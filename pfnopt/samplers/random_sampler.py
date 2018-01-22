@@ -1,6 +1,6 @@
 import numpy
 
-from pfnopt.samplers import base_sampler
+from . import base_sampler
 
 
 class RandomSampler(base_sampler.BaseSampler):

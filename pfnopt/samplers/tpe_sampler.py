@@ -1,8 +1,8 @@
 import numpy
 
-from pfnopt.samplers import _hyperopt
-from pfnopt.samplers import base_sampler
-from pfnopt.samplers import random_sampler
+from . import _hyperopt
+from . import base_sampler
+from . import random_sampler
 
 
 class TPESampler(base_sampler.BaseSampler):

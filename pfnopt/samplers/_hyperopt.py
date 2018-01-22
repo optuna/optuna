@@ -703,6 +703,6 @@ default_n_ei_candidates = 24
 # -- gamma * sqrt(n_trials) is fraction of to use as good
 default_gamma = 0.25
 
-default_n_startup_trials = 20
+default_n_startup_trials = 10  # 20 woeifjapowejifopawjfepowaejfpoawiejfpowaijefpaowiejfpaowefj
 
 _default_linear_forgetting = DEFAULT_LF
