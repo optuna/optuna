@@ -25,19 +25,19 @@ class LocalClient(BaseClient):
         # TODO: if already sampled, return the recorded value
         # TODO: check that distribution is the same
 
-        pairs = self.study.storage.collect_param_result_pairs(
+        pairs = self.study.storage.get_param_result_pairs(
             self.study.study_id, name)
         val = self.study.sampler.sample(distribution, pairs)
-        self.study.storage.report_param(
+        self.study.storage.set_param(
             self.study.study_id, self.trial_id, name, val)
         return val
 
     def complete(self, result):
-        self.study.storage.report_result(
+        self.study.storage.set_result(
             self.study.study_id, self.trial_id, result)
 
     def prune(self, step, current_result):
-        self.study.storage.report_intermediate_result(
+        self.study.storage.set_intermediate_result(
             self.study.study_id, self.trial_id, step, current_result)
         ret = self.study.pruner.prune(
             self.study.storage, self.study.study_id, self.trial_id, step)
