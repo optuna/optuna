@@ -1,5 +1,6 @@
 from . import storage as storage_module
 from . import samplers
+from . import pruners
 from . import client as client_module
 
 
@@ -8,10 +9,11 @@ from . import client as client_module
 # TODO: funcをStudyが持つ必要はないか？
 class Study(object):
 
-    def __init__(self, storage=None, sampler=None, study_id=0):
+    def __init__(self, storage=None, sampler=None, pruner=None, study_id=0):
         self.study_id = study_id
         self.storage = storage or storage_module.InMemoryStorage()
         self.sampler = sampler or samplers.TPESampler()
+        self.pruner = pruner or pruners.MedianPruner()
 
     @property
     def best_params(self):
@@ -39,6 +41,6 @@ def minimize(func, n_trials, study=None):
         trial_id = study.storage.create_new_trial_id(study.study_id)
         client = client_module.LocalClient(study, trial_id)
         result = func(client)
-        client.report_result(result)
+        client.complete(result)
 
     return study

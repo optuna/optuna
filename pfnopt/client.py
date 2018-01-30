@@ -1,12 +1,15 @@
 class BaseClient(object):
 
-    def ask_uniform(self, name, low, high):
-        return self._ask(name, {'kind': 'uniform', 'low': low, 'high': high})
+    def sample_uniform(self, name, low, high):
+        return self._sample(name, {'kind': 'uniform', 'low': low, 'high': high})
 
-    def report_result(self, result):
+    def complete(self, result):
         raise NotImplementedError
 
-    def _ask(self, name, distribution):
+    def prune(self, step, current_result):
+        pass
+
+    def _sample(self, name, distribution):
         raise NotImplementedError
 
 
@@ -18,7 +21,7 @@ class LocalClient(BaseClient):
         self.study = study
         self.trial_id = trial_id
 
-    def _ask(self, name, distribution):
+    def _sample(self, name, distribution):
         # TODO: if already sampled, return the recorded value
         # TODO: check that distribution is the same
 
@@ -26,10 +29,16 @@ class LocalClient(BaseClient):
             self.study.study_id, name)
         val = self.study.sampler.sample(distribution, pairs)
         self.study.storage.report_param(
-            self.study.study_id, self.trial_id, name, val
-        )
+            self.study.study_id, self.trial_id, name, val)
         return val
 
-    def report_result(self, result):
+    def complete(self, result):
         self.study.storage.report_result(
             self.study.study_id, self.trial_id, result)
+
+    def prune(self, step, current_result):
+        self.study.storage.report_intermediate_result(
+            self.study.study_id, self.trial_id, step, current_result)
+        ret = self.study.pruner.prune(
+            self.study.storage, self.study.study_id, self.trial_id, step)
+        return ret

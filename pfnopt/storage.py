@@ -1,4 +1,5 @@
 import copy
+import numpy as np
 
 from . import trial
 
@@ -11,6 +12,8 @@ class InMemoryStorage(object):
     def get_param(self, study_id, trial_id, param_name):
         raise NotImplementedError
 
+    # TODO: report -> set
+
     def report_param(self, study_id, trial_id, param_name, value):
         assert study_id == 0  # TODO
         self.trials[trial_id].params[param_name] = value
@@ -19,11 +22,19 @@ class InMemoryStorage(object):
         assert study_id == 0  # TODO
         self.trials[trial_id].result = result
 
+    def report_intermediate_result(self, study_id, trial_id, step, intermediate_result):
+        assert study_id == 0  # TODO
+        self.trials[trial_id].intermediate_results[step] = intermediate_result
+
     def create_new_trial_id(self, study_id):
         assert study_id == 0
         trial_id = len(self.trials)
         self.trials.append(trial.Trial(trial_id, {}, None))
         return trial_id
+
+    def get_best_intermediate_result_over_steps(self, study_id, trial_id):
+        assert study_id == 0
+        return min(self.trials[trial_id].intermediate_results.values())
 
     def collect_param_result_pairs(self, study_id, param_name):
         assert study_id == 0
@@ -33,6 +44,15 @@ class InMemoryStorage(object):
             for t in self.trials
             if param_name in t.params and t.result is not None
         ]
+
+    def get_median_intermediate_result_over_trials(self, study_id, step):
+        assert study_id == 0
+
+        return np.median([
+            t.intermediate_results[step]
+            for t in self.trials
+            if step in t.intermediate_results
+        ])
 
     def get_best_trial(self):
         # TODO: non-empty check
