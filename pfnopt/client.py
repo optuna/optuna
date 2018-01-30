@@ -1,13 +1,18 @@
+# TODO: don't we need distribution class?
+
 class BaseClient(object):
 
     def sample_uniform(self, name, low, high):
         return self._sample(name, {'kind': 'uniform', 'low': low, 'high': high})
 
+    def sample_loguniform(self, name, low, high):
+        return self._sample(name, {'kind': 'loguniform', 'low': low, 'high': high})
+
     def complete(self, result):
         raise NotImplementedError
 
     def prune(self, step, current_result):
-        pass
+        raise NotImplementedError
 
     def _sample(self, name, distribution):
         raise NotImplementedError

@@ -1,4 +1,5 @@
 import numpy
+import math
 
 from . import _hyperopt
 from . import base_sampler
@@ -36,11 +37,21 @@ class TPESampler(base_sampler.BaseSampler):
 
         if distribution['kind'] == 'uniform':
             return self._sample_uniform(distribution, below_param_values, above_param_values)
+        elif distribution['kind'] == 'loguniform':
+            return self._sample_loguniform(distribution, below_param_values, above_param_values)
         else:
             raise NotImplementedError
 
     def _sample_uniform(self, distribution, below, above):
-        return _hyperopt.iwiwi_uniform_sampler(
+        return _hyperopt.sample_uniform(
             obs_below=below, obs_above=above, prior_weight=self.prior_weight,
             low=distribution['low'], high=distribution['high'],
+            size=(self.n_ei_candidates,), rng=self.rng)
+
+    def _sample_loguniform(self, distribution, below, above):
+        return _hyperopt.sample_loguniform(
+            obs_below=below, obs_above=above, prior_weight=self.prior_weight,
+            # `sample_loguniform` generates values in [exp(low), exp(high)]
+            low=math.log(distribution['low']),
+            high=math.log(distribution['high']),
             size=(self.n_ei_candidates,), rng=self.rng)

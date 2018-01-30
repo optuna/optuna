@@ -526,7 +526,9 @@ def broadcast_best(samples, below_llik, above_llik):
         return []
 
 
-def iwiwi_uniform_sampler(obs_below, obs_above, prior_weight, low, high, size=(), rng=None):
+def sample_uniform(obs_below, obs_above, prior_weight, low, high, size=(), rng=None):
+    # Based on `ap_uniform_sampler`
+
     prior_mu = 0.5 * (high + low)
     prior_sigma = 1.0 * (high - low)
 
@@ -547,6 +549,32 @@ def iwiwi_uniform_sampler(obs_below, obs_above, prior_weight, low, high, size=()
 
     return broadcast_best(samples_b, llik_b, llik_a)[0]  # TODO
 
+
+def sample_loguniform(obs_below, obs_above, prior_weight, low, high, size=(), rng=None):
+    # Based on `ap_loguniform_sampler`
+    # [exp(low), exp(high)]
+
+    prior_mu = 0.5 * (high + low)
+    prior_sigma = 1.0 * (high - low)
+
+    # Below
+    weights_b, mus_b, sigmas_b = adaptive_parzen_normal(
+        np.log(obs_below), prior_weight, prior_mu, prior_sigma)
+    samples_b = LGMM1(
+        weights_b, mus_b, sigmas_b, low=low, high=high,
+        size=size, rng=rng)
+    llik_b = LGMM1_lpdf(
+        samples_b, weights_b, mus_b, sigmas_b,
+        low=low, high=high, q=None)
+
+    # Above
+    weights_a, mus_a, sigmas_a = adaptive_parzen_normal(
+        np.log(obs_above), prior_weight, prior_mu, prior_sigma)
+    llik_a = LGMM1_lpdf(
+        samples_b, weights_a, mus_a, sigmas_a,
+        low=low, high=high, q=None)
+
+    return broadcast_best(samples_b, llik_b, llik_a)[0]  # TODO
 
 
 """
