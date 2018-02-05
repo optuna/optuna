@@ -1,3 +1,6 @@
+import datetime
+
+
 # TODO: don't we need distribution class?
 
 class BaseClient(object):
@@ -18,6 +21,10 @@ class BaseClient(object):
     def params(self):
         raise NotImplementedError
 
+    @property
+    def info(self):
+        raise NotImplementedError
+
     def _sample(self, name, distribution):
         raise NotImplementedError
 
@@ -30,29 +37,44 @@ class LocalClient(BaseClient):
         self.study = study
         self.trial_id = trial_id
 
+        self.study_id = self.study.study_id
+        self.storage = self.study.storage
+
+        self.storage.set_info(
+            self.study_id, self.trial_id,
+            'datetime_start', datetime.datetime.now())
+
     def _sample(self, name, distribution):
         # TODO: if already sampled, return the recorded value
         # TODO: check that distribution is the same
 
-        pairs = self.study.storage.get_param_result_pairs(
-            self.study.study_id, name)
+        pairs = self.storage.get_param_result_pairs(
+            self.study_id, name)
         val = self.study.sampler.sample(distribution, pairs)
-        self.study.storage.set_param(
-            self.study.study_id, self.trial_id, name, val)
+        self.storage.set_param(
+            self.study_id, self.trial_id, name, val)
         return val
 
     def complete(self, result):
-        self.study.storage.set_result(
-            self.study.study_id, self.trial_id, result)
+        self.storage.set_result(
+            self.study_id, self.trial_id, result)
+        self.storage.set_info(
+            self.study_id, self.trial_id,
+            'datetime_complete', datetime.datetime.now())
 
     def prune(self, step, current_result):
-        self.study.storage.set_intermediate_result(
-            self.study.study_id, self.trial_id, step, current_result)
+        self.storage.set_intermediate_result(
+            self.study_id, self.trial_id, step, current_result)
         ret = self.study.pruner.prune(
-            self.study.storage, self.study.study_id, self.trial_id, step)
+            self.storage, self.study_id, self.trial_id, step)
         return ret
 
     @property
     def params(self):
-        return self.study.storage.get_params(
-            self.study.study_id, self.trial_id)
+        return self.storage.get_param_dict(
+            self.study_id, self.trial_id)
+
+    @property
+    def info(self):
+        return self.storage.get_info_dict(
+            self.study_id, self.trial_id)

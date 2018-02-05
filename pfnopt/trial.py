@@ -2,8 +2,9 @@
 class Trial(object):
 
     # TODO: add meta data
-    def __init__(self, trial_id, params, result, intermediate_results=None):
+    def __init__(self, trial_id):
         self.trial_id = trial_id
-        self.params = params
-        self.result = result
-        self.intermediate_results = intermediate_results or {}
+        self.params = {}
+        self.info = {}
+        self.result = None
+        self.intermediate_results = {}

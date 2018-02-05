@@ -12,15 +12,15 @@ class InMemoryStorage(object):
     def create_new_trial_id(self, study_id):
         assert study_id == 0
         trial_id = len(self.trials)
-        self.trials.append(trial.Trial(trial_id, {}, None))
+        self.trials.append(trial.Trial(trial_id))
         return trial_id
+
+    def get_param_dict(self, study_id, trial_id):
+        assert study_id == 0
+        return copy.deepcopy(self.trials[trial_id].params)
 
     def get_param(self, study_id, trial_id, param_name):
         raise NotImplementedError
-
-    def get_params(self, study_id, trial_id):
-        assert study_id == 0
-        return copy.deepcopy(self.trials[trial_id].params)
 
     def set_param(self, study_id, trial_id, param_name, value):
         assert study_id == 0  # TODO
@@ -33,6 +33,19 @@ class InMemoryStorage(object):
     def set_intermediate_result(self, study_id, trial_id, step, intermediate_result):
         assert study_id == 0  # TODO
         self.trials[trial_id].intermediate_results[step] = intermediate_result
+
+    def get_info_dict(self, study_id, trial_id, info_name):
+        assert study_id == 0
+        return self.trials[trial_id].info[info_name]
+
+    def get_info(self, study_id, trial_id):
+        assert study_id == 0
+        return self.trials[trial_id]
+
+    def set_info(self, study_id, trial_id, info_name, value):
+        assert study_id == 0
+        self.trials[trial_id].info[info_name] = value
+
 
     #
     # Methods for result analysis
