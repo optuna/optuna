@@ -18,6 +18,10 @@ class InMemoryStorage(object):
     def get_param(self, study_id, trial_id, param_name):
         raise NotImplementedError
 
+    def get_params(self, study_id, trial_id):
+        assert study_id == 0
+        return copy.deepcopy(self.trials[trial_id].params)
+
     def set_param(self, study_id, trial_id, param_name, value):
         assert study_id == 0  # TODO
         self.trials[trial_id].params[param_name] = value

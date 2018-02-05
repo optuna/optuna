@@ -14,6 +14,10 @@ class BaseClient(object):
     def prune(self, step, current_result):
         raise NotImplementedError
 
+    @property
+    def params(self):
+        raise NotImplementedError
+
     def _sample(self, name, distribution):
         raise NotImplementedError
 
@@ -47,3 +51,8 @@ class LocalClient(BaseClient):
         ret = self.study.pruner.prune(
             self.study.storage, self.study.study_id, self.trial_id, step)
         return ret
+
+    @property
+    def params(self):
+        return self.study.storage.get_params(
+            self.study.study_id, self.trial_id)
