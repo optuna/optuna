@@ -1,3 +1,5 @@
+import datetime
+
 from . import storage as storage_module
 from . import samplers
 from . import pruners
@@ -33,11 +35,23 @@ class Study(object):
 
 
 # TODO: Studyのメンバ関数にしない？
-def minimize(func, n_trials, study=None):
+def minimize(func, n_trials=None, timeout_seconds=None, study=None):
     if study is None:
         study = Study()
 
-    for _ in range(n_trials):
+    i_trial = 0
+    time_start = datetime.datetime.now()
+    while True:
+        if n_trials is not None:
+            if i_trial >= n_trials:
+                break
+            i_trial += 1
+
+        if timeout_seconds is not None:
+            elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
+            if elapsed_seconds >= timeout_seconds:
+                break
+
         trial_id = study.storage.create_new_trial_id(study.study_id)
         client = client_module.LocalClient(study, trial_id)
         result = func(client)
