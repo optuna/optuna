@@ -3,3 +3,4 @@ from . import samplers
 from . import integration
 
 from .study import minimize
+from .study import Study
