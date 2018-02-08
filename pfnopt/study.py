@@ -8,6 +8,7 @@ from . import client as client_module
 
 # TODO: 実験継続と新規実験のどっちも簡単にできるインターフェースを考える必要あり
 
+
 # TODO: funcをStudyが持つ必要はないか？
 class Study(object):
 
@@ -22,8 +23,8 @@ class Study(object):
         return self.best_trial.params
 
     @property
-    def best_result(self):
-        return self.best_trial.result
+    def best_value(self):
+        return self.best_trial.value
 
     @property
     def best_trial(self):

@@ -1,5 +1,7 @@
 import datetime
 
+from . import trial
+
 
 # TODO: don't we need distribution class?
 
@@ -40,7 +42,7 @@ class LocalClient(BaseClient):
         self.study_id = self.study.study_id
         self.storage = self.study.storage
 
-        self.storage.set_info(
+        self.storage.set_system_attr(
             self.study_id, self.trial_id,
             'datetime_start', datetime.datetime.now())
 
@@ -56,14 +58,16 @@ class LocalClient(BaseClient):
         return val
 
     def complete(self, result):
-        self.storage.set_result(
+        self.storage.set_value(
             self.study_id, self.trial_id, result)
-        self.storage.set_info(
+        self.storage.set_state(
+            self.study_id, self.trial_id, trial.State.COMPLETE)
+        self.storage.set_system_attr(
             self.study_id, self.trial_id,
             'datetime_complete', datetime.datetime.now())
 
     def prune(self, step, current_result):
-        self.storage.set_intermediate_result(
+        self.storage.set_intermediate_value(
             self.study_id, self.trial_id, step, current_result)
         ret = self.study.pruner.prune(
             self.storage, self.study_id, self.trial_id, step)
@@ -76,5 +80,5 @@ class LocalClient(BaseClient):
 
     @property
     def info(self):
-        return self.storage.get_info_dict(
+        return self.storage.get_system_attrs(
             self.study_id, self.trial_id)

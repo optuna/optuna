@@ -15,6 +15,10 @@ class InMemoryStorage(object):
         self.trials.append(trial.Trial(trial_id))
         return trial_id
 
+    def set_state(self, study_id, trial_id, state):
+        assert study_id == 0
+        self.trials[trial_id].state = state
+
     def get_param_dict(self, study_id, trial_id):
         assert study_id == 0
         return copy.deepcopy(self.trials[trial_id].params)
@@ -22,29 +26,25 @@ class InMemoryStorage(object):
     def get_param(self, study_id, trial_id, param_name):
         raise NotImplementedError
 
-    def set_param(self, study_id, trial_id, param_name, value):
+    def set_param(self, study_id, trial_id, param_name, param_value):
         assert study_id == 0  # TODO
-        self.trials[trial_id].params[param_name] = value
+        self.trials[trial_id].params[param_name] = param_value
 
-    def set_result(self, study_id, trial_id, result):
+    def set_value(self, study_id, trial_id, value):
         assert study_id == 0  # TODO
-        self.trials[trial_id].result = result
+        self.trials[trial_id].value = value
 
-    def set_intermediate_result(self, study_id, trial_id, step, intermediate_result):
+    def set_intermediate_value(self, study_id, trial_id, step, intermediate_value):
         assert study_id == 0  # TODO
-        self.trials[trial_id].intermediate_results[step] = intermediate_result
+        self.trials[trial_id].intermediate_values[step] = intermediate_value
 
-    def get_info_dict(self, study_id, trial_id, info_name):
+    def get_system_attrs(self, study_id, trial_id):
         assert study_id == 0
-        return self.trials[trial_id].info[info_name]
+        return copy.deepcopy(self.trials[trial_id].system_attrs)
 
-    def get_info(self, study_id, trial_id):
+    def set_system_attr(self, study_id, trial_id, attr_name, attr_value):
         assert study_id == 0
-        return self.trials[trial_id]
-
-    def set_info(self, study_id, trial_id, info_name, value):
-        assert study_id == 0
-        self.trials[trial_id].info[info_name] = value
+        setattr(self.trials[trial_id].system_attrs, attr_name, attr_value)
 
 
     #
@@ -55,8 +55,8 @@ class InMemoryStorage(object):
         # TODO: non-empty check
 
         best_trial = min(
-            (t for t in self.trials if t.result is not None),
-            key=lambda t: t.result)
+            (t for t in self.trials if t.state is trial.State.COMPLETE),
+            key=lambda t: t.value)
 
         return copy.deepcopy(best_trial)
 
@@ -71,9 +71,10 @@ class InMemoryStorage(object):
         assert study_id == 0
 
         return [
-            (t.params[param_name], t.result)
+            (t.params[param_name], t.value)
             for t in self.trials
-            if param_name in t.params and t.result is not None
+            if param_name in t.params and t.value is trial.State.COMPLETE
+            # TODO: We also want to use pruned results
         ]
 
     #
