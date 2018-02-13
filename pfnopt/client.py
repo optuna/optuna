@@ -42,7 +42,7 @@ class LocalClient(BaseClient):
         self.study_id = self.study.study_id
         self.storage = self.study.storage
 
-        self.storage.set_system_attr(
+        self.storage.set_trial_system_attr(
             self.study_id, self.trial_id,
             'datetime_start', datetime.datetime.now())
 
@@ -50,24 +50,24 @@ class LocalClient(BaseClient):
         # TODO: if already sampled, return the recorded value
         # TODO: check that distribution is the same
 
-        pairs = self.storage.get_param_result_pairs(
+        pairs = self.storage.get_trial_param_result_pairs(
             self.study_id, name)
         val = self.study.sampler.sample(distribution, pairs)
-        self.storage.set_param(
+        self.storage.set_trial_param(
             self.study_id, self.trial_id, name, val)
         return val
 
     def complete(self, result):
-        self.storage.set_value(
+        self.storage.set_trial_value(
             self.study_id, self.trial_id, result)
-        self.storage.set_state(
+        self.storage.set_trial_state(
             self.study_id, self.trial_id, trial.State.COMPLETE)
-        self.storage.set_system_attr(
+        self.storage.set_trial_system_attr(
             self.study_id, self.trial_id,
             'datetime_complete', datetime.datetime.now())
 
     def prune(self, step, current_result):
-        self.storage.set_intermediate_value(
+        self.storage.set_trial_intermediate_value(
             self.study_id, self.trial_id, step, current_result)
         ret = self.study.pruner.prune(
             self.storage, self.study_id, self.trial_id, step)
@@ -75,10 +75,10 @@ class LocalClient(BaseClient):
 
     @property
     def params(self):
-        return self.storage.get_param_dict(
+        return self.storage.get_trial_params(
             self.study_id, self.trial_id)
 
     @property
     def info(self):
-        return self.storage.get_system_attrs(
+        return self.storage.get_trial_system_attrs(
             self.study_id, self.trial_id)
