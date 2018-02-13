@@ -44,7 +44,7 @@ class InMemoryStorage(object):
 
     def set_system_attr(self, study_id, trial_id, attr_name, attr_value):
         assert study_id == 0
-        setattr(self.trials[trial_id].system_attrs, attr_name, attr_value)
+        self.trials[trial_id].system_attrs[attr_name] = attr_value
 
 
     #
