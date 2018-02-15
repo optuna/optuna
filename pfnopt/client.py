@@ -80,5 +80,6 @@ class LocalClient(BaseClient):
 
     @property
     def info(self):
+        # TODO: info -> system_attrs
         return self.storage.get_trial_system_attrs(
             self.study_id, self.trial_id)

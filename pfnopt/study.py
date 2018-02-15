@@ -28,11 +28,11 @@ class Study(object):
 
     @property
     def best_trial(self):
-        return self.storage.get_best_trial()
+        return self.storage.get_best_trial(self.study_id)
 
     @property
     def trials(self):
-        return self.storage.get_all_trials()
+        return self.storage.get_all_trials(self.study_id)
 
 
 # TODO: Studyのメンバ関数にしない？
