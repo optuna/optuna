@@ -19,5 +19,8 @@ class RandomSampler(base_sampler.BaseSampler):
             log_low = numpy.log(distribution.low)
             log_high = numpy.log(distribution.high)
             return numpy.exp(self.rng.uniform(log_low, log_high))
+        elif isinstance(distribution, distributions.CategoricalDistribution):
+            choices = distribution.choices
+            return self.rng.randint(len(choices))
         else:
             raise NotImplementedError

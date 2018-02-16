@@ -14,6 +14,9 @@ class BaseClient(object):
     def sample_loguniform(self, name, low, high):
         return self._sample(name, distributions.LogUniformDistribution(low=low, high=high))
 
+    def sample_categorical(self, name, choices):
+        return self._sample(name, distributions.CategoricalDistribution(choices=choices))
+
     def complete(self, result):
         raise NotImplementedError
 
