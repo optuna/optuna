@@ -621,8 +621,6 @@ def categorical(p, upper=None, rng=None, size=()):
 def sample_categorical(obs_below, obs_above, prior_weight, upper, size=(), rng=None, LF=DEFAULT_LF):
     # Based on `ap_categorical_sampler`
 
-    print(obs_below, obs_above, upper)
-
     # Below
     weights_b = linear_forgetting_weights(len(obs_below), LF=LF)
     counts_b = np.bincount(obs_below, minlength=upper, weights=weights_b)
