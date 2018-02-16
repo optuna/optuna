@@ -1,5 +1,6 @@
 import datetime
 
+from . import distributions
 from . import trial
 
 
@@ -8,10 +9,10 @@ from . import trial
 class BaseClient(object):
 
     def sample_uniform(self, name, low, high):
-        return self._sample(name, {'kind': 'uniform', 'low': low, 'high': high})
+        return self._sample(name, distributions.UniformDistribution(low=low, high=high))
 
     def sample_loguniform(self, name, low, high):
-        return self._sample(name, {'kind': 'loguniform', 'low': low, 'high': high})
+        return self._sample(name, distributions.LogUniformDistribution(low=low, high=high))
 
     def complete(self, result):
         raise NotImplementedError
@@ -28,6 +29,7 @@ class BaseClient(object):
         raise NotImplementedError
 
     def _sample(self, name, distribution):
+        # type: (str, distributions._BaseDistribution) -> Any
         raise NotImplementedError
 
 
@@ -50,12 +52,16 @@ class LocalClient(BaseClient):
         # TODO: if already sampled, return the recorded value
         # TODO: check that distribution is the same
 
+        self.storage.set_study_param_distribution(
+            self.study_id, name, distribution)
+
         pairs = self.storage.get_trial_param_result_pairs(
             self.study_id, name)
-        val = self.study.sampler.sample(distribution, pairs)
+        param_value_in_internal_repr = self.study.sampler.sample(distribution, pairs)
         self.storage.set_trial_param(
-            self.study_id, self.trial_id, name, val)
-        return val
+            self.study_id, self.trial_id, name, param_value_in_internal_repr)
+        param_value = distribution.to_user(param_value_in_internal_repr)
+        return param_value
 
     def complete(self, result):
         self.storage.set_trial_value(
