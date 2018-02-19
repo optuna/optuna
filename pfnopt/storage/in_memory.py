@@ -17,6 +17,10 @@ class InMemoryStorage(base.BaseStorage):
         self.trials = []  # type: List[trial.Trial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
 
+    # TODO: discuss API
+    def create_new_study_id(self):
+        return 0  # TODO
+
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
         assert study_id == 0  # TODO(Akiba)
