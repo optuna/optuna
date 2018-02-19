@@ -32,7 +32,7 @@ class InMemoryStorage(_base.BaseStorage):
         self.trials[trial_id].params_in_internal_repr[param_name] = param_value_in_internal_repr
 
         distribution = self.param_distribution[param_name]
-        param_value_actual = distribution.to_user(param_value_in_internal_repr)
+        param_value_actual = distribution.to_external_repr(param_value_in_internal_repr)
         self.trials[trial_id].params[param_name] = param_value_actual
 
     def set_trial_value(self, study_id, trial_id, value):

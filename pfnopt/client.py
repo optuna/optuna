@@ -61,7 +61,7 @@ class LocalClient(BaseClient):
         param_value_in_internal_repr = self.study.sampler.sample(distribution, pairs)
         self.storage.set_trial_param(
             self.study_id, self.trial_id, name, param_value_in_internal_repr)
-        param_value = distribution.to_user(param_value_in_internal_repr)
+        param_value = distribution.to_external_repr(param_value_in_internal_repr)
         return param_value
 
     def complete(self, result):
