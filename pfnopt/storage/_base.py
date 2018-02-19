@@ -5,6 +5,7 @@ import abc
 from typing import Any, List, Dict, Tuple
 
 from pfnopt import trial
+from pfnopt import distributions
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -17,6 +18,11 @@ class BaseStorage(object):
         # type: (int) -> int
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def set_study_param_distribution(self, study_id, param_name, distribution):
+        # type: (int, str, distributions._BaseDistribution) -> None
+        raise NotImplementedError
+
     # Basic trial manipulation
 
     @abc.abstractmethod
@@ -25,7 +31,7 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_param(self, study_id, trial_id, param_name, param_value):
+    def set_trial_param(self, study_id, trial_id, param_name, param_value_in_internal_repr):
         # type: (int, int, str, float) -> None
         # TODO: float? how about categorical?
         raise NotImplementedError
@@ -81,12 +87,13 @@ class BaseStorage(object):
 
     def get_trial_param_result_pairs(self, study_id, param_name):
         # type: (int, str) -> List[Tuple[float, float]]
+        # Be careful: this method returns param values in internal representation
         all_trials = self.get_all_trials(study_id)
 
         return [
-            (t.params[param_name], t.value)
+            (t.params_in_internal_repr[param_name], t.value)
             for t in all_trials
-            if param_name in t.params and t.value is trial.State.COMPLETE
+            if param_name in t.params and t.state is trial.State.COMPLETE
             # TODO: We also want to use pruned results
         ]
 

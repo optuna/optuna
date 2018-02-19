@@ -2,6 +2,7 @@ import math
 import numpy
 
 from . import base_sampler
+from pfnopt import distributions
 
 
 class RandomSampler(base_sampler.BaseSampler):
@@ -12,13 +13,11 @@ class RandomSampler(base_sampler.BaseSampler):
         self.rng = numpy.random.RandomState(seed)
 
     def sample(self, distribution, observation_pairs):
-        kind = distribution['kind']
-
-        if kind == 'uniform':
-            return self.rng.uniform(distribution['low'], distribution['high'])
-        elif kind == 'loguniform':
-            log_low = numpy.log(distribution['low'])
-            log_high = numpy.log(distribution['high'])
+        if isinstance(distribution, distributions.UniformDistribution):
+            return self.rng.uniform(distribution.low, distribution.high)
+        elif isinstance(distribution, distributions.LogUniformDistribution):
+            log_low = numpy.log(distribution.low)
+            log_high = numpy.log(distribution.high)
             return numpy.exp(self.rng.uniform(log_low, log_high))
         else:
             raise NotImplementedError

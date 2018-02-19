@@ -4,6 +4,7 @@ import math
 from . import _hyperopt
 from . import base_sampler
 from . import random_sampler
+from pfnopt import distributions
 
 
 class TPESampler(base_sampler.BaseSampler):
@@ -35,9 +36,9 @@ class TPESampler(base_sampler.BaseSampler):
             range(n), [p[1] for p in observation_pairs],
             self.gamma)
 
-        if distribution['kind'] == 'uniform':
+        if isinstance(distribution, distributions.UniformDistribution):
             return self._sample_uniform(distribution, below_param_values, above_param_values)
-        elif distribution['kind'] == 'loguniform':
+        elif isinstance(distribution, distributions.LogUniformDistribution):
             return self._sample_loguniform(distribution, below_param_values, above_param_values)
         else:
             raise NotImplementedError
@@ -45,13 +46,13 @@ class TPESampler(base_sampler.BaseSampler):
     def _sample_uniform(self, distribution, below, above):
         return _hyperopt.sample_uniform(
             obs_below=below, obs_above=above, prior_weight=self.prior_weight,
-            low=distribution['low'], high=distribution['high'],
+            low=distribution.low, high=distribution.high,
             size=(self.n_ei_candidates,), rng=self.rng)
 
     def _sample_loguniform(self, distribution, below, above):
         return _hyperopt.sample_loguniform(
             obs_below=below, obs_above=above, prior_weight=self.prior_weight,
             # `sample_loguniform` generates values in [exp(low), exp(high)]
-            low=math.log(distribution['low']),
-            high=math.log(distribution['high']),
+            low=math.log(distribution.low),
+            high=math.log(distribution.high),
             size=(self.n_ei_candidates,), rng=self.rng)
