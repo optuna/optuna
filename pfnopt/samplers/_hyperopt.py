@@ -577,6 +577,74 @@ def sample_loguniform(obs_below, obs_above, prior_weight, low, high, size=(), rn
     return broadcast_best(samples_b, llik_b, llik_a)[0]  # TODO
 
 
+def categorical(p, upper=None, rng=None, size=()):
+    # From pyll/stochastic.py
+
+    """Draws i with probability p[i]"""
+    if len(p) == 1 and isinstance(p[0], np.ndarray):
+        p = p[0]
+    p = np.asarray(p)
+
+    if size == ():
+        size = (1,)
+    elif isinstance(size, (int, np.number)):
+        size = (size,)
+    else:
+        size = tuple(size)
+
+    if size == (0,):
+        return np.asarray([])
+    assert len(size)
+
+    if p.ndim == 0:
+        raise NotImplementedError()
+    elif p.ndim == 1:
+        n_draws = int(np.prod(size))
+        sample = rng.multinomial(n=1, pvals=p, size=int(n_draws))
+        assert sample.shape == size + (len(p),)
+        rval = np.dot(sample, np.arange(len(p)))
+        rval.shape = size
+        return rval
+    elif p.ndim == 2:
+        n_draws_, n_choices = p.shape
+        n_draws, = size
+        assert n_draws == n_draws_
+        rval = [np.where(rng.multinomial(pvals=p[ii], n=1))[0][0]
+                for ii in range(n_draws)]
+        rval = np.asarray(rval)
+        rval.shape = size
+        return rval
+    else:
+        raise NotImplementedError()
+
+
+def sample_categorical(obs_below, obs_above, prior_weight, upper, size=(), rng=None, LF=DEFAULT_LF):
+    # Based on `ap_categorical_sampler`
+
+    # Below
+    weights_b = linear_forgetting_weights(len(obs_below), LF=LF)
+    counts_b = np.bincount(obs_below, minlength=upper, weights=weights_b)
+    pseudocounts_b = counts_b + prior_weight
+    pseudocounts_b /= pseudocounts_b.sum()
+    samples_b = categorical(pseudocounts_b, upper=upper, size=size, rng=rng)
+    llik_b = categorical_lpdf(samples_b, pseudocounts_b, upper=upper)
+
+    # Above
+    weights_a = linear_forgetting_weights(len(obs_above), LF=LF)
+    counts_a = np.bincount(obs_above, minlength=upper, weights=weights_a)
+    pseudocounts_a = counts_a + prior_weight
+    pseudocounts_a /= pseudocounts_a.sum()
+    llik_a = categorical_lpdf(samples_b, pseudocounts_a, upper=upper)
+
+    return broadcast_best(samples_b, llik_b, llik_a)[0]
+
+
+
+
+
+
+
+
 """
 @adaptive_parzen_sampler('loguniform')
 def ap_loguniform_sampler(obs, prior_weight, low, high,

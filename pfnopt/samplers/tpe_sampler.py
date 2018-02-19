@@ -40,6 +40,8 @@ class TPESampler(base_sampler.BaseSampler):
             return self._sample_uniform(distribution, below_param_values, above_param_values)
         elif isinstance(distribution, distributions.LogUniformDistribution):
             return self._sample_loguniform(distribution, below_param_values, above_param_values)
+        elif isinstance(distribution, distributions.CategoricalDistribution):
+            return self._sample_categorical(distribution, below_param_values, above_param_values)
         else:
             raise NotImplementedError
 
@@ -56,3 +58,10 @@ class TPESampler(base_sampler.BaseSampler):
             low=math.log(distribution.low),
             high=math.log(distribution.high),
             size=(self.n_ei_candidates,), rng=self.rng)
+
+    def _sample_categorical(self, distribution, below, above):
+        choices = distribution.choices
+        idx = _hyperopt.sample_categorical(
+            obs_below=below, obs_above=above, prior_weight=self.prior_weight,
+            upper=len(choices), size=(self.n_ei_candidates, ), rng=self.rng)
+        return idx
