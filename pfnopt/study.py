@@ -102,7 +102,6 @@ def create_new_study(storage):
     return Study(study_id=study_id, storage=storage)
 
 
-# TODO: Studyのメンバ関数にしない？
 def minimize(
         func,  # type: Callable[[client_module.BaseClient], float]
         n_trials=None,  # type: Optional[int]
@@ -111,7 +110,6 @@ def minimize(
         parallelism_backend='thread'  # type: str
 ):
     # type: (...) -> Study
-
     storage = storage_module.InMemoryStorage()
     study = create_new_study(storage)
     study.run(func, n_trials, timeout_seconds, n_jobs, parallelism_backend)
