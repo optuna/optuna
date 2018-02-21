@@ -3,6 +3,19 @@ jobs:
   build:
     docker:
       - image: circleci/python:3.6.1
+
     steps:
       - checkout
-      - run: echo 'We have no test so far.'
+
+      - run:
+          name: install
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install pytest
+
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            pytest tests
