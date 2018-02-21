@@ -12,7 +12,9 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install pytest
+            pip3 install pytest
+            python3 setup.py sdist
+            pip3 install dist/*.tar.gz
 
       - run:
           name: run tests
