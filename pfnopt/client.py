@@ -1,11 +1,11 @@
 import datetime
-from typing import Any
+from typing import Any  # noqa: F401
 
-from . import distributions
-from . import trial
+from pfnopt import distributions
+from pfnopt import trial
 
 
-# TODO: don't we need distribution class?
+# TODO(Akiba): don't we need distribution class?
 
 class BaseClient(object):
 
@@ -53,8 +53,8 @@ class LocalClient(BaseClient):
             'datetime_start', datetime.datetime.now())
 
     def _sample(self, name, distribution):
-        # TODO: if already sampled, return the recorded value
-        # TODO: check that distribution is the same
+        # TODO(Akiba): if already sampled, return the recorded value
+        # TODO(Akiba): check that distribution is the same
 
         self.storage.set_study_param_distribution(
             self.study_id, name, distribution)
@@ -90,6 +90,6 @@ class LocalClient(BaseClient):
 
     @property
     def info(self):
-        # TODO: info -> system_attrs
+        # TODO(Akiba): info -> system_attrs
         return self.storage.get_trial_system_attrs(
             self.study_id, self.trial_id)
