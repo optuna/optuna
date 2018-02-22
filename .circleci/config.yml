@@ -20,7 +20,7 @@ jobs:
           name: style check
           command: |
             . venv/bin/activate
-            flake8 setup.py pfnopt tests
+            flake8 .
 
       - run:
           name: run tests
