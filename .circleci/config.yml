@@ -12,15 +12,21 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip3 install pytest hacking
+            pip3 install pytest hacking mypy
             python3 setup.py sdist
             pip3 install dist/*.tar.gz
 
       - run:
-          name: style check
+          name: flake8 check
           command: |
             . venv/bin/activate
             flake8 .
+
+      - run:
+          name: mypy check
+          command: |
+            . venv/bin/activate
+            mypy --ignore-missing-imports .
 
       - run:
           name: run tests
