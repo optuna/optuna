@@ -1,15 +1,15 @@
 import datetime
 
-from . import storage as storage_module
-from . import samplers
-from . import pruners
-from . import client as client_module
+from pfnopt import client as client_module
+from pfnopt import pruners
+from pfnopt import samplers
+from pfnopt import storage as storage_module
 
 
-# TODO: 実験継続と新規実験のどっちも簡単にできるインターフェースを考える必要あり
+# TODO(Akiba): 実験継続と新規実験のどっちも簡単にできるインターフェースを考える必要あり
 
 
-# TODO: funcをStudyが持つ必要はないか？
+# TODO(Akiba): funcをStudyが持つ必要はないか？
 class Study(object):
 
     def __init__(self, storage=None, sampler=None, pruner=None, study_id=0):
@@ -35,7 +35,7 @@ class Study(object):
         return self.storage.get_all_trials(self.study_id)
 
 
-# TODO: Studyのメンバ関数にしない？
+# TODO(Akiba): Studyのメンバ関数にしない？
 def minimize(func, n_trials=None, timeout_seconds=None, study=None):
     if study is None:
         study = Study()

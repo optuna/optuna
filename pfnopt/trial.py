@@ -15,7 +15,7 @@ class Trial(object):
         self.trial_id = trial_id
         self.state = State.RUNNING
         self.params = {}
-        self.params_in_internal_repr = {}  # TODO: eliminate me
+        self.params_in_internal_repr = {}  # TODO(Akiba): eliminate me
         self.system_attrs = {}
         self.user_attrs = {}
         self.value = None

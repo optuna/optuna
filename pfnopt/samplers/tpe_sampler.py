@@ -1,10 +1,10 @@
-import numpy
 import math
+import numpy
 
-from . import _hyperopt
-from . import base_sampler
-from . import random_sampler
 from pfnopt import distributions
+from pfnopt.samplers import _hyperopt
+from pfnopt.samplers import base_sampler
+from pfnopt.samplers import random_sampler
 
 
 class TPESampler(base_sampler.BaseSampler):
@@ -27,7 +27,7 @@ class TPESampler(base_sampler.BaseSampler):
     def sample(self, distribution, observation_pairs):
         n = len(observation_pairs)
 
-        # TODO: this behavior is slightly different from hyperopt
+        # TODO(Akiba): this behavior is slightly different from hyperopt
         if n < self.n_startup_trials:
             return self.random_sampler.sample(distribution, observation_pairs)
 

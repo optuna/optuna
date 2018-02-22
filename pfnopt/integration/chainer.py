@@ -1,4 +1,5 @@
-def create_chainer_pruning_trigger(client, observation_key, stop_trigger, test_trigger=(1, 'epoch')):
+def create_chainer_pruning_trigger(client, observation_key, stop_trigger,
+                                   test_trigger=(1, 'epoch')):
     import chainer.training
 
     class _ChainerTrigger(chainer.training.IntervalTrigger):
@@ -12,7 +13,8 @@ def create_chainer_pruning_trigger(client, observation_key, stop_trigger, test_t
         def __init__(self, client_, observation_key_, stop_trigger_, test_trigger_):
             stop_trigger_ = chainer.training.get_trigger(stop_trigger_)
             test_trigger_ = chainer.training.get_trigger(test_trigger_)
-            assert isinstance(test_trigger_, chainer.training.IntervalTrigger)  # TODO: raise ValueError
+            # TODO(Akiba): raise ValueError
+            assert isinstance(test_trigger_, chainer.training.IntervalTrigger)
             super(_ChainerTrigger, self).__init__(stop_trigger_.period, stop_trigger_.unit)
 
             self.client = client_

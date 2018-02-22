@@ -1,4 +1,6 @@
-from typing import NamedTuple, List, Any
+from typing import Any
+from typing import List
+from typing import NamedTuple
 
 
 class _BaseDistribution(object):

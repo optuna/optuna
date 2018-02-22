@@ -1,11 +1,14 @@
+import abc
 import copy
 import numpy as np
 import six
-import abc
-from typing import Any, List, Dict, Tuple
+from typing import Any  # NOQA
+from typing import Dict  # NOQA
+from typing import List  # NOQA
+from typing import Tuple  # NOQA
 
+from pfnopt import distributions  # NOQA
 from pfnopt import trial
-from pfnopt import distributions
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -33,7 +36,7 @@ class BaseStorage(object):
     @abc.abstractmethod
     def set_trial_param(self, study_id, trial_id, param_name, param_value_in_internal_repr):
         # type: (int, int, str, float) -> None
-        # TODO: float? how about categorical?
+        # TODO(Akiba): float? how about categorical?
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -94,7 +97,7 @@ class BaseStorage(object):
             (t.params_in_internal_repr[param_name], t.value)
             for t in all_trials
             if param_name in t.params and t.state is trial.State.COMPLETE
-            # TODO: We also want to use pruned results
+            # TODO(Akiba): We also want to use pruned results
         ]
 
     # Methods for the median pruner
