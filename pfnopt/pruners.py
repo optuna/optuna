@@ -12,7 +12,7 @@ class MedianPruner(BasePruner):
      median of intermediate results of previous trials at the same step.
     """
 
-    n_startup_trials = 5  # TODO: parameterize
+    n_startup_trials = 5  # TODO(Akiba): parameterize
 
     def prune(self, storage, study_id, trial_id, step):
         if trial_id < self.n_startup_trials:
