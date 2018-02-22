@@ -104,7 +104,7 @@ class BaseStorage(object):
 
     def get_best_intermediate_result_over_steps(self, study_id, trial_id):
         # type: (int, int) -> float
-        return min(self.get_trial(trial_id).intermediate_values.values())
+        return min(self.get_trial(study_id, trial_id).intermediate_values.values())
 
     def get_median_intermediate_result_over_trials(self, study_id, step):
         # type: (int, int) -> float

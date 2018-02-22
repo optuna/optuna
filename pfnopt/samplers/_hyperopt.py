@@ -41,6 +41,7 @@ import time
 
 import numpy as np
 from scipy.special import erf
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ EPS = 1e-12
 DEFAULT_LF = 25
 
 
-adaptive_parzen_samplers = {}
+adaptive_parzen_samplers = {}  # type: Dict[Any, Any]
 
 
 def adaptive_parzen_sampler(name):
