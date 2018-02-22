@@ -1,2 +1,2 @@
-from .random_sampler import RandomSampler
-from .tpe_sampler import TPESampler
+from pfnopt.samplers.random_sampler import RandomSampler  # noqa: F401
+from pfnopt.samplers.tpe_sampler import TPESampler  # noqa: F401
