@@ -2,7 +2,7 @@
 
 ## Information for Developers
 
-### Python Format and Lint
+### Format and Lint
 
 
 We use `flake8` and `autopep8`. To install, run:
@@ -22,3 +22,23 @@ Lint:
 ```
 $ flake8 .
 ```
+
+
+### Static Type Checking
+
+We use `mypy`. To install, run:
+
+```
+$ pip install mypy
+```
+
+To invoke static type checking, run:
+
+```
+mypy --ignore-missing-imports .
+```
+
+We use comment-style type annotation for compatibility with Python 2.
+
+* [PEP484](https://www.python.org/dev/peps/pep-0484/)
+* [Syntax cheat sheet](http://mypy.readthedocs.io/en/latest/cheat_sheet.html)
