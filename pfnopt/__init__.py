@@ -1,6 +1,6 @@
-from pfnopt import integration  # noqa: F401
-from pfnopt import samplers  # noqa: F401
-from pfnopt import study  # noqa: F401
+from pfnopt import integration  # NOQA
+from pfnopt import samplers  # NOQA
+from pfnopt import study  # NOQA
 
-from pfnopt.study import minimize  # noqa: F401
-from pfnopt.study import Study  # noqa: F401
+from pfnopt.study import minimize  # NOQA
+from pfnopt.study import Study  # NOQA

@@ -1,1 +1,1 @@
-from pfnopt.storage.in_memory import InMemoryStorage  # noqa: F401
+from pfnopt.storage.in_memory import InMemoryStorage  # NOQA

@@ -1,5 +1,5 @@
 import datetime
-from typing import Any  # noqa: F401
+from typing import Any  # NOQA
 
 from pfnopt import distributions
 from pfnopt import trial

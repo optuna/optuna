@@ -2,12 +2,12 @@ import abc
 import copy
 import numpy as np
 import six
-from typing import Any  # noqa: F401
-from typing import Dict  # noqa: F401
-from typing import List  # noqa: F401
-from typing import Tuple  # noqa: F401
+from typing import Any  # NOQA
+from typing import Dict  # NOQA
+from typing import List  # NOQA
+from typing import Tuple  # NOQA
 
-from pfnopt import distributions  # noqa: F401
+from pfnopt import distributions  # NOQA
 from pfnopt import trial
 
 

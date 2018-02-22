@@ -1,8 +1,8 @@
 import copy
-from typing import Dict  # noqa: F401
-from typing import List  # noqa: F401
+from typing import Dict  # NOQA
+from typing import List  # NOQA
 
-from pfnopt import distributions  # noqa: F401
+from pfnopt import distributions  # NOQA
 from pfnopt import trial
 
 from pfnopt.storage import _base
