@@ -1,10 +1,10 @@
 import numpy
 
 from pfnopt import distributions
-from pfnopt.samplers import base_sampler
+from pfnopt.samplers import base
 
 
-class RandomSampler(base_sampler.BaseSampler):
+class RandomSampler(base.BaseSampler):
 
     def __init__(self, seed=None):
         self.seed = seed

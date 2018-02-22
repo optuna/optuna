@@ -3,11 +3,11 @@ import numpy
 
 from pfnopt import distributions
 from pfnopt.samplers import _hyperopt
-from pfnopt.samplers import base_sampler
-from pfnopt.samplers import random_sampler
+from pfnopt.samplers import base
+from pfnopt.samplers import random
 
 
-class TPESampler(base_sampler.BaseSampler):
+class TPESampler(base.BaseSampler):
 
     def __init__(self,
                  prior_weight=_hyperopt.default_prior_weight,
@@ -22,7 +22,7 @@ class TPESampler(base_sampler.BaseSampler):
         self.seed = seed
 
         self.rng = numpy.random.RandomState(seed)
-        self.random_sampler = random_sampler.RandomSampler(seed=seed)
+        self.random_sampler = random.RandomSampler(seed=seed)
 
     def sample(self, distribution, observation_pairs):
         n = len(observation_pairs)
