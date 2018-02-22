@@ -13,7 +13,7 @@ class InMemoryStorage(_base.BaseStorage):
     def __init__(self):
         self.study_attrs = {}
         self.trials = []  # type: List[trial.Trial]
-        self.param_distribution = {}  # type: Dict[distributions._BaseDistribution]
+        self.param_distribution = {}  # type: Dict[str, distributions._BaseDistribution]
 
     def create_new_trial_id(self, study_id):
         assert study_id == 0  # TODO(Akiba)
