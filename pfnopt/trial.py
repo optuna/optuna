@@ -1,6 +1,6 @@
 import enum
 from typing import NamedTuple
-from typing import Union
+from typing import Optional
 
 import datetime
 
@@ -27,7 +27,9 @@ class Trial(object):
         self.intermediate_values = {}
 
 
-SystemAttributes = NamedTuple(
-    'SystemAttributes',
-    [('datetime_start', Union[datetime.datetime, None]),
-     ('datetime_end', Union[datetime.datetime, None])])
+class SystemAttributes(
+    NamedTuple(
+        '_BaseSystemAttributes',
+        [('datetime_start', Optional[datetime.datetime]),
+         ('datetime_end', Optional[datetime.datetime])])):
+    pass
