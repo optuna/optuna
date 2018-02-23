@@ -30,4 +30,5 @@ class CategoricalDistribution(
         [('choices', List[Any])])):
 
     def to_external_repr(self, param_value_in_internal_repr):
+        # type: (float) -> Any
         return self.choices[int(param_value_in_internal_repr)]
