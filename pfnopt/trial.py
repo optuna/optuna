@@ -27,9 +27,7 @@ class Trial(object):
         self.intermediate_values = {}
 
 
-class SystemAttributes(
-    NamedTuple(
-        '_BaseSystemAttributes',
-        [('datetime_start', Optional[datetime.datetime]),
-         ('datetime_complete', Optional[datetime.datetime])])):
-    pass
+SystemAttributes = NamedTuple(
+    'SystemAttributes',
+    [('datetime_start', Optional[datetime.datetime]),
+     ('datetime_complete', Optional[datetime.datetime])])
