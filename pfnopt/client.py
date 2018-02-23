@@ -53,7 +53,7 @@ class BaseClient(object):
     @property
     @abc.abstractmethod
     def info(self):
-        # type: () -> Dict[str, Any]
+        # type: () -> trial.SystemAttributes
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -74,7 +74,8 @@ class LocalClient(BaseClient):
         self.study_id = self.study.study_id
         self.storage = self.study.storage
 
-        system_attrs = self.storage.get_trial_system_attrs()
+        system_attrs = self.storage.get_trial_system_attrs(
+            self.study_id, self.trial_id)
         self.storage.set_trial_system_attrs(
             self.study_id, self.trial_id,
             system_attrs._replace(datetime_start=datetime.datetime.now()))
@@ -103,7 +104,8 @@ class LocalClient(BaseClient):
         self.storage.set_trial_state(
             self.study_id, self.trial_id, trial.State.COMPLETE)
 
-        system_attrs = self.storage.get_trial_system_attrs()
+        system_attrs = self.storage.get_trial_system_attrs(
+            self.study_id, self.trial_id)
         self.storage.set_trial_system_attrs(
             self.study_id, self.trial_id,
             system_attrs._replace(datetime_complete=datetime.datetime.now()))
@@ -126,7 +128,7 @@ class LocalClient(BaseClient):
 
     @property
     def info(self):
-        # type: () -> Dict[str, Any]
+        # type: () -> trial.SystemAttributes
 
         # TODO(Akiba): info -> system_attrs
         return self.storage.get_trial_system_attrs(

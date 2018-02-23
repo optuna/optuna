@@ -19,6 +19,7 @@ class Trial(object):
 
     def __init__(self, trial_id):
         # type: (int) -> None
+
         self.trial_id = trial_id  # type: int
         self.state = State.RUNNING  # type: State
         self.params = {}  # type: Dict[str, Any]
@@ -29,7 +30,7 @@ class Trial(object):
         self.intermediate_values = {}  # type: Dict[int, float]
 
         # TODO(Akiba): remove this
-        self.params_in_internal_repr = {}
+        self.params_in_internal_repr = {}  # type: Dict[str, float]
 
 
 SystemAttributes = NamedTuple(
