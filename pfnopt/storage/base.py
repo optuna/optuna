@@ -50,7 +50,7 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_system_attr(self, study_id, trial_id, system_attrs):
+    def set_trial_system_attrs(self, study_id, trial_id, system_attrs):
         # type: (int, int, trial.SystemAttributes) -> None
         raise NotImplementedError
 
@@ -82,7 +82,7 @@ class BaseStorage(object):
         # type: (int, int) -> Dict[str, Any]
         return self.get_trial(study_id, trial_id).params
 
-    def get_trial_system_attr(self, study_id, trial_id):
+    def get_trial_system_attrs(self, study_id, trial_id):
         # type: (int, int) -> trial.SystemAttributes
         return self.get_trial(study_id, trial_id).system_attrs
 

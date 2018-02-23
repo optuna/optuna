@@ -53,7 +53,7 @@ class InMemoryStorage(base.BaseStorage):
         assert study_id == 0  # TODO(Akiba)
         self.trials[trial_id].intermediate_values[step] = intermediate_value
 
-    def set_trial_system_attr(self, study_id, trial_id, system_attrs):
+    def set_trial_system_attrs(self, study_id, trial_id, system_attrs):
         # type: (int, int, trial.SystemAttributes) -> None
         assert study_id == 0  # TODO(Akiba)
         self.trials[trial_id].system_attrs = system_attrs
