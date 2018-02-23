@@ -6,8 +6,8 @@ from typing import Any  # NOQA
 from typing import Callable  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
-from typing import Optional  # NOQA
 from typing import Iterable  # NOQA
+from typing import Optional  # NOQA
 
 from pfnopt import client as client_module
 from pfnopt import pruners
