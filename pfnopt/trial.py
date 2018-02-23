@@ -21,7 +21,7 @@ class Trial(object):
         self.params = {}
         self.params_in_internal_repr = {}  # TODO(Akiba): eliminate me
         self.system_attrs = \
-            SystemAttributes(datetime_start=None, datetime_end=None)  # type: SystemAttributes
+            SystemAttributes(datetime_start=None, datetime_complete=None)  # type: SystemAttributes
         self.user_attrs = {}
         self.value = None
         self.intermediate_values = {}
@@ -31,5 +31,5 @@ class SystemAttributes(
     NamedTuple(
         '_BaseSystemAttributes',
         [('datetime_start', Optional[datetime.datetime]),
-         ('datetime_end', Optional[datetime.datetime])])):
+         ('datetime_complete', Optional[datetime.datetime])])):
     pass
