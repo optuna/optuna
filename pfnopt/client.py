@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Sequence  # NOQA
     from typing import TypeVar  # NOQA
+    from pfnopt import study  # NOQA
 
     T = TypeVar('T')
 
