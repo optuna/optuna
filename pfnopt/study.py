@@ -7,12 +7,15 @@ from typing import Callable  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
+from typing import Iterable  # NOQA
 
 from pfnopt import client as client_module
 from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storage as storage_module
 from pfnopt import trial  # NOQA
+
+ObjectiveFuncType = Callable[[client_module.BaseClient], float]
 
 
 class Study(object):
@@ -25,7 +28,7 @@ class Study(object):
             study_id=None  # type: Optional[int]
     ):
         # type: (...) -> None
-        self.storage = storage or storage_module.InMemoryStorage
+        self.storage = storage or storage_module.InMemoryStorage()
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
@@ -53,14 +56,16 @@ class Study(object):
         # type: () -> List[trial.Trial]
         return self.storage.get_all_trials(self.study_id)
 
-    def run(self, func, n_trials, timeout_seconds=None,
+    def run(self, func, n_trials=None, timeout_seconds=None,
             n_jobs=1, parallelism_backend='process'):
+        # type: (ObjectiveFuncType, Optional[int], Optional[int], int, str) -> None
         if n_jobs == 1:
-            return self._run_sequential(func, n_trials, timeout_seconds)
+            self._run_sequential(func, n_trials, timeout_seconds)
         else:
-            return self._run_parallel(func, n_trials, timeout_seconds, n_jobs, parallelism_backend)
+            self._run_parallel(func, n_trials, timeout_seconds, n_jobs, parallelism_backend)
 
     def _run_sequential(self, func, n_trials, timeout_seconds):
+        # type: (ObjectiveFuncType, Optional[int], Optional[int]) -> None
         i_trial = 0
         time_start = datetime.datetime.now()
         while True:
@@ -80,6 +85,8 @@ class Study(object):
             client.complete(result)
 
     def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs, parallelism_backend):
+        # type: (ObjectiveFuncType, Optional[int], Optional[int], int, str) -> None
+
         if parallelism_backend == 'thread':
             pool_class = multiprocessing.pool.ThreadPool
         # elif parallelism_backend == 'process':
@@ -102,7 +109,7 @@ class Study(object):
         self.start_datetime = datetime.datetime.now()
 
         if n_trials is not None:
-            ite = range(n_trials)
+            ite = range(n_trials)  # type: Iterable[int]
         else:
             ite = iter(int, 1)  # Infinite iterator
 
@@ -122,7 +129,7 @@ class Study(object):
 
 
 def minimize(
-        func,  # type: Callable[[client_module.BaseClient], float]
+        func,  # type: ObjectiveFuncType
         n_trials=None,  # type: Optional[int]
         timeout_seconds=None,  # type: Optional[int]
         n_jobs=1,  # type: int
