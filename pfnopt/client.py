@@ -1,5 +1,7 @@
+import abc
 import datetime
 from typing import TYPE_CHECKING  # NOQA
+import six
 
 from pfnopt import distributions
 from pfnopt import trial
@@ -13,11 +15,10 @@ if TYPE_CHECKING:
 
     from pfnopt import study  # NOQA
 
+    T = TypeVar('T')
 
-T = TypeVar('T')
 
-
-# TODO: metaclass
+@six.add_metaclass(abc.ABCMeta)
 class BaseClient(object):
 
     def sample_uniform(self, name, low, high):
@@ -32,24 +33,29 @@ class BaseClient(object):
         # type: (str, Sequence[T]) -> T
         return self._sample(name, distributions.CategoricalDistribution(choices=choices))
 
+    @abc.abstractmethod
     def complete(self, result):
         # type: (float) -> None
         raise NotImplementedError
 
+    @abc.abstractmethod
     def prune(self, step, current_result):
         # type: (int, float) -> bool
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def params(self):
         # type: () -> Dict[str, Any]
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def info(self):
         # type: () -> Dict[str, Any]
         raise NotImplementedError
 
+    @abc.abstractmethod
     def _sample(self, name, distribution):
         # type: (str, distributions.BaseDistribution) -> Any
         raise NotImplementedError
