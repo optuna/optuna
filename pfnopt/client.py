@@ -33,7 +33,7 @@ class BaseClient(object):
         raise NotImplementedError
 
     def _sample(self, name, distribution):
-        # type: (str, distributions._BaseDistribution) -> Any
+        # type: (str, distributions.BaseDistribution) -> Any
         raise NotImplementedError
 
 

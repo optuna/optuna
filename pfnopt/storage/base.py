@@ -23,7 +23,7 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def set_study_param_distribution(self, study_id, param_name, distribution):
-        # type: (int, str, distributions._BaseDistribution) -> None
+        # type: (int, str, distributions.BaseDistribution) -> None
         raise NotImplementedError
 
     # Basic trial manipulation
