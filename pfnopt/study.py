@@ -15,9 +15,6 @@ from pfnopt import storage as storage_module
 from pfnopt import trial  # NOQA
 
 
-# TODO(Akiba): 実験継続と新規実験のどっちも簡単にできるインターフェースを考える必要あり
-
-
 class Study(object):
 
     def __init__(
