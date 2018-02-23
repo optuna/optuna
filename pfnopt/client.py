@@ -48,11 +48,10 @@ class LocalClient(BaseClient):
         self.study_id = self.study.study_id
         self.storage = self.study.storage
 
+        system_attrs = self.storage.get_trial_system_attrs()
         self.storage.set_trial_system_attrs(
             self.study_id, self.trial_id,
-            trial.SystemAttributes(
-                datetime_start=datetime.datetime.now(),
-                datetime_complete=None))
+            system_attrs._replace(datetime_start=datetime.datetime.now()))
 
     def _sample(self, name, distribution):
         # TODO(Akiba): if already sampled, return the recorded value
