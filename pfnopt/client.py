@@ -59,9 +59,8 @@ class LocalClient(BaseClient):
         self.storage.set_study_param_distribution(
             self.study_id, name, distribution)
 
-        pairs = self.storage.get_trial_param_result_pairs(
-            self.study_id, name)
-        param_value_in_internal_repr = self.study.sampler.sample(distribution, pairs)
+        param_value_in_internal_repr = self.study.sampler.sample(
+            self.storage, self.study_id, name, distribution)
         self.storage.set_trial_param(
             self.study_id, self.trial_id, name, param_value_in_internal_repr)
         param_value = distribution.to_external_repr(param_value_in_internal_repr)
