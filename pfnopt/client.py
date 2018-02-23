@@ -5,8 +5,6 @@ from pfnopt import distributions
 from pfnopt import trial
 
 
-# TODO(Akiba): don't we need distribution class?
-
 class BaseClient(object):
 
     def sample_uniform(self, name, low, high):
