@@ -1,4 +1,6 @@
 import enum
+from typing import Any
+from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
@@ -16,15 +18,18 @@ class State(enum.Enum):
 class Trial(object):
 
     def __init__(self, trial_id):
-        self.trial_id = trial_id
-        self.state = State.RUNNING
-        self.params = {}
-        self.params_in_internal_repr = {}  # TODO(Akiba): eliminate me
+        # type: (int) -> None
+        self.trial_id = trial_id  # type: int
+        self.state = State.RUNNING  # type: State
+        self.params = {}  # type: Dict[str, Any]
         self.system_attrs = \
             SystemAttributes(datetime_start=None, datetime_complete=None)  # type: SystemAttributes
-        self.user_attrs = {}
-        self.value = None
-        self.intermediate_values = {}
+        self.user_attrs = {}  # type: Dict[str, Any]
+        self.value = None  # type: Optional[float]
+        self.intermediate_values = {}  # type: Dict[int, float]
+
+        # TODO(Akiba): remove this
+        self.params_in_internal_repr = {}
 
 
 SystemAttributes = NamedTuple(
