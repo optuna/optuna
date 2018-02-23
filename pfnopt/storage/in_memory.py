@@ -1,5 +1,6 @@
 import copy
-from typing import Dict, Any  # NOQA
+from typing import Any  # NOQA
+from typing import Dict  # NOQA
 from typing import List  # NOQA
 
 from pfnopt import distributions  # NOQA
