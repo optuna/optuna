@@ -3,7 +3,7 @@ from typing import List
 from typing import NamedTuple
 
 
-class _BaseDistribution(object):
+class BaseDistribution(object):
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> Any
@@ -11,21 +11,21 @@ class _BaseDistribution(object):
 
 
 class UniformDistribution(
-    _BaseDistribution, NamedTuple(
+    BaseDistribution, NamedTuple(
         '_BaseUniformDistribution',
         [('low', float), ('high', float)])):
     pass
 
 
 class LogUniformDistribution(
-    _BaseDistribution, NamedTuple(
+    BaseDistribution, NamedTuple(
         '_BaseLogUniformDistribution',
         [('low', float), ('high', float)])):
     pass
 
 
 class CategoricalDistribution(
-    _BaseDistribution, NamedTuple(
+    BaseDistribution, NamedTuple(
         '_BaseCategoricalDistribution',
         [('choices', List[Any])])):
 
