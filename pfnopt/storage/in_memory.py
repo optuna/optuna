@@ -21,7 +21,7 @@ class InMemoryStorage(base.BaseStorage):
         self._lock = threading.Lock()
 
     def create_new_study_id(self):
-        return 0  # TODO
+        return 0  # TODO(akiba)
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
@@ -45,7 +45,8 @@ class InMemoryStorage(base.BaseStorage):
     def set_trial_param(self, trial_id, param_name, param_value_in_internal_repr):
         # type: (int, str, float) -> None
         with self._lock:
-            self.trials[trial_id].params_in_internal_repr[param_name] = param_value_in_internal_repr
+            self.trials[trial_id].params_in_internal_repr[param_name] = \
+                param_value_in_internal_repr
             distribution = self.param_distribution[param_name]
             param_value_actual = distribution.to_external_repr(param_value_in_internal_repr)
             self.trials[trial_id].params[param_name] = param_value_actual

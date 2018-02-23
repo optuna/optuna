@@ -16,7 +16,6 @@ class BaseStorage(object):
 
     # Basic study manipulation
 
-    # TODO: discuss API
     @abc.abstractmethod
     def create_new_study_id(self):
         # type: () -> int

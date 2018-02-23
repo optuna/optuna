@@ -76,11 +76,11 @@ class Study(object):
     def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs, parallelism_backend):
         if parallelism_backend == 'thread':
             pool_class = multiprocessing.pool.ThreadPool
-        # TODO: doesn't work with any configuration
         # elif parallelism_backend == 'process':
         #    pool_class = multiprocessing.Pool
         else:
-            raise ValueError('Unknown parallelism backend specified: {}'.format(parallelism_backend))
+            raise ValueError(
+                'Unknown parallelism backend specified: {}'.format(parallelism_backend))
 
         if n_jobs == -1:
             n_jobs = os.cpu_count()
@@ -115,7 +115,7 @@ class Study(object):
                 break
 
 
-# TODO: add some study-wise configuration (e.g., minimize? maximize?)
+# TODO(akiba): add some study-wise configuration (e.g., minimize? maximize?)
 def create_new_study(storage):
     study_id = storage.create_new_study_id()
     return Study(study_id=study_id, storage=storage)
@@ -135,6 +135,6 @@ def minimize(
     return study
 
 
-# TODO: implement me
+# TODO(akiba): implement me
 def maximize():
     raise NotImplementedError
