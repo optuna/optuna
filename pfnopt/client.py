@@ -72,10 +72,9 @@ class LocalClient(BaseClient):
         self.study_id = self.study.study_id
         self.storage = self.study.storage
 
-        system_attrs = self.storage.get_trial_system_attrs(
-            self.study_id, self.trial_id)
+        system_attrs = self.storage.get_trial_system_attrs(self.trial_id)
         self.storage.set_trial_system_attrs(
-            self.study_id, self.trial_id,
+            self.trial_id,
             system_attrs._replace(datetime_start=datetime.datetime.now()))
 
     def _sample(self, name, distribution):
@@ -89,45 +88,37 @@ class LocalClient(BaseClient):
 
         param_value_in_internal_repr = self.study.sampler.sample(
             self.storage, self.study_id, name, distribution)
-        self.storage.set_trial_param(
-            self.study_id, self.trial_id, name, param_value_in_internal_repr)
+        self.storage.set_trial_param(self.trial_id, name, param_value_in_internal_repr)
         param_value = distribution.to_external_repr(param_value_in_internal_repr)
         return param_value
 
     def complete(self, result):
         # type: (float) -> None
 
-        self.storage.set_trial_value(
-            self.study_id, self.trial_id, result)
-        self.storage.set_trial_state(
-            self.study_id, self.trial_id, trial.State.COMPLETE)
+        self.storage.set_trial_value(self.trial_id, result)
+        self.storage.set_trial_state(self.trial_id, trial.State.COMPLETE)
 
-        system_attrs = self.storage.get_trial_system_attrs(
-            self.study_id, self.trial_id)
+        system_attrs = self.storage.get_trial_system_attrs(self.trial_id)
         self.storage.set_trial_system_attrs(
-            self.study_id, self.trial_id,
+            self.trial_id,
             system_attrs._replace(datetime_complete=datetime.datetime.now()))
 
     def prune(self, step, current_result):
         # type: (int, float) -> bool
 
-        self.storage.set_trial_intermediate_value(
-            self.study_id, self.trial_id, step, current_result)
-        ret = self.study.pruner.prune(
-            self.storage, self.study_id, self.trial_id, step)
+        self.storage.set_trial_intermediate_value(self.trial_id, step, current_result)
+        ret = self.study.pruner.prune(self.storage, self.study_id, self.trial_id, step)
         return ret
 
     @property
     def params(self):
         # type: () -> Dict[str, Any]
 
-        return self.storage.get_trial_params(
-            self.study_id, self.trial_id)
+        return self.storage.get_trial_params(self.trial_id)
 
     @property
     def info(self):
         # type: () -> trial.SystemAttributes
 
         # TODO(Akiba): info -> system_attrs
-        return self.storage.get_trial_system_attrs(
-            self.study_id, self.trial_id)
+        return self.storage.get_trial_system_attrs(self.trial_id)

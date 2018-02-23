@@ -29,36 +29,36 @@ class BaseStorage(object):
     # Basic trial manipulation
 
     @abc.abstractmethod
-    def set_trial_state(self, study_id, trial_id, state):
-        # type: (int, int, trial.State) -> None
+    def set_trial_state(self, trial_id, state):
+        # type: (int, trial.State) -> None
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_param(self, study_id, trial_id, param_name, param_value_in_internal_repr):
-        # type: (int, int, str, float) -> None
+    def set_trial_param(self, trial_id, param_name, param_value_in_internal_repr):
+        # type: (int, str, float) -> None
         # TODO(Akiba): float? how about categorical?
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_value(self, study_id, trial_id, value):
+    def set_trial_value(self, trial_id, value):
+        # type: (int, float) -> None
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> None
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_intermediate_value(self, study_id, trial_id, step, intermediate_value):
-        # type: (int, int, int, float) -> None
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def set_trial_system_attrs(self, study_id, trial_id, system_attrs):
-        # type: (int, int, trial.SystemAttributes) -> None
+    def set_trial_system_attrs(self, trial_id, system_attrs):
+        # type: (int, trial.SystemAttributes) -> None
         raise NotImplementedError
 
     # Basic trial access
 
     @abc.abstractmethod
-    def get_trial(self, study_id, trial_id):
-        # type: (int, int) -> trial.Trial
+    def get_trial(self, trial_id):
+        # type: (int) -> trial.Trial
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -78,13 +78,13 @@ class BaseStorage(object):
 
         return copy.deepcopy(best_trial)
 
-    def get_trial_params(self, study_id, trial_id):
-        # type: (int, int) -> Dict[str, Any]
-        return self.get_trial(study_id, trial_id).params
+    def get_trial_params(self, trial_id):
+        # type: (int) -> Dict[str, Any]
+        return self.get_trial(trial_id).params
 
-    def get_trial_system_attrs(self, study_id, trial_id):
-        # type: (int, int) -> trial.SystemAttributes
-        return self.get_trial(study_id, trial_id).system_attrs
+    def get_trial_system_attrs(self, trial_id):
+        # type: (int) -> trial.SystemAttributes
+        return self.get_trial(trial_id).system_attrs
 
     # Methods for the TPE sampler
 
@@ -102,9 +102,9 @@ class BaseStorage(object):
 
     # Methods for the median pruner
 
-    def get_best_intermediate_result_over_steps(self, study_id, trial_id):
-        # type: (int, int) -> float
-        return min(self.get_trial(study_id, trial_id).intermediate_values.values())
+    def get_best_intermediate_result_over_steps(self, trial_id):
+        # type: (int) -> float
+        return min(self.get_trial(trial_id).intermediate_values.values())
 
     def get_median_intermediate_result_over_trials(self, study_id, step):
         # type: (int, int) -> float

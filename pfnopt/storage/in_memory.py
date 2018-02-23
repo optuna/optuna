@@ -29,38 +29,32 @@ class InMemoryStorage(base.BaseStorage):
         assert study_id == 0
         self.param_distribution[param_name] = distribution
 
-    def set_trial_state(self, study_id, trial_id, state):
-        # type: (int, int, trial.State) -> None
-        assert study_id == 0  # TODO(Akiba)
+    def set_trial_state(self, trial_id, state):
+        # type: (int, trial.State) -> None
         self.trials[trial_id].state = state
 
-    def set_trial_param(self, study_id, trial_id, param_name, param_value_in_internal_repr):
-        # type: (int, int, str, float) -> None
-        assert study_id == 0  # TODO(Akiba)
+    def set_trial_param(self, trial_id, param_name, param_value_in_internal_repr):
+        # type: (int, str, float) -> None
         self.trials[trial_id].params_in_internal_repr[param_name] = param_value_in_internal_repr
 
         distribution = self.param_distribution[param_name]
         param_value_actual = distribution.to_external_repr(param_value_in_internal_repr)
         self.trials[trial_id].params[param_name] = param_value_actual
 
-    def set_trial_value(self, study_id, trial_id, value):
-        # type: (int, int, float) -> None
-        assert study_id == 0  # TODO(Akiba)
+    def set_trial_value(self, trial_id, value):
+        # type: (int, float) -> None
         self.trials[trial_id].value = value
 
-    def set_trial_intermediate_value(self, study_id, trial_id, step, intermediate_value):
-        # type: (int, int, int, float) -> None
-        assert study_id == 0  # TODO(Akiba)
+    def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
+        # type: (int, int, float) -> None
         self.trials[trial_id].intermediate_values[step] = intermediate_value
 
-    def set_trial_system_attrs(self, study_id, trial_id, system_attrs):
-        # type: (int, int, trial.SystemAttributes) -> None
-        assert study_id == 0  # TODO(Akiba)
+    def set_trial_system_attrs(self, trial_id, system_attrs):
+        # type: (int, trial.SystemAttributes) -> None
         self.trials[trial_id].system_attrs = system_attrs
 
-    def get_trial(self, study_id, trial_id):
-        # type: (int, int) -> trial.Trial
-        assert study_id == 0  # TODO(Akiba)
+    def get_trial(self, trial_id):
+        # type: (int) -> trial.Trial
         return copy.deepcopy(self.trials[trial_id])
 
     def get_all_trials(self, study_id):
