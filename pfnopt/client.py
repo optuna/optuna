@@ -7,11 +7,11 @@ from pfnopt import distributions
 from pfnopt import trial
 
 if TYPE_CHECKING:
+    from pfnopt.study import Study  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Sequence  # NOQA
     from typing import TypeVar  # NOQA
-    from pfnopt import study  # NOQA
 
     T = TypeVar('T')
 
@@ -65,7 +65,7 @@ class LocalClient(BaseClient):
     """Client that communicates with local study object"""
 
     def __init__(self, study, trial_id):
-        # type: (study.Study, int) -> None
+        # type: (Study, int) -> None
         self.study = study
         self.trial_id = trial_id
 
