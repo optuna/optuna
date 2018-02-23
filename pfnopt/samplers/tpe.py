@@ -3,11 +3,11 @@ import numpy
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 
+from pfnopt import distributions  # NOQA
 from pfnopt.samplers import _hyperopt
 from pfnopt.samplers import base
 from pfnopt.samplers import random
-from pfnopt import distributions  # NOQA
-from pfnopt.storage._base import BaseStorage  # NOQA
+from pfnopt.storage.base import BaseStorage  # NOQA
 
 
 class TPESampler(base.BaseSampler):
@@ -29,7 +29,7 @@ class TPESampler(base.BaseSampler):
         self.random_sampler = random.RandomSampler(seed=seed)
 
     def sample(self, storage, study_id, param_name, param_distribution):
-        # type: (BaseStorage, int, str, distributions._BaseDistribution) -> float
+        # type: (BaseStorage, int, str, distributions.BaseDistribution) -> float
         observation_pairs = storage.get_trial_param_result_pairs(
             study_id, param_name)
         n = len(observation_pairs)
@@ -44,11 +44,14 @@ class TPESampler(base.BaseSampler):
             self.gamma)
 
         if isinstance(param_distribution, distributions.UniformDistribution):
-            return self._sample_uniform(param_distribution, below_param_values, above_param_values)
+            return self._sample_uniform(
+                param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
-            return self._sample_loguniform(param_distribution, below_param_values, above_param_values)
+            return self._sample_loguniform(
+                param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
-            return self._sample_categorical(param_distribution, below_param_values, above_param_values)
+            return self._sample_categorical(
+                param_distribution, below_param_values, above_param_values)
         else:
             raise NotImplementedError
 

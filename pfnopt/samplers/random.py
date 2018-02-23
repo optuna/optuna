@@ -1,10 +1,9 @@
 import numpy
-
-from pfnopt.samplers.base import BaseSampler
-from pfnopt.storage._base import BaseStorage  # NOQA
-from pfnopt import distributions
-
 from typing import Optional  # NOQA
+
+from pfnopt import distributions
+from pfnopt.samplers.base import BaseSampler
+from pfnopt.storage.base import BaseStorage  # NOQA
 
 
 class RandomSampler(BaseSampler):
@@ -15,7 +14,7 @@ class RandomSampler(BaseSampler):
         self.rng = numpy.random.RandomState(seed)
 
     def sample(self, storage, study_id, param_name, param_distribution):
-        # type: (BaseStorage, int, str, distributions._BaseDistribution) -> float
+        # type: (BaseStorage, int, str, distributions.BaseDistribution) -> float
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self.rng.uniform(param_distribution.low, param_distribution.high)
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
