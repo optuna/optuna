@@ -31,6 +31,7 @@ class BaseClient(object):
 
     def sample_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
+        choices = tuple(choices)
         return self._sample(name, distributions.CategoricalDistribution(choices=choices))
 
     @abc.abstractmethod
