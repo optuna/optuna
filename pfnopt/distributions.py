@@ -1,6 +1,6 @@
 from typing import Any
-from typing import List
 from typing import NamedTuple
+from typing import Tuple
 
 
 class BaseDistribution(object):
@@ -27,7 +27,8 @@ class LogUniformDistribution(
 class CategoricalDistribution(
     BaseDistribution, NamedTuple(
         '_BaseCategoricalDistribution',
-        [('choices', List[Any])])):
+        [('choices', Tuple[Any])])):
 
     def to_external_repr(self, param_value_in_internal_repr):
+        # type: (float) -> Any
         return self.choices[int(param_value_in_internal_repr)]

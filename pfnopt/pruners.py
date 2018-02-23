@@ -1,7 +1,16 @@
+import abc
+import six
+
+from pfnopt.storage import BaseStorage  # NOQA
+
+
+@six.add_metaclass(abc.ABCMeta)
 class BasePruner(object):
 
+    @abc.abstractmethod
     def prune(self, storage, study_id, trial_id, step):
-        return NotImplementedError
+        # type: (BaseStorage, int, int, int) -> bool
+        raise NotImplementedError
 
 
 class MedianPruner(BasePruner):
@@ -15,6 +24,8 @@ class MedianPruner(BasePruner):
     n_startup_trials = 5  # TODO(Akiba): parameterize
 
     def prune(self, storage, study_id, trial_id, step):
+        # type: (BaseStorage, int, int, int) -> bool
+
         if trial_id < self.n_startup_trials:
             return False
 

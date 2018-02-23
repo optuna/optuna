@@ -1,9 +1,15 @@
 import datetime
+from typing import Any  # NOQA
+from typing import Callable  # NOQA
+from typing import Dict  # NOQA
+from typing import List  # NOQA
+from typing import Optional  # NOQA
 
 from pfnopt import client as client_module
 from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storage as storage_module
+from pfnopt import trial  # NOQA
 
 
 # TODO(Akiba): 実験継続と新規実験のどっちも簡単にできるインターフェースを考える必要あり
@@ -13,6 +19,7 @@ from pfnopt import storage as storage_module
 class Study(object):
 
     def __init__(self, storage=None, sampler=None, pruner=None, study_id=0):
+        # type: (storage_module.BaseStorage, samplers.BaseSampler, pruners.BasePruner, int) -> None
         self.study_id = study_id
         self.storage = storage or storage_module.InMemoryStorage()
         self.sampler = sampler or samplers.TPESampler()
@@ -20,23 +27,33 @@ class Study(object):
 
     @property
     def best_params(self):
+        # type: () -> Dict[str, Any]
         return self.best_trial.params
 
     @property
     def best_value(self):
+        # type: () -> float
         return self.best_trial.value
 
     @property
     def best_trial(self):
+        # type: () -> trial.Trial
         return self.storage.get_best_trial(self.study_id)
 
     @property
     def trials(self):
+        # type: () -> List[trial.Trial]
         return self.storage.get_all_trials(self.study_id)
 
 
 # TODO(Akiba): Studyのメンバ関数にしない？
-def minimize(func, n_trials=None, timeout_seconds=None, study=None):
+def minimize(
+        func,  # type: Callable[[client_module.BaseClient], float]
+        n_trials=None,  # type: Optional[int]
+        timeout_seconds=None,  # type: Optional[int]
+        study=None  # type: Optional[Study]
+):
+    # type: (...) -> Study
     if study is None:
         study = Study()
 
