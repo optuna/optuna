@@ -20,12 +20,21 @@ from pfnopt import trial  # NOQA
 
 class Study(object):
 
-    def __init__(self, storage=None, sampler=None, pruner=None, study_id=0):
-        # type: (storage_module.BaseStorage, samplers.BaseSampler, pruners.BasePruner, int) -> None
-        self.study_id = study_id
-        self.storage = storage
+    def __init__(
+            self,
+            storage=None,  # type: storage_module.BaseStorage
+            sampler=None,  # type: samplers.BaseSampler
+            pruner=None,  # type: pruners.BasePruner
+            study_id=None  # type: Optional[int]
+    ):
+        # type: (...) -> None
+        self.storage = storage or storage_module.InMemoryStorage
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
+
+        if study_id is None:
+            study_id = self.storage.create_new_study_id()
+        self.study_id = study_id
 
     @property
     def best_params(self):
@@ -115,12 +124,6 @@ class Study(object):
                 break
 
 
-# TODO(akiba): add some study-wise configuration (e.g., minimize? maximize?)
-def create_new_study(storage):
-    study_id = storage.create_new_study_id()
-    return Study(study_id=study_id, storage=storage)
-
-
 def minimize(
         func,  # type: Callable[[client_module.BaseClient], float]
         n_trials=None,  # type: Optional[int]
@@ -130,7 +133,7 @@ def minimize(
 ):
     # type: (...) -> Study
     storage = storage_module.InMemoryStorage()
-    study = create_new_study(storage)
+    study = Study(storage=storage)
     study.run(func, n_trials, timeout_seconds, n_jobs, parallelism_backend)
     return study
 
