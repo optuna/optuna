@@ -1,6 +1,6 @@
 from typing import Any
-from typing import Tuple
 from typing import NamedTuple
+from typing import Tuple
 
 
 class BaseDistribution(object):

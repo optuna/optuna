@@ -1,15 +1,15 @@
 import datetime
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Callable
-from typing import Optional
+from typing import Any  # NOQA
+from typing import Callable  # NOQA
+from typing import Dict  # NOQA
+from typing import List  # NOQA
+from typing import Optional  # NOQA
 
 from pfnopt import client as client_module
 from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storage as storage_module
-from pfnopt import trial
+from pfnopt import trial  # NOQA
 
 
 # TODO(Akiba): 実験継続と新規実験のどっちも簡単にできるインターフェースを考える必要あり

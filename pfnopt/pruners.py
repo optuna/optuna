@@ -1,7 +1,7 @@
 import abc
 import six
 
-from pfnopt.storage import BaseStorage
+from pfnopt.storage import BaseStorage  # NOQA
 
 
 @six.add_metaclass(abc.ABCMeta)

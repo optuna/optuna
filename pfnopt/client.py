@@ -1,19 +1,16 @@
 import abc
 import datetime
-from typing import TYPE_CHECKING  # NOQA
 import six
+from typing import TYPE_CHECKING  # NOQA
 
 from pfnopt import distributions
 from pfnopt import trial
 
-
 if TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import TypeVar  # NOQA
     from typing import Sequence  # NOQA
-
-    from pfnopt import study  # NOQA
+    from typing import TypeVar  # NOQA
 
     T = TypeVar('T')
 

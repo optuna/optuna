@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Union
-    from typing import Tuple
-    from pfnopt.client import BaseClient
     import chainer
+    from pfnopt.client import BaseClient  # NOQA
+    from typing import Tuple
+    from typing import Union
 
     TriggerType = Union[Tuple[(int, str)], chainer.training.IntervalTrigger]
 

@@ -1,10 +1,9 @@
+import datetime
 import enum
-from typing import Any
-from typing import Dict
+from typing import Any  # NOQA
+from typing import Dict  # NOQA
 from typing import NamedTuple
 from typing import Optional
-
-import datetime
 
 
 class State(enum.Enum):
