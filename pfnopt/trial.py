@@ -1,4 +1,8 @@
 import enum
+from typing import NamedTuple
+from typing import Union
+
+import datetime
 
 
 class State(enum.Enum):
@@ -16,7 +20,14 @@ class Trial(object):
         self.state = State.RUNNING
         self.params = {}
         self.params_in_internal_repr = {}  # TODO(Akiba): eliminate me
-        self.system_attrs = {}
+        self.system_attrs = \
+            SystemAttributes(datetime_start=None, datetime_end=None)  # type: SystemAttributes
         self.user_attrs = {}
         self.value = None
         self.intermediate_values = {}
+
+
+SystemAttributes = NamedTuple(
+    'SystemAttributes',
+    [('datetime_start', Union[datetime.datetime, None]),
+     ('datetime_end', Union[datetime.datetime, None])])
