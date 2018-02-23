@@ -48,9 +48,10 @@ class LocalClient(BaseClient):
         self.study_id = self.study.study_id
         self.storage = self.study.storage
 
-        self.storage.set_trial_system_attr(
+        system_attrs = self.storage.get_trial_system_attrs()
+        self.storage.set_trial_system_attrs(
             self.study_id, self.trial_id,
-            'datetime_start', datetime.datetime.now())
+            system_attrs._replace(datetime_start=datetime.datetime.now()))
 
     def _sample(self, name, distribution):
         # TODO(Akiba): if already sampled, return the recorded value
@@ -71,9 +72,11 @@ class LocalClient(BaseClient):
             self.study_id, self.trial_id, result)
         self.storage.set_trial_state(
             self.study_id, self.trial_id, trial.State.COMPLETE)
-        self.storage.set_trial_system_attr(
+
+        system_attrs = self.storage.get_trial_system_attrs()
+        self.storage.set_trial_system_attrs(
             self.study_id, self.trial_id,
-            'datetime_complete', datetime.datetime.now())
+            system_attrs._replace(datetime_complete=datetime.datetime.now()))
 
     def prune(self, step, current_result):
         self.storage.set_trial_intermediate_value(

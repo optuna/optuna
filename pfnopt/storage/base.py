@@ -50,8 +50,8 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_system_attr(self, study_id, trial_id, attr_name, attr_value):
-        # type: (int, int, str, Any) -> None
+    def set_trial_system_attrs(self, study_id, trial_id, system_attrs):
+        # type: (int, int, trial.SystemAttributes) -> None
         raise NotImplementedError
 
     # Basic trial access
@@ -82,8 +82,8 @@ class BaseStorage(object):
         # type: (int, int) -> Dict[str, Any]
         return self.get_trial(study_id, trial_id).params
 
-    def get_trial_trial_system_attrs(self, study_id, trial_id):
-        # type: (int, int) -> Dict[str, Any]
+    def get_trial_system_attrs(self, study_id, trial_id):
+        # type: (int, int) -> trial.SystemAttributes
         return self.get_trial(study_id, trial_id).system_attrs
 
     # Methods for the TPE sampler
