@@ -93,7 +93,26 @@ class Study(object):
             result = func(client)
             client.complete(result)
 
-        pool.map(f, range(n_trials), chunksize=1)  # TODO: timeout
+        self.start_datetime = datetime.datetime.now()
+
+        if n_trials is not None:
+            ite = range(n_trials)
+        else:
+            ite = iter(int, 1)  # Infinite iterator
+
+        imap_ite = pool.imap(f, ite, chunksize=1)
+        while True:
+            if timeout_seconds is None:
+                to = None
+            else:
+                elapsed_timedelta = datetime.datetime.now() - self.start_datetime
+                elapsed_seconds = elapsed_timedelta.total_seconds()
+                to = (timeout_seconds - elapsed_seconds)
+
+            try:
+                imap_ite.next(timeout=to)
+            except (StopIteration, multiprocessing.TimeoutError):
+                break
 
 
 # TODO: add some study-wise configuration (e.g., minimize? maximize?)
