@@ -1,7 +1,6 @@
 import datetime
 import multiprocessing
 import multiprocessing.pool
-import os
 from typing import Any  # NOQA
 from typing import Callable  # NOQA
 from typing import Dict  # NOQA
@@ -96,9 +95,9 @@ class Study(object):
                 'Unknown parallelism backend specified: {}'.format(parallelism_backend))
 
         if n_jobs == -1:
-            n_jobs = os.cpu_count()
+            n_jobs = multiprocessing.cpu_count()
 
-        pool = pool_class(n_jobs)
+        pool = pool_class(n_jobs)  # type: Any
 
         def f(_):
             trial_id = self.storage.create_new_trial_id(self.study_id)
@@ -123,8 +122,8 @@ class Study(object):
                 to = (timeout_seconds - elapsed_seconds)
 
             try:
-                imap_ite.next(timeout=to)
-            except (StopIteration, multiprocessing.TimeoutError):
+                imap_ite.next(timeout=to)  # type: ignore
+            except (StopIteration, multiprocessing.TimeoutError):  # type: ignore
                 break
 
 
