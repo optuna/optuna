@@ -2,22 +2,20 @@ import json
 
 from datetime import datetime
 from sqlalchemy import Column
-from sqlalchemy import Enum
-from sqlalchemy import ForeignKey
-from sqlalchemy import Float
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import orm
 from sqlalchemy.engine import create_engine
+from sqlalchemy import Enum
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-from typing import List
+from sqlalchemy import Float
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import orm
+from sqlalchemy import String
+from typing import List  # NOQA
 
 import pfnopt
 from pfnopt import distributions
-import pfnopt.trial as trial_module
-from pfnopt.distributions import distribution_from_json
 from pfnopt.storage.base import BaseStorage
+import pfnopt.trial as trial_module
 from pfnopt.trial import State
 
 Base = declarative_base()
@@ -35,7 +33,7 @@ class StudyParam(Base):
     param_name = Column(String(255))
     distribution = Column(String(255))
 
-    study = relationship(Study)
+    study = orm.relationship(Study)
 
 
 class Trial(Base):
@@ -45,7 +43,7 @@ class Trial(Base):
     state = Column(Enum(State))
     value = Column(Float)
 
-    study = relationship(Study)
+    study = orm.relationship(Study)
 
 
 class TrialParam(Base):
@@ -55,8 +53,8 @@ class TrialParam(Base):
     study_param_id = Column(Integer, ForeignKey('study_params.study_param_id'))
     param_value = Column(Float)
 
-    trial = relationship(Trial)
-    study_param = relationship(StudyParam)
+    trial = orm.relationship(Trial)
+    study_param = orm.relationship(StudyParam)
 
 
 class TrialValue(Base):
@@ -66,7 +64,7 @@ class TrialValue(Base):
     step = Column(Integer)
     value = Column(Float)
 
-    trial = relationship(Trial)
+    trial = orm.relationship(Trial)
 
 
 class TrialSystemAttributes(Base):
@@ -75,7 +73,7 @@ class TrialSystemAttributes(Base):
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
     system_attributes = Column(String)
 
-    trial = relationship(Trial)
+    trial = orm.relationship(Trial)
 
 
 class RDBStorage(BaseStorage):
@@ -208,7 +206,7 @@ class RDBStorage(BaseStorage):
         trial_params = self.session.query(TrialParam). \
             filter(TrialParam.trial_id == trial_id).all()
         for param in trial_params:
-            distribution = distribution_from_json(param.study_param.distribution)
+            distribution = distributions.distribution_from_json(param.study_param.distribution)
             trial.params[param.study_param.param_name] = \
                 distribution.to_external_repr(param.param_value)
 

@@ -1,13 +1,20 @@
-import json
-import unittest
 from datetime import datetime
-from typing import List
+import json
+from typing import List  # NOQA
+import unittest
 
+from pfnopt.distributions import CategoricalDistribution
+from pfnopt.distributions import distribution_from_json
+from pfnopt.distributions import UniformDistribution
+from pfnopt.storage.rdb import Base
+from pfnopt.storage.rdb import RDBStorage
+from pfnopt.storage.rdb import Study
+from pfnopt.storage.rdb import StudyParam
+from pfnopt.storage.rdb import Trial
+from pfnopt.storage.rdb import TrialParam
+from pfnopt.storage.rdb import TrialSystemAttributes
+from pfnopt.storage.rdb import TrialValue
 import pfnopt.trial as trial_module
-from pfnopt.distributions import UniformDistribution, CategoricalDistribution, \
-    distribution_from_json
-from pfnopt.storage.rdb import Study, Trial, TrialParam, RDBStorage, \
-    TrialValue, TrialSystemAttributes, Base, StudyParam
 
 
 class TestRDBStorage(unittest.TestCase):
