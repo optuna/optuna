@@ -6,7 +6,7 @@ from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 
 import pfnopt
-from pfnopt import client
+from pfnopt import client as client_module  # NOQA
 from pfnopt import trial as trial_module
 
 
@@ -22,16 +22,16 @@ class Func(object):
         self.n_calls = 0
         self.sleep_sec = sleep_sec
 
-    def __call__(self, c):
-        # type: (client.BaseClient) -> float
+    def __call__(self, client):
+        # type: (client_module.BaseClient) -> float
         self.n_calls += 1
 
         # Sleep for testing parallelism
         if self.sleep_sec is not None:
             time.sleep(self.sleep_sec)
 
-        x = c.sample_uniform('x', -10, 10)
-        y = c.sample_uniform('y', 20, 30)
+        x = client.sample_uniform('x', -10, 10)
+        y = client.sample_uniform('y', 20, 30)
         return func(x, y)
 
 
