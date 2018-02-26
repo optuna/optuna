@@ -57,14 +57,14 @@ class Study(object):
 
     def run(self, func, n_trials=None, timeout_seconds=None,
             n_jobs=1, parallelism_backend='process'):
-        # type: (ObjectiveFuncType, Optional[int], Optional[int], int, str) -> None
+        # type: (ObjectiveFuncType, Optional[int], Optional[float], int, str) -> None
         if n_jobs == 1:
             self._run_sequential(func, n_trials, timeout_seconds)
         else:
             self._run_parallel(func, n_trials, timeout_seconds, n_jobs, parallelism_backend)
 
     def _run_sequential(self, func, n_trials, timeout_seconds):
-        # type: (ObjectiveFuncType, Optional[int], Optional[int]) -> None
+        # type: (ObjectiveFuncType, Optional[int], Optional[float]) -> None
         i_trial = 0
         time_start = datetime.datetime.now()
         while True:
@@ -84,7 +84,7 @@ class Study(object):
             client.complete(result)
 
     def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs, parallelism_backend):
-        # type: (ObjectiveFuncType, Optional[int], Optional[int], int, str) -> None
+        # type: (ObjectiveFuncType, Optional[int], Optional[float], int, str) -> None
 
         if parallelism_backend == 'thread':
             pool_class = multiprocessing.pool.ThreadPool
@@ -130,7 +130,7 @@ class Study(object):
 def minimize(
         func,  # type: ObjectiveFuncType
         n_trials=None,  # type: Optional[int]
-        timeout_seconds=None,  # type: Optional[int]
+        timeout_seconds=None,  # type: Optional[float]
         n_jobs=1,  # type: int
         parallelism_backend='thread'  # type: str
 ):

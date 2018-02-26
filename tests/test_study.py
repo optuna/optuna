@@ -69,7 +69,7 @@ def check_study(study):
     (1, 2, 10),  # n_jobs
 ))
 def test_minimize(n_trials, n_jobs):
-    # type: () -> None
+    # type: (int, int) -> None
 
     f = Func()
     study = pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs)
@@ -84,7 +84,7 @@ def test_minimize(n_trials, n_jobs):
     (1, 2, 10),  # n_jobs
 ))
 def test_minimize_timeout(n_trials, n_jobs):
-    # type: () -> None
+    # type: (int, int) -> None
 
     sleep_sec = 0.1
     timeout_sec = 1.0
