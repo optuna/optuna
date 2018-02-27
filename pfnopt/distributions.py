@@ -17,25 +17,28 @@ class BaseDistribution(object):
     def to_internal_repr(self, param_value_in_external_repr):
         return param_value_in_external_repr
 
+    def _asdict(self):
+        raise NotImplementedError
+
 
 class UniformDistribution(
-    BaseDistribution, NamedTuple(
+    NamedTuple(
         '_BaseUniformDistribution',
-        [('low', float), ('high', float)])):
+        [('low', float), ('high', float)]), BaseDistribution):
     pass
 
 
 class LogUniformDistribution(
-    BaseDistribution, NamedTuple(
+    NamedTuple(
         '_BaseLogUniformDistribution',
-        [('low', float), ('high', float)])):
+        [('low', float), ('high', float)]), BaseDistribution):
     pass
 
 
 class CategoricalDistribution(
-    BaseDistribution, NamedTuple(
+    NamedTuple(
         '_BaseCategoricalDistribution',
-        [('choices', Tuple[Union[float, str]])])):
+        [('choices', Tuple[Union[float, str]])]), BaseDistribution):
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> Any

@@ -1,4 +1,3 @@
-from datetime import datetime
 import json
 from sqlalchemy import Column
 from sqlalchemy.engine import create_engine
