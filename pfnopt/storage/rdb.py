@@ -86,13 +86,13 @@ class RDBStorage(BaseStorage):
 
     def set_study_param_distribution(self, study_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
-        study = self.session.query(Study).filter(Study.study_id == study_id).first()
+        study = self.session.query(Study).filter(Study.study_id == study_id).one_or_none()
         assert study is not None
 
         # check if the StudyParam already exists
         study_param = self.session.query(StudyParam). \
             filter(StudyParam.study_id == study_id). \
-            filter(StudyParam.param_name == param_name).first()
+            filter(StudyParam.param_name == param_name).one_or_none()
         assert study_param is None
 
         study_param = StudyParam()
@@ -120,7 +120,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_state(self, trial_id, state):
         # type: (int, trial_module.State) -> None
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).first()
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
         assert trial is not None
 
         trial.state = state
@@ -128,18 +128,18 @@ class RDBStorage(BaseStorage):
 
     def set_trial_param(self, trial_id, param_name, param_value):
         # type: (int, str, float) -> None
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).first()
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
         assert trial is not None
 
         study_param = self.session.query(StudyParam). \
             filter(StudyParam.study_id == trial.study_id). \
-            filter(StudyParam.param_name == param_name).first()
+            filter(StudyParam.param_name == param_name).one_or_none()
         assert study_param is not None
 
         # check if the parameter already exists
         trial_param = self.session.query(TrialParam). \
             filter(TrialParam.trial_id == trial_id). \
-            filter(TrialParam.study_param.has(param_name=param_name)).first()
+            filter(TrialParam.study_param.has(param_name=param_name)).one_or_none()
         assert trial_param is None
 
         trial_param = TrialParam()
@@ -152,19 +152,19 @@ class RDBStorage(BaseStorage):
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).first()
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
         trial.value = value
         self.session.commit()
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> None
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).first()
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
         assert trial is not None
 
         # check if the value at the same step already exists
         duplicated_trial_value = self.session.query(TrialValue). \
             filter(TrialValue.trial_id == trial_id). \
-            filter(TrialValue.step == step).first()
+            filter(TrialValue.step == step).one_or_none()
         assert duplicated_trial_value is None
 
         trial_value = TrialValue(trial_id=trial_id, step=step, value=intermediate_value)
@@ -183,7 +183,7 @@ class RDBStorage(BaseStorage):
         # type: (int) -> trial_module.Trial
         trial = pfnopt.trial.Trial(trial_id)
 
-        trial_rdb = self.session.query(Trial).filter(Trial.trial_id == trial_id).first()
+        trial_rdb = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
         assert trial_rdb is not None
         trial.value = trial_rdb.value
         trial.state = trial_rdb.state
