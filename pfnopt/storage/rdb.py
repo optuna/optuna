@@ -98,7 +98,9 @@ class RDBStorage(BaseStorage):
         study_param = StudyParam()
         study_param.study_id = study_id
         study_param.param_name = param_name
-        study_param.distribution = distribution.to_json()
+        study_param.distribution_json = json.dumps(
+            {'name': distribution.__class__.__name__,
+             'attributes': distribution._asdict()})
         self.session.add(study_param)
         self.session.commit()
 
@@ -191,7 +193,8 @@ class RDBStorage(BaseStorage):
 
         trial_params = self.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
         for param in trial_params:
-            distribution = distributions.distribution_from_json(param.study_param.distribution)
+            distribution = \
+                distributions.distribution_from_json(param.study_param.distribution_json)
             trial.params[param.study_param.param_name] = \
                 distribution.to_external_repr(param.param_value)
 
