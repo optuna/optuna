@@ -9,6 +9,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
+import time
 from typing import Any  # NOQA
 from typing import List  # NOQA
 
@@ -216,15 +217,14 @@ class RDBStorage(BaseStorage):
     @staticmethod
     def _system_attrs_to_json(system_attrs):
         # type: (trial_module.SystemAttributes) -> str
-        system_attrs_dict = {}
 
-        for k, v in system_attrs._asdict().items():
-            if k in {'datetime_start', 'datetime_complete'}:
-                system_attrs_dict[k] = None if v is None else v.strftime('%Y%m%d%H%M%S')
+        def convert(attr):
+            if isinstance(attr, datetime):
+                return attr.strftime('%Y%m%d%H%M%S')
             else:
-                system_attrs_dict[k] = v
+                return attr
 
-        return json.dumps(system_attrs_dict)
+        return json.dumps(system_attrs._asdict(), default=convert)
 
     @staticmethod
     def _json_to_system_attrs(system_attrs_json):
@@ -237,7 +237,4 @@ class RDBStorage(BaseStorage):
             else:
                 system_attrs_dict[k] = v
 
-        return trial_module.SystemAttributes(
-            datetime_start=system_attrs_dict['datetime_start'],
-            datetime_complete=system_attrs_dict['datetime_complete']
-        )
+        return trial_module.SystemAttributes(**system_attrs_dict)

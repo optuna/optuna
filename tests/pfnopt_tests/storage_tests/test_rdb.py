@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from typing import List  # NOQA
 import unittest
@@ -160,7 +160,7 @@ class TestRDBStorage(unittest.TestCase):
 
         # test setting value
         system_attrs_1 = trial_module.SystemAttributes(
-            datetime_start=datetime.strptime('20180226', '%Y%m%d'),
+            datetime_start=datetime(2018, 2, 26, tzinfo=timezone.utc),
             datetime_complete=None)
         storage.set_trial_system_attrs(trial_id, system_attrs_1)
 
