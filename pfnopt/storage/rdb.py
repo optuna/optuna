@@ -1,6 +1,5 @@
-import json
-
 from datetime import datetime
+import json
 from sqlalchemy import Column
 from sqlalchemy.engine import create_engine
 from sqlalchemy import Enum
@@ -10,6 +9,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
+from typing import Any  # NOQA
 from typing import List  # NOQA
 
 import pfnopt
@@ -18,7 +18,7 @@ from pfnopt.storage.base import BaseStorage
 import pfnopt.trial as trial_module
 from pfnopt.trial import State
 
-Base = declarative_base()
+Base = declarative_base()  # type: Any
 
 
 class Study(Base):
@@ -42,6 +42,7 @@ class Trial(Base):
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     state = Column(Enum(State))
     value = Column(Float)
+    system_attributes_json = Column(String(255))
 
     study = orm.relationship(Study)
 
@@ -63,15 +64,6 @@ class TrialValue(Base):
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
     step = Column(Integer)
     value = Column(Float)
-
-    trial = orm.relationship(Trial)
-
-
-class TrialSystemAttributes(Base):
-    __tablename__ = 'trial_system_attrs'
-    trial_system_attr_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
-    system_attributes = Column(String)
 
     trial = orm.relationship(Trial)
 
@@ -113,8 +105,13 @@ class RDBStorage(BaseStorage):
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
         trial = Trial()
+
         trial.study_id = study_id
         trial.state = State.RUNNING
+
+        system_attributes = \
+            trial_module.SystemAttributes(datetime_start=None, datetime_complete=None)
+        trial.system_attributes_json = self._system_attrs_to_json(system_attributes)
 
         self.session.add(trial)
         self.session.commit()
@@ -122,7 +119,7 @@ class RDBStorage(BaseStorage):
         return trial.trial_id
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, trial.State) -> None
+        # type: (int, trial_module.State) -> None
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).first()
         assert trial is not None
 
@@ -170,41 +167,29 @@ class RDBStorage(BaseStorage):
             filter(TrialValue.step == step).first()
         assert duplicated_trial_value is None
 
-        trial_value = TrialValue(
-            trial_id=trial_id,
-            step=step,
-            value=intermediate_value)
+        trial_value = TrialValue(trial_id=trial_id, step=step, value=intermediate_value)
         self.session.add(trial_value)
         self.session.commit()
 
     def set_trial_system_attrs(self, trial_id, system_attrs):
         # type: (int, trial_module.SystemAttributes) -> None
-        trial_system_attrs = self.session.query(TrialSystemAttributes). \
-            filter(TrialSystemAttributes.trial_id == trial_id).first()
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
+        assert trial is not None
 
-        system_attrs_json = self._system_attrs_to_json(system_attrs)
-
-        if trial_system_attrs is None:
-            trial_system_attr = TrialSystemAttributes(
-                trial_id=trial_id, system_attributes=system_attrs_json)
-            self.session.add(trial_system_attr)
-        else:
-            trial_system_attrs.system_attributes = system_attrs_json
-
+        trial.system_attributes_json = self._system_attrs_to_json(system_attrs)
         self.session.commit()
 
     def get_trial(self, trial_id):
-        # type: (int) -> trial.Trial
+        # type: (int) -> trial_module.Trial
         trial = pfnopt.trial.Trial(trial_id)
 
-        trial_rdb = self.session.query(Trial). \
-            filter(Trial.trial_id == trial_id).first()
+        trial_rdb = self.session.query(Trial).filter(Trial.trial_id == trial_id).first()
         assert trial_rdb is not None
         trial.value = trial_rdb.value
         trial.state = trial_rdb.state
+        trial.system_attrs = self._json_to_system_attrs(trial_rdb.system_attributes_json)
 
-        trial_params = self.session.query(TrialParam). \
-            filter(TrialParam.trial_id == trial_id).all()
+        trial_params = self.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
         for param in trial_params:
             distribution = distributions.distribution_from_json(param.study_param.distribution)
             trial.params[param.study_param.param_name] = \
@@ -214,12 +199,6 @@ class RDBStorage(BaseStorage):
             filter(TrialValue.trial_id == trial_id).all()
         for iv in trial_intermediate_values:
             trial.intermediate_values[iv.step] = iv.value
-
-        trial_system_attrs = self.session.query(TrialSystemAttributes). \
-            filter(TrialValue.trial_id == trial_id).first()
-        if trial_system_attrs is not None:
-            trial.system_attributes = \
-                self._json_to_system_attrs(trial_system_attrs.system_attributes)
 
         return trial
 

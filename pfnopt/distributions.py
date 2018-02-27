@@ -1,9 +1,12 @@
+import abc
 import json
+import six
 from typing import Any
 from typing import NamedTuple
 from typing import Tuple
 
 
+@six.add_metaclass(abc.ABCMeta)
 class BaseDistribution(object):
 
     def to_external_repr(self, param_value_in_internal_repr):
@@ -13,11 +16,13 @@ class BaseDistribution(object):
     def to_internal_repr(self, param_value_in_external_repr):
         return param_value_in_external_repr
 
+    @abc.abstractmethod
     def to_json(self):
         # type: () -> str
         raise NotImplementedError()
 
     @staticmethod
+    @abc.abstractmethod
     def from_json(json_str):
         # type: (str) -> BaseDistribution
         raise NotImplementedError()

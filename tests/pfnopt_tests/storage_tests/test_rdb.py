@@ -12,12 +12,12 @@ from pfnopt.storage.rdb import Study
 from pfnopt.storage.rdb import StudyParam
 from pfnopt.storage.rdb import Trial
 from pfnopt.storage.rdb import TrialParam
-from pfnopt.storage.rdb import TrialSystemAttributes
 from pfnopt.storage.rdb import TrialValue
 import pfnopt.trial as trial_module
 
 
 class TestRDBStorage(unittest.TestCase):
+
     def test_create_new_study_id(self):
         storage = self.create_test_storage()
 
@@ -164,9 +164,8 @@ class TestRDBStorage(unittest.TestCase):
             datetime_complete=None)
         storage.set_trial_system_attrs(trial_id, system_attrs_1)
 
-        result_1 = storage.session.query(TrialSystemAttributes). \
-            filter(TrialSystemAttributes.trial_id == trial_id).one()
-        system_attr_json_1 = json.loads(result_1.system_attributes)
+        result_1 = storage.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        system_attr_json_1 = json.loads(result_1.system_attributes_json)
         assert len(system_attr_json_1) == 2
         assert system_attr_json_1['datetime_start'] == '20180226000000'
         assert system_attr_json_1['datetime_complete'] is None
@@ -176,9 +175,8 @@ class TestRDBStorage(unittest.TestCase):
             datetime_complete=datetime.strptime('20180227', '%Y%m%d'))
         storage.set_trial_system_attrs(trial_id, system_attrs_2)
 
-        result_2 = storage.session.query(TrialSystemAttributes). \
-            filter(TrialSystemAttributes.trial_id == trial_id).one()
-        system_attr_json_2 = json.loads(result_2.system_attributes)
+        result_2 = storage.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        system_attr_json_2 = json.loads(result_2.system_attributes_json)
         assert len(system_attr_json_1) == 2
         assert system_attr_json_2['datetime_start'] == '20180226000000'
         assert system_attr_json_2['datetime_complete'] == '20180227000000'
@@ -216,8 +214,8 @@ class TestRDBStorage(unittest.TestCase):
         assert result.params['y'] == 'Ginza'
         assert result.intermediate_values[0] == 2.0
         assert result.intermediate_values[1] == 3.0
-        assert result.system_attributes.datetime_start == datetime_start
-        assert result.system_attributes.datetime_complete is None
+        assert result.system_attrs.datetime_start == datetime_start
+        assert result.system_attrs.datetime_complete is None
 
         storage.close()
 
