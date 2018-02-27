@@ -94,7 +94,7 @@ class RDBStorage(BaseStorage):
             filter(StudyParam.study_id == study_id). \
             filter(StudyParam.param_name == param_name).one_or_none()
         if study_param is not None:
-            distribution_rdb = distributions.distribution_from_json(study_param.distribution_json)
+            distribution_rdb = distributions.json_to_distribution(study_param.distribution_json)
             assert distribution_rdb == distribution
             return
 
@@ -116,7 +116,7 @@ class RDBStorage(BaseStorage):
 
         system_attributes = \
             trial_module.SystemAttributes(datetime_start=None, datetime_complete=None)
-        trial.system_attributes_json = self._system_attrs_to_json(system_attributes)
+        trial.system_attributes_json = trial_module.system_attrs_to_json(system_attributes)
 
         self.session.add(trial)
         self.session.commit()
@@ -188,7 +188,7 @@ class RDBStorage(BaseStorage):
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
         assert trial is not None
 
-        trial.system_attributes_json = self._system_attrs_to_json(system_attrs)
+        trial.system_attributes_json = trial_module.system_attrs_to_json(system_attrs)
         self.session.commit()
 
     def get_trial(self, trial_id):
@@ -199,12 +199,12 @@ class RDBStorage(BaseStorage):
         assert trial_rdb is not None
         trial.value = trial_rdb.value
         trial.state = trial_rdb.state
-        trial.system_attrs = self._json_to_system_attrs(trial_rdb.system_attributes_json)
+        trial.system_attrs = trial_module.json_to_system_attrs(trial_rdb.system_attributes_json)
 
         trial_params = self.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
         for param in trial_params:
             distribution = \
-                distributions.distribution_from_json(param.study_param.distribution_json)
+                distributions.json_to_distribution(param.study_param.distribution_json)
             trial.params[param.study_param.param_name] = \
                 distribution.to_external_repr(param.param_value)
 
@@ -225,28 +225,3 @@ class RDBStorage(BaseStorage):
     def close(self):
         # type: () -> None
         self.session.close()
-
-    @staticmethod
-    def _system_attrs_to_json(system_attrs):
-        # type: (trial_module.SystemAttributes) -> str
-
-        def convert(attr):
-            if isinstance(attr, datetime):
-                return attr.strftime('%Y%m%d%H%M%S')
-            else:
-                return attr
-
-        return json.dumps(system_attrs._asdict(), default=convert)
-
-    @staticmethod
-    def _json_to_system_attrs(system_attrs_json):
-        # type: (str) -> trial_module.SystemAttributes
-        system_attrs_dict = json.loads(system_attrs_json)
-
-        for k, v in system_attrs_dict.items():
-            if k in {'datetime_start', 'datetime_complete'}:
-                system_attrs_dict[k] = None if v is None else datetime.strptime(v, '%Y%m%d%H%M%S')
-            else:
-                system_attrs_dict[k] = v
-
-        return trial_module.SystemAttributes(**system_attrs_dict)

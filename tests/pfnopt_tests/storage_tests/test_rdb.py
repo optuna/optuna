@@ -4,7 +4,7 @@ from typing import List  # NOQA
 import unittest
 
 from pfnopt.distributions import CategoricalDistribution
-from pfnopt.distributions import distribution_from_json
+from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
 from pfnopt.storage.rdb import Base
 from pfnopt.storage.rdb import RDBStorage
@@ -41,13 +41,13 @@ class TestRDBStorage(unittest.TestCase):
 
         # test setting new name
         result_1 = storage.session.query(StudyParam).filter(StudyParam.param_name == 'x').one()
-        distribution_1 = distribution_from_json(result_1.distribution_json)
+        distribution_1 = json_to_distribution(result_1.distribution_json)
         assert distribution_1.__class__ == UniformDistribution
         assert distribution_1.low == 1.
         assert distribution_1.high == 2.
 
         result_2 = storage.session.query(StudyParam).filter(StudyParam.param_name == 'y').one()
-        distribution_2 = distribution_from_json(result_2.distribution_json)
+        distribution_2 = json_to_distribution(result_2.distribution_json)
         assert distribution_2.__class__ == CategoricalDistribution
         assert distribution_2.choices == ('Otemachi', 'Tokyo', 'Ginza')
 

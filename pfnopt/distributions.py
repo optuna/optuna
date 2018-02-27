@@ -45,7 +45,7 @@ class CategoricalDistribution(
         return self.choices.index(param_value_in_external_repr)
 
 
-def distribution_from_json(json_str):
+def json_to_distribution(json_str):
     valid_classes = [UniformDistribution, LogUniformDistribution, CategoricalDistribution]
 
     loaded = json.loads(json_str)
