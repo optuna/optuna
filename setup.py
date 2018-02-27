@@ -9,5 +9,6 @@ setup(
     author='Takuya Akiba',
     author_email='akiba@preferred.jp',
     packages=find_packages(),
-    test_requires=['pytest'], install_requires=['sqlalchemy']
+    install_requires=['sqlalchemy', 'numpy', 'scipy', 'six'],
+    test_requires=['pytest'],
 )

@@ -9,7 +9,6 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
-import time
 from typing import Any  # NOQA
 from typing import List  # NOQA
 
@@ -32,7 +31,7 @@ class StudyParam(Base):
     study_param_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     param_name = Column(String(255))
-    distribution = Column(String(255))
+    distribution_json = Column(String(255))
 
     study = orm.relationship(Study)
 
