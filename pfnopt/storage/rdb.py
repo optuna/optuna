@@ -93,7 +93,10 @@ class RDBStorage(BaseStorage):
         study_param = self.session.query(StudyParam). \
             filter(StudyParam.study_id == study_id). \
             filter(StudyParam.param_name == param_name).one_or_none()
-        assert study_param is None
+        if study_param is not None:
+            distribution_rdb = distributions.distribution_from_json(study_param.distribution_json)
+            assert distribution_rdb == distribution
+            return
 
         study_param = StudyParam()
         study_param.study_id = study_id
@@ -142,7 +145,9 @@ class RDBStorage(BaseStorage):
         trial_param = self.session.query(TrialParam). \
             filter(TrialParam.trial_id == trial_id). \
             filter(TrialParam.study_param.has(param_name=param_name)).one_or_none()
-        assert trial_param is None
+        if trial_param is not None:
+            assert trial_param.param_value == param_value
+            return
 
         trial_param = TrialParam()
         trial_param.trial_id = trial_id
@@ -164,12 +169,17 @@ class RDBStorage(BaseStorage):
         assert trial is not None
 
         # check if the value at the same step already exists
-        duplicated_trial_value = self.session.query(TrialValue). \
+        trial_value = self.session.query(TrialValue). \
             filter(TrialValue.trial_id == trial_id). \
             filter(TrialValue.step == step).one_or_none()
-        assert duplicated_trial_value is None
+        if trial_value is not None:
+            assert trial_value.value == intermediate_value
+            return
 
-        trial_value = TrialValue(trial_id=trial_id, step=step, value=intermediate_value)
+        trial_value = TrialValue()
+        trial_value.trial_id = trial_id
+        trial_value.step = step
+        trial_value.value = intermediate_value
         self.session.add(trial_value)
         self.session.commit()
 

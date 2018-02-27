@@ -39,6 +39,7 @@ class TestRDBStorage(unittest.TestCase):
         storage.set_study_param_distribution(study_id, 'x', uniform)
         storage.set_study_param_distribution(study_id, 'y', categorical)
 
+        # test setting new name
         result_1 = storage.session.query(StudyParam).filter(StudyParam.param_name == 'x').one()
         distribution_1 = distribution_from_json(result_1.distribution_json)
         assert distribution_1.__class__ == UniformDistribution
@@ -49,6 +50,14 @@ class TestRDBStorage(unittest.TestCase):
         distribution_2 = distribution_from_json(result_2.distribution_json)
         assert distribution_2.__class__ == CategoricalDistribution
         assert distribution_2.choices == ('Otemachi', 'Tokyo', 'Ginza')
+
+        # test setting existing name with different distribution
+        self.assertRaises(
+            AssertionError,
+            lambda: storage.set_study_param_distribution(study_id, 'x', categorical))
+
+        # test setting existing name with the same distribution
+        storage.set_study_param_distribution(study_id, 'y', categorical)
 
     def test_create_new_trial_id(self):
         storage = self.create_test_storage()
@@ -96,7 +105,7 @@ class TestRDBStorage(unittest.TestCase):
             # type: (List[TrialParam], str) -> TrialParam
             return next(filter(lambda p: p.study_param.param_name == param_name, items), None)
 
-        # test setting new value
+        # test setting new name
         storage.set_trial_param(trial_id, 'x', 0.5)
         storage.set_trial_param(trial_id, 'y', categorical.to_internal_repr('Ginza'))
 
@@ -105,8 +114,11 @@ class TestRDBStorage(unittest.TestCase):
         assert find_trial_param(result, 'x').param_value == 0.5
         assert find_trial_param(result, 'y').param_value == 2.
 
-        # test overwriting value
+        # test setting existing name with different value
         self.assertRaises(AssertionError, lambda: storage.set_trial_param(trial_id, 'x', 1.0))
+
+        # test setting existing name with the same value
+        storage.set_trial_param(trial_id, 'x', 0.5)
 
         storage.close()
 
@@ -145,10 +157,13 @@ class TestRDBStorage(unittest.TestCase):
         assert find_trial_value(result_1, 2).trial_id == trial_id
         assert find_trial_value(result_1, 2).value == 0.4
 
-        # test overwriting value
+        # test setting existing step with different value
         self.assertRaises(
             AssertionError,
             lambda: storage.set_trial_intermediate_value(trial_id, 0, 0.5))
+
+        # test setting existing step with the same value
+        storage.set_trial_intermediate_value(trial_id, 0, 0.3)
 
         storage.close()
 

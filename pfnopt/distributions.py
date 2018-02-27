@@ -51,13 +51,10 @@ def distribution_from_json(json_str):
     loaded = json.loads(json_str)
 
     if loaded['name'] == CategoricalDistribution.__name__:
-        if 'choices' in loaded['attributes']:
-            loaded['attributes']['choices'] = tuple(loaded['attributes']['choices'])
-        else:
-            raise ValueError
+        loaded['attributes']['choices'] = tuple(loaded['attributes']['choices'])
 
     for cls in valid_classes:
         if loaded['name'] == cls.__name__:
             return cls(**loaded['attributes'])
 
-    raise ValueError
+    raise ValueError('Unknown distribution class: {}'.format(loaded['name']))
