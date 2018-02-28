@@ -123,10 +123,12 @@ def minimize(
         n_trials=None,  # type: Optional[int]
         timeout_seconds=None,  # type: Optional[float]
         n_jobs=1,  # type: int
+        storage=None,  # type: storage_module.BaseStorage
+        sampler=None,  # type: samplers.BaseSampler
+        pruner=None,  # type: pruners.BasePruner
 ):
     # type: (...) -> Study
-    storage = storage_module.InMemoryStorage()
-    study = Study(storage=storage)
+    study = Study(storage=storage, sampler=sampler, pruner=pruner)
     study.run(func, n_trials, timeout_seconds, n_jobs)
     return study
 
