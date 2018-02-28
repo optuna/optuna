@@ -1,6 +1,7 @@
 import itertools
 import pytest
 import time
+import threading
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import Optional  # NOQA
@@ -21,10 +22,12 @@ class Func(object):
         # type: (Optional[float]) -> None
         self.n_calls = 0
         self.sleep_sec = sleep_sec
+        self.lock = threading.Lock()
 
     def __call__(self, client):
         # type: (client_module.BaseClient) -> float
-        self.n_calls += 1
+        with self.lock:
+            self.n_calls += 1
 
         # Sleep for testing parallelism
         if self.sleep_sec is not None:
