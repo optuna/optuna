@@ -67,3 +67,8 @@ def json_to_distribution(json_str):
             return cls(**json_dict['attributes'])
 
     raise ValueError('Unknown distribution class: {}'.format(json_dict['name']))
+
+
+def distribution_to_json(dist):
+    # type: (BaseDistribution) -> str
+    return json.dumps({'name': dist.__class__.__name__, 'attributes': dist._asdict()})

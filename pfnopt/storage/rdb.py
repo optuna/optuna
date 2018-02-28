@@ -1,4 +1,3 @@
-import json
 from sqlalchemy import Column
 from sqlalchemy.engine import create_engine
 from sqlalchemy import Enum
@@ -100,9 +99,7 @@ class RDBStorage(BaseStorage):
         study_param = StudyParam()
         study_param.study_id = study_id
         study_param.param_name = param_name
-        study_param.distribution_json = json.dumps(
-            {'name': distribution.__class__.__name__,
-             'attributes': distribution._asdict()})
+        study_param.distribution_json = distributions.distribution_to_json(distribution)
         self.session.add(study_param)
         self.session.commit()
 
