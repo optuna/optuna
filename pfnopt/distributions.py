@@ -17,6 +17,7 @@ class BaseDistribution(object):
     def to_internal_repr(self, param_value_in_external_repr):
         return param_value_in_external_repr
 
+    @abc.abstractmethod
     def _asdict(self):
         raise NotImplementedError
 
