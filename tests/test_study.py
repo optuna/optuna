@@ -70,7 +70,7 @@ def check_study(study):
 
 @pytest.mark.parametrize('n_trials, n_jobs', itertools.product(
     (1, 2, 50),  # n_trials
-    (1, 2, 10),  # n_jobs
+    (1, 2, 10, -1),  # n_jobs
 ))
 def test_minimize(n_trials, n_jobs):
     # type: (int, int) -> None
