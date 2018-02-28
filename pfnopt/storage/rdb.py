@@ -200,6 +200,7 @@ class RDBStorage(BaseStorage):
                 distributions.json_to_distribution(param.study_param.distribution_json)
             trial.params[param.study_param.param_name] = \
                 distribution.to_external_repr(param.param_value)
+            trial.params_in_internal_repr[param.study_param.param_name] = param.param_value
 
         trial_intermediate_values = self.session.query(TrialValue). \
             filter(TrialValue.trial_id == trial_id).all()
