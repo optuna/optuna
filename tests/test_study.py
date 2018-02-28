@@ -1,7 +1,8 @@
 import itertools
+import multiprocessing
 import pytest
-import time
 import threading
+import time
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import Optional  # NOQA
@@ -101,6 +102,11 @@ def test_minimize_timeout(n_trials, n_jobs):
         assert f.n_calls <= n_trials
 
     # A thread can process at most (timeout_sec / sleep_sec + 1) trials
-    assert f.n_calls <= (timeout_sec / sleep_sec + 1) * n_jobs
+    max_calls = timeout_sec / sleep_sec + 1
+    if n_jobs != -1:
+        max_calls *= n_jobs
+    else:
+        max_calls *= multiprocessing.cpu_count()
+    assert f.n_calls <= max_calls
 
     check_study(study)
