@@ -240,7 +240,8 @@ class TestRDBStorage(unittest.TestCase):
         assert result.intermediate_values[1] == 3.0
         assert result.system_attrs.datetime_start == datetime_start
         assert result.system_attrs.datetime_complete is None
-        assert result.params_in_internal_repr == {'x': 0.5, 'y': 2.0}
+        assert result.params_in_internal_repr['x'] == 0.5
+        assert result.params_in_internal_repr['y'] == 2.0
 
         storage.close()
 
