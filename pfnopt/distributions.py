@@ -42,7 +42,7 @@ class LogUniformDistribution(
 class CategoricalDistribution(
     NamedTuple(
         '_BaseCategoricalDistribution',
-        [('choices', Tuple[Union[float, str]])]), BaseDistribution):
+        [('choices', Tuple[Union[float, str], ...])]), BaseDistribution):
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> Union[float, str]
