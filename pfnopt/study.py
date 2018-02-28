@@ -55,13 +55,12 @@ class Study(object):
         # type: () -> List[trial.Trial]
         return self.storage.get_all_trials(self.study_id)
 
-    def run(self, func, n_trials=None, timeout_seconds=None,
-            n_jobs=1, parallelism_backend='process'):
-        # type: (ObjectiveFuncType, Optional[int], Optional[float], int, str) -> None
+    def run(self, func, n_trials=None, timeout_seconds=None, n_jobs=1):
+        # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
         if n_jobs == 1:
             self._run_sequential(func, n_trials, timeout_seconds)
         else:
-            self._run_parallel(func, n_trials, timeout_seconds, n_jobs, parallelism_backend)
+            self._run_parallel(func, n_trials, timeout_seconds, n_jobs)
 
     def _run_sequential(self, func, n_trials, timeout_seconds):
         # type: (ObjectiveFuncType, Optional[int], Optional[float]) -> None
@@ -83,21 +82,13 @@ class Study(object):
             result = func(client)
             client.complete(result)
 
-    def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs, parallelism_backend):
-        # type: (ObjectiveFuncType, Optional[int], Optional[float], int, str) -> None
-
-        if parallelism_backend == 'thread':
-            pool_class = multiprocessing.pool.ThreadPool
-        # elif parallelism_backend == 'process':
-        #    pool_class = multiprocessing.Pool
-        else:
-            raise ValueError(
-                'Unknown parallelism backend specified: {}'.format(parallelism_backend))
+    def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs):
+        # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
 
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()
 
-        pool = pool_class(n_jobs)  # type: Any
+        pool = multiprocessing.pool.ThreadPool(n_jobs)  # type: Any
 
         def f(_):
             trial_id = self.storage.create_new_trial_id(self.study_id)
@@ -132,12 +123,11 @@ def minimize(
         n_trials=None,  # type: Optional[int]
         timeout_seconds=None,  # type: Optional[float]
         n_jobs=1,  # type: int
-        parallelism_backend='thread'  # type: str
 ):
     # type: (...) -> Study
     storage = storage_module.InMemoryStorage()
     study = Study(storage=storage)
-    study.run(func, n_trials, timeout_seconds, n_jobs, parallelism_backend)
+    study.run(func, n_trials, timeout_seconds, n_jobs)
     return study
 
 
