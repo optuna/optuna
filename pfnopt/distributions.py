@@ -57,13 +57,13 @@ DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, Categorical
 
 def json_to_distribution(json_str):
     # type: (str) -> BaseDistribution
-    loaded = json.loads(json_str)
+    json_dict = json.loads(json_str)
 
-    if loaded['name'] == CategoricalDistribution.__name__:
-        loaded['attributes']['choices'] = tuple(loaded['attributes']['choices'])
+    if json_dict['name'] == CategoricalDistribution.__name__:
+        json_dict['attributes']['choices'] = tuple(json_dict['attributes']['choices'])
 
     for cls in DISTRIBUTION_CLASSES:
-        if loaded['name'] == cls.__name__:
-            return cls(**loaded['attributes'])
+        if json_dict['name'] == cls.__name__:
+            return cls(**json_dict['attributes'])
 
-    raise ValueError('Unknown distribution class: {}'.format(loaded['name']))
+    raise ValueError('Unknown distribution class: {}'.format(json_dict['name']))
