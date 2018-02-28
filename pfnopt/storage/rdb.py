@@ -85,8 +85,8 @@ class RDBStorage(BaseStorage):
 
     def set_study_param_distribution(self, study_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
-        study = self.session.query(Study).filter(Study.study_id == study_id).one_or_none()
-        assert study is not None
+        # the following line is to check that the specified study_id exists in DB.
+        self.session.query(Study).filter(Study.study_id == study_id).one()
 
         # check if the StudyParam already exists
         study_param = self.session.query(StudyParam). \
@@ -124,21 +124,18 @@ class RDBStorage(BaseStorage):
 
     def set_trial_state(self, trial_id, state):
         # type: (int, trial_module.State) -> None
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
-        assert trial is not None
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         trial.state = state
         self.session.commit()
 
     def set_trial_param(self, trial_id, param_name, param_value):
         # type: (int, str, float) -> None
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
-        assert trial is not None
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         study_param = self.session.query(StudyParam). \
             filter(StudyParam.study_id == trial.study_id). \
-            filter(StudyParam.param_name == param_name).one_or_none()
-        assert study_param is not None
+            filter(StudyParam.param_name == param_name).one()
 
         # check if the parameter already exists
         trial_param = self.session.query(TrialParam). \
@@ -158,14 +155,14 @@ class RDBStorage(BaseStorage):
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
         trial.value = value
         self.session.commit()
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> None
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
-        assert trial is not None
+        # the following line is to check that the specified trial_id exists in DB.
+        self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         # check if the value at the same step already exists
         trial_value = self.session.query(TrialValue). \
@@ -184,8 +181,8 @@ class RDBStorage(BaseStorage):
 
     def set_trial_system_attrs(self, trial_id, system_attrs):
         # type: (int, trial_module.SystemAttributes) -> None
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
-        assert trial is not None
+        # the following line is to check that the specified trial_id exists in DB.
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         trial.system_attributes_json = trial_module.system_attrs_to_json(system_attrs)
         self.session.commit()
@@ -194,8 +191,8 @@ class RDBStorage(BaseStorage):
         # type: (int) -> trial_module.Trial
         trial = pfnopt.trial.Trial(trial_id)
 
-        trial_rdb = self.session.query(Trial).filter(Trial.trial_id == trial_id).one_or_none()
-        assert trial_rdb is not None
+        trial_rdb = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+
         trial.value = trial_rdb.value
         trial.state = trial_rdb.state
         trial.system_attrs = trial_module.json_to_system_attrs(trial_rdb.system_attributes_json)
