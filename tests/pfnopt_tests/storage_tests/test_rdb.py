@@ -19,6 +19,7 @@ import pfnopt.trial as trial_module
 class TestRDBStorage(unittest.TestCase):
 
     def test_create_new_study_id(self):
+        # type: () -> None
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -30,6 +31,7 @@ class TestRDBStorage(unittest.TestCase):
         storage.close()
 
     def test_set_study_param_distribution(self):
+        # type: () -> None
         storage = self.create_test_storage()
 
         uniform = UniformDistribution(low=1., high=2.)
@@ -60,6 +62,7 @@ class TestRDBStorage(unittest.TestCase):
         storage.set_study_param_distribution(study_id, 'y', categorical)
 
     def test_create_new_trial_id(self):
+        # type: () -> None
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -74,6 +77,7 @@ class TestRDBStorage(unittest.TestCase):
         storage.close()
 
     def test_set_trial_state(self):
+        # type: () -> None
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -91,6 +95,7 @@ class TestRDBStorage(unittest.TestCase):
         storage.close()
 
     def test_set_trial_param(self):
+        # type: () -> None
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -123,6 +128,7 @@ class TestRDBStorage(unittest.TestCase):
         storage.close()
 
     def test_set_trial_value(self):
+        # type: () -> None
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -137,6 +143,7 @@ class TestRDBStorage(unittest.TestCase):
         storage.close()
 
     def test_set_trial_intermediate_value(self):
+        # type: () -> None
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -168,6 +175,7 @@ class TestRDBStorage(unittest.TestCase):
         storage.close()
 
     def test_set_trial_system_attrs(self):
+        # type: () -> None
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -199,6 +207,7 @@ class TestRDBStorage(unittest.TestCase):
         storage.close()
 
     def test_get_trial(self):
+        # type: () -> None
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -235,6 +244,7 @@ class TestRDBStorage(unittest.TestCase):
         storage.close()
 
     def test_get_all_trials(self):
+        # type: () -> None
         storage = self.create_test_storage()
 
         study_id_1 = storage.create_new_study_id()
