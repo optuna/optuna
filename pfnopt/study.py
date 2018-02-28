@@ -117,6 +117,8 @@ class Study(object):
             except (StopIteration, multiprocessing.TimeoutError):  # type: ignore
                 break
 
+        pool.terminate()
+
 
 def minimize(
         func,  # type: ObjectiveFuncType
