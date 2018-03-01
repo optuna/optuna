@@ -2,6 +2,9 @@ from setuptools import find_packages
 from setuptools import setup
 
 
+tests_require = ['pytest', 'hacking', 'mypy']
+
+
 setup(
     name='pfnopt',
     version='0.0.1',
@@ -10,5 +13,6 @@ setup(
     author_email='akiba@preferred.jp',
     packages=find_packages(),
     install_requires=['sqlalchemy', 'numpy', 'scipy', 'six'],
-    tests_require=['pytest'],
+    tests_require=tests_require,
+    extras_require={'testing': tests_require}
 )
