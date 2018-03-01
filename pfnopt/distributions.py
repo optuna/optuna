@@ -49,6 +49,7 @@ class CategoricalDistribution(
         return self.choices[int(param_value_in_internal_repr)]
 
     def to_internal_repr(self, param_value_in_external_repr):
+        # type: (Union[float, str]) -> float
         return self.choices.index(param_value_in_external_repr)
 
 
