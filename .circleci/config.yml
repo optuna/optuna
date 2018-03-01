@@ -12,9 +12,8 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip3 install pytest hacking mypy
             python3 setup.py sdist
-            pip3 install dist/*.tar.gz
+            pip3 install $(ls dist/*.tar.gz)[testing]
 
       - run:
           name: flake8 check
