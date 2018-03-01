@@ -1,5 +1,6 @@
-import datetime
+from datetime import datetime
 import enum
+import json
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import NamedTuple
@@ -34,5 +35,30 @@ class Trial(object):
 
 SystemAttributes = NamedTuple(
     'SystemAttributes',
-    [('datetime_start', Optional[datetime.datetime]),
-     ('datetime_complete', Optional[datetime.datetime])])
+    [('datetime_start', Optional[datetime]),
+     ('datetime_complete', Optional[datetime])])
+
+
+def system_attrs_to_json(system_attrs):
+    # type: (SystemAttributes) -> str
+
+    def convert(attr):
+        if isinstance(attr, datetime):
+            return attr.strftime('%Y%m%d%H%M%S')
+        else:
+            return attr
+
+    return json.dumps(system_attrs._asdict(), default=convert)
+
+
+def json_to_system_attrs(system_attrs_json):
+    # type: (str) -> SystemAttributes
+    system_attrs_dict = json.loads(system_attrs_json)
+
+    for k, v in system_attrs_dict.items():
+        if k in {'datetime_start', 'datetime_complete'}:
+            system_attrs_dict[k] = None if v is None else datetime.strptime(v, '%Y%m%d%H%M%S')
+        else:
+            system_attrs_dict[k] = v
+
+    return SystemAttributes(**system_attrs_dict)
