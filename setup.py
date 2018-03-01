@@ -10,5 +10,5 @@ setup(
     author_email='akiba@preferred.jp',
     packages=find_packages(),
     install_requires=['sqlalchemy', 'numpy', 'scipy', 'six'],
-    test_requires=['pytest'],
+    tests_require=['pytest'],
 )
