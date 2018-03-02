@@ -3,12 +3,15 @@ import multiprocessing
 import pytest
 import threading
 import time
-from typing import Any  # NOQA
+from typing import Any, Tuple  # NOQA
+from typing import Callable  # NOQA
 from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 
 import pfnopt
 from pfnopt import client as client_module  # NOQA
+from pfnopt.storage import InMemoryStorage
+from pfnopt.storage import RDBStorage
 from pfnopt import trial as trial_module
 
 
@@ -68,33 +71,53 @@ def check_study(study):
         check_trial(trial)
 
 
-@pytest.mark.parametrize('n_trials, n_jobs', itertools.product(
+@pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
     (1, 2, 50),  # n_trials
     (1, 2, 10, -1),  # n_jobs
+    ((InMemoryStorage, {}), (RDBStorage, {'url': 'sqlite:///:memory:'})),  # storage_class_kwargs
 ))
-def test_minimize(n_trials, n_jobs):
-    # type: (int, int) -> None
+def test_minimize(n_trials, n_jobs, storage_class_kwargs):
+    # type: (int, int, Tuple[Callable, Dict[str, Any]])-> None
 
     f = Func()
-    study = pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs)
+    storage = storage_class_kwargs[0](**storage_class_kwargs[1])
 
+    if isinstance(storage, RDBStorage) and n_jobs != 1:
+        with pytest.raises(TypeError):
+            pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, storage=storage)
+        storage.close()
+        return
+
+    study = pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, storage=storage)
     assert f.n_calls == len(study.trials) == n_trials
-
     check_study(study)
 
+    storage.close()
 
-@pytest.mark.parametrize('n_trials, n_jobs', itertools.product(
+
+@pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
     (1, 2, 50, None),  # n_trials
     (1, 2, 10, -1),  # n_jobs
+    ((InMemoryStorage, {}), (RDBStorage, {'url': 'sqlite:///:memory:'})),  # storage_class_kwargs
 ))
-def test_minimize_timeout(n_trials, n_jobs):
-    # type: (int, int) -> None
+def test_minimize_timeout(n_trials, n_jobs, storage_class_kwargs):
+    # type: (int, int, Tuple[Callable, Dict[str, Any]]) -> None
 
     sleep_sec = 0.1
     timeout_sec = 1.0
 
     f = Func(sleep_sec=sleep_sec)
-    study = pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, timeout_seconds=timeout_sec)
+    storage = storage_class_kwargs[0](**storage_class_kwargs[1])
+
+    if isinstance(storage, RDBStorage) and n_jobs != 1:
+        with pytest.raises(TypeError):
+            pfnopt.minimize(
+                f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, timeout_seconds=timeout_sec)
+        storage.close()
+        return
+
+    study = pfnopt.minimize(
+        f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, timeout_seconds=timeout_sec)
 
     assert f.n_calls == len(study.trials)
 
@@ -110,3 +133,5 @@ def test_minimize_timeout(n_trials, n_jobs):
     assert f.n_calls <= max_calls
 
     check_study(study)
+
+    storage.close()

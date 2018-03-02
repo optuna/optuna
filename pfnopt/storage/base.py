@@ -119,3 +119,7 @@ class BaseStorage(object):
             t.intermediate_values[step] for t in all_trials
             if step in t.intermediate_values
         ]))
+
+    def close(self):
+        # type: () -> None
+        pass
