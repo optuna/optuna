@@ -96,12 +96,13 @@ class LocalClient(BaseClient):
         # type: (float) -> None
 
         self.storage.set_trial_value(self.trial_id, result)
-        self.storage.set_trial_state(self.trial_id, trial.State.COMPLETE)
 
         system_attrs = self.storage.get_trial_system_attrs(self.trial_id)
         self.storage.set_trial_system_attrs(
             self.trial_id,
             system_attrs._replace(datetime_complete=datetime.datetime.now()))
+
+        self.storage.set_trial_state(self.trial_id, trial.State.COMPLETE)
 
     def prune(self, step, current_result):
         # type: (int, float) -> bool
