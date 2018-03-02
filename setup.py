@@ -12,7 +12,7 @@ setup(
     author='Takuya Akiba',
     author_email='akiba@preferred.jp',
     packages=find_packages(),
-    install_requires=['sqlalchemy', 'numpy', 'scipy', 'six'],
+    install_requires=['sqlalchemy', 'numpy', 'scipy', 'six', 'typing', 'enum34'],
     tests_require=tests_require,
     extras_require={'testing': tests_require}
 )
