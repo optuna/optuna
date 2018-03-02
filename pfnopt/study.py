@@ -86,7 +86,6 @@ class Study(object):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
 
         if isinstance(self.storage, storage_module.RDBStorage):
-            self.storage.close()
             raise TypeError('Parallel run with RDBStorage is not supported.')
 
         if n_jobs == -1:

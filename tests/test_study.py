@@ -85,10 +85,14 @@ def test_minimize(n_trials, n_jobs, storage_class_kwargs):
     if isinstance(storage, RDBStorage) and n_jobs != 1:
         with pytest.raises(TypeError):
             pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, storage=storage)
-    else:
-        study = pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, storage=storage)
-        assert f.n_calls == len(study.trials) == n_trials
-        check_study(study)
+        storage.close()
+        return
+
+    study = pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, storage=storage)
+    assert f.n_calls == len(study.trials) == n_trials
+    check_study(study)
+
+    storage.close()
 
 
 @pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
@@ -109,21 +113,25 @@ def test_minimize_timeout(n_trials, n_jobs, storage_class_kwargs):
         with pytest.raises(TypeError):
             pfnopt.minimize(
                 f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, timeout_seconds=timeout_sec)
+        storage.close()
+        return
+
+    study = pfnopt.minimize(
+        f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, timeout_seconds=timeout_sec)
+
+    assert f.n_calls == len(study.trials)
+
+    if n_trials is not None:
+        assert f.n_calls <= n_trials
+
+    # A thread can process at most (timeout_sec / sleep_sec + 1) trials
+    max_calls = timeout_sec / sleep_sec + 1
+    if n_jobs != -1:
+        max_calls *= n_jobs
     else:
-        study = pfnopt.minimize(
-            f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, timeout_seconds=timeout_sec)
+        max_calls *= multiprocessing.cpu_count()
+    assert f.n_calls <= max_calls
 
-        assert f.n_calls == len(study.trials)
+    check_study(study)
 
-        if n_trials is not None:
-            assert f.n_calls <= n_trials
-
-        # A thread can process at most (timeout_sec / sleep_sec + 1) trials
-        max_calls = timeout_sec / sleep_sec + 1
-        if n_jobs != -1:
-            max_calls *= n_jobs
-        else:
-            max_calls *= multiprocessing.cpu_count()
-        assert f.n_calls <= max_calls
-
-        check_study(study)
+    storage.close()
