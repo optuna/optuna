@@ -108,7 +108,7 @@ class TestRDBStorage(unittest.TestCase):
 
         def find_trial_param(items, param_name):
             # type: (List[TrialParam], str) -> TrialParam
-            return next(filter(lambda p: p.study_param.param_name == param_name, items), None)
+            return [p for p in items if p.study_param.param_name == param_name][0]
 
         # test setting new name
         storage.set_trial_param(trial_id, 'x', 0.5)
@@ -151,7 +151,7 @@ class TestRDBStorage(unittest.TestCase):
 
         def find_trial_value(items, step):
             # type: (List[TrialValue], int) -> TrialValue
-            return next(filter(lambda p: p.step == step, items), None)
+            return [p for p in items if p.step == step][0]
 
         # test setting new values
         storage.set_trial_intermediate_value(trial_id, 0, 0.3)
