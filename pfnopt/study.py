@@ -13,6 +13,7 @@ from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storage as storage_module
 from pfnopt import trial  # NOQA
+from pfnopt.storage.rdb import RDBStorage
 
 ObjectiveFuncType = Callable[[client_module.BaseClient], float]
 
@@ -84,6 +85,10 @@ class Study(object):
 
     def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
+
+        if isinstance(self.storage, RDBStorage):
+            self.storage.close()
+            raise TypeError('Parallel run with RDBStorage is not supported.')
 
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()

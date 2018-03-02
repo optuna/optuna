@@ -10,6 +10,8 @@ from typing import Optional  # NOQA
 import pfnopt
 from pfnopt import client as client_module  # NOQA
 from pfnopt import trial as trial_module
+from pfnopt.storage import InMemoryStorage
+from pfnopt.storage.rdb import RDBStorage
 
 
 def func(x, y):
@@ -68,45 +70,63 @@ def check_study(study):
         check_trial(trial)
 
 
-@pytest.mark.parametrize('n_trials, n_jobs', itertools.product(
+@pytest.mark.parametrize('n_trials, n_jobs, init_storage', itertools.product(
     (1, 2, 50),  # n_trials
     (1, 2, 10, -1),  # n_jobs
+    (lambda: InMemoryStorage(), lambda: RDBStorage('sqlite:///:memory:')),  # init_storage
 ))
-def test_minimize(n_trials, n_jobs):
+def test_minimize(n_trials, n_jobs, init_storage):
     # type: (int, int) -> None
 
     f = Func()
-    study = pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs)
+    storage = init_storage()
 
-    assert f.n_calls == len(study.trials) == n_trials
+    if isinstance(storage, RDBStorage) and n_jobs != 1:
+        with pytest.raises(TypeError):
+            pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, storage=init_storage())
+    else:
+        study = pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, storage=init_storage())
+        assert f.n_calls == len(study.trials) == n_trials
+        check_study(study)
 
-    check_study(study)
+    storage.close()
 
 
-@pytest.mark.parametrize('n_trials, n_jobs', itertools.product(
+@pytest.mark.parametrize('n_trials, n_jobs, init_storage', itertools.product(
     (1, 2, 50, None),  # n_trials
     (1, 2, 10, -1),  # n_jobs
+    (lambda: InMemoryStorage(), lambda: RDBStorage('sqlite:///:memory:'))  # init_storage
 ))
-def test_minimize_timeout(n_trials, n_jobs):
+def test_minimize_timeout(n_trials, n_jobs, init_storage):
     # type: (int, int) -> None
 
     sleep_sec = 0.1
     timeout_sec = 1.0
 
     f = Func(sleep_sec=sleep_sec)
-    study = pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, timeout_seconds=timeout_sec)
+    storage = init_storage()
 
-    assert f.n_calls == len(study.trials)
-
-    if n_trials is not None:
-        assert f.n_calls <= n_trials
-
-    # A thread can process at most (timeout_sec / sleep_sec + 1) trials
-    max_calls = timeout_sec / sleep_sec + 1
-    if n_jobs != -1:
-        max_calls *= n_jobs
+    if isinstance(storage, RDBStorage) and n_jobs != 1:
+        with pytest.raises(TypeError):
+            pfnopt.minimize(
+                f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, timeout_seconds=timeout_sec)
     else:
-        max_calls *= multiprocessing.cpu_count()
-    assert f.n_calls <= max_calls
+        study = pfnopt.minimize(
+            f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, timeout_seconds=timeout_sec)
 
-    check_study(study)
+        assert f.n_calls == len(study.trials)
+
+        if n_trials is not None:
+            assert f.n_calls <= n_trials
+
+        # A thread can process at most (timeout_sec / sleep_sec + 1) trials
+        max_calls = timeout_sec / sleep_sec + 1
+        if n_jobs != -1:
+            max_calls *= n_jobs
+        else:
+            max_calls *= multiprocessing.cpu_count()
+        assert f.n_calls <= max_calls
+
+        check_study(study)
+
+    storage.close()
