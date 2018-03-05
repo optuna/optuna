@@ -1,8 +1,11 @@
 from setuptools import find_packages
 from setuptools import setup
+import sys
 
 
-tests_require = ['pytest', 'hacking', 'mypy']
+tests_require = ['pytest', 'hacking']
+if sys.version_info[0] == 3:
+    tests_require.append('mypy')
 
 
 setup(
