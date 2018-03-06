@@ -9,6 +9,7 @@ from sqlalchemy import orm
 from sqlalchemy import String
 from typing import Any  # NOQA
 from typing import List  # NOQA
+import uuid
 
 import pfnopt
 from pfnopt import distributions
@@ -22,6 +23,7 @@ Base = declarative_base()  # type: Any
 class Study(Base):
     __tablename__ = 'studies'
     study_id = Column(Integer, primary_key=True)
+    study_uuid = Column(String(255), unique=True)
 
 
 class StudyParam(Base):
@@ -76,7 +78,14 @@ class RDBStorage(BaseStorage):
 
     def create_new_study_id(self):
         # type: () -> int
+        while True:
+            study_uuid = str(uuid.uuid4())
+            study = self.session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
+            if study is None:
+                break
+
         study = Study()
+        study.study_uuid = study_uuid
         self.session.add(study)
         self.session.commit()
 

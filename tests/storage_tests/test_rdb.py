@@ -2,6 +2,9 @@ from datetime import datetime
 import json
 from typing import List  # NOQA
 import unittest
+from unittest.mock import Mock
+from unittest.mock import patch
+import uuid
 
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
@@ -29,6 +32,23 @@ class TestRDBStorage(unittest.TestCase):
         assert result[0].study_id == study_id
 
         storage.close()
+
+    def test_create_new_study_id_duplicated_uuid(self):
+        # type: () -> None
+        mock = Mock()
+        mock.side_effect = ['uuid1', 'uuid1', 'uuid2', 'uuid3']
+
+        with patch.object(uuid, 'uuid4', mock) as mock_object:
+            storage = self.create_test_storage()
+
+            storage.create_new_study_id()
+            study_id = storage.create_new_study_id()
+
+            result = storage.session.query(Study).filter(Study.study_id == study_id).one()
+            assert result.study_uuid == 'uuid2'
+            assert mock_object.call_count == 3
+
+            storage.close()
 
     def test_set_study_param_distribution(self):
         # type: () -> None
