@@ -1,34 +1,48 @@
 version: 2
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
+      - build-python2
+
 jobs:
   build:
     docker:
       - image: circleci/python:3.6.1
-
     steps:
       - checkout
 
-      - run:
+      - run: &install
           name: install
           command: |
-            python3 -m venv venv
+            python -m venv venv || virtualenv venv
             . venv/bin/activate
-            python3 setup.py sdist
-            pip3 install $(ls dist/*.tar.gz)[testing]
+            python setup.py sdist
+            pip install $(ls dist/*.tar.gz)[testing]
 
-      - run:
-          name: flake8 check
+      - run: &flake8
+          name: flake8
           command: |
             . venv/bin/activate
             flake8 .
 
-      - run:
-          name: mypy check
+      - run: &mypy
+          name: mypy
           command: |
             . venv/bin/activate
             mypy --ignore-missing-imports .
+            mypy --py2 --ignore-missing-imports .
 
-      - run:
-          name: run tests
+      - run: &tests
+          name: tests
           command: |
             . venv/bin/activate
             pytest tests
+
+  build-python2:
+    docker:
+      - image: circleci/python:2.7
+    steps:
+      [checkout, run: *install, run: *tests]
