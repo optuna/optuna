@@ -45,4 +45,4 @@ jobs:
     docker:
       - image: circleci/python:2.7
     steps:
-      [checkout, run: *install, run: *flake8, run: *tests]
+      [checkout, run: *install, run: *tests]
