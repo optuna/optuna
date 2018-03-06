@@ -1,9 +1,9 @@
 from datetime import datetime
 import json
+from mock import Mock
+from mock import patch
 from typing import List  # NOQA
 import unittest
-from unittest.mock import Mock
-from unittest.mock import patch
 import uuid
 
 from pfnopt.distributions import CategoricalDistribution
