@@ -143,7 +143,7 @@ def maximize():
     raise NotImplementedError
 
 
-def create_new_study(storage=None, sampler=None, pruner=None):
+def create_new_study(storage, sampler=None, pruner=None):
     # type: (storage_module.BaseStorage, samplers.BaseSampler, pruners.BasePruner) -> Study
     study_uuid = storage.get_study_uuid(storage.create_new_study_id())
     return Study(study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner)
