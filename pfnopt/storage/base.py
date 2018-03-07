@@ -5,6 +5,7 @@ import six
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
+from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 
 from pfnopt import distributions  # NOQA
@@ -19,6 +20,16 @@ class BaseStorage(object):
     @abc.abstractmethod
     def create_new_study_id(self):
         # type: () -> int
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_study_id(self, study_uuid):
+        # type: (str) -> Optional[int]
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_study_uuid(self, study_uuid):
+        # type: (int) -> Optional[str]
         raise NotImplementedError
 
     @abc.abstractmethod

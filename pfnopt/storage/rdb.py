@@ -9,6 +9,7 @@ from sqlalchemy import orm
 from sqlalchemy import String
 from typing import Any  # NOQA
 from typing import List  # NOQA
+from typing import Optional  # NOQA
 import uuid
 
 import pfnopt
@@ -90,6 +91,22 @@ class RDBStorage(BaseStorage):
         self.session.commit()
 
         return study.study_id
+
+    def get_study_id(self, study_uuid):
+        # type: (str) -> Optional[int]
+        study = self.session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
+        if study is None:
+            return None
+        else:
+            return study.study_id
+
+    def get_study_uuid(self, study_id):
+        # type: (int) -> Optional[str]
+        study = self.session.query(Study).filter(Study.study_id == study_id).one_or_none()
+        if study is None:
+            return None
+        else:
+            return study.study_uuid
 
     def set_study_param_distribution(self, study_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None

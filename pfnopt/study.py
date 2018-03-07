@@ -21,19 +21,18 @@ class Study(object):
 
     def __init__(
             self,
+            study_uuid,  # type: str
             storage=None,  # type: storage_module.BaseStorage
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
-            study_id=None  # type: Optional[int]
     ):
         # type: (...) -> None
+        self.study_uuid = study_uuid
         self.storage = storage or storage_module.InMemoryStorage()
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        if study_id is None:
-            study_id = self.storage.create_new_study_id()
-        self.study_id = study_id
+        self.study_id = storage.get_study_id(study_uuid)
 
     @property
     def best_params(self):
@@ -131,9 +130,10 @@ def minimize(
         storage=None,  # type: storage_module.BaseStorage
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
+        study=None,  # type: Study
 ):
     # type: (...) -> Study
-    study = Study(storage=storage, sampler=sampler, pruner=pruner)
+    study = study or create_new_study(storage=storage, sampler=sampler, pruner=pruner)
     study.run(func, n_trials, timeout_seconds, n_jobs)
     return study
 
@@ -141,3 +141,9 @@ def minimize(
 # TODO(akiba): implement me
 def maximize():
     raise NotImplementedError
+
+
+def create_new_study(storage=None, sampler=None, pruner=None):
+    # type: (storage_module.BaseStorage, samplers.BaseSampler, pruners.BasePruner) -> Study
+    study_uuid = storage.get_study_uuid(storage.create_new_study_id())
+    return Study(study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner)

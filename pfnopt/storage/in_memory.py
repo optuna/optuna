@@ -3,11 +3,16 @@ import threading
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
+from typing import Optional  # NOQA
 
 from pfnopt import distributions  # NOQA
 from pfnopt import trial
 
 from pfnopt.storage import base
+
+
+IN_MEMORY_STORAGE_STUDY_ID = 0
+IN_MEMORY_STORAGE_STUDY_UUID = '00000000-0000-0000-0000-000000000000'
 
 
 class InMemoryStorage(base.BaseStorage):
@@ -21,11 +26,19 @@ class InMemoryStorage(base.BaseStorage):
         self._lock = threading.Lock()
 
     def create_new_study_id(self):
-        return 0  # TODO(akiba)
+        return IN_MEMORY_STORAGE_STUDY_ID  # TODO(akiba)
+
+    def get_study_id(self, study_uuid):
+        # type: (str) -> Optional[int]
+        return IN_MEMORY_STORAGE_STUDY_ID
+
+    def get_study_uuid(self, study_id):
+        # type: (int) -> Optional[str]
+        return IN_MEMORY_STORAGE_STUDY_UUID
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
-        assert study_id == 0  # TODO(Akiba)
+        assert study_id == IN_MEMORY_STORAGE_STUDY_ID  # TODO(Akiba)
         with self._lock:
             trial_id = len(self.trials)
             self.trials.append(trial.Trial(trial_id))
@@ -33,7 +46,7 @@ class InMemoryStorage(base.BaseStorage):
 
     def set_study_param_distribution(self, study_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
-        assert study_id == 0
+        assert study_id == IN_MEMORY_STORAGE_STUDY_ID
         with self._lock:
             self.param_distribution[param_name] = distribution
 
@@ -73,6 +86,6 @@ class InMemoryStorage(base.BaseStorage):
 
     def get_all_trials(self, study_id):
         # type: (int) -> List[trial.Trial]
-        assert study_id == 0  # TODO(Akiba)
+        assert study_id == IN_MEMORY_STORAGE_STUDY_ID  # TODO(Akiba)
         with self._lock:
             return copy.deepcopy(self.trials)
