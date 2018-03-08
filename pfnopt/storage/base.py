@@ -23,12 +23,12 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_id(self, study_uuid):
+    def get_study_id_from_uuid(self, study_uuid):
         # type: (str) -> Optional[int]
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_uuid(self, study_uuid):
+    def get_study_uuid_from_id(self, study_uuid):
         # type: (int) -> Optional[str]
         raise NotImplementedError
 

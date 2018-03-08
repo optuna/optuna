@@ -50,31 +50,31 @@ class TestRDBStorage(unittest.TestCase):
 
             storage.close()
 
-    def test_get_study_id(self):
+    def test_get_study_id_from_uuid(self):
         # type: () -> None
 
         storage = self.create_test_storage()
 
         # test not existing study
-        assert storage.get_study_id('dummy-uuid') is None
+        assert storage.get_study_id_from_uuid('dummy-uuid') is None
 
         # test existing study
         storage.create_new_study_id()
         study = storage.session.query(Study).one()
-        assert storage.get_study_id(study.study_uuid) == study.study_id
+        assert storage.get_study_id_from_uuid(study.study_uuid) == study.study_id
 
-    def test_get_study_uuid(self):
+    def test_get_study_uuid_from_id(self):
         # type: () -> None
 
         storage = self.create_test_storage()
 
         # test not existing study
-        assert storage.get_study_uuid(0) is None
+        assert storage.get_study_uuid_from_id(0) is None
 
         # test existing study
         storage.create_new_study_id()
         study = storage.session.query(Study).one()
-        assert storage.get_study_uuid(study.study_id) == study.study_uuid
+        assert storage.get_study_uuid_from_id(study.study_id) == study.study_uuid
 
     def test_set_study_param_distribution(self):
         # type: () -> None

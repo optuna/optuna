@@ -92,7 +92,7 @@ class RDBStorage(BaseStorage):
 
         return study.study_id
 
-    def get_study_id(self, study_uuid):
+    def get_study_id_from_uuid(self, study_uuid):
         # type: (str) -> Optional[int]
         study = self.session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
         if study is None:
@@ -100,7 +100,7 @@ class RDBStorage(BaseStorage):
         else:
             return study.study_id
 
-    def get_study_uuid(self, study_id):
+    def get_study_uuid_from_id(self, study_id):
         # type: (int) -> Optional[str]
         study = self.session.query(Study).filter(Study.study_id == study_id).one_or_none()
         if study is None:
