@@ -1,7 +1,10 @@
 from datetime import datetime
 import json
+from mock import Mock
+from mock import patch
 from typing import List  # NOQA
 import unittest
+import uuid
 
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
@@ -29,6 +32,49 @@ class TestRDBStorage(unittest.TestCase):
         assert result[0].study_id == study_id
 
         storage.close()
+
+    def test_create_new_study_id_duplicated_uuid(self):
+        # type: () -> None
+        mock = Mock()
+        mock.side_effect = ['uuid1', 'uuid1', 'uuid2', 'uuid3']
+
+        with patch.object(uuid, 'uuid4', mock) as mock_object:
+            storage = self.create_test_storage()
+
+            storage.create_new_study_id()
+            study_id = storage.create_new_study_id()
+
+            result = storage.session.query(Study).filter(Study.study_id == study_id).one()
+            assert result.study_uuid == 'uuid2'
+            assert mock_object.call_count == 3
+
+            storage.close()
+
+    def test_get_study_id_from_uuid(self):
+        # type: () -> None
+
+        storage = self.create_test_storage()
+
+        # test not existing study
+        self.assertRaises(ValueError, lambda: storage.get_study_id_from_uuid('dummy-uuid'))
+
+        # test existing study
+        storage.create_new_study_id()
+        study = storage.session.query(Study).one()
+        assert storage.get_study_id_from_uuid(study.study_uuid) == study.study_id
+
+    def test_get_study_uuid_from_id(self):
+        # type: () -> None
+
+        storage = self.create_test_storage()
+
+        # test not existing study
+        self.assertRaises(ValueError, lambda: storage.get_study_uuid_from_id(0))
+
+        # test existing study
+        storage.create_new_study_id()
+        study = storage.session.query(Study).one()
+        assert storage.get_study_uuid_from_id(study.study_id) == study.study_uuid
 
     def test_set_study_param_distribution(self):
         # type: () -> None

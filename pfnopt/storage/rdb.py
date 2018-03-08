@@ -9,6 +9,8 @@ from sqlalchemy import orm
 from sqlalchemy import String
 from typing import Any  # NOQA
 from typing import List  # NOQA
+from typing import Optional  # NOQA
+import uuid
 
 import pfnopt
 from pfnopt import distributions
@@ -22,6 +24,7 @@ Base = declarative_base()  # type: Any
 class Study(Base):
     __tablename__ = 'studies'
     study_id = Column(Integer, primary_key=True)
+    study_uuid = Column(String(255), unique=True)
 
 
 class StudyParam(Base):
@@ -76,11 +79,34 @@ class RDBStorage(BaseStorage):
 
     def create_new_study_id(self):
         # type: () -> int
+        while True:
+            study_uuid = str(uuid.uuid4())
+            study = self.session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
+            if study is None:
+                break
+
         study = Study()
+        study.study_uuid = study_uuid
         self.session.add(study)
         self.session.commit()
 
         return study.study_id
+
+    def get_study_id_from_uuid(self, study_uuid):
+        # type: (str) -> int
+        study = self.session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
+        if study is None:
+            raise ValueError('study_uuid {} does not exist.'.format(study_uuid))
+        else:
+            return study.study_id
+
+    def get_study_uuid_from_id(self, study_id):
+        # type: (int) -> str
+        study = self.session.query(Study).filter(Study.study_id == study_id).one_or_none()
+        if study is None:
+            raise ValueError('study_id {} does not exist.'.format(study_id))
+        else:
+            return study.study_uuid
 
     def set_study_param_distribution(self, study_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None

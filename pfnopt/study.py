@@ -21,42 +21,47 @@ class Study(object):
 
     def __init__(
             self,
-            storage=None,  # type: storage_module.BaseStorage
+            study_uuid,  # type: str
+            storage,  # type: storage_module.BaseStorage
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
-            study_id=None  # type: Optional[int]
     ):
         # type: (...) -> None
-        self.storage = storage or storage_module.InMemoryStorage()
+
+        self.study_uuid = study_uuid
+        self.storage = storage
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        if study_id is None:
-            study_id = self.storage.create_new_study_id()
-        self.study_id = study_id
+        self.study_id = storage.get_study_id_from_uuid(study_uuid)
 
     @property
     def best_params(self):
         # type: () -> Dict[str, Any]
+
         return self.best_trial.params
 
     @property
     def best_value(self):
         # type: () -> float
+
         return self.best_trial.value
 
     @property
     def best_trial(self):
         # type: () -> trial.Trial
+
         return self.storage.get_best_trial(self.study_id)
 
     @property
     def trials(self):
         # type: () -> List[trial.Trial]
+
         return self.storage.get_all_trials(self.study_id)
 
     def run(self, func, n_trials=None, timeout_seconds=None, n_jobs=1):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
+
         if n_jobs == 1:
             self._run_sequential(func, n_trials, timeout_seconds)
         else:
@@ -64,6 +69,7 @@ class Study(object):
 
     def _run_sequential(self, func, n_trials, timeout_seconds):
         # type: (ObjectiveFuncType, Optional[int], Optional[float]) -> None
+
         i_trial = 0
         time_start = datetime.datetime.now()
         while True:
@@ -131,9 +137,11 @@ def minimize(
         storage=None,  # type: storage_module.BaseStorage
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
+        study=None,  # type: Study
 ):
     # type: (...) -> Study
-    study = Study(storage=storage, sampler=sampler, pruner=pruner)
+
+    study = study or create_new_study(storage=storage, sampler=sampler, pruner=pruner)
     study.run(func, n_trials, timeout_seconds, n_jobs)
     return study
 
@@ -141,3 +149,9 @@ def minimize(
 # TODO(akiba): implement me
 def maximize():
     raise NotImplementedError
+
+
+def create_new_study(storage, sampler=None, pruner=None):
+    # type: (storage_module.BaseStorage, samplers.BaseSampler, pruners.BasePruner) -> Study
+    study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
+    return Study(study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner)

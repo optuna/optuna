@@ -3,7 +3,7 @@ from setuptools import setup
 import sys
 
 
-tests_require = ['pytest', 'hacking']
+tests_require = ['pytest', 'hacking', 'mock']
 if sys.version_info[0] == 3:
     tests_require.append('mypy')
 
