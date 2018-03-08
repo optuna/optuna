@@ -56,7 +56,7 @@ class TestRDBStorage(unittest.TestCase):
         storage = self.create_test_storage()
 
         # test not existing study
-        assert storage.get_study_id_from_uuid('dummy-uuid') is None
+        self.assertRaises(ValueError, lambda: storage.get_study_id_from_uuid('dummy-uuid'))
 
         # test existing study
         storage.create_new_study_id()
@@ -69,7 +69,7 @@ class TestRDBStorage(unittest.TestCase):
         storage = self.create_test_storage()
 
         # test not existing study
-        assert storage.get_study_uuid_from_id(0) is None
+        self.assertRaises(ValueError, lambda: storage.get_study_uuid_from_id(0))
 
         # test existing study
         storage.create_new_study_id()

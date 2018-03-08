@@ -31,13 +31,13 @@ class InMemoryStorage(base.BaseStorage):
         return IN_MEMORY_STORAGE_STUDY_ID  # TODO(akiba)
 
     def get_study_id_from_uuid(self, study_uuid):
-        # type: (str) -> Optional[int]
+        # type: (str) -> int
 
         self._check_study_uuid(study_uuid)
         return IN_MEMORY_STORAGE_STUDY_ID
 
     def get_study_uuid_from_id(self, study_id):
-        # type: (int) -> Optional[str]
+        # type: (int) -> str
 
         self._check_study_id(study_id)
         return IN_MEMORY_STORAGE_STUDY_UUID
