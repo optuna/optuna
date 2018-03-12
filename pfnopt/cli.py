@@ -39,4 +39,6 @@ class MakeStudy(Command):
 
 
 def main():
+    # type: () -> int
+
     return PFNOptApp().run(sys.argv[1:])
