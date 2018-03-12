@@ -119,17 +119,14 @@ def test_minimize_timeout(n_trials, n_jobs, storage_class_kwargs):
     study = pfnopt.minimize(
         f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, timeout_seconds=timeout_sec)
 
-    assert f.n_calls == len(study.trials)
+    n_jobs_actual = n_jobs if n_jobs != -1 else multiprocessing.cpu_count()
+    assert len(study.trials) - n_jobs_actual <= f.n_calls <= len(study.trials)
 
     if n_trials is not None:
         assert f.n_calls <= n_trials
 
     # A thread can process at most (timeout_sec / sleep_sec + 1) trials
-    max_calls = timeout_sec / sleep_sec + 1
-    if n_jobs != -1:
-        max_calls *= n_jobs
-    else:
-        max_calls *= multiprocessing.cpu_count()
+    max_calls = (timeout_sec / sleep_sec + 1) * n_jobs_actual
     assert f.n_calls <= max_calls
 
     check_study(study)
