@@ -1,3 +1,5 @@
+from argparse import ArgumentParser  # NOQA
+from argparse import Namespace  # NOQA
 from cliff.app import App
 from cliff.command import Command
 from cliff.commandmanager import CommandManager
@@ -20,13 +22,16 @@ class PFNOptApp(App):
 class MakeStudy(Command):
 
     def get_parser(self, prog_name):
+        # type: (str) -> ArgumentParser
         parser = super(MakeStudy, self).get_parser(prog_name)
         parser.add_argument('--url', '-u', dest='url', required=True)
         return parser
 
     def take_action(self, parsed_args):
+        # type: (Namespace) -> None
         storage = RDBStorage(parsed_args.url)
-        print(create_new_study(storage).study_uuid)
+        study_uuid = create_new_study(storage).study_uuid
+        print(study_uuid)
 
 
 def main():

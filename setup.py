@@ -19,7 +19,7 @@ setup(
     tests_require=tests_require,
     extras_require={'testing': tests_require},
     entry_points={
-        'console_scripts': ['pfnopt = pfnopt.main:main'],
-        'pfnopt.command': ['mkstudy = pfnopt.main:MakeStudy']
+        'console_scripts': ['pfnopt = pfnopt.cli:main'],
+        'pfnopt.command': ['mkstudy = pfnopt.cli:MakeStudy']
     }
 )
