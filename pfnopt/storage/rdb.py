@@ -17,6 +17,7 @@ import pfnopt.trial as trial_module
 from pfnopt.trial import State
 
 Base = declarative_base()  # type: Any
+Session = orm.sessionmaker()
 
 
 class Study(Base):
@@ -72,7 +73,7 @@ class RDBStorage(BaseStorage):
     def __init__(self, url):
         # type: (str) -> None
         self.engine = create_engine(url)
-        self.session = orm.sessionmaker(bind=self.engine)()
+        self.session = Session(bind=self.engine)
         Base.metadata.create_all(self.engine)
 
     def create_new_study_id(self):
