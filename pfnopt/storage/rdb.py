@@ -1,3 +1,4 @@
+from collections import defaultdict
 from sqlalchemy import Column
 from sqlalchemy.engine import create_engine
 from sqlalchemy import Enum
@@ -8,6 +9,7 @@ from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
 from typing import Any  # NOQA
+from typing import Dict  # NOQA
 from typing import List  # NOQA
 import uuid
 
@@ -212,42 +214,66 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id):
         # type: (int) -> trial_module.Trial
 
-        trial_rdb = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        params = self.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
+        values = self.session.query(TrialValue).filter(TrialValue.trial_id == trial_id).all()
 
-        params_rdb = self.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
-        params = {}
-        params_in_internal_repr = {}
-        for param in params_rdb:
-            distribution = \
-                distributions.json_to_distribution(param.study_param.distribution_json)
-            params[param.study_param.param_name] = distribution.to_external_repr(param.param_value)
-            params_in_internal_repr[param.study_param.param_name] = param.param_value
-
-        trial_intermediate_values = self.session.query(TrialValue). \
-            filter(TrialValue.trial_id == trial_id).all()
-        intermediate_values = {}
-        for iv in trial_intermediate_values:
-            intermediate_values[iv.step] = iv.value
-
-        trial = trial_module.Trial(
-            trial_id=trial_id,
-            state=trial_rdb.state,
-            params=params,
-            system_attrs=trial_module.json_to_system_attrs(trial_rdb.system_attributes_json),
-            user_attrs={},
-            value=trial_rdb.value,
-            intermediate_values=intermediate_values,
-            params_in_internal_repr=params_in_internal_repr
-        )
-
-        return trial
+        return self._merge_queried_results([trial], params, values)[0]
 
     def get_all_trials(self, study_id):
         # type: (int) -> List[trial_module.Trial]
-        trials = self.session.query(Trial). \
+
+        trials = self.session.query(Trial).filter(Trial.study_id == study_id).all()
+        params = self.session.query(TrialParam).join(Trial). \
+            filter(Trial.study_id == study_id).all()
+        values = self.session.query(TrialValue).join(Trial). \
             filter(Trial.study_id == study_id).all()
 
-        return [self.get_trial(t.trial_id) for t in trials]
+        return self._merge_queried_results(trials, params, values)
+
+    @staticmethod
+    def _merge_queried_results(trials, trial_params, trial_intermediate_values):
+        # type: (List[Trial], List[TrialParam], List[TrialValue]) -> List[trial_module.Trial]
+
+        id_to_trial = {}
+        for trial in trials:
+            id_to_trial[trial.trial_id] = trial
+
+        id_to_trial_params = defaultdict(list)  # type: Dict[int, List[TrialParam]]
+        for param in trial_params:
+            id_to_trial_params[param.trial_id].append(param)
+
+        id_to_trial_intermediate_values = defaultdict(list)  # type: Dict[int, List[TrialValue]]
+        for value in trial_intermediate_values:
+            id_to_trial_intermediate_values[value.trial_id].append(value)
+
+        result = []
+        for trial_id, trial in id_to_trial.items():
+            params = {}
+            params_in_internal_repr = {}
+            for param in id_to_trial_params[trial_id]:
+                distribution = \
+                    distributions.json_to_distribution(param.study_param.distribution_json)
+                params[param.study_param.param_name] = \
+                    distribution.to_external_repr(param.param_value)
+                params_in_internal_repr[param.study_param.param_name] = param.param_value
+
+            intermediate_values = {}
+            for value in id_to_trial_intermediate_values[trial_id]:
+                intermediate_values[value.step] = value.value
+
+            result.append(trial_module.Trial(
+                trial_id=trial_id,
+                state=trial.state,
+                params=params,
+                system_attrs=trial_module.json_to_system_attrs(trial.system_attributes_json),
+                user_attrs={},
+                value=trial.value,
+                intermediate_values=intermediate_values,
+                params_in_internal_repr=params_in_internal_repr
+            ))
+
+        return result
 
     def close(self):
         # type: () -> None
