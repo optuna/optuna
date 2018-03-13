@@ -9,10 +9,8 @@ from sqlalchemy import orm
 from sqlalchemy import String
 from typing import Any  # NOQA
 from typing import List  # NOQA
-from typing import Optional  # NOQA
 import uuid
 
-import pfnopt
 from pfnopt import distributions
 from pfnopt.storage.base import BaseStorage
 import pfnopt.trial as trial_module
@@ -212,26 +210,34 @@ class RDBStorage(BaseStorage):
 
     def get_trial(self, trial_id):
         # type: (int) -> trial_module.Trial
-        trial = pfnopt.trial.Trial(trial_id)
 
         trial_rdb = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
-        trial.value = trial_rdb.value
-        trial.state = trial_rdb.state
-        trial.system_attrs = trial_module.json_to_system_attrs(trial_rdb.system_attributes_json)
-
-        trial_params = self.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
-        for param in trial_params:
+        params_rdb = self.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
+        params = {}
+        params_in_internal_repr = {}
+        for param in params_rdb:
             distribution = \
                 distributions.json_to_distribution(param.study_param.distribution_json)
-            trial.params[param.study_param.param_name] = \
-                distribution.to_external_repr(param.param_value)
-            trial.params_in_internal_repr[param.study_param.param_name] = param.param_value
+            params[param.study_param.param_name] = distribution.to_external_repr(param.param_value)
+            params_in_internal_repr[param.study_param.param_name] = param.param_value
 
         trial_intermediate_values = self.session.query(TrialValue). \
             filter(TrialValue.trial_id == trial_id).all()
+        intermediate_values = {}
         for iv in trial_intermediate_values:
-            trial.intermediate_values[iv.step] = iv.value
+            intermediate_values[iv.step] = iv.value
+
+        trial = trial_module.Trial(
+            trial_id=trial_id,
+            state=trial_rdb.state,
+            params=params,
+            system_attrs=trial_module.json_to_system_attrs(trial_rdb.system_attributes_json),
+            user_attrs={},
+            value=trial_rdb.value,
+            intermediate_values=intermediate_values,
+            params_in_internal_repr=params_in_internal_repr
+        )
 
         return trial
 
