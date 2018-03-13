@@ -2,10 +2,12 @@ from datetime import datetime
 import json
 from mock import Mock
 from mock import patch
+from typing import Dict  # NOQA
 from typing import List  # NOQA
 import unittest
 import uuid
 
+from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
@@ -23,6 +25,7 @@ class TestRDBStorage(unittest.TestCase):
 
     def test_create_new_study_id(self):
         # type: () -> None
+
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -35,6 +38,7 @@ class TestRDBStorage(unittest.TestCase):
 
     def test_create_new_study_id_duplicated_uuid(self):
         # type: () -> None
+
         mock = Mock()
         mock.side_effect = ['uuid1', 'uuid1', 'uuid2', 'uuid3']
 
@@ -78,14 +82,10 @@ class TestRDBStorage(unittest.TestCase):
 
     def test_set_study_param_distribution(self):
         # type: () -> None
+
         storage = self.create_test_storage()
-
-        uniform = UniformDistribution(low=1., high=2.)
-        categorical = CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
-
         study_id = storage.create_new_study_id()
-        storage.set_study_param_distribution(study_id, 'x', uniform)
-        storage.set_study_param_distribution(study_id, 'y', categorical)
+        self.set_distributions(storage, study_id, self.sample_distributions)
 
         # test setting new name
         result_1 = storage.session.query(StudyParam).filter(StudyParam.param_name == 'x').one()
@@ -102,13 +102,15 @@ class TestRDBStorage(unittest.TestCase):
         # test setting existing name with different distribution
         self.assertRaises(
             AssertionError,
-            lambda: storage.set_study_param_distribution(study_id, 'x', categorical))
+            lambda: storage.set_study_param_distribution(
+                study_id, 'x', self.sample_distributions['y']))
 
         # test setting existing name with the same distribution
-        storage.set_study_param_distribution(study_id, 'y', categorical)
+        storage.set_study_param_distribution(study_id, 'y', self.sample_distributions['y'])
 
     def test_create_new_trial_id(self):
         # type: () -> None
+
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -124,6 +126,7 @@ class TestRDBStorage(unittest.TestCase):
 
     def test_set_trial_state(self):
         # type: () -> None
+
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -142,15 +145,13 @@ class TestRDBStorage(unittest.TestCase):
 
     def test_set_trial_param(self):
         # type: () -> None
+
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
         trial_id = storage.create_new_trial_id(study_id)
 
-        uniform = UniformDistribution(low=1., high=2.)
-        categorical = CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
-        storage.set_study_param_distribution(study_id, 'x', uniform)
-        storage.set_study_param_distribution(study_id, 'y', categorical)
+        self.set_distributions(storage, study_id, self.sample_distributions)
 
         def find_trial_param(items, param_name):
             # type: (List[TrialParam], str) -> TrialParam
@@ -158,7 +159,7 @@ class TestRDBStorage(unittest.TestCase):
 
         # test setting new name
         storage.set_trial_param(trial_id, 'x', 0.5)
-        storage.set_trial_param(trial_id, 'y', categorical.to_internal_repr('Ginza'))
+        storage.set_trial_param(trial_id, 'y', 2.)
 
         result = storage.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
         assert len(result) == 2
@@ -175,6 +176,7 @@ class TestRDBStorage(unittest.TestCase):
 
     def test_set_trial_value(self):
         # type: () -> None
+
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -190,6 +192,7 @@ class TestRDBStorage(unittest.TestCase):
 
     def test_set_trial_intermediate_value(self):
         # type: () -> None
+
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -222,6 +225,7 @@ class TestRDBStorage(unittest.TestCase):
 
     def test_set_trial_system_attrs(self):
         # type: () -> None
+
         storage = self.create_test_storage()
 
         study_id = storage.create_new_study_id()
@@ -254,64 +258,105 @@ class TestRDBStorage(unittest.TestCase):
 
     def test_get_trial(self):
         # type: () -> None
+
         storage = self.create_test_storage()
-
         study_id = storage.create_new_study_id()
-        trial_id = storage.create_new_trial_id(study_id)
+        self.set_distributions(storage, study_id, self.sample_distributions)
 
-        datetime_start = datetime.strptime('20180226', '%Y%m%d')
-        system_attrs = trial_module.SystemAttributes(
-            datetime_start=datetime_start,
-            datetime_complete=None)
-
-        uniform = UniformDistribution(low=1., high=2.)
-        categorical = CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
-        storage.set_study_param_distribution(study_id, 'x', uniform)
-        storage.set_study_param_distribution(study_id, 'y', categorical)
-
-        storage.set_trial_value(trial_id, 1.0)
-        storage.set_trial_state(trial_id, trial_module.State.COMPLETE)
-        storage.set_trial_param(trial_id, 'x', 0.5)
-        storage.set_trial_param(trial_id, 'y', 2)
-        storage.set_trial_intermediate_value(trial_id, 0, 2.0)
-        storage.set_trial_intermediate_value(trial_id, 1, 3.0)
-        storage.set_trial_system_attrs(trial_id, system_attrs)
+        trial_id = TestRDBStorage.create_new_trial_with_sample_trial(
+            storage, study_id, self.sample_distributions, self.sample_trials[0])
 
         result = storage.get_trial(trial_id)
-        assert result.value == 1.0
-        assert result.state == trial_module.State.COMPLETE
-        assert result.params['x'] == 0.5
-        assert result.params['y'] == 'Ginza'
-        assert result.intermediate_values[0] == 2.0
-        assert result.intermediate_values[1] == 3.0
-        assert result.system_attrs.datetime_start == datetime_start
-        assert result.system_attrs.datetime_complete is None
-        assert result.params_in_internal_repr['x'] == 0.5
-        assert result.params_in_internal_repr['y'] == 2.0
+        assert result == TestRDBStorage.sample_trials[0]._replace(trial_id=trial_id)
 
         storage.close()
 
     def test_get_all_trials(self):
         # type: () -> None
         storage = self.create_test_storage()
-
         study_id_1 = storage.create_new_study_id()
         study_id_2 = storage.create_new_study_id()
-        trial_id_1_1 = storage.create_new_trial_id(study_id_1)
-        trial_id_1_2 = storage.create_new_trial_id(study_id_1)
-        trial_id_2_1 = storage.create_new_trial_id(study_id_2)
+        self.set_distributions(storage, study_id_1, self.sample_distributions)
+        self.set_distributions(storage, study_id_2, self.sample_distributions)
 
+        trial_id_1_1 = self.create_new_trial_with_sample_trial(
+            storage, study_id_1, self.sample_distributions, self.sample_trials[0])
+        trial_id_1_2 = self.create_new_trial_with_sample_trial(
+            storage, study_id_1, self.sample_distributions, self.sample_trials[1])
+        trial_id_2_1 = self.create_new_trial_with_sample_trial(
+            storage, study_id_2, self.sample_distributions, self.sample_trials[0])
+
+        # test getting multiple trials
         result_1 = storage.get_all_trials(study_id_1)
-        result_trial_ids_1 = set(map(lambda x: x.trial_id, result_1))
-        assert result_trial_ids_1 == {trial_id_1_1, trial_id_1_2}
+        assert sorted(result_1) == sorted([
+            self.sample_trials[0]._replace(trial_id=trial_id_1_1),
+            self.sample_trials[1]._replace(trial_id=trial_id_1_2)])
 
+        # test getting trials per study
         result_2 = storage.get_all_trials(study_id_2)
-        result_trial_ids_2 = set(map(lambda x: x.trial_id, result_2))
-        assert result_trial_ids_2 == {trial_id_2_1}
+        assert result_2 == [self.sample_trials[0]._replace(trial_id=trial_id_2_1)]
+
+    sample_distributions = {
+        'x': UniformDistribution(low=1., high=2.),
+        'y': CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
+    }  # type: Dict[str, BaseDistribution]
+
+    sample_trials = [
+        trial_module.Trial(
+            trial_id=-1,  # dummy id
+            value=1.,
+            state=trial_module.State.COMPLETE,
+            system_attrs=trial_module.SystemAttributes(
+                datetime_start=datetime.strptime('20180226', '%Y%m%d'),
+                datetime_complete=None),
+            user_attrs={},
+            params={'x': 0.5, 'y': 'Ginza'},
+            intermediate_values={0: 2., 1: 3.},
+            params_in_internal_repr={'x': .5, 'y': 2.}
+        ),
+        trial_module.Trial(
+            trial_id=-1,  # dummy id
+            value=2.,
+            state=trial_module.State.PRUNED,
+            system_attrs=trial_module.SystemAttributes(
+                datetime_start=datetime.strptime('20180227', '%Y%m%d'),
+                datetime_complete=datetime.strptime('20180228', '%Y%m%d')),
+            user_attrs={},
+            params={'x': 0.01, 'y': 'Otemachi'},
+            intermediate_values={0: -2., 1: -3., 2: 100.},
+            params_in_internal_repr={'x': .01, 'y': 0.}
+        )
+    ]  # type: List[trial_module.Trial]
+
+    @staticmethod
+    def create_new_trial_with_sample_trial(storage, study_id, distributions, sample_trial):
+        # type: (RDBStorage, int, Dict[str, BaseDistribution], trial_module.Trial) -> int
+
+        trial_id = storage.create_new_trial_id(study_id)
+
+        storage.set_trial_value(trial_id, sample_trial.value)
+        storage.set_trial_state(trial_id, sample_trial.state)
+        storage.set_trial_system_attrs(trial_id, sample_trial.system_attrs)
+
+        for name, ex_repr in sample_trial.params.items():
+            storage.set_trial_param(trial_id, name, distributions[name].to_internal_repr(ex_repr))
+
+        for step, value in sample_trial.intermediate_values.items():
+            storage.set_trial_intermediate_value(trial_id, step, value)
+
+        return trial_id
+
+    @staticmethod
+    def set_distributions(storage, study_id, distributions):
+        # type: (RDBStorage, int, Dict[str, BaseDistribution]) -> None
+
+        for k, v in distributions.items():
+            storage.set_study_param_distribution(study_id, k, v)
 
     @staticmethod
     def create_test_storage():
         # type: () -> RDBStorage
+
         storage = RDBStorage('sqlite:///:memory:')
         Base.metadata.create_all(storage.engine)
         return storage
