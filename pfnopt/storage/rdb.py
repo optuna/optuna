@@ -74,12 +74,14 @@ class RDBStorage(BaseStorage):
 
     def __init__(self, url):
         # type: (str) -> None
+
         self.engine = create_engine(url)
         self.session = Session(bind=self.engine)
         Base.metadata.create_all(self.engine)
 
     def create_new_study_id(self):
         # type: () -> int
+
         while True:
             study_uuid = str(uuid.uuid4())
             study = self.session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
@@ -95,6 +97,7 @@ class RDBStorage(BaseStorage):
 
     def get_study_id_from_uuid(self, study_uuid):
         # type: (str) -> int
+
         study = self.session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
         if study is None:
             raise ValueError('study_uuid {} does not exist.'.format(study_uuid))
@@ -103,6 +106,7 @@ class RDBStorage(BaseStorage):
 
     def get_study_uuid_from_id(self, study_id):
         # type: (int) -> str
+
         study = self.session.query(Study).filter(Study.study_id == study_id).one_or_none()
         if study is None:
             raise ValueError('study_id {} does not exist.'.format(study_id))
@@ -111,6 +115,7 @@ class RDBStorage(BaseStorage):
 
     def set_study_param_distribution(self, study_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
+
         # the following line is to check that the specified study_id exists in DB.
         self.session.query(Study).filter(Study.study_id == study_id).one()
 
@@ -132,6 +137,7 @@ class RDBStorage(BaseStorage):
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
+
         trial = Trial()
 
         trial.study_id = study_id
@@ -148,6 +154,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_state(self, trial_id, state):
         # type: (int, trial_module.State) -> None
+
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         trial.state = state
@@ -155,6 +162,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_param(self, trial_id, param_name, param_value):
         # type: (int, str, float) -> None
+
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         study_param = self.session.query(StudyParam). \
@@ -179,12 +187,14 @@ class RDBStorage(BaseStorage):
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
+
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
         trial.value = value
         self.session.commit()
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> None
+
         # the following line is to check that the specified trial_id exists in DB.
         self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
@@ -205,6 +215,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_system_attrs(self, trial_id, system_attrs):
         # type: (int, trial_module.SystemAttributes) -> None
+
         # the following line is to check that the specified trial_id exists in DB.
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
@@ -218,7 +229,7 @@ class RDBStorage(BaseStorage):
         params = self.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
         values = self.session.query(TrialValue).filter(TrialValue.trial_id == trial_id).all()
 
-        return self._merge_queried_results([trial], params, values)[0]
+        return self._merge_trials_orm([trial], params, values)[0]
 
     def get_all_trials(self, study_id):
         # type: (int) -> List[trial_module.Trial]
@@ -229,10 +240,10 @@ class RDBStorage(BaseStorage):
         values = self.session.query(TrialValue).join(Trial). \
             filter(Trial.study_id == study_id).all()
 
-        return self._merge_queried_results(trials, params, values)
+        return self._merge_trials_orm(trials, params, values)
 
     @staticmethod
-    def _merge_queried_results(trials, trial_params, trial_intermediate_values):
+    def _merge_trials_orm(trials, trial_params, trial_intermediate_values):
         # type: (List[Trial], List[TrialParam], List[TrialValue]) -> List[trial_module.Trial]
 
         id_to_trial = {}
