@@ -7,6 +7,7 @@ import sys
 
 from pfnopt.storage import RDBStorage
 from pfnopt.study import create_new_study
+from pfnopt.version import __version__
 
 
 class PFNOptApp(App):
@@ -16,7 +17,7 @@ class PFNOptApp(App):
 
         super(PFNOptApp, self).__init__(
             description='',
-            version='0.0.1',
+            version=__version__,
             command_manager=CommandManager('pfnopt.command')
         )
 

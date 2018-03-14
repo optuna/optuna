@@ -4,3 +4,4 @@ from pfnopt import study  # NOQA
 
 from pfnopt.study import minimize  # NOQA
 from pfnopt.study import Study  # NOQA
+from pfnopt.version import __version__  # NOQA

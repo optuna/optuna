@@ -1,6 +1,16 @@
+import os
 from setuptools import find_packages
 from setuptools import setup
 import sys
+
+
+def get_version():
+    version_filepath = os.path.join(os.path.dirname(__file__), 'pfnopt', 'version.py')
+    with open(version_filepath) as f:
+        for line in f:
+            if line.startswith('__version__'):
+                return line.strip().split()[-1][1:-1]
+    assert False
 
 
 tests_require = ['pytest', 'hacking', 'mock']
@@ -10,7 +20,7 @@ if sys.version_info[0] == 3:
 
 setup(
     name='pfnopt',
-    version='0.0.1',
+    version=get_version(),
     description='',
     author='Takuya Akiba',
     author_email='akiba@preferred.jp',
