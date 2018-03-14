@@ -15,28 +15,22 @@ class State(enum.Enum):
     FAIL = 3
 
 
-class Trial(object):
-
-    def __init__(self, trial_id):
-        # type: (int) -> None
-
-        self.trial_id = trial_id  # type: int
-        self.state = State.RUNNING  # type: State
-        self.params = {}  # type: Dict[str, Any]
-        self.system_attrs = \
-            SystemAttributes(datetime_start=None, datetime_complete=None)  # type: SystemAttributes
-        self.user_attrs = {}  # type: Dict[str, Any]
-        self.value = None  # type: Optional[float]
-        self.intermediate_values = {}  # type: Dict[int, float]
-
-        # TODO(Akiba): remove this
-        self.params_in_internal_repr = {}  # type: Dict[str, float]
-
-
 SystemAttributes = NamedTuple(
     'SystemAttributes',
     [('datetime_start', Optional[datetime]),
      ('datetime_complete', Optional[datetime])])
+
+
+Trial = NamedTuple(
+    'Trial',
+    [('trial_id', int),
+     ('state', State),
+     ('params', Dict[str, Any]),
+     ('system_attrs', SystemAttributes),
+     ('user_attrs', Dict[str, Any]),
+     ('value', Optional[float]),
+     ('intermediate_values', Dict[int, float]),
+     ('params_in_internal_repr', Dict[str, float])])
 
 
 def system_attrs_to_json(system_attrs):

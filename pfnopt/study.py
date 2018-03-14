@@ -97,7 +97,7 @@ class Study(object):
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()
 
-        pool = multiprocessing.pool.ThreadPool(n_jobs)  # type: Any
+        pool = multiprocessing.pool.ThreadPool(n_jobs)  # type: ignore
 
         def f(_):
             trial_id = self.storage.create_new_trial_id(self.study_id)

@@ -3,7 +3,6 @@ import threading
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
-from typing import Optional  # NOQA
 
 from pfnopt import distributions  # NOQA
 from pfnopt import trial
@@ -48,7 +47,20 @@ class InMemoryStorage(base.BaseStorage):
         self._check_study_id(study_id)
         with self._lock:
             trial_id = len(self.trials)
-            self.trials.append(trial.Trial(trial_id))
+            self.trials.append(
+                trial.Trial(
+                    trial_id=trial_id,
+                    state=trial.State.RUNNING,
+                    params={},
+                    system_attrs=trial.SystemAttributes(
+                        datetime_start=None,
+                        datetime_complete=None),
+                    user_attrs={},
+                    value=None,
+                    intermediate_values={},
+                    params_in_internal_repr={}
+                )
+            )
         return trial_id
 
     def set_study_param_distribution(self, study_id, param_name, distribution):
@@ -62,7 +74,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int, trial.State) -> None
 
         with self._lock:
-            self.trials[trial_id].state = state
+            self.trials[trial_id] = self.trials[trial_id]._replace(state=state)
 
     def set_trial_param(self, trial_id, param_name, param_value_in_internal_repr):
         # type: (int, str, float) -> None
@@ -78,7 +90,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int, float) -> None
 
         with self._lock:
-            self.trials[trial_id].value = value
+            self.trials[trial_id] = self.trials[trial_id]._replace(value=value)
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> None
@@ -90,7 +102,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int, trial.SystemAttributes) -> None
 
         with self._lock:
-            self.trials[trial_id].system_attrs = system_attrs
+            self.trials[trial_id] = self.trials[trial_id]._replace(system_attrs=system_attrs)
 
     def get_trial(self, trial_id):
         # type: (int) -> trial.Trial
