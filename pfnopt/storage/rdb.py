@@ -1,3 +1,4 @@
+from collections import defaultdict
 from sqlalchemy import Column
 from sqlalchemy.engine import create_engine
 from sqlalchemy import Enum
@@ -8,6 +9,7 @@ from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
 from typing import Any  # NOQA
+from typing import Dict  # NOQA
 from typing import List  # NOQA
 import uuid
 
@@ -72,12 +74,14 @@ class RDBStorage(BaseStorage):
 
     def __init__(self, url):
         # type: (str) -> None
+
         self.engine = create_engine(url)
         self.session = Session(bind=self.engine)
         Base.metadata.create_all(self.engine)
 
     def create_new_study_id(self):
         # type: () -> int
+
         while True:
             study_uuid = str(uuid.uuid4())
             study = self.session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
@@ -93,6 +97,7 @@ class RDBStorage(BaseStorage):
 
     def get_study_id_from_uuid(self, study_uuid):
         # type: (str) -> int
+
         study = self.session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
         if study is None:
             raise ValueError('study_uuid {} does not exist.'.format(study_uuid))
@@ -101,6 +106,7 @@ class RDBStorage(BaseStorage):
 
     def get_study_uuid_from_id(self, study_id):
         # type: (int) -> str
+
         study = self.session.query(Study).filter(Study.study_id == study_id).one_or_none()
         if study is None:
             raise ValueError('study_id {} does not exist.'.format(study_id))
@@ -109,6 +115,7 @@ class RDBStorage(BaseStorage):
 
     def set_study_param_distribution(self, study_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
+
         # the following line is to check that the specified study_id exists in DB.
         self.session.query(Study).filter(Study.study_id == study_id).one()
 
@@ -130,6 +137,7 @@ class RDBStorage(BaseStorage):
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
+
         trial = Trial()
 
         trial.study_id = study_id
@@ -146,6 +154,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_state(self, trial_id, state):
         # type: (int, trial_module.State) -> None
+
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         trial.state = state
@@ -153,6 +162,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_param(self, trial_id, param_name, param_value):
         # type: (int, str, float) -> None
+
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         study_param = self.session.query(StudyParam). \
@@ -177,12 +187,14 @@ class RDBStorage(BaseStorage):
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
+
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
         trial.value = value
         self.session.commit()
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> None
+
         # the following line is to check that the specified trial_id exists in DB.
         self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
@@ -203,6 +215,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_system_attrs(self, trial_id, system_attrs):
         # type: (int, trial_module.SystemAttributes) -> None
+
         # the following line is to check that the specified trial_id exists in DB.
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
@@ -212,42 +225,66 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id):
         # type: (int) -> trial_module.Trial
 
-        trial_rdb = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        params = self.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
+        values = self.session.query(TrialValue).filter(TrialValue.trial_id == trial_id).all()
 
-        params_rdb = self.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
-        params = {}
-        params_in_internal_repr = {}
-        for param in params_rdb:
-            distribution = \
-                distributions.json_to_distribution(param.study_param.distribution_json)
-            params[param.study_param.param_name] = distribution.to_external_repr(param.param_value)
-            params_in_internal_repr[param.study_param.param_name] = param.param_value
-
-        trial_intermediate_values = self.session.query(TrialValue). \
-            filter(TrialValue.trial_id == trial_id).all()
-        intermediate_values = {}
-        for iv in trial_intermediate_values:
-            intermediate_values[iv.step] = iv.value
-
-        trial = trial_module.Trial(
-            trial_id=trial_id,
-            state=trial_rdb.state,
-            params=params,
-            system_attrs=trial_module.json_to_system_attrs(trial_rdb.system_attributes_json),
-            user_attrs={},
-            value=trial_rdb.value,
-            intermediate_values=intermediate_values,
-            params_in_internal_repr=params_in_internal_repr
-        )
-
-        return trial
+        return self._merge_trials_orm([trial], params, values)[0]
 
     def get_all_trials(self, study_id):
         # type: (int) -> List[trial_module.Trial]
-        trials = self.session.query(Trial). \
+
+        trials = self.session.query(Trial).filter(Trial.study_id == study_id).all()
+        params = self.session.query(TrialParam).join(Trial). \
+            filter(Trial.study_id == study_id).all()
+        values = self.session.query(TrialValue).join(Trial). \
             filter(Trial.study_id == study_id).all()
 
-        return [self.get_trial(t.trial_id) for t in trials]
+        return self._merge_trials_orm(trials, params, values)
+
+    @staticmethod
+    def _merge_trials_orm(trials, trial_params, trial_intermediate_values):
+        # type: (List[Trial], List[TrialParam], List[TrialValue]) -> List[trial_module.Trial]
+
+        id_to_trial = {}
+        for trial in trials:
+            id_to_trial[trial.trial_id] = trial
+
+        id_to_trial_params = defaultdict(list)  # type: Dict[int, List[TrialParam]]
+        for param in trial_params:
+            id_to_trial_params[param.trial_id].append(param)
+
+        id_to_trial_intermediate_values = defaultdict(list)  # type: Dict[int, List[TrialValue]]
+        for value in trial_intermediate_values:
+            id_to_trial_intermediate_values[value.trial_id].append(value)
+
+        result = []
+        for trial_id, trial in id_to_trial.items():
+            params = {}
+            params_in_internal_repr = {}
+            for param in id_to_trial_params[trial_id]:
+                distribution = \
+                    distributions.json_to_distribution(param.study_param.distribution_json)
+                params[param.study_param.param_name] = \
+                    distribution.to_external_repr(param.param_value)
+                params_in_internal_repr[param.study_param.param_name] = param.param_value
+
+            intermediate_values = {}
+            for value in id_to_trial_intermediate_values[trial_id]:
+                intermediate_values[value.step] = value.value
+
+            result.append(trial_module.Trial(
+                trial_id=trial_id,
+                state=trial.state,
+                params=params,
+                system_attrs=trial_module.json_to_system_attrs(trial.system_attributes_json),
+                user_attrs={},
+                value=trial.value,
+                intermediate_values=intermediate_values,
+                params_in_internal_repr=params_in_internal_repr
+            ))
+
+        return result
 
     def close(self):
         # type: () -> None
