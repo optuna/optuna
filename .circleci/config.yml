@@ -5,7 +5,9 @@ workflows:
   build:
     jobs:
       - build
-      - build-python2
+      - build-python27
+      - build-python34
+      - build-python35
 
 jobs:
   build:
@@ -41,9 +43,9 @@ jobs:
             . venv/bin/activate
             pytest tests
 
-  build-python35:
+  build-python27:
     docker:
-      - image: circleci/python:3.5
+      - image: circleci/python:2.7
     steps:
       [checkout, run: *install, run: *tests]
 
@@ -53,8 +55,8 @@ jobs:
     steps:
       [checkout, run: *install, run: *tests]
 
-  build-python27:
+  build-python35:
     docker:
-      - image: circleci/python:2.7
+      - image: circleci/python:3.5
     steps:
       [checkout, run: *install, run: *tests]
