@@ -38,7 +38,7 @@ class Func(object):
             time.sleep(self.sleep_sec)
 
         x = client.sample_uniform('x', -10, 10)
-        y = client.sample_uniform('y', 20, 30)
+        y = client.sample_loguniform('y', 20, 30)
         z = client.sample_categorical('z', (-1.0, 1.0))
         return func(x, y, z)
 
