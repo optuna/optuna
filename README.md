@@ -1,5 +1,11 @@
 # PFNOpt
 
+## Information for Users
+
+```
+$ pip install git+https://github.com/pfnet/pfnopt.git
+```
+
 ## Information for Developers
 
 ### Format and Lint
@@ -35,7 +41,7 @@ $ pip install mypy
 To invoke static type checking, run:
 
 ```
-mypy --ignore-missing-imports .
+$ mypy --ignore-missing-imports .
 ```
 
 We use comment-style type annotation for compatibility with Python 2.
