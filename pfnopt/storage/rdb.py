@@ -1,5 +1,4 @@
 from collections import defaultdict
-
 from sqlalchemy import Column
 from sqlalchemy.engine import create_engine
 from sqlalchemy import Enum
