@@ -11,7 +11,7 @@ from typing import Optional  # NOQA
 from pfnopt import client as client_module
 from pfnopt import pruners
 from pfnopt import samplers
-from pfnopt import storages as storage_module
+from pfnopt import storages
 from pfnopt import trial  # NOQA
 
 ObjectiveFuncType = Callable[[client_module.BaseClient], float]
@@ -22,7 +22,7 @@ class Study(object):
     def __init__(
             self,
             study_uuid,  # type: str
-            storage,  # type: storage_module.BaseStorage
+            storage,  # type: storages.BaseStorage
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
     ):
@@ -91,7 +91,7 @@ class Study(object):
     def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
 
-        if isinstance(self.storage, storage_module.RDBStorage):
+        if isinstance(self.storage, storages.RDBStorage):
             raise TypeError('Parallel run with RDBStorage is not supported.')
 
         if n_jobs == -1:
@@ -134,7 +134,7 @@ def minimize(
         n_trials=None,  # type: Optional[int]
         timeout_seconds=None,  # type: Optional[float]
         n_jobs=1,  # type: int
-        storage=None,  # type: storage_module.BaseStorage
+        storage=None,  # type: storages.BaseStorage
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
         study=None,  # type: Study
@@ -152,6 +152,6 @@ def maximize():
 
 
 def create_new_study(storage, sampler=None, pruner=None):
-    # type: (storage_module.BaseStorage, samplers.BaseSampler, pruners.BasePruner) -> Study
+    # type: (storages.BaseStorage, samplers.BaseSampler, pruners.BasePruner) -> Study
     study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
     return Study(study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner)
