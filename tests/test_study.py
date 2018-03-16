@@ -64,12 +64,14 @@ def check_trial(trial):
 
 def check_study(study):
     # type: (pfnopt.Study) -> None
-    check_params(study.best_params)
-    check_value(study.best_value)
-    check_trial(study.best_trial)
-
     for trial in study.trials:
         check_trial(trial)
+
+    complete_trials = [t for t in study.trials if t.state == trial_module.State.COMPLETE]
+    if len(complete_trials) > 0:
+        check_params(study.best_params)
+        check_value(study.best_value)
+        check_trial(study.best_trial)
 
 
 @pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
