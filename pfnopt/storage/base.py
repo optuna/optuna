@@ -1,11 +1,9 @@
 import abc
-import copy
 import numpy as np
 import six
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
-from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 
 from pfnopt import distributions  # NOQA
