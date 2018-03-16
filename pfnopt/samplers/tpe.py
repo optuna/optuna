@@ -75,6 +75,8 @@ class TPESampler(base.BaseSampler):
     def _sample_categorical(self, distribution, below, above):
         # type: (distributions.CategoricalDistribution, List[float], List[float]) -> float
         choices = distribution.choices
+        below = list(map(int, below))
+        above = list(map(int, above))
         idx = _hyperopt.sample_categorical(
             obs_below=below, obs_above=above, prior_weight=self.prior_weight,
             upper=len(choices), size=(self.n_ei_candidates, ), rng=self.rng)

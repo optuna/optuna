@@ -15,9 +15,9 @@ from pfnopt.storage import RDBStorage
 from pfnopt import trial as trial_module
 
 
-def func(x, y):
-    # type: (float, float) -> float
-    return (x - 2) ** 2 + (y - 25) ** 2
+def func(x, y, z):
+    # type: (float, float, float) -> float
+    return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
 class Func(object):
@@ -38,19 +38,20 @@ class Func(object):
             time.sleep(self.sleep_sec)
 
         x = client.sample_uniform('x', -10, 10)
-        y = client.sample_uniform('y', 20, 30)
-        return func(x, y)
+        y = client.sample_loguniform('y', 20, 30)
+        z = client.sample_categorical('z', (-1.0, 1.0))
+        return func(x, y, z)
 
 
 def check_params(params):
     # type: (Dict[str, Any]) -> None
-    assert sorted(params.keys()) == ['x', 'y']
+    assert sorted(params.keys()) == ['x', 'y', 'z']
 
 
 def check_value(value):
     # type: (float) -> None
     assert isinstance(value, float)
-    assert 0.0 <= value <= 12.0 ** 2 + 5.0 ** 2
+    assert -1.0 <= value <= 12.0 ** 2 + 5.0 ** 2 + 1.0
 
 
 def check_trial(trial):
