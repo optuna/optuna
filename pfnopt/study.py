@@ -11,7 +11,7 @@ from typing import Optional  # NOQA
 from pfnopt import client as client_module
 from pfnopt import pruners
 from pfnopt import samplers
-from pfnopt import storage as storage_module
+from pfnopt import storages as storage_module
 from pfnopt import trial  # NOQA
 
 ObjectiveFuncType = Callable[[client_module.BaseClient], float]

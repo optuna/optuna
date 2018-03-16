@@ -5,7 +5,7 @@ from cliff.command import Command
 from cliff.commandmanager import CommandManager
 import sys
 
-from pfnopt.storage import RDBStorage
+from pfnopt.storages import RDBStorage
 from pfnopt.study import create_new_study
 from pfnopt.version import __version__
 

@@ -7,7 +7,7 @@ from pfnopt import distributions  # NOQA
 from pfnopt.samplers import _hyperopt
 from pfnopt.samplers import base
 from pfnopt.samplers import random
-from pfnopt.storage.base import BaseStorage  # NOQA
+from pfnopt.storages.base import BaseStorage  # NOQA
 
 
 class TPESampler(base.BaseSampler):

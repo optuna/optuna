@@ -2,7 +2,7 @@ import re
 import subprocess
 import tempfile
 
-from pfnopt.storage import RDBStorage
+from pfnopt.storages import RDBStorage
 
 
 def test_mkstudy_command():

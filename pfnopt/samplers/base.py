@@ -2,7 +2,7 @@ import abc
 import six
 
 from pfnopt.distributions import BaseDistribution  # NOQA
-from pfnopt.storage.base import BaseStorage  # NOQA
+from pfnopt.storages.base import BaseStorage  # NOQA
 
 
 @six.add_metaclass(abc.ABCMeta)

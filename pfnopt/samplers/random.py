@@ -3,7 +3,7 @@ from typing import Optional  # NOQA
 
 from pfnopt import distributions
 from pfnopt.samplers.base import BaseSampler
-from pfnopt.storage.base import BaseStorage  # NOQA
+from pfnopt.storages.base import BaseStorage  # NOQA
 
 
 class RandomSampler(BaseSampler):

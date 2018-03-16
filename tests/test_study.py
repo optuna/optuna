@@ -10,8 +10,8 @@ from typing import Optional  # NOQA
 
 import pfnopt
 from pfnopt import client as client_module  # NOQA
-from pfnopt.storage import InMemoryStorage
-from pfnopt.storage import RDBStorage
+from pfnopt.storages import InMemoryStorage
+from pfnopt.storages import RDBStorage
 from pfnopt import trial as trial_module
 
 
