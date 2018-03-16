@@ -1,11 +1,9 @@
 import abc
-import copy
 import numpy as np
 import six
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
-from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 
 from pfnopt import distributions  # NOQA
@@ -87,12 +85,12 @@ class BaseStorage(object):
     def get_best_trial(self, study_id):
         # type: (int) -> trial.Trial
         all_trials = self.get_all_trials(study_id)
+        all_trials = [t for t in all_trials if t.state is trial.State.COMPLETE]
 
-        best_trial = min(
-            (t for t in all_trials if t.state is trial.State.COMPLETE),
-            key=lambda t: t.value)
+        if len(all_trials) == 0:
+            raise ValueError('No trials are completed yet')
 
-        return copy.deepcopy(best_trial)
+        return min(all_trials, key=lambda t: t.value)
 
     def get_trial_params(self, trial_id):
         # type: (int) -> Dict[str, Any]

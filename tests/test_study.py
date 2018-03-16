@@ -64,16 +64,25 @@ def check_trial(trial):
 
 def check_study(study):
     # type: (pfnopt.Study) -> None
-    check_params(study.best_params)
-    check_value(study.best_value)
-    check_trial(study.best_trial)
-
     for trial in study.trials:
         check_trial(trial)
 
+    complete_trials = [t for t in study.trials if t.state == trial_module.State.COMPLETE]
+    if len(complete_trials) == 0:
+        with pytest.raises(ValueError):
+            study.best_params
+        with pytest.raises(ValueError):
+            study.best_value
+        with pytest.raises(ValueError):
+            study.best_trial
+    else:
+        check_params(study.best_params)
+        check_value(study.best_value)
+        check_trial(study.best_trial)
+
 
 @pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
-    (1, 2, 50),  # n_trials
+    (0, 1, 2, 50),  # n_trials
     (1, 2, 10, -1),  # n_jobs
     ((InMemoryStorage, {}), (RDBStorage, {'url': 'sqlite:///:memory:'})),  # storage_class_kwargs
 ))
@@ -97,7 +106,7 @@ def test_minimize(n_trials, n_jobs, storage_class_kwargs):
 
 
 @pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
-    (1, 2, 50, None),  # n_trials
+    (0, 1, 2, 50, None),  # n_trials
     (1, 2, 10, -1),  # n_jobs
     ((InMemoryStorage, {}), (RDBStorage, {'url': 'sqlite:///:memory:'})),  # storage_class_kwargs
 ))
