@@ -1,13 +1,16 @@
 from collections import defaultdict
+
 from sqlalchemy import Column
 from sqlalchemy.engine import create_engine
 from sqlalchemy import Enum
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
+from sqlalchemy import UniqueConstraint
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
@@ -30,6 +33,7 @@ class Study(Base):
 
 class StudyParam(Base):
     __tablename__ = 'study_params'
+    __table_args__ = (UniqueConstraint('study_id', 'param_name'), {})  # type: Any
     study_param_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     param_name = Column(String(255))
@@ -51,6 +55,7 @@ class Trial(Base):
 
 class TrialParam(Base):
     __tablename__ = 'trial_params'
+    __table_args__ = (UniqueConstraint('trial_id', 'study_param_id'), {})  # type: Any
     trial_param_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
     study_param_id = Column(Integer, ForeignKey('study_params.study_param_id'))
@@ -62,6 +67,7 @@ class TrialParam(Base):
 
 class TrialValue(Base):
     __tablename__ = 'trial_values'
+    __table_args__ = (UniqueConstraint('trial_id', 'step'), {})  # type: Any
     trial_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
     step = Column(Integer)
@@ -133,7 +139,13 @@ class RDBStorage(BaseStorage):
         study_param.param_name = param_name
         study_param.distribution_json = distributions.distribution_to_json(distribution)
         self.session.add(study_param)
-        self.session.commit()
+
+        try:
+            self.session.commit()
+        except IntegrityError:
+            # This happens due to a known race condition.
+            # Another process/thread might have committed a record with the same unique key.
+            self.session.rollback()
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
@@ -183,7 +195,12 @@ class RDBStorage(BaseStorage):
         trial_param.param_value = param_value
         self.session.add(trial_param)
 
-        self.session.commit()
+        try:
+            self.session.commit()
+        except IntegrityError:
+            # This happens due to a known race condition.
+            # Another process/thread might have committed a record with the same unique key.
+            self.session.rollback()
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
@@ -211,7 +228,13 @@ class RDBStorage(BaseStorage):
         trial_value.step = step
         trial_value.value = intermediate_value
         self.session.add(trial_value)
-        self.session.commit()
+
+        try:
+            self.session.commit()
+        except IntegrityError:
+            # This happens due to a known race condition.
+            # Another process/thread might have committed a record with the same unique key.
+            self.session.rollback()
 
     def set_trial_system_attrs(self, trial_id, system_attrs):
         # type: (int, trial_module.SystemAttributes) -> None
