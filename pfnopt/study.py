@@ -140,7 +140,7 @@ def minimize(
         study=None,  # type: Study
 ):
     # type: (...) -> Study
-
+    storage = storage or storages.InMemoryStorage()
     study = study or create_new_study(storage=storage, sampler=sampler, pruner=pruner)
     study.run(func, n_trials, timeout_seconds, n_jobs)
     return study
