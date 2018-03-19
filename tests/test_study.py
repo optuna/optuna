@@ -106,7 +106,7 @@ def test_minimize(n_trials, n_jobs, storage_class_kwargs):
     assert f.n_calls == len(study.trials) == n_trials
     check_study(study)
 
-    storage.close()
+    study.storage.close()
 
 
 @pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
@@ -149,4 +149,4 @@ def test_minimize_timeout(n_trials, n_jobs, storage_class_kwargs):
 
     check_study(study)
 
-    storage.close()
+    study.storage.close()
