@@ -84,7 +84,11 @@ def check_study(study):
 @pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
     (0, 1, 2, 50),  # n_trials
     (1, 2, 10, -1),  # n_jobs
-    (None, (InMemoryStorage, {}), (RDBStorage, {'url': 'sqlite:///:memory:'})),  # storage_class_kwargs
+    (
+            None,
+            (InMemoryStorage, {}),
+            (RDBStorage, {'url': 'sqlite:///:memory:'})
+    ),  # storage_class_kwargs
 ))
 def test_minimize(n_trials, n_jobs, storage_class_kwargs):
     # type: (int, int, Tuple[Callable, Dict[str, Any]])-> None
@@ -112,7 +116,11 @@ def test_minimize(n_trials, n_jobs, storage_class_kwargs):
 @pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
     (0, 1, 2, 50, None),  # n_trials
     (1, 2, 10, -1),  # n_jobs
-    (None, (InMemoryStorage, {}), (RDBStorage, {'url': 'sqlite:///:memory:'})),  # storage_class_kwargs
+    (
+            None,
+            (InMemoryStorage, {}),
+            (RDBStorage, {'url': 'sqlite:///:memory:'})
+    ),  # storage_class_kwargs
 ))
 def test_minimize_timeout(n_trials, n_jobs, storage_class_kwargs):
     # type: (int, int, Tuple[Callable, Dict[str, Any]]) -> None
