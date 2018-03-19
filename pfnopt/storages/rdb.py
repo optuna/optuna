@@ -16,7 +16,7 @@ from typing import List  # NOQA
 import uuid
 
 from pfnopt import distributions
-from pfnopt.storage.base import BaseStorage
+from pfnopt.storages.base import BaseStorage
 import pfnopt.trial as trial_module
 from pfnopt.trial import State
 

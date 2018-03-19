@@ -11,13 +11,13 @@ from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
-from pfnopt.storage.rdb import Base
-from pfnopt.storage.rdb import RDBStorage
-from pfnopt.storage.rdb import Study
-from pfnopt.storage.rdb import StudyParam
-from pfnopt.storage.rdb import Trial
-from pfnopt.storage.rdb import TrialParam
-from pfnopt.storage.rdb import TrialValue
+from pfnopt.storages.rdb import Base
+from pfnopt.storages.rdb import RDBStorage
+from pfnopt.storages.rdb import Study
+from pfnopt.storages.rdb import StudyParam
+from pfnopt.storages.rdb import Trial
+from pfnopt.storages.rdb import TrialParam
+from pfnopt.storages.rdb import TrialValue
 import pfnopt.trial as trial_module
 
 

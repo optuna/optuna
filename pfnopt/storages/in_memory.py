@@ -7,7 +7,7 @@ from typing import List  # NOQA
 from pfnopt import distributions  # NOQA
 from pfnopt import trial
 
-from pfnopt.storage import base
+from pfnopt.storages import base
 
 
 IN_MEMORY_STORAGE_STUDY_ID = 0
