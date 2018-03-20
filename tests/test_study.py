@@ -15,8 +15,11 @@ from pfnopt.storages import RDBStorage
 from pfnopt import trial as trial_module
 
 
-def func(x, y, z):
-    # type: (float, float, float) -> float
+def func(client):
+    # type: (client_module.BaseClient) -> float
+    x = client.sample_uniform('x', -10, 10)
+    y = client.sample_loguniform('y', 20, 30)
+    z = client.sample_categorical('z', (-1.0, 1.0))
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
@@ -37,10 +40,7 @@ class Func(object):
         if self.sleep_sec is not None:
             time.sleep(self.sleep_sec)
 
-        x = client.sample_uniform('x', -10, 10)
-        y = client.sample_loguniform('y', 20, 30)
-        z = client.sample_categorical('z', (-1.0, 1.0))
-        return func(x, y, z)
+        return func(client)
 
 
 def check_params(params):
@@ -82,26 +82,25 @@ def check_study(study):
 
 
 def test_minimize_trivial_in_memory_new():
-    study = pfnopt.minimize(Func(), n_trials=10)
+    study = pfnopt.minimize(func, n_trials=10)
     check_study(study)
 
 
 def test_minimize_trivial_in_memory_resume():
-    f = Func()
-    study = pfnopt.minimize(f, n_trials=10)
-    pfnopt.minimize(f, n_trials=10, study=study)
+    study = pfnopt.minimize(func, n_trials=10)
+    pfnopt.minimize(func, n_trials=10, study=study)
     check_study(study)
 
 
 def test_minimize_trivial_rdb_new():
     # We prohibit automatic new-study creation when storage is specified.
     with pytest.raises(ValueError):
-        pfnopt.minimize(Func(), n_trials=10, storage='sqlite:///:memory:')
+        pfnopt.minimize(func, n_trials=10, storage='sqlite:///:memory:')
 
 
 def test_minimize_trivial_rdb_resume_study():
     study = pfnopt.create_study('sqlite:///:memory:')
-    pfnopt.minimize(Func(), n_trials=10, study=study)
+    pfnopt.minimize(func, n_trials=10, study=study)
     check_study(study)
 
 
@@ -110,7 +109,7 @@ def test_minimize_trivial_rdb_resume_uuid():
         db_url = 'sqlite:///{}'.format(tf.name)
         study = pfnopt.create_study(db_url)
         study_uuid = study.study_uuid
-        study = pfnopt.minimize(Func(), n_trials=10, storage=db_url, study_uuid=study_uuid)
+        study = pfnopt.minimize(func, n_trials=10, storage=db_url, study_uuid=study_uuid)
         check_study(study)
 
 
