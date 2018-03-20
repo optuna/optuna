@@ -84,13 +84,21 @@ def check_study(study):
 @pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
     (0, 1, 2, 50),  # n_trials
     (1, 2, 10, -1),  # n_jobs
-    ((InMemoryStorage, {}), (RDBStorage, {'url': 'sqlite:///:memory:'})),  # storage_class_kwargs
+    (
+        None,
+        (InMemoryStorage, {}),
+        (RDBStorage, {'url': 'sqlite:///:memory:'})
+    ),  # storage_class_kwargs
 ))
 def test_minimize(n_trials, n_jobs, storage_class_kwargs):
     # type: (int, int, Tuple[Callable, Dict[str, Any]])-> None
 
     f = Func()
-    storage = storage_class_kwargs[0](**storage_class_kwargs[1])
+
+    if storage_class_kwargs is None:
+        storage = None
+    else:
+        storage = storage_class_kwargs[0](**storage_class_kwargs[1])
 
     if isinstance(storage, RDBStorage) and n_jobs != 1:
         with pytest.raises(TypeError):
@@ -102,13 +110,17 @@ def test_minimize(n_trials, n_jobs, storage_class_kwargs):
     assert f.n_calls == len(study.trials) == n_trials
     check_study(study)
 
-    storage.close()
+    study.storage.close()
 
 
 @pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
     (0, 1, 2, 50, None),  # n_trials
     (1, 2, 10, -1),  # n_jobs
-    ((InMemoryStorage, {}), (RDBStorage, {'url': 'sqlite:///:memory:'})),  # storage_class_kwargs
+    (
+        None,
+        (InMemoryStorage, {}),
+        (RDBStorage, {'url': 'sqlite:///:memory:'})
+    ),  # storage_class_kwargs
 ))
 def test_minimize_timeout(n_trials, n_jobs, storage_class_kwargs):
     # type: (int, int, Tuple[Callable, Dict[str, Any]]) -> None
@@ -117,7 +129,11 @@ def test_minimize_timeout(n_trials, n_jobs, storage_class_kwargs):
     timeout_sec = 1.0
 
     f = Func(sleep_sec=sleep_sec)
-    storage = storage_class_kwargs[0](**storage_class_kwargs[1])
+
+    if storage_class_kwargs is None:
+        storage = None
+    else:
+        storage = storage_class_kwargs[0](**storage_class_kwargs[1])
 
     if isinstance(storage, RDBStorage) and n_jobs != 1:
         with pytest.raises(TypeError):
@@ -141,4 +157,4 @@ def test_minimize_timeout(n_trials, n_jobs, storage_class_kwargs):
 
     check_study(study)
 
-    storage.close()
+    study.storage.close()
