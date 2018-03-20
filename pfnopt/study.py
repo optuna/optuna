@@ -7,6 +7,7 @@ from typing import Dict  # NOQA
 from typing import Iterable  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
+from typing import Union  # NOQA
 
 from pfnopt import client as client_module
 from pfnopt import pruners
@@ -142,14 +143,40 @@ def minimize(
         n_trials=None,  # type: Optional[int]
         timeout_seconds=None,  # type: Optional[float]
         n_jobs=1,  # type: int
-        storage=None,  # type: storages.BaseStorage
+        storage=None,  # type: Union[None, str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
+        study_uuid=None,  # type: str
         study=None,  # type: Study
 ):
     # type: (...) -> Study
 
-    study = study or create_new_study(storage=storage, sampler=sampler, pruner=pruner)
+    if study is not None:
+        # We continue the given study
+        if storage is not None:
+            raise ValueError(
+                'Do not specify both study and storage at the same time. '
+                'When a study is given, its associated storage will be used.')
+        if sampler is not None:
+            raise ValueError(
+                'Do not specify both study and sampler at the same time'
+                'When a study is given, its associated sampler will be used.')
+        if pruner is not None:
+            raise ValueError(
+                'Do not specify both study and pruner at the same time'
+                'When a study is given, its associated pruner will be used.')
+    elif storage is not None:
+        # We connect to an existing study in the storage
+        if study_uuid is None:
+            raise ValueError(
+                'When specifying study, please also specify study_uuid to continue a study.'
+                'If you want to start a new study, please make a new one using create_new_study.')
+        storage = storages.get_storage(storage)
+        study = Study(study_uuid, storage, sampler, pruner)
+    else:
+        # We start a new study with a new in-memory storage
+        study = create_new_study(sampler=sampler, pruner=pruner)
+
     study.run(func, n_trials, timeout_seconds, n_jobs)
     return study
 
