@@ -129,6 +129,14 @@ class Study(object):
         pool.terminate()
 
 
+def create_new_study(storage=None, sampler=None, pruner=None):
+    # type: (storages.BaseStorage, samplers.BaseSampler, pruners.BasePruner) -> Study
+
+    storage = storage or storages.InMemoryStorage()
+    study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
+    return Study(study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner)
+
+
 def minimize(
         func,  # type: ObjectiveFuncType
         n_trials=None,  # type: Optional[int]
@@ -140,7 +148,7 @@ def minimize(
         study=None,  # type: Study
 ):
     # type: (...) -> Study
-    storage = storage or storages.InMemoryStorage()
+
     study = study or create_new_study(storage=storage, sampler=sampler, pruner=pruner)
     study.run(func, n_trials, timeout_seconds, n_jobs)
     return study
@@ -149,9 +157,3 @@ def minimize(
 # TODO(akiba): implement me
 def maximize():
     raise NotImplementedError
-
-
-def create_new_study(storage, sampler=None, pruner=None):
-    # type: (storages.BaseStorage, samplers.BaseSampler, pruners.BasePruner) -> Study
-    study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
-    return Study(study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner)
