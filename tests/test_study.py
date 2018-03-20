@@ -97,16 +97,19 @@ def test_minimize(n_trials, n_jobs, storage_class_kwargs):
 
     if storage_class_kwargs is None:
         storage = None
+        study = None
     else:
         storage = storage_class_kwargs[0](**storage_class_kwargs[1])
+        study = pfnopt.create_study(storage=storage)
+        storage = None
 
-    if isinstance(storage, RDBStorage) and n_jobs != 1:
+    if study and isinstance(study.storage, RDBStorage) and n_jobs != 1:
         with pytest.raises(TypeError):
-            pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, storage=storage)
-        storage.close()
+            pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, study=study)
+        study.storage.close()
         return
 
-    study = pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, storage=storage)
+    study = pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, study=study)
     assert f.n_calls == len(study.trials) == n_trials
     check_study(study)
 
@@ -132,18 +135,23 @@ def test_minimize_timeout(n_trials, n_jobs, storage_class_kwargs):
 
     if storage_class_kwargs is None:
         storage = None
+        study = None
     else:
         storage = storage_class_kwargs[0](**storage_class_kwargs[1])
+        study = pfnopt.create_study(storage=storage)
+        storage = None
 
-    if isinstance(storage, RDBStorage) and n_jobs != 1:
+    if study and isinstance(study.storage, RDBStorage) and n_jobs != 1:
         with pytest.raises(TypeError):
             pfnopt.minimize(
-                f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, timeout_seconds=timeout_sec)
-        storage.close()
+                f, n_trials=n_trials, n_jobs=n_jobs, timeout_seconds=timeout_sec,
+                storage=storage, study=study)
+        study.storage.close()
         return
 
     study = pfnopt.minimize(
-        f, n_trials=n_trials, n_jobs=n_jobs, storage=storage, timeout_seconds=timeout_sec)
+        f, n_trials=n_trials, n_jobs=n_jobs, timeout_seconds=timeout_sec,
+        storage=storage, study=study)
 
     n_jobs_actual = n_jobs if n_jobs != -1 else multiprocessing.cpu_count()
     assert len(study.trials) - n_jobs_actual <= f.n_calls <= len(study.trials)
