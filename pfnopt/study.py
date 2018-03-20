@@ -163,17 +163,17 @@ def minimize(
                 'When a study is given, its associated storage will be used.')
         if sampler is not None:
             raise ValueError(
-                'Do not specify both study and sampler at the same time'
+                'Do not specify both study and sampler at the same time. '
                 'When a study is given, its associated sampler will be used.')
         if pruner is not None:
             raise ValueError(
-                'Do not specify both study and pruner at the same time'
+                'Do not specify both study and pruner at the same time. '
                 'When a study is given, its associated pruner will be used.')
     elif storage is not None:
         # We connect to an existing study in the storage
         if study_uuid is None:
             raise ValueError(
-                'When specifying storage, please also specify study_uuid to continue a study.'
+                'When specifying storage, please also specify study_uuid to continue a study. '
                 'If you want to start a new study, please make a new one using create_study.')
         storage = storages.get_storage(storage)
         study = Study(study_uuid, storage, sampler, pruner)
