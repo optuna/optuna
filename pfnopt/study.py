@@ -23,18 +23,18 @@ class Study(object):
     def __init__(
             self,
             study_uuid,  # type: str
-            storage,  # type: storages.BaseStorage
+            storage,  # type: Union[None, str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
     ):
         # type: (...) -> None
 
         self.study_uuid = study_uuid
-        self.storage = storage
+        self.storage = storages.get_storage(storage)
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        self.study_id = storage.get_study_id_from_uuid(study_uuid)
+        self.study_id = self.storage.get_study_id_from_uuid(study_uuid)
 
     @property
     def best_params(self):
