@@ -140,7 +140,7 @@ def test_minimize_parallel(n_trials, n_jobs, storage):
 @pytest.mark.parametrize('n_trials, n_jobs, storage', itertools.product(
     (0, 1, 2, 50, None),  # n_trials
     (1, 2, 10, -1),  # n_jobs
-    (None, 'sqlite:///:memory:'),  # storage_class_kwargs
+    (None, 'sqlite:///:memory:'),  # storage
 ))
 def test_minimize_parallel_timeout(n_trials, n_jobs, storage):
     # type: (int, int, Optional[str]) -> None
