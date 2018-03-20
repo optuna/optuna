@@ -130,7 +130,7 @@ class Study(object):
         pool.terminate()
 
 
-def create_new_study(storage=None, sampler=None, pruner=None):
+def create_study(storage=None, sampler=None, pruner=None):
     # type: (storages.BaseStorage, samplers.BaseSampler, pruners.BasePruner) -> Study
 
     storage = storage or storages.InMemoryStorage()
@@ -170,12 +170,12 @@ def minimize(
         if study_uuid is None:
             raise ValueError(
                 'When specifying storage, please also specify study_uuid to continue a study.'
-                'If you want to start a new study, please make a new one using create_new_study.')
+                'If you want to start a new study, please make a new one using create_study.')
         storage = storages.get_storage(storage)
         study = Study(study_uuid, storage, sampler, pruner)
     else:
         # We start a new study with a new in-memory storage
-        study = create_new_study(sampler=sampler, pruner=pruner)
+        study = create_study(sampler=sampler, pruner=pruner)
 
     study.run(func, n_trials, timeout_seconds, n_jobs)
     return study
