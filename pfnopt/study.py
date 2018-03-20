@@ -169,7 +169,7 @@ def minimize(
         # We connect to an existing study in the storage
         if study_uuid is None:
             raise ValueError(
-                'When specifying study, please also specify study_uuid to continue a study.'
+                'When specifying storage, please also specify study_uuid to continue a study.'
                 'If you want to start a new study, please make a new one using create_new_study.')
         storage = storages.get_storage(storage)
         study = Study(study_uuid, storage, sampler, pruner)
