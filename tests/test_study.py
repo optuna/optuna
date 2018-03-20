@@ -1,6 +1,7 @@
 import itertools
 import multiprocessing
 import pytest
+import tempfile
 import threading
 import time
 from typing import Any, Tuple  # NOQA
@@ -81,6 +82,39 @@ def check_study(study):
         check_trial(study.best_trial)
 
 
+def test_minimize_trivial_in_memory_new():
+    study = pfnopt.minimize(Func(), n_trials=10)
+    check_study(study)
+
+
+def test_minimize_trivial_in_memory_resume():
+    f = Func()
+    study = pfnopt.minimize(f, n_trials=10)
+    pfnopt.minimize(f, n_trials=10, study=study)
+    check_study(study)
+
+
+def test_minimize_trivial_rdb_new():
+    # We prohibit automatic new-study creation when storage is specified.
+    with pytest.raises(ValueError):
+        pfnopt.minimize(Func(), n_trials=10, storage='sqlite:///:memory:')
+
+
+def test_minimize_trivial_rdb_resume_study():
+    study = pfnopt.create_study('sqlite:///:memory:')
+    pfnopt.minimize(Func(), n_trials=10, study=study)
+    check_study(study)
+
+
+def test_minimize_trivial_rdb_resume_uuid():
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = 'sqlite:///{}'.format(tf.name)
+        study = pfnopt.create_study(db_url)
+        study_uuid = study.study_uuid
+        study = pfnopt.minimize(Func(), n_trials=10, storage=db_url, study_uuid=study_uuid)
+        check_study(study)
+
+
 @pytest.mark.parametrize('n_trials, n_jobs, storage_class_kwargs', itertools.product(
     (0, 1, 2, 50),  # n_trials
     (1, 2, 10, -1),  # n_jobs
@@ -90,7 +124,7 @@ def check_study(study):
         (RDBStorage, {'url': 'sqlite:///:memory:'})
     ),  # storage_class_kwargs
 ))
-def test_minimize(n_trials, n_jobs, storage_class_kwargs):
+def test_minimize_parallel(n_trials, n_jobs, storage_class_kwargs):
     # type: (int, int, Tuple[Callable, Dict[str, Any]])-> None
 
     f = Func()
@@ -125,7 +159,7 @@ def test_minimize(n_trials, n_jobs, storage_class_kwargs):
         (RDBStorage, {'url': 'sqlite:///:memory:'})
     ),  # storage_class_kwargs
 ))
-def test_minimize_timeout(n_trials, n_jobs, storage_class_kwargs):
+def test_minimize_parallel_timeout(n_trials, n_jobs, storage_class_kwargs):
     # type: (int, int, Tuple[Callable, Dict[str, Any]]) -> None
 
     sleep_sec = 0.1
