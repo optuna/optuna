@@ -6,7 +6,7 @@ from cliff.commandmanager import CommandManager
 import sys
 
 from pfnopt.storages import RDBStorage
-from pfnopt.study import create_new_study
+from pfnopt.study import create_study
 from pfnopt.version import __version__
 
 
@@ -35,7 +35,7 @@ class MakeStudy(Command):
         # type: (Namespace) -> None
 
         storage = RDBStorage(parsed_args.url)
-        study_uuid = create_new_study(storage).study_uuid
+        study_uuid = create_study(storage).study_uuid
         print(study_uuid)
 
 
