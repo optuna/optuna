@@ -180,9 +180,9 @@ def test_study_pickle():
     study_1 = pfnopt.minimize(func, n_trials=10)
     check_study(study_1)
     assert len(study_1.trials) == 10
-    dumped = pickle.dumps(study_1)
+    dumped_bytes = pickle.dumps(study_1)
 
-    study_2 = pickle.loads(dumped)
+    study_2 = pickle.loads(dumped_bytes)
     check_study(study_2)
     assert len(study_2.trials) == 10
 
