@@ -1,11 +1,11 @@
 import itertools
 import multiprocessing
+import pickle
 import pytest
 import tempfile
 import threading
 import time
-from typing import Any, Tuple  # NOQA
-from typing import Callable  # NOQA
+from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 
@@ -174,3 +174,18 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage):
     check_study(study)
 
     study.storage.close()
+
+
+def test_study_pickle():
+    study_1 = pfnopt.minimize(func, n_trials=10)
+    check_study(study_1)
+    assert len(study_1.trials) == 10
+    dumped_bytes = pickle.dumps(study_1)
+
+    study_2 = pickle.loads(dumped_bytes)
+    check_study(study_2)
+    assert len(study_2.trials) == 10
+
+    pfnopt.minimize(func, n_trials=10, study=study_2)
+    check_study(study_2)
+    assert len(study_2.trials) == 20

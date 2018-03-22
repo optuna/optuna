@@ -24,6 +24,17 @@ class InMemoryStorage(base.BaseStorage):
 
         self._lock = threading.Lock()
 
+    def __getstate__(self):
+        # type: () -> Dict[Any, Any]
+        state = self.__dict__.copy()
+        del state['_lock']
+        return state
+
+    def __setstate__(self, state):
+        # type: (Dict[Any, Any]) -> None
+        self.__dict__.update(state)
+        self._lock = threading.Lock()
+
     def create_new_study_id(self):
         # type: () -> int
 
