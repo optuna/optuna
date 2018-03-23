@@ -33,7 +33,7 @@ def _configure_library_root_logger():
 
     with _lock:
         if _default_handler:
-            # We have already configured our library root logger.
+            # This library has already configured our library root logger.
             return
         _default_handler = colorlog.StreamHandler()
         _default_handler.setFormatter(colorlog.ColoredFormatter(
@@ -46,7 +46,7 @@ def _configure_library_root_logger():
             # configure loggers by ourselves to prevent double logging, etc.
             return
 
-        # Apply our default configuration to our library root logger
+        # Apply our default configuration to our library root logger.
         library_root_logger = _get_library_root_logger()
         library_root_logger.addHandler(_default_handler)
         library_root_logger.setLevel(logging.INFO)
