@@ -25,7 +25,8 @@ setup(
     author='Takuya Akiba',
     author_email='akiba@preferred.jp',
     packages=find_packages(),
-    install_requires=['sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'enum34', 'cliff', 'colorlog'],
+    install_requires=[
+        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'enum34', 'cliff', 'colorlog'],
     tests_require=tests_require,
     extras_require={'testing': tests_require},
     entry_points={
