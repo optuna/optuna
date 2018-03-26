@@ -16,9 +16,12 @@ from typing import List  # NOQA
 import uuid
 
 from pfnopt import distributions
+from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
 import pfnopt.trial as trial_module
 from pfnopt.trial import State
+
+logger = logging.get_logger(__name__)
 
 Base = declarative_base()  # type: Any
 Session = orm.sessionmaker()
@@ -141,9 +144,10 @@ class RDBStorage(BaseStorage):
 
         try:
             self.session.commit()
-        except IntegrityError:
-            # This happens due to a known race condition.
-            # Another process/thread might have committed a record with the same unique key.
+        except IntegrityError as e:
+            logger.debug(
+                'Caught {}. This happens due to a known race condition. Another process/thread '
+                'might have committed a record with the same unique key.'.format(repr(e)))
             self.session.rollback()
 
     def create_new_trial_id(self, study_id):
@@ -196,9 +200,10 @@ class RDBStorage(BaseStorage):
 
         try:
             self.session.commit()
-        except IntegrityError:
-            # This happens due to a known race condition.
-            # Another process/thread might have committed a record with the same unique key.
+        except IntegrityError as e:
+            logger.debug(
+                'Caught {}. This happens due to a known race condition. Another process/thread '
+                'might have committed a record with the same unique key.'.format(repr(e)))
             self.session.rollback()
 
     def set_trial_value(self, trial_id, value):
@@ -230,9 +235,10 @@ class RDBStorage(BaseStorage):
 
         try:
             self.session.commit()
-        except IntegrityError:
-            # This happens due to a known race condition.
-            # Another process/thread might have committed a record with the same unique key.
+        except IntegrityError as e:
+            logger.debug(
+                'Caught {}. This happens due to a known race condition. Another process/thread '
+                'might have committed a record with the same unique key.'.format(repr(e)))
             self.session.rollback()
 
     def set_trial_system_attrs(self, trial_id, system_attrs):
