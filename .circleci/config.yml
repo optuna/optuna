@@ -2,12 +2,26 @@ version: 2
 
 workflows:
   version: 2
-  build:
+  commit-build:
     jobs:
       - build
       - build-python27
       - build-python34
       - build-python35
+  daily-build:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - build
+      - build-python27
+      - build-python34
+      - build-python35
+      - run-examples
 
 jobs:
   build:
@@ -60,3 +74,20 @@ jobs:
       - image: circleci/python:3.5
     steps:
       [checkout, run: *install, run: *tests]
+
+  run-examples:
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      - checkout
+
+      - run: *install
+
+      - run:
+          name: run-examples
+          command: |
+            . venv/bin/activate
+            for file in `find examples -name '*.py'`
+            do
+               python $file
+            done
