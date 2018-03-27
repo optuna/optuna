@@ -10,18 +10,6 @@ from pfnopt.study import create_study
 from pfnopt.version import __version__
 
 
-class PFNOptApp(App):
-
-    def __init__(self):
-        # type: () -> None
-
-        super(PFNOptApp, self).__init__(
-            description='',
-            version=__version__,
-            command_manager=CommandManager('pfnopt.command')
-        )
-
-
 class MakeStudy(Command):
 
     def get_parser(self, prog_name):
@@ -37,6 +25,26 @@ class MakeStudy(Command):
         storage = RDBStorage(parsed_args.url)
         study_uuid = create_study(storage).study_uuid
         print(study_uuid)
+
+
+_COMMANDS = {
+    'mkstudy': MakeStudy
+}
+
+
+class PFNOptApp(App):
+
+    def __init__(self):
+        # type: () -> None
+
+        command_manager = CommandManager('pfnopt.command')
+        super(PFNOptApp, self).__init__(
+            description='',
+            version=__version__,
+            command_manager=command_manager
+        )
+        for name, cls in _COMMANDS.items():
+            command_manager.add_command(name, cls)
 
 
 def main():
