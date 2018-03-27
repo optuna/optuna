@@ -36,7 +36,7 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_study_param_distribution(self, study_id, param_name, distribution):
+    def set_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
         raise NotImplementedError
 

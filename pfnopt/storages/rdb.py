@@ -33,17 +33,6 @@ class Study(Base):
     study_uuid = Column(String(255), unique=True)
 
 
-class StudyParam(Base):
-    __tablename__ = 'study_params'
-    __table_args__ = (UniqueConstraint('study_id', 'param_name'), {})  # type: Any
-    study_param_id = Column(Integer, primary_key=True)
-    study_id = Column(Integer, ForeignKey('studies.study_id'))
-    param_name = Column(String(255))
-    distribution_json = Column(String(255))
-
-    study = orm.relationship(Study)
-
-
 class Trial(Base):
     __tablename__ = 'trials'
     trial_id = Column(Integer, primary_key=True)
@@ -55,16 +44,29 @@ class Trial(Base):
     study = orm.relationship(Study)
 
 
+class ParamDistribution(Base):
+    __tablename__ = 'param_distributions'
+    __table_args__ = (UniqueConstraint('trial_id', 'param_name'), {})  # type: Any
+    param_distribution_id = Column(Integer, primary_key=True)
+    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
+    param_name = Column(String(255))
+    distribution_json = Column(String(255))
+
+    trial = orm.relationship(Trial)
+
+
+# todo(sano): merge ParamDistribution and TrialParam because they are 1-to-1 relationship
 class TrialParam(Base):
     __tablename__ = 'trial_params'
-    __table_args__ = (UniqueConstraint('trial_id', 'study_param_id'), {})  # type: Any
+    __table_args__ = (UniqueConstraint('trial_id', 'param_distribution_id'), {})  # type: Any
     trial_param_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
-    study_param_id = Column(Integer, ForeignKey('study_params.study_param_id'))
+    param_distribution_id = \
+        Column(Integer, ForeignKey('param_distributions.param_distribution_id'))
     param_value = Column(Float)
 
     trial = orm.relationship(Trial)
-    study_param = orm.relationship(StudyParam)
+    param_distribution = orm.relationship(ParamDistribution)
 
 
 class TrialValue(Base):
@@ -121,34 +123,29 @@ class RDBStorage(BaseStorage):
         else:
             return study.study_uuid
 
-    def set_study_param_distribution(self, study_id, param_name, distribution):
+    def set_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
 
-        # the following line is to check that the specified study_id exists in DB.
-        self.session.query(Study).filter(Study.study_id == study_id).one()
+        # the following line is to check that the specified trial_id exists in DB.
+        self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
-        # check if the StudyParam already exists
-        study_param = self.session.query(StudyParam). \
-            filter(StudyParam.study_id == study_id). \
-            filter(StudyParam.param_name == param_name).one_or_none()
-        if study_param is not None:
-            distribution_rdb = distributions.json_to_distribution(study_param.distribution_json)
+        # check if the ParamDistribution already exists
+        param_distribution = self.session.query(ParamDistribution). \
+            filter(ParamDistribution.trial_id == trial_id). \
+            filter(ParamDistribution.param_name == param_name).one_or_none()
+        if param_distribution is not None:
+            distribution_rdb = \
+                distributions.json_to_distribution(param_distribution.distribution_json)
             assert distribution_rdb == distribution
             return
 
-        study_param = StudyParam()
-        study_param.study_id = study_id
-        study_param.param_name = param_name
-        study_param.distribution_json = distributions.distribution_to_json(distribution)
-        self.session.add(study_param)
+        param_distribution = ParamDistribution()
+        param_distribution.trial_id = trial_id
+        param_distribution.param_name = param_name
+        param_distribution.distribution_json = distributions.distribution_to_json(distribution)
+        self.session.add(param_distribution)
 
-        try:
-            self.session.commit()
-        except IntegrityError as e:
-            logger.debug(
-                'Caught {}. This happens due to a known race condition. Another process/thread '
-                'might have committed a record with the same unique key.'.format(repr(e)))
-            self.session.rollback()
+        self.session.commit()
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
@@ -180,21 +177,21 @@ class RDBStorage(BaseStorage):
 
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
-        study_param = self.session.query(StudyParam). \
-            filter(StudyParam.study_id == trial.study_id). \
-            filter(StudyParam.param_name == param_name).one()
+        param_distribution = self.session.query(ParamDistribution). \
+            filter(ParamDistribution.trial_id == trial.study_id). \
+            filter(ParamDistribution.param_name == param_name).one()
 
         # check if the parameter already exists
         trial_param = self.session.query(TrialParam). \
             filter(TrialParam.trial_id == trial_id). \
-            filter(TrialParam.study_param.has(param_name=param_name)).one_or_none()
+            filter(TrialParam.param_distribution.has(param_name=param_name)).one_or_none()
         if trial_param is not None:
             assert trial_param.param_value == param_value
             return
 
         trial_param = TrialParam()
         trial_param.trial_id = trial_id
-        trial_param.study_param_id = study_param.study_param_id
+        trial_param.param_distribution_id = param_distribution.param_distribution_id
         trial_param.param_value = param_value
         self.session.add(trial_param)
 
@@ -292,10 +289,10 @@ class RDBStorage(BaseStorage):
             params_in_internal_repr = {}
             for param in id_to_trial_params[trial_id]:
                 distribution = \
-                    distributions.json_to_distribution(param.study_param.distribution_json)
-                params[param.study_param.param_name] = \
+                    distributions.json_to_distribution(param.param_distribution.distribution_json)
+                params[param.param_distribution.param_name] = \
                     distribution.to_external_repr(param.param_value)
-                params_in_internal_repr[param.study_param.param_name] = param.param_value
+                params_in_internal_repr[param.param_distribution.param_name] = param.param_value
 
             intermediate_values = {}
             for value in id_to_trial_intermediate_values[trial_id]:

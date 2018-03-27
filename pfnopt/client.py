@@ -83,8 +83,7 @@ class LocalClient(BaseClient):
         # TODO(Akiba): if already sampled, return the recorded value
         # TODO(Akiba): check that distribution is the same
 
-        self.storage.set_study_param_distribution(
-            self.study_id, name, distribution)
+        self.storage.set_param_distribution(self.study_id, name, distribution)
 
         param_value_in_internal_repr = self.study.sampler.sample(
             self.storage, self.study_id, name, distribution)
