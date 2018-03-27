@@ -12,7 +12,7 @@ from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
 from pfnopt.storages.rdb import Base
-from pfnopt.storages.rdb import ParamDistribution
+from pfnopt.storages.rdb import TrialParamDistribution
 from pfnopt.storages.rdb import RDBStorage
 from pfnopt.storages.rdb import Study
 from pfnopt.storages.rdb import Trial
@@ -87,20 +87,20 @@ class TestRDBStorage(unittest.TestCase):
         study_id = storage.create_new_study_id()
 
         trial_id = storage.create_new_trial_id(study_id)
-        storage.set_param_distribution(trial_id, 'x', self.example_distributions['x'])
-        storage.set_param_distribution(trial_id, 'y', self.example_distributions['y'])
+        storage.set_trial_param_distribution(trial_id, 'x', self.example_distributions['x'])
+        storage.set_trial_param_distribution(trial_id, 'y', self.example_distributions['y'])
 
         # test setting new name
-        result_1 = storage.session.query(ParamDistribution). \
-            filter(ParamDistribution.param_name == 'x').one()
+        result_1 = storage.session.query(TrialParamDistribution). \
+            filter(TrialParamDistribution.param_name == 'x').one()
         distribution_1 = json_to_distribution(result_1.distribution_json)
         assert result_1.trial_id == trial_id
         assert isinstance(distribution_1, UniformDistribution)
         assert distribution_1.low == self.example_distributions['x'].low
         assert distribution_1.high == self.example_distributions['x'].high
 
-        result_2 = storage.session.query(ParamDistribution). \
-            filter(ParamDistribution.param_name == 'y').one()
+        result_2 = storage.session.query(TrialParamDistribution). \
+            filter(TrialParamDistribution.param_name == 'y').one()
         distribution_2 = json_to_distribution(result_2.distribution_json)
         assert result_2.trial_id == trial_id
         assert isinstance(distribution_2, CategoricalDistribution)
@@ -109,10 +109,11 @@ class TestRDBStorage(unittest.TestCase):
         # test setting existing name with different distribution
         self.assertRaises(
             AssertionError,
-            lambda: storage.set_param_distribution(trial_id, 'x', self.example_distributions['y']))
+            lambda: storage.set_trial_param_distribution(
+                trial_id, 'x', self.example_distributions['y']))
 
         # test setting existing name with the same distribution
-        storage.set_param_distribution(trial_id, 'y', self.example_distributions['y'])
+        storage.set_trial_param_distribution(trial_id, 'y', self.example_distributions['y'])
 
     def test_create_new_trial_id(self):
         # type: () -> None
@@ -355,7 +356,7 @@ class TestRDBStorage(unittest.TestCase):
         # type: (RDBStorage, int, Dict[str, BaseDistribution]) -> None
 
         for k, v in distributions.items():
-            storage.set_param_distribution(trial_id, k, v)
+            storage.set_trial_param_distribution(trial_id, k, v)
 
     @staticmethod
     def create_test_storage():

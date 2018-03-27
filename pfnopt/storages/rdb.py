@@ -44,7 +44,7 @@ class Trial(Base):
     study = orm.relationship(Study)
 
 
-class ParamDistribution(Base):
+class TrialParamDistribution(Base):
     __tablename__ = 'param_distributions'
     __table_args__ = (UniqueConstraint('trial_id', 'param_name'), {})  # type: Any
     param_distribution_id = Column(Integer, primary_key=True)
@@ -66,7 +66,7 @@ class TrialParam(Base):
     param_value = Column(Float)
 
     trial = orm.relationship(Trial)
-    param_distribution = orm.relationship(ParamDistribution)
+    param_distribution = orm.relationship(TrialParamDistribution)
 
 
 class TrialValue(Base):
@@ -123,23 +123,23 @@ class RDBStorage(BaseStorage):
         else:
             return study.study_uuid
 
-    def set_param_distribution(self, trial_id, param_name, distribution):
+    def set_trial_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
 
         # the following line is to check that the specified trial_id exists in DB.
         self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         # check if the ParamDistribution already exists
-        param_distribution = self.session.query(ParamDistribution). \
-            filter(ParamDistribution.trial_id == trial_id). \
-            filter(ParamDistribution.param_name == param_name).one_or_none()
+        param_distribution = self.session.query(TrialParamDistribution). \
+            filter(TrialParamDistribution.trial_id == trial_id). \
+            filter(TrialParamDistribution.param_name == param_name).one_or_none()
         if param_distribution is not None:
             distribution_rdb = \
                 distributions.json_to_distribution(param_distribution.distribution_json)
             assert distribution_rdb == distribution
             return
 
-        param_distribution = ParamDistribution()
+        param_distribution = TrialParamDistribution()
         param_distribution.trial_id = trial_id
         param_distribution.param_name = param_name
         param_distribution.distribution_json = distributions.distribution_to_json(distribution)
@@ -177,9 +177,9 @@ class RDBStorage(BaseStorage):
 
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
-        param_distribution = self.session.query(ParamDistribution). \
-            filter(ParamDistribution.trial_id == trial.study_id). \
-            filter(ParamDistribution.param_name == param_name).one()
+        param_distribution = self.session.query(TrialParamDistribution). \
+            filter(TrialParamDistribution.trial_id == trial.study_id). \
+            filter(TrialParamDistribution.param_name == param_name).one()
 
         # check if the parameter already exists
         trial_param = self.session.query(TrialParam). \

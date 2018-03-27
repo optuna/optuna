@@ -74,7 +74,7 @@ class InMemoryStorage(base.BaseStorage):
             )
         return trial_id
 
-    def set_param_distribution(self, trial_id, param_name, distribution):
+    def set_trial_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
 
         with self._lock:
