@@ -17,6 +17,12 @@ _lock = threading.Lock()
 _default_handler = None  # type: logging.Handler
 
 
+def create_default_formatter():
+    # type: () -> colorlog.ColoredFormatter
+    return colorlog.ColoredFormatter(
+        '%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s')
+
+
 def _get_library_name():
     # type: () -> str
 
@@ -38,9 +44,8 @@ def _configure_library_root_logger():
         if _default_handler:
             # This library has already configured the library root logger.
             return
-        _default_handler = colorlog.StreamHandler()
-        _default_handler.setFormatter(colorlog.ColoredFormatter(
-            '%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s'))
+        _default_handler = logging.StreamHandler()
+        _default_handler.setFormatter(create_default_formatter())
 
         python_root_logger = logging.getLogger()
         if python_root_logger.handlers:
