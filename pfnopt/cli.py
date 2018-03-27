@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
 from cliff.app import App
