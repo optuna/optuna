@@ -21,8 +21,6 @@ from pfnopt.storages.base import BaseStorage
 import pfnopt.trial as trial_module
 from pfnopt.trial import State
 
-logger = logging.get_logger(__name__)
-
 Base = declarative_base()  # type: Any
 Session = orm.sessionmaker()
 
@@ -86,6 +84,7 @@ class RDBStorage(BaseStorage):
         self.engine = create_engine(url)
         self.session = Session(bind=self.engine)
         Base.metadata.create_all(self.engine)
+        self.logger = logging.get_logger(__name__)
 
     def create_new_study_id(self):
         # type: () -> int
@@ -145,7 +144,7 @@ class RDBStorage(BaseStorage):
         try:
             self.session.commit()
         except IntegrityError as e:
-            logger.debug(
+            self.logger.debug(
                 'Caught {}. This happens due to a known race condition. Another process/thread '
                 'might have committed a record with the same unique key.'.format(repr(e)))
             self.session.rollback()
@@ -201,7 +200,7 @@ class RDBStorage(BaseStorage):
         try:
             self.session.commit()
         except IntegrityError as e:
-            logger.debug(
+            self.logger.debug(
                 'Caught {}. This happens due to a known race condition. Another process/thread '
                 'might have committed a record with the same unique key.'.format(repr(e)))
             self.session.rollback()
@@ -236,7 +235,7 @@ class RDBStorage(BaseStorage):
         try:
             self.session.commit()
         except IntegrityError as e:
-            logger.debug(
+            self.logger.debug(
                 'Caught {}. This happens due to a known race condition. Another process/thread '
                 'might have committed a record with the same unique key.'.format(repr(e)))
             self.session.rollback()
