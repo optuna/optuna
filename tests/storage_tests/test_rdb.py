@@ -12,11 +12,11 @@ from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
 from pfnopt.storages.rdb import Base
-from pfnopt.storages.rdb import TrialParamDistribution
 from pfnopt.storages.rdb import RDBStorage
 from pfnopt.storages.rdb import Study
 from pfnopt.storages.rdb import Trial
 from pfnopt.storages.rdb import TrialParam
+from pfnopt.storages.rdb import TrialParamDistribution
 from pfnopt.storages.rdb import TrialValue
 import pfnopt.trial as trial_module
 
