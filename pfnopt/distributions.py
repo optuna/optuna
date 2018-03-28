@@ -77,14 +77,12 @@ def distribution_to_json(dist):
     return json.dumps({'name': dist.__class__.__name__, 'attributes': dist._asdict()})
 
 
-def check_distribution_compatibility(distribution_old, distribution_new):
+def check_distribution_compatibility(dist_old, dist_new):
     # type: (BaseDistribution, BaseDistribution) -> None
 
-    if distribution_old.__class__ != distribution_new.__class__:
+    if dist_old.__class__ != dist_new.__class__:
         raise ValueError('Cannot set different distribution kind to the same parameter name.')
 
-    if isinstance(distribution_old, CategoricalDistribution):
-        if isinstance(distribution_new, CategoricalDistribution):
-            if distribution_old.choices != distribution_new.choices:
-                raise ValueError(
-                    CategoricalDistribution.__name__ + 'does not support dynamic value range.')
+    if isinstance(dist_old, CategoricalDistribution) and dist_old.choices != dist_new.choices:
+        raise ValueError(
+            CategoricalDistribution.__name__ + ' does not support dynamic value space.')
