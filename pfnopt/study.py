@@ -10,6 +10,7 @@ from typing import Optional  # NOQA
 from typing import Union  # NOQA
 
 from pfnopt import client as client_module
+from pfnopt import logging
 from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storages
@@ -35,6 +36,7 @@ class Study(object):
         self.pruner = pruner or pruners.MedianPruner()
 
         self.study_id = self.storage.get_study_id_from_uuid(study_uuid)
+        self.logger = logging.get_logger(__name__)
 
     @property
     def best_params(self):
@@ -88,6 +90,7 @@ class Study(object):
             client = client_module.LocalClient(self, trial_id)
             result = func(client)
             client.complete(result)
+            self._log_completed_trial(trial_id, result)
 
     def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
@@ -105,6 +108,7 @@ class Study(object):
             client = client_module.LocalClient(self, trial_id)
             result = func(client)
             client.complete(result)
+            self._log_completed_trial(trial_id, result)
 
         self.start_datetime = datetime.datetime.now()
 
@@ -128,6 +132,12 @@ class Study(object):
                 break
 
         pool.terminate()
+
+    def _log_completed_trial(self, trial_id, value):
+        self.logger.info(
+            'Finished trial {} resulted in value: {}. '
+            'Current best value is {} with parameters: {}.'.format(
+                trial_id, value, self.best_value, self.best_params))
 
 
 def create_study(
