@@ -30,7 +30,7 @@ class Func(object):
         self.n_calls = 0
         self.sleep_sec = sleep_sec
         self.lock = threading.Lock()
-        self.x_max = 10
+        self.x_max = 10.0
 
     def __call__(self, client):
         # type: (client_module.BaseClient) -> float
