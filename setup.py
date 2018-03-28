@@ -26,7 +26,8 @@ setup(
     author_email='akiba@preferred.jp',
     packages=find_packages(),
     install_requires=[
-        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'enum34', 'cliff', 'colorlog'],
+        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'enum34', 'cliff', 'colorlog',
+        'bokeh'],
     tests_require=tests_require,
     extras_require={'testing': tests_require},
     entry_points={

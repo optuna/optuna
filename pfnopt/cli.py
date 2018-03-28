@@ -28,8 +28,25 @@ class MakeStudy(Command):
         print(study_uuid)
 
 
+class Dashboard(Command):
+
+    def get_parser(self, prog_name):
+        # type: (str) -> ArgumentParser
+
+        parser = super(Dashboard, self).get_parser(prog_name)
+        parser.add_argument('--url', dest='url', required=True)
+        parser.add_argument('--study_uuid', required=True)
+        return parser
+
+    def take_action(self, parsed_args):
+        # type: (Namespace) -> None
+
+        pfnopt.dashboard.serve(parsed_args.url, parsed_args.study_uuid)
+
+
 _COMMANDS = {
-    'mkstudy': MakeStudy
+    'mkstudy': MakeStudy,
+    'dashboard': Dashboard,
 }
 
 
