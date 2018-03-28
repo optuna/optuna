@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 from mock import Mock
 from mock import patch
+from sqlalchemy.exc import IntegrityError
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 import unittest
@@ -108,7 +109,7 @@ class TestRDBStorage(unittest.TestCase):
 
         # test setting existing name with the same distribution
         storage.set_trial_param_distribution(
-            storage.create_new_trial_id(study_id),
+            storage.create_new_trial_id(study_id),  # new trial_id
             'y',
             self.example_distributions['y'])
 
@@ -116,7 +117,7 @@ class TestRDBStorage(unittest.TestCase):
         self.assertRaises(
             ValueError,
             lambda: storage.set_trial_param_distribution(
-                storage.create_new_trial_id(study_id),
+                storage.create_new_trial_id(study_id),  # new trial_id
                 'x',
                 self.example_distributions['y']))
 
@@ -124,15 +125,23 @@ class TestRDBStorage(unittest.TestCase):
         self.assertRaises(
             ValueError,
             lambda: storage.set_trial_param_distribution(
-                storage.create_new_trial_id(study_id),
+                storage.create_new_trial_id(study_id),  # new trial_id
                 'y',
                 self.example_distributions['y']._replace(choices=('Tokyo', 'Shinbashi'))))
 
         # test setting existing name with different value (non CategoricalDistribution)
         storage.set_trial_param_distribution(
-            storage.create_new_trial_id(study_id),
+            storage.create_new_trial_id(study_id),  # new trial_id
             'x',
             self.example_distributions['x']._replace(low=100, high=200))
+
+        # test setting a duplicated pair of trial and parameter name
+        self.assertRaises(
+            IntegrityError,
+            lambda: storage.set_trial_param_distribution(
+                trial_id,  # existing trial_id
+                'x',
+                self.example_distributions['x']))
 
     def test_create_new_trial_id(self):
         # type: () -> None
