@@ -38,6 +38,17 @@ class Study(object):
         self.study_id = self.storage.get_study_id_from_uuid(study_uuid)
         self.logger = logging.get_logger(__name__)
 
+    def __getstate__(self):
+        # type: () -> Dict[Any, Any]
+        state = self.__dict__.copy()
+        del state['logger']
+        return state
+
+    def __setstate__(self, state):
+        # type: (Dict[Any, Any]) -> None
+        self.__dict__.update(state)
+        self.logger = logging.get_logger(__name__)
+
     @property
     def best_params(self):
         # type: () -> Dict[str, Any]
