@@ -8,7 +8,7 @@ from typing import List  # NOQA
 import unittest
 import uuid
 
-from pfnopt.distributions import BaseDistribution, LogUniformDistribution  # NOQA
+from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution

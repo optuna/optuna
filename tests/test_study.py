@@ -15,9 +15,9 @@ from pfnopt.storages import RDBStorage
 from pfnopt import trial as trial_module
 
 
-def func(client, x_scaling_factor=1.0):
+def func(client, x_max=1.0):
     # type: (client_module.BaseClient, float) -> float
-    x = client.sample_uniform('x', -10 * x_scaling_factor, 10 * x_scaling_factor)
+    x = client.sample_uniform('x', -x_max, x_max)
     y = client.sample_loguniform('y', 20, 30)
     z = client.sample_categorical('z', (-1.0, 1.0))
     return (x - 2) ** 2 + (y - 25) ** 2 + z
@@ -30,19 +30,20 @@ class Func(object):
         self.n_calls = 0
         self.sleep_sec = sleep_sec
         self.lock = threading.Lock()
-        self.x_scaling_factor = 1.0
+        self.x_max = 10
 
     def __call__(self, client):
         # type: (client_module.BaseClient) -> float
         with self.lock:
             self.n_calls += 1
+            x_max = self.x_max
+            self.x_max *= 0.9
 
         # Sleep for testing parallelism
         if self.sleep_sec is not None:
             time.sleep(self.sleep_sec)
 
-        self.x_scaling_factor *= 0.9
-        return func(client, self.x_scaling_factor)
+        return func(client, x_max)
 
 
 def check_params(params):
