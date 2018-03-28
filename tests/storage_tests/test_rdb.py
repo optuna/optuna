@@ -7,7 +7,7 @@ from typing import List  # NOQA
 import unittest
 import uuid
 
-from pfnopt.distributions import BaseDistribution  # NOQA
+from pfnopt.distributions import BaseDistribution, LogUniformDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
@@ -106,14 +106,33 @@ class TestRDBStorage(unittest.TestCase):
         assert isinstance(distribution_2, CategoricalDistribution)
         assert distribution_2.choices == self.example_distributions['y'].choices
 
-        # test setting existing name with different distribution
-        self.assertRaises(
-            AssertionError,
-            lambda: storage.set_trial_param_distribution(
-                trial_id, 'x', self.example_distributions['y']))
-
         # test setting existing name with the same distribution
-        storage.set_trial_param_distribution(trial_id, 'y', self.example_distributions['y'])
+        storage.set_trial_param_distribution(
+            storage.create_new_trial_id(study_id),
+            'y',
+            self.example_distributions['y'])
+
+        # test setting existing name with different distribution kind
+        self.assertRaises(
+            ValueError,
+            lambda: storage.set_trial_param_distribution(
+                storage.create_new_trial_id(study_id),
+                'x',
+                self.example_distributions['y']))
+
+        # test setting existing name with different value (CategoricalDistribution)
+        self.assertRaises(
+            ValueError,
+            lambda: storage.set_trial_param_distribution(
+                storage.create_new_trial_id(study_id),
+                'y',
+                self.example_distributions['y']._replace(choices=('Tokyo', 'Shinbashi'))))
+
+        # test setting existing name with different value (non CategoricalDistribution)
+        storage.set_trial_param_distribution(
+            storage.create_new_trial_id(study_id),
+            'x',
+            self.example_distributions['x']._replace(low=100, high=200))
 
     def test_create_new_trial_id(self):
         # type: () -> None
@@ -341,9 +360,9 @@ class TestRDBStorage(unittest.TestCase):
         storage.set_trial_value(trial_id, example_trial.value)
         storage.set_trial_state(trial_id, example_trial.state)
         storage.set_trial_system_attrs(trial_id, example_trial.system_attrs)
+        TestRDBStorage.set_distributions(storage, trial_id, distributions)
 
         for name, ex_repr in example_trial.params.items():
-            TestRDBStorage.set_distributions(storage, trial_id, distributions)
             storage.set_trial_param(trial_id, name, distributions[name].to_internal_repr(ex_repr))
 
         for step, value in example_trial.intermediate_values.items():
