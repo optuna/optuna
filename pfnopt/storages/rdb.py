@@ -129,7 +129,7 @@ class RDBStorage(BaseStorage):
         # the following line is to check that the specified trial_id exists in DB.
         self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
-        # check if the ParamDistribution already exists
+        # check if the TrialParamDistribution already exists
         param_distribution = self.session.query(TrialParamDistribution). \
             filter(TrialParamDistribution.trial_id == trial_id). \
             filter(TrialParamDistribution.param_name == param_name).one_or_none()

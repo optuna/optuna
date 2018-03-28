@@ -80,7 +80,7 @@ class TestRDBStorage(unittest.TestCase):
         study = storage.session.query(Study).one()
         assert storage.get_study_uuid_from_id(study.study_id) == study.study_uuid
 
-    def test_set_param_distribution(self):
+    def test_set_trial_param_distribution(self):
         # type: () -> None
 
         storage = self.create_test_storage()
