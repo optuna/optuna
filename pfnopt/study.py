@@ -146,9 +146,9 @@ class Study(object):
 
     def _log_completed_trial(self, trial_id, value):
         self.logger.info(
-            'Finished trial {} resulted in value: {}. '
+            'Finished a trial resulted in value: {}. '
             'Current best value is {} with parameters: {}.'.format(
-                trial_id, value, self.best_value, self.best_params))
+                value, self.best_value, self.best_params))
 
 
 def create_study(
