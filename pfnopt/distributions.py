@@ -58,6 +58,7 @@ DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, Categorical
 
 def json_to_distribution(json_str):
     # type: (str) -> BaseDistribution
+
     json_dict = json.loads(json_str)
 
     if json_dict['name'] == CategoricalDistribution.__name__:
@@ -72,4 +73,16 @@ def json_to_distribution(json_str):
 
 def distribution_to_json(dist):
     # type: (BaseDistribution) -> str
+
     return json.dumps({'name': dist.__class__.__name__, 'attributes': dist._asdict()})
+
+
+def check_distribution_compatibility(dist_old, dist_new):
+    # type: (BaseDistribution, BaseDistribution) -> None
+
+    if dist_old.__class__ != dist_new.__class__:
+        raise ValueError('Cannot set different distribution kind to the same parameter name.')
+
+    if isinstance(dist_old, CategoricalDistribution) and dist_old.choices != dist_new.choices:
+        raise ValueError(
+            CategoricalDistribution.__name__ + ' does not support dynamic value space.')
