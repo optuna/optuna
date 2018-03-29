@@ -78,6 +78,9 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int, str, distributions.BaseDistribution) -> None
 
         with self._lock:
+            if param_name in self.param_distribution:
+                distributions.check_distribution_compatibility(
+                    self.param_distribution[param_name], distribution)
             self.param_distribution[param_name] = distribution
 
     def set_trial_state(self, trial_id, state):

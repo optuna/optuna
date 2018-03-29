@@ -125,18 +125,16 @@ class RDBStorage(BaseStorage):
     def set_trial_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
 
-        # the following line is to check that the specified trial_id exists in DB.
-        self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
-        # check if the TrialParamDistribution already exists
-        param_distribution = self.session.query(TrialParamDistribution). \
-            filter(TrialParamDistribution.trial_id == trial_id). \
-            filter(TrialParamDistribution.param_name == param_name).one_or_none()
+        # check if this distribution is compatible with previous ones in the same study
+        param_distribution = self.session.query(TrialParamDistribution).join(Trial). \
+            filter(Trial.study_id == trial.study_id). \
+            filter(TrialParamDistribution.param_name == param_name).first()
         if param_distribution is not None:
             distribution_rdb = \
                 distributions.json_to_distribution(param_distribution.distribution_json)
-            assert distribution_rdb == distribution
-            return
+            distributions.check_distribution_compatibility(distribution_rdb, distribution)
 
         param_distribution = TrialParamDistribution()
         param_distribution.trial_id = trial_id

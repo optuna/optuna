@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 from mock import Mock
 from mock import patch
+from sqlalchemy.exc import IntegrityError
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 import unittest
@@ -106,14 +107,41 @@ class TestRDBStorage(unittest.TestCase):
         assert isinstance(distribution_2, CategoricalDistribution)
         assert distribution_2.choices == self.example_distributions['y'].choices
 
-        # test setting existing name with different distribution
-        self.assertRaises(
-            AssertionError,
-            lambda: storage.set_trial_param_distribution(
-                trial_id, 'x', self.example_distributions['y']))
-
         # test setting existing name with the same distribution
-        storage.set_trial_param_distribution(trial_id, 'y', self.example_distributions['y'])
+        storage.set_trial_param_distribution(
+            storage.create_new_trial_id(study_id),  # new trial_id
+            'y',
+            self.example_distributions['y'])
+
+        # test setting existing name with different distribution kind
+        self.assertRaises(
+            ValueError,
+            lambda: storage.set_trial_param_distribution(
+                storage.create_new_trial_id(study_id),  # new trial_id
+                'x',
+                self.example_distributions['y']))
+
+        # test setting existing name with different value (CategoricalDistribution)
+        self.assertRaises(
+            ValueError,
+            lambda: storage.set_trial_param_distribution(
+                storage.create_new_trial_id(study_id),  # new trial_id
+                'y',
+                self.example_distributions['y']._replace(choices=('Tokyo', 'Shinbashi'))))
+
+        # test setting existing name with different value (non CategoricalDistribution)
+        storage.set_trial_param_distribution(
+            storage.create_new_trial_id(study_id),  # new trial_id
+            'x',
+            self.example_distributions['x']._replace(low=100, high=200))
+
+        # test setting a duplicated pair of trial and parameter name
+        self.assertRaises(
+            IntegrityError,
+            lambda: storage.set_trial_param_distribution(
+                trial_id,  # existing trial_id
+                'x',
+                self.example_distributions['x']))
 
     def test_create_new_trial_id(self):
         # type: () -> None
@@ -341,9 +369,9 @@ class TestRDBStorage(unittest.TestCase):
         storage.set_trial_value(trial_id, example_trial.value)
         storage.set_trial_state(trial_id, example_trial.state)
         storage.set_trial_system_attrs(trial_id, example_trial.system_attrs)
+        TestRDBStorage.set_distributions(storage, trial_id, distributions)
 
         for name, ex_repr in example_trial.params.items():
-            TestRDBStorage.set_distributions(storage, trial_id, distributions)
             storage.set_trial_param(trial_id, name, distributions[name].to_internal_repr(ex_repr))
 
         for step, value in example_trial.intermediate_values.items():
