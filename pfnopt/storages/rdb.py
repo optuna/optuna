@@ -175,7 +175,7 @@ class RDBStorage(BaseStorage):
         trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         param_distribution = self.session.query(TrialParamDistribution). \
-            filter(TrialParamDistribution.trial_id == trial.study_id). \
+            filter(TrialParamDistribution.trial_id == trial.trial_id). \
             filter(TrialParamDistribution.param_name == param_name).one()
 
         # check if the parameter already exists
