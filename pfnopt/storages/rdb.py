@@ -1,4 +1,5 @@
 from collections import defaultdict
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy.engine import create_engine
 from sqlalchemy import Enum
@@ -20,6 +21,9 @@ from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
 import pfnopt.trial as trial_module
 from pfnopt.trial import State
+from pfnopt import version
+
+SCHEMA_VERSION = 1
 
 Base = declarative_base()  # type: Any
 Session = orm.sessionmaker()
@@ -78,6 +82,14 @@ class TrialValue(Base):
     trial = orm.relationship(Trial)
 
 
+class VersionInfo(Base):
+    __tablename__ = 'version_info'
+    # todo(sano): introduce check constraint to ensure this table has only one row.
+    version_info_id = Column(Boolean, primary_key=True, default=True)
+    schema_version = Column(Integer)
+    library_version = Column(String(255))
+
+
 class RDBStorage(BaseStorage):
 
     def __init__(self, url):
@@ -86,6 +98,7 @@ class RDBStorage(BaseStorage):
         self.engine = create_engine(url)
         self.session = Session(bind=self.engine)
         Base.metadata.create_all(self.engine)
+        self._check_table_schema_compatibility()
         self.logger = logging.get_logger(__name__)
 
     def create_new_study_id(self):
@@ -308,6 +321,31 @@ class RDBStorage(BaseStorage):
 
         return result
 
+    def _check_table_schema_compatibility(self):
+        # type: () -> None
+
+        version_info = self.session.query(VersionInfo).one_or_none()
+        if version_info is None:
+            version_info = VersionInfo()
+            version_info.schema_version = SCHEMA_VERSION
+            version_info.library_version = version.__version__
+            self.session.add(version_info)
+            try:
+                self.session.commit()
+            except IntegrityError as e:
+                self.logger.debug(
+                    'Ignoring {}. This happens due to a timing issue during initial setup of {} '
+                    'table among multi threads/processes/nodes.'.format(
+                        repr(e), VersionInfo.__tablename__))
+                self.session.rollback()
+        else:
+            if version_info.schema_version != SCHEMA_VERSION:
+                raise RuntimeError(
+                    'The runtime pfnopt version {} is no longer compatible with the table schema '
+                    '(set up by pfnopt {}).'.format(
+                        version.__version__, version_info.library_version))
+
     def close(self):
         # type: () -> None
+
         self.session.close()
