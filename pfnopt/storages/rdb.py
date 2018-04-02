@@ -1,5 +1,5 @@
 from collections import defaultdict
-from sqlalchemy import Boolean
+from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy.engine import create_engine
 from sqlalchemy import Enum
@@ -48,7 +48,7 @@ class Trial(Base):
 
 class TrialParamDistribution(Base):
     __tablename__ = 'param_distributions'
-    __table_args__ = (UniqueConstraint('trial_id', 'param_name'), {})  # type: Any
+    __table_args__ = (UniqueConstraint('trial_id', 'param_name'), )  # type: Any
     param_distribution_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
     param_name = Column(String(255))
@@ -60,7 +60,7 @@ class TrialParamDistribution(Base):
 # todo(sano): merge ParamDistribution and TrialParam because they are 1-to-1 relationship
 class TrialParam(Base):
     __tablename__ = 'trial_params'
-    __table_args__ = (UniqueConstraint('trial_id', 'param_distribution_id'), {})  # type: Any
+    __table_args__ = (UniqueConstraint('trial_id', 'param_distribution_id'), )  # type: Any
     trial_param_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
     param_distribution_id = \
@@ -73,7 +73,7 @@ class TrialParam(Base):
 
 class TrialValue(Base):
     __tablename__ = 'trial_values'
-    __table_args__ = (UniqueConstraint('trial_id', 'step'), {})  # type: Any
+    __table_args__ = (UniqueConstraint('trial_id', 'step'), )  # type: Any
     trial_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
     step = Column(Integer)
@@ -84,8 +84,9 @@ class TrialValue(Base):
 
 class VersionInfo(Base):
     __tablename__ = 'version_info'
-    # todo(sano): introduce check constraint to ensure this table has only one row.
-    version_info_id = Column(Boolean, primary_key=True, default=True)
+    # setting check constraint to ensure the number of rows is at most 1
+    __table_args__ = (CheckConstraint('version_info_id=1'), )  # type: Any
+    version_info_id = Column(Integer, primary_key=True, autoincrement=False, default=1)
     schema_version = Column(Integer)
     library_version = Column(String(255))
 

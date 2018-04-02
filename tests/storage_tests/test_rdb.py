@@ -3,16 +3,20 @@ import json
 from mock import Mock
 from mock import patch
 import pytest
+from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 import unittest
 import uuid
 
+from sqlalchemy.orm import Session
+
 from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
+from pfnopt.storages.rdb import Base
 from pfnopt.storages.rdb import RDBStorage
 from pfnopt.storages.rdb import SCHEMA_VERSION
 from pfnopt.storages.rdb import Study
@@ -23,6 +27,21 @@ from pfnopt.storages.rdb import TrialValue
 from pfnopt.storages.rdb import VersionInfo
 import pfnopt.trial as trial_module
 from pfnopt import version
+
+
+def test_version_info():
+    engine = create_engine('sqlite:///:memory:')
+    session = Session(bind=engine)
+    Base.metadata.create_all(engine)
+
+    session.add(VersionInfo(schema_version=1, library_version='0.0.1'))
+    session.commit()
+
+    # test check constraint of version_info_id
+    session.add(VersionInfo(version_info_id=2, schema_version=2, library_version='0.0.2'))
+    pytest.raises(IntegrityError, lambda: session.commit())
+
+    session.close()
 
 
 class TestRDBStorage(unittest.TestCase):
