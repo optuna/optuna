@@ -83,4 +83,5 @@ class PFNOptApp(App):
 def main():
     # type: () -> int
 
-    return PFNOptApp().run(sys.argv[1:])
+    argv = sys.argv[1:] if len(sys.argv) > 1 else ['help']
+    return PFNOptApp().run(argv)

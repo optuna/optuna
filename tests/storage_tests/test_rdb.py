@@ -2,11 +2,15 @@ from datetime import datetime
 import json
 from mock import Mock
 from mock import patch
+import pytest
+from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 import unittest
 import uuid
+
+from sqlalchemy.orm import Session
 
 from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
@@ -14,15 +18,42 @@ from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
 from pfnopt.storages.rdb import Base
 from pfnopt.storages.rdb import RDBStorage
+from pfnopt.storages.rdb import SCHEMA_VERSION
 from pfnopt.storages.rdb import Study
 from pfnopt.storages.rdb import Trial
 from pfnopt.storages.rdb import TrialParam
 from pfnopt.storages.rdb import TrialParamDistribution
 from pfnopt.storages.rdb import TrialValue
+from pfnopt.storages.rdb import VersionInfo
 import pfnopt.trial as trial_module
+from pfnopt import version
+
+
+def test_version_info():
+    engine = create_engine('sqlite:///:memory:')
+    session = Session(bind=engine)
+    Base.metadata.create_all(engine)
+
+    session.add(VersionInfo(schema_version=1, library_version='0.0.1'))
+    session.commit()
+
+    # test check constraint of version_info_id
+    session.add(VersionInfo(version_info_id=2, schema_version=2, library_version='0.0.2'))
+    pytest.raises(IntegrityError, lambda: session.commit())
+
+    session.close()
 
 
 class TestRDBStorage(unittest.TestCase):
+
+    def test_init(self):
+        storage = RDBStorage('sqlite:///:memory:')
+
+        version_info = storage.session.query(VersionInfo).first()
+        assert version_info.schema_version == SCHEMA_VERSION
+        assert version_info.library_version == version.__version__
+
+        storage.close()
 
     def test_create_new_study_id(self):
         # type: () -> None
@@ -360,6 +391,20 @@ class TestRDBStorage(unittest.TestCase):
         )
     ]
 
+    def test_check_table_schema_compatibility(self):
+        storage = self.create_test_storage()
+
+        # test not raising error for out of date schema type
+        storage._check_table_schema_compatibility()
+
+        # test raising error for out of date schema type
+        version_info = storage.session.query(VersionInfo).one()
+        version_info.schema_version = SCHEMA_VERSION - 1
+        storage.session.commit()
+
+        with pytest.raises(RuntimeError):
+            storage._check_table_schema_compatibility()
+
     @staticmethod
     def create_new_trial_with_example_trial(storage, study_id, distributions, example_trial):
         # type: (RDBStorage, int, Dict[str, BaseDistribution], trial_module.Trial) -> int
@@ -391,5 +436,4 @@ class TestRDBStorage(unittest.TestCase):
         # type: () -> RDBStorage
 
         storage = RDBStorage('sqlite:///:memory:')
-        Base.metadata.create_all(storage.engine)
         return storage
