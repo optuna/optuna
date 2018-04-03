@@ -48,6 +48,7 @@ class StorageSupplier(object):
 
     def __enter__(self):
         # type: () -> Optional[pfnopt.storages.BaseStorage]
+
         if self.storage_specifier == 'none':
             return None
         elif self.storage_specifier == 'new':
@@ -69,6 +70,7 @@ class StorageSupplier(object):
 
 def func(client, x_max=1.0):
     # type: (pfnopt.client.BaseClient, float) -> float
+
     x = client.sample_uniform('x', -x_max, x_max)
     y = client.sample_loguniform('y', 20, 30)
     z = client.sample_categorical('z', (-1.0, 1.0))
@@ -79,6 +81,7 @@ class Func(object):
 
     def __init__(self, sleep_sec=None):
         # type: (Optional[float]) -> None
+
         self.n_calls = 0
         self.sleep_sec = sleep_sec
         self.lock = threading.Lock()
@@ -86,6 +89,7 @@ class Func(object):
 
     def __call__(self, client):
         # type: (pfnopt.client.BaseClient) -> float
+
         with self.lock:
             self.n_calls += 1
             x_max = self.x_max
@@ -100,11 +104,13 @@ class Func(object):
 
 def check_params(params):
     # type: (Dict[str, Any]) -> None
+
     assert sorted(params.keys()) == ['x', 'y', 'z']
 
 
 def check_value(value):
     # type: (float) -> None
+
     assert isinstance(value, float)
     assert -1.0 <= value <= 12.0 ** 2 + 5.0 ** 2 + 1.0
 
