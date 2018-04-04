@@ -2,7 +2,7 @@ import collections
 import datetime
 import multiprocessing
 import multiprocessing.pool
-import queue
+from six.moves import queue
 import time
 from typing import Any  # NOQA
 from typing import Callable  # NOQA
@@ -162,7 +162,7 @@ class Study(object):
         for _ in range(n_jobs):
             que.put(False)
 
-        collections.deque(imap_ite, maxlen=0)  # Consume the iterator to wait for all threads
+        collections.deque(imap_ite, maxlen=0)  # Consume the iterator to wait for all threads.
         pool.terminate()
         que.close()
         que.join_thread()
@@ -200,7 +200,7 @@ def minimize(
     # type: (...) -> Study
 
     if study is not None:
-        # We continue the given study
+        # We continue the given study.
         if storage is not None:
             raise ValueError(
                 'Do not specify both study and storage at the same time. '
@@ -214,7 +214,7 @@ def minimize(
                 'Do not specify both study and pruner at the same time. '
                 'When a study is given, its associated pruner will be used.')
     elif storage is not None:
-        # We connect to an existing study in the storage
+        # We connect to an existing study in the storage.
         if study_uuid is None:
             raise ValueError(
                 'When specifying storage, please also specify study_uuid to continue a study. '
@@ -222,7 +222,7 @@ def minimize(
         storage = storages.get_storage(storage)
         study = Study(study_uuid, storage, sampler, pruner)
     else:
-        # We start a new study with a new in-memory storage
+        # We start a new study with a new in-memory storage.
         study = create_study(sampler=sampler, pruner=pruner)
 
     study.run(func, n_trials, timeout_seconds, n_jobs)
