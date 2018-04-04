@@ -134,6 +134,7 @@ class Study(object):
                 result = func(client)
                 client.complete(result)
                 self._log_completed_trial(trial_id, result)
+            self.storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
         for _ in range(n_jobs):

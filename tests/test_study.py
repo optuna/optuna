@@ -201,8 +201,6 @@ def test_minimize_parallel(n_trials, n_jobs, storage_mode):
         assert f.n_calls == len(study.trials) == n_trials
         check_study(study)
 
-        study.storage.close()
-
 
 @pytest.mark.parametrize('n_trials, n_jobs, storage_mode', itertools.product(
     (0, 1, 2, 50, None),  # n_trials
@@ -232,8 +230,6 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
         assert f.n_calls <= max_calls
 
         check_study(study)
-
-        study.storage.close()
 
 
 def test_study_pickle():
