@@ -2,7 +2,7 @@ import collections
 import datetime
 import multiprocessing
 import multiprocessing.pool
-import queue
+from six.moves import queue
 import time
 from typing import Any  # NOQA
 from typing import Callable  # NOQA
