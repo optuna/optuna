@@ -2,8 +2,8 @@ import collections
 import datetime
 import multiprocessing
 import multiprocessing.pool
-import time
 import queue
+import time
 from typing import Any  # NOQA
 from typing import Callable  # NOQA
 from typing import Dict  # NOQA
