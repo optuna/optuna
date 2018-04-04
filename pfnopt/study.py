@@ -108,9 +108,6 @@ class Study(object):
     def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
 
-        #if isinstance(self.storage, storages.RDBStorage):
-        #    raise TypeError('Parallel run with RDBStorage is not supported.')
-
         self.start_datetime = datetime.datetime.now()
 
         if n_jobs == -1:
