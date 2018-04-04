@@ -26,7 +26,6 @@ from pfnopt import version
 SCHEMA_VERSION = 1
 
 Base = declarative_base()  # type: Any
-Session = orm.sessionmaker()
 
 
 class Study(Base):
@@ -96,11 +95,17 @@ class RDBStorage(BaseStorage):
     def __init__(self, url):
         # type: (str) -> None
 
-        self.engine = create_engine(url)
-        self.session = Session(bind=self.engine)
+        self.engine = create_engine(url, echo_pool=True)
+        self.scoped_session_maker = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         Base.metadata.create_all(self.engine)
         self._check_table_schema_compatibility()
         self.logger = logging.get_logger(__name__)
+
+    @property
+    def session(self):
+        # type: () -> orm.Session
+
+        return self.scoped_session_maker()
 
     def create_new_study_id(self):
         # type: () -> int
@@ -349,4 +354,4 @@ class RDBStorage(BaseStorage):
     def close(self):
         # type: () -> None
 
-        self.session.close()
+        self.scoped_session_maker.remove()

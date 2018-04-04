@@ -197,13 +197,6 @@ def test_minimize_parallel(n_trials, n_jobs, storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = pfnopt.create_study(storage=storage)
-
-        if isinstance(study.storage, pfnopt.storages.RDBStorage) and n_jobs != 1:
-            with pytest.raises(TypeError):
-                pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, study=study)
-            study.storage.close()
-            return
-
         pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, study=study)
         assert f.n_calls == len(study.trials) == n_trials
         check_study(study)
@@ -225,14 +218,6 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = pfnopt.create_study(storage=storage)
-
-        if isinstance(study.storage, pfnopt.storages.RDBStorage) and n_jobs != 1:
-            with pytest.raises(TypeError):
-                pfnopt.minimize(
-                    f, n_trials=n_trials, n_jobs=n_jobs, timeout_seconds=timeout_sec, study=study)
-            study.storage.close()
-            return
-
         study = pfnopt.minimize(
             f, n_trials=n_trials, n_jobs=n_jobs, timeout_seconds=timeout_sec, study=study)
 
