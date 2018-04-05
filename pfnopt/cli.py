@@ -34,7 +34,7 @@ class Dashboard(Command):
         # type: (str) -> ArgumentParser
 
         parser = super(Dashboard, self).get_parser(prog_name)
-        parser.add_argument('--url', dest='url', required=True)
+        parser.add_argument('--url', required=True)
         parser.add_argument('--study_uuid', required=True)
         return parser
 
@@ -45,9 +45,31 @@ class Dashboard(Command):
         pfnopt.dashboard.serve(study)
 
 
+class Report(Command):
+
+    def get_parser(self, prog_name):
+        # type: (str) -> ArgumentParser
+
+        parser = super(Report, self).get_parser(prog_name)
+        parser.add_argument('--url', required=True)
+        parser.add_argument('--study_uuid', required=True)
+        parser.add_argument('--out', '-o', default='report.html')
+        return parser
+
+    def take_action(self, parsed_args):
+        # type: (Namespace) -> None
+
+        study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
+        pfnopt.dashboard.write(study, parsed_args.out)
+
+        logger = pfnopt.logging.get_logger(__name__)
+        logger.info('Report successfully written to: {}'.format(parsed_args.out))
+
+
 _COMMANDS = {
     'mkstudy': MakeStudy,
     'dashboard': Dashboard,
+    'report': Report,
 }
 
 

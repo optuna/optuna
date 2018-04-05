@@ -1,3 +1,4 @@
+import bokeh.command.bootstrap
 import bokeh.document  # NOQA
 import bokeh.layouts
 import bokeh.models
@@ -18,6 +19,7 @@ import pfnopt.study
 import pfnopt.trial
 
 
+_mode = None  # type: str
 _study = None  # type: Optional[pfnopt.study.Study]
 
 
@@ -143,10 +145,11 @@ class _AllTrialsWidget(object):
 
 class _DashboardApp(object):
 
-    def __init__(self, study):
-        # type: (pfnopt.study.Study) -> None
+    def __init__(self, study, launch_update_thread):
+        # type: (pfnopt.study.Study, bool) -> None
 
         self.study = study
+        self.launch_update_thread = launch_update_thread
         self.lock = threading.Lock()
 
     def __call__(self, doc):
@@ -169,8 +172,9 @@ class _DashboardApp(object):
                 [self.all_trials_widget.create_table()]
             ], sizing_mode='scale_width'))
 
-        thread = threading.Thread(target=self.thread_loop, daemon=True)
-        thread.start()
+        if self.launch_update_thread:
+            thread = threading.Thread(target=self.thread_loop, daemon=True)
+            thread.start()
 
     def thread_loop(self):
         # type: () -> None
@@ -201,24 +205,46 @@ class _DashboardApp(object):
 def serve(study):
     # type: (pfnopt.study.Study) -> None
 
-    global _study
-    import bokeh.command.bootstrap
+    global _mode, _study
 
+    # We want to pass the mode (launching a server? or, just writing an HTML?) and a target study
+    # to our Bokeh app. Unfortunately, as we are using `bokeh.command.bootstrap.main` to launch
+    # our Bokeh app, we cannot directly pass Python objects to it. Therefore, we have no choice but
+    # to use global variables to pass them.
+    _mode = 'serve'
     _study = study
 
-    bokeh.command.bootstrap.main(
-        ['bokeh', 'serve', '--show', __file__]
-    )
+    # This is not a very clean way to launch Bokeh server. Another seemingly better way is to
+    # instantiate and launch `bokeh.server.server.Server` by ourselves. However, in this way,
+    # for some reason, we found that the CDS update is not reflected to browsers, at least on Bokeh
+    # version 0.12.15. In addition, we will need to do many configuration to servers, which can be
+    # done automatically with the following one line. So, for now, we decided to use this way.
+    bokeh.command.bootstrap.main(['bokeh', 'serve', '--show', __file__])
+
+
+def write(study, out_path):
+    # type: (pfnopt.study.Study, str) -> None
+
+    global _mode, _study
+
+    _mode = 'html'
+    _study = study
+    bokeh.command.bootstrap.main(['bokeh', 'html', __file__, '-o', out_path])
 
 
 def _run():
     # type: () -> None
 
+    # Please note that `_study` and `pfnopt.dashboard._study` are different here. Here, this module
+    # is loaded inside Bokeh, and thus it is not `pfnopt.dashboard`, but `bk_script_????`.
     study = pfnopt.dashboard._study
-    app = _DashboardApp(study)
+    mode = pfnopt.dashboard._mode
+
+    app = _DashboardApp(study, launch_update_thread=(mode == 'serve'))
     doc = bokeh.plotting.curdoc()
     app(doc)
 
 
 if __name__.startswith('bk_script_'):
+    # Here, this module is loaded inside Bokeh. Therefore, we should launch the Bokeh app.
     _run()
