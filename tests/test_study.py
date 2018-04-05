@@ -22,6 +22,10 @@ STORAGE_MODES = [
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
 
+# We need to set the timeout higher to avoid "OperationalError: database is locked",
+# particularly on CircleCI.
+SQLITE3_TIMEOUT = 300
+
 common_tempfile = None  # type: IO[Any]
 
 
@@ -54,10 +58,10 @@ class StorageSupplier(object):
         elif self.storage_specifier == 'new':
             self.tempfile = tempfile.NamedTemporaryFile()
             url = 'sqlite:///{}'.format(self.tempfile.name)
-            return pfnopt.storages.RDBStorage(url)
+            return pfnopt.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
         elif self.storage_specifier == 'common':
             url = 'sqlite:///{}'.format(common_tempfile.name)
-            return pfnopt.storages.RDBStorage(url)
+            return pfnopt.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
         else:
             assert False
 
@@ -197,18 +201,9 @@ def test_minimize_parallel(n_trials, n_jobs, storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = pfnopt.create_study(storage=storage)
-
-        if isinstance(study.storage, pfnopt.storages.RDBStorage) and n_jobs != 1:
-            with pytest.raises(TypeError):
-                pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, study=study)
-            study.storage.close()
-            return
-
         pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, study=study)
         assert f.n_calls == len(study.trials) == n_trials
         check_study(study)
-
-        study.storage.close()
 
 
 @pytest.mark.parametrize('n_trials, n_jobs, storage_mode', itertools.product(
@@ -225,14 +220,6 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = pfnopt.create_study(storage=storage)
-
-        if isinstance(study.storage, pfnopt.storages.RDBStorage) and n_jobs != 1:
-            with pytest.raises(TypeError):
-                pfnopt.minimize(
-                    f, n_trials=n_trials, n_jobs=n_jobs, timeout_seconds=timeout_sec, study=study)
-            study.storage.close()
-            return
-
         study = pfnopt.minimize(
             f, n_trials=n_trials, n_jobs=n_jobs, timeout_seconds=timeout_sec, study=study)
 
@@ -247,8 +234,6 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
         assert f.n_calls <= max_calls
 
         check_study(study)
-
-        study.storage.close()
 
 
 def test_study_pickle():

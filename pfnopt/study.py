@@ -108,9 +108,6 @@ class Study(object):
     def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
 
-        if isinstance(self.storage, storages.RDBStorage):
-            raise TypeError('Parallel run with RDBStorage is not supported.')
-
         self.start_datetime = datetime.datetime.now()
 
         if n_jobs == -1:
@@ -134,6 +131,7 @@ class Study(object):
                 result = func(client)
                 client.complete(result)
                 self._log_completed_trial(trial_id, result)
+            self.storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
         for _ in range(n_jobs):

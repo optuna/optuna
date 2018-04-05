@@ -129,6 +129,7 @@ class BaseStorage(object):
             if step in t.intermediate_values
         ]))
 
-    def close(self):
+    def remove_session(self):
         # type: () -> None
+
         pass
