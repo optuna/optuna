@@ -26,6 +26,27 @@ def test_mkstudy_command():
         assert study_id == 2
 
 
+def test_report_command():
+    # type: () -> None
+
+    with \
+            tempfile.NamedTemporaryFile() as tf_db, \
+            tempfile.NamedTemporaryFile('r') as tf_report:
+
+            db_url = 'sqlite:///{}'.format(tf_db.name)
+            command_mkstudy = ['pfnopt', 'mkstudy', '--url', db_url]
+            study_uuid = subprocess.check_output(command_mkstudy).strip()
+
+            command_report = [
+                'pfnopt', 'report', '--url', db_url, '--study_uuid', study_uuid,
+                '--out', tf_report.name]
+            assert subprocess.check_call(command_report) == 0
+
+            html = tf_report.read()
+            assert '<body>' in html
+            assert 'bokeh' in html
+
+
 def test_empty_argv():
     # type: () -> None
 
