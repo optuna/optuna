@@ -14,7 +14,7 @@ def _create_some_study():
         y = client.sample_loguniform('y', 10, 20)
         z = client.sample_categorical('z', (10, 20.5, '30'))
 
-        return x ** 2 + y ** 2 + float(z)
+        return x ** 2 + y ** 2 + float(z)  # type: ignore
 
     return pfnopt.minimize(f, n_trials=100)
 

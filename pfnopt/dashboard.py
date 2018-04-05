@@ -157,7 +157,7 @@ class _DashboardApp(object):
 
         self.doc = doc
         self.current_trials = self.study.trials
-        self.new_trials = None
+        self.new_trials = None  # type: Optional[List[pfnopt.trial.Trial]]
         self.complete_trials_widget = _CompleteTrialsWidget(self.current_trials)
         self.all_trials_widget = _AllTrialsWidget(self.current_trials)
 
