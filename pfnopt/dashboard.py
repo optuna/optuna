@@ -1,3 +1,4 @@
+import bokeh.document  # NOQA
 import bokeh.layouts
 import bokeh.models
 import bokeh.models.widgets
@@ -8,7 +9,10 @@ import numpy as np
 import threading
 import time
 import tornado.gen
-from typing import Optional
+from typing import Any  # NOQA
+from typing import Dict  # NOQA
+from typing import List  # NOQA
+from typing import Optional  # NOQA
 
 import pfnopt.study
 import pfnopt.trial
@@ -38,6 +42,8 @@ h1, p {{
 class _CompleteTrialsWidget(object):
 
     def __init__(self, trials):
+        # type: (List[pfnopt.trial.Trial]) -> None
+
         complete_trials = [
             trial for trial in trials
             if trial.state == pfnopt.trial.State.COMPLETE
@@ -55,6 +61,8 @@ class _CompleteTrialsWidget(object):
         self.best_value = best_values[-1] if complete_trials else np.inf
 
     def create_figure(self):
+        # type: () -> bokeh.plotting.Figure
+
         figure = bokeh.plotting.figure(height=150)
         figure.circle(x='#', y='value', source=self.cds, alpha=0.3, color='navy')
         figure.line(x='#', y='best_value', source=self.cds, color='firebrick')
@@ -63,7 +71,9 @@ class _CompleteTrialsWidget(object):
         return figure
 
     def update(self, new_trials):
-        stream_dict = collections.defaultdict(list)
+        # type: (List[pfnopt.trial.Trial]) -> None
+
+        stream_dict = collections.defaultdict(list)  # type: Dict[str, List[Any]]
 
         for trial in new_trials:
             if trial.state != pfnopt.trial.State.COMPLETE:
@@ -83,9 +93,13 @@ class _CompleteTrialsWidget(object):
 class _AllTrialsWidget(object):
 
     def __init__(self, trials):
+        # type: (List[pfnopt.trial.Trial]) -> None
+
         self.cds = bokeh.models.ColumnDataSource(self.trials_to_dict(trials))
 
     def create_table(self):
+        # type: () -> bokeh.models.widgets.DataTable
+
         return bokeh.models.widgets.DataTable(
             source=self.cds,
             columns=[
@@ -95,6 +109,8 @@ class _AllTrialsWidget(object):
         )
 
     def update(self, old_trials, new_trials):
+        # type: (List[pfnopt.trial.Trial], List[pfnopt.trial.Trial]) -> None
+
         modified_indices = []
         modified_trials = []
         for i, old_trial in enumerate(old_trials):
@@ -114,6 +130,8 @@ class _AllTrialsWidget(object):
 
     @staticmethod
     def trials_to_dict(trials):
+        # type: (List[pfnopt.trial.Trial]) -> Dict[str, List[Any]]
+
         return {
             'trial_id': [trial.trial_id for trial in trials],
             'state': [trial.state.name for trial in trials],
@@ -126,17 +144,15 @@ class _AllTrialsWidget(object):
 class _DashboardApp(object):
 
     def __init__(self, study):
-        self.study = study
+        # type: (pfnopt.study.Study) -> None
 
-        self.doc = None
+        self.study = study
         self.lock = threading.Lock()
-        self.complete_trials_widget = None
 
     def __call__(self, doc):
-        # type: (aaaaa) -> None
+        # type: (bokeh.document.Document) -> None
 
         self.doc = doc
-
         self.current_trials = self.study.trials
         self.new_trials = None
         self.complete_trials_widget = _CompleteTrialsWidget(self.current_trials)
@@ -195,8 +211,14 @@ def serve(study):
     )
 
 
-if __name__.startswith('bk_script_'):
+def _run():
+    # type: () -> None
+
     study = pfnopt.dashboard._study
     app = _DashboardApp(study)
     doc = bokeh.plotting.curdoc()
     app(doc)
+
+
+if __name__.startswith('bk_script_'):
+    _run()
