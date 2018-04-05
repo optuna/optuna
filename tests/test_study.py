@@ -22,6 +22,10 @@ STORAGE_MODES = [
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
 
+# We need to set the timeout higher to avoid "OperationalError: database is locked",
+# particularly on CircleCI.
+SQLITE3_TIMEOUT = 300
+
 common_tempfile = None  # type: IO[Any]
 
 
@@ -54,10 +58,10 @@ class StorageSupplier(object):
         elif self.storage_specifier == 'new':
             self.tempfile = tempfile.NamedTemporaryFile()
             url = 'sqlite:///{}'.format(self.tempfile.name)
-            return pfnopt.storages.RDBStorage(url)
+            return pfnopt.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
         elif self.storage_specifier == 'common':
             url = 'sqlite:///{}'.format(common_tempfile.name)
-            return pfnopt.storages.RDBStorage(url)
+            return pfnopt.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
         else:
             assert False
 
