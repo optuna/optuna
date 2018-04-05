@@ -1,10 +1,12 @@
+import collections
 import datetime
 import multiprocessing
 import multiprocessing.pool
+from six.moves import queue
+import time
 from typing import Any  # NOQA
 from typing import Callable  # NOQA
 from typing import Dict  # NOQA
-from typing import Iterable  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 from typing import Union  # NOQA
@@ -109,40 +111,60 @@ class Study(object):
         if isinstance(self.storage, storages.RDBStorage):
             raise TypeError('Parallel run with RDBStorage is not supported.')
 
+        self.start_datetime = datetime.datetime.now()
+
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()
 
+        if n_trials is not None:
+            # The number of threads needs not to be larger than trials.
+            n_jobs = min(n_jobs, n_trials)
+
+            if n_trials == 0:
+                return  # When n_jobs is zero, ThreadPool fails.
+
         pool = multiprocessing.pool.ThreadPool(n_jobs)  # type: ignore
 
-        def f(_):
-            trial_id = self.storage.create_new_trial_id(self.study_id)
-            client = client_module.LocalClient(self, trial_id)
-            result = func(client)
-            client.complete(result)
-            self._log_completed_trial(trial_id, result)
+        # A queue is passed to each thread. When True is received, then the thread continues
+        # the evaluation. When False is received, then it quits.
+        def func_child_thread(que):
+            while que.get():
+                trial_id = self.storage.create_new_trial_id(self.study_id)
+                client = client_module.LocalClient(self, trial_id)
+                result = func(client)
+                client.complete(result)
+                self._log_completed_trial(trial_id, result)
 
-        self.start_datetime = datetime.datetime.now()
+        que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
+        for _ in range(n_jobs):
+            que.put(True)
+        n_enqueued_trials = n_jobs
+        imap_ite = pool.imap(func_child_thread, [que] * n_jobs, chunksize=1)
 
-        if n_trials is not None:
-            ite = range(n_trials)  # type: Iterable[int]
-        else:
-            ite = iter(int, 1)  # Infinite iterator
-
-        imap_ite = pool.imap(f, ite, chunksize=1)
         while True:
-            if timeout_seconds is None:
-                to = None
-            else:
+            if timeout_seconds is not None:
                 elapsed_timedelta = datetime.datetime.now() - self.start_datetime
                 elapsed_seconds = elapsed_timedelta.total_seconds()
-                to = (timeout_seconds - elapsed_seconds)
+                if elapsed_seconds > timeout_seconds:
+                    break
+
+            if n_trials is not None:
+                if n_enqueued_trials >= n_trials:
+                    break
 
             try:
-                imap_ite.next(timeout=to)  # type: ignore
-            except (StopIteration, multiprocessing.TimeoutError):  # type: ignore
-                break
+                que.put_nowait(True)
+                n_enqueued_trials += 1
+            except queue.Full:
+                time.sleep(1)
 
+        for _ in range(n_jobs):
+            que.put(False)
+
+        collections.deque(imap_ite, maxlen=0)  # Consume the iterator to wait for all threads.
         pool.terminate()
+        que.close()
+        que.join_thread()
 
     def _log_completed_trial(self, trial_id, value):
         self.logger.info(
@@ -177,7 +199,7 @@ def minimize(
     # type: (...) -> Study
 
     if study is not None:
-        # We continue the given study
+        # We continue the given study.
         if storage is not None:
             raise ValueError(
                 'Do not specify both study and storage at the same time. '
@@ -191,7 +213,7 @@ def minimize(
                 'Do not specify both study and pruner at the same time. '
                 'When a study is given, its associated pruner will be used.')
     elif storage is not None:
-        # We connect to an existing study in the storage
+        # We connect to an existing study in the storage.
         if study_uuid is None:
             raise ValueError(
                 'When specifying storage, please also specify study_uuid to continue a study. '
@@ -199,7 +221,7 @@ def minimize(
         storage = storages.get_storage(storage)
         study = Study(study_uuid, storage, sampler, pruner)
     else:
-        # We start a new study with a new in-memory storage
+        # We start a new study with a new in-memory storage.
         study = create_study(sampler=sampler, pruner=pruner)
 
     study.run(func, n_trials, timeout_seconds, n_jobs)
