@@ -14,6 +14,7 @@ from sqlalchemy import UniqueConstraint
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
+from typing import Optional  # NOQA
 import uuid
 
 from pfnopt import distributions
@@ -92,10 +93,11 @@ class VersionInfo(Base):
 
 class RDBStorage(BaseStorage):
 
-    def __init__(self, url):
-        # type: (str) -> None
+    def __init__(self, url, connect_args=None):
+        # type: (str, Optional[Dict[str, Any]]) -> None
 
-        self.engine = create_engine(url, connect_args={'timeout': 60})
+        connect_args = connect_args or {}
+        self.engine = create_engine(url, connect_args=connect_args)
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         Base.metadata.create_all(self.engine)
         self._check_table_schema_compatibility()
