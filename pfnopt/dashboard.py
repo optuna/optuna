@@ -173,7 +173,8 @@ class _DashboardApp(object):
             ], sizing_mode='scale_width'))
 
         if self.launch_update_thread:
-            thread = threading.Thread(target=self.thread_loop, daemon=True)
+            thread = threading.Thread(target=self.thread_loop)
+            thread.daemon = True
             thread.start()
 
     def thread_loop(self):
