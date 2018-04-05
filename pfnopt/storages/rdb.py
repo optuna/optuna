@@ -95,7 +95,7 @@ class RDBStorage(BaseStorage):
     def __init__(self, url):
         # type: (str) -> None
 
-        self.engine = create_engine(url, echo_pool=True)
+        self.engine = create_engine(url, connect_args={'timeout': 60})
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         Base.metadata.create_all(self.engine)
         self._check_table_schema_compatibility()
