@@ -383,13 +383,9 @@ class RDBStorage(BaseStorage):
     def __del__(self):
         # type: () -> None
 
-        """Destructor of class RDBStorage.
-
-        This destructor calls remove_session to explicitly close the DB connection. We need this
-        because DB connections created in SQLAlchemy are not automatically closed by reference
-        counters, so it is hard to guarantee that they are released by correct threads
-        (for more information, please see the docstring of remove_session).
-
-        """
+        # This destructor calls remove_session to explicitly close the DB connection. We need this
+        # because DB connections created in SQLAlchemy are not automatically closed by reference
+        # counters, so it is not guaranteed that they are released by correct threads (for more
+        # information, please see the docstring of remove_session).
 
         self.remove_session()
