@@ -41,7 +41,8 @@ class Dashboard(Command):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        pfnopt.dashboard.serve(parsed_args.url, parsed_args.study_uuid)
+        study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
+        pfnopt.dashboard.serve(study)
 
 
 _COMMANDS = {

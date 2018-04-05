@@ -3,19 +3,18 @@ import bokeh.models
 import bokeh.models.widgets
 import bokeh.plotting
 import bokeh.themes
-
 import collections
 import numpy as np
 import threading
 import time
 import tornado.gen
+from typing import Optional
 
 import pfnopt.study
 import pfnopt.trial
 
 
-_storage_url = None
-_study_uuid = None
+_study = None  # type: Optional[pfnopt.study.Study]
 
 
 _HEADER_FORMAT = '''
@@ -126,27 +125,27 @@ class _AllTrialsWidget(object):
 
 class _DashboardApp(object):
 
-    def __init__(self, storage_url, study_uuid):
-        self.study_uuid = study_uuid
-        self.storage_url = storage_url
+    def __init__(self, study):
+        self.study = study
 
         self.doc = None
         self.lock = threading.Lock()
         self.complete_trials_widget = None
 
     def __call__(self, doc):
+        # type: (aaaaa) -> None
+
         self.doc = doc
-        self.study = pfnopt.study.Study(
-            study_uuid=self.study_uuid, storage=self.storage_url)
 
         self.current_trials = self.study.trials
         self.new_trials = None
         self.complete_trials_widget = _CompleteTrialsWidget(self.current_trials)
         self.all_trials_widget = _AllTrialsWidget(self.current_trials)
 
-        # Layout
         self.doc.title = 'PFNOpt Dashboard (Beta)'
-        header = _HEADER_FORMAT.format(url=self.storage_url, study_uuid=self.study_uuid)
+        header = _HEADER_FORMAT.format(
+            url=str(self.study.storage),
+            study_uuid=self.study.study_uuid)
         self.doc.add_root(
             bokeh.layouts.layout([
                 [bokeh.models.widgets.Div(text=header)],
@@ -158,12 +157,11 @@ class _DashboardApp(object):
         thread.start()
 
     def thread_loop(self):
-        study = pfnopt.study.Study(
-            study_uuid=self.study_uuid, storage=self.storage_url)
+        # type: () -> None
 
         while True:
             time.sleep(1)
-            new_trials = study.trials
+            new_trials = self.study.trials
             with self.lock:
                 need_to_add_callback = (self.new_trials is None)
                 self.new_trials = new_trials
@@ -172,6 +170,8 @@ class _DashboardApp(object):
 
     @tornado.gen.coroutine
     def update_callback(self):
+        # type: () -> None
+
         with self.lock:
             current_trials = self.current_trials
             new_trials = self.new_trials
@@ -182,13 +182,13 @@ class _DashboardApp(object):
         self.all_trials_widget.update(current_trials, new_trials)
 
 
-def serve(storage_url, study_uuid):
-    global _storage_url
-    global _study_uuid
+def serve(study):
+    # type: (pfnopt.study.Study) -> None
+
+    global _study
     import bokeh.command.bootstrap
 
-    _storage_url = storage_url
-    _study_uuid = study_uuid
+    _study = study
 
     bokeh.command.bootstrap.main(
         ['bokeh', 'serve', '--show', __file__]
@@ -196,9 +196,7 @@ def serve(storage_url, study_uuid):
 
 
 if __name__.startswith('bk_script_'):
-    storage_url = pfnopt.dashboard._storage_url
-    study_uuid = pfnopt.dashboard._study_uuid
-
-    app = _DashboardApp(storage_url=storage_url, study_uuid=study_uuid)
+    study = pfnopt.dashboard._study
+    app = _DashboardApp(study)
     doc = bokeh.plotting.curdoc()
     app(doc)
