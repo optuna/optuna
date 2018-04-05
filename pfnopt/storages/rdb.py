@@ -14,6 +14,7 @@ from sqlalchemy import UniqueConstraint
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
+from typing import Optional  # NOQA
 import uuid
 
 from pfnopt import distributions
@@ -26,7 +27,6 @@ from pfnopt import version
 SCHEMA_VERSION = 1
 
 Base = declarative_base()  # type: Any
-Session = orm.sessionmaker()
 
 
 class Study(Base):
@@ -93,11 +93,12 @@ class VersionInfo(Base):
 
 class RDBStorage(BaseStorage):
 
-    def __init__(self, url):
-        # type: (str) -> None
+    def __init__(self, url, connect_args=None):
+        # type: (str, Optional[Dict[str, Any]]) -> None
 
-        self.engine = create_engine(url)
-        self.session = Session(bind=self.engine)
+        connect_args = connect_args or {}
+        self.engine = create_engine(url, connect_args=connect_args)
+        self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         Base.metadata.create_all(self.engine)
         self._check_table_schema_compatibility()
         self.logger = logging.get_logger(__name__)
@@ -105,23 +106,26 @@ class RDBStorage(BaseStorage):
     def create_new_study_id(self):
         # type: () -> int
 
+        session = self.scoped_session()
+
         while True:
             study_uuid = str(uuid.uuid4())
-            study = self.session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
+            study = session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
             if study is None:
                 break
 
         study = Study()
         study.study_uuid = study_uuid
-        self.session.add(study)
-        self.session.commit()
+        session.add(study)
+        session.commit()
 
         return study.study_id
 
     def get_study_id_from_uuid(self, study_uuid):
         # type: (str) -> int
 
-        study = self.session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
+        session = self.scoped_session()
+        study = session.query(Study).filter(Study.study_uuid == study_uuid).one_or_none()
         if study is None:
             raise ValueError('study_uuid {} does not exist.'.format(study_uuid))
         else:
@@ -130,7 +134,8 @@ class RDBStorage(BaseStorage):
     def get_study_uuid_from_id(self, study_id):
         # type: (int) -> str
 
-        study = self.session.query(Study).filter(Study.study_id == study_id).one_or_none()
+        session = self.scoped_session()
+        study = session.query(Study).filter(Study.study_id == study_id).one_or_none()
         if study is None:
             raise ValueError('study_id {} does not exist.'.format(study_id))
         else:
@@ -139,10 +144,11 @@ class RDBStorage(BaseStorage):
     def set_trial_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
 
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        session = self.scoped_session()
+        trial = session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         # check if this distribution is compatible with previous ones in the same study
-        param_distribution = self.session.query(TrialParamDistribution).join(Trial). \
+        param_distribution = session.query(TrialParamDistribution).join(Trial). \
             filter(Trial.study_id == trial.study_id). \
             filter(TrialParamDistribution.param_name == param_name).first()
         if param_distribution is not None:
@@ -154,15 +160,14 @@ class RDBStorage(BaseStorage):
         param_distribution.trial_id = trial_id
         param_distribution.param_name = param_name
         param_distribution.distribution_json = distributions.distribution_to_json(distribution)
-        self.session.add(param_distribution)
+        session.add(param_distribution)
 
-        self.session.commit()
+        session.commit()
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
 
         trial = Trial()
-
         trial.study_id = study_id
         trial.state = State.RUNNING
 
@@ -170,30 +175,33 @@ class RDBStorage(BaseStorage):
             trial_module.SystemAttributes(datetime_start=None, datetime_complete=None)
         trial.system_attributes_json = trial_module.system_attrs_to_json(system_attributes)
 
-        self.session.add(trial)
-        self.session.commit()
+        session = self.scoped_session()
+        session.add(trial)
+        session.commit()
 
         return trial.trial_id
 
     def set_trial_state(self, trial_id, state):
         # type: (int, trial_module.State) -> None
 
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        session = self.scoped_session()
+        trial = session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         trial.state = state
-        self.session.commit()
+        session.commit()
 
     def set_trial_param(self, trial_id, param_name, param_value):
         # type: (int, str, float) -> None
 
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        session = self.scoped_session()
+        trial = session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
-        param_distribution = self.session.query(TrialParamDistribution). \
+        param_distribution = session.query(TrialParamDistribution). \
             filter(TrialParamDistribution.trial_id == trial.trial_id). \
             filter(TrialParamDistribution.param_name == param_name).one()
 
         # check if the parameter already exists
-        trial_param = self.session.query(TrialParam). \
+        trial_param = session.query(TrialParam). \
             filter(TrialParam.trial_id == trial_id). \
             filter(TrialParam.param_distribution.has(param_name=param_name)).one_or_none()
         if trial_param is not None:
@@ -204,31 +212,34 @@ class RDBStorage(BaseStorage):
         trial_param.trial_id = trial_id
         trial_param.param_distribution_id = param_distribution.param_distribution_id
         trial_param.param_value = param_value
-        self.session.add(trial_param)
+        session.add(trial_param)
 
         try:
-            self.session.commit()
+            session.commit()
         except IntegrityError as e:
             self.logger.debug(
                 'Caught {}. This happens due to a known race condition. Another process/thread '
                 'might have committed a record with the same unique key.'.format(repr(e)))
-            self.session.rollback()
+            session.rollback()
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
 
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        session = self.scoped_session()
+        trial = session.query(Trial).filter(Trial.trial_id == trial_id).one()
         trial.value = value
-        self.session.commit()
+        session.commit()
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> None
 
+        session = self.scoped_session()
+
         # the following line is to check that the specified trial_id exists in DB.
-        self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         # check if the value at the same step already exists
-        trial_value = self.session.query(TrialValue). \
+        trial_value = session.query(TrialValue). \
             filter(TrialValue.trial_id == trial_id). \
             filter(TrialValue.step == step).one_or_none()
         if trial_value is not None:
@@ -239,41 +250,45 @@ class RDBStorage(BaseStorage):
         trial_value.trial_id = trial_id
         trial_value.step = step
         trial_value.value = intermediate_value
-        self.session.add(trial_value)
+        session.add(trial_value)
 
         try:
-            self.session.commit()
+            session.commit()
         except IntegrityError as e:
             self.logger.debug(
                 'Caught {}. This happens due to a known race condition. Another process/thread '
                 'might have committed a record with the same unique key.'.format(repr(e)))
-            self.session.rollback()
+            session.rollback()
 
     def set_trial_system_attrs(self, trial_id, system_attrs):
         # type: (int, trial_module.SystemAttributes) -> None
 
+        session = self.scoped_session()
+
         # the following line is to check that the specified trial_id exists in DB.
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        trial = session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         trial.system_attributes_json = trial_module.system_attrs_to_json(system_attrs)
-        self.session.commit()
+        session.commit()
 
     def get_trial(self, trial_id):
         # type: (int) -> trial_module.Trial
 
-        trial = self.session.query(Trial).filter(Trial.trial_id == trial_id).one()
-        params = self.session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
-        values = self.session.query(TrialValue).filter(TrialValue.trial_id == trial_id).all()
+        session = self.scoped_session()
+        trial = session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        params = session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
+        values = session.query(TrialValue).filter(TrialValue.trial_id == trial_id).all()
 
         return self._merge_trials_orm([trial], params, values)[0]
 
     def get_all_trials(self, study_id):
         # type: (int) -> List[trial_module.Trial]
 
-        trials = self.session.query(Trial).filter(Trial.study_id == study_id).all()
-        params = self.session.query(TrialParam).join(Trial). \
+        session = self.scoped_session()
+        trials = session.query(Trial).filter(Trial.study_id == study_id).all()
+        params = session.query(TrialParam).join(Trial). \
             filter(Trial.study_id == study_id).all()
-        values = self.session.query(TrialValue).join(Trial). \
+        values = session.query(TrialValue).join(Trial). \
             filter(Trial.study_id == study_id).all()
 
         return self._merge_trials_orm(trials, params, values)
@@ -325,20 +340,22 @@ class RDBStorage(BaseStorage):
     def _check_table_schema_compatibility(self):
         # type: () -> None
 
-        version_info = self.session.query(VersionInfo).one_or_none()
+        session = self.scoped_session()
+
+        version_info = session.query(VersionInfo).one_or_none()
         if version_info is None:
             version_info = VersionInfo()
             version_info.schema_version = SCHEMA_VERSION
             version_info.library_version = version.__version__
-            self.session.add(version_info)
+            session.add(version_info)
             try:
-                self.session.commit()
+                session.commit()
             except IntegrityError as e:
                 self.logger.debug(
                     'Ignoring {}. This happens due to a timing issue during initial setup of {} '
                     'table among multi threads/processes/nodes.'.format(
                         repr(e), VersionInfo.__tablename__))
-                self.session.rollback()
+                session.rollback()
         else:
             if version_info.schema_version != SCHEMA_VERSION:
                 raise RuntimeError(
@@ -346,7 +363,29 @@ class RDBStorage(BaseStorage):
                     '(set up by pfnopt {}).'.format(
                         version.__version__, version_info.library_version))
 
-    def close(self):
+    def remove_session(self):
         # type: () -> None
 
-        self.session.close()
+        """Removes the current session.
+
+        A session is stored in SQLALchemy's ThreadLocalRegistry for each thread. This method
+        closes and removes the session which is associated to the current thread. Particularly,
+        under multi-thread use cases, it is important to call this method *from each thread*.
+        Otherwise, all sessions and their associated DB connections are destructed by a thread
+        that occasionally invoked the garbage collector. By default, it is not allowed to touch
+        a SQLite connection from threads other than the thread that created the connection.
+        Therefore, we need to explicitly close the connection from each thread.
+
+        """
+
+        self.scoped_session.remove()
+
+    def __del__(self):
+        # type: () -> None
+
+        # This destructor calls remove_session to explicitly close the DB connection. We need this
+        # because DB connections created in SQLAlchemy are not automatically closed by reference
+        # counters, so it is not guaranteed that they are released by correct threads (for more
+        # information, please see the docstring of remove_session).
+
+        self.remove_session()
