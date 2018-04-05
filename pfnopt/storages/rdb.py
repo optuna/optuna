@@ -368,7 +368,7 @@ class RDBStorage(BaseStorage):
 
         """Removes the current session.
 
-        A session is stored in SQLALchemy's ThreadLocalRegistry for each thread. This method
+        A session is stored in SQLAlchemy's ThreadLocalRegistry for each thread. This method
         closes and removes the session which is associated to the current thread. Particularly,
         under multi-thread use cases, it is important to call this method *from each thread*.
         Otherwise, all sessions and their associated DB connections are destructed by a thread
