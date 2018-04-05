@@ -203,6 +203,17 @@ class _DashboardApp(object):
         self.all_trials_widget.update(current_trials, new_trials)
 
 
+def _get_this_source_path():
+    # type: () -> str
+
+    path = __file__
+
+    # Sometimes __file__ points to a *.pyc file, but Bokeh doesn't accept it.
+    if path.endswith('.pyc'):
+        path = path[:-1]
+    return path
+
+
 def serve(study):
     # type: (pfnopt.study.Study) -> None
 
@@ -220,7 +231,7 @@ def serve(study):
     # for some reason, we found that the CDS update is not reflected to browsers, at least on Bokeh
     # version 0.12.15. In addition, we will need to do many configuration to servers, which can be
     # done automatically with the following one line. So, for now, we decided to use this way.
-    bokeh.command.bootstrap.main(['bokeh', 'serve', '--show', __file__])
+    bokeh.command.bootstrap.main(['bokeh', 'serve', '--show', _get_this_source_path()])
 
 
 def write(study, out_path):
@@ -230,7 +241,7 @@ def write(study, out_path):
 
     _mode = 'html'
     _study = study
-    bokeh.command.bootstrap.main(['bokeh', 'html', __file__, '-o', out_path])
+    bokeh.command.bootstrap.main(['bokeh', 'html', _get_this_source_path(), '-o', out_path])
 
 
 def _run():
