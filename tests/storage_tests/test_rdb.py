@@ -125,46 +125,13 @@ class TestRDBStorage(unittest.TestCase):
         # test setting new name
         result_1 = storage.session.query(TrialParamDistribution). \
             filter(TrialParamDistribution.param_name == 'x').one()
-        distribution_1 = json_to_distribution(result_1.distribution_json)
         assert result_1.trial_id == trial_id
-        assert isinstance(distribution_1, UniformDistribution)
-        assert distribution_1.low == self.example_distributions['x'].low
-        assert distribution_1.high == self.example_distributions['x'].high
+        assert json_to_distribution(result_1.distribution_json) == self.example_distributions['x']
 
         result_2 = storage.session.query(TrialParamDistribution). \
             filter(TrialParamDistribution.param_name == 'y').one()
-        distribution_2 = json_to_distribution(result_2.distribution_json)
         assert result_2.trial_id == trial_id
-        assert isinstance(distribution_2, CategoricalDistribution)
-        assert distribution_2.choices == self.example_distributions['y'].choices
-
-        # test setting existing name with the same distribution
-        storage.set_trial_param_distribution(
-            storage.create_new_trial_id(study_id),  # new trial_id
-            'y',
-            self.example_distributions['y'])
-
-        # test setting existing name with different distribution kind
-        self.assertRaises(
-            ValueError,
-            lambda: storage.set_trial_param_distribution(
-                storage.create_new_trial_id(study_id),  # new trial_id
-                'x',
-                self.example_distributions['y']))
-
-        # test setting existing name with different value (CategoricalDistribution)
-        self.assertRaises(
-            ValueError,
-            lambda: storage.set_trial_param_distribution(
-                storage.create_new_trial_id(study_id),  # new trial_id
-                'y',
-                self.example_distributions['y']._replace(choices=('Tokyo', 'Shinbashi'))))
-
-        # test setting existing name with different value (non CategoricalDistribution)
-        storage.set_trial_param_distribution(
-            storage.create_new_trial_id(study_id),  # new trial_id
-            'x',
-            self.example_distributions['x']._replace(low=100, high=200))
+        assert json_to_distribution(result_2.distribution_json) == self.example_distributions['y']
 
         # test setting a duplicated pair of trial and parameter name
         self.assertRaises(
