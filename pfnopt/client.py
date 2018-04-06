@@ -110,6 +110,11 @@ class LocalClient(BaseClient):
         ret = self.study.pruner.prune(self.storage, self.study_id, self.trial_id, step)
         return ret
 
+    def set_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self.storage.set_trial_user_attr(self.trial_id, key, value)
+
     @property
     def params(self):
         # type: () -> Dict[str, Any]
