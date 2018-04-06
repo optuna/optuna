@@ -1,4 +1,5 @@
 from collections import defaultdict
+import json
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy.engine import create_engine
@@ -24,7 +25,7 @@ import pfnopt.trial as trial_module
 from pfnopt.trial import State
 from pfnopt import version
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 Base = declarative_base()  # type: Any
 
@@ -41,6 +42,7 @@ class Trial(Base):
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     state = Column(Enum(State))
     value = Column(Float)
+    user_attributes_json = Column(String(255))
     system_attributes_json = Column(String(255))
 
     study = orm.relationship(Study)
@@ -175,6 +177,8 @@ class RDBStorage(BaseStorage):
             trial_module.SystemAttributes(datetime_start=None, datetime_complete=None)
         trial.system_attributes_json = trial_module.system_attrs_to_json(system_attributes)
 
+        trial.user_attributes_json = '{}'
+
         session = self.scoped_session()
         session.add(trial)
         session.commit()
@@ -265,10 +269,21 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        # the following line is to check that the specified trial_id exists in DB.
         trial = session.query(Trial).filter(Trial.trial_id == trial_id).one()
 
         trial.system_attributes_json = trial_module.system_attrs_to_json(system_attrs)
+        session.commit()
+
+    def set_trial_user_attr(self, trial_id, key, value):
+        # type: (int, str, Any) -> None
+
+        session = self.scoped_session()
+
+        trial = session.query(Trial).filter(Trial.trial_id == trial_id).one()
+
+        loaded_json = json.loads(trial.user_attributes_json)
+        loaded_json[key] = value
+        trial.user_attributes_json = json.dumps(loaded_json)
         session.commit()
 
     def get_trial(self, trial_id):
@@ -286,10 +301,8 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
         trials = session.query(Trial).filter(Trial.study_id == study_id).all()
-        params = session.query(TrialParam).join(Trial). \
-            filter(Trial.study_id == study_id).all()
-        values = session.query(TrialValue).join(Trial). \
-            filter(Trial.study_id == study_id).all()
+        params = session.query(TrialParam).join(Trial).filter(Trial.study_id == study_id).all()
+        values = session.query(TrialValue).join(Trial).filter(Trial.study_id == study_id).all()
 
         return self._merge_trials_orm(trials, params, values)
 
@@ -329,7 +342,7 @@ class RDBStorage(BaseStorage):
                 state=trial.state,
                 params=params,
                 system_attrs=trial_module.json_to_system_attrs(trial.system_attributes_json),
-                user_attrs={},
+                user_attrs=json.loads(trial.user_attributes_json),
                 value=trial.value,
                 intermediate_values=intermediate_values,
                 params_in_internal_repr=params_in_internal_repr
