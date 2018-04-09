@@ -21,6 +21,7 @@ class InMemoryStorage(base.BaseStorage):
         self.study_attrs = {}  # type: Dict[str, Any]
         self.trials = []  # type: List[trial.Trial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
+        self.study_user_attrs = {}  # type: Dict[str, Any]
 
         self._lock = threading.Lock()
 
@@ -51,6 +52,24 @@ class InMemoryStorage(base.BaseStorage):
 
         self._check_study_id(study_id)
         return IN_MEMORY_STORAGE_STUDY_UUID
+
+    def set_study_user_attr(self, study_id, key, value):
+        # type: (int, str, Any) -> None
+
+        with self._lock:
+            self.study_user_attrs[key] = value
+
+    def get_study_user_attr(self, study_id, key):
+        # type: (int, str) -> Any
+
+        with self._lock:
+            return copy.deepcopy(self.study_user_attrs[key])
+
+    def get_all_study_user_attrs(self, study_id):
+        # type: (int) -> Dict[str, Any]
+
+        with self._lock:
+            return copy.deepcopy(self.study_user_attrs)
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
