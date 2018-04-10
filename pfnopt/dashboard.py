@@ -35,7 +35,6 @@ h1, p {{
 
 <h1>PFNOpt Dashboard (Beta)</h1>
 <p>
-<b>URL:</b> {url}<br>
 <b>Study UUID:</b> {study_uuid}<br>
 </p>
 '''
@@ -163,7 +162,6 @@ class _DashboardApp(object):
 
         self.doc.title = 'PFNOpt Dashboard (Beta)'
         header = _HEADER_FORMAT.format(
-            url=str(self.study.storage),
             study_uuid=self.study.study_uuid)
         self.doc.add_root(
             bokeh.layouts.layout([
