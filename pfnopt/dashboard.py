@@ -21,6 +21,7 @@ from typing import Dict  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 
+import pfnopt.logging
 import pfnopt.study
 import pfnopt.trial
 
@@ -215,6 +216,11 @@ def _check_bokeh_availability():
             '(The actual import error is as follows: ' + str(_import_error) + ')')
 
 
+def _show_experimental_warning():
+    logger = pfnopt.logging.get_logger(__name__)
+    logger.warning('PFNOpt dashboard is still highly experimental. Please use with caution!')
+
+
 def _get_this_source_path():
     # type: () -> str
 
@@ -232,6 +238,7 @@ def serve(study):
     global _mode, _study
 
     _check_bokeh_availability()
+    _show_experimental_warning()
 
     # We want to pass the mode (launching a server? or, just writing an HTML?) and a target study
     # to our Bokeh app. Unfortunately, as we are using `bokeh.command.bootstrap.main` to launch
@@ -257,6 +264,7 @@ def write(study, out_path):
     global _mode, _study
 
     _check_bokeh_availability()
+    _show_experimental_warning()
 
     _mode = 'html'
     _study = study
