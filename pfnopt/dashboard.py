@@ -97,7 +97,6 @@ if _available:
             if stream_dict:
                 self.cds.stream(stream_dict)
 
-
     class _AllTrialsWidget(object):
 
         def __init__(self, trials):
@@ -147,7 +146,6 @@ if _available:
                 'params': [str(trial.params) for trial in trials],
                 'system_attrs': [str(trial.system_attrs._asdict()) for trial in trials],
             }
-
 
     class _DashboardApp(object):
 
