@@ -226,7 +226,10 @@ def serve(study):
     _mode = 'serve'
     _study = study
 
-    # This is not a very clean way to launch Bokeh server. Another seemingly better way is to
+    # TODO(akiba): Stop using Bokeh's CLI entry point, and start the HTTP server by ourselves.
+
+    # This is not a very clean way to launch Bokeh server.
+    # Another seemingly better way is to
     # instantiate and launch `bokeh.server.server.Server` by ourselves. However, in this way,
     # for some reason, we found that the CDS update is not reflected to browsers, at least on Bokeh
     # version 0.12.15. In addition, we will need to do many configuration to servers, which can be
