@@ -13,7 +13,7 @@ def get_version():
     assert False
 
 
-tests_require = ['pytest', 'hacking', 'mock']
+tests_require = ['pytest', 'hacking', 'mock', 'bokeh']
 if sys.version_info[0] == 3:
     tests_require.append('mypy')
 
