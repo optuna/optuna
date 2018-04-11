@@ -117,6 +117,12 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             self.trials[trial_id] = self.trials[trial_id]._replace(system_attrs=system_attrs)
 
+    def set_trial_user_attr(self, trial_id, key, value):
+        # type: (int, str, Any) -> None
+
+        with self._lock:
+            self.trials[trial_id].user_attrs[key] = value
+
     def get_trial(self, trial_id):
         # type: (int) -> trial.Trial
 
