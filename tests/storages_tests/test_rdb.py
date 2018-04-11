@@ -342,7 +342,7 @@ class TestRDBStorage(unittest.TestCase):
             system_attrs=trial_module.SystemAttributes(
                 datetime_start=datetime.strptime('20180227', '%Y%m%d'),
                 datetime_complete=datetime.strptime('20180228', '%Y%m%d')),
-            user_attrs={},
+            user_attrs={'tags': ['video', 'classification'], 'dataset': 'YouTube-8M'},
             params={'x': 0.01, 'y': 'Otemachi'},
             intermediate_values={0: -2., 1: -3., 2: 100.},
             params_in_internal_repr={'x': .01, 'y': 0.}
@@ -382,6 +382,9 @@ class TestRDBStorage(unittest.TestCase):
 
         for step, value in example_trial.intermediate_values.items():
             storage.set_trial_intermediate_value(trial_id, step, value)
+
+        for key, value in example_trial.user_attrs.items():
+            storage.set_trial_user_attr(trial_id, key, value)
 
         return trial_id
 
