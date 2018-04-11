@@ -7,7 +7,7 @@ from pfnopt.storages import RDBStorage
 
 
 @pytest.mark.parametrize('storage_init_func', [
-    lambda: InMemoryStorage(),
+    InMemoryStorage,
     lambda: RDBStorage('sqlite:///:memory:')
 ])
 def test_set_trial_user_attrs(storage_init_func):

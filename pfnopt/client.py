@@ -9,7 +9,6 @@ from pfnopt import trial
 if TYPE_CHECKING:
     from pfnopt.study import Study  # NOQA
     from typing import Any  # NOQA
-    from typing import Dict  # NOQA
     from typing import Sequence  # NOQA
     from typing import TypeVar  # NOQA
 
@@ -21,42 +20,42 @@ class BaseClient(object):
 
     def sample_uniform(self, name, low, high):
         # type: (str, float, float) -> float
+
         return self._sample(name, distributions.UniformDistribution(low=low, high=high))
 
     def sample_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
+
         return self._sample(name, distributions.LogUniformDistribution(low=low, high=high))
 
     def sample_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
+
         choices = tuple(choices)
         return self._sample(name, distributions.CategoricalDistribution(choices=choices))
 
     @abc.abstractmethod
     def complete(self, result):
         # type: (float) -> None
+
         raise NotImplementedError
 
     @abc.abstractmethod
     def prune(self, step, current_result):
         # type: (int, float) -> bool
+
         raise NotImplementedError
 
-    @property
     @abc.abstractmethod
-    def params(self):
-        # type: () -> Dict[str, Any]
-        raise NotImplementedError
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
 
-    @property
-    @abc.abstractmethod
-    def info(self):
-        # type: () -> trial.SystemAttributes
         raise NotImplementedError
 
     @abc.abstractmethod
     def _sample(self, name, distribution):
         # type: (str, distributions.BaseDistribution) -> Any
+
         raise NotImplementedError
 
 
@@ -110,20 +109,7 @@ class LocalClient(BaseClient):
         ret = self.study.pruner.prune(self.storage, self.study_id, self.trial_id, step)
         return ret
 
-    def set_attr(self, key, value):
+    def set_user_attr(self, key, value):
         # type: (str, Any) -> None
 
         self.storage.set_trial_user_attr(self.trial_id, key, value)
-
-    @property
-    def params(self):
-        # type: () -> Dict[str, Any]
-
-        return self.storage.get_trial_params(self.trial_id)
-
-    @property
-    def info(self):
-        # type: () -> trial.SystemAttributes
-
-        # TODO(Akiba): info -> system_attrs
-        return self.storage.get_trial_system_attrs(self.trial_id)
