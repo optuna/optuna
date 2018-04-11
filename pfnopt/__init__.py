@@ -1,3 +1,4 @@
+from pfnopt import dashboard  # NOQA
 from pfnopt import integration  # NOQA
 from pfnopt import logging  # NOQA
 from pfnopt import samplers  # NOQA
