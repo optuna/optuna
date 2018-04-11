@@ -177,18 +177,7 @@ class RDBStorage(BaseStorage):
 
         session.commit()
 
-    def get_study_user_attr(self, study_id, key):
-        # type: (int, str) -> Any
-
-        session = self.scoped_session()
-
-        attribute = session.query(StudyUserAttribute). \
-            filter(StudyUserAttribute.study_id == study_id). \
-            filter(StudyUserAttribute.key == key).one()
-
-        return json.loads(attribute.value_json)
-
-    def get_all_study_user_attrs(self, study_id):
+    def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
 
         session = self.scoped_session()

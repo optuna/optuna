@@ -75,6 +75,12 @@ class Study(object):
 
         return self.storage.get_all_trials(self.study_id)
 
+    @property
+    def user_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self.storage.get_study_user_attrs(self.study_id)
+
     def run(self, func, n_trials=None, timeout_seconds=None, n_jobs=1):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
 
@@ -82,6 +88,11 @@ class Study(object):
             self._run_sequential(func, n_trials, timeout_seconds)
         else:
             self._run_parallel(func, n_trials, timeout_seconds, n_jobs)
+
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self.storage.set_study_user_attr(self.study_id, key, value)
 
     def _run_sequential(self, func, n_trials, timeout_seconds):
         # type: (ObjectiveFuncType, Optional[int], Optional[float]) -> None

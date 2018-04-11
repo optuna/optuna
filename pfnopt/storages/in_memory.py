@@ -59,13 +59,7 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             self.study_user_attrs[key] = value
 
-    def get_study_user_attr(self, study_id, key):
-        # type: (int, str) -> Any
-
-        with self._lock:
-            return copy.deepcopy(self.study_user_attrs[key])
-
-    def get_all_study_user_attrs(self, study_id):
+    def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
 
         with self._lock:
