@@ -34,6 +34,18 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def set_study_user_attr(self, study_id, key, value):
+        # type: (int, str, Any) -> None
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_study_user_attrs(self, study_id):
+        # type: (int) -> Dict[str, Any]
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
 

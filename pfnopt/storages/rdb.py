@@ -36,6 +36,17 @@ class Study(Base):
     study_uuid = Column(String(255), unique=True)
 
 
+class StudyUserAttribute(Base):
+    __tablename__ = 'study_user_attributes'
+    __table_args__ = (UniqueConstraint('study_id', 'key'), )  # type: Any
+    study_user_attribute_id = Column(Integer, primary_key=True)
+    study_id = Column(Integer, ForeignKey('studies.study_id'))
+    key = Column(String(255))
+    value_json = Column(String(255))
+
+    study = orm.relationship(Study)
+
+
 class Trial(Base):
     __tablename__ = 'trials'
     trial_id = Column(Integer, primary_key=True)
@@ -142,6 +153,39 @@ class RDBStorage(BaseStorage):
             raise ValueError('study_id {} does not exist.'.format(study_id))
         else:
             return study.study_uuid
+
+    def set_study_user_attr(self, study_id, key, value):
+        # type: (int, str, Any) -> None
+
+        session = self.scoped_session()
+
+        # check if the study already exists
+        session.query(Study).filter(Study.study_id == study_id).one()
+
+        attribute = session.query(StudyUserAttribute). \
+            filter(StudyUserAttribute.study_id == study_id). \
+            filter(StudyUserAttribute.key == key).one_or_none()
+
+        if attribute is None:
+            attribute = StudyUserAttribute(
+                study_id=study_id, key=key, value_json=json.dumps(value))
+            session.add(attribute)
+        else:
+            attribute.study_id = study_id
+            attribute.key = key
+            attribute.value_json = json.dumps(value)
+
+        session.commit()
+
+    def get_study_user_attrs(self, study_id):
+        # type: (int) -> Dict[str, Any]
+
+        session = self.scoped_session()
+
+        attributes = session.query(StudyUserAttribute). \
+            filter(StudyUserAttribute.study_id == study_id).all()
+
+        return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
     def set_trial_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None

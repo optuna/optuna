@@ -236,6 +236,17 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
         check_study(study)
 
 
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_set_and_get_user_attrs(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = pfnopt.create_study(storage=storage)
+
+        study.set_user_attr('dataset', 'MNIST')
+        assert study.user_attrs['dataset'] == 'MNIST'
+
+
 def test_study_pickle():
     # type: () -> None
 
