@@ -18,7 +18,6 @@ class InMemoryStorage(base.BaseStorage):
 
     def __init__(self):
         # type: () -> None
-        self.study_attrs = {}  # type: Dict[str, Any]
         self.trials = []  # type: List[trial.Trial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
         self.study_user_attrs = {}  # type: Dict[str, Any]

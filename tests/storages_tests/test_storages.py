@@ -31,9 +31,8 @@ def test_set_and_get_study_user_attrs(storage_init_func):
         assert storage.get_study_user_attrs(study_id)[key] == value
 
     # Test setting value
-    check_set_and_get('dataset', EXAMPLE_ATTRS['dataset'])
-    check_set_and_get('none', EXAMPLE_ATTRS['none'])
-    check_set_and_get('json_serializable', EXAMPLE_ATTRS['json_serializable'])
+    for key, value in EXAMPLE_ATTRS.items():
+        check_set_and_get(key, value)
     assert storage.get_study_user_attrs(study_id) == EXAMPLE_ATTRS
 
     # Test overwriting value.
@@ -57,9 +56,8 @@ def test_set_trial_user_attrs(storage_init_func):
         assert storage.get_trial(trial_id).user_attrs[key] == value
 
     # Test setting value.
-    check_set_and_get(trial_id_1, 'dataset', EXAMPLE_ATTRS['dataset'])
-    check_set_and_get(trial_id_1, 'none', EXAMPLE_ATTRS['none'])
-    check_set_and_get(trial_id_1, 'json_serializable', EXAMPLE_ATTRS['json_serializable'])
+    for key, value in EXAMPLE_ATTRS.items():
+        check_set_and_get(trial_id_1, key, value)
     assert storage.get_trial(trial_id_1).user_attrs == EXAMPLE_ATTRS
 
     # Test overwriting value.

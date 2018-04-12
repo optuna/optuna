@@ -159,7 +159,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        # check if the parameter already exists
+        # check if the study already exists
         session.query(Study).filter(Study.study_id == study_id).one()
 
         attribute = session.query(StudyUserAttribute). \
