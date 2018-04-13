@@ -12,8 +12,7 @@ def test_mkstudy_command():
         db_url = 'sqlite:///{}'.format(tf.name)
         command = ['pfnopt', 'mkstudy', '--url', db_url]
 
-        # command exit code should be 0
-        assert subprocess.check_call(command) == 0
+        subprocess.check_call(command)
 
         # command output should be in uuid string format
         study_uuid = str(subprocess.check_output(command).decode().strip())
@@ -36,7 +35,6 @@ def test_set_study_user_attr():
         command = ['pfnopt', 'mkstudy', '--url', db_url]
         study_uuid = str(subprocess.check_output(command).decode().strip())
 
-        # command exit code should be 0
         example_attrs = {'architecture': 'ResNet', 'baselen_score': '0.002'}
         base_command = ['pfnopt', 'set_study_attr', '--url', db_url, '--study_uuid', study_uuid]
         for key, value in example_attrs.items():
@@ -62,7 +60,7 @@ def test_report_command():
             command_report = [
                 'pfnopt', 'report', '--url', db_url, '--study_uuid', study_uuid,
                 '--out', tf_report.name]
-            assert subprocess.check_call(command_report) == 0
+            subprocess.check_call(command_report)
 
             html = tf_report.read()
             assert '<body>' in html
