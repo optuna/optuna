@@ -28,6 +28,28 @@ class MakeStudy(Command):
         print(study_uuid)
 
 
+class SetStudyUserAttribute(Command):
+
+    def get_parser(self, prog_name):
+        # type: (str) -> ArgumentParser
+
+        parser = super(SetStudyUserAttribute, self).get_parser(prog_name)
+        parser.add_argument('--url', '-u', required=True)
+        parser.add_argument('--study_uuid', required=True)
+        parser.add_argument('--key', '-k', required=True)
+        parser.add_argument('--value', '-v', required=True)
+        return parser
+
+    def take_action(self, parsed_args):
+        # type: (Namespace) -> None
+
+        study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
+        study.set_user_attr(parsed_args.key, parsed_args.value)
+
+        logger = pfnopt.logging.get_logger(__name__)
+        logger.info('Attribute successfully written.')
+
+
 class Dashboard(Command):
 
     def get_parser(self, prog_name):
@@ -68,6 +90,7 @@ class Report(Command):
 
 _COMMANDS = {
     'mkstudy': MakeStudy,
+    'set_study_attr': SetStudyUserAttribute,
     'dashboard': Dashboard,
     'report': Report,
 }

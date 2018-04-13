@@ -26,6 +26,28 @@ def test_mkstudy_command():
         assert study_id == 2
 
 
+def test_set_study_user_attr():
+    # type: () -> None
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = 'sqlite:///{}'.format(tf.name)
+
+        # make study
+        command = ['pfnopt', 'mkstudy', '--url', db_url]
+        study_uuid = str(subprocess.check_output(command).decode().strip())
+
+        # command exit code should be 0
+        example_attrs = {'architecture': 'ResNet', 'baselen_score': '0.002'}
+        base_command = ['pfnopt', 'set_study_attr', '--url', db_url, '--study_uuid', study_uuid]
+        for key, value in example_attrs.items():
+            assert subprocess.check_call(base_command + ['--key', key, '--value', value]) == 0
+
+        # attrs should be stored in storage
+        storage = RDBStorage(db_url)
+        study_id = storage.get_study_id_from_uuid(study_uuid)
+        assert storage.get_study_user_attrs(study_id) == example_attrs
+
+
 def test_report_command():
     # type: () -> None
 
