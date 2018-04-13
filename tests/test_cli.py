@@ -40,7 +40,7 @@ def test_set_study_user_attr():
         example_attrs = {'architecture': 'ResNet', 'baselen_score': '0.002'}
         base_command = ['pfnopt', 'set_study_attr', '--url', db_url, '--study_uuid', study_uuid]
         for key, value in example_attrs.items():
-            assert subprocess.check_call(base_command + ['--key', key, '--value', value]) == 0
+            subprocess.check_call(base_command + ['--key', key, '--value', value])
 
         # attrs should be stored in storage
         storage = RDBStorage(db_url)
