@@ -7,6 +7,7 @@ from typing import List  # NOQA
 from typing import Tuple  # NOQA
 
 from pfnopt import distributions  # NOQA
+from pfnopt import study_summary
 from pfnopt import trial
 
 
@@ -34,6 +35,12 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def set_study_system_attrs(self, study_id, system_attrs):
+        # type: (int, study_summary.StudySummary) -> None
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
@@ -48,6 +55,12 @@ class BaseStorage(object):
     @abc.abstractmethod
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_all_study_summaries(self):
+        # type: () -> List[study_summary.StudySummary]
 
         raise NotImplementedError
 

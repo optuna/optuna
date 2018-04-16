@@ -19,13 +19,14 @@ from typing import Optional  # NOQA
 import uuid
 
 from pfnopt import distributions
+from pfnopt import study_summary
 from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
 import pfnopt.trial as trial_module
 from pfnopt.trial import State
 from pfnopt import version
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 Base = declarative_base()  # type: Any
 
@@ -34,6 +35,17 @@ class Study(Base):
     __tablename__ = 'studies'
     study_id = Column(Integer, primary_key=True)
     study_uuid = Column(String(255), unique=True)
+
+
+class StudySystemAttribute(Base):
+    __tablename__ = 'study_system_attributes'
+    __table_args__ = (UniqueConstraint('study_id', 'key'), )
+    study_system_attribute_id = Column(Integer, primary_key=True)
+    study_id = Column(Integer, ForeignKey('studies.study_id'))
+    key = Column(String(255))
+    value_json = Column(String(255))
+
+    study = orm.relationship(Study)
 
 
 class StudyUserAttribute(Base):
@@ -154,6 +166,30 @@ class RDBStorage(BaseStorage):
         else:
             return study.study_uuid
 
+    def set_study_system_attrs(self, study_id, system_attrs):
+        # type: (int, study_summary.StudySummary) -> None
+
+        session = self.scoped_session()
+
+        # check if the study already exists
+        session.query(Study).filter(Study.study_id == study_id).one()
+
+        for key, value in system_attrs._asdict().items():
+            attribute = session.query(StudySystemAttribute). \
+                filter(StudySystemAttribute.study_id == study_id). \
+                filter(StudySystemAttribute.key == key).one_or_none()
+
+            if attribute is None:
+                attribute = StudySystemAttribute(
+                    study_id=study_id, key=key, value_json=json.dumps(value))
+                session.add(attribute)
+            else:
+                attribute.study_id = study_id
+                attribute.key = key
+                attribute.value_json = json.dumps(session)
+
+            self._commit_ignoring_integrity_error(session)
+
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
@@ -175,7 +211,7 @@ class RDBStorage(BaseStorage):
             attribute.key = key
             attribute.value_json = json.dumps(value)
 
-        session.commit()
+        self._commit_ignoring_integrity_error(session)
 
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
@@ -186,6 +222,11 @@ class RDBStorage(BaseStorage):
             filter(StudyUserAttribute.study_id == study_id).all()
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
+
+    def get_all_study_summaries(self):
+        # type: () -> List[study_summary.StudySummary]
+
+        raise NotImplementedError
 
     def set_trial_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
@@ -262,13 +303,7 @@ class RDBStorage(BaseStorage):
         trial_param.param_value = param_value
         session.add(trial_param)
 
-        try:
-            session.commit()
-        except IntegrityError as e:
-            self.logger.debug(
-                'Caught {}. This happens due to a known race condition. Another process/thread '
-                'might have committed a record with the same unique key.'.format(repr(e)))
-            session.rollback()
+        self._commit_ignoring_integrity_error(session)
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
@@ -405,20 +440,24 @@ class RDBStorage(BaseStorage):
             version_info.schema_version = SCHEMA_VERSION
             version_info.library_version = version.__version__
             session.add(version_info)
-            try:
-                session.commit()
-            except IntegrityError as e:
-                self.logger.debug(
-                    'Ignoring {}. This happens due to a timing issue during initial setup of {} '
-                    'table among multi threads/processes/nodes.'.format(
-                        repr(e), VersionInfo.__tablename__))
-                session.rollback()
+            self._commit_ignoring_integrity_error(session)
         else:
             if version_info.schema_version != SCHEMA_VERSION:
                 raise RuntimeError(
                     'The runtime pfnopt version {} is no longer compatible with the table schema '
                     '(set up by pfnopt {}).'.format(
                         version.__version__, version_info.library_version))
+
+    def _commit_ignoring_integrity_error(self, session):
+        # type: () -> None
+
+        try:
+            session.commit()
+        except IntegrityError as e:
+            self.logger.debug(
+                'Ignoring {}. This happens due to a timing issue. Another threads/processes/nodes '
+                'has already committed a record with identical key(s).'.format(repr(e)))
+            session.rollback()
 
     def remove_session(self):
         # type: () -> None
