@@ -2,6 +2,7 @@ import enum
 from typing import Any
 from typing import Dict
 from typing import NamedTuple
+from typing import Optional
 
 
 class StudyTask(enum.Enum):
@@ -12,8 +13,8 @@ class StudyTask(enum.Enum):
 
 StudySystemAttributes = NamedTuple(
     'StudySystemAttributes',
-    [('name', str),
-     ('task', StudyTask)])
+    [('name', Optional[str]),
+     ('task', Optional[StudyTask])])
 
 
 StudySummary = NamedTuple(
