@@ -5,6 +5,8 @@ from typing import Dict  # NOQA
 from typing import List  # NOQA
 
 from pfnopt import distributions  # NOQA
+from pfnopt.study_summary import StudySummary
+from pfnopt.study_summary import StudySystemAttributes
 from pfnopt import trial
 
 from pfnopt.storages import base
@@ -21,6 +23,7 @@ class InMemoryStorage(base.BaseStorage):
         self.trials = []  # type: List[trial.Trial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
         self.study_user_attrs = {}  # type: Dict[str, Any]
+        self.study_system_attrs = StudySystemAttributes(None, None)  # type: StudySystemAttributes
 
         self._lock = threading.Lock()
 
@@ -52,6 +55,18 @@ class InMemoryStorage(base.BaseStorage):
         self._check_study_id(study_id)
         return IN_MEMORY_STORAGE_STUDY_UUID
 
+    def set_study_system_attrs(self, study_id, system_attrs):
+        # type: (int, StudySystemAttributes) -> None
+
+        with self._lock:
+            self.study_system_attrs = system_attrs
+
+    def get_study_system_attrs(self, study_id):
+        # type: (int) -> StudySystemAttributes
+
+        with self._lock:
+            return copy.deepcopy(self.study_system_attrs)
+
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
@@ -63,6 +78,19 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             return copy.deepcopy(self.study_user_attrs)
+
+    def get_all_study_summaries(self):
+        # type: () -> List[StudySummary]
+
+        with self._lock:
+            summary = StudySummary(
+                study_id=IN_MEMORY_STORAGE_STUDY_ID,
+                study_uuid=IN_MEMORY_STORAGE_STUDY_UUID,
+                system_attrs=self.study_system_attrs,
+                user_attrs=copy.deepcopy(self.study_user_attrs),
+                n_trials=len(self.trials)
+            )
+            return [summary]
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int

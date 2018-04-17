@@ -1,4 +1,5 @@
 from collections import defaultdict
+import itertools
 import json
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
@@ -8,8 +9,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
+from sqlalchemy import func
 from sqlalchemy import Integer
 from sqlalchemy import orm
+from sqlalchemy.orm import Session  # NOQA
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
 from typing import Any  # NOQA
@@ -21,11 +24,14 @@ import uuid
 from pfnopt import distributions
 from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
+from pfnopt.study_summary import StudySummary
+from pfnopt.study_summary import StudySystemAttributes
+from pfnopt.study_summary import StudyTask
 import pfnopt.trial as trial_module
 from pfnopt.trial import State
 from pfnopt import version
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 Base = declarative_base()  # type: Any
 
@@ -34,6 +40,120 @@ class Study(Base):
     __tablename__ = 'studies'
     study_id = Column(Integer, primary_key=True)
     study_uuid = Column(String(255), unique=True)
+
+    @classmethod
+    def find_by_id(cls, session, study_id):
+        # type: (Session, int) -> Study
+
+        return session.query(cls).filter(cls.study_id == study_id).one()
+
+    @classmethod
+    def find_all(cls, session):
+        # type: (Session) -> List[Study]
+
+        return session.query(cls).all()
+
+    def set_system_attrs(self, session, system_attrs):
+        # type: (Session, StudySystemAttributes) -> None
+
+        models = StudySystemAttribute.create_instances_from_attributes(self, system_attrs)
+        for m in models:
+            m.add_or_update(session)
+
+    def get_system_attrs(self, session):
+        # type: (Session) -> StudySystemAttributes
+
+        models = StudySystemAttribute.find_by_study(session, self)
+        return StudySystemAttribute.merge_instances_to_attributes(models)
+
+
+class StudySystemAttribute(Base):
+    __tablename__ = 'study_system_attributes'
+    __table_args__ = (UniqueConstraint('study_id', 'key'), )
+    study_system_attribute_id = Column(Integer, primary_key=True)
+    study_id = Column(Integer, ForeignKey('studies.study_id'))
+    key = Column(String(255))
+    value = Column(String(255))
+
+    study = orm.relationship(Study)
+
+    def add_or_update(self, session):
+        attribute = session.query(StudySystemAttribute). \
+            filter(StudySystemAttribute.study_id == self.study_id). \
+            filter(StudySystemAttribute.key == self.key).one_or_none()
+
+        if attribute is None:
+            session.add(self)
+        else:
+            attribute.value = self.value
+
+    @classmethod
+    def find_by_study(cls, session, study):
+        # type: (Session, Study) -> List[StudySystemAttribute]
+
+        return session.query(cls).filter(cls.study_id == study.study_id).all()
+
+    @classmethod
+    def find_all(cls, session):
+        # type: (Session) -> List[StudySystemAttribute]
+
+        return session.query(cls).all()
+
+    @classmethod
+    def create_instances_from_attributes(cls, study, system_attrs):
+        # type: (Study, StudySystemAttributes) -> List[StudySystemAttribute]
+
+        instances = []
+        for key, value in system_attrs._asdict().items():
+            value = cls._convert_value_to_internal_repr(key, value)
+            instances.append(StudySystemAttribute(study_id=study.study_id, key=key, value=value))
+
+        return instances
+
+    @classmethod
+    def merge_instances_to_attributes(cls, system_attr_models):
+        # type (List[SystemAttribute]) -> SystemAttributes
+
+        assert len({m.study_id for m in system_attr_models}) == 1
+
+        attributes_kwargs = {}
+        for attr in system_attr_models:
+            value = cls._convert_value_to_external_repr(attr.key, attr.value)
+            attributes_kwargs[attr.key] = value
+
+        return StudySystemAttributes(**attributes_kwargs)
+
+    @classmethod
+    def _convert_value_to_internal_repr(cls, key, value):
+        # type (str, Any) -> str
+
+        cls._check_attribute_key(key)
+
+        if key == 'task' and value is not None:
+            isinstance(value, StudyTask)
+            value = str(value.value)
+
+        return value
+
+    @classmethod
+    def _convert_value_to_external_repr(cls, key, value):
+        # type (str, str) -> Any
+
+        cls._check_attribute_key(key)
+
+        if key == 'task':
+            value = None if value is None else StudyTask(int(value))
+
+        return value
+
+    @classmethod
+    def _check_attribute_key(cls, key):
+        # type: (str) -> None
+
+        # todo(sano): better way to get keys
+        if key not in StudySystemAttributes(None, None)._asdict().keys():
+            raise ValueError(
+                '{} does not have attribute: {}.'.format(StudySystemAttributes.__name__, key))
 
 
 class StudyUserAttribute(Base):
@@ -46,6 +166,12 @@ class StudyUserAttribute(Base):
 
     study = orm.relationship(Study)
 
+    @classmethod
+    def find_all(cls, session):
+        # type: (Session) -> List[StudyUserAttribute]
+
+        return session.query(cls).all()
+
 
 class Trial(Base):
     __tablename__ = 'trials'
@@ -53,10 +179,18 @@ class Trial(Base):
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     state = Column(Enum(State))
     value = Column(Float)
+    # todo(sano): make attributes as an EAV tables to deal with multi process trial
     user_attributes_json = Column(String(255))
     system_attributes_json = Column(String(255))
 
     study = orm.relationship(Study)
+
+    @classmethod
+    def count_group_by_study(cls, session):
+        # type: (Session) -> Dict[Study, int]
+
+        counts = session.query(cls.study, func.count(cls.study_id)).group_by(cls.study_id).all()
+        return {sc[0]: sc[1] for sc in counts}
 
 
 class TrialParamDistribution(Base):
@@ -154,6 +288,19 @@ class RDBStorage(BaseStorage):
         else:
             return study.study_uuid
 
+    def set_study_system_attrs(self, study_id, system_attrs):
+        # type: (int, StudySystemAttributes) -> None
+
+        session = self.scoped_session()
+        Study.find_by_id(session, study_id).set_system_attrs(session, system_attrs)
+        self._commit_ignoring_integrity_error(session)
+
+    def get_study_system_attrs(self, study_id):
+        # type: (int) -> StudySystemAttributes
+
+        session = self.scoped_session()
+        return Study.find_by_id(session, study_id).get_system_attrs(session)
+
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
@@ -175,7 +322,7 @@ class RDBStorage(BaseStorage):
             attribute.key = key
             attribute.value_json = json.dumps(value)
 
-        session.commit()
+        self._commit_ignoring_integrity_error(session)
 
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
@@ -186,6 +333,44 @@ class RDBStorage(BaseStorage):
             filter(StudyUserAttribute.study_id == study_id).all()
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
+
+    def get_all_study_summaries(self):
+        # type: () -> List[StudySummary]
+
+        session = self.scoped_session()
+
+        # summarize study_uuid
+        study_models = Study.find_all(session)
+        id_to_uuid = {m.study_id: m.study_uuid for m in study_models}
+
+        # summarize system_attrs
+        system_attr_models = StudySystemAttribute.find_all(session)
+        id_to_system_attrs = {}
+        system_attr_models = sorted(system_attr_models, key=lambda x: x.study_id)
+        for key, group in itertools.groupby(system_attr_models, key=lambda x: x.study_id):
+            id_to_system_attrs[key] = StudySystemAttribute.merge_instances_to_attributes(group)
+
+        # summarize user_attrs
+        # user_attr_models = StudyUserAttribute.find_all(session)
+        # id_to_user_attrs = {}
+        # todo(sano): summarize user_attrs
+
+        # summarize n_trials
+        id_to_n_trials = {k.study_id: v for k, v in Trial.count_group_by_study(session)}
+
+        study_summaries = []
+        for study_id, study_uuid in id_to_uuid:
+            study_summaries.append(
+                StudySummary(
+                    study_id=study_id,
+                    study_uuid=study_uuid,
+                    system_attrs=id_to_system_attrs[study_id],
+                    user_attrs=None,  # todo(sano): summarize user_attrs
+                    n_trials=id_to_n_trials[study_id]
+                )
+            )
+
+        return study_summaries
 
     def set_trial_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
@@ -262,13 +447,7 @@ class RDBStorage(BaseStorage):
         trial_param.param_value = param_value
         session.add(trial_param)
 
-        try:
-            session.commit()
-        except IntegrityError as e:
-            self.logger.debug(
-                'Caught {}. This happens due to a known race condition. Another process/thread '
-                'might have committed a record with the same unique key.'.format(repr(e)))
-            session.rollback()
+        self._commit_ignoring_integrity_error(session)
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
@@ -405,20 +584,24 @@ class RDBStorage(BaseStorage):
             version_info.schema_version = SCHEMA_VERSION
             version_info.library_version = version.__version__
             session.add(version_info)
-            try:
-                session.commit()
-            except IntegrityError as e:
-                self.logger.debug(
-                    'Ignoring {}. This happens due to a timing issue during initial setup of {} '
-                    'table among multi threads/processes/nodes.'.format(
-                        repr(e), VersionInfo.__tablename__))
-                session.rollback()
+            self._commit_ignoring_integrity_error(session)
         else:
             if version_info.schema_version != SCHEMA_VERSION:
                 raise RuntimeError(
                     'The runtime pfnopt version {} is no longer compatible with the table schema '
                     '(set up by pfnopt {}).'.format(
                         version.__version__, version_info.library_version))
+
+    def _commit_ignoring_integrity_error(self, session):
+        # type: (Session) -> None
+
+        try:
+            session.commit()
+        except IntegrityError as e:
+            self.logger.debug(
+                'Ignoring {}. This happens due to a timing issue. Another threads/processes/nodes '
+                'has already committed a record with identical key(s).'.format(repr(e)))
+            session.rollback()
 
     def remove_session(self):
         # type: () -> None

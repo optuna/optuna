@@ -16,6 +16,7 @@ from pfnopt import logging
 from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storages
+from pfnopt import study_summary  # NOQA
 from pfnopt import trial  # NOQA
 
 ObjectiveFuncType = Callable[[client_module.BaseClient], float]
@@ -240,3 +241,9 @@ def minimize(
 # TODO(akiba): implement me
 def maximize():
     raise NotImplementedError
+
+
+def get_all_study_summaries(storage):
+    # type: (Union[str, storages.BaseStorage]) -> List[study_summary.StudySummary]
+
+    return storages.get_storage(storage).get_all_study_summaries()
