@@ -118,11 +118,7 @@ class StudySystemAttribute(Base):
 
         attributes_kwargs = {}
         for attr in system_attr_models:
-            value = attr.value
-
-            if attr.key == 'task':
-                value = None if value is None else StudyTask(int(value))
-
+            value = cls._convert_value_to_external_repr(attr.key, attr.value)
             attributes_kwargs[attr.key] = value
 
         return StudySystemAttributes(**attributes_kwargs)
@@ -190,11 +186,10 @@ class Trial(Base):
     study = orm.relationship(Study)
 
     @classmethod
-    def count_all_group_by_study(cls, session):
+    def count_group_by_study(cls, session):
         # type: (Session) -> Dict[Study, int]
 
         counts = session.query(cls.study, func.count(cls.study_id)).group_by(cls.study_id).all()
-
         return {sc[0]: sc[1] for sc in counts}
 
 
@@ -361,7 +356,7 @@ class RDBStorage(BaseStorage):
         # todo(sano): summarize user_attrs
 
         # summarize n_trials
-        id_to_n_trials = {k.study_id: v for k, v in Trial.count_all_group_by_study(session)}
+        id_to_n_trials = {k.study_id: v for k, v in Trial.count_group_by_study(session)}
 
         study_summaries = []
         for study_id, study_uuid in id_to_uuid:
