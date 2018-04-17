@@ -1,4 +1,5 @@
 from collections import defaultdict
+import itertools
 import json
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
@@ -40,30 +41,30 @@ class Study(Base):
     study_id = Column(Integer, primary_key=True)
     study_uuid = Column(String(255), unique=True)
 
-    @staticmethod
-    def find_by_id(session, study_id):
+    @classmethod
+    def find_by_id(cls, session, study_id):
         # type: (Session, int) -> Study
 
-        return session.query(Study).filter(Study.study_id == study_id).one()
+        return session.query(cls).filter(cls.study_id == study_id).one()
 
-    @staticmethod
-    def find_all(session):
+    @classmethod
+    def find_all(cls, session):
         # type: (Session) -> List[Study]
 
-        return session.query(Study).all()
+        return session.query(cls).all()
 
     def set_system_attrs(self, session, system_attrs):
         # type: (Session, StudySystemAttributes) -> None
 
-        models = StudySystemAttribute.create_instances_from_system_attrs(self, system_attrs)
+        models = StudySystemAttribute.create_instances_from_attributes(self, system_attrs)
         for m in models:
-            m.insert_or_update(session)
+            m.add_or_update(session)
 
     def get_system_attrs(self, session):
         # type: (Session) -> StudySystemAttributes
 
         models = StudySystemAttribute.find_by_study(session, self)
-        return StudySystemAttribute.merge_instances_to_system_attrs(models)
+        return StudySystemAttribute.merge_instances_to_attributes(models)
 
 
 class StudySystemAttribute(Base):
@@ -76,17 +77,15 @@ class StudySystemAttribute(Base):
 
     study = orm.relationship(Study)
 
-    def insert_or_update(self, session):
+    def add_or_update(self, session):
         attribute = session.query(StudySystemAttribute). \
             filter(StudySystemAttribute.study_id == self.study_id). \
             filter(StudySystemAttribute.key == self.key).one_or_none()
 
         if attribute is None:
             session.add(self)
-            _commit_ignoring_integrity_error(session)
         else:
             attribute.value = self.value
-            session.commit()
 
     @classmethod
     def find_by_study(cls, session, study):
@@ -98,10 +97,10 @@ class StudySystemAttribute(Base):
     def find_all(cls, session):
         # type: (Session) -> List[StudySystemAttribute]
 
-        return session.query(StudySystemAttribute).all()
+        return session.query(cls).all()
 
     @classmethod
-    def create_instances_from_system_attrs(cls, study, system_attrs):
+    def create_instances_from_attributes(cls, study, system_attrs):
         # type: (Study, StudySystemAttributes) -> List[StudySystemAttribute]
 
         instances = []
@@ -112,7 +111,7 @@ class StudySystemAttribute(Base):
         return instances
 
     @classmethod
-    def merge_instances_to_system_attrs(cls, system_attr_models):
+    def merge_instances_to_attributes(cls, system_attr_models):
         # type (List[SystemAttribute]) -> SystemAttributes
 
         assert len({m.study_id for m in system_attr_models}) == 1
@@ -171,11 +170,11 @@ class StudyUserAttribute(Base):
 
     study = orm.relationship(Study)
 
-    @staticmethod
-    def find_all(session):
+    @classmethod
+    def find_all(cls, session):
         # type: (Session) -> List[StudyUserAttribute]
 
-        return session.query(StudyUserAttribute).all()
+        return session.query(cls).all()
 
 
 class Trial(Base):
@@ -190,14 +189,13 @@ class Trial(Base):
 
     study = orm.relationship(Study)
 
-    @staticmethod
-    def count_all_group_by_study(session):
+    @classmethod
+    def count_all_group_by_study(cls, session):
         # type: (Session) -> Dict[Study, int]
 
-        study_counts = session.query(Trial.study, func.count(Trial.study_id)). \
-            group_by(Trial.study_id).all()
+        counts = session.query(cls.study, func.count(cls.study_id)).group_by(cls.study_id).all()
 
-        return {sc[0]: sc[1] for sc in study_counts}
+        return {sc[0]: sc[1] for sc in counts}
 
 
 class TrialParamDistribution(Base):
@@ -299,7 +297,8 @@ class RDBStorage(BaseStorage):
         # type: (int, StudySystemAttributes) -> None
 
         session = self.scoped_session()
-        return Study.find_by_id(session, study_id).set_system_attrs(session, system_attrs)
+        Study.find_by_id(session, study_id).set_system_attrs(session, system_attrs)
+        self._commit_ignoring_integrity_error(session)
 
     def get_study_system_attrs(self, study_id):
         # type: (int) -> StudySystemAttributes
@@ -343,17 +342,40 @@ class RDBStorage(BaseStorage):
     def get_all_study_summaries(self):
         # type: () -> List[StudySummary]
 
-        # session = self.scoped_session()
+        session = self.scoped_session()
 
-        # studies = Study.find_all(session)
-        # study_system_attributes = StudySystemAttribute.find_all(session)
-        # study_user_attributes = StudyUserAttribute.find_all(session)
-        # study_counts = Trial.count_all_group_by_study(session)
+        # summarize study_uuid
+        study_models = Study.find_all(session)
+        id_to_uuid = {m.study_id: m.study_uuid for m in study_models}
 
-        # todo(sano): summarize result!
+        # summarize system_attrs
+        system_attr_models = StudySystemAttribute.find_all(session)
+        id_to_system_attrs = {}
+        system_attr_models = sorted(system_attr_models, key=lambda x: x.study_id)
+        for key, group in itertools.groupby(system_attr_models, key=lambda x: x.study_id):
+            id_to_system_attrs[key] = StudySystemAttribute.merge_instances_to_attributes(group)
 
-        print(StudySummary)
-        return []
+        # summarize user_attrs
+        # user_attr_models = StudyUserAttribute.find_all(session)
+        # id_to_user_attrs = {}
+        # todo(sano): summarize user_attrs
+
+        # summarize n_trials
+        id_to_n_trials = {k.study_id: v for k, v in Trial.count_all_group_by_study(session)}
+
+        study_summaries = []
+        for study_id, study_uuid in id_to_uuid:
+            study_summaries.append(
+                StudySummary(
+                    study_id=study_id,
+                    study_uuid=study_uuid,
+                    system_attrs=id_to_system_attrs[study_id],
+                    user_attrs=None,  # todo(sano): summarize user_attrs
+                    n_trials=id_to_n_trials[study_id]
+                )
+            )
+
+        return study_summaries
 
     def set_trial_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
@@ -612,16 +634,3 @@ class RDBStorage(BaseStorage):
         # information, please see the docstring of remove_session).
 
         self.remove_session()
-
-
-def _commit_ignoring_integrity_error(session):
-    # type: (Session) -> None
-
-    try:
-        session.commit()
-    except IntegrityError as e:
-        logger = logging.get_logger(__name__)
-        logger.debug(
-            'Ignoring {}. This happens due to a timing issue. Another threads/processes/nodes '
-            'has already committed a record with identical key(s).'.format(repr(e)))
-        session.rollback()
