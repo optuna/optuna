@@ -11,13 +11,13 @@ import sys
 import pfnopt
 
 
-class MakeStudy(Command):
+class CreateStudy(Command):
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
-        parser = super(MakeStudy, self).get_parser(prog_name)
-        parser.add_argument('--url', '-u', dest='url', required=True)
+        parser = super(CreateStudy, self).get_parser(prog_name)
+        parser.add_argument('--url', '-u', required=True)
         return parser
 
     def take_action(self, parsed_args):
@@ -28,12 +28,12 @@ class MakeStudy(Command):
         print(study_uuid)
 
 
-class SetStudyUserAttribute(Command):
+class StudySetUserAttribute(Command):
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
-        parser = super(SetStudyUserAttribute, self).get_parser(prog_name)
+        parser = super(StudySetUserAttribute, self).get_parser(prog_name)
         parser.add_argument('--url', '-u', required=True)
         parser.add_argument('--study_uuid', required=True)
         parser.add_argument('--key', '-k', required=True)
@@ -58,41 +58,26 @@ class Dashboard(Command):
         parser = super(Dashboard, self).get_parser(prog_name)
         parser.add_argument('--url', required=True)
         parser.add_argument('--study_uuid', required=True)
+        parser.add_argument('--out', '-o')
         return parser
 
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
         study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
-        pfnopt.dashboard.serve(study)
 
-
-class Report(Command):
-
-    def get_parser(self, prog_name):
-        # type: (str) -> ArgumentParser
-
-        parser = super(Report, self).get_parser(prog_name)
-        parser.add_argument('--url', required=True)
-        parser.add_argument('--study_uuid', required=True)
-        parser.add_argument('--out', '-o', default='report.html')
-        return parser
-
-    def take_action(self, parsed_args):
-        # type: (Namespace) -> None
-
-        study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
-        pfnopt.dashboard.write(study, parsed_args.out)
-
-        logger = pfnopt.logging.get_logger(__name__)
-        logger.info('Report successfully written to: {}'.format(parsed_args.out))
+        if parsed_args.out is None:
+            pfnopt.dashboard.serve(study)
+        else:
+            pfnopt.dashboard.write(study, parsed_args.out)
+            logger = pfnopt.logging.get_logger(__name__)
+            logger.info('Report successfully written to: {}'.format(parsed_args.out))
 
 
 _COMMANDS = {
-    'mkstudy': MakeStudy,
-    'set_study_attr': SetStudyUserAttribute,
+    'create-study': CreateStudy,
+    'study set-user-attr': StudySetUserAttribute,
     'dashboard': Dashboard,
-    'report': Report,
 }
 
 
