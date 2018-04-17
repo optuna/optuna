@@ -5,10 +5,13 @@ from argparse import Namespace  # NOQA
 from cliff.app import App
 from cliff.command import Command
 from cliff.commandmanager import CommandManager
+import importlib.machinery
 import logging
 import sys
+import types
 
 import pfnopt
+
 
 
 class CreateStudy(Command):
@@ -74,10 +77,48 @@ class Dashboard(Command):
             logger.info('Report successfully written to: {}'.format(parsed_args.out))
 
 
+class Minimize(Command):
+
+    def get_parser(self, prog_name):
+        # type: (str) -> ArgumentParser
+
+        parser = super(Minimize, self).get_parser(prog_name)
+        parser.add_argument('--n_trials', type=int)
+        parser.add_argument('--timeout_seconds', type=float)
+        parser.add_argument('--n_jobs', type=int, default=1)
+        parser.add_argument('--url', required=True)
+        parser.add_argument('--study_uuid')
+        parser.add_argument('--create_study', action='store_true')
+        parser.add_argument('script_file')
+        parser.add_argument('method_name')
+        return parser
+
+    def take_action(self, parsed_args):
+        # type: (Namespace) -> None
+
+        # TODO: check args consistency
+
+        if parsed_args.create_study:
+            study = pfnopt.create_study(storage=parsed_args.url)
+        else:
+            study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
+
+        loader = importlib.machinery.SourceFileLoader('pfnopt_target_module', parsed_args.script_file)
+        target_module = types.ModuleType(loader.name)
+        loader.exec_module(target_module)
+        target_method = getattr(target_module, parsed_args.method_name)
+
+        pfnopt.minimize(
+            target_method, n_trials=parsed_args.n_trials,
+            timeout_seconds=parsed_args.timeout_seconds, n_jobs=parsed_args.n_jobs,
+            study=study)
+
+
 _COMMANDS = {
     'create-study': CreateStudy,
     'study set-user-attr': StudySetUserAttribute,
     'dashboard': Dashboard,
+    'minimize': Minimize,
 }
 
 
