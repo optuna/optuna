@@ -93,29 +93,29 @@ class Minimize(BaseCommand):
         parser.add_argument('--url', '-u')
         parser.add_argument('--study-uuid')
         parser.add_argument('--create-study', action='store_true')
-        parser.add_argument('script-file')
-        parser.add_argument('method-name')
+        parser.add_argument('file')
+        parser.add_argument('method')
         return parser
 
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
         if parsed_args.create_study and parsed_args.study_uuid:
-            raise ValueError('Inconsistent arguments. --create-study and --study-uuid should not '
-                             'be specified at the same time.')
+            raise ValueError('Inconsistent arguments. Flags --create-study and --study-uuid '
+                             'should not be specified at the same time.')
         if not parsed_args.create_study and not parsed_args.study_uuid:
-            raise ValueError('Inconsistent arguments. Either --create-study or --study-uuid should '
-                             'be speficied.')
+            raise ValueError('Inconsistent arguments. Either --create-study or --study-uuid '
+                             'should be speficied.')
 
         if parsed_args.create_study:
             study = pfnopt.create_study(storage=parsed_args.url)
         else:
             study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
 
-        loader = importlib.machinery.SourceFileLoader('pfnopt_target_module', parsed_args.script_file)
+        loader = importlib.machinery.SourceFileLoader('pfnopt_target_module', parsed_args.file)
         target_module = types.ModuleType(loader.name)
         loader.exec_module(target_module)
-        target_method = getattr(target_module, parsed_args.method_name)
+        target_method = getattr(target_module, parsed_args.method)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.
