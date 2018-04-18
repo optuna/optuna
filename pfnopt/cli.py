@@ -112,7 +112,8 @@ class Minimize(BaseCommand):
         else:
             study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
 
-        loader = importlib.machinery.SourceFileLoader('pfnopt_target_module', parsed_args.file)
+        loader = importlib.machinery.SourceFileLoader(  # type: ignore
+            'pfnopt_target_module', parsed_args.file)
         target_module = types.ModuleType(loader.name)
         loader.exec_module(target_module)
         target_method = getattr(target_module, parsed_args.method)
