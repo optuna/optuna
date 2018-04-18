@@ -59,7 +59,7 @@ class Dashboard(Command):
         # type: (str) -> ArgumentParser
 
         parser = super(Dashboard, self).get_parser(prog_name)
-        parser.add_argument('--url', required=True)
+        parser.add_argument('--url', '-u', required=True)
         parser.add_argument('--study_uuid', required=True)
         parser.add_argument('--out', '-o')
         return parser

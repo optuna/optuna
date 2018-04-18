@@ -36,7 +36,8 @@ def test_study_set_user_attr():
         study_uuid = str(subprocess.check_output(command).decode().strip())
 
         example_attrs = {'architecture': 'ResNet', 'baselen_score': '0.002'}
-        base_command = ['pfnopt', 'study', 'set-user-attr', '--url', db_url, '--study_uuid', study_uuid]
+        base_command = [
+            'pfnopt', 'study', 'set-user-attr', '--url', db_url, '--study_uuid', study_uuid]
         for key, value in example_attrs.items():
             subprocess.check_call(base_command + ['--key', key, '--value', value])
 
