@@ -95,19 +95,20 @@ class Minimize(Command):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        self.app.options.debug = True
-
-        # TODO: check args consistency
-
         if parsed_args.create_study:
             study = pfnopt.create_study(storage=parsed_args.url)
         else:
+            if not parsed_args.study_uuid:
+                raise ValueError()  # TODO
+
             study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
 
         loader = importlib.machinery.SourceFileLoader('pfnopt_target_module', parsed_args.script_file)
         target_module = types.ModuleType(loader.name)
         loader.exec_module(target_module)
         target_method = getattr(target_module, parsed_args.method_name)
+
+        self.app.options.debug = True
 
         pfnopt.minimize(
             target_method, n_trials=parsed_args.n_trials,
