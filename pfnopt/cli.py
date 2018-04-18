@@ -13,7 +13,14 @@ import types
 import pfnopt
 
 
-class CreateStudy(Command):
+class BaseCommand(Command):
+
+    def __init__(self, *args, **kwargs):
+        super(BaseCommand, self).__init__(*args, **kwargs)
+        self.logger = pfnopt.logging.get_logger(__name__)
+
+
+class CreateStudy(BaseCommand):
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
@@ -30,7 +37,7 @@ class CreateStudy(Command):
         print(study_uuid)
 
 
-class StudySetUserAttribute(Command):
+class StudySetUserAttribute(BaseCommand):
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
@@ -48,11 +55,10 @@ class StudySetUserAttribute(Command):
         study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
-        logger = pfnopt.logging.get_logger(__name__)
-        logger.info('Attribute successfully written.')
+        self.logger.info('Attribute successfully written.')
 
 
-class Dashboard(Command):
+class Dashboard(BaseCommand):
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
@@ -72,8 +78,7 @@ class Dashboard(Command):
             pfnopt.dashboard.serve(study)
         else:
             pfnopt.dashboard.write(study, parsed_args.out)
-            logger = pfnopt.logging.get_logger(__name__)
-            logger.info('Report successfully written to: {}'.format(parsed_args.out))
+            self.logger.info('Report successfully written to: {}'.format(parsed_args.out))
 
 
 class Minimize(Command):
