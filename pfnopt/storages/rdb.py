@@ -48,23 +48,10 @@ class Study(Base):
         return session.query(cls).filter(cls.study_id == study_id).one()
 
     @classmethod
-    def find_all(cls, session):
+    def all(cls, session):
         # type: (Session) -> List[Study]
 
         return session.query(cls).all()
-
-    def set_system_attrs(self, session, system_attrs):
-        # type: (Session, StudySystemAttributes) -> None
-
-        models = StudySystemAttribute.create_instances_from_attributes(self, system_attrs)
-        for m in models:
-            m.add_or_update(session)
-
-    def get_system_attrs(self, session):
-        # type: (Session) -> StudySystemAttributes
-
-        models = StudySystemAttribute.find_by_study(session, self)
-        return StudySystemAttribute.merge_instances_to_attributes(models)
 
 
 class StudySystemAttribute(Base):
@@ -77,15 +64,40 @@ class StudySystemAttribute(Base):
 
     study = orm.relationship(Study)
 
-    def add_or_update(self, session):
-        attribute = session.query(StudySystemAttribute). \
-            filter(StudySystemAttribute.study_id == self.study_id). \
-            filter(StudySystemAttribute.key == self.key).one_or_none()
+    @property
+    def value_as_external_repr(self):
+        # type () -> Any
 
-        if attribute is None:
-            session.add(self)
-        else:
-            attribute.value = self.value
+        value = self.value
+        if self.key == 'task':
+            value = None if value is None else StudyTask(int(value))
+
+        return value
+
+    def update_value_with_external_repr(self, session, value_as_external_repr):
+        # type (Any) -> None
+
+        value = value_as_external_repr
+        if self.key == 'task' and value_as_external_repr is not None:
+            isinstance(value_as_external_repr, StudyTask)
+            value = str(value_as_external_repr.value)
+        self.value = value
+
+        session.add(self)
+
+    @classmethod
+    def find_or_create_by_study_key(cls, session, study, key):
+        # type: (Session, Study, str) -> StudySystemAttribute
+
+        model = session.query(cls). \
+            filter(cls.study_id == study.study_id). \
+            filter(cls.key == key).one_or_none()
+        if model is None:
+            model = StudySystemAttribute(study_id=study.study_id, key=key)
+
+        session.add(model)
+
+        return model
 
     @classmethod
     def find_by_study(cls, session, study):
@@ -94,66 +106,10 @@ class StudySystemAttribute(Base):
         return session.query(cls).filter(cls.study_id == study.study_id).all()
 
     @classmethod
-    def find_all(cls, session):
+    def all(cls, session):
         # type: (Session) -> List[StudySystemAttribute]
 
         return session.query(cls).all()
-
-    @classmethod
-    def create_instances_from_attributes(cls, study, system_attrs):
-        # type: (Study, StudySystemAttributes) -> List[StudySystemAttribute]
-
-        instances = []
-        for key, value in system_attrs._asdict().items():
-            value = cls._convert_value_to_internal_repr(key, value)
-            instances.append(StudySystemAttribute(study_id=study.study_id, key=key, value=value))
-
-        return instances
-
-    @classmethod
-    def merge_instances_to_attributes(cls, system_attr_models):
-        # type (List[SystemAttribute]) -> SystemAttributes
-
-        assert len({m.study_id for m in system_attr_models}) == 1
-
-        attributes_kwargs = {}
-        for attr in system_attr_models:
-            value = cls._convert_value_to_external_repr(attr.key, attr.value)
-            attributes_kwargs[attr.key] = value
-
-        return StudySystemAttributes(**attributes_kwargs)
-
-    @classmethod
-    def _convert_value_to_internal_repr(cls, key, value):
-        # type (str, Any) -> str
-
-        cls._check_attribute_key(key)
-
-        if key == 'task' and value is not None:
-            isinstance(value, StudyTask)
-            value = str(value.value)
-
-        return value
-
-    @classmethod
-    def _convert_value_to_external_repr(cls, key, value):
-        # type (str, str) -> Any
-
-        cls._check_attribute_key(key)
-
-        if key == 'task':
-            value = None if value is None else StudyTask(int(value))
-
-        return value
-
-    @classmethod
-    def _check_attribute_key(cls, key):
-        # type: (str) -> None
-
-        # todo(sano): better way to get keys
-        if key not in StudySystemAttributes(None, None)._asdict().keys():
-            raise ValueError(
-                '{} does not have attribute: {}.'.format(StudySystemAttributes.__name__, key))
 
 
 class StudyUserAttribute(Base):
@@ -292,14 +248,22 @@ class RDBStorage(BaseStorage):
         # type: (int, StudySystemAttributes) -> None
 
         session = self.scoped_session()
-        Study.find_by_id(session, study_id).set_system_attrs(session, system_attrs)
-        self._commit_ignoring_integrity_error(session)
+
+        study = Study.find_by_id(session, study_id)
+        for key, value in system_attrs._asdict().items():
+            attr_model = StudySystemAttribute.find_or_create_by_study_key(session, study, key)
+            attr_model.update_value_with_external_repr(session, value)
+            self._commit_ignoring_integrity_error(session)
 
     def get_study_system_attrs(self, study_id):
         # type: (int) -> StudySystemAttributes
 
         session = self.scoped_session()
-        return Study.find_by_id(session, study_id).get_system_attrs(session)
+
+        study_model = Study.find_by_id(session, study_id)
+        attr_models = StudySystemAttribute.find_by_study(session, study_model)
+
+        return StudySystemAttributes(**{a.key: a.value_as_external_repr for a in attr_models})
 
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
@@ -340,15 +304,16 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         # summarize study_uuid
-        study_models = Study.find_all(session)
+        study_models = Study.all(session)
         id_to_uuid = {m.study_id: m.study_uuid for m in study_models}
 
         # summarize system_attrs
-        system_attr_models = StudySystemAttribute.find_all(session)
+        system_attr_models = StudySystemAttribute.all(session)
         id_to_system_attrs = {}
         system_attr_models = sorted(system_attr_models, key=lambda x: x.study_id)
         for key, group in itertools.groupby(system_attr_models, key=lambda x: x.study_id):
-            id_to_system_attrs[key] = StudySystemAttribute.merge_instances_to_attributes(group)
+            kwargs = {attr.key: attr.value_as_external_repr for attr in group}
+            id_to_system_attrs[key] = StudySystemAttributes(**kwargs)
 
         # summarize user_attrs
         # user_attr_models = StudyUserAttribute.find_all(session)
