@@ -13,7 +13,6 @@ import types
 import pfnopt
 
 
-
 class CreateStudy(Command):
 
     def get_parser(self, prog_name):
@@ -86,7 +85,7 @@ class Minimize(Command):
         parser.add_argument('--n_trials', type=int)
         parser.add_argument('--timeout_seconds', type=float)
         parser.add_argument('--n_jobs', type=int, default=1)
-        parser.add_argument('--url', required=True)
+        parser.add_argument('--url', '-u')
         parser.add_argument('--study_uuid')
         parser.add_argument('--create_study', action='store_true')
         parser.add_argument('script_file')
@@ -95,6 +94,8 @@ class Minimize(Command):
 
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
+
+        self.app.options.debug = True
 
         # TODO: check args consistency
 
