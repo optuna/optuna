@@ -81,31 +81,35 @@ class Dashboard(BaseCommand):
             self.logger.info('Report successfully written to: {}'.format(parsed_args.out))
 
 
-class Minimize(Command):
+class Minimize(BaseCommand):
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
         parser = super(Minimize, self).get_parser(prog_name)
-        parser.add_argument('--n_trials', type=int)
-        parser.add_argument('--timeout_seconds', type=float)
-        parser.add_argument('--n_jobs', type=int, default=1)
+        parser.add_argument('--n-trials', type=int)
+        parser.add_argument('--timeout-seconds', type=float)
+        parser.add_argument('--n-jobs', type=int, default=1)
         parser.add_argument('--url', '-u')
-        parser.add_argument('--study_uuid')
-        parser.add_argument('--create_study', action='store_true')
-        parser.add_argument('script_file')
-        parser.add_argument('method_name')
+        parser.add_argument('--study-uuid')
+        parser.add_argument('--create-study', action='store_true')
+        parser.add_argument('script-file')
+        parser.add_argument('method-name')
         return parser
 
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
+        if parsed_args.create_study and parsed_args.study_uuid:
+            raise ValueError('Inconsistent arguments. --create-study and --study-uuid should not '
+                             'be specified at the same time.')
+        if not parsed_args.create_study and not parsed_args.study_uuid:
+            raise ValueError('Inconsistent arguments. Either --create-study or --study-uuid should '
+                             'be speficied.')
+
         if parsed_args.create_study:
             study = pfnopt.create_study(storage=parsed_args.url)
         else:
-            if not parsed_args.study_uuid:
-                raise ValueError()  # TODO
-
             study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
 
         loader = importlib.machinery.SourceFileLoader('pfnopt_target_module', parsed_args.script_file)
@@ -113,6 +117,8 @@ class Minimize(Command):
         loader.exec_module(target_module)
         target_method = getattr(target_module, parsed_args.method_name)
 
+        # We force enabling the debug flag. As we are going to execute user codes, we want to show
+        # exception stack traces by default.
         self.app.options.debug = True
 
         pfnopt.minimize(
