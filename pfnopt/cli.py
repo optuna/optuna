@@ -5,10 +5,9 @@ from argparse import Namespace  # NOQA
 from cliff.app import App
 from cliff.command import Command
 from cliff.commandmanager import CommandManager
-import importlib.machinery
+import imp
 import logging
 import sys
-import types
 
 import pfnopt
 
@@ -112,10 +111,7 @@ class Minimize(BaseCommand):
         else:
             study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
 
-        loader = importlib.machinery.SourceFileLoader(  # type: ignore
-            'pfnopt_target_module', parsed_args.file)
-        target_module = types.ModuleType(loader.name)
-        loader.exec_module(target_module)
+        target_module = imp.load_source('pfnopt_target_module', parsed_args.file)
         target_method = getattr(target_module, parsed_args.method)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
