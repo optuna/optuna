@@ -37,7 +37,7 @@ def test_study_set_user_attr():
 
         example_attrs = {'architecture': 'ResNet', 'baselen_score': '0.002'}
         base_command = [
-            'pfnopt', 'study', 'set-user-attr', '--url', db_url, '--study_uuid', study_uuid]
+            'pfnopt', 'study', 'set-user-attr', '--url', db_url, '--study-uuid', study_uuid]
         for key, value in example_attrs.items():
             subprocess.check_call(base_command + ['--key', key, '--value', value])
 
@@ -59,7 +59,7 @@ def test_dashboard_command():
             study_uuid = subprocess.check_output(command_mkstudy).strip()
 
             command_report = [
-                'pfnopt', 'dashboard', '--url', db_url, '--study_uuid', study_uuid,
+                'pfnopt', 'dashboard', '--url', db_url, '--study-uuid', study_uuid,
                 '--out', tf_report.name]
             subprocess.check_call(command_report)
 
