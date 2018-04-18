@@ -5,12 +5,12 @@ import tempfile
 from pfnopt.storages import RDBStorage
 
 
-def test_mkstudy_command():
+def test_create_study_command():
     # type: () -> None
 
     with tempfile.NamedTemporaryFile() as tf:
         db_url = 'sqlite:///{}'.format(tf.name)
-        command = ['pfnopt', 'mkstudy', '--url', db_url]
+        command = ['pfnopt', 'create-study', '--url', db_url]
 
         subprocess.check_call(command)
 
@@ -25,18 +25,19 @@ def test_mkstudy_command():
         assert study_id == 2
 
 
-def test_set_study_user_attr():
+def test_study_set_user_attr():
     # type: () -> None
 
     with tempfile.NamedTemporaryFile() as tf:
         db_url = 'sqlite:///{}'.format(tf.name)
 
         # make study
-        command = ['pfnopt', 'mkstudy', '--url', db_url]
+        command = ['pfnopt', 'create-study', '--url', db_url]
         study_uuid = str(subprocess.check_output(command).decode().strip())
 
         example_attrs = {'architecture': 'ResNet', 'baselen_score': '0.002'}
-        base_command = ['pfnopt', 'set_study_attr', '--url', db_url, '--study_uuid', study_uuid]
+        base_command = [
+            'pfnopt', 'study', 'set-user-attr', '--url', db_url, '--study_uuid', study_uuid]
         for key, value in example_attrs.items():
             subprocess.check_call(base_command + ['--key', key, '--value', value])
 
@@ -46,7 +47,7 @@ def test_set_study_user_attr():
         assert storage.get_study_user_attrs(study_id) == example_attrs
 
 
-def test_report_command():
+def test_dashboard_command():
     # type: () -> None
 
     with \
@@ -54,11 +55,11 @@ def test_report_command():
             tempfile.NamedTemporaryFile('r') as tf_report:
 
             db_url = 'sqlite:///{}'.format(tf_db.name)
-            command_mkstudy = ['pfnopt', 'mkstudy', '--url', db_url]
+            command_mkstudy = ['pfnopt', 'create-study', '--url', db_url]
             study_uuid = subprocess.check_output(command_mkstudy).strip()
 
             command_report = [
-                'pfnopt', 'report', '--url', db_url, '--study_uuid', study_uuid,
+                'pfnopt', 'dashboard', '--url', db_url, '--study_uuid', study_uuid,
                 '--out', tf_report.name]
             subprocess.check_call(command_report)
 
