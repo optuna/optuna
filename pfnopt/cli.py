@@ -35,7 +35,7 @@ class StudySetUserAttribute(Command):
 
         parser = super(StudySetUserAttribute, self).get_parser(prog_name)
         parser.add_argument('--url', '-u', required=True)
-        parser.add_argument('--study_uuid', required=True)
+        parser.add_argument('--study-uuid', required=True)
         parser.add_argument('--key', '-k', required=True)
         parser.add_argument('--value', '-v', required=True)
         return parser
@@ -57,7 +57,7 @@ class Dashboard(Command):
 
         parser = super(Dashboard, self).get_parser(prog_name)
         parser.add_argument('--url', '-u', required=True)
-        parser.add_argument('--study_uuid', required=True)
+        parser.add_argument('--study-uuid', required=True)
         parser.add_argument('--out', '-o')
         return parser
 
