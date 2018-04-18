@@ -8,6 +8,9 @@ from cliff.commandmanager import CommandManager
 import imp
 import logging
 import sys
+from typing import Any  # NOQA
+from typing import Dict  # NOQA
+from typing import List  # NOQA
 
 import pfnopt
 
@@ -15,6 +18,8 @@ import pfnopt
 class BaseCommand(Command):
 
     def __init__(self, *args, **kwargs):
+        # type: (List[Any], Dict[str, Any]) -> None
+
         super(BaseCommand, self).__init__(*args, **kwargs)
         self.logger = pfnopt.logging.get_logger(__name__)
 
