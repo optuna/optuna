@@ -133,6 +133,8 @@ class RDBStorage(BaseStorage):
         session.add(study)
         session.commit()
 
+        self.logger.info('A new study created with UUID: {}'.format(study.study_uuid))
+
         return study.study_id
 
     def get_study_id_from_uuid(self, study_uuid):
