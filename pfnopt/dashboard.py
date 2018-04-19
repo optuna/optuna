@@ -46,6 +46,8 @@ h1, p {{
 </p>
 '''
 
+_DATETIME_FORMAT = '%Y-%m-%d:%H:%M:%S'
+
 
 if _available:
     class _CompleteTrialsWidget(object):
@@ -112,7 +114,14 @@ if _available:
                 source=self.cds,
                 columns=[
                     bokeh.models.widgets.TableColumn(field=field, title=field)
-                    for field in ['trial_id', 'state', 'value', 'params', 'system_attrs']
+                    for field in [
+                        'trial_id',
+                        'state',
+                        'value',
+                        'params',
+                        'datetime_start',
+                        'datetime_complete'
+                    ]
                 ]
             )
 
@@ -145,7 +154,10 @@ if _available:
                 'state': [trial.state.name for trial in trials],
                 'value': [trial.value for trial in trials],
                 'params': [str(trial.params) for trial in trials],
-                'system_attrs': [str(trial.system_attrs._asdict()) for trial in trials],
+                'datetime_start':
+                    [trial.datetime_start.strftime(_DATETIME_FORMAT) for trial in trials],
+                'datetime_complete':
+                    [trial.datetime_complete.strftime(_DATETIME_FORMAT) for trial in trials],
             }
 
     class _DashboardApp(object):

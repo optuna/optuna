@@ -1,6 +1,7 @@
 from collections import defaultdict
+from datetime import datetime
 import json
-from sqlalchemy import CheckConstraint
+from sqlalchemy import CheckConstraint, DateTime
 from sqlalchemy import Column
 from sqlalchemy.engine import create_engine
 from sqlalchemy import Enum
@@ -25,7 +26,7 @@ import pfnopt.trial as trial_module
 from pfnopt.trial import State
 from pfnopt import version
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 BaseModel = declarative_base()  # type: Any
 
@@ -51,10 +52,13 @@ class TrialModel(BaseModel):
     __tablename__ = 'trials'
     trial_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
-    state = Column(Enum(State))
+    state = Column(Enum(State), default=State.RUNNING)
     value = Column(Float)
     user_attributes_json = Column(String(255))
-    system_attributes_json = Column(String(255))
+    datetime_start = Column(
+        DateTime(timezone=True), default=datetime.utcnow)
+    datetime_complete = Column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
     study = orm.relationship(StudyModel)
 
@@ -217,11 +221,6 @@ class RDBStorage(BaseStorage):
         trial = TrialModel()
         trial.study_id = study_id
         trial.state = State.RUNNING
-
-        system_attributes = \
-            trial_module.SystemAttributes(datetime_start=None, datetime_complete=None)
-        trial.system_attributes_json = trial_module.system_attrs_to_json(system_attributes)
-
         trial.user_attributes_json = '{}'
 
         session = self.scoped_session()
@@ -309,16 +308,6 @@ class RDBStorage(BaseStorage):
                 'might have committed a record with the same unique key.'.format(repr(e)))
             session.rollback()
 
-    def set_trial_system_attrs(self, trial_id, system_attrs):
-        # type: (int, trial_module.SystemAttributes) -> None
-
-        session = self.scoped_session()
-
-        trial = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one()
-
-        trial.system_attributes_json = trial_module.system_attrs_to_json(system_attrs)
-        session.commit()
-
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
 
@@ -392,11 +381,12 @@ class RDBStorage(BaseStorage):
                 trial_id=trial_id,
                 state=trial.state,
                 params=params,
-                system_attrs=trial_module.json_to_system_attrs(trial.system_attributes_json),
                 user_attrs=json.loads(trial.user_attributes_json),
                 value=trial.value,
                 intermediate_values=intermediate_values,
-                params_in_internal_repr=params_in_internal_repr
+                params_in_internal_repr=params_in_internal_repr,
+                datetime_start=trial.datetime_start,
+                datetime_complete=trial.datetime_complete
             ))
 
         return result

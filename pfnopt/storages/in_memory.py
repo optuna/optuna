@@ -1,13 +1,13 @@
 import copy
+from datetime import datetime
 import threading
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 
 from pfnopt import distributions  # NOQA
-from pfnopt import trial
-
 from pfnopt.storages import base
+from pfnopt import trial
 
 
 IN_MEMORY_STORAGE_STUDY_ID = 0
@@ -75,13 +75,12 @@ class InMemoryStorage(base.BaseStorage):
                     trial_id=trial_id,
                     state=trial.State.RUNNING,
                     params={},
-                    system_attrs=trial.SystemAttributes(
-                        datetime_start=None,
-                        datetime_complete=None),
                     user_attrs={},
                     value=None,
                     intermediate_values={},
-                    params_in_internal_repr={}
+                    params_in_internal_repr={},
+                    datetime_start=datetime.utcnow(),
+                    datetime_complete=None
                 )
             )
         return trial_id
@@ -100,6 +99,9 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             self.trials[trial_id] = self.trials[trial_id]._replace(state=state)
+            if state == trial.State.COMPLETE:
+                self.trials[trial_id] = \
+                    self.trials[trial_id]._replace(datetime_complete=datetime.utcnow())
 
     def set_trial_param(self, trial_id, param_name, param_value_in_internal_repr):
         # type: (int, str, float) -> None
@@ -122,12 +124,6 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             self.trials[trial_id].intermediate_values[step] = intermediate_value
-
-    def set_trial_system_attrs(self, trial_id, system_attrs):
-        # type: (int, trial.SystemAttributes) -> None
-
-        with self._lock:
-            self.trials[trial_id] = self.trials[trial_id]._replace(system_attrs=system_attrs)
 
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
