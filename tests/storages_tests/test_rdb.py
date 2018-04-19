@@ -16,15 +16,15 @@ from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
-from pfnopt.storages.rdb import Base
+from pfnopt.storages.rdb import BaseModel
 from pfnopt.storages.rdb import RDBStorage
 from pfnopt.storages.rdb import SCHEMA_VERSION
-from pfnopt.storages.rdb import Study
-from pfnopt.storages.rdb import Trial
-from pfnopt.storages.rdb import TrialParam
-from pfnopt.storages.rdb import TrialParamDistribution
-from pfnopt.storages.rdb import TrialValue
-from pfnopt.storages.rdb import VersionInfo
+from pfnopt.storages.rdb import StudyModel
+from pfnopt.storages.rdb import TrialModel
+from pfnopt.storages.rdb import TrialParamDistributionModel
+from pfnopt.storages.rdb import TrialParamModel
+from pfnopt.storages.rdb import TrialValueModel
+from pfnopt.storages.rdb import VersionInfoModel
 import pfnopt.trial as trial_module
 from pfnopt import version
 
@@ -32,13 +32,13 @@ from pfnopt import version
 def test_version_info():
     engine = create_engine('sqlite:///:memory:')
     session = Session(bind=engine)
-    Base.metadata.create_all(engine)
+    BaseModel.metadata.create_all(engine)
 
-    session.add(VersionInfo(schema_version=1, library_version='0.0.1'))
+    session.add(VersionInfoModel(schema_version=1, library_version='0.0.1'))
     session.commit()
 
     # test check constraint of version_info_id
-    session.add(VersionInfo(version_info_id=2, schema_version=2, library_version='0.0.2'))
+    session.add(VersionInfoModel(version_info_id=2, schema_version=2, library_version='0.0.2'))
     pytest.raises(IntegrityError, lambda: session.commit())
 
 
@@ -48,7 +48,7 @@ class TestRDBStorage(unittest.TestCase):
         storage = RDBStorage('sqlite:///:memory:')
         session = storage.scoped_session()
 
-        version_info = session.query(VersionInfo).first()
+        version_info = session.query(VersionInfoModel).first()
         assert version_info.schema_version == SCHEMA_VERSION
         assert version_info.library_version == version.__version__
 
@@ -60,7 +60,7 @@ class TestRDBStorage(unittest.TestCase):
 
         study_id = storage.create_new_study_id()
 
-        result = session.query(Study).all()
+        result = session.query(StudyModel).all()
         assert len(result) == 1
         assert result[0].study_id == study_id
 
@@ -77,7 +77,7 @@ class TestRDBStorage(unittest.TestCase):
             storage.create_new_study_id()
             study_id = storage.create_new_study_id()
 
-            result = session.query(Study).filter(Study.study_id == study_id).one()
+            result = session.query(StudyModel).filter(StudyModel.study_id == study_id).one()
             assert result.study_uuid == 'uuid2'
             assert mock_object.call_count == 3
 
@@ -92,7 +92,7 @@ class TestRDBStorage(unittest.TestCase):
 
         # test existing study
         storage.create_new_study_id()
-        study = session.query(Study).one()
+        study = session.query(StudyModel).one()
         assert storage.get_study_id_from_uuid(study.study_uuid) == study.study_id
 
     def test_get_study_uuid_from_id(self):
@@ -106,7 +106,7 @@ class TestRDBStorage(unittest.TestCase):
 
         # test existing study
         storage.create_new_study_id()
-        study = session.query(Study).one()
+        study = session.query(StudyModel).one()
         assert storage.get_study_uuid_from_id(study.study_id) == study.study_uuid
 
     def test_set_trial_param_distribution(self):
@@ -121,13 +121,13 @@ class TestRDBStorage(unittest.TestCase):
         storage.set_trial_param_distribution(trial_id, 'y', self.example_distributions['y'])
 
         # test setting new name
-        result_1 = session.query(TrialParamDistribution). \
-            filter(TrialParamDistribution.param_name == 'x').one()
+        result_1 = session.query(TrialParamDistributionModel). \
+            filter(TrialParamDistributionModel.param_name == 'x').one()
         assert result_1.trial_id == trial_id
         assert json_to_distribution(result_1.distribution_json) == self.example_distributions['x']
 
-        result_2 = session.query(TrialParamDistribution). \
-            filter(TrialParamDistribution.param_name == 'y').one()
+        result_2 = session.query(TrialParamDistributionModel). \
+            filter(TrialParamDistributionModel.param_name == 'y').one()
         assert result_2.trial_id == trial_id
         assert json_to_distribution(result_2.distribution_json) == self.example_distributions['y']
 
@@ -148,7 +148,7 @@ class TestRDBStorage(unittest.TestCase):
         study_id = storage.create_new_study_id()
         trial_id = storage.create_new_trial_id(study_id)
 
-        result = session.query(Trial).all()
+        result = session.query(TrialModel).all()
         assert len(result) == 1
         assert result[0].study_id == study_id
         assert result[0].trial_id == trial_id
@@ -163,11 +163,11 @@ class TestRDBStorage(unittest.TestCase):
         study_id = storage.create_new_study_id()
         trial_id = storage.create_new_trial_id(study_id)
 
-        result_1 = session.query(Trial).filter(Trial.trial_id == trial_id).one().state
+        result_1 = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one().state
 
         storage.set_trial_state(trial_id, trial_module.State.PRUNED)
 
-        result_2 = session.query(Trial).filter(Trial.trial_id == trial_id).one().state
+        result_2 = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one().state
 
         assert result_1 == trial_module.State.RUNNING
         assert result_2 == trial_module.State.PRUNED
@@ -184,14 +184,14 @@ class TestRDBStorage(unittest.TestCase):
         self.set_distributions(storage, study_id, self.example_distributions)
 
         def find_trial_param(items, param_name):
-            # type: (List[TrialParam], str) -> TrialParam
+            # type: (List[TrialParamModel], str) -> TrialParamModel
             return [p for p in items if p.param_distribution.param_name == param_name][0]
 
         # test setting new name
         storage.set_trial_param(trial_id, 'x', 0.5)
         storage.set_trial_param(trial_id, 'y', 2.)
 
-        result = session.query(TrialParam).filter(TrialParam.trial_id == trial_id).all()
+        result = session.query(TrialParamModel).filter(TrialParamModel.trial_id == trial_id).all()
         assert len(result) == 2
         assert find_trial_param(result, 'x').param_value == 0.5
         assert find_trial_param(result, 'y').param_value == 2.
@@ -214,7 +214,7 @@ class TestRDBStorage(unittest.TestCase):
         # test setting new value
         storage.set_trial_value(trial_id, 0.5)
 
-        result_1 = session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        result_1 = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one()
         assert result_1.value == 0.5
 
     def test_set_trial_intermediate_value(self):
@@ -227,14 +227,15 @@ class TestRDBStorage(unittest.TestCase):
         trial_id = storage.create_new_trial_id(study_id)
 
         def find_trial_value(items, step):
-            # type: (List[TrialValue], int) -> TrialValue
+            # type: (List[TrialValueModel], int) -> TrialValueModel
             return [p for p in items if p.step == step][0]
 
         # test setting new values
         storage.set_trial_intermediate_value(trial_id, 0, 0.3)
         storage.set_trial_intermediate_value(trial_id, 2, 0.4)
 
-        result_1 = session.query(TrialValue).filter(TrialValue.trial_id == trial_id).all()
+        result_1 = session.query(TrialValueModel). \
+            filter(TrialValueModel.trial_id == trial_id).all()
         assert len(result_1) == 2
         assert find_trial_value(result_1, 0).trial_id == trial_id
         assert find_trial_value(result_1, 0).value == 0.3
@@ -264,7 +265,7 @@ class TestRDBStorage(unittest.TestCase):
             datetime_complete=None)
         storage.set_trial_system_attrs(trial_id, system_attrs_1)
 
-        result_1 = session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        result_1 = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one()
         system_attr_json_1 = json.loads(result_1.system_attributes_json)
         assert len(system_attr_json_1) == 2
         assert system_attr_json_1['datetime_start'] == '20180226000000'
@@ -275,7 +276,7 @@ class TestRDBStorage(unittest.TestCase):
             datetime_complete=datetime.strptime('20180227', '%Y%m%d'))
         storage.set_trial_system_attrs(trial_id, system_attrs_2)
 
-        result_2 = session.query(Trial).filter(Trial.trial_id == trial_id).one()
+        result_2 = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one()
         system_attr_json_2 = json.loads(result_2.system_attributes_json)
         assert len(system_attr_json_1) == 2
         assert system_attr_json_2['datetime_start'] == '20180226000000'
@@ -359,7 +360,7 @@ class TestRDBStorage(unittest.TestCase):
         storage._check_table_schema_compatibility()
 
         # test raising error for out of date schema type
-        version_info = session.query(VersionInfo).one()
+        version_info = session.query(VersionInfoModel).one()
         version_info.schema_version = SCHEMA_VERSION - 1
         session.commit()
 
