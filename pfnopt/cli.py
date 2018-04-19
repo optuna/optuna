@@ -109,7 +109,7 @@ class Minimize(BaseCommand):
                              'should not be specified at the same time.')
         if not parsed_args.create_study and not parsed_args.study_uuid:
             raise ValueError('Inconsistent arguments. Either --create-study or --study-uuid '
-                             'should be speficied.')
+                             'should be specified.')
 
         if parsed_args.create_study:
             study = pfnopt.create_study(storage=parsed_args.url)
