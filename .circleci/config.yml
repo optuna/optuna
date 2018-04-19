@@ -22,6 +22,9 @@ workflows:
       - build-python34
       - build-python35
       - run-examples
+      - run-examples-python27
+      - run-examples-python34
+      - run-examples-python35
 
 jobs:
   build:
@@ -83,7 +86,7 @@ jobs:
 
       - run: *install
 
-      - run:
+      - run: &examples
           name: run-examples
           command: |
             . venv/bin/activate
@@ -91,3 +94,21 @@ jobs:
             do
                python $file
             done
+
+  run-examples-python27:
+    docker:
+      - image: circleci/python:2.7
+    steps:
+      [checkout, run: *install, run: *examples]
+
+  run-examples-python34:
+    docker:
+      - image: circleci/python:3.4
+    steps:
+      [checkout, run: *install, run: *examples]
+
+  run-examples-python35:
+    docker:
+      - image: circleci/python:3.5
+    steps:
+      [checkout, run: *install, run: *examples]
