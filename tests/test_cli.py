@@ -1,7 +1,10 @@
+import pytest
 import re
 import subprocess
 import tempfile
 
+import pfnopt
+from pfnopt.client import BaseClient  # NOQA
 from pfnopt.storages import RDBStorage
 
 
@@ -66,6 +69,59 @@ def test_dashboard_command():
             html = tf_report.read()
             assert '<body>' in html
             assert 'bokeh' in html
+
+
+# An example of objective functions for testing minimize command
+def objective_func(client):
+    # type: (BaseClient) -> float
+
+    x = client.sample_uniform('x', -10, 10)
+    return (x + 5) ** 2
+
+
+def test_minimize_command_in_memory():
+    # type: () -> None
+
+    subprocess.check_call(
+        ['pfnopt', 'minimize', '--n-trials', '10', '--create-study', __file__, 'objective_func'])
+
+
+def test_minimize_command_rdb():
+    # type: () -> None
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = 'sqlite:///{}'.format(tf.name)
+        subprocess.check_call(['pfnopt', 'minimize', '--url', db_url, '--n-trials',
+                               '10', '--create-study', __file__, 'objective_func'])
+
+        study_uuid = str(subprocess.check_output(
+            ['pfnopt', 'create-study', '--url', db_url]).decode().strip())
+        subprocess.check_call(['pfnopt', 'minimize', '--url', db_url, '--study-uuid', study_uuid,
+                               '--n-trials', '10', __file__, 'objective_func'])
+
+        study = pfnopt.Study(storage=db_url, study_uuid=study_uuid)
+        assert len(study.trials) == 10
+        assert 'x' in study.best_params
+
+
+def test_minimize_command_inconsistent_args():
+    # type: () -> None
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = 'sqlite:///{}'.format(tf.name)
+
+        # Feeding neither --create-study nor --study-uuid
+        with pytest.raises(subprocess.CalledProcessError):
+            subprocess.check_call(['pfnopt', 'minimize', '--url', db_url, '--n-trials', '10',
+                                   __file__, 'objective_func'])
+
+        # Feeding both --create-study and --study-uuid
+        study_uuid = str(subprocess.check_output(
+            ['pfnopt', 'create-study', '--url', db_url]).decode().strip())
+        with pytest.raises(subprocess.CalledProcessError):
+            subprocess.check_call(['pfnopt', 'minimize', '--url', db_url, '--n-trials', '10',
+                                   __file__, 'objective_func',
+                                   '--create-study', '--study-uuid', study_uuid])
 
 
 def test_empty_argv():

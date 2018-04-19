@@ -13,9 +13,19 @@ def get_version():
     assert False
 
 
-tests_require = ['pytest', 'hacking', 'mock', 'bokeh']
-if sys.version_info[0] == 3:
-    tests_require.append('mypy')
+def get_install_requires():
+    install_requires = [
+        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'cliff', 'colorlog']
+    if sys.version_info[0] == 2:
+        install_requires.extend(['enum34'])
+    return install_requires
+
+
+def get_tests_require():
+    tests_require = ['pytest', 'hacking', 'mock', 'bokeh']
+    if sys.version_info[0] == 3:
+        tests_require.append('mypy')
+    return tests_require
 
 
 setup(
@@ -25,10 +35,9 @@ setup(
     author='Takuya Akiba',
     author_email='akiba@preferred.jp',
     packages=find_packages(),
-    install_requires=[
-        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'enum34', 'cliff', 'colorlog'],
-    tests_require=tests_require,
-    extras_require={'testing': tests_require},
+    install_requires=get_install_requires(),
+    tests_require=get_tests_require(),
+    extras_require={'testing': get_tests_require()},
     entry_points={
         'console_scripts': ['pfnopt = pfnopt.cli:main']
     }

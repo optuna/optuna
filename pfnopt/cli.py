@@ -5,6 +5,7 @@ from argparse import Namespace  # NOQA
 from cliff.app import App
 from cliff.command import Command
 from cliff.commandmanager import CommandManager
+import imp
 import logging
 import sys
 from typing import Any  # NOQA
@@ -84,10 +85,55 @@ class Dashboard(BaseCommand):
             self.logger.info('Report successfully written to: {}'.format(parsed_args.out))
 
 
+class Minimize(BaseCommand):
+
+    def get_parser(self, prog_name):
+        # type: (str) -> ArgumentParser
+
+        parser = super(Minimize, self).get_parser(prog_name)
+        parser.add_argument('--n-trials', type=int)
+        parser.add_argument('--timeout-seconds', type=float)
+        parser.add_argument('--n-jobs', type=int, default=1)
+        parser.add_argument('--url', '-u')
+        parser.add_argument('--study-uuid')
+        parser.add_argument('--create-study', action='store_true')
+        parser.add_argument('file')
+        parser.add_argument('method')
+        return parser
+
+    def take_action(self, parsed_args):
+        # type: (Namespace) -> None
+
+        if parsed_args.create_study and parsed_args.study_uuid:
+            raise ValueError('Inconsistent arguments. Flags --create-study and --study-uuid '
+                             'should not be specified at the same time.')
+        if not parsed_args.create_study and not parsed_args.study_uuid:
+            raise ValueError('Inconsistent arguments. Either --create-study or --study-uuid '
+                             'should be specified.')
+
+        if parsed_args.create_study:
+            study = pfnopt.create_study(storage=parsed_args.url)
+        else:
+            study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
+
+        target_module = imp.load_source('pfnopt_target_module', parsed_args.file)
+        target_method = getattr(target_module, parsed_args.method)
+
+        # We force enabling the debug flag. As we are going to execute user codes, we want to show
+        # exception stack traces by default.
+        self.app.options.debug = True
+
+        pfnopt.minimize(
+            target_method, n_trials=parsed_args.n_trials,
+            timeout_seconds=parsed_args.timeout_seconds, n_jobs=parsed_args.n_jobs,
+            study=study)
+
+
 _COMMANDS = {
     'create-study': CreateStudy,
     'study set-user-attr': StudySetUserAttribute,
     'dashboard': Dashboard,
+    'minimize': Minimize,
 }
 
 
