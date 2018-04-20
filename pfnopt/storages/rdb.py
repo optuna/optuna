@@ -1,8 +1,10 @@
 from collections import defaultdict
 from datetime import datetime
 import json
-from sqlalchemy import CheckConstraint, DateTime
+
+from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
+from sqlalchemy import DateTime
 from sqlalchemy.engine import create_engine
 from sqlalchemy import Enum
 from sqlalchemy.exc import IntegrityError
@@ -52,13 +54,11 @@ class TrialModel(BaseModel):
     __tablename__ = 'trials'
     trial_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
-    state = Column(Enum(State), default=State.RUNNING)
+    state = Column(Enum(State))
     value = Column(Float)
     user_attributes_json = Column(String(255))
-    datetime_start = Column(
-        DateTime(timezone=True), default=datetime.utcnow)
-    datetime_complete = Column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    datetime_start = Column(DateTime, default=datetime.now)
+    datetime_complete = Column(DateTime)
 
     study = orm.relationship(StudyModel)
 
@@ -238,6 +238,8 @@ class RDBStorage(BaseStorage):
         trial = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one()
 
         trial.state = state
+        if state.is_terminal():
+            trial.datetime_complete = datetime.now()
         session.commit()
 
     def set_trial_param(self, trial_id, param_name, param_value):

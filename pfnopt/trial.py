@@ -13,6 +13,9 @@ class State(enum.Enum):
     PRUNED = 2
     FAIL = 3
 
+    def is_terminal(self):
+        return self == State.COMPLETE or self == State.PRUNED
+
 
 Trial = NamedTuple(
     'Trial',

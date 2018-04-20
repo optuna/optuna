@@ -79,7 +79,7 @@ class InMemoryStorage(base.BaseStorage):
                     value=None,
                     intermediate_values={},
                     params_in_internal_repr={},
-                    datetime_start=datetime.utcnow(),
+                    datetime_start=datetime.now(),
                     datetime_complete=None
                 )
             )
@@ -99,9 +99,9 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             self.trials[trial_id] = self.trials[trial_id]._replace(state=state)
-            if state == trial.State.COMPLETE:
+            if state.is_terminal():
                 self.trials[trial_id] = \
-                    self.trials[trial_id]._replace(datetime_complete=datetime.utcnow())
+                    self.trials[trial_id]._replace(datetime_complete=datetime.now())
 
     def set_trial_param(self, trial_id, param_name, param_value_in_internal_repr):
         # type: (int, str, float) -> None

@@ -33,25 +33,16 @@ def test_trial_model():
     session = Session(bind=engine)
     BaseModel.metadata.create_all(engine)
 
-    datetime_1 = datetime.utcnow()
+    datetime_1 = datetime.now()
 
     session.add(TrialModel())
     session.commit()
 
-    datetime_2 = datetime.utcnow()
+    datetime_2 = datetime.now()
 
     trial_model = session.query(TrialModel).first()
     assert datetime_1 < trial_model.datetime_start < datetime_2
-    assert datetime_1 < trial_model.datetime_complete < datetime_2
-
-    trial_model.value = 1.0
-    session.commit()
-
-    datetime_3 = datetime.utcnow()
-
-    trial_model = session.query(TrialModel).first()
-    assert datetime_1 < trial_model.datetime_start < datetime_2
-    assert datetime_2 < trial_model.datetime_complete < datetime_3
+    assert trial_model.datetime_complete is None
 
 
 def test_version_info_model():
@@ -281,12 +272,12 @@ class TestRDBStorage(unittest.TestCase):
         storage = self.create_test_storage()
         study_id = storage.create_new_study_id()
 
-        datetime_before = datetime.utcnow()
+        datetime_before = datetime.now()
 
         trial_id = self.create_new_trial_with_example_trial(
             storage, study_id, self.example_distributions, self.example_trials[0])
 
-        datetime_after = datetime.utcnow()
+        datetime_after = datetime.now()
 
         trial = storage.get_trial(trial_id)
         self.check_example_trial_static_attributes(trial, self.example_trials[0])
@@ -300,7 +291,7 @@ class TestRDBStorage(unittest.TestCase):
         study_id_1 = storage.create_new_study_id()
         study_id_2 = storage.create_new_study_id()
 
-        datetime_before = datetime.utcnow()
+        datetime_before = datetime.now()
 
         self.create_new_trial_with_example_trial(
             storage, study_id_1, self.example_distributions, self.example_trials[0])
@@ -309,7 +300,7 @@ class TestRDBStorage(unittest.TestCase):
         self.create_new_trial_with_example_trial(
             storage, study_id_2, self.example_distributions, self.example_trials[0])
 
-        datetime_after = datetime.utcnow()
+        datetime_after = datetime.now()
 
         # test getting multiple trials
         trials = sorted(storage.get_all_trials(study_id_1), key=lambda x: x.trial_id)
@@ -317,7 +308,10 @@ class TestRDBStorage(unittest.TestCase):
         self.check_example_trial_static_attributes(trials[1], self.example_trials[1])
         for t in trials:
             assert datetime_before < t.datetime_start < datetime_after
-            assert datetime_before < t.datetime_complete < datetime_after
+            if t.state.is_terminal():
+                assert datetime_before < t.datetime_complete < datetime_after
+            else:
+                assert t.datetime_complete is None
 
         # test getting trials per study
         trials = sorted(storage.get_all_trials(study_id_2), key=lambda x: x.trial_id)
@@ -343,7 +337,7 @@ class TestRDBStorage(unittest.TestCase):
         trial_module.Trial(
             trial_id=-1,  # dummy id
             value=2.,
-            state=trial_module.State.PRUNED,
+            state=trial_module.State.RUNNING,
             user_attrs={'tags': ['video', 'classification'], 'dataset': 'YouTube-8M'},
             params={'x': 0.01, 'y': 'Otemachi'},
             intermediate_values={0: -2., 1: -3., 2: 100.},
