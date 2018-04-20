@@ -1,3 +1,22 @@
+"""
+PFNOpt example that optimizes multi-layer perceptrons using Chainer.
+
+In this example, we optimize the validation accuracy of hand-written digit recognition using
+Chainer and MNIST. We optimize the neural network architecture as well as the optimizer
+configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
+subset of it.
+
+We have the following two ways to execute this example:
+
+(1) Execute this code directly.
+    $ python chainer_mnist.py
+
+
+(2) Execute through CLI.
+    $ pfnopt minimize chainer_mnist.py objective --create-study --n-trials=100
+
+"""
+
 import chainer
 import chainer.functions as F
 import chainer.links as L
