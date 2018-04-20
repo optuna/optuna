@@ -29,6 +29,8 @@ from pfnopt import version
 
 
 def test_trial_model():
+    # type: () -> None
+
     engine = create_engine('sqlite:///:memory:')
     session = Session(bind=engine)
     BaseModel.metadata.create_all(engine)
@@ -46,6 +48,8 @@ def test_trial_model():
 
 
 def test_version_info_model():
+    # type: () -> None
+
     engine = create_engine('sqlite:///:memory:')
     session = Session(bind=engine)
     BaseModel.metadata.create_all(engine)
@@ -61,6 +65,8 @@ def test_version_info_model():
 class TestRDBStorage(unittest.TestCase):
 
     def test_init(self):
+        # type: () -> None
+
         storage = RDBStorage('sqlite:///:memory:')
         session = storage.scoped_session()
 

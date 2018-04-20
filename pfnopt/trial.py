@@ -14,6 +14,8 @@ class State(enum.Enum):
     FAIL = 3
 
     def is_terminal(self):
+        # type: () -> bool
+
         return self == State.COMPLETE or self == State.PRUNED
 
 
