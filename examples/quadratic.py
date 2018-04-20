@@ -1,3 +1,21 @@
+"""
+PFNOpt example that optimizes a simple quadratic function.
+
+In this example, we optimize a simple quadratic function. We also demonstrate how to continue an
+optimization and to use timeouts.
+
+We have the following two ways to execute this example:
+
+(1) Execute this code directly.
+    $ python quadratic.py
+
+
+(2) Execute through CLI.
+    $ pfnopt minimize quadratic.py objective --create-study --n-trials=100
+
+"""
+
+
 import pfnopt
 
 
