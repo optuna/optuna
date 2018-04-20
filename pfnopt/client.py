@@ -1,5 +1,4 @@
 import abc
-import datetime
 import six
 from typing import TYPE_CHECKING  # NOQA
 
@@ -71,11 +70,6 @@ class LocalClient(BaseClient):
         self.study_id = self.study.study_id
         self.storage = self.study.storage
 
-        system_attrs = self.storage.get_trial_system_attrs(self.trial_id)
-        self.storage.set_trial_system_attrs(
-            self.trial_id,
-            system_attrs._replace(datetime_start=datetime.datetime.now()))
-
     def _sample(self, name, distribution):
         # type: (str, distributions.BaseDistribution) -> Any
 
@@ -94,12 +88,6 @@ class LocalClient(BaseClient):
         # type: (float) -> None
 
         self.storage.set_trial_value(self.trial_id, result)
-
-        system_attrs = self.storage.get_trial_system_attrs(self.trial_id)
-        self.storage.set_trial_system_attrs(
-            self.trial_id,
-            system_attrs._replace(datetime_complete=datetime.datetime.now()))
-
         self.storage.set_trial_state(self.trial_id, trial.State.COMPLETE)
 
     def prune(self, step, current_result):

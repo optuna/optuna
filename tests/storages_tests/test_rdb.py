@@ -1,5 +1,4 @@
 from datetime import datetime
-import json
 from mock import Mock
 from mock import patch
 import pytest
@@ -29,7 +28,28 @@ import pfnopt.trial as trial_module
 from pfnopt import version
 
 
-def test_version_info():
+def test_trial_model():
+    # type: () -> None
+
+    engine = create_engine('sqlite:///:memory:')
+    session = Session(bind=engine)
+    BaseModel.metadata.create_all(engine)
+
+    datetime_1 = datetime.now()
+
+    session.add(TrialModel())
+    session.commit()
+
+    datetime_2 = datetime.now()
+
+    trial_model = session.query(TrialModel).first()
+    assert datetime_1 < trial_model.datetime_start < datetime_2
+    assert trial_model.datetime_complete is None
+
+
+def test_version_info_model():
+    # type: () -> None
+
     engine = create_engine('sqlite:///:memory:')
     session = Session(bind=engine)
     BaseModel.metadata.create_all(engine)
@@ -45,6 +65,8 @@ def test_version_info():
 class TestRDBStorage(unittest.TestCase):
 
     def test_init(self):
+        # type: () -> None
+
         storage = RDBStorage('sqlite:///:memory:')
         session = storage.scoped_session()
 
@@ -250,50 +272,6 @@ class TestRDBStorage(unittest.TestCase):
         # test setting existing step with the same value
         storage.set_trial_intermediate_value(trial_id, 0, 0.3)
 
-    def test_set_trial_system_attrs(self):
-        # type: () -> None
-
-        storage = self.create_test_storage()
-        session = storage.scoped_session()
-
-        study_id = storage.create_new_study_id()
-        trial_id = storage.create_new_trial_id(study_id)
-
-        # test setting value
-        system_attrs_1 = trial_module.SystemAttributes(
-            datetime_start=datetime.strptime('20180226', '%Y%m%d'),
-            datetime_complete=None)
-        storage.set_trial_system_attrs(trial_id, system_attrs_1)
-
-        result_1 = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one()
-        system_attr_json_1 = json.loads(result_1.system_attributes_json)
-        assert len(system_attr_json_1) == 2
-        assert system_attr_json_1['datetime_start'] == '20180226000000'
-        assert system_attr_json_1['datetime_complete'] is None
-
-        # test overwriting value
-        system_attrs_2 = system_attrs_1._replace(
-            datetime_complete=datetime.strptime('20180227', '%Y%m%d'))
-        storage.set_trial_system_attrs(trial_id, system_attrs_2)
-
-        result_2 = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one()
-        system_attr_json_2 = json.loads(result_2.system_attributes_json)
-        assert len(system_attr_json_1) == 2
-        assert system_attr_json_2['datetime_start'] == '20180226000000'
-        assert system_attr_json_2['datetime_complete'] == '20180227000000'
-
-    def test_get_trial(self):
-        # type: () -> None
-
-        storage = self.create_test_storage()
-        study_id = storage.create_new_study_id()
-
-        trial_id = TestRDBStorage.create_new_trial_with_example_trial(
-            storage, study_id, self.example_distributions, self.example_trials[0])
-
-        result = storage.get_trial(trial_id)
-        assert result == TestRDBStorage.example_trials[0]._replace(trial_id=trial_id)
-
     def test_get_all_trials(self):
         # type: () -> None
 
@@ -301,22 +279,31 @@ class TestRDBStorage(unittest.TestCase):
         study_id_1 = storage.create_new_study_id()
         study_id_2 = storage.create_new_study_id()
 
-        trial_id_1_1 = self.create_new_trial_with_example_trial(
+        datetime_before = datetime.now()
+
+        self.create_new_trial_with_example_trial(
             storage, study_id_1, self.example_distributions, self.example_trials[0])
-        trial_id_1_2 = self.create_new_trial_with_example_trial(
+        self.create_new_trial_with_example_trial(
             storage, study_id_1, self.example_distributions, self.example_trials[1])
-        trial_id_2_1 = self.create_new_trial_with_example_trial(
+        self.create_new_trial_with_example_trial(
             storage, study_id_2, self.example_distributions, self.example_trials[0])
 
+        datetime_after = datetime.now()
+
         # test getting multiple trials
-        result_1 = storage.get_all_trials(study_id_1)
-        assert sorted(result_1) == sorted([
-            self.example_trials[0]._replace(trial_id=trial_id_1_1),
-            self.example_trials[1]._replace(trial_id=trial_id_1_2)])
+        trials = sorted(storage.get_all_trials(study_id_1), key=lambda x: x.trial_id)
+        self.check_example_trial_static_attributes(trials[0], self.example_trials[0])
+        self.check_example_trial_static_attributes(trials[1], self.example_trials[1])
+        for t in trials:
+            assert datetime_before < t.datetime_start < datetime_after
+            if t.state.is_finished():
+                assert datetime_before < t.datetime_complete < datetime_after
+            else:
+                assert t.datetime_complete is None
 
         # test getting trials per study
-        result_2 = storage.get_all_trials(study_id_2)
-        assert result_2 == [self.example_trials[0]._replace(trial_id=trial_id_2_1)]
+        trials = sorted(storage.get_all_trials(study_id_2), key=lambda x: x.trial_id)
+        self.check_example_trial_static_attributes(trials[0], self.example_trials[0])
 
     example_distributions = {
         'x': UniformDistribution(low=1., high=2.),
@@ -328,25 +315,23 @@ class TestRDBStorage(unittest.TestCase):
             trial_id=-1,  # dummy id
             value=1.,
             state=trial_module.State.COMPLETE,
-            system_attrs=trial_module.SystemAttributes(
-                datetime_start=datetime.strptime('20180226', '%Y%m%d'),
-                datetime_complete=None),
             user_attrs={},
             params={'x': 0.5, 'y': 'Ginza'},
             intermediate_values={0: 2., 1: 3.},
-            params_in_internal_repr={'x': .5, 'y': 2.}
+            params_in_internal_repr={'x': .5, 'y': 2.},
+            datetime_start=None,  # dummy
+            datetime_complete=None  # dummy
         ),
         trial_module.Trial(
             trial_id=-1,  # dummy id
             value=2.,
-            state=trial_module.State.PRUNED,
-            system_attrs=trial_module.SystemAttributes(
-                datetime_start=datetime.strptime('20180227', '%Y%m%d'),
-                datetime_complete=datetime.strptime('20180228', '%Y%m%d')),
+            state=trial_module.State.RUNNING,
             user_attrs={'tags': ['video', 'classification'], 'dataset': 'YouTube-8M'},
             params={'x': 0.01, 'y': 'Otemachi'},
             intermediate_values={0: -2., 1: -3., 2: 100.},
-            params_in_internal_repr={'x': .01, 'y': 0.}
+            params_in_internal_repr={'x': .01, 'y': 0.},
+            datetime_start=None,  # dummy
+            datetime_complete=None  # dummy
         )
     ]
 
@@ -368,6 +353,14 @@ class TestRDBStorage(unittest.TestCase):
             storage._check_table_schema_compatibility()
 
     @staticmethod
+    def check_example_trial_static_attributes(trial_1, trial_2):
+        # type: (trial_module.Trial, trial_module.Trial) -> None
+
+        trial_1 = trial_1._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
+        trial_2 = trial_2._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
+        assert trial_1 == trial_2
+
+    @staticmethod
     def create_new_trial_with_example_trial(storage, study_id, distributions, example_trial):
         # type: (RDBStorage, int, Dict[str, BaseDistribution], trial_module.Trial) -> int
 
@@ -375,7 +368,6 @@ class TestRDBStorage(unittest.TestCase):
 
         storage.set_trial_value(trial_id, example_trial.value)
         storage.set_trial_state(trial_id, example_trial.state)
-        storage.set_trial_system_attrs(trial_id, example_trial.system_attrs)
         TestRDBStorage.set_distributions(storage, trial_id, distributions)
 
         for name, ex_repr in example_trial.params.items():
