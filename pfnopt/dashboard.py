@@ -46,7 +46,7 @@ h1, p {{
 </p>
 '''
 
-_DATETIME_FORMAT = '%Y-%m-%d:%H:%M:%S'
+_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
 if _available:
