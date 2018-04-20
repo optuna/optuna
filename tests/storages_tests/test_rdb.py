@@ -266,24 +266,6 @@ class TestRDBStorage(unittest.TestCase):
         # test setting existing step with the same value
         storage.set_trial_intermediate_value(trial_id, 0, 0.3)
 
-    def test_get_trial(self):
-        # type: () -> None
-
-        storage = self.create_test_storage()
-        study_id = storage.create_new_study_id()
-
-        datetime_before = datetime.now()
-
-        trial_id = self.create_new_trial_with_example_trial(
-            storage, study_id, self.example_distributions, self.example_trials[0])
-
-        datetime_after = datetime.now()
-
-        trial = storage.get_trial(trial_id)
-        self.check_example_trial_static_attributes(trial, self.example_trials[0])
-        assert datetime_before < trial.datetime_start < datetime_after
-        assert datetime_before < trial.datetime_complete < datetime_after
-
     def test_get_all_trials(self):
         # type: () -> None
 
@@ -366,6 +348,8 @@ class TestRDBStorage(unittest.TestCase):
 
     @staticmethod
     def check_example_trial_static_attributes(trial_1, trial_2):
+        # type: (trial_module.Trial, trial_module.Trial) -> None
+
         trial_1 = trial_1._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
         trial_2 = trial_2._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
         assert trial_1 == trial_2
