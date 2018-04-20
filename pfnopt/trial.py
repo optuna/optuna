@@ -13,7 +13,7 @@ class State(enum.Enum):
     PRUNED = 2
     FAIL = 3
 
-    def is_terminal(self):
+    def is_finished(self):
         # type: () -> bool
 
         return self == State.COMPLETE or self == State.PRUNED

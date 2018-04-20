@@ -296,7 +296,7 @@ class TestRDBStorage(unittest.TestCase):
         self.check_example_trial_static_attributes(trials[1], self.example_trials[1])
         for t in trials:
             assert datetime_before < t.datetime_start < datetime_after
-            if t.state.is_terminal():
+            if t.state.is_finished():
                 assert datetime_before < t.datetime_complete < datetime_after
             else:
                 assert t.datetime_complete is None

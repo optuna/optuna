@@ -238,7 +238,7 @@ class RDBStorage(BaseStorage):
         trial = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one()
 
         trial.state = state
-        if state.is_terminal():
+        if state.is_finished():
             trial.datetime_complete = datetime.now()
         session.commit()
 

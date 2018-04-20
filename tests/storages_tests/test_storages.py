@@ -125,7 +125,7 @@ def test_get_trial(storage_init_func):
 
         trial = storage.get_trial(trial_id)
         _check_example_trial_static_attributes(trial, example_trial)
-        if trial.state.is_terminal():
+        if trial.state.is_finished():
             assert datetime_before < trial.datetime_start < datetime_after
             assert datetime_before < trial.datetime_complete < datetime_after
         else:

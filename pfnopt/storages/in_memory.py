@@ -99,7 +99,7 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             self.trials[trial_id] = self.trials[trial_id]._replace(state=state)
-            if state.is_terminal():
+            if state.is_finished():
                 self.trials[trial_id] = \
                     self.trials[trial_id]._replace(datetime_complete=datetime.now())
 
