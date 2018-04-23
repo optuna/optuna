@@ -8,10 +8,10 @@ import pfnopt
 from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import UniformDistribution
+from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages import BaseStorage  # NOQA
 from pfnopt.storages import InMemoryStorage
 from pfnopt.storages import RDBStorage
-from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 
 
 EXAMPLE_SYSTEM_ATTRS = {
