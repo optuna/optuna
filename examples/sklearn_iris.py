@@ -17,9 +17,9 @@ We have the following two ways to execute this example:
 """
 
 import sklearn.datasets
+import sklearn.ensemble
 import sklearn.model_selection
 import sklearn.svm
-import sklearn.ensemble
 
 
 def objective(client):
