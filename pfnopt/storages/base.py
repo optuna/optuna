@@ -60,9 +60,8 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
-    # TODO(sano): support getting attribute in a thread-safe way.
     def get_study_system_attr(self, study_id, key):
-        # type: (int, str) -> Dict[str, Any]
+        # type: (int, str) -> Any
 
         user_attrs = self.get_study_user_attrs(study_id)
         return copy.deepcopy(user_attrs[SYSTEM_ATTRS_KEY][key])
@@ -123,7 +122,6 @@ class BaseStorage(object):
 
     # Basic trial access
 
-    # TODO(sano): support getting attribute in a thread-safe way.
     def get_trial_system_attr(self, trial_id, key):
         # type: (int, str) -> Any
 
