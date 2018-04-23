@@ -38,7 +38,15 @@ class InMemoryStorage(base.BaseStorage):
     def create_new_study_id(self):
         # type: () -> int
 
+        self.study_user_attrs[base.SYSTEM_ATTRS_KEY] = {}
+
         return IN_MEMORY_STORAGE_STUDY_ID  # TODO(akiba)
+
+    def set_study_user_attr(self, study_id, key, value):
+        # type: (int, str, Any) -> None
+
+        with self._lock:
+            self.study_user_attrs[key] = value
 
     def get_study_id_from_uuid(self, study_uuid):
         # type: (str) -> int
@@ -51,12 +59,6 @@ class InMemoryStorage(base.BaseStorage):
 
         self._check_study_id(study_id)
         return IN_MEMORY_STORAGE_STUDY_UUID
-
-    def set_study_user_attr(self, study_id, key, value):
-        # type: (int, str, Any) -> None
-
-        with self._lock:
-            self.study_user_attrs[key] = value
 
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
@@ -75,7 +77,7 @@ class InMemoryStorage(base.BaseStorage):
                     trial_id=trial_id,
                     state=trial.State.RUNNING,
                     params={},
-                    user_attrs={},
+                    user_attrs={base.SYSTEM_ATTRS_KEY: {}},
                     value=None,
                     intermediate_values={},
                     params_in_internal_repr={},
