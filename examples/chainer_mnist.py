@@ -44,7 +44,7 @@ def create_model(client):
 
 
 def create_optimizer(client, model):
-    # We optimize the choice of optimizers as well as their learning rates.
+    # We optimize the choice of optimizers as well as their parameters.
     optimizer_name = client.sample_categorical('optimizer', ['Adam', 'MomentumSGD'])
     if optimizer_name == 'Adam':
         adam_alpha = client.sample_loguniform('adam_apha', 1e-5, 1e-1)
