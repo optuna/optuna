@@ -31,7 +31,7 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
-    # TODO(sano): support updating attributes among multiple threads/processes/nodes.
+    # TODO(sano): support setting attribute in a thread-safe way.
     def set_study_system_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
@@ -60,7 +60,7 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
-    # TODO(sano): support updating attributes among multiple threads/processes/nodes.
+    # TODO(sano): support getting attribute in a thread-safe way.
     def get_study_system_attr(self, study_id, key):
         # type: (int, str) -> Dict[str, Any]
 
@@ -112,7 +112,7 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
-    # TODO(sano): support updating attributes among multiple threads/processes/nodes.
+    # TODO(sano): support setting attribute in a thread-safe way.
     def set_trial_system_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
 
@@ -123,7 +123,7 @@ class BaseStorage(object):
 
     # Basic trial access
 
-    # TODO(sano): support updating attributes among multiple threads/processes/nodes.
+    # TODO(sano): support getting attribute in a thread-safe way.
     def get_trial_system_attr(self, trial_id, key):
         # type: (int, str) -> Any
 
