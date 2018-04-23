@@ -4,17 +4,17 @@ from mock import patch
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 import unittest
 import uuid
 
-from sqlalchemy.orm import Session
-
 from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
+from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb import BaseModel
 from pfnopt.storages.rdb import RDBStorage
 from pfnopt.storages.rdb import SCHEMA_VERSION
@@ -315,7 +315,7 @@ class TestRDBStorage(unittest.TestCase):
             trial_id=-1,  # dummy id
             value=1.,
             state=trial_module.State.COMPLETE,
-            user_attrs={},
+            user_attrs={SYSTEM_ATTRS_KEY: {}},
             params={'x': 0.5, 'y': 'Ginza'},
             intermediate_values={0: 2., 1: 3.},
             params_in_internal_repr={'x': .5, 'y': 2.},
@@ -326,7 +326,9 @@ class TestRDBStorage(unittest.TestCase):
             trial_id=-1,  # dummy id
             value=2.,
             state=trial_module.State.RUNNING,
-            user_attrs={'tags': ['video', 'classification'], 'dataset': 'YouTube-8M'},
+            user_attrs={
+                SYSTEM_ATTRS_KEY: {'some_key': 'some_value'},
+                'tags': ['video', 'classification'], 'dataset': 'YouTube-8M'},
             params={'x': 0.01, 'y': 'Otemachi'},
             intermediate_values={0: -2., 1: -3., 2: 100.},
             params_in_internal_repr={'x': .01, 'y': 0.},

@@ -24,6 +24,7 @@ import uuid
 from pfnopt import distributions
 from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
+from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 import pfnopt.trial as trial_module
 from pfnopt.trial import State
 from pfnopt import version
@@ -137,29 +138,11 @@ class RDBStorage(BaseStorage):
         session.add(study)
         session.commit()
 
+        self.set_study_user_attr(study.study_id, SYSTEM_ATTRS_KEY, {})
+
         self.logger.info('A new study created with UUID: {}'.format(study.study_uuid))
 
         return study.study_id
-
-    def get_study_id_from_uuid(self, study_uuid):
-        # type: (str) -> int
-
-        session = self.scoped_session()
-        study = session.query(StudyModel).filter(StudyModel.study_uuid == study_uuid).one_or_none()
-        if study is None:
-            raise ValueError('study_uuid {} does not exist.'.format(study_uuid))
-        else:
-            return study.study_id
-
-    def get_study_uuid_from_id(self, study_id):
-        # type: (int) -> str
-
-        session = self.scoped_session()
-        study = session.query(StudyModel).filter(StudyModel.study_id == study_id).one_or_none()
-        if study is None:
-            raise ValueError('study_id {} does not exist.'.format(study_id))
-        else:
-            return study.study_uuid
 
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
@@ -183,6 +166,26 @@ class RDBStorage(BaseStorage):
             attribute.value_json = json.dumps(value)
 
         session.commit()
+
+    def get_study_id_from_uuid(self, study_uuid):
+        # type: (str) -> int
+
+        session = self.scoped_session()
+        study = session.query(StudyModel).filter(StudyModel.study_uuid == study_uuid).one_or_none()
+        if study is None:
+            raise ValueError('study_uuid {} does not exist.'.format(study_uuid))
+        else:
+            return study.study_id
+
+    def get_study_uuid_from_id(self, study_id):
+        # type: (int) -> str
+
+        session = self.scoped_session()
+        study = session.query(StudyModel).filter(StudyModel.study_id == study_id).one_or_none()
+        if study is None:
+            raise ValueError('study_id {} does not exist.'.format(study_id))
+        else:
+            return study.study_uuid
 
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
@@ -223,7 +226,7 @@ class RDBStorage(BaseStorage):
         trial = TrialModel()
         trial.study_id = study_id
         trial.state = State.RUNNING
-        trial.user_attributes_json = '{}'
+        trial.user_attributes_json = json.dumps({SYSTEM_ATTRS_KEY: {}})
 
         session = self.scoped_session()
         session.add(trial)

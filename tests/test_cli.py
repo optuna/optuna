@@ -47,7 +47,9 @@ def test_study_set_user_attr():
         # attrs should be stored in storage
         storage = RDBStorage(db_url)
         study_id = storage.get_study_id_from_uuid(study_uuid)
-        assert storage.get_study_user_attrs(study_id) == example_attrs
+        study_user_attrs = storage.get_study_user_attrs(study_id)
+        assert len(study_user_attrs) == 3  # Including the system attribute key.
+        assert all([study_user_attrs[k] == v for k, v in example_attrs.items()])
 
 
 def test_dashboard_command():
