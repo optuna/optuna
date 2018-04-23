@@ -23,37 +23,28 @@ import chainer.links as L
 import numpy as np
 
 
-N_TRAIN_EXAMPLES = 1000
-N_TEST_EXAMPLES = 100
-BATCHSIZE = 32
+N_TRAIN_EXAMPLES = 3000
+N_TEST_EXAMPLES = 1000
+BATCHSIZE = 128
 EPOCH = 10
 
 
-class MLP(chainer.Chain):
+def create_model(client):
+    # We optimize the numbers of layers and their units.
+    n_layers = int(client.sample_uniform('n_layers', 1, 4))
 
-    def __init__(self, client):
-        super(MLP, self).__init__()
+    layers = []
+    for i in range(n_layers):
+        n_units = int(client.sample_loguniform('n_units_l{}'.format(i), 4, 128))
+        layers.append(L.Linear(None, n_units))
+        layers.append(F.relu)
+    layers.append(L.Linear(None, 10))
 
-        n_units_l1 = int(client.sample_loguniform('n_units_l1', 16, 256))
-        n_units_l2 = int(client.sample_loguniform('n_units_l2', 16, 256))
-        n_units_l3 = int(client.sample_loguniform('n_units_l3', 16, 256))
-
-        with self.init_scope():
-            self.l1 = L.Linear(None, n_units_l1)
-            self.l2 = L.Linear(None, n_units_l2)
-            self.l3 = L.Linear(None, n_units_l3)
-
-    def __call__(self, x):
-        h1 = F.relu(self.l1(x))
-        h2 = F.relu(self.l2(h1))
-        return self.l3(h2)
+    return chainer.Sequential(*layers)
 
 
-def objective(client):
-    # Model --- We optimize the number of units in each layer.
-    model = L.Classifier(MLP(client))
-
-    # Optimizer --- We optimize the choice of optimizers as well as their learning rates.
+def create_optimizer(client, model):
+    # We optimize the choice of optimizers as well as their learning rates.
     optimizer_name = client.sample_categorical('optimizer', ['Adam', 'MomentumSGD'])
     if optimizer_name == 'Adam':
         adam_alpha = client.sample_loguniform('adam_apha', 1e-5, 1e-1)
@@ -61,7 +52,17 @@ def objective(client):
     else:
         momentum_sgd_lr = client.sample_loguniform('momentum_sgd_lr', 1e-5, 1e-1)
         optimizer = chainer.optimizers.MomentumSGD(lr=momentum_sgd_lr)
+
+    weight_decay = client.sample_loguniform('weight_decay', 1e-10, 1e-3)
     optimizer.setup(model)
+    optimizer.add_hook(chainer.optimizer.WeightDecay(weight_decay))
+    return optimizer
+
+
+def objective(client):
+    # Model and optimizer
+    model = L.Classifier(create_model(client))
+    optimizer = create_optimizer(client, model)
 
     # Dataset
     rng = np.random.RandomState(0)
@@ -85,10 +86,18 @@ def objective(client):
 
     # Run!
     trainer.run()
+
+    # Set the user attributes such as loss and accuracy for train and validation sets
+    log_last = log_report_extension.log[-1]
+    for key, value in log_last.items():
+        client.set_user_attr(key, value)
+
+    # Return the validation error
     val_err = 1.0 - log_report_extension.log[-1]['validation/main/accuracy']
     return val_err
 
 
 if __name__ == '__main__':
     import pfnopt
-    pfnopt.minimize(objective, n_trials=100)
+    study = pfnopt.minimize(objective, n_trials=100)
+    print(study.best_trial)
