@@ -225,9 +225,10 @@ class RDBStorage(BaseStorage):
         # type: (int) -> trial_module.Trial
 
         session = self.scoped_session()
-        trial = session.query(models.TrialModel).filter(models.TrialModel.trial_id == trial_id).one()
-        params = session.query(models.TrialParamModel).filter(models.TrialParamModel.trial_id == trial_id).all()
-        values = session.query(models.TrialValueModel).filter(models.TrialValueModel.trial_id == trial_id).all()
+
+        trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
+        params = models.TrialParamModel.where_trial(trial, session)
+        values = models.TrialValueModel.where_trial(trial, session)
 
         return self._merge_trials_orm([trial], params, values)[0]
 
@@ -235,11 +236,11 @@ class RDBStorage(BaseStorage):
         # type: (int) -> List[trial_module.Trial]
 
         session = self.scoped_session()
-        trials = session.query(models.TrialModel).filter(models.TrialModel.study_id == study_id).all()
-        params = session.query(models.TrialParamModel).join(models.TrialModel). \
-            filter(models.TrialModel.study_id == study_id).all()
-        values = session.query(models.TrialValueModel).join(models.TrialModel). \
-            filter(models.TrialModel.study_id == study_id).all()
+
+        study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+        trials = models.TrialModel.where_study(study, session)
+        params = models.TrialParamModel.where_study(study, session)
+        values = models.TrialValueModel.where_study(study, session)
 
         return self._merge_trials_orm(trials, params, values)
 
@@ -255,19 +256,19 @@ class RDBStorage(BaseStorage):
         for trial in trials:
             id_to_trial[trial.trial_id] = trial
 
-        id_to_trial_params = defaultdict(list)  # type: Dict[int, List[models.TrialParamModel]]
+        id_to_params = defaultdict(list)  # type: Dict[int, List[models.TrialParamModel]]
         for param in trial_params:
-            id_to_trial_params[param.trial_id].append(param)
+            id_to_params[param.trial_id].append(param)
 
-        id_to_intermediate_values = defaultdict(list)  # type: Dict[int, List[models.TrialValueModel]]
+        id_to_values = defaultdict(list)  # type: Dict[int, List[models.TrialValueModel]]
         for value in trial_intermediate_values:
-            id_to_intermediate_values[value.trial_id].append(value)
+            id_to_values[value.trial_id].append(value)
 
         result = []
         for trial_id, trial in id_to_trial.items():
             params = {}
             params_in_internal_repr = {}
-            for param in id_to_trial_params[trial_id]:
+            for param in id_to_params[trial_id]:
                 distribution = \
                     distributions.json_to_distribution(param.param_distribution.distribution_json)
                 params[param.param_distribution.param_name] = \
@@ -275,7 +276,7 @@ class RDBStorage(BaseStorage):
                 params_in_internal_repr[param.param_distribution.param_name] = param.param_value
 
             intermediate_values = {}
-            for value in id_to_intermediate_values[trial_id]:
+            for value in id_to_values[trial_id]:
                 intermediate_values[value.step] = value.value
 
             result.append(trial_module.Trial(
@@ -297,26 +298,21 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        version_info = session.query(models.VersionInfoModel).one_or_none()
-        if version_info is None:
-            version_info = models.VersionInfoModel()
-            version_info.schema_version = models.SCHEMA_VERSION
-            version_info.library_version = version.__version__
-            session.add(version_info)
-            try:
-                session.commit()
-            except IntegrityError as e:
-                self.logger.debug(
-                    'Ignoring {}. This happens due to a timing issue during initial setup of {} '
-                    'table among multi threads/processes/nodes.'.format(
-                        repr(e), models.VersionInfoModel.__tablename__))
-                session.rollback()
-        else:
-            if version_info.schema_version != models.SCHEMA_VERSION:
-                raise RuntimeError(
-                    'The runtime pfnopt version {} is no longer compatible with the table schema '
-                    '(set up by pfnopt {}).'.format(
-                        version.__version__, version_info.library_version))
+        version_info = models.VersionInfoModel.find_or_create(session)
+
+        try:
+            session.commit()
+        except IntegrityError as e:
+            self.logger.debug(
+                'Ignoring {}. This happens due to a timing issue during initial setup of {} '
+                'table among multi threads/processes/nodes.'.format(
+                    repr(e), models.VersionInfoModel.__tablename__))
+            session.rollback()
+
+        if version_info.schema_version != models.SCHEMA_VERSION:
+            raise RuntimeError(
+                'The runtime pfnopt version {} is no longer compatible with the table schema '
+                '(set up by pfnopt {}).'.format(version.__version__, version_info.library_version))
 
     def remove_session(self):
         # type: () -> None

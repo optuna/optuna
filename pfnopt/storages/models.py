@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pfnopt import distributions
+from pfnopt import distributions, version
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -16,7 +16,7 @@ from typing import Any, Optional, List  # NOQA
 from pfnopt.trial import State
 from sqlalchemy.orm import Session
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 BaseModel = declarative_base()  # type: Any
 
@@ -95,6 +95,14 @@ class TrialModel(BaseModel):
 
         return trial
 
+    @classmethod
+    def where_study(cls, study, session):
+        # type: (StudyModel, Session) -> List[TrialModel]
+
+        trials = session.query(cls).filter(cls.study_id == study.study_id).all()
+
+        return trials
+
 
 class TrialParamDistributionModel(BaseModel):
     __tablename__ = 'param_distributions'
@@ -166,6 +174,24 @@ class TrialParamModel(BaseModel):
 
         return trial_param
 
+    @classmethod
+    def where_study(cls, study, session):
+        # type: (StudyModel, Session) -> List[TrialParamModel]
+
+        trial_params = session.query(cls).join(TrialModel). \
+            filter(TrialModel.study_id == study.study_id).all()
+
+        return trial_params
+
+
+    @classmethod
+    def where_trial(cls, trial, session):
+        # type: (TrialModel, Session) -> List[TrialParamModel]
+
+        trial_params = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+
+        return trial_params
+
 
 class TrialValueModel(BaseModel):
     __tablename__ = 'trial_values'
@@ -187,6 +213,23 @@ class TrialValueModel(BaseModel):
 
         return trial_value
 
+    @classmethod
+    def where_study(cls, study, session):
+        # type: (StudyModel, Session) -> List[TrialValueModel]
+
+        trial_values = session.query(cls).join(TrialModel). \
+            filter(TrialModel.study_id == study.study_id).all()
+
+        return trial_values
+
+    @classmethod
+    def where_trial(cls, trial, session):
+        # type: (TrialModel, Session) -> List[TrialValueModel]
+
+        trial_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+
+        return trial_values
+
 
 class VersionInfoModel(BaseModel):
     __tablename__ = 'version_info'
@@ -196,3 +239,16 @@ class VersionInfoModel(BaseModel):
     schema_version = Column(Integer)
     library_version = Column(String(255))
 
+    @classmethod
+    def find_or_create(cls, session):
+        # type: (Session) -> VersionInfoModel
+
+        version_info = session.query(cls).one_or_none()
+        if version_info is None:
+            version_info = VersionInfoModel(
+                schema_version=SCHEMA_VERSION,
+                library_version=version.__version__
+            )
+            session.add(version_info)
+
+        return version_info
