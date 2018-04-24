@@ -4,11 +4,11 @@ workflows:
   version: 2
   commit-build:
     jobs:
-      - check
-      - run-tests-python36
-      - run-tests-python27
-      - run-tests-python34
-      - run-tests-python35
+      - checks
+      - tests-python36
+      - tests-python27
+      - tests-python34
+      - tests-python35
   daily-build:
     triggers:
       - schedule:
@@ -18,21 +18,21 @@ workflows:
               only:
                 - master
     jobs:
-      - check
-      - run-tests-python36
-      - run-tests-python27
-      - run-tests-python34
-      - run-tests-python35
-      - run-examples-python36
-      - run-examples-python27
-      - run-examples-python34
-      - run-examples-python35
+      - checks
+      - tests-python36
+      - tests-python27
+      - tests-python34
+      - tests-python35
+      - examples-python36
+      - examples-python27
+      - examples-python34
+      - examples-python35
 
 jobs:
 
   # Lint and static type checking
 
-  check:
+  checks:
     docker:
       - image: circleci/python:3.6
     steps:
@@ -46,13 +46,13 @@ jobs:
             python setup.py sdist
             pip install $(ls dist/*.tar.gz)[testing]
 
-      - run: &check-flake8
+      - run:
           name: flake8
           command: |
             . venv/bin/activate
             flake8 .
 
-      - run: &check-mypy
+      - run:
           name: mypy
           command: |
             . venv/bin/activate
@@ -61,7 +61,7 @@ jobs:
 
   # Unit tests
 
-  run-tests-python36:
+  tests-python36:
     docker:
       - image: circleci/python:3.6
     steps:
@@ -75,19 +75,19 @@ jobs:
             . venv/bin/activate
             pytest tests
 
-  run-tests-python27:
+  tests-python27:
     docker:
       - image: circleci/python:2.7
     steps:
       [checkout, run: *install, run: *tests]
 
-  run-tests-python34:
+  tests-python34:
     docker:
       - image: circleci/python:3.4
     steps:
       [checkout, run: *install, run: *tests]
 
-  run-tests-python35:
+  tests-python35:
     docker:
       - image: circleci/python:3.5
     steps:
@@ -95,7 +95,7 @@ jobs:
 
   # Examples
 
-  run-examples-python36:
+  examples-python36:
     docker:
       - image: circleci/python:3.6
     steps:
@@ -110,7 +110,7 @@ jobs:
             pip install chainer scikit-learn
 
       - run: &examples
-          name: run-examples
+          name: examples
           command: |
             . venv/bin/activate
             for file in `find examples -name '*.py'`
@@ -118,19 +118,19 @@ jobs:
                python $file
             done
 
-  run-examples-python27:
+  examples-python27:
     docker:
       - image: circleci/python:2.7
     steps:
       [checkout, run: *install, run: *install-examples, run: *examples]
 
-  run-examples-python34:
+  examples-python34:
     docker:
       - image: circleci/python:3.4
     steps:
       [checkout, run: *install, run: *install-examples, run: *examples]
 
-  run-examples-python35:
+  examples-python35:
     docker:
       - image: circleci/python:3.5
     steps:
