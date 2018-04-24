@@ -125,7 +125,8 @@ class Minimize(BaseCommand):
         try:
             target_method = getattr(target_module, parsed_args.method)
         except AttributeError:
-            self.logger.error('Method {} not found in file {}.'.format(parsed_args.method, parsed_args.file))
+            self.logger.error('Method {} not found in file {}.'.format(
+                parsed_args.method, parsed_args.file))
             return 1
 
         pfnopt.minimize(
