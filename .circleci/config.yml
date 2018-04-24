@@ -86,6 +86,12 @@ jobs:
 
       - run: *install
 
+      - run: &install-examples
+          name: install
+          command: |
+            . venv/bin/activate
+            pip install chainer scikit-learn
+
       - run: &examples
           name: run-examples
           command: |
@@ -99,16 +105,16 @@ jobs:
     docker:
       - image: circleci/python:2.7
     steps:
-      [checkout, run: *install, run: *examples]
+      [checkout, run: *install, run: *install-examples, run: *examples]
 
   run-examples-python34:
     docker:
       - image: circleci/python:3.4
     steps:
-      [checkout, run: *install, run: *examples]
+      [checkout, run: *install, run: *install-examples, run: *examples]
 
   run-examples-python35:
     docker:
       - image: circleci/python:3.5
     steps:
-      [checkout, run: *install, run: *examples]
+      [checkout, run: *install, run: *install-examples, run: *examples]
