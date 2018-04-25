@@ -41,4 +41,3 @@ def test_version_info_model():
     # test check constraint of version_info_id
     session.add(VersionInfoModel(version_info_id=2, schema_version=2, library_version='0.0.2'))
     pytest.raises(IntegrityError, lambda: session.commit())
-

@@ -13,7 +13,6 @@ from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
 from pfnopt.storages.base import SYSTEM_ATTRS_KEY
-from pfnopt.storages import RDBStorage
 from pfnopt.storages.models import SCHEMA_VERSION
 from pfnopt.storages.models import StudyModel
 from pfnopt.storages.models import TrialModel
@@ -21,6 +20,7 @@ from pfnopt.storages.models import TrialParamDistributionModel
 from pfnopt.storages.models import TrialParamModel
 from pfnopt.storages.models import TrialValueModel
 from pfnopt.storages.models import VersionInfoModel
+from pfnopt.storages import RDBStorage
 import pfnopt.trial as trial_module
 from pfnopt import version
 
