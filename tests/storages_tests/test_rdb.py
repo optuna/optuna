@@ -173,24 +173,6 @@ class TestRDBStorage(unittest.TestCase):
         assert result[0].trial_id == trial_id
         assert result[0].state == trial_module.State.RUNNING
 
-    def test_set_trial_state(self):
-        # type: () -> None
-
-        storage = self.create_test_storage()
-        session = storage.scoped_session()
-
-        study_id = storage.create_new_study_id()
-        trial_id = storage.create_new_trial_id(study_id)
-
-        result_1 = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one().state
-
-        storage.set_trial_state(trial_id, trial_module.State.PRUNED)
-
-        result_2 = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one().state
-
-        assert result_1 == trial_module.State.RUNNING
-        assert result_2 == trial_module.State.PRUNED
-
     example_distributions = {
         'x': UniformDistribution(low=1., high=2.),
         'y': CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))

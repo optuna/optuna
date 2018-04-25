@@ -112,6 +112,32 @@ def test_set_and_get_study_system_attrs(storage_init_func):
     InMemoryStorage,
     lambda: RDBStorage('sqlite:///:memory:')
 ])
+def test_set_trial_state(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+
+    trial_id_1 = storage.create_new_trial_id(storage.create_new_study_id())
+    trial_id_2 = storage.create_new_trial_id(storage.create_new_study_id())
+
+    storage.set_trial_state(trial_id_1, pfnopt.trial.State.RUNNING)
+    assert storage.get_trial(trial_id_1).state == pfnopt.trial.State.RUNNING
+    assert storage.get_trial(trial_id_1).datetime_complete is None
+
+    storage.set_trial_state(trial_id_2, pfnopt.trial.State.COMPLETE)
+    assert storage.get_trial(trial_id_2).state == pfnopt.trial.State.COMPLETE
+    assert storage.get_trial(trial_id_2).datetime_complete is not None
+
+    # Test overwriting value.
+    storage.set_trial_state(trial_id_1, pfnopt.trial.State.PRUNED)
+    assert storage.get_trial(trial_id_1).state == pfnopt.trial.State.PRUNED
+    assert storage.get_trial(trial_id_1).datetime_complete is not None
+
+
+@pytest.mark.parametrize('storage_init_func', [
+    InMemoryStorage,
+    lambda: RDBStorage('sqlite:///:memory:')
+])
 def test_set_trial_param(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
