@@ -18,7 +18,7 @@ from pfnopt import distributions
 from pfnopt.trial import State
 
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 3
 
 NOT_FOUND_MSG = 'Record does not exist.'
 
