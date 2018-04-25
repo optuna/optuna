@@ -16,10 +16,11 @@ from typing import Optional  # NOQA
 
 from pfnopt import distributions
 from pfnopt.trial import State
-from pfnopt import version
 
 
 SCHEMA_VERSION = 4
+
+NOT_FOUND_MSG = 'Record does not exist.'
 
 BaseModel = declarative_base()  # type: Any
 
@@ -35,7 +36,7 @@ class StudyModel(BaseModel):
 
         study = session.query(cls).filter(cls.study_id == study_id).one_or_none()
         if study is None and not allow_none:
-            raise ValueError('study_id {} does not exist.'.format(study_id))
+            raise ValueError(NOT_FOUND_MSG)
 
         return study
 
@@ -45,7 +46,7 @@ class StudyModel(BaseModel):
 
         study = session.query(cls).filter(cls.study_uuid == study_uuid).one_or_none()
         if study is None and not allow_none:
-            raise ValueError('study_uuid {} does not exist.'.format(study_uuid))
+            raise ValueError(NOT_FOUND_MSG)
 
         return study
 
@@ -61,11 +62,11 @@ class StudyUserAttributeModel(BaseModel):
     study = orm.relationship(StudyModel)
 
     @classmethod
-    def find_by_study_id_and_key(cls, study_id, key, session):
-        # type: (int, str, orm.Session) -> Optional[StudyUserAttributeModel]
+    def find_by_study_and_key(cls, study, key, session):
+        # type: (StudyModel, str, orm.Session) -> Optional[StudyUserAttributeModel]
 
         attribute = session.query(cls). \
-            filter(cls.study_id == study_id).filter(cls.key == key).one_or_none()
+            filter(cls.study_id == study.study_id).filter(cls.key == key).one_or_none()
 
         return attribute
 
@@ -94,7 +95,7 @@ class TrialModel(BaseModel):
 
         trial = session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
         if trial is None and not allow_none:
-            raise ValueError('trial_id {} does not exist.'.format(trial_id))
+            raise ValueError(NOT_FOUND_MSG)
 
         return trial
 
@@ -145,11 +146,7 @@ class TrialParamDistributionModel(BaseModel):
             filter(cls.param_name == param_name).one_or_none()
 
         if param_distribution is None and not allow_none:
-            raise ValueError(
-                'Record does not exist with trial_id {} and param_name {}.'.format(
-                    trial.trial_id, param_name
-                )
-            )
+            raise ValueError(NOT_FOUND_MSG)
 
         return param_distribution
 
@@ -242,15 +239,9 @@ class VersionInfoModel(BaseModel):
     library_version = Column(String(255))
 
     @classmethod
-    def find_or_create(cls, session):
+    def find(cls, session):
         # type: (orm.Session) -> VersionInfoModel
 
         version_info = session.query(cls).one_or_none()
-        if version_info is None:
-            version_info = VersionInfoModel(
-                schema_version=SCHEMA_VERSION,
-                library_version=version.__version__
-            )
-            session.add(version_info)
 
         return version_info

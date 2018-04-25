@@ -60,10 +60,8 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        # Check if the study already exists.
-        models.StudyModel.find_by_id(study_id, session, allow_none=False)
-
-        attribute = models.StudyUserAttributeModel.find_by_study_id_and_key(study_id, key, session)
+        study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+        attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
         if attribute is None:
             attribute = models.StudyUserAttributeModel(
                 study_id=study_id, key=key, value_json=json.dumps(value))
@@ -147,8 +145,6 @@ class RDBStorage(BaseStorage):
         trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
         param_distribution = models.TrialParamDistributionModel.find_by_trial_and_param_name(
             trial, param_name, session, allow_none=False)
-
-        # check if the parameter already exists
         param = models.TrialParamModel.find_by_trial_and_param_name(trial, param_name, session)
         if param is not None:
             assert param.param_value == param_value
@@ -161,13 +157,7 @@ class RDBStorage(BaseStorage):
         )
 
         session.add(param)
-        try:
-            session.commit()
-        except IntegrityError as e:
-            self.logger.debug(
-                'Caught {}. This happens due to a known race condition. Another process/thread '
-                'might have committed a record with the same unique key.'.format(repr(e)))
-            session.rollback()
+        self._commit_or_rollback_on_integrity_error(session)
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
@@ -184,10 +174,8 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        # the following line is to check that the specified trial_id exists in DB.
         trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
 
-        # check if the value at the same step already exists
         trial_value = models.TrialValueModel.find_by_trial_and_step(trial, step, session)
         if trial_value is not None:
             assert trial_value.value == intermediate_value
@@ -200,13 +188,7 @@ class RDBStorage(BaseStorage):
         )
 
         session.add(trial_value)
-        try:
-            session.commit()
-        except IntegrityError as e:
-            self.logger.debug(
-                'Caught {}. This happens due to a known race condition. Another process/thread '
-                'might have committed a record with the same unique key.'.format(repr(e)))
-            session.rollback()
+        self._commit_or_rollback_on_integrity_error(session)
 
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
@@ -298,21 +280,33 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        version_info = models.VersionInfoModel.find_or_create(session)
+        version_info = models.VersionInfoModel.find(session)
+        if version_info is not None:
+            if version_info.schema_version != models.SCHEMA_VERSION:
+                raise RuntimeError(
+                    'The runtime pfnopt version {} is no longer compatible with the table schema '
+                    '(set up by pfnopt {}).'.format(
+                        version.__version__, version_info.library_version))
+            return
+
+        version_info = models.VersionInfoModel(
+            schema_version=models.SCHEMA_VERSION,
+            library_version=version.__version__
+        )
+
+        session.add(version_info)
+        self._commit_or_rollback_on_integrity_error(session)
+
+    def _commit_or_rollback_on_integrity_error(self, session):
+        # type: (orm.Session) -> None
 
         try:
             session.commit()
         except IntegrityError as e:
             self.logger.debug(
-                'Ignoring {}. This happens due to a timing issue during initial setup of {} '
-                'table among multi threads/processes/nodes.'.format(
-                    repr(e), models.VersionInfoModel.__tablename__))
+                'Ignoring {}. This happens due to a timing issue among threads/processes/nodes. '
+                'Another one might have committed a record with the same key(s).'.format(repr(e)))
             session.rollback()
-
-        if version_info.schema_version != models.SCHEMA_VERSION:
-            raise RuntimeError(
-                'The runtime pfnopt version {} is no longer compatible with the table schema '
-                '(set up by pfnopt {}).'.format(version.__version__, version_info.library_version))
 
     def remove_session(self):
         # type: () -> None
