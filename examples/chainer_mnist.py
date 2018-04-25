@@ -21,6 +21,10 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 import numpy as np
+import pkg_resources
+
+if pkg_resources.parse_version(chainer.__version__) < pkg_resources.parse_version('4.0.0'):
+    raise RuntimeError('Chainer>=4.0.0 is required for this example.')
 
 
 N_TRAIN_EXAMPLES = 3000
