@@ -7,6 +7,7 @@ from typing import Dict  # NOQA
 import pfnopt
 from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
+from pfnopt.distributions import LogUniformDistribution
 from pfnopt.distributions import UniformDistribution
 from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages import BaseStorage  # NOQA
@@ -105,6 +106,67 @@ def test_set_and_get_study_system_attrs(storage_init_func):
 
     # Test overwriting value.
     check_set_and_get('dataset', 'ImageNet')
+
+
+@pytest.mark.parametrize('storage_init_func', [
+    InMemoryStorage,
+    lambda: RDBStorage('sqlite:///:memory:')
+])
+def test_set_trial_param(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+
+    # Setup test across multiple studies and trials.
+    study_id = storage.create_new_study_id()
+    trial_id_1 = storage.create_new_trial_id(study_id)
+    trial_id_2 = storage.create_new_trial_id(study_id)
+    trial_id_3 = storage.create_new_trial_id(storage.create_new_study_id())
+
+    # Setup trial_1.
+    _set_distributions(
+        storage, trial_id_1,
+        {
+            't1-x': UniformDistribution(low=1.0, high=2.0),
+            't1-y': LogUniformDistribution(low=1.0, high=100.0),
+        }
+    )
+    storage.set_trial_param(trial_id_1, 't1-x', 0.5)
+    storage.set_trial_param(trial_id_1, 't1-y', 2.0)
+
+    # Setup trial_2.
+    _set_distributions(
+        storage, trial_id_2,
+        {
+            't2-x': UniformDistribution(low=-1.0, high=1.0),
+            't2-y': CategoricalDistribution(choices=('Shibuya', 'Ebisu', 'Meguro')),
+        }
+    )
+    storage.set_trial_param(trial_id_2, 't2-y', 2)
+
+    # Setup trial_3.
+    _set_distributions(
+        storage, trial_id_3,
+        {
+            't3-x': CategoricalDistribution(choices=('Shibuya', 'Shinsen')),
+        }
+    )
+    storage.set_trial_param(trial_id_3, 't3-x', 0)
+
+    # Assert values.
+    assert storage.get_trial(trial_id_1).params == {'t1-x': 0.5, 't1-y': 2.0}
+    assert storage.get_trial(trial_id_2).params == {'t2-y': 'Meguro'}
+    assert storage.get_trial(trial_id_3).params == {'t3-x': 'Shibuya'}
+
+    # Test setting existing name with different value.
+    pytest.raises(
+        AssertionError,
+        lambda: storage.set_trial_param(trial_id_1, 't1-x', float('inf')))
+
+    # Test setting existing name with the same value.
+    storage.set_trial_param(trial_id_1, 't1-x', 0.5)
+
+    # TODO(sano): Test ValueError is raised when not existing param is set.
 
 
 @pytest.mark.parametrize('storage_init_func', [

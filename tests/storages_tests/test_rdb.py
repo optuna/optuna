@@ -6,7 +6,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import Dict  # NOQA
-from typing import List  # NOQA
 import unittest
 import uuid
 
@@ -21,8 +20,6 @@ from pfnopt.storages.rdb import SCHEMA_VERSION
 from pfnopt.storages.rdb import StudyModel
 from pfnopt.storages.rdb import TrialModel
 from pfnopt.storages.rdb import TrialParamDistributionModel
-from pfnopt.storages.rdb import TrialParamModel
-from pfnopt.storages.rdb import TrialValueModel
 from pfnopt.storages.rdb import VersionInfoModel
 import pfnopt.trial as trial_module
 from pfnopt import version
@@ -193,36 +190,6 @@ class TestRDBStorage(unittest.TestCase):
 
         assert result_1 == trial_module.State.RUNNING
         assert result_2 == trial_module.State.PRUNED
-
-    def test_set_trial_param(self):
-        # type: () -> None
-
-        storage = self.create_test_storage()
-        session = storage.scoped_session()
-
-        study_id = storage.create_new_study_id()
-        trial_id = storage.create_new_trial_id(study_id)
-
-        self.set_distributions(storage, study_id, self.example_distributions)
-
-        def find_trial_param(items, param_name):
-            # type: (List[TrialParamModel], str) -> TrialParamModel
-            return [p for p in items if p.param_distribution.param_name == param_name][0]
-
-        # test setting new name
-        storage.set_trial_param(trial_id, 'x', 0.5)
-        storage.set_trial_param(trial_id, 'y', 2.)
-
-        result = session.query(TrialParamModel).filter(TrialParamModel.trial_id == trial_id).all()
-        assert len(result) == 2
-        assert find_trial_param(result, 'x').param_value == 0.5
-        assert find_trial_param(result, 'y').param_value == 2.
-
-        # test setting existing name with different value
-        self.assertRaises(AssertionError, lambda: storage.set_trial_param(trial_id, 'x', 1.0))
-
-        # test setting existing name with the same value
-        storage.set_trial_param(trial_id, 'x', 0.5)
 
     example_distributions = {
         'x': UniformDistribution(low=1., high=2.),
