@@ -102,7 +102,7 @@ class Minimize(BaseCommand):
         return parser
 
     def take_action(self, parsed_args):
-        # type: (Namespace) -> None
+        # type: (Namespace) -> int
 
         if parsed_args.create_study and parsed_args.study_uuid:
             raise ValueError('Inconsistent arguments. Flags --create-study and --study-uuid '
@@ -116,17 +116,24 @@ class Minimize(BaseCommand):
         else:
             study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
 
-        target_module = imp.load_source('pfnopt_target_module', parsed_args.file)
-        target_method = getattr(target_module, parsed_args.method)
-
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.
         self.app.options.debug = True
+
+        target_module = imp.load_source('pfnopt_target_module', parsed_args.file)
+
+        try:
+            target_method = getattr(target_module, parsed_args.method)
+        except AttributeError:
+            self.logger.error('Method {} not found in file {}.'.format(
+                parsed_args.method, parsed_args.file))
+            return 1
 
         pfnopt.minimize(
             target_method, n_trials=parsed_args.n_trials,
             timeout_seconds=parsed_args.timeout_seconds, n_jobs=parsed_args.n_jobs,
             study=study)
+        return 0
 
 
 _COMMANDS = {
