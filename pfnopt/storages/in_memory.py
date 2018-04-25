@@ -125,7 +125,10 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int, int, float) -> None
 
         with self._lock:
-            self.trials[trial_id].intermediate_values[step] = intermediate_value
+            values = self.trials[trial_id].intermediate_values
+            if step in values:
+                assert values[step] == intermediate_value
+            values[step] = intermediate_value
 
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None

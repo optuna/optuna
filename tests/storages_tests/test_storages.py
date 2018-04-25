@@ -199,6 +199,75 @@ def test_get_trial(storage_init_func):
             assert trial.datetime_complete is None
 
 
+@pytest.mark.parametrize('storage_init_func', [
+    InMemoryStorage,
+    lambda: RDBStorage('sqlite:///:memory:')
+])
+def test_set_trial_intermediate_value(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+
+    trial_id_1 = storage.create_new_trial_id(storage.create_new_study_id())
+    trial_id_2 = storage.create_new_trial_id(storage.create_new_study_id())
+
+    # test setting new values
+    storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+    storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
+    storage.set_trial_intermediate_value(trial_id_2, 0, 0.1)
+    storage.set_trial_intermediate_value(trial_id_2, 1, 0.4)
+    storage.set_trial_intermediate_value(trial_id_2, 2, 0.5)
+
+    assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
+    assert storage.get_trial(trial_id_2).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
+
+    # test setting existing step with different value
+    pytest.raises(
+        AssertionError,
+        lambda: storage.set_trial_intermediate_value(trial_id_1, 0, 0.5))
+
+    # test setting existing step with the same value
+    storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+
+
+@pytest.mark.parametrize('storage_init_func', [
+    InMemoryStorage,
+    lambda: RDBStorage('sqlite:///:memory:')
+])
+def test_get_all_trials(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+    study_id_1 = storage.create_new_study_id()
+    study_id_2 = storage.create_new_study_id()
+
+    datetime_before = datetime.now()
+
+    _create_new_trial_with_example_trial(
+        storage, study_id_1, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0])
+    _create_new_trial_with_example_trial(
+        storage, study_id_1, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[1])
+    _create_new_trial_with_example_trial(
+        storage, study_id_2, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0])
+
+    datetime_after = datetime.now()
+
+    # test getting multiple trials
+    trials = sorted(storage.get_all_trials(study_id_1), key=lambda x: x.trial_id)
+    _check_example_trial_static_attributes(trials[0], EXAMPLE_TRIALS[0])
+    _check_example_trial_static_attributes(trials[1], EXAMPLE_TRIALS[1])
+    for t in trials:
+        assert datetime_before < t.datetime_start < datetime_after
+        if t.state.is_finished():
+            assert datetime_before < t.datetime_complete < datetime_after
+        else:
+            assert t.datetime_complete is None
+
+    # test getting trials per study
+    trials = sorted(storage.get_all_trials(study_id_2), key=lambda x: x.trial_id)
+    _check_example_trial_static_attributes(trials[0], EXAMPLE_TRIALS[0])
+
+
 def _create_new_trial_with_example_trial(storage, study_id, distributions, example_trial):
     # type: (BaseStorage, int, Dict[str, BaseDistribution], pfnopt.trial.Trial) -> int
 
