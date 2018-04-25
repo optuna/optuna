@@ -71,7 +71,7 @@ def test_set_and_get_study_user_attrs(storage_init_func):
         storage.set_study_user_attr(study_id, key, value)
         assert storage.get_study_user_attrs(study_id)[key] == value
 
-    # Test setting value
+    # Test setting value.
     for key, value in EXAMPLE_USER_ATTRS.items():
         check_set_and_get(key, value)
     assert storage.get_study_user_attrs(study_id) == EXAMPLE_USER_ATTRS
@@ -111,7 +111,66 @@ def test_set_and_get_study_system_attrs(storage_init_func):
     InMemoryStorage,
     lambda: RDBStorage('sqlite:///:memory:')
 ])
-def test_set_trial_user_attrs(storage_init_func):
+def test_set_trial_value(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+
+    # Setup test across multiple studies and trials.
+    study_id = storage.create_new_study_id()
+    trial_id_1 = storage.create_new_trial_id(study_id)
+    trial_id_2 = storage.create_new_trial_id(study_id)
+    trial_id_3 = storage.create_new_trial_id(storage.create_new_study_id())
+
+    # Test setting new value.
+    storage.set_trial_value(trial_id_1, 0.5)
+    storage.set_trial_value(trial_id_3, float('inf'))
+
+    assert storage.get_trial(trial_id_1).value == 0.5
+    assert storage.get_trial(trial_id_2).value is None
+    assert storage.get_trial(trial_id_3).value == float('inf')
+
+
+@pytest.mark.parametrize('storage_init_func', [
+    InMemoryStorage,
+    lambda: RDBStorage('sqlite:///:memory:')
+])
+def test_set_trial_intermediate_value(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+
+    # Setup test across multiple studies and trials.
+    study_id = storage.create_new_study_id()
+    trial_id_1 = storage.create_new_trial_id(study_id)
+    trial_id_2 = storage.create_new_trial_id(study_id)
+    trial_id_3 = storage.create_new_trial_id(storage.create_new_study_id())
+
+    # Test setting new values.
+    storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+    storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
+    storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
+    storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
+    storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
+
+    assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
+    assert storage.get_trial(trial_id_2).intermediate_values == {}
+    assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
+
+    # Test setting existing step with different value.
+    pytest.raises(
+        AssertionError,
+        lambda: storage.set_trial_intermediate_value(trial_id_1, 0, 0.5))
+
+    # Test setting existing step with the same value.
+    storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+
+
+@pytest.mark.parametrize('storage_init_func', [
+    InMemoryStorage,
+    lambda: RDBStorage('sqlite:///:memory:')
+])
+def test_set_trial_user_attr(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
@@ -203,37 +262,6 @@ def test_get_trial(storage_init_func):
     InMemoryStorage,
     lambda: RDBStorage('sqlite:///:memory:')
 ])
-def test_set_trial_intermediate_value(storage_init_func):
-    # type: (Callable[[], BaseStorage]) -> None
-
-    storage = storage_init_func()
-
-    trial_id_1 = storage.create_new_trial_id(storage.create_new_study_id())
-    trial_id_2 = storage.create_new_trial_id(storage.create_new_study_id())
-
-    # test setting new values
-    storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
-    storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
-    storage.set_trial_intermediate_value(trial_id_2, 0, 0.1)
-    storage.set_trial_intermediate_value(trial_id_2, 1, 0.4)
-    storage.set_trial_intermediate_value(trial_id_2, 2, 0.5)
-
-    assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
-    assert storage.get_trial(trial_id_2).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
-
-    # test setting existing step with different value
-    pytest.raises(
-        AssertionError,
-        lambda: storage.set_trial_intermediate_value(trial_id_1, 0, 0.5))
-
-    # test setting existing step with the same value
-    storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
-
-
-@pytest.mark.parametrize('storage_init_func', [
-    InMemoryStorage,
-    lambda: RDBStorage('sqlite:///:memory:')
-])
 def test_get_all_trials(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
@@ -252,7 +280,7 @@ def test_get_all_trials(storage_init_func):
 
     datetime_after = datetime.now()
 
-    # test getting multiple trials
+    # Test getting multiple trials.
     trials = sorted(storage.get_all_trials(study_id_1), key=lambda x: x.trial_id)
     _check_example_trial_static_attributes(trials[0], EXAMPLE_TRIALS[0])
     _check_example_trial_static_attributes(trials[1], EXAMPLE_TRIALS[1])
@@ -263,7 +291,7 @@ def test_get_all_trials(storage_init_func):
         else:
             assert t.datetime_complete is None
 
-    # test getting trials per study
+    # Test getting trials per study.
     trials = sorted(storage.get_all_trials(study_id_2), key=lambda x: x.trial_id)
     _check_example_trial_static_attributes(trials[0], EXAMPLE_TRIALS[0])
 

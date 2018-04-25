@@ -224,21 +224,6 @@ class TestRDBStorage(unittest.TestCase):
         # test setting existing name with the same value
         storage.set_trial_param(trial_id, 'x', 0.5)
 
-    def test_set_trial_value(self):
-        # type: () -> None
-
-        storage = self.create_test_storage()
-        session = storage.scoped_session()
-
-        study_id = storage.create_new_study_id()
-        trial_id = storage.create_new_trial_id(study_id)
-
-        # test setting new value
-        storage.set_trial_value(trial_id, 0.5)
-
-        result_1 = session.query(TrialModel).filter(TrialModel.trial_id == trial_id).one()
-        assert result_1.value == 0.5
-
     example_distributions = {
         'x': UniformDistribution(low=1., high=2.),
         'y': CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
