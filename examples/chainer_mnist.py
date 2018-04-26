@@ -105,7 +105,7 @@ def objective(client):
 
 if __name__ == '__main__':
     import pfnopt
-    study = pfnopt.minimize(objective, n_trials=1)
+    study = pfnopt.minimize(objective, n_trials=100)
 
     print('Number of finished trials: ', len(study.trials))
 
