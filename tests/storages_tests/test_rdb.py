@@ -1,10 +1,7 @@
-from datetime import datetime
 from mock import Mock
 from mock import patch
 import pytest
-from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing import Dict  # NOQA
 import unittest
 import uuid
@@ -13,49 +10,14 @@ from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
-from pfnopt.storages.rdb import BaseModel
-from pfnopt.storages.rdb import RDBStorage
-from pfnopt.storages.rdb import SCHEMA_VERSION
-from pfnopt.storages.rdb import StudyModel
-from pfnopt.storages.rdb import TrialModel
-from pfnopt.storages.rdb import TrialParamDistributionModel
-from pfnopt.storages.rdb import VersionInfoModel
+from pfnopt.storages.models import SCHEMA_VERSION
+from pfnopt.storages.models import StudyModel
+from pfnopt.storages.models import TrialModel
+from pfnopt.storages.models import TrialParamDistributionModel
+from pfnopt.storages.models import VersionInfoModel
+from pfnopt.storages import RDBStorage
 import pfnopt.trial as trial_module
 from pfnopt import version
-
-
-def test_trial_model():
-    # type: () -> None
-
-    engine = create_engine('sqlite:///:memory:')
-    session = Session(bind=engine)
-    BaseModel.metadata.create_all(engine)
-
-    datetime_1 = datetime.now()
-
-    session.add(TrialModel())
-    session.commit()
-
-    datetime_2 = datetime.now()
-
-    trial_model = session.query(TrialModel).first()
-    assert datetime_1 < trial_model.datetime_start < datetime_2
-    assert trial_model.datetime_complete is None
-
-
-def test_version_info_model():
-    # type: () -> None
-
-    engine = create_engine('sqlite:///:memory:')
-    session = Session(bind=engine)
-    BaseModel.metadata.create_all(engine)
-
-    session.add(VersionInfoModel(schema_version=1, library_version='0.0.1'))
-    session.commit()
-
-    # test check constraint of version_info_id
-    session.add(VersionInfoModel(version_info_id=2, schema_version=2, library_version='0.0.2'))
-    pytest.raises(IntegrityError, lambda: session.commit())
 
 
 class TestRDBStorage(unittest.TestCase):
