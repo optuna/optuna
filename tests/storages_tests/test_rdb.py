@@ -12,11 +12,9 @@ from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
 from pfnopt.storages.models import SCHEMA_VERSION
 from pfnopt.storages.models import StudyModel
-from pfnopt.storages.models import TrialModel
 from pfnopt.storages.models import TrialParamDistributionModel
 from pfnopt.storages.models import VersionInfoModel
 from pfnopt.storages import RDBStorage
-import pfnopt.trial as trial_module
 from pfnopt import version
 
 
@@ -88,21 +86,6 @@ class TestRDBStorage(unittest.TestCase):
         storage.create_new_study_id()
         study = session.query(StudyModel).one()
         assert storage.get_study_uuid_from_id(study.study_id) == study.study_uuid
-
-    def test_create_new_trial_id(self):
-        # type: () -> None
-
-        storage = self.create_test_storage()
-        session = storage.scoped_session()
-
-        study_id = storage.create_new_study_id()
-        trial_id = storage.create_new_trial_id(study_id)
-
-        result = session.query(TrialModel).all()
-        assert len(result) == 1
-        assert result[0].study_id == study_id
-        assert result[0].trial_id == trial_id
-        assert result[0].state == trial_module.State.RUNNING
 
     def test_set_trial_param_distribution(self):
         # type: () -> None

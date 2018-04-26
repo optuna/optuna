@@ -56,10 +56,24 @@ EXAMPLE_TRIALS = [
 ]
 
 
-@pytest.mark.parametrize('storage_init_func', [
-    InMemoryStorage,
-    lambda: RDBStorage('sqlite:///:memory:')
-])
+def parametrize_storage(
+        func  # type: (Callable[[Callable[[], BaseStorage]], None])
+):
+    # type: (...) -> Callable[[Callable[[], BaseStorage]], None]
+
+    @pytest.mark.parametrize('storage_init_func', [
+        InMemoryStorage,
+        lambda: RDBStorage('sqlite:///:memory:')
+    ])
+    def parametrized_func(storage_init_func):
+        # type: (Callable[[], BaseStorage]) -> None
+
+        return func(storage_init_func)
+
+    return parametrized_func
+
+
+@parametrize_storage
 def test_set_and_get_study_user_attrs(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
@@ -81,10 +95,7 @@ def test_set_and_get_study_user_attrs(storage_init_func):
     check_set_and_get('dataset', 'ImageNet')
 
 
-@pytest.mark.parametrize('storage_init_func', [
-    InMemoryStorage,
-    lambda: RDBStorage('sqlite:///:memory:')
-])
+@parametrize_storage
 def test_set_and_get_study_system_attrs(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
@@ -108,10 +119,23 @@ def test_set_and_get_study_system_attrs(storage_init_func):
     check_set_and_get('dataset', 'ImageNet')
 
 
-@pytest.mark.parametrize('storage_init_func', [
-    InMemoryStorage,
-    lambda: RDBStorage('sqlite:///:memory:')
-])
+@parametrize_storage
+def test_create_new_trial_id(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+
+    study_id = storage.create_new_study_id()
+    trial_id = storage.create_new_trial_id(study_id)
+
+    trials = storage.get_all_trials(study_id)
+    assert len(trials) == 1
+    assert trials[0].trial_id == trial_id
+    assert trials[0].state == pfnopt.trial.State.RUNNING
+    assert trials[0].user_attrs == {SYSTEM_ATTRS_KEY: {}}
+
+
+@parametrize_storage
 def test_set_trial_state(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
@@ -134,10 +158,7 @@ def test_set_trial_state(storage_init_func):
     assert storage.get_trial(trial_id_1).datetime_complete is not None
 
 
-@pytest.mark.parametrize('storage_init_func', [
-    InMemoryStorage,
-    lambda: RDBStorage('sqlite:///:memory:')
-])
+@parametrize_storage
 def test_set_trial_param(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
@@ -185,9 +206,8 @@ def test_set_trial_param(storage_init_func):
     assert storage.get_trial(trial_id_3).params == {'t3-x': 'Shibuya'}
 
     # Test setting existing name with different value.
-    pytest.raises(
-        AssertionError,
-        lambda: storage.set_trial_param(trial_id_1, 't1-x', float('inf')))
+    with pytest.raises(AssertionError):
+        storage.set_trial_param(trial_id_1, 't1-x', float('inf'))
 
     # Test setting existing name with the same value.
     storage.set_trial_param(trial_id_1, 't1-x', 0.5)
@@ -195,10 +215,7 @@ def test_set_trial_param(storage_init_func):
     # TODO(sano): Test ValueError is raised when not existing param is set.
 
 
-@pytest.mark.parametrize('storage_init_func', [
-    InMemoryStorage,
-    lambda: RDBStorage('sqlite:///:memory:')
-])
+@parametrize_storage
 def test_set_trial_value(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
@@ -219,10 +236,7 @@ def test_set_trial_value(storage_init_func):
     assert storage.get_trial(trial_id_3).value == float('inf')
 
 
-@pytest.mark.parametrize('storage_init_func', [
-    InMemoryStorage,
-    lambda: RDBStorage('sqlite:///:memory:')
-])
+@parametrize_storage
 def test_set_trial_intermediate_value(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
@@ -246,18 +260,14 @@ def test_set_trial_intermediate_value(storage_init_func):
     assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
 
     # Test setting existing step with different value.
-    pytest.raises(
-        AssertionError,
-        lambda: storage.set_trial_intermediate_value(trial_id_1, 0, 0.5))
+    with pytest.raises(AssertionError):
+        storage.set_trial_intermediate_value(trial_id_1, 0, 0.5)
 
     # Test setting existing step with the same value.
     storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
 
 
-@pytest.mark.parametrize('storage_init_func', [
-    InMemoryStorage,
-    lambda: RDBStorage('sqlite:///:memory:')
-])
+@parametrize_storage
 def test_set_trial_user_attr(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
@@ -285,10 +295,7 @@ def test_set_trial_user_attr(storage_init_func):
     assert storage.get_trial(trial_id_2).user_attrs['baseline_score'] == 0.001
 
 
-@pytest.mark.parametrize('storage_init_func', [
-    InMemoryStorage,
-    lambda: RDBStorage('sqlite:///:memory:')
-])
+@parametrize_storage
 def test_set_and_get_tiral_system_attr(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
@@ -318,10 +325,7 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     assert system_attrs == {'baseline_score': 0.001}
 
 
-@pytest.mark.parametrize('storage_init_func', [
-    InMemoryStorage,
-    lambda: RDBStorage('sqlite:///:memory:')
-])
+@parametrize_storage
 def test_get_trial(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
@@ -346,10 +350,7 @@ def test_get_trial(storage_init_func):
             assert trial.datetime_complete is None
 
 
-@pytest.mark.parametrize('storage_init_func', [
-    InMemoryStorage,
-    lambda: RDBStorage('sqlite:///:memory:')
-])
+@parametrize_storage
 def test_get_all_trials(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
