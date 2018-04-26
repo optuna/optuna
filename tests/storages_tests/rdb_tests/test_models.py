@@ -4,9 +4,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from pfnopt.storages.models import BaseModel
-from pfnopt.storages.models import TrialModel
-from pfnopt.storages.models import VersionInfoModel
+from pfnopt.storages.rdb.models import BaseModel
+from pfnopt.storages.rdb.models import TrialModel
+from pfnopt.storages.rdb.models import VersionInfoModel
 
 
 def test_trial_model():

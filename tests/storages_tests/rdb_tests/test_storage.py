@@ -10,10 +10,10 @@ from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
-from pfnopt.storages.models import SCHEMA_VERSION
-from pfnopt.storages.models import StudyModel
-from pfnopt.storages.models import TrialParamDistributionModel
-from pfnopt.storages.models import VersionInfoModel
+from pfnopt.storages.rdb.models import SCHEMA_VERSION
+from pfnopt.storages.rdb.models import StudyModel
+from pfnopt.storages.rdb.models import TrialParamDistributionModel
+from pfnopt.storages.rdb.models import VersionInfoModel
 from pfnopt.storages import RDBStorage
 from pfnopt import version
 
