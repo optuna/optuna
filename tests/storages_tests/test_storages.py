@@ -56,21 +56,8 @@ EXAMPLE_TRIALS = [
 ]
 
 
-def parametrize_storage(
-        func  # type: (Callable[[Callable[[], BaseStorage]], None])
-):
-    # type: (...) -> Callable[[Callable[[], BaseStorage]], None]
-
-    @pytest.mark.parametrize('storage_init_func', [
-        InMemoryStorage,
-        lambda: RDBStorage('sqlite:///:memory:')
-    ])
-    def parametrized_func(storage_init_func):
-        # type: (Callable[[], BaseStorage]) -> None
-
-        return func(storage_init_func)
-
-    return parametrized_func
+parametrize_storage = pytest.mark.parametrize(
+    'storage_init_func', [InMemoryStorage, lambda: RDBStorage('sqlite:///:memory:')])
 
 
 @parametrize_storage
