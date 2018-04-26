@@ -113,6 +113,8 @@ class InMemoryStorage(base.BaseStorage):
                 param_value_in_internal_repr
             distribution = self.param_distribution[param_name]
             param_value_actual = distribution.to_external_repr(param_value_in_internal_repr)
+            if param_name in self.trials[trial_id].params:
+                assert self.trials[trial_id].params[param_name] == param_value_actual
             self.trials[trial_id].params[param_name] = param_value_actual
 
     def set_trial_value(self, trial_id, value):
@@ -125,7 +127,10 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int, int, float) -> None
 
         with self._lock:
-            self.trials[trial_id].intermediate_values[step] = intermediate_value
+            values = self.trials[trial_id].intermediate_values
+            if step in values:
+                assert values[step] == intermediate_value
+            values[step] = intermediate_value
 
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
