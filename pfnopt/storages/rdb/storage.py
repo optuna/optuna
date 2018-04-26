@@ -15,7 +15,7 @@ from pfnopt import distributions
 from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
 from pfnopt.storages.base import SYSTEM_ATTRS_KEY
-from pfnopt.storages import models
+from pfnopt.storages.rdb import models
 import pfnopt.trial as trial_module
 from pfnopt.trial import State
 from pfnopt import version
