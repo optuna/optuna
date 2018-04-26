@@ -6,9 +6,9 @@ workflows:
     jobs:
       - checks
       - tests-python36
-      - tests-python27
-      - tests-python34
       - tests-python35
+      - tests-python34
+      - tests-python27
   daily-build:
     triggers:
       - schedule:
@@ -20,13 +20,13 @@ workflows:
     jobs:
       - checks
       - tests-python36
-      - tests-python27
-      - tests-python34
       - tests-python35
+      - tests-python34
+      - tests-python27
       - examples-python36
-      - examples-python27
-      - examples-python34
       - examples-python35
+      - examples-python34
+      - examples-python27
 
 jobs:
 
@@ -75,9 +75,9 @@ jobs:
             . venv/bin/activate
             pytest tests
 
-  tests-python27:
+  tests-python35:
     docker:
-      - image: circleci/python:2.7
+      - image: circleci/python:3.5
     steps:
       [checkout, run: *install, run: *tests]
 
@@ -87,9 +87,9 @@ jobs:
     steps:
       [checkout, run: *install, run: *tests]
 
-  tests-python35:
+  tests-python27:
     docker:
-      - image: circleci/python:3.5
+      - image: circleci/python:2.7
     steps:
       [checkout, run: *install, run: *tests]
 
@@ -118,9 +118,9 @@ jobs:
                python $file
             done
 
-  examples-python27:
+  examples-python35:
     docker:
-      - image: circleci/python:2.7
+      - image: circleci/python:3.5
     steps:
       [checkout, run: *install, run: *install-examples, run: *examples]
 
@@ -130,8 +130,8 @@ jobs:
     steps:
       [checkout, run: *install, run: *install-examples, run: *examples]
 
-  examples-python35:
+  examples-python27:
     docker:
-      - image: circleci/python:3.5
+      - image: circleci/python:2.7
     steps:
       [checkout, run: *install, run: *install-examples, run: *examples]
