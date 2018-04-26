@@ -17,6 +17,8 @@ We have the following two ways to execute this example:
 
 """
 
+from __future__ import print_function
+
 import chainer
 import chainer.functions as F
 import chainer.links as L
@@ -103,5 +105,19 @@ def objective(client):
 
 if __name__ == '__main__':
     import pfnopt
-    study = pfnopt.minimize(objective, n_trials=100)
-    print(study.best_trial)
+    study = pfnopt.minimize(objective, n_trials=1)
+
+    print('Number of finished trials: ', len(study.trials))
+
+    print('Best trial:')
+    trial = study.best_trial
+
+    print('  Value: ', trial.value)
+
+    print('  Params: ')
+    for key, value in trial.params.items():
+        print('    {}: {}'.format(key, value))
+
+    print('  User attrs:')
+    for key, value in trial.user_attrs.items():
+        print('    {}: {}'.format(key, value))
