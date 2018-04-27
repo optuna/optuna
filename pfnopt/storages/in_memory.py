@@ -6,8 +6,8 @@ from typing import Dict  # NOQA
 from typing import List  # NOQA
 
 from pfnopt import distributions  # NOQA
+from pfnopt import frozen_trial
 from pfnopt.storages import base
-from pfnopt import trial
 
 
 IN_MEMORY_STORAGE_STUDY_ID = 0
@@ -18,7 +18,7 @@ class InMemoryStorage(base.BaseStorage):
 
     def __init__(self):
         # type: () -> None
-        self.trials = []  # type: List[trial.FrozenTrial]
+        self.trials = []  # type: List[frozen_trial.FrozenTrial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
         self.study_user_attrs = {}  # type: Dict[str, Any]
 
@@ -73,9 +73,9 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             trial_id = len(self.trials)
             self.trials.append(
-                trial.FrozenTrial(
+                frozen_trial.FrozenTrial(
                     trial_id=trial_id,
-                    state=trial.State.RUNNING,
+                    state=frozen_trial.State.RUNNING,
                     params={},
                     user_attrs={base.SYSTEM_ATTRS_KEY: {}},
                     value=None,
@@ -97,7 +97,7 @@ class InMemoryStorage(base.BaseStorage):
             self.param_distribution[param_name] = distribution
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, trial.State) -> None
+        # type: (int, frozen_trial.State) -> None
 
         with self._lock:
             self.trials[trial_id] = self.trials[trial_id]._replace(state=state)
@@ -139,13 +139,13 @@ class InMemoryStorage(base.BaseStorage):
             self.trials[trial_id].user_attrs[key] = value
 
     def get_trial(self, trial_id):
-        # type: (int) -> trial.FrozenTrial
+        # type: (int) -> frozen_trial.FrozenTrial
 
         with self._lock:
             return copy.deepcopy(self.trials[trial_id])
 
     def get_all_trials(self, study_id):
-        # type: (int) -> List[trial.FrozenTrial]
+        # type: (int) -> List[frozen_trial.FrozenTrial]
 
         self._check_study_id(study_id)
         with self._lock:

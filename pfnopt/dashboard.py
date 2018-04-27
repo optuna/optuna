@@ -21,9 +21,9 @@ from typing import Dict  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 
+import pfnopt.frozen_trial
 import pfnopt.logging
 import pfnopt.study
-import pfnopt.trial
 
 
 _mode = None  # type: str
@@ -53,11 +53,11 @@ if _available:
     class _CompleteTrialsWidget(object):
 
         def __init__(self, trials):
-            # type: (List[pfnopt.trial.FrozenTrial]) -> None
+            # type: (List[pfnopt.frozen_trial.FrozenTrial]) -> None
 
             complete_trials = [
                 trial for trial in trials
-                if trial.state == pfnopt.trial.State.COMPLETE
+                if trial.state == pfnopt.frozen_trial.State.COMPLETE
             ]
             self.trial_ids = set([trial.trial_id for trial in complete_trials])
 
@@ -82,12 +82,12 @@ if _available:
             return figure
 
         def update(self, new_trials):
-            # type: (List[pfnopt.trial.FrozenTrial]) -> None
+            # type: (List[pfnopt.frozen_trial.FrozenTrial]) -> None
 
             stream_dict = collections.defaultdict(list)  # type: Dict[str, List[Any]]
 
             for trial in new_trials:
-                if trial.state != pfnopt.trial.State.COMPLETE:
+                if trial.state != pfnopt.frozen_trial.State.COMPLETE:
                     continue
                 if trial.trial_id in self.trial_ids:
                     continue
@@ -103,7 +103,7 @@ if _available:
     class _AllTrialsWidget(object):
 
         def __init__(self, trials):
-            # type: (List[pfnopt.trial.FrozenTrial]) -> None
+            # type: (List[pfnopt.frozen_trial.FrozenTrial]) -> None
 
             self.cds = bokeh.models.ColumnDataSource(self.trials_to_dict(trials))
 
@@ -125,8 +125,12 @@ if _available:
                 ]
             )
 
-        def update(self, old_trials, new_trials):
-            # type: (List[pfnopt.trial.FrozenTrial], List[pfnopt.trial.FrozenTrial]) -> None
+        def update(
+                self,
+                old_trials,  # type: List[pfnopt.frozen_trial.FrozenTrial]
+                new_trials,  # type: List[pfnopt.frozen_trial.FrozenTrial]
+        ):
+            # type: (...) -> None
 
             modified_indices = []
             modified_trials = []
@@ -147,7 +151,7 @@ if _available:
 
         @staticmethod
         def trials_to_dict(trials):
-            # type: (List[pfnopt.trial.FrozenTrial]) -> Dict[str, List[Any]]
+            # type: (List[pfnopt.frozen_trial.FrozenTrial]) -> Dict[str, List[Any]]
 
             return {
                 'trial_id': [trial.trial_id for trial in trials],
@@ -174,7 +178,7 @@ if _available:
 
             self.doc = doc
             self.current_trials = self.study.trials
-            self.new_trials = None  # type: Optional[List[pfnopt.trial.FrozenTrial]]
+            self.new_trials = None  # type: Optional[List[pfnopt.frozen_trial.FrozenTrial]]
             self.complete_trials_widget = _CompleteTrialsWidget(self.current_trials)
             self.all_trials_widget = _AllTrialsWidget(self.current_trials)
 

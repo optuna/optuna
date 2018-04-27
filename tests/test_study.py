@@ -120,9 +120,9 @@ def check_value(value):
 
 
 def check_trial(trial):
-    # type: (pfnopt.trial.FrozenTrial) -> None
+    # type: (pfnopt.frozen_trial.FrozenTrial) -> None
 
-    if trial.state == pfnopt.trial.State.COMPLETE:
+    if trial.state == pfnopt.frozen_trial.State.COMPLETE:
         check_params(trial.params)
         check_value(trial.value)
 
@@ -133,7 +133,7 @@ def check_study(study):
     for trial in study.trials:
         check_trial(trial)
 
-    complete_trials = [t for t in study.trials if t.state == pfnopt.trial.State.COMPLETE]
+    complete_trials = [t for t in study.trials if t.state == pfnopt.frozen_trial.State.COMPLETE]
     if len(complete_trials) == 0:
         with pytest.raises(ValueError):
             study.best_params

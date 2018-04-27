@@ -8,7 +8,7 @@ from typing import List  # NOQA
 from typing import Tuple  # NOQA
 
 from pfnopt import distributions  # NOQA
-from pfnopt import trial
+from pfnopt import frozen_trial
 
 
 SYSTEM_ATTRS_KEY = '__system__'
@@ -82,7 +82,7 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def set_trial_state(self, trial_id, state):
-        # type: (int, trial.State) -> None
+        # type: (int, frozen_trial.State) -> None
 
         raise NotImplementedError
 
@@ -130,23 +130,23 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def get_trial(self, trial_id):
-        # type: (int) -> trial.FrozenTrial
+        # type: (int) -> frozen_trial.FrozenTrial
 
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_all_trials(self, study_id):
-        # type: (int) -> List[trial.FrozenTrial]
+        # type: (int) -> List[frozen_trial.FrozenTrial]
 
         raise NotImplementedError
 
     # Trial access utility
 
     def get_best_trial(self, study_id):
-        # type: (int) -> trial.FrozenTrial
+        # type: (int) -> frozen_trial.FrozenTrial
 
         all_trials = self.get_all_trials(study_id)
-        all_trials = [t for t in all_trials if t.state is trial.State.COMPLETE]
+        all_trials = [t for t in all_trials if t.state is frozen_trial.State.COMPLETE]
 
         if len(all_trials) == 0:
             raise ValueError('No trials are completed yet')
@@ -169,9 +169,9 @@ class BaseStorage(object):
         return [
             (t.params_in_internal_repr[param_name], t.value)
             for t in all_trials
-            if param_name in t.params and t.state is trial.State.COMPLETE
+            if param_name in t.params and t.state is frozen_trial.State.COMPLETE
             # TODO(Akiba): We also want to use pruned results
-        ]
+            ]
 
     # Methods for the median pruner
 
