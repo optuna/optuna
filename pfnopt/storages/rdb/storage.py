@@ -204,7 +204,7 @@ class RDBStorage(BaseStorage):
         session.commit()
 
     def get_trial(self, trial_id):
-        # type: (int) -> trial_module.Trial
+        # type: (int) -> trial_module.FrozenTrial
 
         session = self.scoped_session()
 
@@ -215,7 +215,7 @@ class RDBStorage(BaseStorage):
         return self._merge_trials_orm([trial], params, values)[0]
 
     def get_all_trials(self, study_id):
-        # type: (int) -> List[trial_module.Trial]
+        # type: (int) -> List[trial_module.FrozenTrial]
 
         session = self.scoped_session()
 
@@ -232,7 +232,7 @@ class RDBStorage(BaseStorage):
             trial_params,   # type: List[models.TrialParamModel]
             trial_intermediate_values  # type: List[models.TrialValueModel]
     ):
-        # type: (...) -> List[trial_module.Trial]
+        # type: (...) -> List[trial_module.FrozenTrial]
 
         id_to_trial = {}
         for trial in trials:
@@ -261,7 +261,7 @@ class RDBStorage(BaseStorage):
             for value in id_to_values[trial_id]:
                 intermediate_values[value.step] = value.value
 
-            result.append(trial_module.Trial(
+            result.append(trial_module.FrozenTrial(
                 trial_id=trial_id,
                 state=trial.state,
                 params=params,

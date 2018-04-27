@@ -53,7 +53,7 @@ if _available:
     class _CompleteTrialsWidget(object):
 
         def __init__(self, trials):
-            # type: (List[pfnopt.trial.Trial]) -> None
+            # type: (List[pfnopt.trial.FrozenTrial]) -> None
 
             complete_trials = [
                 trial for trial in trials
@@ -82,7 +82,7 @@ if _available:
             return figure
 
         def update(self, new_trials):
-            # type: (List[pfnopt.trial.Trial]) -> None
+            # type: (List[pfnopt.trial.FrozenTrial]) -> None
 
             stream_dict = collections.defaultdict(list)  # type: Dict[str, List[Any]]
 
@@ -103,7 +103,7 @@ if _available:
     class _AllTrialsWidget(object):
 
         def __init__(self, trials):
-            # type: (List[pfnopt.trial.Trial]) -> None
+            # type: (List[pfnopt.trial.FrozenTrial]) -> None
 
             self.cds = bokeh.models.ColumnDataSource(self.trials_to_dict(trials))
 
@@ -126,7 +126,7 @@ if _available:
             )
 
         def update(self, old_trials, new_trials):
-            # type: (List[pfnopt.trial.Trial], List[pfnopt.trial.Trial]) -> None
+            # type: (List[pfnopt.trial.FrozenTrial], List[pfnopt.trial.FrozenTrial]) -> None
 
             modified_indices = []
             modified_trials = []
@@ -147,7 +147,7 @@ if _available:
 
         @staticmethod
         def trials_to_dict(trials):
-            # type: (List[pfnopt.trial.Trial]) -> Dict[str, List[Any]]
+            # type: (List[pfnopt.trial.FrozenTrial]) -> Dict[str, List[Any]]
 
             return {
                 'trial_id': [trial.trial_id for trial in trials],
@@ -174,7 +174,7 @@ if _available:
 
             self.doc = doc
             self.current_trials = self.study.trials
-            self.new_trials = None  # type: Optional[List[pfnopt.trial.Trial]]
+            self.new_trials = None  # type: Optional[List[pfnopt.trial.FrozenTrial]]
             self.complete_trials_widget = _CompleteTrialsWidget(self.current_trials)
             self.all_trials_widget = _AllTrialsWidget(self.current_trials)
 

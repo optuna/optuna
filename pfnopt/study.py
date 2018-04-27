@@ -65,13 +65,13 @@ class Study(object):
 
     @property
     def best_trial(self):
-        # type: () -> trial.Trial
+        # type: () -> trial.FrozenTrial
 
         return self.storage.get_best_trial(self.study_id)
 
     @property
     def trials(self):
-        # type: () -> List[trial.Trial]
+        # type: () -> List[trial.FrozenTrial]
 
         return self.storage.get_all_trials(self.study_id)
 

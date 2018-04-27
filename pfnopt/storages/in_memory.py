@@ -18,7 +18,7 @@ class InMemoryStorage(base.BaseStorage):
 
     def __init__(self):
         # type: () -> None
-        self.trials = []  # type: List[trial.Trial]
+        self.trials = []  # type: List[trial.FrozenTrial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
         self.study_user_attrs = {}  # type: Dict[str, Any]
 
@@ -73,7 +73,7 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             trial_id = len(self.trials)
             self.trials.append(
-                trial.Trial(
+                trial.FrozenTrial(
                     trial_id=trial_id,
                     state=trial.State.RUNNING,
                     params={},
@@ -139,13 +139,13 @@ class InMemoryStorage(base.BaseStorage):
             self.trials[trial_id].user_attrs[key] = value
 
     def get_trial(self, trial_id):
-        # type: (int) -> trial.Trial
+        # type: (int) -> trial.FrozenTrial
 
         with self._lock:
             return copy.deepcopy(self.trials[trial_id])
 
     def get_all_trials(self, study_id):
-        # type: (int) -> List[trial.Trial]
+        # type: (int) -> List[trial.FrozenTrial]
 
         self._check_study_id(study_id)
         with self._lock:

@@ -130,20 +130,20 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def get_trial(self, trial_id):
-        # type: (int) -> trial.Trial
+        # type: (int) -> trial.FrozenTrial
 
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_all_trials(self, study_id):
-        # type: (int) -> List[trial.Trial]
+        # type: (int) -> List[trial.FrozenTrial]
 
         raise NotImplementedError
 
     # Trial access utility
 
     def get_best_trial(self, study_id):
-        # type: (int) -> trial.Trial
+        # type: (int) -> trial.FrozenTrial
 
         all_trials = self.get_all_trials(study_id)
         all_trials = [t for t in all_trials if t.state is trial.State.COMPLETE]

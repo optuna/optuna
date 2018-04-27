@@ -29,7 +29,7 @@ EXAMPLE_DISTRIBUTIONS = {
 }  # type: Dict[str, BaseDistribution]
 
 EXAMPLE_TRIALS = [
-    pfnopt.trial.Trial(
+    pfnopt.trial.FrozenTrial(
         trial_id=-1,  # dummy id
         value=1.,
         state=pfnopt.trial.State.COMPLETE,
@@ -40,7 +40,7 @@ EXAMPLE_TRIALS = [
         datetime_start=None,  # dummy
         datetime_complete=None  # dummy
     ),
-    pfnopt.trial.Trial(
+    pfnopt.trial.FrozenTrial(
         trial_id=-1,  # dummy id
         value=2.,
         state=pfnopt.trial.State.RUNNING,
@@ -373,7 +373,7 @@ def test_get_all_trials(storage_init_func):
 
 
 def _create_new_trial_with_example_trial(storage, study_id, distributions, example_trial):
-    # type: (BaseStorage, int, Dict[str, BaseDistribution], pfnopt.trial.Trial) -> int
+    # type: (BaseStorage, int, Dict[str, BaseDistribution], pfnopt.trial.FrozenTrial) -> int
 
     trial_id = storage.create_new_trial_id(study_id)
 
@@ -401,7 +401,7 @@ def _set_distributions(storage, trial_id, distributions):
 
 
 def _check_example_trial_static_attributes(trial_1, trial_2):
-    # type: (pfnopt.trial.Trial, pfnopt.trial.Trial) -> None
+    # type: (pfnopt.trial.FrozenTrial, pfnopt.trial.FrozenTrial) -> None
 
     trial_1 = trial_1._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
     trial_2 = trial_2._replace(trial_id=-1, datetime_start=None, datetime_complete=None)

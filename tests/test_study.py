@@ -120,7 +120,7 @@ def check_value(value):
 
 
 def check_trial(trial):
-    # type: (pfnopt.trial.Trial) -> None
+    # type: (pfnopt.trial.FrozenTrial) -> None
 
     if trial.state == pfnopt.trial.State.COMPLETE:
         check_params(trial.params)
