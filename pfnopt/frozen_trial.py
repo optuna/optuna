@@ -19,8 +19,8 @@ class State(enum.Enum):
         return self == State.COMPLETE or self == State.PRUNED
 
 
-Trial = NamedTuple(
-    'Trial',
+FrozenTrial = NamedTuple(
+    'FrozenTrial',
     [('trial_id', int),
      ('state', State),
      ('params', Dict[str, Any]),

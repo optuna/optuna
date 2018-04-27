@@ -15,7 +15,7 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 
 from pfnopt import distributions
-from pfnopt.trial import State
+from pfnopt.frozen_trial import State
 
 
 SCHEMA_VERSION = 3

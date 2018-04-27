@@ -12,12 +12,12 @@ from typing import Optional  # NOQA
 import uuid
 
 from pfnopt import distributions
+from pfnopt import frozen_trial
+from pfnopt.frozen_trial import State
 from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
 from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb import models
-import pfnopt.trial as trial_module
-from pfnopt.trial import State
 from pfnopt import version
 
 
@@ -126,7 +126,7 @@ class RDBStorage(BaseStorage):
         return trial.trial_id
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, trial_module.State) -> None
+        # type: (int, frozen_trial.State) -> None
 
         session = self.scoped_session()
 
@@ -204,7 +204,7 @@ class RDBStorage(BaseStorage):
         session.commit()
 
     def get_trial(self, trial_id):
-        # type: (int) -> trial_module.Trial
+        # type: (int) -> frozen_trial.FrozenTrial
 
         session = self.scoped_session()
 
@@ -215,7 +215,7 @@ class RDBStorage(BaseStorage):
         return self._merge_trials_orm([trial], params, values)[0]
 
     def get_all_trials(self, study_id):
-        # type: (int) -> List[trial_module.Trial]
+        # type: (int) -> List[frozen_trial.FrozenTrial]
 
         session = self.scoped_session()
 
@@ -232,7 +232,7 @@ class RDBStorage(BaseStorage):
             trial_params,   # type: List[models.TrialParamModel]
             trial_intermediate_values  # type: List[models.TrialValueModel]
     ):
-        # type: (...) -> List[trial_module.Trial]
+        # type: (...) -> List[frozen_trial.FrozenTrial]
 
         id_to_trial = {}
         for trial in trials:
@@ -261,7 +261,7 @@ class RDBStorage(BaseStorage):
             for value in id_to_values[trial_id]:
                 intermediate_values[value.step] = value.value
 
-            result.append(trial_module.Trial(
+            result.append(frozen_trial.FrozenTrial(
                 trial_id=trial_id,
                 state=trial.state,
                 params=params,

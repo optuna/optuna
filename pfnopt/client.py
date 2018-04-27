@@ -3,7 +3,7 @@ import six
 from typing import TYPE_CHECKING  # NOQA
 
 from pfnopt import distributions
-from pfnopt import trial
+from pfnopt import frozen_trial
 
 if TYPE_CHECKING:
     from pfnopt.study import Study  # NOQA
@@ -88,7 +88,7 @@ class LocalClient(BaseClient):
         # type: (float) -> None
 
         self.storage.set_trial_value(self.trial_id, result)
-        self.storage.set_trial_state(self.trial_id, trial.State.COMPLETE)
+        self.storage.set_trial_state(self.trial_id, frozen_trial.State.COMPLETE)
 
     def prune(self, step, current_result):
         # type: (int, float) -> bool

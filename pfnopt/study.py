@@ -12,11 +12,11 @@ from typing import Optional  # NOQA
 from typing import Union  # NOQA
 
 from pfnopt import client as client_module
+from pfnopt import frozen_trial  # NOQA
 from pfnopt import logging
 from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storages
-from pfnopt import trial  # NOQA
 
 ObjectiveFuncType = Callable[[client_module.BaseClient], float]
 
@@ -65,13 +65,13 @@ class Study(object):
 
     @property
     def best_trial(self):
-        # type: () -> trial.Trial
+        # type: () -> frozen_trial.FrozenTrial
 
         return self.storage.get_best_trial(self.study_id)
 
     @property
     def trials(self):
-        # type: () -> List[trial.Trial]
+        # type: () -> List[frozen_trial.FrozenTrial]
 
         return self.storage.get_all_trials(self.study_id)
 
