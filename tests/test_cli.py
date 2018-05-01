@@ -74,10 +74,10 @@ def test_dashboard_command():
 
 
 # An example of objective functions for testing minimize command
-def objective_func(client):
+def objective_func(trial):
     # type: (Trial) -> float
 
-    x = client.sample_uniform('x', -10, 10)
+    x = trial.sample_uniform('x', -10, 10)
     return (x + 5) ** 2
 
 

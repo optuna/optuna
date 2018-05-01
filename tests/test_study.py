@@ -72,12 +72,12 @@ class StorageSupplier(object):
             self.tempfile.close()
 
 
-def func(client, x_max=1.0):
+def func(trial, x_max=1.0):
     # type: (pfnopt.trial.Trial, float) -> float
 
-    x = client.sample_uniform('x', -x_max, x_max)
-    y = client.sample_loguniform('y', 20, 30)
-    z = client.sample_categorical('z', (-1.0, 1.0))
+    x = trial.sample_uniform('x', -x_max, x_max)
+    y = trial.sample_loguniform('y', 20, 30)
+    z = trial.sample_categorical('z', (-1.0, 1.0))
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
@@ -91,7 +91,7 @@ class Func(object):
         self.lock = threading.Lock()
         self.x_max = 10.0
 
-    def __call__(self, client):
+    def __call__(self, trial):
         # type: (pfnopt.trial.Trial) -> float
 
         with self.lock:
@@ -103,7 +103,7 @@ class Func(object):
         if self.sleep_sec is not None:
             time.sleep(self.sleep_sec)
 
-        return func(client, x_max)
+        return func(trial, x_max)
 
 
 def check_params(params):

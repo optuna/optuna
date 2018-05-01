@@ -111,9 +111,9 @@ class Study(object):
                     break
 
             trial_id = self.storage.create_new_trial_id(self.study_id)
-            client = trial.Trial(self, trial_id)
-            result = func(client)
-            client.complete(result)
+            trial = trial.Trial(self, trial_id)
+            result = func(trial)
+            trial.complete(result)
             self._log_completed_trial(trial_id, result)
 
     def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs):
@@ -138,9 +138,9 @@ class Study(object):
         def func_child_thread(que):
             while que.get():
                 trial_id = self.storage.create_new_trial_id(self.study_id)
-                client = trial.Trial(self, trial_id)
-                result = func(client)
-                client.complete(result)
+                trial = trial.Trial(self, trial_id)
+                result = func(trial)
+                trial.complete(result)
                 self._log_completed_trial(trial_id, result)
             self.storage.remove_session()
 

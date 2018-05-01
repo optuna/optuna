@@ -7,12 +7,12 @@ import pfnopt.trial
 def _create_some_study():
     # type: () -> pfnopt.Study
 
-    def f(client):
+    def f(trial):
         # type: (pfnopt.trial.Trial) -> float
 
-        x = client.sample_uniform('x', -10, 10)
-        y = client.sample_loguniform('y', 10, 20)
-        z = client.sample_categorical('z', (10, 20.5, '30'))
+        x = trial.sample_uniform('x', -10, 10)
+        y = trial.sample_loguniform('y', 10, 20)
+        z = trial.sample_categorical('z', (10, 20.5, '30'))
 
         return x ** 2 + y ** 2 + float(z)  # type: ignore
 
