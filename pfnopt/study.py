@@ -16,9 +16,9 @@ from pfnopt import logging
 from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storages
-from pfnopt import trial
+from pfnopt import trial as trial_module
 
-ObjectiveFuncType = Callable[[trial.Trial], float]
+ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
 class Study(object):
@@ -111,7 +111,7 @@ class Study(object):
                     break
 
             trial_id = self.storage.create_new_trial_id(self.study_id)
-            trial = trial.Trial(self, trial_id)
+            trial = trial_module.Trial(self, trial_id)
             result = func(trial)
             trial.complete(result)
             self._log_completed_trial(trial_id, result)
@@ -138,7 +138,7 @@ class Study(object):
         def func_child_thread(que):
             while que.get():
                 trial_id = self.storage.create_new_trial_id(self.study_id)
-                trial = trial.Trial(self, trial_id)
+                trial = trial_module.Trial(self, trial_id)
                 result = func(trial)
                 trial.complete(result)
                 self._log_completed_trial(trial_id, result)
