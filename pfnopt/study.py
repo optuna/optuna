@@ -11,14 +11,14 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 from typing import Union  # NOQA
 
-from pfnopt import client as client_module
 from pfnopt import frozen_trial  # NOQA
 from pfnopt import logging
 from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storages
+from pfnopt import trial
 
-ObjectiveFuncType = Callable[[client_module.BaseClient], float]
+ObjectiveFuncType = Callable[[trial.Trial], float]
 
 
 class Study(object):
@@ -111,7 +111,7 @@ class Study(object):
                     break
 
             trial_id = self.storage.create_new_trial_id(self.study_id)
-            client = client_module.LocalClient(self, trial_id)
+            client = trial.Trial(self, trial_id)
             result = func(client)
             client.complete(result)
             self._log_completed_trial(trial_id, result)
@@ -138,7 +138,7 @@ class Study(object):
         def func_child_thread(que):
             while que.get():
                 trial_id = self.storage.create_new_trial_id(self.study_id)
-                client = client_module.LocalClient(self, trial_id)
+                client = trial.Trial(self, trial_id)
                 result = func(client)
                 client.complete(result)
                 self._log_completed_trial(trial_id, result)

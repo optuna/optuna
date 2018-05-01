@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import chainer
-    from pfnopt.client import BaseClient  # NOQA
+    from pfnopt.trial import Trial  # NOQA
     from typing import Tuple
     from typing import Union
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 def create_chainer_pruning_trigger(
         client, observation_key, stop_trigger, test_trigger=(1, 'epoch')):
-    # type: (BaseClient, str, TriggerType, TriggerType) -> TriggerType
+    # type: (Trial, str, TriggerType, TriggerType) -> TriggerType
 
     import chainer.training
 
@@ -24,7 +24,7 @@ def create_chainer_pruning_trigger(
         # This class inherits IntervalTrigger to properly work with Chainer's ProgressBar
 
         def __init__(self, client_, observation_key_, stop_trigger_, test_trigger_):
-            # type: (BaseClient, str, TriggerType, TriggerType) -> None
+            # type: (Trial, str, TriggerType, TriggerType) -> None
 
             stop_trigger_ = chainer.training.get_trigger(stop_trigger_)
             test_trigger_ = chainer.training.get_trigger(test_trigger_)

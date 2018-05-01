@@ -1,14 +1,14 @@
 import tempfile
 
 import pfnopt
-import pfnopt.client
+import pfnopt.trial
 
 
 def _create_some_study():
     # type: () -> pfnopt.Study
 
     def f(client):
-        # type: (pfnopt.client.BaseClient) -> float
+        # type: (pfnopt.trial.Trial) -> float
 
         x = client.sample_uniform('x', -10, 10)
         y = client.sample_loguniform('y', 10, 20)

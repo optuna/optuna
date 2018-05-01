@@ -13,7 +13,7 @@ from typing import Optional  # NOQA
 from typing import Type  # NOQA
 
 import pfnopt
-import pfnopt.client
+import pfnopt.trial
 
 
 STORAGE_MODES = [
@@ -73,7 +73,7 @@ class StorageSupplier(object):
 
 
 def func(client, x_max=1.0):
-    # type: (pfnopt.client.BaseClient, float) -> float
+    # type: (pfnopt.trial.Trial, float) -> float
 
     x = client.sample_uniform('x', -x_max, x_max)
     y = client.sample_loguniform('y', 20, 30)
@@ -92,7 +92,7 @@ class Func(object):
         self.x_max = 10.0
 
     def __call__(self, client):
-        # type: (pfnopt.client.BaseClient) -> float
+        # type: (pfnopt.trial.Trial) -> float
 
         with self.lock:
             self.n_calls += 1
