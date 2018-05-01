@@ -16,9 +16,9 @@ from typing import Optional  # NOQA
 
 from pfnopt import distributions
 from pfnopt.frozen_trial import State
+from pfnopt.study_task import StudyTask
 
-
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 NOT_FOUND_MSG = 'Record does not exist.'
 
@@ -29,6 +29,7 @@ class StudyModel(BaseModel):
     __tablename__ = 'studies'
     study_id = Column(Integer, primary_key=True)
     study_uuid = Column(String(255), unique=True)
+    task = Column(Enum(StudyTask), nullable=False)
 
     @classmethod
     def find_by_id(cls, study_id, session, allow_none=True):
@@ -81,7 +82,7 @@ class TrialModel(BaseModel):
     __tablename__ = 'trials'
     trial_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
-    state = Column(Enum(State))
+    state = Column(Enum(State), nullable=False)
     value = Column(Float)
     user_attributes_json = Column(String(255))
     datetime_start = Column(DateTime, default=datetime.now)

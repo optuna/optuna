@@ -8,6 +8,7 @@ from typing import List  # NOQA
 from pfnopt import distributions  # NOQA
 from pfnopt import frozen_trial
 from pfnopt.storages import base
+from pfnopt import study_task
 
 
 IN_MEMORY_STORAGE_STUDY_ID = 0
@@ -20,6 +21,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: () -> None
         self.trials = []  # type: List[frozen_trial.FrozenTrial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
+        self.task = study_task.StudyTask.NOT_SET
         self.study_user_attrs = {}  # type: Dict[str, Any]
 
         self._lock = threading.Lock()
@@ -42,6 +44,15 @@ class InMemoryStorage(base.BaseStorage):
 
         return IN_MEMORY_STORAGE_STUDY_ID  # TODO(akiba)
 
+    def set_study_task(self, study_id, task):
+        # type: (int, study_task.StudyTask) -> None
+
+        with self._lock:
+            if self.task != study_task.StudyTask.NOT_SET and self.task != task:
+                raise ValueError(
+                    'Cannot override study task from {} to {}.'.format(self.task, task))
+            self.task = task
+
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
@@ -59,6 +70,11 @@ class InMemoryStorage(base.BaseStorage):
 
         self._check_study_id(study_id)
         return IN_MEMORY_STORAGE_STUDY_UUID
+
+    def get_study_task(self, study_id):
+        # type: (int) -> study_task.StudyTask
+
+        return self.task
 
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]

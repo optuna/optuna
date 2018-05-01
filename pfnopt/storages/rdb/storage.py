@@ -18,6 +18,7 @@ from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
 from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb import models
+from pfnopt.study_task import StudyTask
 from pfnopt import version
 
 
@@ -44,7 +45,7 @@ class RDBStorage(BaseStorage):
             if study is None:
                 break
 
-        study = models.StudyModel(study_uuid=study_uuid)
+        study = models.StudyModel(study_uuid=study_uuid, task=StudyTask.NOT_SET)
         session.add(study)
         session.commit()
 
@@ -54,6 +55,22 @@ class RDBStorage(BaseStorage):
         self.logger.info('A new study created with UUID: {}'.format(study.study_uuid))
 
         return study.study_id
+
+    # TODO(sano): Prevent simultaneous setting of StudyTask.MINIMIZE and StudyTask.MAXIMIZE.
+    def set_study_task(self, study_id, task):
+        # type: (int, StudyTask) -> None
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+
+        if study.task != StudyTask.NOT_SET and study.task != task:
+            raise ValueError(
+                'Cannot override study task from {} to {}.'.format(study.task, task))
+
+        study.task = task
+
+        session.commit()
 
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
@@ -86,6 +103,15 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
 
         return study.study_uuid
+
+    def get_study_task(self, study_id):
+        # type: (int) -> None
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+
+        return study.task
 
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
