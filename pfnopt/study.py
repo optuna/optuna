@@ -141,7 +141,8 @@ class Study(object):
                 trial_id = self.storage.create_new_trial_id(self.study_id)
                 trial = trial_module.Trial(self, trial_id)
                 result = func(trial)
-                trial.complete(result)
+                trial.report(result)
+                trial.complete()
                 self._log_completed_trial(trial_id, result)
             self.storage.remove_session()
 
