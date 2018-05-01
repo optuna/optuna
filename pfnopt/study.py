@@ -2,6 +2,7 @@ import collections
 import datetime
 import multiprocessing
 import multiprocessing.pool
+import six
 from six.moves import queue
 import time
 from typing import Any  # NOQA
@@ -222,7 +223,7 @@ def minimize(
                 'When a study is given, its associated pruner will be used.')
     elif storage is not None:
         # We connect to an existing study in the storage.
-        if not isinstance(study, str):
+        if not isinstance(study, six.text_type):
             raise ValueError(
                 'When specifying storage, please also specify a study UUID to continue a study. '
                 'If you want to start a new study, please make a new one using create_study.')
