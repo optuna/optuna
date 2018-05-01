@@ -39,5 +39,5 @@ if __name__ == '__main__':
 
     # We can specify the timeout instead of a number of trials.
     print('Running additional trials in 2 seconds...')
-    pfnopt.minimize(objective, timeout_seconds=2.0, study=study)
+    pfnopt.minimize(objective, timeout=2.0, study=study)
     print('Best value: {} (params: {})\n'.format(study.best_value, study.best_params))

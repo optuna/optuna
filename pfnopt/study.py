@@ -197,7 +197,7 @@ def create_study(
 def minimize(
         func,  # type: ObjectiveFuncType
         n_trials=None,  # type: Optional[int]
-        timeout_seconds=None,  # type: Optional[float]
+        timeout=None,  # type: Optional[float]
         n_jobs=1,  # type: int
         storage=None,  # type: Union[None, str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
@@ -232,7 +232,7 @@ def minimize(
         # We start a new study with a new in-memory storage.
         study = create_study(sampler=sampler, pruner=pruner)
 
-    study.run(func, n_trials, timeout_seconds, n_jobs)
+    study.run(func, n_trials, timeout, n_jobs)
     return study
 
 

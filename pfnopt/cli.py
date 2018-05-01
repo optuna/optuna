@@ -92,7 +92,7 @@ class Minimize(BaseCommand):
 
         parser = super(Minimize, self).get_parser(prog_name)
         parser.add_argument('--n-trials', type=int)
-        parser.add_argument('--timeout-seconds', type=float)
+        parser.add_argument('--timeout', type=float)
         parser.add_argument('--n-jobs', type=int, default=1)
         parser.add_argument('--storage')
         parser.add_argument('--study')
@@ -131,7 +131,7 @@ class Minimize(BaseCommand):
 
         pfnopt.minimize(
             target_method, n_trials=parsed_args.n_trials,
-            timeout_seconds=parsed_args.timeout_seconds, n_jobs=parsed_args.n_jobs,
+            timeout=parsed_args.timeout, n_jobs=parsed_args.n_jobs,
             study=study)
         return 0
 
