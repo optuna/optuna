@@ -121,19 +121,19 @@ def check_value(value):
     assert -1.0 <= value <= 12.0 ** 2 + 5.0 ** 2 + 1.0
 
 
-def check_trial(trial):
+def check_frozen_trial(frozen_trial):
     # type: (pfnopt.frozen_trial.FrozenTrial) -> None
 
-    if trial.state == pfnopt.frozen_trial.State.COMPLETE:
-        check_params(trial.params)
-        check_value(trial.value)
+    if frozen_trial.state == pfnopt.frozen_trial.State.COMPLETE:
+        check_params(frozen_trial.params)
+        check_value(frozen_trial.value)
 
 
 def check_study(study):
     # type: (pfnopt.Study) -> None
 
     for trial in study.trials:
-        check_trial(trial)
+        check_frozen_trial(trial)
 
     complete_trials = [t for t in study.trials if t.state == pfnopt.frozen_trial.State.COMPLETE]
     if len(complete_trials) == 0:
@@ -146,7 +146,7 @@ def check_study(study):
     else:
         check_params(study.best_params)
         check_value(study.best_value)
-        check_trial(study.best_trial)
+        check_frozen_trial(study.best_trial)
 
 
 def test_minimize_trivial_in_memory_new():
@@ -255,6 +255,7 @@ def test_trial_set_and_get_user_attrs(storage_mode):
 
     def f(trial):
         # type: (pfnopt.trial.Trial) -> float
+
         trial.set_user_attr('train_accuracy', 1)
         assert trial.user_attrs['train_accuracy'] == 1
         return 0.0
@@ -262,8 +263,8 @@ def test_trial_set_and_get_user_attrs(storage_mode):
     with StorageSupplier(storage_mode) as storage:
         study = pfnopt.create_study(storage=storage)
         pfnopt.minimize(f, n_trials=1, study=study)
-        trial = study.trials[0]
-        assert trial.user_attrs['train_accuracy'] == 1
+        frozen_trial = study.trials[0]
+        assert frozen_trial.user_attrs['train_accuracy'] == 1
 
 
 def test_study_pickle():
