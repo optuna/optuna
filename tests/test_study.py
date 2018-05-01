@@ -103,7 +103,9 @@ class Func(object):
         if self.sleep_sec is not None:
             time.sleep(self.sleep_sec)
 
-        return func(trial, x_max)
+        value = func(trial, x_max)
+        check_params(trial.params)
+        return value
 
 
 def check_params(params):
@@ -237,7 +239,7 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_set_and_get_user_attrs(storage_mode):
+def test_study_set_and_get_user_attrs(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
@@ -245,6 +247,23 @@ def test_set_and_get_user_attrs(storage_mode):
 
         study.set_user_attr('dataset', 'MNIST')
         assert study.user_attrs['dataset'] == 'MNIST'
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_trial_set_and_get_user_attrs(storage_mode):
+    # type: (str) -> None
+
+    def f(trial):
+        # type: (pfnopt.Trial) -> float
+        trial.set_user_attr('train_accuracy', 1)
+        assert trial.user_attrs['train_accuracy'] == 1
+        return 0.0
+
+    with StorageSupplier(storage_mode) as storage:
+        study = pfnopt.create_study(storage=storage)
+        pfnopt.minimize(f, n_trials=1, study=study)
+        trial = study.trials[0]
+        assert trial.user_attrs['train_accuracy'] == 1
 
 
 def test_study_pickle():
