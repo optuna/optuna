@@ -6,6 +6,7 @@ from pfnopt import frozen_trial
 if TYPE_CHECKING:
     from pfnopt.study import Study  # NOQA
     from typing import Any  # NOQA
+    from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import TypeVar  # NOQA
 
@@ -40,18 +41,25 @@ class Trial(object):
         choices = tuple(choices)
         return self._sample(name, distributions.CategoricalDistribution(choices=choices))
 
-    def complete(self, result):
-        # type: (float) -> None
+    def report(self, value, step=None):
+        # type: (float, Optional[int]) -> None
 
-        self.storage.set_trial_value(self.trial_id, result)
+        self.storage.set_trial_value(self.trial_id, value)
+        if step is not None:
+            self.storage.set_trial_intermediate_value(self.trial_id, step, value)
+
+    def complete(self):
+        # type: () -> None
+
         self.storage.set_trial_state(self.trial_id, frozen_trial.State.COMPLETE)
 
-    def prune(self, step, current_result):
-        # type: (int, float) -> bool
+    def should_prune(self, step):
+        # type: (int) -> bool
 
-        self.storage.set_trial_intermediate_value(self.trial_id, step, current_result)
-        ret = self.study.pruner.prune(self.storage, self.study_id, self.trial_id, step)
-        return ret
+        # TODO(akiba): remove `step` argument
+
+        return self.study.pruner.prune(
+            self.storage, self.study_id, self.trial_id, step)
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
