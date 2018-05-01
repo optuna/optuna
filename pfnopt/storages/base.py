@@ -163,7 +163,6 @@ class BaseStorage(object):
 
         return self.get_trial(trial_id).user_attrs
 
-
     # Methods for the TPE sampler
 
     def get_trial_param_result_pairs(self, study_id, param_name):

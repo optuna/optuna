@@ -254,7 +254,7 @@ def test_trial_set_and_get_user_attrs(storage_mode):
     # type: (str) -> None
 
     def f(trial):
-        # type: (pfnopt.Trial) -> float
+        # type: (pfnopt.trial.Trial) -> float
         trial.set_user_attr('train_accuracy', 1)
         assert trial.user_attrs['train_accuracy'] == 1
         return 0.0
