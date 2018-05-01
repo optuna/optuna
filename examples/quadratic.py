@@ -21,8 +21,8 @@ import pfnopt
 
 # Define a simple 2-dimensional objective function whose minimum value is -1 when (x, y) = (0, -1).
 def objective(trial):
-    x = trial.sample_uniform('x', -100, 100)
-    y = trial.sample_categorical('y', (-1, 0, 1))
+    x = trial.suggest_uniform('x', -100, 100)
+    y = trial.suggest_categorical('y', (-1, 0, 1))
     return x ** 2 + y
 
 
