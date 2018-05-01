@@ -18,7 +18,8 @@ from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
 from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb import models
-from pfnopt.study_task import StudyTask
+from pfnopt import study_summary
+from pfnopt import study_task
 from pfnopt import version
 
 
@@ -45,7 +46,7 @@ class RDBStorage(BaseStorage):
             if study is None:
                 break
 
-        study = models.StudyModel(study_uuid=study_uuid, task=StudyTask.NOT_SET)
+        study = models.StudyModel(study_uuid=study_uuid, task=study_task.StudyTask.NOT_SET)
         session.add(study)
         session.commit()
 
@@ -58,13 +59,13 @@ class RDBStorage(BaseStorage):
 
     # TODO(sano): Prevent simultaneous setting of StudyTask.MINIMIZE and StudyTask.MAXIMIZE.
     def set_study_task(self, study_id, task):
-        # type: (int, StudyTask) -> None
+        # type: (int, study_task.StudyTask) -> None
 
         session = self.scoped_session()
 
         study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
 
-        if study.task != StudyTask.NOT_SET and study.task != task:
+        if study.task != study_task.StudyTask.NOT_SET and study.task != task:
             raise ValueError(
                 'Cannot override study task from {} to {}.'.format(study.task, task))
 
@@ -105,7 +106,7 @@ class RDBStorage(BaseStorage):
         return study.study_uuid
 
     def get_study_task(self, study_id):
-        # type: (int) -> None
+        # type: (int) -> study_task.StudyTask
 
         session = self.scoped_session()
 
@@ -120,6 +121,29 @@ class RDBStorage(BaseStorage):
         attributes = models.StudyUserAttributeModel.where_study_id(study_id, session)
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
+
+    def get_all_study_summaries(self):
+        # type: () -> List[study_summary.StudySummary]
+
+        session = self.scoped_session()
+
+        studies = models.StudyModel.all(session)
+
+        study_sumarries = []
+        for study in studies:
+            user_attrs = self.get_study_user_attrs(study.study_id)
+            trials = self.get_all_trials(study.study_id)
+            task = self.get_study_task(study.study_id)
+
+            study_sumarries.append(study_summary.StudySummary(
+                study_id=study.study_id,
+                study_uuid=study.study_uuid,
+                user_attrs=user_attrs,
+                n_trials=len(trials),
+                task=task
+            ))
+
+        return study_sumarries
 
     def set_trial_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None

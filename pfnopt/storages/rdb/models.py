@@ -51,6 +51,12 @@ class StudyModel(BaseModel):
 
         return study
 
+    @classmethod
+    def all(cls, session):
+        # type: (orm.Session) -> List[StudyModel]
+
+        return session.query(cls).all()
+
 
 class StudyUserAttributeModel(BaseModel):
     __tablename__ = 'study_user_attributes'

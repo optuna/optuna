@@ -1,13 +1,13 @@
 import copy
 from datetime import datetime
 import threading
-from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 
 from pfnopt import distributions  # NOQA
 from pfnopt import frozen_trial
 from pfnopt.storages import base
+from pfnopt import study_summary  # NOQA
 from pfnopt import study_task
 
 
@@ -81,6 +81,17 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             return copy.deepcopy(self.study_user_attrs)
+
+    def get_all_study_summaries(self):
+        # type: () -> List[study_summary.StudySummary]
+
+        return [study_summary.StudySummary(
+            study_id=IN_MEMORY_STORAGE_STUDY_ID,
+            study_uuid=IN_MEMORY_STORAGE_STUDY_UUID,
+            user_attrs=copy.deepcopy(self.study_user_attrs),
+            n_trials=len(self.trials),
+            task=self.task
+        )]
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
