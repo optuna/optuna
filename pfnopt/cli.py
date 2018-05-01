@@ -30,13 +30,13 @@ class CreateStudy(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(CreateStudy, self).get_parser(prog_name)
-        parser.add_argument('--url', '-u', required=True)
+        parser.add_argument('--storage', required=True)
         return parser
 
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        storage = pfnopt.storages.RDBStorage(parsed_args.url)
+        storage = pfnopt.storages.RDBStorage(parsed_args.storage)
         study_uuid = pfnopt.create_study(storage).study_uuid
         print(study_uuid)
 
@@ -47,8 +47,8 @@ class StudySetUserAttribute(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(StudySetUserAttribute, self).get_parser(prog_name)
-        parser.add_argument('--url', '-u', required=True)
-        parser.add_argument('--study-uuid', required=True)
+        parser.add_argument('--storage', required=True)
+        parser.add_argument('--study', required=True)
         parser.add_argument('--key', '-k', required=True)
         parser.add_argument('--value', '-v', required=True)
         return parser
@@ -56,7 +56,7 @@ class StudySetUserAttribute(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
+        study = pfnopt.Study(storage=parsed_args.storage, study_uuid=parsed_args.study)
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
         self.logger.info('Attribute successfully written.')
@@ -68,15 +68,15 @@ class Dashboard(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(Dashboard, self).get_parser(prog_name)
-        parser.add_argument('--url', '-u', required=True)
-        parser.add_argument('--study-uuid', required=True)
+        parser.add_argument('--storage', required=True)
+        parser.add_argument('--study', required=True)
         parser.add_argument('--out', '-o')
         return parser
 
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
+        study = pfnopt.Study(storage=parsed_args.storage, study_uuid=parsed_args.study)
 
         if parsed_args.out is None:
             pfnopt.dashboard.serve(study)
@@ -94,8 +94,8 @@ class Minimize(BaseCommand):
         parser.add_argument('--n-trials', type=int)
         parser.add_argument('--timeout-seconds', type=float)
         parser.add_argument('--n-jobs', type=int, default=1)
-        parser.add_argument('--url', '-u')
-        parser.add_argument('--study-uuid')
+        parser.add_argument('--storage')
+        parser.add_argument('--study')
         parser.add_argument('--create-study', action='store_true')
         parser.add_argument('file')
         parser.add_argument('method')
@@ -104,17 +104,17 @@ class Minimize(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> int
 
-        if parsed_args.create_study and parsed_args.study_uuid:
-            raise ValueError('Inconsistent arguments. Flags --create-study and --study-uuid '
+        if parsed_args.create_study and parsed_args.study:
+            raise ValueError('Inconsistent arguments. Flags --create-study and --study '
                              'should not be specified at the same time.')
-        if not parsed_args.create_study and not parsed_args.study_uuid:
-            raise ValueError('Inconsistent arguments. Either --create-study or --study-uuid '
+        if not parsed_args.create_study and not parsed_args.study:
+            raise ValueError('Inconsistent arguments. Either --create-study or --study '
                              'should be specified.')
 
         if parsed_args.create_study:
-            study = pfnopt.create_study(storage=parsed_args.url)
+            study = pfnopt.create_study(storage=parsed_args.storage)
         else:
-            study = pfnopt.Study(storage=parsed_args.url, study_uuid=parsed_args.study_uuid)
+            study = pfnopt.Study(storage=parsed_args.storage, study_uuid=parsed_args.study)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.
