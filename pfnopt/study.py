@@ -202,12 +202,11 @@ def minimize(
         storage=None,  # type: Union[None, str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
-        study_uuid=None,  # type: str
-        study=None,  # type: Study
+        study=None,  # type: Union[None, str, Study]
 ):
     # type: (...) -> Study
 
-    if study is not None:
+    if isinstance(study, Study):
         # We continue the given study.
         if storage is not None:
             raise ValueError(
@@ -223,12 +222,12 @@ def minimize(
                 'When a study is given, its associated pruner will be used.')
     elif storage is not None:
         # We connect to an existing study in the storage.
-        if study_uuid is None:
+        if not isinstance(study, str):
             raise ValueError(
-                'When specifying storage, please also specify study_uuid to continue a study. '
+                'When specifying storage, please also specify a study UUID to continue a study. '
                 'If you want to start a new study, please make a new one using create_study.')
         storage = storages.get_storage(storage)
-        study = Study(study_uuid, storage, sampler, pruner)
+        study = Study(study, storage, sampler, pruner)
     else:
         # We start a new study with a new in-memory storage.
         study = create_study(sampler=sampler, pruner=pruner)

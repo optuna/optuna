@@ -185,7 +185,7 @@ def test_minimize_trivial_rdb_resume_uuid():
         db_url = 'sqlite:///{}'.format(tf.name)
         study = pfnopt.create_study(db_url)
         study_uuid = study.study_uuid
-        study = pfnopt.minimize(func, n_trials=10, storage=db_url, study_uuid=study_uuid)
+        study = pfnopt.minimize(func, n_trials=10, storage=db_url, study=study_uuid)
         check_study(study)
 
 
