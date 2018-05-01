@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class Trial(object):
 
-    """Client that communicates with local study object"""
+    """An active trial class that is passed to and communicates with users' objective functions."""
 
     def __init__(self, study, trial_id):
         # type: (Study, int) -> None
