@@ -11,14 +11,14 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 from typing import Union  # NOQA
 
-from pfnopt import client as client_module
 from pfnopt import frozen_trial  # NOQA
 from pfnopt import logging
 from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storages
+from pfnopt import trial as trial_module
 
-ObjectiveFuncType = Callable[[client_module.BaseClient], float]
+ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
 class Study(object):
@@ -111,9 +111,9 @@ class Study(object):
                     break
 
             trial_id = self.storage.create_new_trial_id(self.study_id)
-            client = client_module.LocalClient(self, trial_id)
-            result = func(client)
-            client.complete(result)
+            trial = trial_module.Trial(self, trial_id)
+            result = func(trial)
+            trial.complete(result)
             self._log_completed_trial(trial_id, result)
 
     def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs):
@@ -138,9 +138,9 @@ class Study(object):
         def func_child_thread(que):
             while que.get():
                 trial_id = self.storage.create_new_trial_id(self.study_id)
-                client = client_module.LocalClient(self, trial_id)
-                result = func(client)
-                client.complete(result)
+                trial = trial_module.Trial(self, trial_id)
+                result = func(trial)
+                trial.complete(result)
                 self._log_completed_trial(trial_id, result)
             self.storage.remove_session()
 

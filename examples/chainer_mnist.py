@@ -35,13 +35,13 @@ BATCHSIZE = 128
 EPOCH = 10
 
 
-def create_model(client):
+def create_model(trial):
     # We optimize the numbers of layers and their units.
-    n_layers = int(client.sample_uniform('n_layers', 1, 4))
+    n_layers = int(trial.sample_uniform('n_layers', 1, 4))
 
     layers = []
     for i in range(n_layers):
-        n_units = int(client.sample_loguniform('n_units_l{}'.format(i), 4, 128))
+        n_units = int(trial.sample_loguniform('n_units_l{}'.format(i), 4, 128))
         layers.append(L.Linear(None, n_units))
         layers.append(F.relu)
     layers.append(L.Linear(None, 10))
@@ -49,26 +49,26 @@ def create_model(client):
     return chainer.Sequential(*layers)
 
 
-def create_optimizer(client, model):
+def create_optimizer(trial, model):
     # We optimize the choice of optimizers as well as their parameters.
-    optimizer_name = client.sample_categorical('optimizer', ['Adam', 'MomentumSGD'])
+    optimizer_name = trial.sample_categorical('optimizer', ['Adam', 'MomentumSGD'])
     if optimizer_name == 'Adam':
-        adam_alpha = client.sample_loguniform('adam_apha', 1e-5, 1e-1)
+        adam_alpha = trial.sample_loguniform('adam_apha', 1e-5, 1e-1)
         optimizer = chainer.optimizers.Adam(alpha=adam_alpha)
     else:
-        momentum_sgd_lr = client.sample_loguniform('momentum_sgd_lr', 1e-5, 1e-1)
+        momentum_sgd_lr = trial.sample_loguniform('momentum_sgd_lr', 1e-5, 1e-1)
         optimizer = chainer.optimizers.MomentumSGD(lr=momentum_sgd_lr)
 
-    weight_decay = client.sample_loguniform('weight_decay', 1e-10, 1e-3)
+    weight_decay = trial.sample_loguniform('weight_decay', 1e-10, 1e-3)
     optimizer.setup(model)
     optimizer.add_hook(chainer.optimizer.WeightDecay(weight_decay))
     return optimizer
 
 
-def objective(client):
+def objective(trial):
     # Model and optimizer
-    model = L.Classifier(create_model(client))
-    optimizer = create_optimizer(client, model)
+    model = L.Classifier(create_model(trial))
+    optimizer = create_optimizer(trial, model)
 
     # Dataset
     rng = np.random.RandomState(0)
@@ -96,7 +96,7 @@ def objective(client):
     # Set the user attributes such as loss and accuracy for train and validation sets
     log_last = log_report_extension.log[-1]
     for key, value in log_last.items():
-        client.set_user_attr(key, value)
+        trial.set_user_attr(key, value)
 
     # Return the validation error
     val_err = 1.0 - log_report_extension.log[-1]['validation/main/accuracy']

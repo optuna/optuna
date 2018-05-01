@@ -4,8 +4,8 @@ import subprocess
 import tempfile
 
 import pfnopt
-from pfnopt.client import BaseClient  # NOQA
 from pfnopt.storages import RDBStorage
+from pfnopt.trial import Trial  # NOQA
 
 
 def test_create_study_command():
@@ -74,10 +74,10 @@ def test_dashboard_command():
 
 
 # An example of objective functions for testing minimize command
-def objective_func(client):
-    # type: (BaseClient) -> float
+def objective_func(trial):
+    # type: (Trial) -> float
 
-    x = client.sample_uniform('x', -10, 10)
+    x = trial.sample_uniform('x', -10, 10)
     return (x + 5) ** 2
 
 
