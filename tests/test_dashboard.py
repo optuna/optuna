@@ -10,9 +10,9 @@ def _create_some_study():
     def f(trial):
         # type: (pfnopt.trial.Trial) -> float
 
-        x = trial.sample_uniform('x', -10, 10)
-        y = trial.sample_loguniform('y', 10, 20)
-        z = trial.sample_categorical('z', (10, 20.5, '30'))
+        x = trial.suggest_uniform('x', -10, 10)
+        y = trial.suggest_loguniform('y', 10, 20)
+        z = trial.suggest_categorical('z', (10, 20.5, '30'))
 
         return x ** 2 + y ** 2 + float(z)  # type: ignore
 

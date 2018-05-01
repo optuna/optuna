@@ -77,7 +77,7 @@ def test_dashboard_command():
 def objective_func(trial):
     # type: (Trial) -> float
 
-    x = trial.sample_uniform('x', -10, 10)
+    x = trial.suggest_uniform('x', -10, 10)
     return (x + 5) ** 2
 
 

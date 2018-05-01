@@ -75,9 +75,9 @@ class StorageSupplier(object):
 def func(trial, x_max=1.0):
     # type: (pfnopt.trial.Trial, float) -> float
 
-    x = trial.sample_uniform('x', -x_max, x_max)
-    y = trial.sample_loguniform('y', 20, 30)
-    z = trial.sample_categorical('z', (-1.0, 1.0))
+    x = trial.suggest_uniform('x', -x_max, x_max)
+    y = trial.suggest_loguniform('y', 20, 30)
+    z = trial.suggest_categorical('z', (-1.0, 1.0))
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
