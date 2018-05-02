@@ -131,16 +131,20 @@ class RDBStorage(BaseStorage):
 
         study_sumarries = []
         for study in studies:
-            user_attrs = self.get_study_user_attrs(study.study_id)
             trials = self.get_all_trials(study.study_id)
-            task = self.get_study_task(study.study_id)
+
+            best_trial = None
+            if len([t for t in trials if t.state == frozen_trial.State.COMPLETE]) > 0:
+                best_trial = self.get_best_trial(study.study_id)
 
             study_sumarries.append(study_summary.StudySummary(
                 study_id=study.study_id,
                 study_uuid=study.study_uuid,
-                user_attrs=user_attrs,
+                task=self.get_study_task(study.study_id),
+                best_trial=best_trial,
+                user_attrs=self.get_study_user_attrs(study.study_id),
                 n_trials=len(trials),
-                task=task
+                datetime_start=min([t.datetime_start for t in trials])
             ))
 
         return study_sumarries

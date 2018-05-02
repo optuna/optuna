@@ -86,12 +86,18 @@ class InMemoryStorage(base.BaseStorage):
     def get_all_study_summaries(self):
         # type: () -> List[study_summary.StudySummary]
 
+        best_trial = None
+        if len([t for t in self.trials if t.state == frozen_trial.State.COMPLETE]) > 0:
+            best_trial = self.get_best_trial(IN_MEMORY_STORAGE_STUDY_ID)
+
         return [study_summary.StudySummary(
             study_id=IN_MEMORY_STORAGE_STUDY_ID,
             study_uuid=IN_MEMORY_STORAGE_STUDY_UUID,
+            task=self.task,
+            best_trial=best_trial,
             user_attrs=copy.deepcopy(self.study_user_attrs),
             n_trials=len(self.trials),
-            task=self.task
+            datetime_start=min([t.datetime_start for t in self.trials])
         )]
 
     def create_new_trial_id(self, study_id):

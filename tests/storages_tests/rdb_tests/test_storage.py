@@ -125,7 +125,7 @@ class TestRDBStorage(unittest.TestCase):
                 'x',
                 example_distributions['x']))
 
-    def test_get_all_study_summaries(self):
+    def test_get_all_study_summaries_with_multiple_studies(self):
         # type: () -> None
 
         storage = self.create_test_storage()
@@ -146,16 +146,20 @@ class TestRDBStorage(unittest.TestCase):
         expected_summary_1 = StudySummary(
             study_id=study_id_1,
             study_uuid=storage.get_study_uuid_from_id(study_id_1),
+            task=StudyTask.MINIMIZE,
             user_attrs={SYSTEM_ATTRS_KEY: {}},
+            best_trial=None,
             n_trials=2,
-            task=StudyTask.MINIMIZE
+            datetime_start=summaries[0].datetime_start  # This always passes.
         )
         expected_summary_2 = StudySummary(
             study_id=study_id_2,
             study_uuid=storage.get_study_uuid_from_id(study_id_2),
+            task=StudyTask.MAXIMIZE,
             user_attrs={SYSTEM_ATTRS_KEY: {}},
+            best_trial=None,
             n_trials=1,
-            task=StudyTask.MAXIMIZE
+            datetime_start=summaries[1].datetime_start  # This always passes.
         )
 
         assert summaries[0] == expected_summary_1

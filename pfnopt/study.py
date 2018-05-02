@@ -16,6 +16,7 @@ from pfnopt import logging
 from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storages
+from pfnopt import study_summary  # NOQA
 from pfnopt import study_task
 from pfnopt import trial as trial_module
 
@@ -266,3 +267,10 @@ def minimize(
 # TODO(akiba): implement me
 def maximize():
     raise NotImplementedError
+
+
+def get_all_study_summaries(storage):
+    # type: (Union[None, str, storages.BaseStorage]) -> List[study_summary.StudySummary]
+
+    storage = storages.get_storage(storage)
+    return storage.get_all_study_summaries()
