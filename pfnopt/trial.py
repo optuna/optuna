@@ -6,6 +6,7 @@ from pfnopt import frozen_trial
 if TYPE_CHECKING:
     from pfnopt.study import Study  # NOQA
     from typing import Any  # NOQA
+    from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import TypeVar  # NOQA
@@ -25,21 +26,21 @@ class Trial(object):
         self.study_id = self.study.study_id
         self.storage = self.study.storage
 
-    def sample_uniform(self, name, low, high):
+    def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        return self._sample(name, distributions.UniformDistribution(low=low, high=high))
+        return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
 
-    def sample_loguniform(self, name, low, high):
+    def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        return self._sample(name, distributions.LogUniformDistribution(low=low, high=high))
+        return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
 
-    def sample_categorical(self, name, choices):
+    def suggest_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
 
         choices = tuple(choices)
-        return self._sample(name, distributions.CategoricalDistribution(choices=choices))
+        return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
 
     def report(self, value, step=None):
         # type: (float, Optional[int]) -> None
@@ -66,7 +67,7 @@ class Trial(object):
 
         self.storage.set_trial_user_attr(self.trial_id, key, value)
 
-    def _sample(self, name, distribution):
+    def _suggest(self, name, distribution):
         # type: (str, distributions.BaseDistribution) -> Any
 
         # TODO(Akiba): if already sampled, return the recorded value
@@ -79,3 +80,15 @@ class Trial(object):
         self.storage.set_trial_param(self.trial_id, name, param_value_in_internal_repr)
         param_value = distribution.to_external_repr(param_value_in_internal_repr)
         return param_value
+
+    @property
+    def params(self):
+        # type: () -> Dict[str, Any]
+
+        return self.storage.get_trial_params(self.trial_id)
+
+    @property
+    def user_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self.storage.get_trial_user_attrs(self.trial_id)

@@ -21,8 +21,8 @@ import pfnopt
 
 # Define a simple 2-dimensional objective function whose minimum value is -1 when (x, y) = (0, -1).
 def objective(trial):
-    x = trial.sample_uniform('x', -100, 100)
-    y = trial.sample_categorical('y', (-1, 0, 1))
+    x = trial.suggest_uniform('x', -100, 100)
+    y = trial.suggest_categorical('y', (-1, 0, 1))
     return x ** 2 + y
 
 
@@ -39,5 +39,5 @@ if __name__ == '__main__':
 
     # We can specify the timeout instead of a number of trials.
     print('Running additional trials in 2 seconds...')
-    pfnopt.minimize(objective, timeout_seconds=2.0, study=study)
+    pfnopt.minimize(objective, timeout=2.0, study=study)
     print('Best value: {} (params: {})\n'.format(study.best_value, study.best_params))
