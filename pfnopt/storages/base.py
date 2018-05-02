@@ -1,7 +1,6 @@
 import abc
 import copy
 import numpy as np
-import pfnopt.structs
 import six
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
@@ -156,7 +155,7 @@ class BaseStorage(object):
         # type: (int) -> structs.FrozenTrial
 
         all_trials = self.get_all_trials(study_id)
-        all_trials = [t for t in all_trials if t.state is pfnopt.structs.TrialState.COMPLETE]
+        all_trials = [t for t in all_trials if t.state is structs.TrialState.COMPLETE]
 
         if len(all_trials) == 0:
             raise ValueError('No trials are completed yet')
@@ -190,7 +189,7 @@ class BaseStorage(object):
         return [
             (t.params_in_internal_repr[param_name], t.value)
             for t in all_trials
-            if param_name in t.params and t.state is pfnopt.structs.TrialState.COMPLETE
+            if param_name in t.params and t.state is structs.TrialState.COMPLETE
             # TODO(Akiba): We also want to use pruned results
             ]
 
