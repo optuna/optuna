@@ -51,7 +51,7 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             if self.task != study_task.StudyTask.NOT_SET and self.task != task:
                 raise ValueError(
-                    'Cannot override study task from {} to {}.'.format(self.task, task))
+                    'Cannot overwrite study task from {} to {}.'.format(self.task, task))
             self.task = task
 
     def set_study_user_attr(self, study_id, key, value):
@@ -90,6 +90,10 @@ class InMemoryStorage(base.BaseStorage):
         if len([t for t in self.trials if t.state == frozen_trial.State.COMPLETE]) > 0:
             best_trial = self.get_best_trial(IN_MEMORY_STORAGE_STUDY_ID)
 
+        datetime_start = None
+        if len(self.trials) > 0:
+            datetime_start = min([t.datetime_start for t in self.trials])
+
         return [study_summary.StudySummary(
             study_id=IN_MEMORY_STORAGE_STUDY_ID,
             study_uuid=IN_MEMORY_STORAGE_STUDY_UUID,
@@ -97,7 +101,7 @@ class InMemoryStorage(base.BaseStorage):
             best_trial=best_trial,
             user_attrs=copy.deepcopy(self.study_user_attrs),
             n_trials=len(self.trials),
-            datetime_start=min([t.datetime_start for t in self.trials])
+            datetime_start=datetime_start
         )]
 
     def create_new_trial_id(self, study_id):

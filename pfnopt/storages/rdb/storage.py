@@ -57,7 +57,7 @@ class RDBStorage(BaseStorage):
 
         return study.study_id
 
-    # TODO(sano): Prevent simultaneous setting of StudyTask.MINIMIZE and StudyTask.MAXIMIZE.
+    # TODO(sano): Prevent simultaneous setting of different tasks by multiple threads/processes.
     def set_study_task(self, study_id, task):
         # type: (int, study_task.StudyTask) -> None
 
@@ -67,7 +67,7 @@ class RDBStorage(BaseStorage):
 
         if study.task != study_task.StudyTask.NOT_SET and study.task != task:
             raise ValueError(
-                'Cannot override study task from {} to {}.'.format(study.task, task))
+                'Cannot overwrite study task from {} to {}.'.format(study.task, task))
 
         study.task = task
 
@@ -122,6 +122,7 @@ class RDBStorage(BaseStorage):
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
+    # TODO(sano): Optimize this method to reduce the number of queries.
     def get_all_study_summaries(self):
         # type: () -> List[study_summary.StudySummary]
 
@@ -137,6 +138,10 @@ class RDBStorage(BaseStorage):
             if len([t for t in trials if t.state == frozen_trial.State.COMPLETE]) > 0:
                 best_trial = self.get_best_trial(study.study_id)
 
+            datetime_start = None
+            if len(trials) > 0:
+                datetime_start = min([t.datetime_start for t in trials])
+
             study_sumarries.append(study_summary.StudySummary(
                 study_id=study.study_id,
                 study_uuid=study.study_uuid,
@@ -144,7 +149,7 @@ class RDBStorage(BaseStorage):
                 best_trial=best_trial,
                 user_attrs=self.get_study_user_attrs(study.study_id),
                 n_trials=len(trials),
-                datetime_start=min([t.datetime_start for t in trials])
+                datetime_start=datetime_start
             ))
 
         return study_sumarries

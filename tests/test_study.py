@@ -277,6 +277,36 @@ def test_trial_set_and_get_user_attrs(storage_mode):
         assert frozen_trial.user_attrs['train_accuracy'] == 1
 
 
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_all_study_summaries(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = pfnopt.create_study(storage=storage)
+        pfnopt.minimize(Func(), n_trials=5, study=study)
+
+        summaries = pfnopt.get_all_study_summaries(study.storage)
+        summary = [s for s in summaries if s.study_id == study.study_id][0]
+
+        assert summary.study_uuid == study.study_uuid
+        assert summary.n_trials == 5
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_all_study_summaries_with_no_trials(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = pfnopt.create_study(storage=storage)
+
+        summaries = pfnopt.get_all_study_summaries(study.storage)
+        summary = [s for s in summaries if s.study_id == study.study_id][0]
+
+        assert summary.study_uuid == study.study_uuid
+        assert summary.n_trials == 0
+        assert summary.datetime_start is None
+
+
 def test_study_pickle():
     # type: () -> None
 
