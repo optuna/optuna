@@ -1,6 +1,7 @@
 import abc
 import copy
 import numpy as np
+import pfnopt.structs
 import six
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
@@ -8,9 +9,7 @@ from typing import List  # NOQA
 from typing import Tuple  # NOQA
 
 from pfnopt import distributions  # NOQA
-from pfnopt import frozen_trial
-from pfnopt import study_summary  # NOQA
-from pfnopt import study_task  # NOQA
+from pfnopt import structs  # NOQA
 
 SYSTEM_ATTRS_KEY = '__system__'
 
@@ -34,7 +33,7 @@ class BaseStorage(object):
 
     @ abc.abstractmethod
     def set_study_task(self, study_id, task):
-        # type: (int, study_task.StudyTask) -> None
+        # type: (int, structs.StudyTask) -> None
 
         raise NotImplementedError
 
@@ -63,7 +62,7 @@ class BaseStorage(object):
 
     @ abc.abstractmethod
     def get_study_task(self, study_id):
-        # type: (int) -> study_task.StudyTask
+        # type: (int) -> structs.StudyTask
 
         raise NotImplementedError
 
@@ -81,7 +80,7 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def get_all_study_summaries(self):
-        # type: () -> List[study_summary.StudySummary]
+        # type: () -> List[structs.StudySummary]
 
         raise NotImplementedError
 
@@ -101,7 +100,7 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def set_trial_state(self, trial_id, state):
-        # type: (int, frozen_trial.State) -> None
+        # type: (int, structs.TrialState) -> None
 
         raise NotImplementedError
 
@@ -143,21 +142,21 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def get_trial(self, trial_id):
-        # type: (int) -> frozen_trial.FrozenTrial
+        # type: (int) -> structs.FrozenTrial
 
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_all_trials(self, study_id):
-        # type: (int) -> List[frozen_trial.FrozenTrial]
+        # type: (int) -> List[structs.FrozenTrial]
 
         raise NotImplementedError
 
     def get_best_trial(self, study_id):
-        # type: (int) -> frozen_trial.FrozenTrial
+        # type: (int) -> structs.FrozenTrial
 
         all_trials = self.get_all_trials(study_id)
-        all_trials = [t for t in all_trials if t.state is frozen_trial.State.COMPLETE]
+        all_trials = [t for t in all_trials if t.state is pfnopt.structs.TrialState.COMPLETE]
 
         if len(all_trials) == 0:
             raise ValueError('No trials are completed yet')
@@ -191,7 +190,7 @@ class BaseStorage(object):
         return [
             (t.params_in_internal_repr[param_name], t.value)
             for t in all_trials
-            if param_name in t.params and t.state is frozen_trial.State.COMPLETE
+            if param_name in t.params and t.state is pfnopt.structs.TrialState.COMPLETE
             # TODO(Akiba): We also want to use pruned results
             ]
 

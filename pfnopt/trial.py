@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING  # NOQA
 
 from pfnopt import distributions
-from pfnopt import frozen_trial
+from pfnopt import structs
 
 if TYPE_CHECKING:
     from pfnopt.study import Study  # NOQA
@@ -52,7 +52,7 @@ class Trial(object):
     def complete(self):
         # type: () -> None
 
-        self.storage.set_trial_state(self.trial_id, frozen_trial.State.COMPLETE)
+        self.storage.set_trial_state(self.trial_id, structs.TrialState.COMPLETE)
 
     def should_prune(self, step):
         # type: (int) -> bool

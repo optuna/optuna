@@ -13,8 +13,6 @@ from typing import Optional  # NOQA
 from typing import Type  # NOQA
 
 import pfnopt
-from pfnopt.study_task import StudyTask
-import pfnopt.trial
 
 
 STORAGE_MODES = [
@@ -123,9 +121,9 @@ def check_value(value):
 
 
 def check_frozen_trial(frozen_trial):
-    # type: (pfnopt.frozen_trial.FrozenTrial) -> None
+    # type: (pfnopt.structs.FrozenTrial) -> None
 
-    if frozen_trial.state == pfnopt.frozen_trial.State.COMPLETE:
+    if frozen_trial.state == pfnopt.structs.TrialState.COMPLETE:
         check_params(frozen_trial.params)
         check_value(frozen_trial.value)
 
@@ -136,7 +134,7 @@ def check_study(study):
     for trial in study.trials:
         check_frozen_trial(trial)
 
-    complete_trials = [t for t in study.trials if t.state == pfnopt.frozen_trial.State.COMPLETE]
+    complete_trials = [t for t in study.trials if t.state == pfnopt.structs.TrialState.COMPLETE]
     if len(complete_trials) == 0:
         with pytest.raises(ValueError):
             study.best_params
@@ -243,7 +241,7 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
 def test_minimize_with_incompatible_task(storage_mode):
     with StorageSupplier(storage_mode) as storage:
         study = pfnopt.create_study(storage=storage)
-        study.storage.set_study_task(study.study_id, StudyTask.MAXIMIZE)
+        study.storage.set_study_task(study.study_id, pfnopt.structs.StudyTask.MAXIMIZE)
         with pytest.raises(ValueError):
             pfnopt.minimize(Func(), n_trials=1, n_jobs=1, study=study)
 

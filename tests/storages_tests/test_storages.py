@@ -4,7 +4,6 @@ from typing import Any  # NOQA
 from typing import Callable  # NOQA
 from typing import Dict  # NOQA
 
-import pfnopt
 from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import LogUniformDistribution
@@ -13,8 +12,9 @@ from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages import BaseStorage  # NOQA
 from pfnopt.storages import InMemoryStorage
 from pfnopt.storages import RDBStorage
-from pfnopt.study_task import StudyTask
-
+from pfnopt.structs import FrozenTrial
+from pfnopt.structs import StudyTask
+from pfnopt.structs import TrialState
 
 EXAMPLE_SYSTEM_ATTRS = {
     'dataset': 'MNIST',
@@ -30,10 +30,10 @@ EXAMPLE_DISTRIBUTIONS = {
 }  # type: Dict[str, BaseDistribution]
 
 EXAMPLE_TRIALS = [
-    pfnopt.frozen_trial.FrozenTrial(
+    FrozenTrial(
         trial_id=-1,  # dummy id
         value=1.,
-        state=pfnopt.frozen_trial.State.COMPLETE,
+        state=TrialState.COMPLETE,
         user_attrs={SYSTEM_ATTRS_KEY: {}},
         params={'x': 0.5, 'y': 'Ginza'},
         intermediate_values={0: 2., 1: 3.},
@@ -41,10 +41,10 @@ EXAMPLE_TRIALS = [
         datetime_start=None,  # dummy
         datetime_complete=None  # dummy
     ),
-    pfnopt.frozen_trial.FrozenTrial(
+    FrozenTrial(
         trial_id=-1,  # dummy id
         value=2.,
-        state=pfnopt.frozen_trial.State.RUNNING,
+        state=TrialState.RUNNING,
         user_attrs={
             SYSTEM_ATTRS_KEY: {'some_key': 'some_value'},
             'tags': ['video', 'classification'], 'dataset': 'YouTube-8M'},
@@ -142,7 +142,7 @@ def test_create_new_trial_id(storage_init_func):
     trials = storage.get_all_trials(study_id)
     assert len(trials) == 1
     assert trials[0].trial_id == trial_id
-    assert trials[0].state == pfnopt.frozen_trial.State.RUNNING
+    assert trials[0].state == TrialState.RUNNING
     assert trials[0].user_attrs == {SYSTEM_ATTRS_KEY: {}}
 
 
@@ -155,17 +155,17 @@ def test_set_trial_state(storage_init_func):
     trial_id_1 = storage.create_new_trial_id(storage.create_new_study_id())
     trial_id_2 = storage.create_new_trial_id(storage.create_new_study_id())
 
-    storage.set_trial_state(trial_id_1, pfnopt.frozen_trial.State.RUNNING)
-    assert storage.get_trial(trial_id_1).state == pfnopt.frozen_trial.State.RUNNING
+    storage.set_trial_state(trial_id_1, TrialState.RUNNING)
+    assert storage.get_trial(trial_id_1).state == TrialState.RUNNING
     assert storage.get_trial(trial_id_1).datetime_complete is None
 
-    storage.set_trial_state(trial_id_2, pfnopt.frozen_trial.State.COMPLETE)
-    assert storage.get_trial(trial_id_2).state == pfnopt.frozen_trial.State.COMPLETE
+    storage.set_trial_state(trial_id_2, TrialState.COMPLETE)
+    assert storage.get_trial(trial_id_2).state == TrialState.COMPLETE
     assert storage.get_trial(trial_id_2).datetime_complete is not None
 
     # Test overwriting value.
-    storage.set_trial_state(trial_id_1, pfnopt.frozen_trial.State.PRUNED)
-    assert storage.get_trial(trial_id_1).state == pfnopt.frozen_trial.State.PRUNED
+    storage.set_trial_state(trial_id_1, TrialState.PRUNED)
+    assert storage.get_trial(trial_id_1).state == TrialState.PRUNED
     assert storage.get_trial(trial_id_1).datetime_complete is not None
 
 
@@ -433,7 +433,7 @@ def test_get_all_trials(storage_init_func):
 
 
 def _create_new_trial_with_example_trial(storage, study_id, distributions, example_trial):
-    # type: (BaseStorage, int, Dict[str, BaseDistribution], pfnopt.frozen_trial.FrozenTrial) -> int
+    # type: (BaseStorage, int, Dict[str, BaseDistribution], FrozenTrial) -> int
 
     trial_id = storage.create_new_trial_id(study_id)
 
@@ -461,7 +461,7 @@ def _set_distributions(storage, trial_id, distributions):
 
 
 def _check_example_trial_static_attributes(trial_1, trial_2):
-    # type: (pfnopt.frozen_trial.FrozenTrial, pfnopt.frozen_trial.FrozenTrial) -> None
+    # type: (FrozenTrial, FrozenTrial) -> None
 
     trial_1 = trial_1._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
     trial_2 = trial_2._replace(trial_id=-1, datetime_start=None, datetime_complete=None)

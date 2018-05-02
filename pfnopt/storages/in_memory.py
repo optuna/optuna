@@ -6,10 +6,8 @@ from typing import Dict  # NOQA
 from typing import List  # NOQA
 
 from pfnopt import distributions  # NOQA
-from pfnopt import frozen_trial
 from pfnopt.storages import base
-from pfnopt import study_summary  # NOQA
-from pfnopt import study_task
+from pfnopt import structs
 
 
 IN_MEMORY_STORAGE_STUDY_ID = 0
@@ -20,9 +18,9 @@ class InMemoryStorage(base.BaseStorage):
 
     def __init__(self):
         # type: () -> None
-        self.trials = []  # type: List[frozen_trial.FrozenTrial]
+        self.trials = []  # type: List[structs.FrozenTrial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
-        self.task = study_task.StudyTask.NOT_SET
+        self.task = structs.StudyTask.NOT_SET
         self.study_user_attrs = {}  # type: Dict[str, Any]
 
         self._lock = threading.Lock()
@@ -46,10 +44,10 @@ class InMemoryStorage(base.BaseStorage):
         return IN_MEMORY_STORAGE_STUDY_ID  # TODO(akiba)
 
     def set_study_task(self, study_id, task):
-        # type: (int, study_task.StudyTask) -> None
+        # type: (int, structs.StudyTask) -> None
 
         with self._lock:
-            if self.task != study_task.StudyTask.NOT_SET and self.task != task:
+            if self.task != structs.StudyTask.NOT_SET and self.task != task:
                 raise ValueError(
                     'Cannot overwrite study task from {} to {}.'.format(self.task, task))
             self.task = task
@@ -73,7 +71,7 @@ class InMemoryStorage(base.BaseStorage):
         return IN_MEMORY_STORAGE_STUDY_UUID
 
     def get_study_task(self, study_id):
-        # type: (int) -> study_task.StudyTask
+        # type: (int) -> structs.StudyTask
 
         return self.task
 
@@ -84,10 +82,10 @@ class InMemoryStorage(base.BaseStorage):
             return copy.deepcopy(self.study_user_attrs)
 
     def get_all_study_summaries(self):
-        # type: () -> List[study_summary.StudySummary]
+        # type: () -> List[structs.StudySummary]
 
         best_trial = None
-        n_complete_trials = len([t for t in self.trials if t.state == frozen_trial.State.COMPLETE])
+        n_complete_trials = len([t for t in self.trials if t.state == structs.TrialState.COMPLETE])
         if n_complete_trials > 0:
             best_trial = self.get_best_trial(IN_MEMORY_STORAGE_STUDY_ID)
 
@@ -95,7 +93,7 @@ class InMemoryStorage(base.BaseStorage):
         if len(self.trials) > 0:
             datetime_start = min([t.datetime_start for t in self.trials])
 
-        return [study_summary.StudySummary(
+        return [structs.StudySummary(
             study_id=IN_MEMORY_STORAGE_STUDY_ID,
             study_uuid=IN_MEMORY_STORAGE_STUDY_UUID,
             task=self.task,
@@ -112,9 +110,9 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             trial_id = len(self.trials)
             self.trials.append(
-                frozen_trial.FrozenTrial(
+                structs.FrozenTrial(
                     trial_id=trial_id,
-                    state=frozen_trial.State.RUNNING,
+                    state=structs.TrialState.RUNNING,
                     params={},
                     user_attrs={base.SYSTEM_ATTRS_KEY: {}},
                     value=None,
@@ -136,7 +134,7 @@ class InMemoryStorage(base.BaseStorage):
             self.param_distribution[param_name] = distribution
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, frozen_trial.State) -> None
+        # type: (int, structs.TrialState) -> None
 
         with self._lock:
             self.trials[trial_id] = self.trials[trial_id]._replace(state=state)
@@ -178,13 +176,13 @@ class InMemoryStorage(base.BaseStorage):
             self.trials[trial_id].user_attrs[key] = value
 
     def get_trial(self, trial_id):
-        # type: (int) -> frozen_trial.FrozenTrial
+        # type: (int) -> structs.FrozenTrial
 
         with self._lock:
             return copy.deepcopy(self.trials[trial_id])
 
     def get_all_trials(self, study_id):
-        # type: (int) -> List[frozen_trial.FrozenTrial]
+        # type: (int) -> List[structs.FrozenTrial]
 
         self._check_study_id(study_id)
         with self._lock:

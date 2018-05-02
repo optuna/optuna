@@ -4,10 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from pfnopt.frozen_trial import State
 from pfnopt.storages.rdb.models import BaseModel
 from pfnopt.storages.rdb.models import TrialModel
 from pfnopt.storages.rdb.models import VersionInfoModel
+from pfnopt.structs import TrialState
 
 
 def test_trial_model():
@@ -19,7 +19,7 @@ def test_trial_model():
 
     datetime_1 = datetime.now()
 
-    session.add(TrialModel(state=State.RUNNING))
+    session.add(TrialModel(state=TrialState.RUNNING))
     session.commit()
 
     datetime_2 = datetime.now()
