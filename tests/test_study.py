@@ -13,6 +13,7 @@ from typing import Optional  # NOQA
 from typing import Type  # NOQA
 
 import pfnopt
+from pfnopt.study_task import StudyTask
 import pfnopt.trial
 
 
@@ -236,6 +237,15 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
         assert f.n_calls <= max_calls
 
         check_study(study)
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_minimize_with_incompatible_task(storage_mode):
+    with StorageSupplier(storage_mode) as storage:
+        study = pfnopt.create_study(storage=storage)
+        study.storage.set_study_task(study.study_id, StudyTask.MAXIMIZE)
+        with pytest.raises(ValueError):
+            pfnopt.minimize(Func(), n_trials=1, n_jobs=1, study=study)
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
