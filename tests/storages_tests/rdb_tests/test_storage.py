@@ -10,11 +10,14 @@ from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
+from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb.models import SCHEMA_VERSION
 from pfnopt.storages.rdb.models import StudyModel
 from pfnopt.storages.rdb.models import TrialParamDistributionModel
 from pfnopt.storages.rdb.models import VersionInfoModel
 from pfnopt.storages import RDBStorage
+from pfnopt.study_summary import StudySummary
+from pfnopt.study_task import StudyTask
 from pfnopt import version
 
 
@@ -121,6 +124,46 @@ class TestRDBStorage(unittest.TestCase):
                 trial_id,  # existing trial_id
                 'x',
                 example_distributions['x']))
+
+    def test_get_all_study_summaries_with_multiple_studies(self):
+        # type: () -> None
+
+        storage = self.create_test_storage()
+
+        study_id_1 = storage.create_new_study_id()
+        study_id_2 = storage.create_new_study_id()
+
+        storage.set_study_task(study_id_1, StudyTask.MINIMIZE)
+        storage.set_study_task(study_id_2, StudyTask.MAXIMIZE)
+
+        storage.create_new_trial_id(study_id_1)
+        storage.create_new_trial_id(study_id_1)
+        storage.create_new_trial_id(study_id_2)
+
+        summaries = storage.get_all_study_summaries()
+        summaries = sorted(summaries, key=lambda x: x.study_id)
+
+        expected_summary_1 = StudySummary(
+            study_id=study_id_1,
+            study_uuid=storage.get_study_uuid_from_id(study_id_1),
+            task=StudyTask.MINIMIZE,
+            user_attrs={SYSTEM_ATTRS_KEY: {}},
+            best_trial=None,
+            n_trials=2,
+            datetime_start=summaries[0].datetime_start  # This always passes.
+        )
+        expected_summary_2 = StudySummary(
+            study_id=study_id_2,
+            study_uuid=storage.get_study_uuid_from_id(study_id_2),
+            task=StudyTask.MAXIMIZE,
+            user_attrs={SYSTEM_ATTRS_KEY: {}},
+            best_trial=None,
+            n_trials=1,
+            datetime_start=summaries[1].datetime_start  # This always passes.
+        )
+
+        assert summaries[0] == expected_summary_1
+        assert summaries[1] == expected_summary_2
 
     def test_check_table_schema_compatibility(self):
         # type: () -> None

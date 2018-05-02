@@ -11,6 +11,7 @@ from pfnopt import trial  # NOQA
 from pfnopt import version  # NOQA
 
 from pfnopt.study import create_study  # NOQA
+from pfnopt.study import get_all_study_summaries  # NOQA
 from pfnopt.study import minimize  # NOQA
 from pfnopt.study import Study  # NOQA
 from pfnopt.trial import Trial  # NOQA

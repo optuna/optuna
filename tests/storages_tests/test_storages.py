@@ -13,6 +13,7 @@ from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages import BaseStorage  # NOQA
 from pfnopt.storages import InMemoryStorage
 from pfnopt.storages import RDBStorage
+from pfnopt.study_task import StudyTask
 
 
 EXAMPLE_SYSTEM_ATTRS = {
@@ -58,6 +59,29 @@ EXAMPLE_TRIALS = [
 
 parametrize_storage = pytest.mark.parametrize(
     'storage_init_func', [InMemoryStorage, lambda: RDBStorage('sqlite:///:memory:')])
+
+
+@parametrize_storage
+def test_set_and_get_study_task(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+    study_id = storage.create_new_study_id()
+
+    def check_set_and_get(task):
+        # type: (StudyTask) -> None
+
+        storage.set_study_task(study_id, task)
+        assert storage.get_study_task(study_id) == task
+
+    assert storage.get_study_task(study_id) == StudyTask.NOT_SET
+
+    # Test setting value.
+    check_set_and_get(StudyTask.MINIMIZE)
+
+    # Test overwriting value.
+    with pytest.raises(ValueError):
+        storage.set_study_task(study_id, StudyTask.MAXIMIZE)
 
 
 @parametrize_storage
@@ -310,6 +334,42 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     check_set_and_get(trial_id_2, 'baseline_score', 0.001)
     system_attrs = storage.get_trial(trial_id_2).user_attrs[SYSTEM_ATTRS_KEY]
     assert system_attrs == {'baseline_score': 0.001}
+
+
+@parametrize_storage
+def test_get_all_study_summaries(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+    study_id = storage.create_new_study_id()
+
+    storage.set_study_task(study_id, StudyTask.MINIMIZE)
+
+    datetime_1 = datetime.now()
+
+    # Set up trial 1.
+    _create_new_trial_with_example_trial(
+        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0])
+
+    datetime_2 = datetime.now()
+
+    # Set up trial 2.
+    trial_id_2 = storage.create_new_trial_id(study_id)
+    storage.set_trial_value(trial_id_2, 2.0)
+
+    for key, value in EXAMPLE_USER_ATTRS.items():
+        storage.set_study_user_attr(study_id, key, value)
+
+    summaries = storage.get_all_study_summaries()
+
+    assert len(summaries) == 1
+    assert summaries[0].study_id == study_id
+    assert summaries[0].study_uuid == storage.get_study_uuid_from_id(study_id)
+    assert summaries[0].task == StudyTask.MINIMIZE
+    assert summaries[0].user_attrs == EXAMPLE_USER_ATTRS
+    assert summaries[0].n_trials == 2
+    assert datetime_1 < summaries[0].datetime_start < datetime_2
+    _check_example_trial_static_attributes(summaries[0].best_trial, EXAMPLE_TRIALS[0])
 
 
 @parametrize_storage

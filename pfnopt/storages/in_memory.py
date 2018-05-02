@@ -8,6 +8,8 @@ from typing import List  # NOQA
 from pfnopt import distributions  # NOQA
 from pfnopt import frozen_trial
 from pfnopt.storages import base
+from pfnopt import study_summary  # NOQA
+from pfnopt import study_task
 
 
 IN_MEMORY_STORAGE_STUDY_ID = 0
@@ -20,6 +22,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: () -> None
         self.trials = []  # type: List[frozen_trial.FrozenTrial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
+        self.task = study_task.StudyTask.NOT_SET
         self.study_user_attrs = {}  # type: Dict[str, Any]
 
         self._lock = threading.Lock()
@@ -42,6 +45,15 @@ class InMemoryStorage(base.BaseStorage):
 
         return IN_MEMORY_STORAGE_STUDY_ID  # TODO(akiba)
 
+    def set_study_task(self, study_id, task):
+        # type: (int, study_task.StudyTask) -> None
+
+        with self._lock:
+            if self.task != study_task.StudyTask.NOT_SET and self.task != task:
+                raise ValueError(
+                    'Cannot overwrite study task from {} to {}.'.format(self.task, task))
+            self.task = task
+
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
@@ -60,11 +72,38 @@ class InMemoryStorage(base.BaseStorage):
         self._check_study_id(study_id)
         return IN_MEMORY_STORAGE_STUDY_UUID
 
+    def get_study_task(self, study_id):
+        # type: (int) -> study_task.StudyTask
+
+        return self.task
+
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
 
         with self._lock:
             return copy.deepcopy(self.study_user_attrs)
+
+    def get_all_study_summaries(self):
+        # type: () -> List[study_summary.StudySummary]
+
+        best_trial = None
+        n_complete_trials = len([t for t in self.trials if t.state == frozen_trial.State.COMPLETE])
+        if n_complete_trials > 0:
+            best_trial = self.get_best_trial(IN_MEMORY_STORAGE_STUDY_ID)
+
+        datetime_start = None
+        if len(self.trials) > 0:
+            datetime_start = min([t.datetime_start for t in self.trials])
+
+        return [study_summary.StudySummary(
+            study_id=IN_MEMORY_STORAGE_STUDY_ID,
+            study_uuid=IN_MEMORY_STORAGE_STUDY_UUID,
+            task=self.task,
+            best_trial=best_trial,
+            user_attrs=copy.deepcopy(self.study_user_attrs),
+            n_trials=len(self.trials),
+            datetime_start=datetime_start
+        )]
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int

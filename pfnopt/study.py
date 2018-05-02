@@ -16,6 +16,8 @@ from pfnopt import logging
 from pfnopt import pruners
 from pfnopt import samplers
 from pfnopt import storages
+from pfnopt import study_summary  # NOQA
+from pfnopt import study_task
 from pfnopt import trial as trial_module
 
 ObjectiveFuncType = Callable[[trial_module.Trial], float]
@@ -68,6 +70,12 @@ class Study(object):
         # type: () -> frozen_trial.FrozenTrial
 
         return self.storage.get_best_trial(self.study_id)
+
+    @property
+    def task(self):
+        # type: () -> study_task.StudyTask
+
+        return self.storage.get_study_task(self.study_id)
 
     @property
     def trials(self):
@@ -247,6 +255,13 @@ def minimize(
         # We start a new study with a new in-memory storage.
         study = create_study(sampler=sampler, pruner=pruner)
 
+    # Set up StudyTask as MINIMIZE.
+    if study.task == study_task.StudyTask.MAXIMIZE:
+        raise ValueError(
+            'Cannot run minimize task with study UUID {} because it already has been set up as a '
+            'maximize task.'.format(study.study_uuid))
+    study.storage.set_study_task(study.study_id, study_task.StudyTask.MINIMIZE)
+
     study.run(func, n_trials, timeout, n_jobs)
     return study
 
@@ -254,3 +269,10 @@ def minimize(
 # TODO(akiba): implement me
 def maximize():
     raise NotImplementedError
+
+
+def get_all_study_summaries(storage):
+    # type: (Union[None, str, storages.BaseStorage]) -> List[study_summary.StudySummary]
+
+    storage = storages.get_storage(storage)
+    return storage.get_all_study_summaries()

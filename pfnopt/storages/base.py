@@ -9,7 +9,8 @@ from typing import Tuple  # NOQA
 
 from pfnopt import distributions  # NOQA
 from pfnopt import frozen_trial
-
+from pfnopt import study_summary  # NOQA
+from pfnopt import study_task  # NOQA
 
 SYSTEM_ATTRS_KEY = '__system__'
 
@@ -28,6 +29,12 @@ class BaseStorage(object):
     @abc.abstractmethod
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
+
+        raise NotImplementedError
+
+    @ abc.abstractmethod
+    def set_study_task(self, study_id, task):
+        # type: (int, study_task.StudyTask) -> None
 
         raise NotImplementedError
 
@@ -54,6 +61,12 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
+    @ abc.abstractmethod
+    def get_study_task(self, study_id):
+        # type: (int) -> study_task.StudyTask
+
+        raise NotImplementedError
+
     @abc.abstractmethod
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
@@ -65,6 +78,12 @@ class BaseStorage(object):
 
         user_attrs = self.get_study_user_attrs(study_id)
         return copy.deepcopy(user_attrs[SYSTEM_ATTRS_KEY][key])
+
+    @abc.abstractmethod
+    def get_all_study_summaries(self):
+        # type: () -> List[study_summary.StudySummary]
+
+        raise NotImplementedError
 
     # Basic trial manipulation
 

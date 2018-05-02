@@ -13,6 +13,7 @@ from typing import Optional  # NOQA
 from typing import Type  # NOQA
 
 import pfnopt
+from pfnopt.study_task import StudyTask
 import pfnopt.trial
 
 
@@ -239,6 +240,15 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_minimize_with_incompatible_task(storage_mode):
+    with StorageSupplier(storage_mode) as storage:
+        study = pfnopt.create_study(storage=storage)
+        study.storage.set_study_task(study.study_id, StudyTask.MAXIMIZE)
+        with pytest.raises(ValueError):
+            pfnopt.minimize(Func(), n_trials=1, n_jobs=1, study=study)
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 def test_study_set_and_get_user_attrs(storage_mode):
     # type: (str) -> None
 
@@ -265,6 +275,36 @@ def test_trial_set_and_get_user_attrs(storage_mode):
         pfnopt.minimize(f, n_trials=1, study=study)
         frozen_trial = study.trials[0]
         assert frozen_trial.user_attrs['train_accuracy'] == 1
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_all_study_summaries(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = pfnopt.create_study(storage=storage)
+        pfnopt.minimize(Func(), n_trials=5, study=study)
+
+        summaries = pfnopt.get_all_study_summaries(study.storage)
+        summary = [s for s in summaries if s.study_id == study.study_id][0]
+
+        assert summary.study_uuid == study.study_uuid
+        assert summary.n_trials == 5
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_all_study_summaries_with_no_trials(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = pfnopt.create_study(storage=storage)
+
+        summaries = pfnopt.get_all_study_summaries(study.storage)
+        summary = [s for s in summaries if s.study_id == study.study_id][0]
+
+        assert summary.study_uuid == study.study_uuid
+        assert summary.n_trials == 0
+        assert summary.datetime_start is None
 
 
 def test_study_pickle():

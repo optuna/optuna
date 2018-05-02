@@ -18,6 +18,8 @@ from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
 from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb import models
+from pfnopt import study_summary
+from pfnopt import study_task
 from pfnopt import version
 
 
@@ -44,7 +46,7 @@ class RDBStorage(BaseStorage):
             if study is None:
                 break
 
-        study = models.StudyModel(study_uuid=study_uuid)
+        study = models.StudyModel(study_uuid=study_uuid, task=study_task.StudyTask.NOT_SET)
         session.add(study)
         session.commit()
 
@@ -54,6 +56,22 @@ class RDBStorage(BaseStorage):
         self.logger.info('A new study created with UUID: {}'.format(study.study_uuid))
 
         return study.study_id
+
+    # TODO(sano): Prevent simultaneous setting of different tasks by multiple threads/processes.
+    def set_study_task(self, study_id, task):
+        # type: (int, study_task.StudyTask) -> None
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+
+        if study.task != study_task.StudyTask.NOT_SET and study.task != task:
+            raise ValueError(
+                'Cannot overwrite study task from {} to {}.'.format(study.task, task))
+
+        study.task = task
+
+        session.commit()
 
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
@@ -87,6 +105,15 @@ class RDBStorage(BaseStorage):
 
         return study.study_uuid
 
+    def get_study_task(self, study_id):
+        # type: (int) -> study_task.StudyTask
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+
+        return study.task
+
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
 
@@ -94,6 +121,39 @@ class RDBStorage(BaseStorage):
         attributes = models.StudyUserAttributeModel.where_study_id(study_id, session)
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
+
+    # TODO(sano): Optimize this method to reduce the number of queries.
+    def get_all_study_summaries(self):
+        # type: () -> List[study_summary.StudySummary]
+
+        session = self.scoped_session()
+
+        studies = models.StudyModel.all(session)
+
+        study_sumarries = []
+        for study in studies:
+            trials = self.get_all_trials(study.study_id)
+
+            best_trial = None
+            n_complete_trials = len([t for t in trials if t.state == frozen_trial.State.COMPLETE])
+            if n_complete_trials > 0:
+                best_trial = self.get_best_trial(study.study_id)
+
+            datetime_start = None
+            if len(trials) > 0:
+                datetime_start = min([t.datetime_start for t in trials])
+
+            study_sumarries.append(study_summary.StudySummary(
+                study_id=study.study_id,
+                study_uuid=study.study_uuid,
+                task=self.get_study_task(study.study_id),
+                best_trial=best_trial,
+                user_attrs=self.get_study_user_attrs(study.study_id),
+                n_trials=len(trials),
+                datetime_start=datetime_start
+            ))
+
+        return study_sumarries
 
     def set_trial_param_distribution(self, trial_id, param_name, distribution):
         # type: (int, str, distributions.BaseDistribution) -> None
