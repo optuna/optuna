@@ -1,7 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
 import json
-
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import orm
@@ -12,14 +11,11 @@ from typing import Optional  # NOQA
 import uuid
 
 from pfnopt import distributions
-from pfnopt import frozen_trial
-from pfnopt.frozen_trial import State
 from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
 from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb import models
-from pfnopt import study_summary
-from pfnopt import study_task
+from pfnopt import structs
 from pfnopt import version
 
 
@@ -46,7 +42,7 @@ class RDBStorage(BaseStorage):
             if study is None:
                 break
 
-        study = models.StudyModel(study_uuid=study_uuid, task=study_task.StudyTask.NOT_SET)
+        study = models.StudyModel(study_uuid=study_uuid, task=structs.StudyTask.NOT_SET)
         session.add(study)
         session.commit()
 
@@ -59,13 +55,13 @@ class RDBStorage(BaseStorage):
 
     # TODO(sano): Prevent simultaneous setting of different tasks by multiple threads/processes.
     def set_study_task(self, study_id, task):
-        # type: (int, study_task.StudyTask) -> None
+        # type: (int, structs.StudyTask) -> None
 
         session = self.scoped_session()
 
         study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
 
-        if study.task != study_task.StudyTask.NOT_SET and study.task != task:
+        if study.task != structs.StudyTask.NOT_SET and study.task != task:
             raise ValueError(
                 'Cannot overwrite study task from {} to {}.'.format(study.task, task))
 
@@ -106,7 +102,7 @@ class RDBStorage(BaseStorage):
         return study.study_uuid
 
     def get_study_task(self, study_id):
-        # type: (int) -> study_task.StudyTask
+        # type: (int) -> structs.StudyTask
 
         session = self.scoped_session()
 
@@ -124,7 +120,7 @@ class RDBStorage(BaseStorage):
 
     # TODO(sano): Optimize this method to reduce the number of queries.
     def get_all_study_summaries(self):
-        # type: () -> List[study_summary.StudySummary]
+        # type: () -> List[structs.StudySummary]
 
         session = self.scoped_session()
 
@@ -135,7 +131,7 @@ class RDBStorage(BaseStorage):
             trials = self.get_all_trials(study.study_id)
 
             best_trial = None
-            n_complete_trials = len([t for t in trials if t.state == frozen_trial.State.COMPLETE])
+            n_complete_trials = len([t for t in trials if t.state == structs.TrialState.COMPLETE])
             if n_complete_trials > 0:
                 best_trial = self.get_best_trial(study.study_id)
 
@@ -143,7 +139,7 @@ class RDBStorage(BaseStorage):
             if len(trials) > 0:
                 datetime_start = min([t.datetime_start for t in trials])
 
-            study_sumarries.append(study_summary.StudySummary(
+            study_sumarries.append(structs.StudySummary(
                 study_id=study.study_id,
                 study_uuid=study.study_uuid,
                 task=self.get_study_task(study.study_id),
@@ -176,7 +172,7 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel(
             study_id=study_id,
-            state=State.RUNNING,
+            state=structs.TrialState.RUNNING,
             user_attributes_json=json.dumps({SYSTEM_ATTRS_KEY: {}})
         )
 
@@ -186,7 +182,7 @@ class RDBStorage(BaseStorage):
         return trial.trial_id
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, frozen_trial.State) -> None
+        # type: (int, structs.TrialState) -> None
 
         session = self.scoped_session()
 
@@ -264,7 +260,7 @@ class RDBStorage(BaseStorage):
         session.commit()
 
     def get_trial(self, trial_id):
-        # type: (int) -> frozen_trial.FrozenTrial
+        # type: (int) -> structs.FrozenTrial
 
         session = self.scoped_session()
 
@@ -275,7 +271,7 @@ class RDBStorage(BaseStorage):
         return self._merge_trials_orm([trial], params, values)[0]
 
     def get_all_trials(self, study_id):
-        # type: (int) -> List[frozen_trial.FrozenTrial]
+        # type: (int) -> List[structs.FrozenTrial]
 
         session = self.scoped_session()
 
@@ -292,7 +288,7 @@ class RDBStorage(BaseStorage):
             trial_params,   # type: List[models.TrialParamModel]
             trial_intermediate_values  # type: List[models.TrialValueModel]
     ):
-        # type: (...) -> List[frozen_trial.FrozenTrial]
+        # type: (...) -> List[structs.FrozenTrial]
 
         id_to_trial = {}
         for trial in trials:
@@ -321,7 +317,7 @@ class RDBStorage(BaseStorage):
             for value in id_to_values[trial_id]:
                 intermediate_values[value.step] = value.value
 
-            result.append(frozen_trial.FrozenTrial(
+            result.append(structs.FrozenTrial(
                 trial_id=trial_id,
                 state=trial.state,
                 params=params,

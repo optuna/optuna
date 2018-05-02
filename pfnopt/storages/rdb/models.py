@@ -15,8 +15,8 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 
 from pfnopt import distributions
-from pfnopt.frozen_trial import State
-from pfnopt.study_task import StudyTask
+from pfnopt.structs import StudyTask
+from pfnopt.structs import TrialState
 
 SCHEMA_VERSION = 4
 
@@ -88,7 +88,7 @@ class TrialModel(BaseModel):
     __tablename__ = 'trials'
     trial_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
-    state = Column(Enum(State), nullable=False)
+    state = Column(Enum(TrialState), nullable=False)
     value = Column(Float)
     user_attributes_json = Column(String(255))
     datetime_start = Column(DateTime, default=datetime.now)

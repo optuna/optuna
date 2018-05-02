@@ -16,8 +16,8 @@ from pfnopt.storages.rdb.models import StudyModel
 from pfnopt.storages.rdb.models import TrialParamDistributionModel
 from pfnopt.storages.rdb.models import VersionInfoModel
 from pfnopt.storages import RDBStorage
-from pfnopt.study_summary import StudySummary
-from pfnopt.study_task import StudyTask
+from pfnopt.structs import StudySummary
+from pfnopt.structs import StudyTask
 from pfnopt import version
 
 
