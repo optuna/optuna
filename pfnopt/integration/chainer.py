@@ -52,6 +52,7 @@ def create_chainer_pruning_trigger(
 
             current_step = getattr(trainer.updater, self.test_trigger.unit)
             current_score = float(observation[self.key])
-            return self.trial.prune(current_step, current_score)
+            self.trial.report(current_score, step=current_step)
+            return self.trial.should_prune(current_step)
 
     return _ChainerTrigger(trial, observation_key, stop_trigger, test_trigger)
