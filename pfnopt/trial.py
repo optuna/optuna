@@ -6,6 +6,7 @@ from pfnopt import frozen_trial
 if TYPE_CHECKING:
     from pfnopt.study import Study  # NOQA
     from typing import Any  # NOQA
+    from typing import Dict  # NOQA
     from typing import Sequence  # NOQA
     from typing import TypeVar  # NOQA
 
@@ -71,3 +72,15 @@ class Trial(object):
         self.storage.set_trial_param(self.trial_id, name, param_value_in_internal_repr)
         param_value = distribution.to_external_repr(param_value_in_internal_repr)
         return param_value
+
+    @property
+    def params(self):
+        # type: () -> Dict[str, Any]
+
+        return self.storage.get_trial_params(self.trial_id)
+
+    @property
+    def user_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self.storage.get_trial_user_attrs(self.trial_id)
