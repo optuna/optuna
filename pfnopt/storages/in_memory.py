@@ -87,7 +87,8 @@ class InMemoryStorage(base.BaseStorage):
         # type: () -> List[study_summary.StudySummary]
 
         best_trial = None
-        if len([t for t in self.trials if t.state == frozen_trial.State.COMPLETE]) > 0:
+        n_complete_trials = len([t for t in self.trials if t.state == frozen_trial.State.COMPLETE])
+        if n_complete_trials > 0:
             best_trial = self.get_best_trial(IN_MEMORY_STORAGE_STUDY_ID)
 
         datetime_start = None

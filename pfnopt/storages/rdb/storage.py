@@ -135,7 +135,8 @@ class RDBStorage(BaseStorage):
             trials = self.get_all_trials(study.study_id)
 
             best_trial = None
-            if len([t for t in trials if t.state == frozen_trial.State.COMPLETE]) > 0:
+            n_complete_trials = len([t for t in trials if t.state == frozen_trial.State.COMPLETE])
+            if n_complete_trials > 0:
                 best_trial = self.get_best_trial(study.study_id)
 
             datetime_start = None
