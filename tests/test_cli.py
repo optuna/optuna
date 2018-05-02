@@ -13,7 +13,7 @@ def test_create_study_command():
 
     with tempfile.NamedTemporaryFile() as tf:
         db_url = 'sqlite:///{}'.format(tf.name)
-        command = ['pfnopt', 'create-study', '--url', db_url]
+        command = ['pfnopt', 'create-study', '--storage', db_url]
 
         subprocess.check_call(command)
 
@@ -35,12 +35,12 @@ def test_study_set_user_attr():
         db_url = 'sqlite:///{}'.format(tf.name)
 
         # make study
-        command = ['pfnopt', 'create-study', '--url', db_url]
+        command = ['pfnopt', 'create-study', '--storage', db_url]
         study_uuid = str(subprocess.check_output(command).decode().strip())
 
         example_attrs = {'architecture': 'ResNet', 'baselen_score': '0.002'}
         base_command = [
-            'pfnopt', 'study', 'set-user-attr', '--url', db_url, '--study-uuid', study_uuid]
+            'pfnopt', 'study', 'set-user-attr', '--storage', db_url, '--study', study_uuid]
         for key, value in example_attrs.items():
             subprocess.check_call(base_command + ['--key', key, '--value', value])
 
@@ -60,11 +60,11 @@ def test_dashboard_command():
             tempfile.NamedTemporaryFile('r') as tf_report:
 
             db_url = 'sqlite:///{}'.format(tf_db.name)
-            command_mkstudy = ['pfnopt', 'create-study', '--url', db_url]
+            command_mkstudy = ['pfnopt', 'create-study', '--storage', db_url]
             study_uuid = subprocess.check_output(command_mkstudy).strip()
 
             command_report = [
-                'pfnopt', 'dashboard', '--url', db_url, '--study-uuid', study_uuid,
+                'pfnopt', 'dashboard', '--storage', db_url, '--study', study_uuid,
                 '--out', tf_report.name]
             subprocess.check_call(command_report)
 
@@ -93,12 +93,12 @@ def test_minimize_command_rdb():
 
     with tempfile.NamedTemporaryFile() as tf:
         db_url = 'sqlite:///{}'.format(tf.name)
-        subprocess.check_call(['pfnopt', 'minimize', '--url', db_url, '--n-trials',
+        subprocess.check_call(['pfnopt', 'minimize', '--storage', db_url, '--n-trials',
                                '10', '--create-study', __file__, 'objective_func'])
 
         study_uuid = str(subprocess.check_output(
-            ['pfnopt', 'create-study', '--url', db_url]).decode().strip())
-        subprocess.check_call(['pfnopt', 'minimize', '--url', db_url, '--study-uuid', study_uuid,
+            ['pfnopt', 'create-study', '--storage', db_url]).decode().strip())
+        subprocess.check_call(['pfnopt', 'minimize', '--storage', db_url, '--study', study_uuid,
                                '--n-trials', '10', __file__, 'objective_func'])
 
         study = pfnopt.Study(storage=db_url, study_uuid=study_uuid)
@@ -112,18 +112,18 @@ def test_minimize_command_inconsistent_args():
     with tempfile.NamedTemporaryFile() as tf:
         db_url = 'sqlite:///{}'.format(tf.name)
 
-        # Feeding neither --create-study nor --study-uuid
+        # Feeding neither --create-study nor --study
         with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(['pfnopt', 'minimize', '--url', db_url, '--n-trials', '10',
+            subprocess.check_call(['pfnopt', 'minimize', '--storage', db_url, '--n-trials', '10',
                                    __file__, 'objective_func'])
 
-        # Feeding both --create-study and --study-uuid
+        # Feeding both --create-study and --study
         study_uuid = str(subprocess.check_output(
-            ['pfnopt', 'create-study', '--url', db_url]).decode().strip())
+            ['pfnopt', 'create-study', '--storage', db_url]).decode().strip())
         with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(['pfnopt', 'minimize', '--url', db_url, '--n-trials', '10',
+            subprocess.check_call(['pfnopt', 'minimize', '--storage', db_url, '--n-trials', '10',
                                    __file__, 'objective_func',
-                                   '--create-study', '--study-uuid', study_uuid])
+                                   '--create-study', '--study', study_uuid])
 
 
 def test_empty_argv():

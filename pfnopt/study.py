@@ -194,46 +194,58 @@ def create_study(
     return Study(study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner)
 
 
+def get_study(
+        study,  # type: Union[str, Study]
+        storage=None,  # type: Union[None, str, storages.BaseStorage]
+        sampler=None,  # type: samplers.BaseSampler
+        pruner=None,  # type: pruners.BasePruner
+):
+    # type: (...) -> Study
+
+    if isinstance(study, Study):
+        if storage is not None:
+            raise ValueError(
+                'Do not give both study and storage objects at the same time. '
+                'When a study is given, its associated storage will be used.')
+        if sampler is not None:
+            raise ValueError(
+                'Do not give both study and sampler objects at the same time. '
+                'When a study is given, its associated sampler will be used.')
+        if pruner is not None:
+            raise ValueError(
+                'Do not give both study and pruner objects at the same time. '
+                'When a study is given, its associated pruner will be used.')
+
+        return study
+    else:
+        # `study` is expected to be a string and interpreted as a study UUID
+        return Study(study_uuid=study, storage=storage, sampler=sampler, pruner=pruner)
+
+
 def minimize(
         func,  # type: ObjectiveFuncType
         n_trials=None,  # type: Optional[int]
-        timeout_seconds=None,  # type: Optional[float]
+        timeout=None,  # type: Optional[float]
         n_jobs=1,  # type: int
         storage=None,  # type: Union[None, str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
-        study_uuid=None,  # type: str
-        study=None,  # type: Study
+        study=None,  # type: Union[None, str, Study]
 ):
     # type: (...) -> Study
 
     if study is not None:
-        # We continue the given study.
+        study = get_study(study, storage, sampler, pruner)
+    else:
         if storage is not None:
             raise ValueError(
-                'Do not specify both study and storage at the same time. '
-                'When a study is given, its associated storage will be used.')
-        if sampler is not None:
-            raise ValueError(
-                'Do not specify both study and sampler at the same time. '
-                'When a study is given, its associated sampler will be used.')
-        if pruner is not None:
-            raise ValueError(
-                'Do not specify both study and pruner at the same time. '
-                'When a study is given, its associated pruner will be used.')
-    elif storage is not None:
-        # We connect to an existing study in the storage.
-        if study_uuid is None:
-            raise ValueError(
-                'When specifying storage, please also specify study_uuid to continue a study. '
+                'When specifying storage, please also specify a study UUID to continue a study. '
                 'If you want to start a new study, please make a new one using create_study.')
-        storage = storages.get_storage(storage)
-        study = Study(study_uuid, storage, sampler, pruner)
-    else:
+
         # We start a new study with a new in-memory storage.
         study = create_study(sampler=sampler, pruner=pruner)
 
-    study.run(func, n_trials, timeout_seconds, n_jobs)
+    study.run(func, n_trials, timeout, n_jobs)
     return study
 
 

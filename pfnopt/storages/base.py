@@ -141,12 +141,6 @@ class BaseStorage(object):
 
     # Basic trial access
 
-    def get_trial_system_attr(self, trial_id, key):
-        # type: (int, str) -> Any
-
-        user_attrs = self.get_trial(trial_id).user_attrs
-        return copy.deepcopy(user_attrs[SYSTEM_ATTRS_KEY][key])
-
     @abc.abstractmethod
     def get_trial(self, trial_id):
         # type: (int) -> frozen_trial.FrozenTrial
@@ -158,8 +152,6 @@ class BaseStorage(object):
         # type: (int) -> List[frozen_trial.FrozenTrial]
 
         raise NotImplementedError
-
-    # Trial access utility
 
     def get_best_trial(self, study_id):
         # type: (int) -> frozen_trial.FrozenTrial
@@ -176,6 +168,17 @@ class BaseStorage(object):
         # type: (int) -> Dict[str, Any]
 
         return self.get_trial(trial_id).params
+
+    def get_trial_user_attrs(self, trial_id):
+        # type: (int) -> Dict[str, Any]
+
+        return self.get_trial(trial_id).user_attrs
+
+    def get_trial_system_attr(self, trial_id, key):
+        # type: (int, str) -> Any
+
+        user_attrs = self.get_trial(trial_id).user_attrs
+        return copy.deepcopy(user_attrs[SYSTEM_ATTRS_KEY][key])
 
     # Methods for the TPE sampler
 
