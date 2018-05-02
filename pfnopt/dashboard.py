@@ -21,7 +21,9 @@ from typing import Dict  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 
-import pfnopt
+import pfnopt.logging
+import pfnopt.structs
+import pfnopt.study
 
 
 _mode = None  # type: str
