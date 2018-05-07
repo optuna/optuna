@@ -32,21 +32,37 @@ class StudyModel(BaseModel):
     task = Column(Enum(StudyTask), nullable=False)
 
     @classmethod
-    def find_by_id(cls, study_id, session, allow_none=True):
-        # type: (int, orm.Session, bool) -> Optional[StudyModel]
+    def find_by_id(cls, study_id, session):
+        # type: (int, orm.Session) -> Optional[StudyModel]
 
         study = session.query(cls).filter(cls.study_id == study_id).one_or_none()
-        if study is None and not allow_none:
+
+        return study
+
+    @classmethod
+    def find_or_raise_by_id(cls, study_id, session):
+        # type: (int, orm.Session) -> StudyModel
+
+        study = cls.find_by_id(study_id, session)
+        if study is None:
             raise ValueError(NOT_FOUND_MSG)
 
         return study
 
     @classmethod
-    def find_by_uuid(cls, study_uuid, session, allow_none=True):
-        # type: (str, orm.Session, bool) -> Optional[StudyModel]
+    def find_by_uuid(cls, study_uuid, session):
+        # type: (str, orm.Session) -> Optional[StudyModel]
 
         study = session.query(cls).filter(cls.study_uuid == study_uuid).one_or_none()
-        if study is None and not allow_none:
+
+        return study
+
+    @classmethod
+    def find_or_raise_by_uuid(cls, study_uuid, session):
+        # type: (str, orm.Session) -> StudyModel
+
+        study = cls.find_by_uuid(study_uuid, session)
+        if study is None:
             raise ValueError(NOT_FOUND_MSG)
 
         return study
@@ -97,11 +113,19 @@ class TrialModel(BaseModel):
     study = orm.relationship(StudyModel)
 
     @classmethod
-    def find_by_id(cls, trial_id, session, allow_none=True):
-        # type: (int, orm.Session, bool) -> Optional[TrialModel]
+    def find_by_id(cls, trial_id, session):
+        # type: (int, orm.Session) -> Optional[TrialModel]
 
         trial = session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
-        if trial is None and not allow_none:
+
+        return trial
+
+    @classmethod
+    def find_or_raise_by_id(cls, trial_id, session):
+        # type: (int, orm.Session) -> TrialModel
+
+        trial = cls.find_by_id(trial_id, session)
+        if trial is None:
             raise ValueError(NOT_FOUND_MSG)
 
         return trial
@@ -134,8 +158,7 @@ class TrialParamDistributionModel(BaseModel):
     def _check_compatibility_with_previous_trial_param_distributions(self, session):
         # type: (orm.Session) -> None
 
-        trial = TrialModel.find_by_id(self.trial_id, session, allow_none=False)
-        assert trial is not None
+        trial = TrialModel.find_or_raise_by_id(self.trial_id, session)
 
         previous_record = session.query(TrialParamDistributionModel).join(TrialModel). \
             filter(TrialModel.study_id == trial.study_id). \
@@ -146,14 +169,22 @@ class TrialParamDistributionModel(BaseModel):
                 distributions.json_to_distribution(self.distribution_json))
 
     @classmethod
-    def find_by_trial_and_param_name(cls, trial, param_name, session, allow_none=True):
-        # type: (TrialModel, str, orm.Session, bool) -> Optional[TrialParamDistributionModel]
+    def find_by_trial_and_param_name(cls, trial, param_name, session):
+        # type: (TrialModel, str, orm.Session) -> Optional[TrialParamDistributionModel]
 
         param_distribution = session.query(cls). \
             filter(cls.trial_id == trial.trial_id). \
             filter(cls.param_name == param_name).one_or_none()
 
-        if param_distribution is None and not allow_none:
+        return param_distribution
+
+    @classmethod
+    def find_or_raise_by_trial_and_param_name(cls, trial, param_name, session):
+        # type: (TrialModel, str, orm.Session) -> TrialParamDistributionModel
+
+        param_distribution = cls.find_by_trial_and_param_name(trial, param_name, session)
+
+        if param_distribution is None:
             raise ValueError(NOT_FOUND_MSG)
 
         return param_distribution
