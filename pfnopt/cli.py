@@ -5,14 +5,20 @@ from argparse import Namespace  # NOQA
 from cliff.app import App
 from cliff.command import Command
 from cliff.commandmanager import CommandManager
+from cliff.lister import Lister
 import imp
 import logging
 import sys
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
+from typing import Tuple  # NOQA
 
 import pfnopt
+
+
+_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+_STUDY_LIST_HEADER = ('UUID', 'TASK', 'N_TRIALS', 'DATETIME_START')
 
 
 class BaseCommand(Command):
@@ -60,6 +66,29 @@ class StudySetUserAttribute(BaseCommand):
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
         self.logger.info('Attribute successfully written.')
+
+
+class StudyList(Lister):
+
+    def get_parser(self, prog_name):
+        # type: (str) -> ArgumentParser
+
+        parser = super(StudyList, self).get_parser(prog_name)
+        parser.add_argument('--storage', required=True)
+        return parser
+
+    def take_action(self, parsed_args):
+        # type: (Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]
+
+        summaries = pfnopt.get_all_study_summaries(storage=parsed_args.storage)
+
+        rows = []
+        for s in summaries:
+            start = s.datetime_start if s.datetime_start is not None else None
+            row = (s.study_uuid, s.task.name, s.n_trials, start)
+            rows.append(row)
+
+        return _STUDY_LIST_HEADER, tuple(rows)
 
 
 class Dashboard(BaseCommand):
@@ -139,6 +168,7 @@ class Minimize(BaseCommand):
 _COMMANDS = {
     'create-study': CreateStudy,
     'study set-user-attr': StudySetUserAttribute,
+    'study list': StudyList,
     'dashboard': Dashboard,
     'minimize': Minimize,
 }
