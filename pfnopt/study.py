@@ -244,6 +244,7 @@ def minimize(
         pruner=None,  # type: pruners.BasePruner
         study=None,  # type: Union[None, str, Study]
 ):
+    # type: (...) -> Study
     """Minimize an objective function.
 
     Args:
@@ -271,8 +272,6 @@ def minimize(
         A study object.
 
     """
-
-    # type: (...) -> Study
 
     if study is not None:
         study = get_study(study, storage, sampler, pruner)
