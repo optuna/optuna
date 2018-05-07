@@ -2,8 +2,10 @@ import pytest
 import re
 import subprocess
 import tempfile
+from typing import List  # NOQA
 
 import pfnopt
+from pfnopt.cli import Studies
 from pfnopt.storages import RDBStorage
 from pfnopt.trial import Trial  # NOQA
 
@@ -28,7 +30,7 @@ def test_create_study_command():
         assert study_id == 2
 
 
-def test_study_set_user_attr():
+def test_study_set_user_attr_command():
     # type: () -> None
 
     with tempfile.NamedTemporaryFile() as tf:
@@ -50,6 +52,44 @@ def test_study_set_user_attr():
         study_user_attrs = storage.get_study_user_attrs(study_id)
         assert len(study_user_attrs) == 3  # Including the system attribute key.
         assert all([study_user_attrs[k] == v for k, v in example_attrs.items()])
+
+
+def test_studies_command():
+    # type: () -> None
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = 'sqlite:///{}'.format(tf.name)
+        storage = RDBStorage(db_url)
+
+        # First study.
+        study_uuid_1 = storage.get_study_uuid_from_id(storage.create_new_study_id())
+
+        # Second study.
+        study_uuid_2 = storage.get_study_uuid_from_id(storage.create_new_study_id())
+        pfnopt.minimize(objective_func, n_trials=10, storage=storage, study=study_uuid_2)
+
+        # Run command.
+        command = ['pfnopt', 'studies', '--storage', db_url]
+        output = str(subprocess.check_output(command).decode().strip())
+        rows = output.split('\n')
+
+        def get_row_elements(row_index):
+            # type: (int) -> List[str]
+
+            return [r.strip() for r in rows[row_index].split('|')[1: -1]]
+
+        assert len(rows) == 6
+        assert tuple(get_row_elements(1)) == Studies._study_list_header
+
+        # Check study_uuid and n_trials for the first study.
+        elms = get_row_elements(3)
+        assert elms[0] == study_uuid_1
+        assert elms[2] == '0'
+
+        # Check study_uuid and n_trials for the second study.
+        elms = get_row_elements(4)
+        assert elms[0] == study_uuid_2
+        assert elms[2] == '10'
 
 
 def test_dashboard_command():
