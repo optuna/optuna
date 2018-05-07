@@ -244,6 +244,34 @@ def minimize(
         pruner=None,  # type: pruners.BasePruner
         study=None,  # type: Union[None, str, Study]
 ):
+    """Minimize an objective function.
+
+    Args:
+        func:
+            A callable that implements objective function.
+        n_trials:
+            The number of trials. If this argument is set to None, as many trials run as possible.
+        timeout:
+            Stop study after the given number of second(s). If this argument is set to None, as
+            many trials run as possible.
+        n_jobs:
+            The number of parallel jobs. If this argument is set to -1, the number is set to CPU
+            counts.
+        storage:
+            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
+            instantiated.
+        sampler:
+            Sampler object that implements background algorithm for value suggestion.
+        pruner:
+            Pruner object that implements early stopping logic.
+        study:
+            Study object or its UUID. If this argument is set to None, a new study is created.
+
+    Returns:
+        A study object.
+
+    """
+
     # type: (...) -> Study
 
     if study is not None:
