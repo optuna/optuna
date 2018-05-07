@@ -63,6 +63,40 @@ parametrize_storage = pytest.mark.parametrize(
 
 
 @parametrize_storage
+def test_create_new_study_id(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+    study_id = storage.create_new_study_id()
+
+    summaries = storage.get_all_study_summaries()
+    assert len(summaries) == 1
+    assert summaries[0].study_id == study_id
+
+
+@parametrize_storage
+def test_get_study_id_from_uuid_and_get_study_uuid_from_id(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+
+    # Test not existing study.
+    with pytest.raises(ValueError):
+        storage.get_study_id_from_uuid('dummy-uuid')
+
+    with pytest.raises(ValueError):
+        storage.get_study_uuid_from_id(-1)
+
+    # Test existing study.
+    study_id = storage.create_new_study_id()
+    summary = storage.get_all_study_summaries()[0]
+
+    assert study_id == summary.study_id
+    assert storage.get_study_uuid_from_id(summary.study_id) == summary.study_uuid
+    assert storage.get_study_id_from_uuid(summary.study_uuid) == summary.study_id
+
+
+@parametrize_storage
 def test_set_and_get_study_task(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
