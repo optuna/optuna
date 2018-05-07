@@ -17,10 +17,6 @@ from typing import Tuple  # NOQA
 import pfnopt
 
 
-_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-_STUDY_LIST_HEADER = ('UUID', 'TASK', 'N_TRIALS', 'DATETIME_START')
-
-
 class BaseCommand(Command):
 
     def __init__(self, *args, **kwargs):
@@ -70,6 +66,9 @@ class StudySetUserAttribute(BaseCommand):
 
 class Studies(Lister):
 
+    _datetime_format = '%Y-%m-%d %H:%M:%S'
+    _study_list_header = ('UUID', 'TASK', 'N_TRIALS', 'DATETIME_START')
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -84,11 +83,12 @@ class Studies(Lister):
 
         rows = []
         for s in summaries:
-            start = s.datetime_start if s.datetime_start is not None else None
+            start = s.datetime_start.strftime(self._datetime_format) \
+                if s.datetime_start is not None else None
             row = (s.study_uuid, s.task.name, s.n_trials, start)
             rows.append(row)
 
-        return _STUDY_LIST_HEADER, tuple(rows)
+        return self._study_list_header, tuple(rows)
 
 
 class Dashboard(BaseCommand):

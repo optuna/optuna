@@ -5,7 +5,7 @@ import tempfile
 from typing import List  # NOQA
 
 import pfnopt
-from pfnopt.cli import _STUDY_LIST_HEADER
+from pfnopt.cli import Studies
 from pfnopt.storages import RDBStorage
 from pfnopt.trial import Trial  # NOQA
 
@@ -79,7 +79,7 @@ def test_studies_command():
             return [r.strip() for r in rows[row_index].split('|')[1: -1]]
 
         assert len(rows) == 6
-        assert tuple(get_row_elements(1)) == _STUDY_LIST_HEADER
+        assert tuple(get_row_elements(1)) == Studies._study_list_header
 
         # Check study_uuid and n_trials for the first study.
         elms = get_row_elements(3)
