@@ -158,7 +158,7 @@ class BaseStorage(object):
         all_trials = [t for t in all_trials if t.state is structs.TrialState.COMPLETE]
 
         if len(all_trials) == 0:
-            raise ValueError('No trials are completed yet')
+            raise ValueError('No trials are completed yet.')
 
         return min(all_trials, key=lambda t: t.value)
 
@@ -189,7 +189,9 @@ class BaseStorage(object):
         return [
             (t.params_in_internal_repr[param_name], t.value)
             for t in all_trials
-            if param_name in t.params and t.state is structs.TrialState.COMPLETE
+            if (t.value is not None and
+                param_name in t.params and
+                t.state is structs.TrialState.COMPLETE)
             # TODO(Akiba): We also want to use pruned results
             ]
 

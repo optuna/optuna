@@ -61,7 +61,11 @@ class Study(object):
     def best_value(self):
         # type: () -> float
 
-        return self.best_trial.value
+        best_value = self.best_trial.value
+        if best_value is None:
+            raise ValueError('No trials are completed yet.')
+
+        return best_value
 
     @property
     def best_trial(self):

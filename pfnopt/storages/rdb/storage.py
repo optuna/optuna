@@ -59,7 +59,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         if study.task != structs.StudyTask.NOT_SET and study.task != task:
             raise ValueError(
@@ -74,7 +74,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
         attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
         if attribute is None:
             attribute = models.StudyUserAttributeModel(
@@ -89,7 +89,8 @@ class RDBStorage(BaseStorage):
         # type: (str) -> int
 
         session = self.scoped_session()
-        study = models.StudyModel.find_by_uuid(study_uuid, session, allow_none=False)
+
+        study = models.StudyModel.find_or_raise_by_uuid(study_uuid, session)
 
         return study.study_id
 
@@ -97,7 +98,8 @@ class RDBStorage(BaseStorage):
         # type: (int) -> str
 
         session = self.scoped_session()
-        study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         return study.study_uuid
 
@@ -106,7 +108,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         return study.task
 
@@ -114,6 +116,7 @@ class RDBStorage(BaseStorage):
         # type: (int) -> Dict[str, Any]
 
         session = self.scoped_session()
+
         attributes = models.StudyUserAttributeModel.where_study_id(study_id, session)
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
@@ -186,7 +189,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         trial.state = state
         if state.is_finished():
             trial.datetime_complete = datetime.now()
@@ -198,9 +201,11 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
-        param_distribution = models.TrialParamDistributionModel.find_by_trial_and_param_name(
-            trial, param_name, session, allow_none=False)
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        param_distribution = \
+            models.TrialParamDistributionModel.find_or_raise_by_trial_and_param_name(
+                trial, param_name, session)
+
         param = models.TrialParamModel.find_by_trial_and_param_name(trial, param_name, session)
         if param is not None:
             assert param.param_value == param_value
@@ -220,7 +225,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         trial.value = value
 
         session.commit()
@@ -230,8 +235,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
-
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         trial_value = models.TrialValueModel.find_by_trial_and_step(trial, step, session)
         if trial_value is not None:
             assert trial_value.value == intermediate_value
@@ -251,8 +255,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
-
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         loaded_json = json.loads(trial.user_attributes_json)
         loaded_json[key] = value
         trial.user_attributes_json = json.dumps(loaded_json)
@@ -264,7 +267,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         params = models.TrialParamModel.where_trial(trial, session)
         values = models.TrialValueModel.where_trial(trial, session)
 
@@ -275,7 +278,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
         trials = models.TrialModel.where_study(study, session)
         params = models.TrialParamModel.where_study(study, session)
         values = models.TrialValueModel.where_study(study, session)

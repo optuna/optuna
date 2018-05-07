@@ -26,7 +26,7 @@ import pfnopt.structs
 import pfnopt.study
 
 
-_mode = None  # type: str
+_mode = None  # type: Optional[str]
 _study = None  # type: Optional[pfnopt.study.Study]
 
 
@@ -159,9 +159,13 @@ if _available:
                 'value': [trial.value for trial in trials],
                 'params': [str(trial.params) for trial in trials],
                 'datetime_start':
-                    [trial.datetime_start.strftime(_DATETIME_FORMAT) for trial in trials],
+                    [trial.datetime_start.strftime(_DATETIME_FORMAT)
+                     if trial.datetime_start is not None else None
+                     for trial in trials],
                 'datetime_complete':
-                    [trial.datetime_complete.strftime(_DATETIME_FORMAT) for trial in trials],
+                    [trial.datetime_complete.strftime(_DATETIME_FORMAT)
+                     if trial.datetime_complete is not None else None
+                     for trial in trials],
             }
 
     class _DashboardApp(object):
@@ -177,7 +181,8 @@ if _available:
             # type: (bokeh.document.Document) -> None
 
             self.doc = doc
-            self.current_trials = self.study.trials
+            self.current_trials = \
+                self.study.trials  # type: Optional[List[pfnopt.structs.FrozenTrial]]
             self.new_trials = None  # type: Optional[List[pfnopt.structs.FrozenTrial]]
             self.complete_trials_widget = _CompleteTrialsWidget(self.current_trials)
             self.all_trials_widget = _AllTrialsWidget(self.current_trials)
@@ -219,6 +224,8 @@ if _available:
                 self.current_trials = self.new_trials
                 self.new_trials = None
 
+            assert current_trials is not None
+            assert new_trials is not None
             self.complete_trials_widget.update(new_trials)
             self.all_trials_widget.update(current_trials, new_trials)
 
@@ -295,6 +302,7 @@ def _run():
     study = pfnopt.dashboard._study
     mode = pfnopt.dashboard._mode
 
+    assert study is not None
     app = _DashboardApp(study, launch_update_thread=(mode == 'serve'))
     doc = bokeh.plotting.curdoc()
     app(doc)

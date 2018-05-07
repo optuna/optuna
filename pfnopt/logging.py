@@ -11,10 +11,11 @@ from logging import INFO  # NOQA
 from logging import WARN  # NOQA
 from logging import WARNING  # NOQA
 import threading
+from typing import Optional  # NOQA
 
 
 _lock = threading.Lock()
-_default_handler = None  # type: logging.Handler
+_default_handler = None  # type: Optional[logging.Handler]
 
 
 def create_default_formatter():
@@ -100,6 +101,8 @@ def disable_default_handler():
     # type: () -> None
 
     _configure_library_root_logger()
+
+    assert _default_handler is not None
     _get_library_root_logger().removeHandler(_default_handler)
 
 
@@ -107,4 +110,6 @@ def enable_default_handler():
     # type: () -> None
 
     _configure_library_root_logger()
+
+    assert _default_handler is not None
     _get_library_root_logger().addHandler(_default_handler)

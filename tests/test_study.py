@@ -25,7 +25,7 @@ STORAGE_MODES = [
 # particularly on CircleCI.
 SQLITE3_TIMEOUT = 300
 
-common_tempfile = None  # type: IO[Any]
+common_tempfile = None  # type: Optional[IO[Any]]
 
 
 def setup_module():
@@ -38,6 +38,7 @@ def setup_module():
 def teardown_module():
     # type: () -> None
 
+    assert common_tempfile is not None
     common_tempfile.close()
 
 
@@ -47,7 +48,7 @@ class StorageSupplier(object):
         # type: (str) -> None
 
         self.storage_specifier = storage_specifier
-        self.tempfile = None  # type: IO[Any]
+        self.tempfile = None  # type: Optional[IO[Any]]
 
     def __enter__(self):
         # type: () -> Optional[pfnopt.storages.BaseStorage]
@@ -59,6 +60,7 @@ class StorageSupplier(object):
             url = 'sqlite:///{}'.format(self.tempfile.name)
             return pfnopt.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
         elif self.storage_specifier == 'common':
+            assert common_tempfile is not None
             url = 'sqlite:///{}'.format(common_tempfile.name)
             return pfnopt.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
         else:
@@ -114,7 +116,7 @@ def check_params(params):
 
 
 def check_value(value):
-    # type: (float) -> None
+    # type: (Optional[float]) -> None
 
     assert isinstance(value, float)
     assert -1.0 <= value <= 12.0 ** 2 + 5.0 ** 2 + 1.0

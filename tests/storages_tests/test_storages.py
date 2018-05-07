@@ -3,6 +3,7 @@ import pytest
 from typing import Any  # NOQA
 from typing import Callable  # NOQA
 from typing import Dict  # NOQA
+from typing import Optional  # NOQA
 
 from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
@@ -22,7 +23,7 @@ EXAMPLE_SYSTEM_ATTRS = {
     'json_serializable': {'baseline_score': 0.001, 'tags': ['image', 'classification']},
 }
 
-EXAMPLE_USER_ATTRS = dict(EXAMPLE_SYSTEM_ATTRS, **{SYSTEM_ATTRS_KEY: {}})
+EXAMPLE_USER_ATTRS = dict(EXAMPLE_SYSTEM_ATTRS, **{SYSTEM_ATTRS_KEY: {}})  # type: Dict[str, Any]
 
 EXAMPLE_DISTRIBUTIONS = {
     'x': UniformDistribution(low=1., high=2.),
@@ -368,6 +369,7 @@ def test_get_all_study_summaries(storage_init_func):
     assert summaries[0].task == StudyTask.MINIMIZE
     assert summaries[0].user_attrs == EXAMPLE_USER_ATTRS
     assert summaries[0].n_trials == 2
+    assert summaries[0].datetime_start is not None
     assert datetime_1 < summaries[0].datetime_start < datetime_2
     _check_example_trial_static_attributes(summaries[0].best_trial, EXAMPLE_TRIALS[0])
 
@@ -390,11 +392,14 @@ def test_get_trial(storage_init_func):
         trial = storage.get_trial(trial_id)
         _check_example_trial_static_attributes(trial, example_trial)
         if trial.state.is_finished():
+            assert trial.datetime_start is not None
+            assert trial.datetime_complete is not None
             assert datetime_before < trial.datetime_start < datetime_after
             assert datetime_before < trial.datetime_complete < datetime_after
         else:
-            assert datetime_before < trial.datetime_start < datetime_after
+            assert trial.datetime_start is not None
             assert trial.datetime_complete is None
+            assert datetime_before < trial.datetime_start < datetime_after
 
 
 @parametrize_storage
@@ -421,8 +426,10 @@ def test_get_all_trials(storage_init_func):
     _check_example_trial_static_attributes(trials[0], EXAMPLE_TRIALS[0])
     _check_example_trial_static_attributes(trials[1], EXAMPLE_TRIALS[1])
     for t in trials:
+        assert t.datetime_start is not None
         assert datetime_before < t.datetime_start < datetime_after
         if t.state.is_finished():
+            assert t.datetime_complete is not None
             assert datetime_before < t.datetime_complete < datetime_after
         else:
             assert t.datetime_complete is None
@@ -437,7 +444,8 @@ def _create_new_trial_with_example_trial(storage, study_id, distributions, examp
 
     trial_id = storage.create_new_trial_id(study_id)
 
-    storage.set_trial_value(trial_id, example_trial.value)
+    if example_trial.value is not None:
+        storage.set_trial_value(trial_id, example_trial.value)
     storage.set_trial_state(trial_id, example_trial.state)
     _set_distributions(storage, trial_id, distributions)
 
@@ -461,8 +469,12 @@ def _set_distributions(storage, trial_id, distributions):
 
 
 def _check_example_trial_static_attributes(trial_1, trial_2):
-    # type: (FrozenTrial, FrozenTrial) -> None
+    # type: (Optional[FrozenTrial], Optional[FrozenTrial]) -> None
+
+    assert trial_1 is not None
+    assert trial_2 is not None
 
     trial_1 = trial_1._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
     trial_2 = trial_2._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
+
     assert trial_1 == trial_2
