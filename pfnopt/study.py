@@ -61,7 +61,10 @@ class Study(object):
     def best_value(self):
         # type: () -> float
 
-        return self.best_trial.value
+        best_value = self.best_trial.value
+        assert best_value is not None
+
+        return best_value
 
     @property
     def best_trial(self):

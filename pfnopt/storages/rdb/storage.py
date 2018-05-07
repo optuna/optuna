@@ -60,6 +60,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+        assert study is not None
 
         if study.task != structs.StudyTask.NOT_SET and study.task != task:
             raise ValueError(
@@ -75,6 +76,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+        assert study is not None
+
         attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
         if attribute is None:
             attribute = models.StudyUserAttributeModel(
@@ -89,7 +92,9 @@ class RDBStorage(BaseStorage):
         # type: (str) -> int
 
         session = self.scoped_session()
+
         study = models.StudyModel.find_by_uuid(study_uuid, session, allow_none=False)
+        assert study is not None
 
         return study.study_id
 
@@ -97,7 +102,9 @@ class RDBStorage(BaseStorage):
         # type: (int) -> str
 
         session = self.scoped_session()
+
         study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+        assert study is not None
 
         return study.study_uuid
 
@@ -107,6 +114,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+        assert study is not None
 
         return study.task
 
@@ -187,6 +195,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
+        assert trial is not None
+
         trial.state = state
         if state.is_finished():
             trial.datetime_complete = datetime.now()
@@ -199,8 +209,12 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
+        assert trial is not None
+
         param_distribution = models.TrialParamDistributionModel.find_by_trial_and_param_name(
             trial, param_name, session, allow_none=False)
+        assert param_distribution is not None
+
         param = models.TrialParamModel.find_by_trial_and_param_name(trial, param_name, session)
         if param is not None:
             assert param.param_value == param_value
@@ -221,6 +235,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
+        assert trial is not None
+
         trial.value = value
 
         session.commit()
@@ -231,6 +247,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
+        assert trial is not None
 
         trial_value = models.TrialValueModel.find_by_trial_and_step(trial, step, session)
         if trial_value is not None:
@@ -252,6 +269,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
+        assert trial is not None
 
         loaded_json = json.loads(trial.user_attributes_json)
         loaded_json[key] = value
@@ -265,6 +283,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_by_id(trial_id, session, allow_none=False)
+        assert trial is not None
+
         params = models.TrialParamModel.where_trial(trial, session)
         values = models.TrialValueModel.where_trial(trial, session)
 
@@ -276,6 +296,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         study = models.StudyModel.find_by_id(study_id, session, allow_none=False)
+        assert study is not None
+
         trials = models.TrialModel.where_study(study, session)
         params = models.TrialParamModel.where_study(study, session)
         values = models.TrialValueModel.where_study(study, session)

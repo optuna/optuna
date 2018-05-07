@@ -135,6 +135,7 @@ class TrialParamDistributionModel(BaseModel):
         # type: (orm.Session) -> None
 
         trial = TrialModel.find_by_id(self.trial_id, session, allow_none=False)
+        assert trial is not None
 
         previous_record = session.query(TrialParamDistributionModel).join(TrialModel). \
             filter(TrialModel.study_id == trial.study_id). \
