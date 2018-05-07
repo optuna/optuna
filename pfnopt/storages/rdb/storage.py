@@ -154,20 +154,6 @@ class RDBStorage(BaseStorage):
 
         return study_sumarries
 
-    def set_trial_param_distribution(self, trial_id, param_name, distribution):
-        # type: (int, str, distributions.BaseDistribution) -> None
-
-        session = self.scoped_session()
-
-        param_distribution = models.TrialParamDistributionModel(
-            trial_id=trial_id,
-            param_name=param_name,
-            distribution_json=distributions.distribution_to_json(distribution)
-        )
-
-        param_distribution.check_and_add(session)
-        session.commit()
-
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
 
@@ -183,6 +169,20 @@ class RDBStorage(BaseStorage):
         session.commit()
 
         return trial.trial_id
+
+    def set_trial_param_distribution(self, trial_id, param_name, distribution):
+        # type: (int, str, distributions.BaseDistribution) -> None
+
+        session = self.scoped_session()
+
+        param_distribution = models.TrialParamDistributionModel(
+            trial_id=trial_id,
+            param_name=param_name,
+            distribution_json=distributions.distribution_to_json(distribution)
+        )
+
+        param_distribution.check_and_add(session)
+        session.commit()
 
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None
