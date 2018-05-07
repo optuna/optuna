@@ -158,7 +158,7 @@ class BaseStorage(object):
         all_trials = [t for t in all_trials if t.state is structs.TrialState.COMPLETE]
 
         if len(all_trials) == 0:
-            raise ValueError('No trials are completed yet')
+            raise ValueError('No trials are completed yet.')
 
         return min(all_trials, key=lambda t: t.value)
 

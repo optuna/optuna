@@ -62,7 +62,8 @@ class Study(object):
         # type: () -> float
 
         best_value = self.best_trial.value
-        assert best_value is not None
+        if best_value is None:
+            raise ValueError('No trials are completed yet.')
 
         return best_value
 
