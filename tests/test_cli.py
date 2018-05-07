@@ -54,7 +54,7 @@ def test_study_set_user_attr_command():
         assert all([study_user_attrs[k] == v for k, v in example_attrs.items()])
 
 
-def test_study_list_command():
+def test_studies_command():
     # type: () -> None
 
     with tempfile.NamedTemporaryFile() as tf:
@@ -69,7 +69,7 @@ def test_study_list_command():
         pfnopt.minimize(objective_func, n_trials=10, storage=storage, study=study_uuid_2)
 
         # Run command.
-        command = ['pfnopt', 'study', 'list', '--storage', db_url]
+        command = ['pfnopt', 'studies', '--storage', db_url]
         output = str(subprocess.check_output(command).decode().strip())
         rows = output.split('\n')
 

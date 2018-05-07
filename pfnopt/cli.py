@@ -68,12 +68,12 @@ class StudySetUserAttribute(BaseCommand):
         self.logger.info('Attribute successfully written.')
 
 
-class StudyList(Lister):
+class Studies(Lister):
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
-        parser = super(StudyList, self).get_parser(prog_name)
+        parser = super(Studies, self).get_parser(prog_name)
         parser.add_argument('--storage', required=True)
         return parser
 
@@ -168,7 +168,7 @@ class Minimize(BaseCommand):
 _COMMANDS = {
     'create-study': CreateStudy,
     'study set-user-attr': StudySetUserAttribute,
-    'study list': StudyList,
+    'studies': Studies,
     'dashboard': Dashboard,
     'minimize': Minimize,
 }
