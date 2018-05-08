@@ -18,8 +18,8 @@ class Trial(object):
 
     """A trial is a process of evaluating an objective function.
 
-    This object is passed to an objective function, and provides interfaces to suggest imperative
-    parameters, manage the trial's state, and set/get user-defined attributes of the trial.
+    This object is passed to an objective function, and provides interfaces to get parameter
+    suggestion, manage the trial's state, and set/get user-defined attributes of the trial.
 
     Note that this object is seamlessly instantiated and passed to the objective function behind
     Study.run() method (as well as maximize/minimize function); hence, in typical use cases,
