@@ -23,9 +23,10 @@ ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 class Study(object):
 
-    """A study corresponds to an optimization task, i.e., a set of trials. This object provides
-    interfaces to run a new trial, access trials' history, set/get user-defined attributes of the
-    study itself.
+    """A study corresponds to an optimization task, i.e., a set of trials.
+
+    This object provides interfaces to run a new trial, access trials' history, set/get
+    user-defined attributes of the study itself.
 
     Args:
         study_uuid:
@@ -245,6 +246,23 @@ def get_study(
         pruner=None,  # type: pruners.BasePruner
 ):
     # type: (...) -> Study
+    """Return a given study object itself, or instantiate a study object with a given study UUID.
+
+    Args:
+        study:
+            Study object or its UUID.
+        storage:
+            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
+            instantiated.
+        sampler:
+            Sampler object that implements background algorithm for value suggestion.
+        pruner:
+            Pruner object that decides early stopping of unpromising trials.
+
+    Returns:
+        A study object.
+
+    """
 
     if isinstance(study, Study):
         if storage is not None:
@@ -334,6 +352,17 @@ def maximize():
 
 def get_all_study_summaries(storage):
     # type: (Union[None, str, storages.BaseStorage]) -> List[structs.StudySummary]
+    """Get all history of studies stored in a specified storage.
+
+    Args:
+        storage:
+            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
+            instantiated.
+
+    Returns:
+        List of study history summarized as StudySummary objects.
+
+    """
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
