@@ -23,6 +23,24 @@ ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 class Study(object):
 
+    """A study corresponds to an optimization task, i.e., a set of trials.
+
+    This object provides interfaces to run a new trial, access trials' history, set/get
+    user-defined attributes of the study itself.
+
+    Args:
+        study_uuid:
+            Study's UUID. If this argument is set to None, a new study is created.
+        storage:
+            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
+            instantiated.
+        sampler:
+            Sampler object that implements background algorithm for value suggestion.
+        pruner:
+            Pruner object that decides early stopping of unpromising trials.
+
+    """
+
     def __init__(
             self,
             study_uuid,  # type: str
@@ -201,6 +219,22 @@ def create_study(
 ):
     # type: (...) -> Study
 
+    """Create a new study.
+
+    Args:
+        storage:
+            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
+            instantiated.
+        sampler:
+            Sampler object that implements background algorithm for value suggestion.
+        pruner:
+            Pruner object that decides early stopping of unpromising trials.
+
+    Returns:
+        A study object.
+
+    """
+
     storage = storages.get_storage(storage)
     study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
     return Study(study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner)
@@ -213,6 +247,24 @@ def get_study(
         pruner=None,  # type: pruners.BasePruner
 ):
     # type: (...) -> Study
+
+    """Return a given study object itself, or instantiate a study object with a given study UUID.
+
+    Args:
+        study:
+            Study object or its UUID.
+        storage:
+            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
+            instantiated.
+        sampler:
+            Sampler object that implements background algorithm for value suggestion.
+        pruner:
+            Pruner object that decides early stopping of unpromising trials.
+
+    Returns:
+        A study object.
+
+    """
 
     if isinstance(study, Study):
         if storage is not None:
@@ -246,6 +298,34 @@ def minimize(
 ):
     # type: (...) -> Study
 
+    """Minimize an objective function.
+
+    Args:
+        func:
+            A callable that implements objective function.
+        n_trials:
+            The number of trials. If this argument is set to None, as many trials run as possible.
+        timeout:
+            Stop study after the given number of second(s). If this argument is set to None, as
+            many trials run as possible.
+        n_jobs:
+            The number of parallel jobs. If this argument is set to -1, the number is set to CPU
+            counts.
+        storage:
+            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
+            instantiated.
+        sampler:
+            Sampler object that implements background algorithm for value suggestion.
+        pruner:
+            Pruner object that decides early stopping of unpromising trials.
+        study:
+            Study object or its UUID. If this argument is set to None, a new study is created.
+
+    Returns:
+        A study object.
+
+    """
+
     if study is not None:
         study = get_study(study, storage, sampler, pruner)
     else:
@@ -274,7 +354,18 @@ def maximize():
 
 
 def get_all_study_summaries(storage):
-    # type: (Union[None, str, storages.BaseStorage]) -> List[structs.StudySummary]
+    # type: (Union[str, storages.BaseStorage]) -> List[structs.StudySummary]
+
+    """Get all history of studies stored in a specified storage.
+
+    Args:
+        storage:
+            Storage object or its DB URL.
+
+    Returns:
+        List of study history summarized as StudySummary objects.
+
+    """
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
