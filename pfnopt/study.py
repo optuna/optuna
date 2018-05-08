@@ -23,6 +23,23 @@ ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 class Study(object):
 
+    """A study corresponds to an optimization task, i.e., a set of trials. This object provides
+    interfaces to run a new trial, access trials' history, set/get user-defined attributes of the
+    study itself.
+
+    Args:
+        study_uuid:
+            Study's UUID. If this argument is set to None, a new study is created.
+        storage:
+            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
+            instantiated.
+        sampler:
+            Sampler object that implements background algorithm for value suggestion.
+        pruner:
+            Pruner object that decides early stopping of unpromising trials.
+
+    """
+
     def __init__(
             self,
             study_uuid,  # type: str
