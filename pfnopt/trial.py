@@ -16,7 +16,20 @@ if TYPE_CHECKING:
 
 class Trial(object):
 
-    """An active trial class that is passed to and communicates with users' objective functions."""
+    """A trial is a process of evaluating an objective function.
+
+    This object is passed to an objective function, and provides interfaces to suggest imperative
+    parameters, manage the trial's state, and set/get user-defined attributes of the trial.
+
+    Note that this object is seamlessly instantiated and passed to the objective function behind
+    Study.run() method (as well as maximize/minimize function); hence, in typical use cases,
+    library users do not care about instantiation of this object.
+
+    Args:
+        study: A study object.
+        trial_id: A trial ID populated by a storage object.
+
+    """
 
     def __init__(self, study, trial_id):
         # type: (Study, int) -> None
