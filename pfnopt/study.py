@@ -200,6 +200,21 @@ def create_study(
         pruner=None,  # type: pruners.BasePruner
 ):
     # type: (...) -> Study
+    """Create a new study.
+
+    Args:
+        storage:
+            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
+            instantiated.
+        sampler:
+            Sampler object that implements background algorithm for value suggestion.
+        pruner:
+            Pruner object that decides early stopping of unpromising trials.
+
+    Returns:
+        A study object.
+
+    """
 
     storage = storages.get_storage(storage)
     study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
@@ -264,7 +279,7 @@ def minimize(
         sampler:
             Sampler object that implements background algorithm for value suggestion.
         pruner:
-            Pruner object that implements early stopping logic.
+            Pruner object that decides early stopping of unpromising trials.
         study:
             Study object or its UUID. If this argument is set to None, a new study is created.
 
