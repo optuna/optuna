@@ -26,8 +26,10 @@ class Trial(object):
     library users do not care about instantiation of this object.
 
     Args:
-        study: A study object.
-        trial_id: A trial ID populated by a storage object.
+        study:
+            A study object.
+        trial_id:
+            A trial ID populated by a storage object.
 
     """
 
