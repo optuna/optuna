@@ -218,6 +218,7 @@ def create_study(
         pruner=None,  # type: pruners.BasePruner
 ):
     # type: (...) -> Study
+
     """Create a new study.
 
     Args:
@@ -246,6 +247,7 @@ def get_study(
         pruner=None,  # type: pruners.BasePruner
 ):
     # type: (...) -> Study
+
     """Return a given study object itself, or instantiate a study object with a given study UUID.
 
     Args:
@@ -295,6 +297,7 @@ def minimize(
         study=None,  # type: Union[None, str, Study]
 ):
     # type: (...) -> Study
+
     """Minimize an objective function.
 
     Args:
@@ -351,13 +354,13 @@ def maximize():
 
 
 def get_all_study_summaries(storage):
-    # type: (Union[None, str, storages.BaseStorage]) -> List[structs.StudySummary]
+    # type: (Union[str, storages.BaseStorage]) -> List[structs.StudySummary]
+
     """Get all history of studies stored in a specified storage.
 
     Args:
         storage:
-            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
-            instantiated.
+            Storage object or its DB URL.
 
     Returns:
         List of study history summarized as StudySummary objects.
