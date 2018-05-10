@@ -127,27 +127,41 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        studies = models.StudyModel.all(session)
+        study_models = models.StudyModel.all(session)
+        trial_models = models.TrialModel.all(session)
+        param_models = models.TrialParamModel.all(session)
+        value_models = models.TrialValueModel.all(session)
 
         study_sumarries = []
-        for study in studies:
-            trials = self.get_all_trials(study.study_id)
+        for study_model in study_models:
+            # Filter model objects by study.
+            study_trial_models = [t for t in trial_models if t.study_id == study_model.study_id]
+            study_trial_ids = {t.trial_id for t in study_trial_models}
+            study_param_models = [p for p in param_models if p.trial_id in study_trial_ids]
+            study_value_models = [v for v in value_models if v.trial_id in study_trial_ids]
 
+            # Merge trial related model objects.
+            trials = self._merge_trials_orm(
+                study_trial_models, study_param_models, study_value_models)
+
+            # Find best trial.
+            completed_trials = [t for t in trials if t.state is structs.TrialState.COMPLETE]
             best_trial = None
-            n_complete_trials = len([t for t in trials if t.state == structs.TrialState.COMPLETE])
-            if n_complete_trials > 0:
-                best_trial = self.get_best_trial(study.study_id)
+            if len(completed_trials) > 0:
+                best_trial = min(completed_trials, key=lambda t: t.value)
 
+            # Find datetime_start.
             datetime_start = None
             if len(trials) > 0:
                 datetime_start = min([t.datetime_start for t in trials])
 
+            # Consolidate StudySummary.
             study_sumarries.append(structs.StudySummary(
-                study_id=study.study_id,
-                study_uuid=study.study_uuid,
-                task=self.get_study_task(study.study_id),
+                study_id=study_model.study_id,
+                study_uuid=study_model.study_uuid,
+                task=self.get_study_task(study_model.study_id),
                 best_trial=best_trial,
-                user_attrs=self.get_study_user_attrs(study.study_id),
+                user_attrs=self.get_study_user_attrs(study_model.study_id),
                 n_trials=len(trials),
                 datetime_start=datetime_start
             ))

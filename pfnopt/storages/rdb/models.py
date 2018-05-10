@@ -138,6 +138,12 @@ class TrialModel(BaseModel):
 
         return trials
 
+    @classmethod
+    def all(cls, session):
+        # type: (orm.Session) -> List[TrialModel]
+
+        return session.query(cls).all()
+
 
 class TrialParamDistributionModel(BaseModel):
     __tablename__ = 'param_distributions'
@@ -230,6 +236,12 @@ class TrialParamModel(BaseModel):
 
         return trial_params
 
+    @classmethod
+    def all(cls, session):
+        # type: (orm.Session) -> List[TrialParamModel]
+
+        return session.query(cls).all()
+
 
 class TrialValueModel(BaseModel):
     __tablename__ = 'trial_values'
@@ -267,6 +279,12 @@ class TrialValueModel(BaseModel):
         trial_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
 
         return trial_values
+
+    @classmethod
+    def all(cls, session):
+        # type: (orm.Session) -> List[TrialValueModel]
+
+        return session.query(cls).all()
 
 
 class VersionInfoModel(BaseModel):

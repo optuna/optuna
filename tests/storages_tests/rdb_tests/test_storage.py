@@ -107,6 +107,7 @@ def test_get_all_study_summaries_with_multiple_studies():
 
     study_id_1 = storage.create_new_study_id()
     study_id_2 = storage.create_new_study_id()
+    study_id_3 = storage.create_new_study_id()
 
     storage.set_study_task(study_id_1, StudyTask.MINIMIZE)
     storage.set_study_task(study_id_2, StudyTask.MAXIMIZE)
@@ -136,9 +137,19 @@ def test_get_all_study_summaries_with_multiple_studies():
         n_trials=1,
         datetime_start=summaries[1].datetime_start  # This always passes.
     )
+    expected_summary_3 = StudySummary(
+        study_id=study_id_3,
+        study_uuid=storage.get_study_uuid_from_id(study_id_3),
+        task=StudyTask.NOT_SET,
+        user_attrs={SYSTEM_ATTRS_KEY: {}},
+        best_trial=None,
+        n_trials=0,
+        datetime_start=None
+    )
 
     assert summaries[0] == expected_summary_1
     assert summaries[1] == expected_summary_2
+    assert summaries[2] == expected_summary_3
 
 
 def test_check_table_schema_compatibility():
