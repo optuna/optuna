@@ -32,7 +32,7 @@ class CreateStudy(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(CreateStudy, self).get_parser(prog_name)
-        parser.add_argument('--storage', required=True)
+        parser.add_argument('--storage', required=True, help='DB URL.')
         return parser
 
     def take_action(self, parsed_args):
@@ -49,10 +49,10 @@ class StudySetUserAttribute(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(StudySetUserAttribute, self).get_parser(prog_name)
-        parser.add_argument('--storage', required=True)
-        parser.add_argument('--study', required=True)
-        parser.add_argument('--key', '-k', required=True)
-        parser.add_argument('--value', '-v', required=True)
+        parser.add_argument('--storage', required=True, help='DB URL.')
+        parser.add_argument('--study', required=True, help='Study UUID.')
+        parser.add_argument('--key', '-k', required=True, help='Key of the user attribute.')
+        parser.add_argument('--value', '-v', required=True, help='Value to be set.')
         return parser
 
     def take_action(self, parsed_args):
@@ -73,7 +73,7 @@ class Studies(Lister):
         # type: (str) -> ArgumentParser
 
         parser = super(Studies, self).get_parser(prog_name)
-        parser.add_argument('--storage', required=True)
+        parser.add_argument('--storage', required=True, help='DB URL.')
         return parser
 
     def take_action(self, parsed_args):
@@ -97,9 +97,11 @@ class Dashboard(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(Dashboard, self).get_parser(prog_name)
-        parser.add_argument('--storage', required=True)
-        parser.add_argument('--study', required=True)
-        parser.add_argument('--out', '-o')
+        parser.add_argument('--storage', required=True, help='DB URL.')
+        parser.add_argument('--study', required=True, help='Study UUID.')
+        parser.add_argument('--out', '-o',
+                            help='Output HTML file path. If it is not given, a HTTP server starts '
+                                 'and the dashboard is served.')
         return parser
 
     def take_action(self, parsed_args):
@@ -120,14 +122,21 @@ class Minimize(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(Minimize, self).get_parser(prog_name)
-        parser.add_argument('--n-trials', type=int)
-        parser.add_argument('--timeout', type=float)
-        parser.add_argument('--n-jobs', type=int, default=1)
-        parser.add_argument('--storage')
-        parser.add_argument('--study')
-        parser.add_argument('--create-study', action='store_true')
-        parser.add_argument('file')
-        parser.add_argument('method')
+        parser.add_argument('--n-trials', type=int,
+                            help='The number of trials. If this argument is not given, as many '
+                                 'trials run as possible.')
+        parser.add_argument('--timeout', type=float,
+                            help='Stop study after the given number of second(s). If this argument'
+                                 ' is not given, as many trials run as possible.')
+        parser.add_argument('--n-jobs', type=int, default=1,
+                            help='The number of parallel jobs. If this argument is set to -1, the '
+                                 'number is set to CPU counts.')
+        parser.add_argument('--storage', help='DB URL.')
+        parser.add_argument('--study', help='Study UUID.')
+        parser.add_argument('--create-study', action='store_true', help='Create a new study.')
+        parser.add_argument('file',
+                            help='Python script file where the objective function resides.')
+        parser.add_argument('method', help='The method name of the objective function.')
         return parser
 
     def take_action(self, parsed_args):
