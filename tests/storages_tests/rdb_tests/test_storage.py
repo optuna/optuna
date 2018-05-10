@@ -17,6 +17,7 @@ from pfnopt.storages.rdb.models import VersionInfoModel
 from pfnopt.storages import RDBStorage
 from pfnopt.structs import StudySummary
 from pfnopt.structs import StudyTask
+from pfnopt.structs import TrialState
 from pfnopt import version
 
 
@@ -105,15 +106,32 @@ def test_get_all_study_summaries_with_multiple_studies():
 
     storage = create_test_storage()
 
+    # Set up a MINIMIZE study.
     study_id_1 = storage.create_new_study_id()
-    study_id_2 = storage.create_new_study_id()
-
     storage.set_study_task(study_id_1, StudyTask.MINIMIZE)
+
+    trial_id_1_1 = storage.create_new_trial_id(study_id_1)
+    trial_id_1_2 = storage.create_new_trial_id(study_id_1)
+
+    storage.set_trial_value(trial_id_1_1, 100)
+    storage.set_trial_value(trial_id_1_2, 0)
+
+    storage.set_trial_state(trial_id_1_1, TrialState.COMPLETE)
+    storage.set_trial_state(trial_id_1_2, TrialState.COMPLETE)
+
+    # Set up a MAXIMIZE study.
+    study_id_2 = storage.create_new_study_id()
     storage.set_study_task(study_id_2, StudyTask.MAXIMIZE)
 
-    storage.create_new_trial_id(study_id_1)
-    storage.create_new_trial_id(study_id_1)
-    storage.create_new_trial_id(study_id_2)
+    # TODO(sano): Add more trials after implementing maximize.
+    trial_id_2_1 = storage.create_new_trial_id(study_id_2)
+
+    storage.set_trial_value(trial_id_2_1, -100)
+
+    storage.set_trial_state(trial_id_2_1, TrialState.COMPLETE)
+
+    # Set up an empty study.
+    study_id_3 = storage.create_new_study_id()
 
     summaries = storage.get_all_study_summaries()
     summaries = sorted(summaries, key=lambda x: x.study_id)
@@ -123,7 +141,7 @@ def test_get_all_study_summaries_with_multiple_studies():
         study_uuid=storage.get_study_uuid_from_id(study_id_1),
         task=StudyTask.MINIMIZE,
         user_attrs={SYSTEM_ATTRS_KEY: {}},
-        best_trial=None,
+        best_trial=summaries[0].best_trial,  # This always passes.
         n_trials=2,
         datetime_start=summaries[0].datetime_start  # This always passes.
     )
@@ -132,13 +150,29 @@ def test_get_all_study_summaries_with_multiple_studies():
         study_uuid=storage.get_study_uuid_from_id(study_id_2),
         task=StudyTask.MAXIMIZE,
         user_attrs={SYSTEM_ATTRS_KEY: {}},
-        best_trial=None,
+        best_trial=summaries[1].best_trial,  # This always passes.
         n_trials=1,
         datetime_start=summaries[1].datetime_start  # This always passes.
+    )
+    expected_summary_3 = StudySummary(
+        study_id=study_id_3,
+        study_uuid=storage.get_study_uuid_from_id(study_id_3),
+        task=StudyTask.NOT_SET,
+        user_attrs={SYSTEM_ATTRS_KEY: {}},
+        best_trial=None,
+        n_trials=0,
+        datetime_start=None
     )
 
     assert summaries[0] == expected_summary_1
     assert summaries[1] == expected_summary_2
+    assert summaries[2] == expected_summary_3
+
+    assert summaries[0].best_trial is not None
+    assert summaries[0].best_trial.value == 0
+
+    assert summaries[1].best_trial is not None
+    assert summaries[1].best_trial.value == -100
 
 
 def test_check_table_schema_compatibility():

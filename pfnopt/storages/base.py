@@ -160,6 +160,7 @@ class BaseStorage(object):
         if len(all_trials) == 0:
             raise ValueError('No trials are completed yet.')
 
+        # TODO(sano): Deal with maximize task.
         return min(all_trials, key=lambda t: t.value)
 
     def get_trial_params(self, trial_id):
