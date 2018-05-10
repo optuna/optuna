@@ -134,7 +134,8 @@ class Minimize(BaseCommand):
         parser.add_argument('--storage', help='DB URL.')
         parser.add_argument('--study', help='Study UUID.')
         parser.add_argument('--create-study', action='store_true', help='Create a new study.')
-        parser.add_argument('file', help='Python script file where the objective function resides.')
+        parser.add_argument('file',
+                            help='Python script file where the objective function resides.')
         parser.add_argument('method', help='The method name of the objective function.')
         return parser
 
