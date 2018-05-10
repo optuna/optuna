@@ -136,24 +136,28 @@ class RDBStorage(BaseStorage):
         for study_model in study_models:
             # Filter model objects by study.
             study_trial_models = [t for t in trial_models if t.study_id == study_model.study_id]
-            study_trial_ids = {t.trial_id for t in study_trial_models}
-            study_param_models = [p for p in param_models if p.trial_id in study_trial_ids]
-            study_value_models = [v for v in value_models if v.trial_id in study_trial_ids]
 
-            # Merge trial related model objects.
-            trials = self._merge_trials_orm(
-                study_trial_models, study_param_models, study_value_models)
-
-            # Find best trial.
-            completed_trials = [t for t in trials if t.state is structs.TrialState.COMPLETE]
+            # Get best trial.
+            completed_trial_models = [t for t in study_trial_models
+                                      if t.state is structs.TrialState.COMPLETE]
             best_trial = None
-            if len(completed_trials) > 0:
-                best_trial = min(completed_trials, key=lambda t: t.value)
+            if len(completed_trial_models) > 0:
+                # TODO(sano): Deal with maximize task.
+                best_trial_model = min(completed_trial_models, key=lambda t: t.value)
+
+                best_param_models = [p for p in param_models
+                                     if p.trial_id == best_trial_model.trial_id]
+                best_value_models = [v for v in value_models
+                                     if v.trial_id == best_trial_model.trial_id]
+
+                # Merge model objects related to the best trial.
+                best_trial = self._merge_trials_orm(
+                    [best_trial_model], best_param_models, best_value_models)[0]
 
             # Find datetime_start.
             datetime_start = None
-            if len(trials) > 0:
-                datetime_start = min([t.datetime_start for t in trials])
+            if len(study_trial_models) > 0:
+                datetime_start = min([t.datetime_start for t in study_trial_models])
 
             # Consolidate StudySummary.
             study_sumarries.append(structs.StudySummary(
@@ -162,7 +166,7 @@ class RDBStorage(BaseStorage):
                 task=self.get_study_task(study_model.study_id),
                 best_trial=best_trial,
                 user_attrs=self.get_study_user_attrs(study_model.study_id),
-                n_trials=len(trials),
+                n_trials=len(study_trial_models),
                 datetime_start=datetime_start
             ))
 
