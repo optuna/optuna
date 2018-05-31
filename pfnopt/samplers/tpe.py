@@ -80,4 +80,4 @@ class TPESampler(base.BaseSampler):
         idx = _hyperopt.sample_categorical(
             obs_below=below, obs_above=above, prior_weight=self.prior_weight,
             upper=len(choices), size=(self.n_ei_candidates, ), rng=self.rng)
-        return idx
+        return int(idx)
