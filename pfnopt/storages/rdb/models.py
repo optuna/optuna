@@ -18,7 +18,7 @@ from pfnopt import distributions
 from pfnopt.structs import StudyTask
 from pfnopt.structs import TrialState
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 NOT_FOUND_MSG = 'Record does not exist.'
 
@@ -145,12 +145,13 @@ class TrialModel(BaseModel):
         return session.query(cls).all()
 
 
-class TrialParamDistributionModel(BaseModel):
-    __tablename__ = 'param_distributions'
+class TrialParamModel(BaseModel):
+    __tablename__ = 'trial_params'
     __table_args__ = (UniqueConstraint('trial_id', 'param_name'), )  # type: Any
-    param_distribution_id = Column(Integer, primary_key=True)
+    param_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
     param_name = Column(String(255))
+    param_value = Column(Float)
     distribution_json = Column(String(255))
 
     trial = orm.relationship(TrialModel)
@@ -166,9 +167,9 @@ class TrialParamDistributionModel(BaseModel):
 
         trial = TrialModel.find_or_raise_by_id(self.trial_id, session)
 
-        previous_record = session.query(TrialParamDistributionModel).join(TrialModel). \
+        previous_record = session.query(TrialParamModel).join(TrialModel). \
             filter(TrialModel.study_id == trial.study_id). \
-            filter(TrialParamDistributionModel.param_name == self.param_name).first()
+            filter(TrialParamModel.param_name == self.param_name).first()
         if previous_record is not None:
             distributions.check_distribution_compatibility(
                 distributions.json_to_distribution(previous_record.distribution_json),
@@ -176,7 +177,7 @@ class TrialParamDistributionModel(BaseModel):
 
     @classmethod
     def find_by_trial_and_param_name(cls, trial, param_name, session):
-        # type: (TrialModel, str, orm.Session) -> Optional[TrialParamDistributionModel]
+        # type: (TrialModel, str, orm.Session) -> Optional[TrialParamModel]
 
         param_distribution = session.query(cls). \
             filter(cls.trial_id == trial.trial_id). \
@@ -186,7 +187,7 @@ class TrialParamDistributionModel(BaseModel):
 
     @classmethod
     def find_or_raise_by_trial_and_param_name(cls, trial, param_name, session):
-        # type: (TrialModel, str, orm.Session) -> TrialParamDistributionModel
+        # type: (TrialModel, str, orm.Session) -> TrialParamModel
 
         param_distribution = cls.find_by_trial_and_param_name(trial, param_name, session)
 
@@ -194,30 +195,6 @@ class TrialParamDistributionModel(BaseModel):
             raise ValueError(NOT_FOUND_MSG)
 
         return param_distribution
-
-
-# todo(sano): merge ParamDistribution and TrialParam because they are 1-to-1 relationship
-class TrialParamModel(BaseModel):
-    __tablename__ = 'trial_params'
-    __table_args__ = (UniqueConstraint('trial_id', 'param_distribution_id'), )  # type: Any
-    trial_param_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
-    param_distribution_id = \
-        Column(Integer, ForeignKey('param_distributions.param_distribution_id'))
-    param_value = Column(Float)
-
-    trial = orm.relationship(TrialModel)
-    param_distribution = orm.relationship(TrialParamDistributionModel)
-
-    @classmethod
-    def find_by_trial_and_param_name(cls, trial, param_name, session):
-        # type: (TrialModel, str, orm.Session) -> Optional[TrialParamModel]
-
-        trial_param = session.query(cls). \
-            filter(cls.trial_id == trial.trial_id). \
-            filter(cls.param_distribution.has(param_name=param_name)).one_or_none()
-
-        return trial_param
 
     @classmethod
     def where_study(cls, study, session):

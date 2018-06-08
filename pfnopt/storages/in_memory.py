@@ -124,15 +124,6 @@ class InMemoryStorage(base.BaseStorage):
             )
         return trial_id
 
-    def set_trial_param_distribution(self, trial_id, param_name, distribution):
-        # type: (int, str, distributions.BaseDistribution) -> None
-
-        with self._lock:
-            if param_name in self.param_distribution:
-                distributions.check_distribution_compatibility(
-                    self.param_distribution[param_name], distribution)
-            self.param_distribution[param_name] = distribution
-
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None
 
@@ -142,17 +133,26 @@ class InMemoryStorage(base.BaseStorage):
                 self.trials[trial_id] = \
                     self.trials[trial_id]._replace(datetime_complete=datetime.now())
 
-    def set_trial_param(self, trial_id, param_name, param_value_in_internal_repr):
-        # type: (int, str, float) -> None
+    def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
+        # type: (int, str, float, distributions.BaseDistribution) -> None
 
         with self._lock:
-            self.trials[trial_id].params_in_internal_repr[param_name] = \
-                param_value_in_internal_repr
-            distribution = self.param_distribution[param_name]
-            param_value_actual = distribution.to_external_repr(param_value_in_internal_repr)
+            # Check param distribution compatibility with previous trial(s).
+            if param_name in self.param_distribution:
+                distributions.check_distribution_compatibility(
+                    self.param_distribution[param_name], distribution)
+
+            # Check param has no been set; otherwise, assert it is identical.
+            param_value_external = distribution.to_external_repr(param_value_internal)
             if param_name in self.trials[trial_id].params:
-                assert self.trials[trial_id].params[param_name] == param_value_actual
-            self.trials[trial_id].params[param_name] = param_value_actual
+                assert self.trials[trial_id].params[param_name] == param_value_external
+
+            # Set param distribution.
+            self.param_distribution[param_name] = distribution
+
+            # Set param.
+            self.trials[trial_id].params_in_internal_repr[param_name] = param_value_internal
+            self.trials[trial_id].params[param_name] = param_value_external
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
