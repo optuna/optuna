@@ -188,20 +188,6 @@ class RDBStorage(BaseStorage):
 
         return trial.trial_id
 
-    def set_trial_param_distribution(self, trial_id, param_name, distribution):
-        # type: (int, str, distributions.BaseDistribution) -> None
-
-        session = self.scoped_session()
-
-        param_distribution = models.TrialParamDistributionModel(
-            trial_id=trial_id,
-            param_name=param_name,
-            distribution_json=distributions.distribution_to_json(distribution)
-        )
-
-        param_distribution.check_and_add(session)
-        session.commit()
-
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None
 
@@ -214,28 +200,22 @@ class RDBStorage(BaseStorage):
 
         session.commit()
 
-    def set_trial_param(self, trial_id, param_name, param_value):
-        # type: (int, str, float) -> None
+    def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
+        # type: (int, str, float, distributions.BaseDistribution) -> None
 
         session = self.scoped_session()
 
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        param_distribution = \
-            models.TrialParamDistributionModel.find_or_raise_by_trial_and_param_name(
-                trial, param_name, session)
-
-        param = models.TrialParamModel.find_by_trial_and_param_name(trial, param_name, session)
-        if param is not None:
-            assert param.param_value == param_value
-            return
+        models.TrialModel.find_or_raise_by_id(trial_id, session)
 
         param = models.TrialParamModel(
             trial_id=trial_id,
-            param_distribution_id=param_distribution.param_distribution_id,
-            param_value=param_value
+            param_name=param_name,
+            param_value=param_value_internal,
+            distribution_json=distributions.distribution_to_json(distribution)
         )
 
-        session.add(param)
+        param.check_and_add(session)
+
         self._commit_or_rollback_on_integrity_error(session)
 
     def set_trial_value(self, trial_id, value):
@@ -328,11 +308,9 @@ class RDBStorage(BaseStorage):
             params = {}
             params_in_internal_repr = {}
             for param in id_to_params[trial_id]:
-                distribution = \
-                    distributions.json_to_distribution(param.param_distribution.distribution_json)
-                params[param.param_distribution.param_name] = \
-                    distribution.to_external_repr(param.param_value)
-                params_in_internal_repr[param.param_distribution.param_name] = param.param_value
+                distribution = distributions.json_to_distribution(param.distribution_json)
+                params[param.param_name] = distribution.to_external_repr(param.param_value)
+                params_in_internal_repr[param.param_name] = param.param_value
 
             intermediate_values = {}
             for value in id_to_values[trial_id]:

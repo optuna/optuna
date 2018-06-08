@@ -1,7 +1,6 @@
 from mock import Mock
 from mock import patch
 import pytest
-from sqlalchemy.exc import IntegrityError
 from typing import Dict  # NOQA
 import uuid
 
@@ -12,7 +11,7 @@ from pfnopt.distributions import UniformDistribution
 from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb.models import SCHEMA_VERSION
 from pfnopt.storages.rdb.models import StudyModel
-from pfnopt.storages.rdb.models import TrialParamDistributionModel
+from pfnopt.storages.rdb.models import TrialParamModel
 from pfnopt.storages.rdb.models import VersionInfoModel
 from pfnopt.storages import RDBStorage
 from pfnopt.structs import StudySummary
@@ -66,7 +65,7 @@ def test_create_new_study_id_duplicated_uuid():
         assert mock_object.call_count == 3
 
 
-def test_set_trial_param_distribution():
+def test_set_trial_param_to_check_distribution_json():
     # type: () -> None
 
     example_distributions = {
@@ -79,26 +78,17 @@ def test_set_trial_param_distribution():
     study_id = storage.create_new_study_id()
 
     trial_id = storage.create_new_trial_id(study_id)
-    storage.set_trial_param_distribution(trial_id, 'x', example_distributions['x'])
-    storage.set_trial_param_distribution(trial_id, 'y', example_distributions['y'])
+    storage.set_trial_param(trial_id, 'x', 1.5, example_distributions['x'])
+    storage.set_trial_param(trial_id, 'y', 2, example_distributions['y'])
 
     # test setting new name
-    result_1 = session.query(TrialParamDistributionModel). \
-        filter(TrialParamDistributionModel.param_name == 'x').one()
-    assert result_1.trial_id == trial_id
+    result_1 = session.query(TrialParamModel). \
+        filter(TrialParamModel.param_name == 'x').one()
     assert json_to_distribution(result_1.distribution_json) == example_distributions['x']
 
-    result_2 = session.query(TrialParamDistributionModel). \
-        filter(TrialParamDistributionModel.param_name == 'y').one()
-    assert result_2.trial_id == trial_id
+    result_2 = session.query(TrialParamModel). \
+        filter(TrialParamModel.param_name == 'y').one()
     assert json_to_distribution(result_2.distribution_json) == example_distributions['y']
-
-    # test setting a duplicated pair of trial and parameter name
-    with pytest.raises(IntegrityError):
-        storage.set_trial_param_distribution(
-            trial_id,  # existing trial_id
-            'x',
-            example_distributions['x'])
 
 
 def test_get_all_study_summaries_with_multiple_studies():

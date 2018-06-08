@@ -216,49 +216,44 @@ def test_set_trial_param(storage_init_func):
     trial_id_2 = storage.create_new_trial_id(study_id)
     trial_id_3 = storage.create_new_trial_id(storage.create_new_study_id())
 
-    # Setup trial_1.
-    _set_distributions(
-        storage, trial_id_1,
-        {
-            't1-x': UniformDistribution(low=1.0, high=2.0),
-            't1-y': LogUniformDistribution(low=1.0, high=100.0),
-        }
-    )
-    storage.set_trial_param(trial_id_1, 't1-x', 0.5)
-    storage.set_trial_param(trial_id_1, 't1-y', 2.0)
+    # Setup Distributions.
+    distribution_x = UniformDistribution(low=1.0, high=2.0)
+    distribution_y_1 = CategoricalDistribution(choices=('Shibuya', 'Ebisu', 'Meguro'))
+    distribution_y_2 = CategoricalDistribution(choices=('Shibuya', 'Shinsen'))
+    distribution_z = LogUniformDistribution(low=1.0, high=100.0)
 
-    # Setup trial_2.
-    _set_distributions(
-        storage, trial_id_2,
-        {
-            't2-x': UniformDistribution(low=-1.0, high=1.0),
-            't2-y': CategoricalDistribution(choices=('Shibuya', 'Ebisu', 'Meguro')),
-        }
-    )
-    storage.set_trial_param(trial_id_2, 't2-y', 2)
+    # Test trial_1.
+    storage.set_trial_param(trial_id_1, 'x', 0.5, distribution_x)
+    storage.set_trial_param(trial_id_1, 'y', 2, distribution_y_1)
 
-    # Setup trial_3.
-    _set_distributions(
-        storage, trial_id_3,
-        {
-            't3-x': CategoricalDistribution(choices=('Shibuya', 'Shinsen')),
-        }
-    )
-    storage.set_trial_param(trial_id_3, 't3-x', 0)
-
-    # Assert values.
-    assert storage.get_trial(trial_id_1).params == {'t1-x': 0.5, 't1-y': 2.0}
-    assert storage.get_trial(trial_id_2).params == {'t2-y': 'Meguro'}
-    assert storage.get_trial(trial_id_3).params == {'t3-x': 'Shibuya'}
-
-    # Test setting existing name with different value.
-    with pytest.raises(AssertionError):
-        storage.set_trial_param(trial_id_1, 't1-x', float('inf'))
-
+    assert storage.get_trial(trial_id_1).params == {'x': 0.5, 'y': 'Meguro'}
     # Test setting existing name with the same value.
-    storage.set_trial_param(trial_id_1, 't1-x', 0.5)
+    storage.set_trial_param(trial_id_1, 'x', 0.5, distribution_x)
 
-    # TODO(sano): Test ValueError is raised when not existing param is set.
+    # Setup trial_2: same study as trial_1.
+    storage.set_trial_param(trial_id_2, 'x', 0.3, distribution_x)
+    storage.set_trial_param(trial_id_2, 'z', 0.1, distribution_z)
+
+    assert storage.get_trial(trial_id_2).params == {'x': 0.3, 'z': 0.1}
+    with pytest.raises(ValueError):
+        # Test setting incompatible distribution: UniformDistribution and LogUniformDistribution.
+        storage.set_trial_param(trial_id_2, 'x', 0.5, distribution_z)
+    with pytest.raises(ValueError):
+        # Test setting incompatible distribution: CategoricalDistribution in different order.
+        storage.set_trial_param(
+            trial_id_2, 'y', 2, CategoricalDistribution(choices=('Meguro', 'Shibuya', 'Ebisu')))
+
+    # Setup trial_3: different study from trial_1.
+    if isinstance(storage, InMemoryStorage):
+        with pytest.raises(ValueError):
+            # InMemoryStorage shares the same study if create_new_study_id is additionally invoked.
+            # Thus, the following line should fail due to distribution incompatibility.
+            storage.set_trial_param(trial_id_3, 'y', 1, distribution_y_2)
+    else:
+        storage.set_trial_param(trial_id_3, 'y', 1, distribution_y_2)
+        assert storage.get_trial(trial_id_3).params == {'y': 'Shinsen'}
+
+    # TODO(sano): add test to check False return in case set has been fail.
 
 
 @parametrize_storage
@@ -481,10 +476,11 @@ def _create_new_trial_with_example_trial(storage, study_id, distributions, examp
     if example_trial.value is not None:
         storage.set_trial_value(trial_id, example_trial.value)
     storage.set_trial_state(trial_id, example_trial.state)
-    _set_distributions(storage, trial_id, distributions)
 
-    for name, ex_repr in example_trial.params.items():
-        storage.set_trial_param(trial_id, name, distributions[name].to_internal_repr(ex_repr))
+    for name, param_external in example_trial.params.items():
+        param_internal = distributions[name].to_internal_repr(param_external)
+        distribution = distributions[name]
+        storage.set_trial_param(trial_id, name, param_internal, distribution)
 
     for step, value in example_trial.intermediate_values.items():
         storage.set_trial_intermediate_value(trial_id, step, value)
@@ -493,13 +489,6 @@ def _create_new_trial_with_example_trial(storage, study_id, distributions, examp
         storage.set_trial_user_attr(trial_id, key, value)
 
     return trial_id
-
-
-def _set_distributions(storage, trial_id, distributions):
-    # type: (BaseStorage, int, Dict[str, BaseDistribution]) -> None
-
-    for k, v in distributions.items():
-        storage.set_trial_param_distribution(trial_id, k, v)
 
 
 def _check_example_trial_static_attributes(trial_1, trial_2):

@@ -92,22 +92,15 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_param_distribution(self, trial_id, param_name, distribution):
-        # type: (int, str, distributions.BaseDistribution) -> None
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None
 
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_param(self, trial_id, param_name, param_value_in_internal_repr):
-        # type: (int, str, float) -> None
+    def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
+        # type: (int, str, float, distributions.BaseDistribution) -> None
 
-        # TODO(Akiba): float? how about categorical?
         raise NotImplementedError
 
     @abc.abstractmethod

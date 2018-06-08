@@ -86,13 +86,13 @@ class Trial(object):
         # type: (str, distributions.BaseDistribution) -> Any
 
         # TODO(Akiba): if already sampled, return the recorded value
-        # TODO(Akiba): check that distribution is the same
-
-        self.storage.set_trial_param_distribution(self.trial_id, name, distribution)
 
         param_value_in_internal_repr = self.study.sampler.sample(
             self.storage, self.study_id, name, distribution)
-        self.storage.set_trial_param(self.trial_id, name, param_value_in_internal_repr)
+
+        self.storage.set_trial_param(
+            self.trial_id, name, param_value_in_internal_repr, distribution)
+
         param_value = distribution.to_external_repr(param_value_in_internal_repr)
         return param_value
 
