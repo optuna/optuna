@@ -201,11 +201,23 @@ class RDBStorage(BaseStorage):
         session.commit()
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
-        # type: (int, str, float, distributions.BaseDistribution) -> None
+        # type: (int, str, float, distributions.BaseDistribution) -> bool
 
         session = self.scoped_session()
 
-        models.TrialModel.find_or_raise_by_id(trial_id, session)
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        trial_param = \
+            models.TrialParamModel.find_by_trial_and_param_name(trial, param_name, session)
+
+        if trial_param is not None:
+            # Raise error in case distribution is incompatible.
+            distributions.check_distribution_compatibility(
+                distributions.json_to_distribution(trial_param.distribution_json),
+                distribution
+            )
+
+            # Return False when distribution is compatible but parameter has already been set.
+            return False
 
         param = models.TrialParamModel(
             trial_id=trial_id,
@@ -215,8 +227,9 @@ class RDBStorage(BaseStorage):
         )
 
         param.check_and_add(session)
+        commit_success = self._commit_or_rollback_on_integrity_error(session)
 
-        self._commit_or_rollback_on_integrity_error(session)
+        return commit_success
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
@@ -229,15 +242,14 @@ class RDBStorage(BaseStorage):
         session.commit()
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
-        # type: (int, int, float) -> None
+        # type: (int, int, float) -> bool
 
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         trial_value = models.TrialValueModel.find_by_trial_and_step(trial, step, session)
         if trial_value is not None:
-            assert trial_value.value == intermediate_value
-            return
+            return False
 
         trial_value = models.TrialValueModel(
             trial_id=trial_id,
@@ -246,7 +258,9 @@ class RDBStorage(BaseStorage):
         )
 
         session.add(trial_value)
-        self._commit_or_rollback_on_integrity_error(session)
+        commit_success = self._commit_or_rollback_on_integrity_error(session)
+
+        return commit_success
 
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
@@ -353,7 +367,7 @@ class RDBStorage(BaseStorage):
         self._commit_or_rollback_on_integrity_error(session)
 
     def _commit_or_rollback_on_integrity_error(self, session):
-        # type: (orm.Session) -> None
+        # type: (orm.Session) -> bool
 
         try:
             session.commit()
@@ -362,6 +376,9 @@ class RDBStorage(BaseStorage):
                 'Ignoring {}. This happens due to a timing issue among threads/processes/nodes. '
                 'Another one might have committed a record with the same key(s).'.format(repr(e)))
             session.rollback()
+            return False
+
+        return True
 
     def remove_session(self):
         # type: () -> None

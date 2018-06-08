@@ -134,7 +134,7 @@ class InMemoryStorage(base.BaseStorage):
                     self.trials[trial_id]._replace(datetime_complete=datetime.now())
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
-        # type: (int, str, float, distributions.BaseDistribution) -> None
+        # type: (int, str, float, distributions.BaseDistribution) -> bool
 
         with self._lock:
             # Check param distribution compatibility with previous trial(s).
@@ -142,10 +142,10 @@ class InMemoryStorage(base.BaseStorage):
                 distributions.check_distribution_compatibility(
                     self.param_distribution[param_name], distribution)
 
-            # Check param has no been set; otherwise, assert it is identical.
+            # Check param has not been set; otherwise, return False.
             param_value_external = distribution.to_external_repr(param_value_internal)
             if param_name in self.trials[trial_id].params:
-                assert self.trials[trial_id].params[param_name] == param_value_external
+                return False
 
             # Set param distribution.
             self.param_distribution[param_name] = distribution
@@ -154,6 +154,8 @@ class InMemoryStorage(base.BaseStorage):
             self.trials[trial_id].params_in_internal_repr[param_name] = param_value_internal
             self.trials[trial_id].params[param_name] = param_value_external
 
+            return True
+
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
 
@@ -161,13 +163,16 @@ class InMemoryStorage(base.BaseStorage):
             self.trials[trial_id] = self.trials[trial_id]._replace(value=value)
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
-        # type: (int, int, float) -> None
+        # type: (int, int, float) -> bool
 
         with self._lock:
             values = self.trials[trial_id].intermediate_values
             if step in values:
-                assert values[step] == intermediate_value
+                return False
+
             values[step] = intermediate_value
+
+            return True
 
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
