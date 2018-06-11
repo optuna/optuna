@@ -227,8 +227,8 @@ def test_set_trial_param(storage_init_func):
     storage.set_trial_param(trial_id_1, 'y', 2, distribution_y_1)
 
     assert storage.get_trial(trial_id_1).params == {'x': 0.5, 'y': 'Meguro'}
-    # Test setting existing name with the same value.
-    storage.set_trial_param(trial_id_1, 'x', 0.5, distribution_x)
+    # Test setting existing name.
+    assert not storage.set_trial_param(trial_id_1, 'x', 0.6, distribution_x)
 
     # Setup trial_2: same study as trial_1.
     storage.set_trial_param(trial_id_2, 'x', 0.3, distribution_x)
@@ -252,8 +252,6 @@ def test_set_trial_param(storage_init_func):
     else:
         storage.set_trial_param(trial_id_3, 'y', 1, distribution_y_2)
         assert storage.get_trial(trial_id_3).params == {'y': 'Shinsen'}
-
-    # TODO(sano): add test to check False return in case set has been fail.
 
 
 @parametrize_storage
@@ -300,12 +298,8 @@ def test_set_trial_intermediate_value(storage_init_func):
     assert storage.get_trial(trial_id_2).intermediate_values == {}
     assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
 
-    # Test setting existing step with different value.
-    with pytest.raises(AssertionError):
-        storage.set_trial_intermediate_value(trial_id_1, 0, 0.5)
-
-    # Test setting existing step with the same value.
-    storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+    # Test setting existing step.
+    assert not storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
 
 
 @parametrize_storage

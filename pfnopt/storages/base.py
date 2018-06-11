@@ -99,7 +99,7 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
-        # type: (int, str, float, distributions.BaseDistribution) -> None
+        # type: (int, str, float, distributions.BaseDistribution) -> bool
 
         raise NotImplementedError
 
@@ -111,7 +111,7 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
-        # type: (int, int, float) -> None
+        # type: (int, int, float) -> bool
 
         raise NotImplementedError
 
