@@ -205,7 +205,7 @@ def test_set_trial_state(storage_init_func):
 
 
 @parametrize_storage
-def test_set_trial_param(storage_init_func):
+def test_set_and_get_trial_param(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
@@ -222,35 +222,45 @@ def test_set_trial_param(storage_init_func):
     distribution_y_2 = CategoricalDistribution(choices=('Shibuya', 'Shinsen'))
     distribution_z = LogUniformDistribution(low=1.0, high=100.0)
 
-    # Test trial_1.
-    storage.set_trial_param(trial_id_1, 'x', 0.5, distribution_x)
-    storage.set_trial_param(trial_id_1, 'y', 2, distribution_y_1)
+    # Test trial_1: setting new params.
+    assert storage.set_trial_param(trial_id_1, 'x', 0.5, distribution_x)
+    assert storage.set_trial_param(trial_id_1, 'y', 2, distribution_y_1)
 
+    # Test trial_1: getting params.
+    assert storage.get_trial_param(trial_id_1, 'x') == 0.5
+    assert storage.get_trial_param(trial_id_1, 'y') == 2
+    # Test trial_1: checking all params and external repr.
     assert storage.get_trial(trial_id_1).params == {'x': 0.5, 'y': 'Meguro'}
-    # Test setting existing name.
+    # Test trial_1: setting existing name.
     assert not storage.set_trial_param(trial_id_1, 'x', 0.6, distribution_x)
 
-    # Setup trial_2: same study as trial_1.
-    storage.set_trial_param(trial_id_2, 'x', 0.3, distribution_x)
-    storage.set_trial_param(trial_id_2, 'z', 0.1, distribution_z)
+    # Setup trial_2: setting new params (to the same study as trial_1).
+    assert storage.set_trial_param(trial_id_2, 'x', 0.3, distribution_x)
+    assert storage.set_trial_param(trial_id_2, 'z', 0.1, distribution_z)
 
+    # Test trial_2: getting params.
+    assert storage.get_trial_param(trial_id_2, 'x') == 0.3
+    assert storage.get_trial_param(trial_id_2, 'z') == 0.1
+
+    # Test trial_2: checking all params and external repr.
     assert storage.get_trial(trial_id_2).params == {'x': 0.3, 'z': 0.1}
+    # Test trial_2: setting different distribution.
     with pytest.raises(ValueError):
-        # Test setting incompatible distribution: UniformDistribution and LogUniformDistribution.
         storage.set_trial_param(trial_id_2, 'x', 0.5, distribution_z)
+    # Test trial_2: setting CategoricalDistribution in different order.
     with pytest.raises(ValueError):
-        # Test setting incompatible distribution: CategoricalDistribution in different order.
         storage.set_trial_param(
             trial_id_2, 'y', 2, CategoricalDistribution(choices=('Meguro', 'Shibuya', 'Ebisu')))
 
-    # Setup trial_3: different study from trial_1.
+    # Setup trial_3: setting new params (to different study from trial_1).
     if isinstance(storage, InMemoryStorage):
         with pytest.raises(ValueError):
             # InMemoryStorage shares the same study if create_new_study_id is additionally invoked.
             # Thus, the following line should fail due to distribution incompatibility.
             storage.set_trial_param(trial_id_3, 'y', 1, distribution_y_2)
     else:
-        storage.set_trial_param(trial_id_3, 'y', 1, distribution_y_2)
+        assert storage.set_trial_param(trial_id_3, 'y', 1, distribution_y_2)
+        assert storage.get_trial_param(trial_id_3, 'y') == 1
         assert storage.get_trial(trial_id_3).params == {'y': 'Shinsen'}
 
 
@@ -288,11 +298,11 @@ def test_set_trial_intermediate_value(storage_init_func):
     trial_id_3 = storage.create_new_trial_id(storage.create_new_study_id())
 
     # Test setting new values.
-    storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
-    storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
-    storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
-    storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
-    storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
+    assert storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+    assert storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
+    assert storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
+    assert storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
+    assert storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
 
     assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
     assert storage.get_trial(trial_id_2).intermediate_values == {}
