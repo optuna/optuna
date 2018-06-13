@@ -231,6 +231,17 @@ class RDBStorage(BaseStorage):
 
         return commit_success
 
+    def get_trial_param(self, trial_id, param_name):
+        # type: (int, str) -> float
+
+        session = self.scoped_session()
+
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        trial_param = models.TrialParamModel.find_or_raise_by_trial_and_param_name(
+            trial, param_name, session)
+
+        return trial_param.param_value
+
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
 

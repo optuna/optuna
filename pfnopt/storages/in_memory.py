@@ -156,6 +156,11 @@ class InMemoryStorage(base.BaseStorage):
 
             return True
 
+    def get_trial_param(self, trial_id, param_name):
+        # type: (int, str) -> float
+
+        return self.trials[trial_id].params_in_internal_repr[param_name]
+
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
 
