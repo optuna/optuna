@@ -1,0 +1,118 @@
+import gc
+import pytest
+from types import TracebackType  # NOQA
+from typing import Any  # NOQA
+from typing import Dict  # NOQA
+from typing import Type  # NOQA
+
+from pfnopt import create_study
+from pfnopt.integration import minimize_chainermn
+from pfnopt.storages import RDBStorage
+from pfnopt.testing.storage import StorageSupplier
+from pfnopt.trial import Trial  # NOQA
+
+try:
+    import chainermn
+    from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
+    _available = True
+except ImportError:
+    _available = False
+
+
+STORAGE_MODES = ['new', 'common']
+
+
+def setup_module():
+    # type: () -> None
+
+    StorageSupplier.setup_common_tempfile()
+
+
+def teardown_module():
+    # type: () -> None
+
+    StorageSupplier.teardown_common_tempfile()
+
+
+class Func(object):
+
+    def __init__(self):
+        # type: () -> None
+
+        self.suggested_values = {}  # type: Dict[int, Dict[str, Any]]
+
+    def __call__(self, trial):
+        # type: (Trial) -> float
+
+        x = trial.suggest_uniform('x', -10, 10)
+        y = trial.suggest_loguniform('y', 20, 30)
+        z = trial.suggest_categorical('z', (-1.0, 1.0))
+
+        self.suggested_values[trial.trial_id] = {}
+        self.suggested_values[trial.trial_id]['x'] = x
+        self.suggested_values[trial.trial_id]['y'] = y
+        self.suggested_values[trial.trial_id]['z'] = z
+
+        return (x - 2) ** 2 + (y - 25) ** 2 + z
+
+
+class MultiNodeStorageSupplier(StorageSupplier):
+
+    def __init__(self, storage_specifier, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        super(MultiNodeStorageSupplier, self).__init__(storage_specifier)
+        self.comm = comm
+
+    def __enter__(self):
+        # type: () -> RDBStorage
+
+        if self.comm.rank == 0:
+            storage = super(MultiNodeStorageSupplier, self).__enter__()
+            assert isinstance(storage, RDBStorage)
+            url = storage.engine.url
+        else:
+            url = None
+
+        url = self.comm.mpi_comm.bcast(url)
+        return RDBStorage(url)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # type: (Type[BaseException], BaseException, TracebackType) -> None
+
+        if self.comm.rank == 0:
+            super(MultiNodeStorageSupplier, self).__exit__(exc_type, exc_val, exc_tb)
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_minimize_chainermn(storage_mode):
+    # type: (str) -> None
+
+    if not _available:
+        pytest.skip('This test requires ChainerMN.')
+
+    comm = chainermn.create_communicator('naive')
+    if comm.size < 2:
+        pytest.skip("This test is for multi-node only.")
+
+    with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+        # Create and broadcast study_uuid.
+        uuid_local = create_study(storage).study_uuid if comm.rank == 0 else None
+        uuid_bcast = comm.mpi_comm.bcast(uuid_local)
+
+        # Invoke minimize_chainermn.
+        n_trials = 20
+        func = Func()
+        study = minimize_chainermn(func, uuid_bcast, comm, storage=storage, n_trials=n_trials)
+
+        # Assert trial counts.
+        assert len(study.trials) == n_trials
+
+        # Assert the same parameters have been suggested among all nodes.
+        for trial in study.trials:
+            assert trial.params == func.suggested_values[trial.trial_id]
+
+        # Explicitly call storage's __del__ before sqlite tempfile is deleted.
+        del storage
+        gc.collect()
+        comm.mpi_comm.barrier()
