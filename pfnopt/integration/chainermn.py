@@ -75,6 +75,8 @@ def minimize_chainermn(
 
 
 def _check_chainermn_availability():
+    # type: () -> None
+
     if not _available:
         raise ImportError(
             'ChainerMN is not available. Please install ChainerMN to use this feature. '
