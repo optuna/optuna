@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from typing import Callable  # NOQA
 from typing import Optional  # NOQA
 from typing import Union  # NOQA
 
@@ -9,7 +10,6 @@ from pfnopt.storages import BaseStorage  # NOQA
 from pfnopt.storages import InMemoryStorage
 from pfnopt.study import get_study
 from pfnopt.study import minimize
-from pfnopt.study import ObjectiveFuncType  # NOQA
 from pfnopt.study import Study  # NOQA
 from pfnopt.trial import Trial  # NOQA
 
@@ -23,7 +23,7 @@ except ImportError as e:
 
 class ObjectiveFuncChainerMN(object):
     def __init__(self, func, comm):
-        # type: (ObjectiveFuncType, CommunicatorBase) -> None
+        # type: (Callable[[Trial, CommunicatorBase], float], CommunicatorBase) -> None
 
         self.comm = comm
         self.objective = func
@@ -32,11 +32,11 @@ class ObjectiveFuncChainerMN(object):
         # type: (Trial) -> float
 
         self.comm.mpi_comm.bcast((True, trial.trial_id))
-        return self.objective(trial)
+        return self.objective(trial, self.comm)
 
 
 def minimize_chainermn(
-        func,  # type: ObjectiveFuncType
+        func,  # type: Callable[[Trial, CommunicatorBase], float]
         study,  # type: Union[str, Study]
         comm,  # type: CommunicatorBase
         n_trials=None,  # type: Optional[int]
@@ -69,7 +69,7 @@ def minimize_chainermn(
             if not has_next_trial:
                 break
             trial = Trial(study, trial_id)
-            func(trial)
+            func(trial, comm)
 
     return study
 
