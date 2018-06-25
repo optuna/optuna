@@ -4,8 +4,11 @@ PFNOpt example that optimizes multi-layer perceptrons using ChainerMN.
 In this example, we optimize the validation accuracy of hand-written digit recognition using
 ChainerMN and MNIST, where architecture of neural network is optimized.
 
-ChainerMN and it's PFNOpt integration are supposed to be invoked via MPI.
-    $ mpirun -n 2 -- python chainermn_mnist.py
+ChainerMN and it's PFNOpt integration are supposed to be invoked via MPI. You can run this example
+as follows:
+    $ STORAGE_URL=sqlite:///example.db
+    $ STUDY_UUID=`pfnopt create-study --storage $STORAGE_URL`
+    $ mpirun -n 2 -- python chainermn_mnist.py $STUDY_UUID $STORAGE_URL
 
 """
 
@@ -15,7 +18,9 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 import chainermn
-import tempfile
+import sys
+
+import pfnopt
 
 
 BATCHSIZE = 128
@@ -36,7 +41,7 @@ def create_model(trial):
     return chainer.Sequential(*layers)
 
 
-def objective(trial):
+def objective(trial, comm):
     # Sample an architecture.
     model = L.Classifier(create_model(trial))
 
@@ -73,39 +78,25 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    import pfnopt
+    # Please make sure common study and storage are shared among nodes.
+    study_uuid = sys.argv[1]
+    storage_url = sys.argv[2]
 
     comm = chainermn.create_communicator('naive')
-
-    print('Number of nodes: ', comm.size)
-
     if comm.rank == 0:
-        # ChainerMN integration supports only RDB backend.
-        sqlite_file = tempfile.NamedTemporaryFile()
-        sqlite_url = 'sqlite:///{}'.format(sqlite_file.name)
-
-        study_uuid = pfnopt.create_study(storage=sqlite_url).study_uuid
-    else:
-        study_uuid, sqlite_url = None, None
-
-    # Please make sure common study and storage are shared among nodes.
-    study_uuid = comm.bcast_obj(study_uuid)
-    sqlite_url = comm.bcast_obj(sqlite_url)
+        print('Study UUID: ', study_uuid)
+        print('Storage URL: ', storage_url)
+        print('Number of nodes: ', comm.size)
 
     # Run optimization!
     study = pfnopt.integration.minimize_chainermn(
-        objective, study_uuid, comm, storage=sqlite_url, n_trials=25)
-
-    print('Number of finished trials: ', len(study.trials))
-
-    print('Best trial:')
-    trial = study.best_trial
-
-    print('  Value: ', trial.value)
-
-    print('  Params: ')
-    for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        objective, study_uuid, comm, storage=storage_url, n_trials=25)
 
     if comm.rank == 0:
-        sqlite_file.close()
+        print('Number of finished trials: ', len(study.trials))
+        print('Best trial:')
+        trial = study.best_trial
+        print('  Value: ', trial.value)
+        print('  Params: ')
+        for key, value in trial.params.items():
+            print('    {}: {}'.format(key, value))
