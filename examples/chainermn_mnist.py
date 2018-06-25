@@ -84,9 +84,9 @@ if __name__ == '__main__':
 
     comm = chainermn.create_communicator('naive')
     if comm.rank == 0:
-        print('Study UUID: ', study_uuid)
-        print('Storage URL: ', storage_url)
-        print('Number of nodes: ', comm.size)
+        print('Study UUID:', study_uuid)
+        print('Storage URL:', storage_url)
+        print('Number of nodes:', comm.size)
 
     # Run optimization!
     study = pfnopt.integration.minimize_chainermn(
