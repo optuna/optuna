@@ -41,8 +41,8 @@ class Func(object):
 
         self.suggested_values = {}  # type: Dict[int, Dict[str, Any]]
 
-    def __call__(self, trial):
-        # type: (Trial) -> float
+    def __call__(self, trial, comm):
+        # type: (Trial, CommunicatorBase) -> float
 
         x = trial.suggest_uniform('x', -10, 10)
         y = trial.suggest_loguniform('y', 20, 30)
