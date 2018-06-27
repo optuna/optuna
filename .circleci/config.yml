@@ -41,10 +41,13 @@ jobs:
       - run: &install
           name: install
           command: |
+            sudo apt-get update
+            sudo apt-get -y install openmpi-bin libopenmpi-dev
             python -m venv venv || virtualenv venv
             . venv/bin/activate
             python setup.py sdist
             pip install $(ls dist/*.tar.gz)[testing]
+            pip install chainermn
 
       - run:
           name: flake8
@@ -75,23 +78,29 @@ jobs:
             . venv/bin/activate
             pytest tests
 
+      - run: &tests-mn
+          name: tests-mn
+          command: |
+            . venv/bin/activate
+            mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+
   tests-python35:
     docker:
       - image: circleci/python:3.5
     steps:
-      [checkout, run: *install, run: *tests]
+      [checkout, run: *install, run: *tests, run: *tests-mn]
 
   tests-python34:
     docker:
       - image: circleci/python:3.4
     steps:
-      [checkout, run: *install, run: *tests]
+      [checkout, run: *install, run: *tests, run: *tests-mn]
 
   tests-python27:
     docker:
       - image: circleci/python:2.7
     steps:
-      [checkout, run: *install, run: *tests]
+      [checkout, run: *install, run: *tests, run: *tests-mn]
 
   # Examples
 
@@ -113,25 +122,33 @@ jobs:
           name: examples
           command: |
             . venv/bin/activate
-            for file in `find examples -name '*.py'`
+            for file in `find examples -name '*.py' -not -name 'chainermn_mnist.py'`
             do
                python $file
             done
+
+      - run: &examples-mn
+          name: examples-mn
+          command: |
+            . venv/bin/activate
+            STORAGE_URL=sqlite:///example.db
+            STUDY_UUID=`pfnopt create-study --storage $STORAGE_URL`
+            mpirun -n 2 -- python examples/chainermn_mnist.py $STUDY_UUID $STORAGE_URL
 
   examples-python35:
     docker:
       - image: circleci/python:3.5
     steps:
-      [checkout, run: *install, run: *install-examples, run: *examples]
+      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
 
   examples-python34:
     docker:
       - image: circleci/python:3.4
     steps:
-      [checkout, run: *install, run: *install-examples, run: *examples]
+      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
 
   examples-python27:
     docker:
       - image: circleci/python:2.7
     steps:
-      [checkout, run: *install, run: *install-examples, run: *examples]
+      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
