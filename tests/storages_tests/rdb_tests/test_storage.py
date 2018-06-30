@@ -1,6 +1,7 @@
 from mock import Mock
 from mock import patch
 import pytest
+import sys
 from typing import Dict  # NOQA
 import uuid
 
@@ -29,6 +30,17 @@ def test_init():
     version_info = session.query(VersionInfoModel).first()
     assert version_info.schema_version == SCHEMA_VERSION
     assert version_info.library_version == version.__version__
+
+
+def test_init_db_module_import_error():
+    # type: () -> None
+
+    expected_msg = 'Failed to import DB access module for the specified storage URL. ' \
+                   'Please install appropriate one.'
+
+    with patch.dict(sys.modules, {'psycopg2': None}):
+        with pytest.raises(ImportError, match=expected_msg):
+            RDBStorage('postgresql://user:password@host/database')
 
 
 def test_create_new_study_id_multiple_studies():
