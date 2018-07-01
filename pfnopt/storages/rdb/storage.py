@@ -25,7 +25,14 @@ class RDBStorage(BaseStorage):
         # type: (str, Optional[Dict[str, Any]]) -> None
 
         connect_args = connect_args or {}
-        self.engine = create_engine(url, connect_args=connect_args)
+
+        try:
+            self.engine = create_engine(url, connect_args=connect_args)
+        except ImportError as e:
+            raise ImportError(
+                'Failed to import DB access module for the specified storage URL. '
+                'Please install appropriate one. (The actual import error is: ' + str(e) + '.)')
+
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
         self._check_table_schema_compatibility()
@@ -416,4 +423,5 @@ class RDBStorage(BaseStorage):
         # counters, so it is not guaranteed that they are released by correct threads (for more
         # information, please see the docstring of remove_session).
 
-        self.remove_session()
+        if hasattr(self, 'scoped_session'):
+            self.remove_session()
