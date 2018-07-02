@@ -5,15 +5,13 @@ import pytest
 import tempfile
 import threading
 import time
-from types import TracebackType  # NOQA
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import IO  # NOQA
 from typing import Optional  # NOQA
-from typing import Type  # NOQA
 
 import pfnopt
-
+from pfnopt.testing.storage import StorageSupplier
 
 STORAGE_MODES = [
     'none',    # We give `None` to storage argument, so InMemoryStorage is used.
@@ -31,46 +29,13 @@ common_tempfile = None  # type: Optional[IO[Any]]
 def setup_module():
     # type: () -> None
 
-    global common_tempfile
-    common_tempfile = tempfile.NamedTemporaryFile()
+    StorageSupplier.setup_common_tempfile()
 
 
 def teardown_module():
     # type: () -> None
 
-    assert common_tempfile is not None
-    common_tempfile.close()
-
-
-class StorageSupplier(object):
-
-    def __init__(self, storage_specifier):
-        # type: (str) -> None
-
-        self.storage_specifier = storage_specifier
-        self.tempfile = None  # type: Optional[IO[Any]]
-
-    def __enter__(self):
-        # type: () -> Optional[pfnopt.storages.BaseStorage]
-
-        if self.storage_specifier == 'none':
-            return None
-        elif self.storage_specifier == 'new':
-            self.tempfile = tempfile.NamedTemporaryFile()
-            url = 'sqlite:///{}'.format(self.tempfile.name)
-            return pfnopt.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
-        elif self.storage_specifier == 'common':
-            assert common_tempfile is not None
-            url = 'sqlite:///{}'.format(common_tempfile.name)
-            return pfnopt.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
-        else:
-            assert False
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        # type: (Type[BaseException], BaseException, TracebackType) -> None
-
-        if self.tempfile:
-            self.tempfile.close()
+    StorageSupplier.teardown_common_tempfile()
 
 
 def func(trial, x_max=1.0):
@@ -305,6 +270,49 @@ def test_get_all_study_summaries_with_no_trials(storage_mode):
         assert summary.study_uuid == study.study_uuid
         assert summary.n_trials == 0
         assert summary.datetime_start is None
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_run_trial(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = pfnopt.create_study(
+            storage=storage, acceptable_trial_exceptions=(ValueError,))
+
+        # Test trial without exception.
+        study._run_trial(func)
+        check_study(study)
+
+        # Test trial with acceptable exception.
+        def func_value_error(_):
+            raise ValueError
+
+        trial = study._run_trial(func_value_error)
+        frozen_trial = study.storage.get_trial(trial.trial_id)
+
+        expected_message = 'A trial failed with the following error: ValueError()'
+        assert frozen_trial.state == pfnopt.structs.TrialState.FAIL
+        assert frozen_trial.user_attrs['__system__']['fail_reason'] == expected_message
+
+        # Test trial with unacceptable exception.
+        def func_arithmetic_error(_):
+            raise ArithmeticError
+
+        with pytest.raises(ArithmeticError):
+            study._run_trial(func_arithmetic_error)
+
+        # Test trial with invalid objective value.
+        def func_invalid_return(_):
+            return None
+
+        trial = study._run_trial(func_invalid_return)
+        frozen_trial = study.storage.get_trial(trial.trial_id)
+
+        expected_message = 'Setting trial status as FAILED because the returned value from the ' \
+                           'objective function cannot be casted to float. Returned value is: None'
+        assert frozen_trial.state == pfnopt.structs.TrialState.FAIL
+        assert frozen_trial.user_attrs['__system__']['fail_reason'] == expected_message
 
 
 def test_study_pickle():

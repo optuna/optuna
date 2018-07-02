@@ -38,6 +38,10 @@ class Study(object):
             Sampler object that implements background algorithm for value suggestion.
         pruner:
             Pruner object that decides early stopping of unpromising trials.
+        acceptable_trial_exceptions:
+            A study continues to run even when a trial raises one of exceptions specified in this
+            argument. Default is (Exception,), where all non-exit exceptions are handled by this
+            logic.
 
     """
 
@@ -47,6 +51,7 @@ class Study(object):
             storage,  # type: Union[None, str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
+            acceptable_trial_exceptions=(Exception,)  # Tuple[Exception]
     ):
         # type: (...) -> None
 
@@ -54,6 +59,7 @@ class Study(object):
         self.storage = storages.get_storage(storage)
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
+        self.acceptable_trial_exceptions = acceptable_trial_exceptions
 
         self.study_id = self.storage.get_study_id_from_uuid(study_uuid)
         self.logger = logging.get_logger(__name__)
@@ -138,12 +144,7 @@ class Study(object):
                 if elapsed_seconds >= timeout_seconds:
                     break
 
-            trial_id = self.storage.create_new_trial_id(self.study_id)
-            trial = trial_module.Trial(self, trial_id)
-            result = func(trial)
-            trial.report(result)
-            trial.complete()
-            self._log_completed_trial(trial_id, result)
+            self._run_trial(func)
 
     def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
@@ -166,12 +167,7 @@ class Study(object):
         # the evaluation. When False is received, then it quits.
         def func_child_thread(que):
             while que.get():
-                trial_id = self.storage.create_new_trial_id(self.study_id)
-                trial = trial_module.Trial(self, trial_id)
-                result = func(trial)
-                trial.report(result)
-                trial.complete()
-                self._log_completed_trial(trial_id, result)
+                self._run_trial(func)
             self.storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
@@ -205,7 +201,41 @@ class Study(object):
         que.close()
         que.join_thread()
 
-    def _log_completed_trial(self, trial_id, value):
+    def _run_trial(self, func):
+        # type: (ObjectiveFuncType) -> trial_module.Trial
+
+        trial_id = self.storage.create_new_trial_id(self.study_id)
+        trial = trial_module.Trial(self, trial_id)
+
+        try:
+            result = func(trial)
+        except self.acceptable_trial_exceptions as e:
+            message = 'A trial failed with the following error: {}'.format(repr(e))
+            self.logger.warning(message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            return trial
+
+        try:
+            result = float(result)
+        except (ValueError, TypeError,):
+            message = 'Setting trial status as FAILED because the returned value from the ' \
+                      'objective function cannot be casted to float. Returned value is: ' \
+                      '{}'.format(repr(result))
+            self.logger.warning(message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            return trial
+
+        trial.report(result)
+        self.storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
+        self._log_completed_trial(result)
+
+        return trial
+
+    def _log_completed_trial(self, value):
+        # type: (float) -> None
+
         self.logger.info(
             'Finished a trial resulted in value: {}. '
             'Current best value is {} with parameters: {}.'.format(
@@ -216,6 +246,7 @@ def create_study(
         storage=None,  # type: Union[None, str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
+        acceptable_trial_exceptions=(Exception,)  # Tuple[Exception]
 ):
     # type: (...) -> Study
 
@@ -229,6 +260,10 @@ def create_study(
             Sampler object that implements background algorithm for value suggestion.
         pruner:
             Pruner object that decides early stopping of unpromising trials.
+        acceptable_trial_exceptions:
+            A study continues to run even when a trial raises one of exceptions specified in this
+            argument. Default is (Exception,), where all non-exit exceptions are handled by this
+            logic.
 
     Returns:
         A study object.
@@ -237,7 +272,9 @@ def create_study(
 
     storage = storages.get_storage(storage)
     study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
-    return Study(study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner)
+    return Study(
+        study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner,
+        acceptable_trial_exceptions=acceptable_trial_exceptions)
 
 
 def get_study(
@@ -245,6 +282,7 @@ def get_study(
         storage=None,  # type: Union[None, str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
+        acceptable_trial_exceptions=(Exception,)  # Tuple[Exception]
 ):
     # type: (...) -> Study
 
@@ -260,6 +298,10 @@ def get_study(
             Sampler object that implements background algorithm for value suggestion.
         pruner:
             Pruner object that decides early stopping of unpromising trials.
+        acceptable_trial_exceptions:
+            A study continues to run even when a trial raises one of exceptions specified in this
+            argument. Default is (Exception,), where all non-exit exceptions are handled by this
+            logic.
 
     Returns:
         A study object.
@@ -283,7 +325,9 @@ def get_study(
         return study
     else:
         # `study` is expected to be a string and interpreted as a study UUID
-        return Study(study_uuid=study, storage=storage, sampler=sampler, pruner=pruner)
+        return Study(
+            study_uuid=study, storage=storage, sampler=sampler, pruner=pruner,
+            acceptable_trial_exceptions=acceptable_trial_exceptions)
 
 
 def minimize(
