@@ -214,6 +214,25 @@ def test_minimize_with_incompatible_task(storage_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_minimize_with_catch(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = pfnopt.create_study(storage=storage)
+
+        def func_value_error(_):
+            raise ValueError
+
+        # Test acceptable exception.
+        pfnopt.minimize(func_value_error, n_trials=20, study=study, catch=(ValueError,))
+
+        # Test trial with unacceptable exception.
+        with pytest.raises(ValueError):
+            pfnopt.minimize(
+                func_value_error, n_trials=20, study=study, catch=(ArithmeticError,))
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 def test_study_set_and_get_user_attrs(storage_mode):
     # type: (str) -> None
 
@@ -277,18 +296,17 @@ def test_run_trial(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(
-            storage=storage, acceptable_trial_exceptions=(ValueError,))
+        study = pfnopt.create_study(storage=storage)
 
         # Test trial without exception.
-        study._run_trial(func)
+        study._run_trial(func, catch=(Exception,))
         check_study(study)
 
         # Test trial with acceptable exception.
         def func_value_error(_):
             raise ValueError
 
-        trial = study._run_trial(func_value_error)
+        trial = study._run_trial(func_value_error, catch=(ValueError,))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
         expected_message = 'A trial failed with the following error: ValueError()'
@@ -296,17 +314,14 @@ def test_run_trial(storage_mode):
         assert frozen_trial.user_attrs['__system__']['fail_reason'] == expected_message
 
         # Test trial with unacceptable exception.
-        def func_arithmetic_error(_):
-            raise ArithmeticError
-
-        with pytest.raises(ArithmeticError):
-            study._run_trial(func_arithmetic_error)
+        with pytest.raises(ValueError):
+            study._run_trial(func_value_error, catch=(ArithmeticError,))
 
         # Test trial with invalid objective value.
         def func_invalid_return(_):
             return None
 
-        trial = study._run_trial(func_invalid_return)
+        trial = study._run_trial(func_invalid_return, catch=(Exception,))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
         expected_message = 'Setting trial status as FAILED because the returned value from the ' \
