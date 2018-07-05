@@ -18,6 +18,7 @@ We have following two ways to execute this example:
 
 from __future__ import division
 
+import numpy as np
 import sklearn.datasets
 import sklearn.metrics
 import xgboost as xgb
@@ -59,8 +60,8 @@ def objective(trial):
 
     bst = xgb.train(param, dtrain, n_round)
     preds = bst.predict(dtest)
-    pred_labels = [round(value) for value in preds]
-    accuracy = sklearn.metrics.accuracy_score(dtest.get_label(), pred_labels)
+    pred_labels = np.rint(preds).astype('int64')
+    accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
     return 1.0 - accuracy
 
 
