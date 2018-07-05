@@ -22,8 +22,11 @@ import sklearn.datasets
 import sklearn.metrics
 import xgboost as xgb
 
+import pfnopt
+
 
 def objective(trial):
+    # type: (pfnopt.trial.Trial) -> float
     (data, target) = sklearn.datasets.load_breast_cancer(return_X_y=True)
 
     train_size = int(data.shape[0] * 0.75)
@@ -62,6 +65,5 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    import pfnopt
     study = pfnopt.minimize(objective, n_trials=100)
     print(study.best_trial)
