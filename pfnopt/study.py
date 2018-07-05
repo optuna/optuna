@@ -229,9 +229,9 @@ class Study(object):
         try:
             result = float(result)
         except (ValueError, TypeError,):
-            message = 'Setting trial status as FAILED because the returned value from the ' \
+            message = 'Setting trial status as {} because the returned value from the ' \
                       'objective function cannot be casted to float. Returned value is: ' \
-                      '{}'.format(repr(result))
+                      '{}'.format(structs.TrialState.FAIL, repr(result))
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
