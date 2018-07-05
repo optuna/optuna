@@ -21,6 +21,7 @@ from __future__ import division
 import numpy as np
 import sklearn.datasets
 import sklearn.metrics
+from sklearn.model_selection import train_test_split
 import xgboost as xgb
 
 import pfnopt
@@ -29,14 +30,7 @@ import pfnopt
 def objective(trial):
     # type: (pfnopt.trial.Trial) -> float
     (data, target) = sklearn.datasets.load_breast_cancer(return_X_y=True)
-
-    train_size = int(data.shape[0] * 0.75)
-
-    train_x = data[:train_size, :]
-    train_y = target[:train_size]
-    test_x = data[train_size:, :]
-    test_y = target[train_size:]
-
+    train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.25)
     dtrain = xgb.DMatrix(train_x, label=train_y)
     dtest = xgb.DMatrix(test_x, label=test_y)
 
