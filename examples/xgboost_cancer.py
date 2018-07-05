@@ -60,7 +60,7 @@ def objective(trial):
 
     bst = xgb.train(param, dtrain, n_round)
     preds = bst.predict(dtest)
-    pred_labels = np.rint(preds).astype('int64')
+    pred_labels = np.rint(preds)
     accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
     return 1.0 - accuracy
 
