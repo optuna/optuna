@@ -9,6 +9,8 @@ from typing import Callable  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
+from typing import Tuple  # NOQA
+from typing import Type  # NOQA
 from typing import Union  # NOQA
 
 from pfnopt import logging
@@ -109,21 +111,28 @@ class Study(object):
 
         return self.storage.get_study_user_attrs(self.study_id)
 
-    def run(self, func, n_trials=None, timeout_seconds=None, n_jobs=1):
-        # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
+    def run(
+            self,
+            func,  # type: ObjectiveFuncType
+            n_trials=None,  # type: Optional[int]
+            timeout_seconds=None,  # type: Optional[float]
+            n_jobs=1,  # type: int
+            catch=(Exception,)  # type: Tuple[Type[Exception]]
+    ):
+        # type: (...) -> None
 
         if n_jobs == 1:
-            self._run_sequential(func, n_trials, timeout_seconds)
+            self._run_sequential(func, n_trials, timeout_seconds, catch)
         else:
-            self._run_parallel(func, n_trials, timeout_seconds, n_jobs)
+            self._run_parallel(func, n_trials, timeout_seconds, n_jobs, catch)
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
 
         self.storage.set_study_user_attr(self.study_id, key, value)
 
-    def _run_sequential(self, func, n_trials, timeout_seconds):
-        # type: (ObjectiveFuncType, Optional[int], Optional[float]) -> None
+    def _run_sequential(self, func, n_trials, timeout_seconds, catch):
+        # type: (ObjectiveFuncType, Optional[int], Optional[float], Tuple[Type[Exception]]) -> None
 
         i_trial = 0
         time_start = datetime.datetime.now()
@@ -138,15 +147,17 @@ class Study(object):
                 if elapsed_seconds >= timeout_seconds:
                     break
 
-            trial_id = self.storage.create_new_trial_id(self.study_id)
-            trial = trial_module.Trial(self, trial_id)
-            result = func(trial)
-            trial.report(result)
-            trial.complete()
-            self._log_completed_trial(trial_id, result)
+            self._run_trial(func, catch)
 
-    def _run_parallel(self, func, n_trials, timeout_seconds, n_jobs):
-        # type: (ObjectiveFuncType, Optional[int], Optional[float], int) -> None
+    def _run_parallel(
+            self,
+            func,  # type: ObjectiveFuncType
+            n_trials,  # type: Optional[int]
+            timeout_seconds,  # type: Optional[float]
+            n_jobs,  # type: int
+            catch  # type: Tuple[Type[Exception]]
+    ):
+        # type: (...) -> None
 
         self.start_datetime = datetime.datetime.now()
 
@@ -166,12 +177,7 @@ class Study(object):
         # the evaluation. When False is received, then it quits.
         def func_child_thread(que):
             while que.get():
-                trial_id = self.storage.create_new_trial_id(self.study_id)
-                trial = trial_module.Trial(self, trial_id)
-                result = func(trial)
-                trial.report(result)
-                trial.complete()
-                self._log_completed_trial(trial_id, result)
+                self._run_trial(func, catch)
             self.storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
@@ -205,7 +211,41 @@ class Study(object):
         que.close()
         que.join_thread()
 
-    def _log_completed_trial(self, trial_id, value):
+    def _run_trial(self, func, catch):
+        # type: (ObjectiveFuncType, Tuple[Type[Exception]]) -> trial_module.Trial
+
+        trial_id = self.storage.create_new_trial_id(self.study_id)
+        trial = trial_module.Trial(self, trial_id)
+
+        try:
+            result = func(trial)
+        except catch as e:
+            message = 'A trial failed with the following error: {}'.format(repr(e))
+            self.logger.warning(message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            return trial
+
+        try:
+            result = float(result)
+        except (ValueError, TypeError,):
+            message = 'Setting trial status as {} because the returned value from the ' \
+                      'objective function cannot be casted to float. Returned value is: ' \
+                      '{}'.format(structs.TrialState.FAIL, repr(result))
+            self.logger.warning(message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            return trial
+
+        trial.report(result)
+        self.storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
+        self._log_completed_trial(result)
+
+        return trial
+
+    def _log_completed_trial(self, value):
+        # type: (float) -> None
+
         self.logger.info(
             'Finished a trial resulted in value: {}. '
             'Current best value is {} with parameters: {}.'.format(
@@ -295,6 +335,7 @@ def minimize(
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
         study=None,  # type: Union[None, str, Study]
+        catch=(Exception,)  # Tuple[Type[Exception]]
 ):
     # type: (...) -> Study
 
@@ -320,6 +361,10 @@ def minimize(
             Pruner object that decides early stopping of unpromising trials.
         study:
             Study object or its UUID. If this argument is set to None, a new study is created.
+        catch:
+            A study continues to run even when a trial raises one of exceptions specified in this
+            argument. Default is (Exception,), where all non-exit exceptions are handled by this
+            logic.
 
     Returns:
         A study object.
@@ -344,7 +389,7 @@ def minimize(
             'maximize task.'.format(study.study_uuid))
     study.storage.set_study_task(study.study_id, structs.StudyTask.MINIMIZE)
 
-    study.run(func, n_trials, timeout, n_jobs)
+    study.run(func, n_trials, timeout, n_jobs, catch)
     return study
 
 
