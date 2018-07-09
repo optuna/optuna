@@ -1,5 +1,6 @@
 import collections
 import datetime
+import math
 import multiprocessing
 import multiprocessing.pool
 from six.moves import queue
@@ -220,7 +221,8 @@ class Study(object):
         try:
             result = func(trial)
         except catch as e:
-            message = 'A trial failed with the following error: {}'.format(repr(e))
+            message = 'Setting trial status as {} because of the following error: {}'.format(
+                structs.TrialState.FAIL, repr(e))
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
@@ -232,6 +234,14 @@ class Study(object):
             message = 'Setting trial status as {} because the returned value from the ' \
                       'objective function cannot be casted to float. Returned value is: ' \
                       '{}'.format(structs.TrialState.FAIL, repr(result))
+            self.logger.warning(message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            return trial
+
+        if math.isnan(result):
+            message = 'Setting trial status as {} because the objective function returned ' \
+                      '{}.'.format(structs.TrialState.FAIL, result)
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
