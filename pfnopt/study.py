@@ -1,8 +1,8 @@
 import collections
 import datetime
+import math
 import multiprocessing
 import multiprocessing.pool
-import numpy as np
 from six.moves import queue
 import time
 from typing import Any  # NOQA
@@ -239,7 +239,7 @@ class Study(object):
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             return trial
 
-        if np.isnan(result):
+        if math.isnan(result):
             message = 'Setting trial status as {} because the objective function returned ' \
                       '{}.'.format(structs.TrialState.FAIL, result)
             self.logger.warning(message)
