@@ -50,6 +50,11 @@ class Trial(object):
 
         return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
 
+    def suggest_quniform(self, name, low, high, q):
+        # type: (str, float, float, float) -> float
+
+        return self._suggest(name, distributions.QUniformDistribution(low=low, high=high, q=q))
+
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
 

@@ -21,6 +21,10 @@ class RandomSampler(BaseSampler):
             log_low = numpy.log(param_distribution.low)
             log_high = numpy.log(param_distribution.high)
             return numpy.exp(self.rng.uniform(log_low, log_high))
+        elif isinstance(param_distribution, distributions.QUniformDistribution):
+            q = param_distribution.q
+            s = self.rng.uniform(param_distribution.low, param_distribution.high)
+            return numpy.round(s / q) * q
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             choices = param_distribution.choices
             return self.rng.randint(len(choices))

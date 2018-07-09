@@ -49,6 +49,9 @@ class TPESampler(base.BaseSampler):
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
             return self._sample_loguniform(
                 param_distribution, below_param_values, above_param_values)
+        elif isinstance(param_distribution, distributions.QUniformDistribution):
+            return self._sample_quniform(
+                param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             return self._sample_categorical(
                 param_distribution, below_param_values, above_param_values)
@@ -71,6 +74,13 @@ class TPESampler(base.BaseSampler):
             low=math.log(distribution.low),
             high=math.log(distribution.high),
             size=(self.n_ei_candidates,), rng=self.rng)
+
+    def _sample_quniform(self, distribution, below, above):
+        # type: (distributions.QUniformDistribution, List[float], List[float]) -> float
+        return _hyperopt.sample_quniform(
+            obs_below=below, obs_above=above, prior_weight=self.prior_weight,
+            low=distribution.low, high=distribution.high,
+            size=(self.n_ei_candidates,), rng=self.rng, q=distribution.q)
 
     def _sample_categorical(self, distribution, below, above):
         # type: (distributions.CategoricalDistribution, List[float], List[float]) -> float
