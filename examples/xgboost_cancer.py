@@ -28,7 +28,6 @@ import pfnopt
 
 
 def objective(trial):
-    # type: (pfnopt.trial.Trial) -> float
     (data, target) = sklearn.datasets.load_breast_cancer(return_X_y=True)
     train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.25)
     dtrain = xgb.DMatrix(train_x, label=train_y)
