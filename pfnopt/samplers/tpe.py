@@ -77,10 +77,11 @@ class TPESampler(base.BaseSampler):
 
     def _sample_quniform(self, distribution, below, above):
         # type: (distributions.QUniformDistribution, List[float], List[float]) -> float
+
         return _hyperopt.sample_quniform(
             obs_below=below, obs_above=above, prior_weight=self.prior_weight,
-            low=distribution.low, high=distribution.high,
-            size=(self.n_ei_candidates,), rng=self.rng, q=distribution.q)
+            low=distribution.low, high=distribution.high, q=distribution.q,
+            size=(self.n_ei_candidates,), rng=self.rng)
 
     def _sample_categorical(self, distribution, below, above):
         # type: (distributions.CategoricalDistribution, List[float], List[float]) -> float

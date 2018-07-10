@@ -578,7 +578,7 @@ def sample_loguniform(obs_below, obs_above, prior_weight, low, high, size=(), rn
     return broadcast_best(samples_b, llik_b, llik_a)[0]  # TODO
 
 
-def sample_quniform(obs_below, obs_above, prior_weight, low, high, size=(), rng=None, q=None):
+def sample_quniform(obs_below, obs_above, prior_weight, low, high, q, size=(), rng=None):
     # Based on `ap_quniform_sampler`
 
     prior_mu = 0.5 * (high + low)
