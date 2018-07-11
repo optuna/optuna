@@ -1,6 +1,7 @@
-import typing
-import pytest
+import typing  # NOQA
+
 import numpy as np
+import pytest
 
 import pfnopt
 
@@ -50,4 +51,3 @@ def test_quniform(sampler_init_func):
     assert np.all(points <= 10.2)
     round_points = np.round(10 * points)
     np.testing.assert_almost_equal(round_points, 10 * points)
-
