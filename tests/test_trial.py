@@ -36,7 +36,7 @@ def test_suggest_uniform(storage_init_func):
 
 
 @parametrize_storage
-def test_suggest_quniform(storage_init_func):
+def test_suggest_discrete_uniform(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
 
     mock = Mock()
@@ -46,7 +46,7 @@ def test_suggest_quniform(storage_init_func):
     with patch.object(sampler, 'sample', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
-        distribution = distributions.QUniformDistribution(low=0., high=3., q=1.)
+        distribution = distributions.DiscreteUniformDistribution(low=0., high=3., q=1.)
 
         assert trial._suggest('x', distribution) == 1.  # Test suggesting a param.
         assert trial._suggest('x', distribution) == 1.  # Test suggesting the same param.

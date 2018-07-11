@@ -39,9 +39,9 @@ class LogUniformDistribution(
     pass
 
 
-class QUniformDistribution(
+class DiscreteUniformDistribution(
     NamedTuple(
-        '_BaseQUniformDistribution',
+        '_BaseDiscreteUniformDistribution',
         [('low', float), ('high', float), ('q', float)]), BaseDistribution):
     pass
 
@@ -61,7 +61,7 @@ class CategoricalDistribution(
 
 
 DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution,
-                        QUniformDistribution, CategoricalDistribution)
+                        DiscreteUniformDistribution, CategoricalDistribution)
 
 
 def json_to_distribution(json_str):
