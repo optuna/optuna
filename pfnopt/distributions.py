@@ -41,7 +41,7 @@ class LogUniformDistribution(
 
 class QUniformDistribution(
     NamedTuple(
-        '_BaseUniformDistribution',
+        '_BaseQUniformDistribution',
         [('low', float), ('high', float), ('q', float)]), BaseDistribution):
     pass
 
