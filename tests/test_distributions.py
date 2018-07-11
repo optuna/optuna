@@ -60,7 +60,7 @@ def test_check_distribution_compatibility():
         EXAMPLE_DISTRIBUTIONS['c2'],
         EXAMPLE_DISTRIBUTIONS['c2']._replace(choice=('Roppongi', 'Akasaka'))))
 
-    # test dynamic value range (CategoricalDistribution)
+    # test dynamic value range (except CategoricalDistribution)
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS['u'],
         EXAMPLE_DISTRIBUTIONS['u']._replace(low=-1.0, high=-2.0))
@@ -69,4 +69,4 @@ def test_check_distribution_compatibility():
         EXAMPLE_DISTRIBUTIONS['l']._replace(low=-0.1, high=1.0))
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS['qu'],
-        EXAMPLE_DISTRIBUTIONS['qu']._replace(low=-1.0, high=10.0, q=2))
+        EXAMPLE_DISTRIBUTIONS['qu']._replace(low=-1.0, high=10.0, q=3.))

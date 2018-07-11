@@ -601,7 +601,7 @@ def sample_quniform(obs_below, obs_above, prior_weight, low, high, q, size=(), r
         samples_b, weights_a, mus_a, sigmas_a,
         low=low, high=high, q=q)
 
-    return broadcast_best(samples_b, llik_b, llik_a)[0]  # TODO
+    return broadcast_best(samples_b, llik_b, llik_a)[0]
 
 
 def categorical(p, upper=None, rng=None, size=()):
