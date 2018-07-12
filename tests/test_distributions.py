@@ -8,6 +8,7 @@ from pfnopt import distributions
 EXAMPLE_DISTRIBUTIONS = {
     'u': distributions.UniformDistribution(low=1., high=2.),
     'l': distributions.LogUniformDistribution(low=0.001, high=100),
+    'du': distributions.DiscreteUniformDistribution(low=1., high=10., q=2.),
     'c1': distributions.CategoricalDistribution(choices=(2.71, -float('inf'))),
     'c2': distributions.CategoricalDistribution(choices=('Roppongi', 'Azabu'))
 }  # type: Dict[str, Any]
@@ -15,6 +16,8 @@ EXAMPLE_DISTRIBUTIONS = {
 EXAMPLE_JSONS = {
     'u': '{"name": "UniformDistribution", "attributes": {"low": 1.0, "high": 2.0}}',
     'l': '{"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}}',
+    'du': '{"name": "DiscreteUniformDistribution",'
+          '"attributes": {"low": 1.0, "high": 10.0, "q": 2.0}}',
     'c1': '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     'c2': '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}'
 }
@@ -58,10 +61,13 @@ def test_check_distribution_compatibility():
         EXAMPLE_DISTRIBUTIONS['c2'],
         EXAMPLE_DISTRIBUTIONS['c2']._replace(choice=('Roppongi', 'Akasaka'))))
 
-    # test dynamic value range (CategoricalDistribution)
+    # test dynamic value range (except CategoricalDistribution)
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS['u'],
         EXAMPLE_DISTRIBUTIONS['u']._replace(low=-1.0, high=-2.0))
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS['l'],
         EXAMPLE_DISTRIBUTIONS['l']._replace(low=-0.1, high=1.0))
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS['du'],
+        EXAMPLE_DISTRIBUTIONS['du']._replace(low=-1.0, high=10.0, q=3.))

@@ -50,6 +50,12 @@ class Trial(object):
 
         return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
 
+    def suggest_discrete_uniform(self, name, low, high, q):
+        # type: (str, float, float, float) -> float
+
+        discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+        return self._suggest(name, discrete)
+
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
 

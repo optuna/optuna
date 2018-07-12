@@ -39,6 +39,13 @@ class LogUniformDistribution(
     pass
 
 
+class DiscreteUniformDistribution(
+    NamedTuple(
+        '_BaseDiscreteUniformDistribution',
+        [('low', float), ('high', float), ('q', float)]), BaseDistribution):
+    pass
+
+
 class CategoricalDistribution(
     NamedTuple(
         '_BaseCategoricalDistribution',
@@ -53,7 +60,8 @@ class CategoricalDistribution(
         return self.choices.index(param_value_in_external_repr)
 
 
-DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, CategoricalDistribution)
+DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution,
+                        DiscreteUniformDistribution, CategoricalDistribution)
 
 
 def json_to_distribution(json_str):

@@ -578,6 +578,32 @@ def sample_loguniform(obs_below, obs_above, prior_weight, low, high, size=(), rn
     return broadcast_best(samples_b, llik_b, llik_a)[0]  # TODO
 
 
+def sample_quniform(obs_below, obs_above, prior_weight, low, high, q, size=(), rng=None):
+    # Based on `ap_quniform_sampler`
+
+    prior_mu = 0.5 * (high + low)
+    prior_sigma = 1.0 * (high - low)
+
+    # Below
+    weights_b, mus_b, sigmas_b = adaptive_parzen_normal(
+        obs_below, prior_weight, prior_mu, prior_sigma)
+    samples_b = GMM1(
+        weights_b, mus_b, sigmas_b,
+        low=low, high=high, q=q, size=size, rng=rng)
+    llik_b = GMM1_lpdf(
+        samples_b, weights_b, mus_b, sigmas_b,
+        low=low, high=high, q=q)
+
+    # Above
+    weights_a, mus_a, sigmas_a = adaptive_parzen_normal(
+        obs_above, prior_weight, prior_mu, prior_sigma)
+    llik_a = GMM1_lpdf(
+        samples_b, weights_a, mus_a, sigmas_a,
+        low=low, high=high, q=q)
+
+    return broadcast_best(samples_b, llik_b, llik_a)[0]
+
+
 def categorical(p, upper=None, rng=None, size=()):
     # From pyll/stochastic.py
 
