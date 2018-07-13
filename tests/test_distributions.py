@@ -9,6 +9,7 @@ EXAMPLE_DISTRIBUTIONS = {
     'u': distributions.UniformDistribution(low=1., high=2.),
     'l': distributions.LogUniformDistribution(low=0.001, high=100),
     'du': distributions.DiscreteUniformDistribution(low=1., high=10., q=2.),
+    'iu': distributions.IntegerUniformDistribution(low=1, high=10),
     'c1': distributions.CategoricalDistribution(choices=(2.71, -float('inf'))),
     'c2': distributions.CategoricalDistribution(choices=('Roppongi', 'Azabu'))
 }  # type: Dict[str, Any]
@@ -18,6 +19,7 @@ EXAMPLE_JSONS = {
     'l': '{"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}}',
     'du': '{"name": "DiscreteUniformDistribution",'
           '"attributes": {"low": 1.0, "high": 10.0, "q": 2.0}}',
+    'iu': '{"name": "IntegerUniformDistribution", "attributes": {"low": 1, "high": 10}}',
     'c1': '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     'c2': '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}'
 }
@@ -71,3 +73,6 @@ def test_check_distribution_compatibility():
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS['du'],
         EXAMPLE_DISTRIBUTIONS['du']._replace(low=-1.0, high=10.0, q=3.))
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS['iu'],
+        EXAMPLE_DISTRIBUTIONS['iu']._replace(low=-1, high=1))

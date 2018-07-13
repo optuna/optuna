@@ -46,6 +46,24 @@ class DiscreteUniformDistribution(
     pass
 
 
+class IntegerUniformDistribution(
+    NamedTuple(
+        '_BaseIntegerUniformDistribution',
+        [('low', int), ('high', int)]), DiscreteUniformDistribution):
+
+    @property
+    def q(self):
+        return 1.0
+
+    def to_external_repr(self, param_value_in_internal_repr):
+        # type: (float) -> int
+        return int(param_value_in_internal_repr)
+
+    def to_internal_repr(self, param_value_in_external_repr):
+        # type: (int) -> float
+        return float(param_value_in_external_repr)
+
+
 class CategoricalDistribution(
     NamedTuple(
         '_BaseCategoricalDistribution',
@@ -61,7 +79,8 @@ class CategoricalDistribution(
 
 
 DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution,
-                        DiscreteUniformDistribution, CategoricalDistribution)
+                        DiscreteUniformDistribution, IntegerUniformDistribution,
+                        CategoricalDistribution)
 
 
 def json_to_distribution(json_str):

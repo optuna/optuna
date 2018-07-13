@@ -59,8 +59,8 @@ class Trial(object):
     def suggest_integer(self, name, low, high):
         # type: (str, int, int) -> int
 
-        discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=1.)
-        return int(self._suggest(name, discrete))
+        integer = distributions.IntegerUniformDistribution(low=low, high=high)
+        return int(self._suggest(name, integer))
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
