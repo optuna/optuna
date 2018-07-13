@@ -4,6 +4,7 @@ import six
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import NamedTuple
+from typing import Optional  # NOQA
 from typing import Tuple
 from typing import Union
 
@@ -46,21 +47,26 @@ class DiscreteUniformDistribution(
     pass
 
 
-class IntegerUniformDistribution(
-    NamedTuple(
-        '_BaseIntegerUniformDistribution',
-        [('low', int), ('high', int)]), DiscreteUniformDistribution):
+class IntegerUniformDistribution(DiscreteUniformDistribution):
+    def __new__(cls, low, high, q=1):
+        # type: (int, int, Optional[int]) -> IntegerUniformDistribution
 
-    @property
-    def q(self):
-        return 1.0
+        return super(IntegerUniformDistribution, cls).__new__(cls, low, high, q)
+
+    def __init__(self, low, high, q=1):
+        # type: (int, int, Optional[int]) -> None
+
+        # This method is necessary to check types.
+        pass
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
+
         return int(param_value_in_internal_repr)
 
     def to_internal_repr(self, param_value_in_external_repr):
         # type: (int) -> float
+
         return float(param_value_in_external_repr)
 
 
