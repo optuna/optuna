@@ -47,17 +47,10 @@ class DiscreteUniformDistribution(
     pass
 
 
-class IntegerUniformDistribution(DiscreteUniformDistribution):
-    def __new__(cls, low, high, q=1):
-        # type: (int, int, Optional[int]) -> IntegerUniformDistribution
-
-        return super(IntegerUniformDistribution, cls).__new__(cls, low, high, q)
-
-    def __init__(self, low, high, q=1):
-        # type: (int, int, Optional[int]) -> None
-
-        # This method is necessary to check types.
-        pass
+class IntegerUniformDistribution(
+    NamedTuple(
+        '_BaseIntegerUniformDistribution',
+        [('low', int), ('high', int)]), BaseDistribution):
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int

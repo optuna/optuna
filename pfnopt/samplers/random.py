@@ -29,6 +29,9 @@ class RandomSampler(BaseSampler):
             v = numpy.round(s / q) * q
             # v may slightly exceed range due to round-off errors.
             return min(max(v, param_distribution.low), param_distribution.high)
+        elif isinstance(param_distribution, distributions.IntegerUniformDistribution):
+            # numpy.random.randint includes low but excludes high.
+            return self.rng.randint(param_distribution.low, param_distribution.high+1)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             choices = param_distribution.choices
             return self.rng.randint(len(choices))
