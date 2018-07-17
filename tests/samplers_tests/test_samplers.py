@@ -52,14 +52,16 @@ def test_discrete_uniform(sampler_class):
 
 
 @parametrize_sampler
-def test_integer(sampler_class):
+def test_int(sampler_class):
     # type: (typing.Callable[[], pfnopt.samplers.BaseSampler]) -> None
 
     sampler = sampler_class()
     storage = pfnopt.storages.get_storage(None)
     study_id = storage.create_new_study_id()
 
-    distribution = pfnopt.distributions.IntegerUniformDistribution(-10, 10)
+    distribution = pfnopt.distributions.IntUniformDistribution(-10, 10)
     points = np.array([sampler.sample(storage, study_id, 'x', distribution) for _ in range(100)])
     assert np.all(points >= -10)
     assert np.all(points <= 10)
+    round_points = np.round(points)
+    np.testing.assert_almost_equal(round_points, points)

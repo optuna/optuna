@@ -47,9 +47,9 @@ class DiscreteUniformDistribution(
     pass
 
 
-class IntegerUniformDistribution(
+class IntUniformDistribution(
     NamedTuple(
-        '_BaseIntegerUniformDistribution',
+        '_BaseIntUniformDistribution',
         [('low', int), ('high', int)]), BaseDistribution):
 
     def to_external_repr(self, param_value_in_internal_repr):
@@ -78,7 +78,7 @@ class CategoricalDistribution(
 
 
 DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution,
-                        DiscreteUniformDistribution, IntegerUniformDistribution,
+                        DiscreteUniformDistribution, IntUniformDistribution,
                         CategoricalDistribution)
 
 

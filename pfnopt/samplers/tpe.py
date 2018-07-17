@@ -52,8 +52,8 @@ class TPESampler(base.BaseSampler):
         elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
             return self._sample_discrete_uniform(
                 param_distribution, below_param_values, above_param_values)
-        elif isinstance(param_distribution, distributions.IntegerUniformDistribution):
-            return self._sample_integer(
+        elif isinstance(param_distribution, distributions.IntUniformDistribution):
+            return self._sample_int(
                 param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             return self._sample_categorical(
@@ -90,8 +90,8 @@ class TPESampler(base.BaseSampler):
         # v may slightly exceed range due to round-off errors.
         return min(max(v, distribution.low), distribution.high)
 
-    def _sample_integer(self, distribution, below, above):
-        # type: (distributions.IntegerUniformDistribution, List[float], List[float]) -> float
+    def _sample_int(self, distribution, below, above):
+        # type: (distributions.IntUniformDistribution, List[float], List[float]) -> float
 
         q = 1.0
         v = _hyperopt.sample_quniform(
