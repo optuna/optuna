@@ -4,7 +4,6 @@ import six
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import NamedTuple
-from typing import Optional  # NOQA
 from typing import Tuple
 from typing import Union
 

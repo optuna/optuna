@@ -63,4 +63,5 @@ def test_int(sampler_class):
     points = np.array([sampler.sample(storage, study_id, 'x', distribution) for _ in range(100)])
     assert np.all(points >= -10)
     assert np.all(points <= 10)
-    assert points.dtype == int
+    round_points = np.round(points)
+    np.testing.assert_almost_equal(round_points, points)
