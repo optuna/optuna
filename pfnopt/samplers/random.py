@@ -31,7 +31,7 @@ class RandomSampler(BaseSampler):
             return min(max(v, param_distribution.low), param_distribution.high)
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
             # numpy.random.randint includes low but excludes high.
-            return self.rng.randint(param_distribution.low, param_distribution.high+1)
+            return self.rng.randint(param_distribution.low, param_distribution.high + 1)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             choices = param_distribution.choices
             return self.rng.randint(len(choices))
