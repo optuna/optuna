@@ -49,3 +49,19 @@ def test_discrete_uniform(sampler_class):
     assert np.all(points <= 10.2)
     round_points = np.round(10 * points)
     np.testing.assert_almost_equal(round_points, 10 * points)
+
+
+@parametrize_sampler
+def test_int(sampler_class):
+    # type: (typing.Callable[[], pfnopt.samplers.BaseSampler]) -> None
+
+    sampler = sampler_class()
+    storage = pfnopt.storages.get_storage(None)
+    study_id = storage.create_new_study_id()
+
+    distribution = pfnopt.distributions.IntUniformDistribution(-10, 10)
+    points = np.array([sampler.sample(storage, study_id, 'x', distribution) for _ in range(100)])
+    assert np.all(points >= -10)
+    assert np.all(points <= 10)
+    round_points = np.round(points)
+    np.testing.assert_almost_equal(round_points, points)
