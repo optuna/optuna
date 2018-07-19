@@ -3,6 +3,7 @@ import datetime
 import math
 import multiprocessing
 import multiprocessing.pool
+import pandas as pd
 from six.moves import queue
 import time
 from typing import Any  # NOQA
@@ -10,6 +11,7 @@ from typing import Callable  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
+from typing import Set  # NOQA
 from typing import Tuple  # NOQA
 from typing import Type  # NOQA
 from typing import Union  # NOQA
@@ -131,6 +133,27 @@ class Study(object):
         # type: (str, Any) -> None
 
         self.storage.set_study_user_attr(self.study_id, key, value)
+
+    def trials_dataframe(self):
+        # type: () -> pd.DataFrame
+
+        columns = [attr for attr in structs.FrozenTrial.visible_attrs
+                   if attr not in structs.FrozenTrial.nested_attrs]
+        nested_columns = structs.FrozenTrial.nested_attrs
+        data = [{('header', column): trial.__getattribute__(column) for column in columns}
+                for trial in self.trials]
+        column_tuples = [('header', column) for column in columns]
+        nested_keys = {c: set() for c in nested_columns}  # type: Dict[str, Set[Tuple[str, str]]]
+        for trial, record in zip(self.trials, data):
+            for column in nested_columns:
+                value_dict = trial.__getattribute__(column)
+                for key, value in value_dict.items():
+                    if key.startswith("__"):
+                        continue
+                    record[(column, key)] = value
+                    nested_keys[column].add((column, key))
+        column_tuples += [key for column in nested_columns for key in sorted(nested_keys[column])]
+        return pd.DataFrame(data, columns=pd.MultiIndex.from_tuples(column_tuples))
 
     def _run_sequential(self, func, n_trials, timeout_seconds, catch):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], Tuple[Type[Exception]]) -> None

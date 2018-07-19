@@ -359,3 +359,23 @@ def test_study_pickle():
     pfnopt.minimize(func, n_trials=10, study=study_2)
     check_study(study_2)
     assert len(study_2.trials) == 20
+
+
+def test_trials_dataframe():
+    # type: () -> None
+
+    study_1 = pfnopt.minimize(func, n_trials=10)
+    check_study(study_1)
+    assert len(study_1.trials) == 10
+    df = study_1.trials_dataframe()
+    assert ('header', 'trial_id') in df.columns
+    assert ('header', 'value') in df.columns
+    assert ('params', 'x') in df.columns
+    assert ('params', 'y') in df.columns
+    assert ('params', 'z') in df.columns
+    assert (df.params.x > -1.0).all()
+    assert (df.params.x < 1.0).all()
+    assert (df.params.y > 10).all()
+    assert (df.params.y < 30).all()
+    assert (df.params.z >= -1.0).all()
+    assert (df.params.z <= 1.0).all()

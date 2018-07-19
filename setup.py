@@ -15,7 +15,7 @@ def get_version():
 
 def get_install_requires():
     install_requires = [
-        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'cliff', 'colorlog']
+        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'cliff', 'colorlog', 'pandas']
     if sys.version_info[0] == 2:
         install_requires.extend(['enum34'])
     return install_requires

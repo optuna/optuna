@@ -26,17 +26,22 @@ class StudyTask(enum.Enum):
     MAXIMIZE = 2
 
 
-FrozenTrial = NamedTuple(
-    'FrozenTrial',
-    [('trial_id', int),
-     ('state', TrialState),
-     ('params', Dict[str, Any]),
-     ('user_attrs', Dict[str, Any]),
-     ('value', Optional[float]),
-     ('intermediate_values', Dict[int, float]),
-     ('params_in_internal_repr', Dict[str, float]),
-     ('datetime_start', Optional[datetime]),
-     ('datetime_complete', Optional[datetime])])
+class FrozenTrial(
+    NamedTuple(
+        '_BaseFrozenTrial',
+        [('trial_id', int),
+         ('state', TrialState),
+         ('params', Dict[str, Any]),
+         ('user_attrs', Dict[str, Any]),
+         ('value', Optional[float]),
+         ('intermediate_values', Dict[int, float]),
+         ('params_in_internal_repr', Dict[str, float]),
+         ('datetime_start', Optional[datetime]),
+         ('datetime_complete', Optional[datetime])])):
+
+    visible_attrs = ['trial_id', 'state', 'value', 'datetime_start', 'datetime_complete',
+                     'params', 'user_attrs', 'intermediate_values']
+    nested_attrs = ['params', 'user_attrs', 'intermediate_values']
 
 
 StudySummary = NamedTuple(
