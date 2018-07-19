@@ -364,10 +364,8 @@ def test_study_pickle():
 def test_trials_dataframe():
     # type: () -> None
 
-    study_1 = pfnopt.minimize(func, n_trials=10)
-    check_study(study_1)
-    assert len(study_1.trials) == 10
-    df = study_1.trials_dataframe()
+    study = pfnopt.minimize(func, n_trials=10)
+    df = study.trials_dataframe()
     assert ('header', 'trial_id') in df.columns
     assert ('header', 'value') in df.columns
     assert ('params', 'x') in df.columns

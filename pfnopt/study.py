@@ -148,7 +148,8 @@ class Study(object):
             for column in nested_columns:
                 value_dict = trial.__getattribute__(column)
                 for key, value in value_dict.items():
-                    if key.startswith("__"):
+                    # exclude private attributes such as '__system__'
+                    if key.startswith('__'):
                         continue
                     record[(column, key)] = value
                     nested_keys[column].add((column, key))
