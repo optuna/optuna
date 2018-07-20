@@ -390,3 +390,35 @@ def test_trials_dataframe(storage_mode):
             assert df.params.x[i] == 1
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_trials_dataframe_with_failure(storage_mode):
+    # type: (str) -> None
+
+    def f(trial):
+        # type: (pfnopt.trial.Trial) -> float
+
+        x = trial.suggest_int('x', 1, 1)
+        y = trial.suggest_categorical('y', (2.5,))
+        trial.set_user_attr('train_loss', 3)
+        raise ValueError()
+        return x + y  # 3.5
+
+    with StorageSupplier(storage_mode) as storage:
+        study = pfnopt.create_study(storage=storage)
+        pfnopt.minimize(f, n_trials=3, study=study)
+        df = study.trials_dataframe()
+        assert len(df) == 3
+        # header: 5, params: 2, user_attrs: 1 system_attrs: 1
+        assert len(df.columns) == 9
+        for i in range(3):
+            assert ('header', 'trial_id') in df.columns  # trial_id depends on other tests.
+            assert df.header.state[i] == pfnopt.structs.TrialState.FAIL
+            assert df.header.value[i] is None
+            assert isinstance(df.header.datetime_start[i], pd.Timestamp)
+            assert df.header.datetime_complete[i] is None
+            assert df.params.x[i] == 1
+            assert df.params.y[i] == 2.5
+            assert df.user_attrs.train_loss[i] == 3
+            assert ('system_attrs', 'fail_reason') in df.columns

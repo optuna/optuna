@@ -137,24 +137,45 @@ class Study(object):
     def trials_dataframe(self):
         # type: () -> pd.DataFrame
 
-        columns = [attr for attr in structs.FrozenTrial.visible_attrs
-                   if attr not in structs.FrozenTrial.nested_attrs]
-        nested_columns = structs.FrozenTrial.nested_attrs
-        data = [{('header', column): trial.__getattribute__(column) for column in columns}
-                for trial in self.trials]
-        column_tuples = [('header', column) for column in columns]
-        nested_keys = {c: set() for c in nested_columns}  # type: Dict[str, Set[Tuple[str, str]]]
-        for trial, record in zip(self.trials, data):
-            for column in nested_columns:
-                value_dict = trial.__getattribute__(column)
-                for key, value in value_dict.items():
-                    # exclude private attributes such as '__system__'
-                    if key.startswith('__'):
-                        continue
-                    record[(column, key)] = value
-                    nested_keys[column].add((column, key))
-        column_tuples += [key for column in nested_columns for key in sorted(nested_keys[column])]
-        return pd.DataFrame(data, columns=pd.MultiIndex.from_tuples(column_tuples))
+        # column_agg is an aggregator of column names.
+        column_agg = collections.OrderedDict()  # type: Dict[str, Set[Tuple[str, str]]]
+        for field, field_type in structs.FrozenTrial._field_types.items():
+            if field in structs.FrozenTrial.internal_fields:
+                continue
+            # typing.Optional[float] is an instance of typing.Union.
+            # isinstance is required to exclude it.
+            if isinstance(field_type, type) and issubclass(field_type, dict):
+                column_agg[field] = set()
+            else:
+                column_agg[field] = {('header', field)}
+
+        records = []  # type: List[Dict[Tuple[str, str], Any]]
+        for trial in self.trials:
+            trial_dict = trial._asdict()
+
+            # move trial.user_attrs.__system__ to trial.system_attrs if it exists.
+            if 'user_attrs' in trial_dict and '__system__' in trial_dict['user_attrs']:
+                trial_dict['system_attrs'] = trial_dict['user_attrs']['__system__']
+                del trial_dict['user_attrs']['__system__']
+                column_agg['system_attrs'] = set()
+
+            record = {}
+            for field, value in trial_dict.items():
+                if field in structs.FrozenTrial.internal_fields:
+                    continue
+                if type(value) == dict:
+                    for in_field, in_value in value.items():
+                        record[(field, in_field)] = in_value
+                        column_agg[field].add((field, in_field))
+                else:
+                    record[('header', field)] = value
+            records.append(record)
+
+        columns = []  # type: List[Tuple[str, str]]
+        for x in column_agg.values():
+            columns += sorted(x)
+
+        return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
     def _run_sequential(self, func, n_trials, timeout_seconds, catch):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], Tuple[Type[Exception]]) -> None

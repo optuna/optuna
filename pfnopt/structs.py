@@ -31,17 +31,16 @@ class FrozenTrial(
         '_BaseFrozenTrial',
         [('trial_id', int),
          ('state', TrialState),
+         ('value', Optional[float]),
+         ('datetime_start', Optional[datetime]),
+         ('datetime_complete', Optional[datetime]),
          ('params', Dict[str, Any]),
          ('user_attrs', Dict[str, Any]),
-         ('value', Optional[float]),
          ('intermediate_values', Dict[int, float]),
          ('params_in_internal_repr', Dict[str, float]),
-         ('datetime_start', Optional[datetime]),
-         ('datetime_complete', Optional[datetime])])):
+         ])):
 
-    visible_attrs = ['trial_id', 'state', 'value', 'datetime_start', 'datetime_complete',
-                     'params', 'user_attrs', 'intermediate_values']
-    nested_attrs = ['params', 'user_attrs', 'intermediate_values']
+    internal_fields = ['params_in_internal_repr']
 
 
 StudySummary = NamedTuple(
