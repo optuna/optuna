@@ -220,12 +220,20 @@ class Study(object):
 
         try:
             result = func(trial)
+        except pruners.TrialPruned as e:
+            message = 'Setting trial status as {}: {}'.format(
+                structs.TrialState.PRUNED, repr(e))
+            self.logger.warning(message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
+            return trial
         except catch as e:
             message = 'Setting trial status as {} because of the following error: {}'.format(
                 structs.TrialState.FAIL, repr(e))
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            import traceback
+            print(traceback.format_exc())
             return trial
 
         try:
