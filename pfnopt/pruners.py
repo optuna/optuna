@@ -38,27 +38,11 @@ class MedianPruner(BasePruner):
         return best_intermediate_result > median
 
 
-class WarmupMedianPruner(MedianPruner):
+class TrialPruned(Exception):
 
-    """Pruner using median with Warm-up period
+    """Exception for pruned trials
 
-     If number of steps is smaller than threshold n_warmup_steps,
-     this pruner never prunes trials. Otherwise, it works like MedianPruner.
-
+     This exception tells a trainer that the current trial was pruned.
     """
 
-    def __init__(self, n_warmup_steps=5):
-        # type: (int) -> None
-
-        self.n_warmup_steps = n_warmup_steps
-
-    def prune(self, storage, study_id, trial_id, step):
-        # type: (BaseStorage, int, int, int) -> bool
-
-        if step < self.n_warmup_steps:
-            return False
-        return super(WarmupMedianPruner, self).prune(storage, study_id, trial_id, step)
-
-
-class TrialPruned(Exception):
     pass
