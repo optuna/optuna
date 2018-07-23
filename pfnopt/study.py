@@ -138,16 +138,8 @@ class Study(object):
         # type: () -> pd.DataFrame
 
         # column_agg is an aggregator of column names.
-        column_agg = collections.OrderedDict()  # type: Dict[str, Set[Tuple[str, str]]]
-        for field, field_type in structs.FrozenTrial._field_types.items():
-            if field in structs.FrozenTrial.internal_fields:
-                continue
-            # typing.Optional[float] is an instance of typing.Union.
-            # isinstance is required to exclude it.
-            if isinstance(field_type, type) and issubclass(field_type, dict):
-                column_agg[field] = set()
-            else:
-                column_agg[field] = {('header', field)}
+        column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
+        header_field_name = 'header'
 
         records = []  # type: List[Dict[Tuple[str, str], Any]]
         for trial in self.trials:
@@ -157,7 +149,6 @@ class Study(object):
             if 'user_attrs' in trial_dict and '__system__' in trial_dict['user_attrs']:
                 trial_dict['system_attrs'] = trial_dict['user_attrs']['__system__']
                 del trial_dict['user_attrs']['__system__']
-                column_agg['system_attrs'] = set()
 
             record = {}
             for field, value in trial_dict.items():
@@ -168,13 +159,13 @@ class Study(object):
                         record[(field, in_field)] = in_value
                         column_agg[field].add((field, in_field))
                 else:
-                    record[('header', field)] = value
+                    record[(header_field_name, field)] = value
+                    column_agg[field].add((header_field_name, field))
             records.append(record)
 
-        columns = []  # type: List[Tuple[str, str]]
-        for x in column_agg.values():
-            columns += sorted(x)
-
+        field_order = list(structs.FrozenTrial._fields)
+        field_order += [k for k in sorted(column_agg) if k not in field_order]
+        columns = sum(map(sorted, [column_agg[k] for k in field_order]), [])
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
     def _run_sequential(self, func, n_trials, timeout_seconds, catch):
