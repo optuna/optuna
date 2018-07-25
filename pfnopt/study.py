@@ -138,6 +138,8 @@ class Study(object):
         # type: () -> pd.DataFrame
 
         # column_agg is an aggregator of column names.
+        # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
+        # Values are dataframe columns such as ('header', 'trial_id') and ('params', 'n_layers').
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
         header_field_name = 'header'
 
@@ -146,7 +148,7 @@ class Study(object):
             trial_dict = trial._asdict()
 
             # move trial.user_attrs.__system__ to trial.system_attrs if it exists.
-            if 'user_attrs' in trial_dict and '__system__' in trial_dict['user_attrs']:
+            if '__system__' in trial_dict['user_attrs']:
                 trial_dict['system_attrs'] = trial_dict['user_attrs']['__system__']
                 del trial_dict['user_attrs']['__system__']
 
@@ -154,7 +156,7 @@ class Study(object):
             for field, value in trial_dict.items():
                 if field in structs.FrozenTrial.internal_fields:
                     continue
-                if type(value) == dict:
+                if isinstance(value, dict):
                     for in_field, in_value in value.items():
                         record[(field, in_field)] = in_value
                         column_agg[field].add((field, in_field))
@@ -163,9 +165,9 @@ class Study(object):
                     column_agg[field].add((header_field_name, field))
             records.append(record)
 
-        field_order = list(structs.FrozenTrial._fields)
-        field_order += [k for k in sorted(column_agg) if k not in field_order]
-        columns = sum(map(sorted, [column_agg[k] for k in field_order]), [])
+        field_order = list(structs.FrozenTrial._fields) + ['system_attrs']
+        columns = sum((sorted(column_agg[k]) for k in field_order), [])
+
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
     def _run_sequential(self, func, n_trials, timeout_seconds, catch):
