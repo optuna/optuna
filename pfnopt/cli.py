@@ -12,9 +12,21 @@ import sys
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
+from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 
 import pfnopt
+
+
+def get_storage_url(storage_url, config_path):
+    # type: (Optional[str], Optional[str]) -> str
+
+    storage_url = storage_url or pfnopt.config.load_pfnopt_config(config_path).default_storage
+
+    if storage_url is None:
+        raise ValueError('Storage URL is specified neither in config file nor --storage option.')
+
+    return storage_url
 
 
 class BaseCommand(Command):
@@ -32,13 +44,15 @@ class CreateStudy(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(CreateStudy, self).get_parser(prog_name)
-        parser.add_argument('--storage', required=True, help='DB URL.')
+        parser.add_argument('--config', default=None, help='Config file path.')
+        parser.add_argument('--storage', default=None, help='DB URL.')
         return parser
 
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        storage = pfnopt.storages.RDBStorage(parsed_args.storage)
+        storage_url = get_storage_url(parsed_args.storage, parsed_args.config)
+        storage = pfnopt.storages.RDBStorage(storage_url)
         study_uuid = pfnopt.create_study(storage).study_uuid
         print(study_uuid)
 
@@ -49,7 +63,8 @@ class StudySetUserAttribute(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(StudySetUserAttribute, self).get_parser(prog_name)
-        parser.add_argument('--storage', required=True, help='DB URL.')
+        parser.add_argument('--config', default=None, help='Config file path.')
+        parser.add_argument('--storage', default=None, help='DB URL.')
         parser.add_argument('--study', required=True, help='Study UUID.')
         parser.add_argument('--key', '-k', required=True, help='Key of the user attribute.')
         parser.add_argument('--value', '-v', required=True, help='Value to be set.')
@@ -58,7 +73,8 @@ class StudySetUserAttribute(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        study = pfnopt.Study(storage=parsed_args.storage, study_uuid=parsed_args.study)
+        storage_url = get_storage_url(parsed_args.storage, parsed_args.config)
+        study = pfnopt.Study(storage=storage_url, study_uuid=parsed_args.study)
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
         self.logger.info('Attribute successfully written.')
@@ -73,13 +89,15 @@ class Studies(Lister):
         # type: (str) -> ArgumentParser
 
         parser = super(Studies, self).get_parser(prog_name)
-        parser.add_argument('--storage', required=True, help='DB URL.')
+        parser.add_argument('--config', default=None, help='Config file path.')
+        parser.add_argument('--storage', default=None, help='DB URL.')
         return parser
 
     def take_action(self, parsed_args):
         # type: (Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]
 
-        summaries = pfnopt.get_all_study_summaries(storage=parsed_args.storage)
+        storage_url = get_storage_url(parsed_args.storage, parsed_args.config)
+        summaries = pfnopt.get_all_study_summaries(storage=storage_url)
 
         rows = []
         for s in summaries:
@@ -97,7 +115,8 @@ class Dashboard(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(Dashboard, self).get_parser(prog_name)
-        parser.add_argument('--storage', required=True, help='DB URL.')
+        parser.add_argument('--config', default=None, help='Config file path.')
+        parser.add_argument('--storage', default=None, help='DB URL.')
         parser.add_argument('--study', required=True, help='Study UUID.')
         parser.add_argument('--out', '-o',
                             help='Output HTML file path. If it is not given, a HTTP server starts '
@@ -107,7 +126,8 @@ class Dashboard(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        study = pfnopt.Study(storage=parsed_args.storage, study_uuid=parsed_args.study)
+        storage_url = get_storage_url(parsed_args.storage, parsed_args.config)
+        study = pfnopt.Study(storage=storage_url, study_uuid=parsed_args.study)
 
         if parsed_args.out is None:
             pfnopt.dashboard.serve(study)
@@ -122,6 +142,7 @@ class Minimize(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(Minimize, self).get_parser(prog_name)
+        parser.add_argument('--config', default=None, help='Config file path.')
         parser.add_argument('--n-trials', type=int,
                             help='The number of trials. If this argument is not given, as many '
                                  'trials run as possible.')
@@ -149,10 +170,11 @@ class Minimize(BaseCommand):
             raise ValueError('Inconsistent arguments. Either --create-study or --study '
                              'should be specified.')
 
+        storage_url = get_storage_url(parsed_args.storage, parsed_args.config)
         if parsed_args.create_study:
-            study = pfnopt.create_study(storage=parsed_args.storage)
+            study = pfnopt.create_study(storage=storage_url)
         else:
-            study = pfnopt.Study(storage=parsed_args.storage, study_uuid=parsed_args.study)
+            study = pfnopt.Study(storage=storage_url, study_uuid=parsed_args.study)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.

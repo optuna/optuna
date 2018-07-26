@@ -1,3 +1,4 @@
+from pfnopt import config  # NOQA
 from pfnopt import dashboard  # NOQA
 from pfnopt import distributions  # NOQA
 from pfnopt import integration  # NOQA
