@@ -147,7 +147,7 @@ class Study(object):
         for trial in self.trials:
             trial_dict = trial._asdict()
 
-            # move trial.user_attrs.__system__ to trial.system_attrs if it exists.
+            # Move trial.user_attrs.__system__ to trial.system_attrs if it exists.
             if '__system__' in trial_dict['user_attrs']:
                 trial_dict['system_attrs'] = trial_dict['user_attrs']['__system__']
                 del trial_dict['user_attrs']['__system__']
@@ -165,8 +165,8 @@ class Study(object):
                     column_agg[field].add((header_field_name, field))
             records.append(record)
 
-        field_order = list(structs.FrozenTrial._fields) + ['system_attrs']
-        columns = sum((sorted(column_agg[k]) for k in field_order), [])
+        column_order = list(structs.FrozenTrial._fields) + ['system_attrs']
+        columns = sum((sorted(column_agg[k]) for k in column_order), [])
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
