@@ -1,5 +1,6 @@
 from mock import patch
 import os
+import pytest
 import shutil
 import tempfile
 from typing import Optional  # NOQA
@@ -56,8 +57,8 @@ def test_load_pfnopt_config_base_values():
         with open(tf.name, 'w') as fw:
             fw.write('dummy_key: dummy_value\n')
 
-        config = pfnopt.config.load_pfnopt_config(tf.name)
-        assert config == pfnopt.config.BASE_PFNOPT_CONFIG
+        with pytest.raises(ValueError):
+            pfnopt.config.load_pfnopt_config(tf.name)
 
 
 def test_load_pfnopt_config_empty_file():
@@ -78,5 +79,5 @@ def test_load_pfnopt_config_non_dict():
         with open(tf.name, 'w') as fw:
             fw.write('some_str')
 
-        config = pfnopt.config.load_pfnopt_config(tf.name)
-        assert config == pfnopt.config.BASE_PFNOPT_CONFIG
+        with pytest.raises(ValueError):
+            pfnopt.config.load_pfnopt_config(tf.name)

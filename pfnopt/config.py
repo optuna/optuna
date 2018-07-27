@@ -1,6 +1,4 @@
 import os
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
 from typing import NamedTuple
 from typing import Optional
 import yaml
@@ -12,16 +10,22 @@ BASE_PFNOPT_CONFIG = PFNOptConfig(default_storage=None)
 
 
 def load_pfnopt_config(path=None):
-    # type: (str) -> PFNOptConfig
+    # type: (Optional[str]) -> PFNOptConfig
 
     path = path or os.path.expanduser('~/.pfnopt.yml')
 
     with open(path, 'r') as fw:
-        stream = fw.read()
-    config = yaml.load(stream)
+        config_str = fw.read()
+    config = yaml.load(config_str)
 
-    replace_dict = {}  # type: Dict[str, Any]
-    if isinstance(config, dict):
-        replace_dict = {k: v for k, v in config.items() if k in PFNOptConfig._fields}
+    if config is None:
+        return BASE_PFNOPT_CONFIG
 
-    return BASE_PFNOPT_CONFIG._replace(**replace_dict)
+    if not isinstance(config, dict):
+        raise ValueError('Format error found in the config file.')
+
+    for key in config.keys():
+        if key not in PFNOptConfig._fields:
+            raise ValueError('Unknown key found in the config file: {}'.format(key))
+
+    return BASE_PFNOPT_CONFIG._replace(**config)
