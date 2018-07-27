@@ -3,6 +3,7 @@ import datetime
 import math
 import multiprocessing
 import multiprocessing.pool
+import pandas as pd
 from six.moves import queue
 import time
 from typing import Any  # NOQA
@@ -10,6 +11,7 @@ from typing import Callable  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
+from typing import Set  # NOQA
 from typing import Tuple  # NOQA
 from typing import Type  # NOQA
 from typing import Union  # NOQA
@@ -131,6 +133,42 @@ class Study(object):
         # type: (str, Any) -> None
 
         self.storage.set_study_user_attr(self.study_id, key, value)
+
+    def trials_dataframe(self):
+        # type: () -> pd.DataFrame
+
+        # column_agg is an aggregator of column names.
+        # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
+        # Values are dataframe columns such as ('header', 'trial_id') and ('params', 'n_layers').
+        column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
+        header_field_name = 'header'
+
+        records = []  # type: List[Dict[Tuple[str, str], Any]]
+        for trial in self.trials:
+            trial_dict = trial._asdict()
+
+            # Move trial.user_attrs.__system__ to trial.system_attrs if it exists.
+            if '__system__' in trial_dict['user_attrs']:
+                trial_dict['system_attrs'] = trial_dict['user_attrs']['__system__']
+                del trial_dict['user_attrs']['__system__']
+
+            record = {}
+            for field, value in trial_dict.items():
+                if field in structs.FrozenTrial.internal_fields:
+                    continue
+                if isinstance(value, dict):
+                    for in_field, in_value in value.items():
+                        record[(field, in_field)] = in_value
+                        column_agg[field].add((field, in_field))
+                else:
+                    record[(header_field_name, field)] = value
+                    column_agg[field].add((header_field_name, field))
+            records.append(record)
+
+        column_order = list(structs.FrozenTrial._fields) + ['system_attrs']
+        columns = sum((sorted(column_agg[k]) for k in column_order), [])
+
+        return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
     def _run_sequential(self, func, n_trials, timeout_seconds, catch):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], Tuple[Type[Exception]]) -> None
