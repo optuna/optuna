@@ -7,7 +7,6 @@ import typing  # NOQA
 
 import pfnopt
 from pfnopt import storages
-from pfnopt.study import create_study
 
 
 parametrize_storage = pytest.mark.parametrize(
@@ -81,5 +80,5 @@ def test_chainer_pruning_extension(storage_init_func):
 
             return True
 
-    study = create_study(storage_init_func(), pruner=AllPruner())
+    study = pfnopt.create_study(storage_init_func(), pruner=AllPruner())
     study.run(objective, n_trials=1)

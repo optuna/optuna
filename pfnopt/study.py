@@ -232,8 +232,6 @@ class Study(object):
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            import traceback
-            print(traceback.format_exc())
             return trial
 
         try:
