@@ -21,7 +21,8 @@ class MedianPruner(BasePruner):
      median of intermediate results of previous trials at the same step.
     """
 
-    n_startup_trials = 5  # TODO(Akiba): parameterize
+    def __init__(self, n_startup_trials=5):
+        self.n_startup_trials = n_startup_trials
 
     def prune(self, storage, study_id, trial_id, step):
         # type: (BaseStorage, int, int, int) -> bool
@@ -32,8 +33,6 @@ class MedianPruner(BasePruner):
         best_intermediate_result = storage.get_best_intermediate_result_over_steps(trial_id)
         median = storage.get_median_intermediate_result_over_trials(
             study_id, step)
-
-        print(step, best_intermediate_result, median)
 
         return best_intermediate_result > median
 
