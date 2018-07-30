@@ -53,7 +53,7 @@ def create_optimizer(trial, model):
     # We optimize the choice of optimizers as well as their parameters.
     optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'MomentumSGD'])
     if optimizer_name == 'Adam':
-        adam_alpha = trial.suggest_loguniform('adam_apha', 1e-5, 1e-1)
+        adam_alpha = trial.suggest_loguniform('adam_alpha', 1e-5, 1e-1)
         optimizer = chainer.optimizers.Adam(alpha=adam_alpha)
     else:
         momentum_sgd_lr = trial.suggest_loguniform('momentum_sgd_lr', 1e-5, 1e-1)
