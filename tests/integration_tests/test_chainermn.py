@@ -70,7 +70,7 @@ class MultiNodeStorageSupplier(StorageSupplier):
         if self.comm.rank == 0:
             storage = super(MultiNodeStorageSupplier, self).__enter__()
             assert isinstance(storage, RDBStorage)
-            url = storage.engine.url
+            url = str(storage.engine.url)
         else:
             url = None
 
