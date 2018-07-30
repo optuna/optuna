@@ -7,6 +7,7 @@ neural networks, a pruner observes intermediate results and stops unpromising tr
 
 You can run this example as follows:
     $ python chainer_pruner.py
+
 """
 
 from __future__ import print_function
@@ -28,6 +29,7 @@ N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
+PRUNER_INTERVAL = 3
 
 
 class Objective(object):
@@ -37,11 +39,11 @@ class Objective(object):
 
     def create_model(self, trial):
         # We optimize the numbers of layers and their units.
-        n_layers = int(trial.suggest_uniform('n_layers', 1, 4))
+        n_layers = trial.suggest_int('n_layers', 1, 3)
 
         layers = []
         for i in range(n_layers):
-            n_units = int(trial.suggest_loguniform('n_units_l{}'.format(i), 4, 128))
+            n_units = int(trial.suggest_loguniform('n_units_l{}'.format(i), 32, 256))
             layers.append(L.Linear(None, n_units))
             layers.append(F.relu)
         layers.append(L.Linear(None, 10))
@@ -70,7 +72,7 @@ class Objective(object):
         if self.use_pruner:
             trainer.extend(
                 pfnopt.integration.ChainerPruningExtension(trial, 'validation/main/loss',
-                                                           (1, 'epoch'))
+                                                           (PRUNER_INTERVAL, 'epoch'))
             )
         trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
         trainer.extend(chainer.training.extensions.PrintReport(
@@ -97,12 +99,13 @@ def show_results(study):
 
 
 if __name__ == '__main__':
+    pruner = pfnopt.pruners.MedianPruner(n_startup_trials=10)
     study_with_pruner = pfnopt.minimize(Objective(use_pruner=True), timeout=30,
-                                        pruner=pfnopt.pruners.MedianPruner())
-    study_wo_pruner = pfnopt.minimize(Objective(use_pruner=False), timeout=30)
+                                        pruner=pruner)
+    study_without_pruner = pfnopt.minimize(Objective(use_pruner=False), timeout=30)
 
     print('Study with pruner: ')
     show_results(study_with_pruner)
 
     print('Study without pruner: ')
-    show_results(study_wo_pruner)
+    show_results(study_without_pruner)
