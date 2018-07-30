@@ -1,7 +1,5 @@
 import chainer
-import chainer.functions as F
 import chainer.links as L
-import numpy
 import pytest
 import typing  # NOQA
 
@@ -15,35 +13,6 @@ parametrize_storage = pytest.mark.parametrize(
 )
 
 
-def create_model(trial):
-    # type: (pfnopt.trial.Trial) -> float
-
-    layers = []
-    n_units = trial.suggest_int('n_units', 1, 10)
-    layers.append(L.Linear(None, n_units))
-    layers.append(F.relu)
-    layers.append(L.Linear(None, 2))
-    return chainer.Sequential(*layers)
-
-
-class Dataset(chainer.dataset.DatasetMixin):
-
-    def __init__(self, values):
-        # type: (typing.List[int]) -> None
-
-        self.values = values
-
-    def __len__(self):
-        # type: () -> int
-
-        return len(self.values)
-
-    def get_example(self, i):
-        # type: (int) -> typing.Tuple[numpy.ndarray, int]
-
-        return numpy.array([self.values[i]], numpy.float32), numpy.int32(i % 2)
-
-
 @parametrize_storage
 def test_chainer_pruning_extension(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
@@ -53,25 +22,24 @@ def test_chainer_pruning_extension(storage_init_func):
 
         n_data = 64
         batchsize = 16
-        model = L.Classifier(create_model(trial))
+        model = L.Classifier(chainer.Sequential([L.Linear(None, 2)]))
         optimizer = chainer.optimizers.Adam()
         optimizer.setup(model)
 
-        dataset = Dataset([i for i in range(n_data)])
+        # Classify an integer into odd or even.
+        dataset = chainer.dataset.TupleDataset(list(range(n_data)),
+                                               [i % 2 for i in range(n_data)])
         train_iter = chainer.iterators.SerialIterator(dataset, batchsize)
-        test_iter = chainer.iterators.SerialIterator(dataset, batchsize,
-                                                     repeat=False, shuffle=False)
         updater = chainer.training.StandardUpdater(train_iter, optimizer)
-        trainer = chainer.training.Trainer(updater, (10, 'epoch'))
-        trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
+        trainer = chainer.training.Trainer(updater, (1, 'epoch'))
         trainer.extend(
-            pfnopt.integration.chainer.ChainerPruningExtension(trial, 'validation/main/loss',
+            pfnopt.integration.chainer.ChainerPruningExtension(trial, 'main/loss',
                                                                (1, 'epoch')))
         log_report_extension = chainer.training.extensions.LogReport(log_name=None)
         trainer.extend(log_report_extension)
         with pytest.raises(pfnopt.pruners.TrialPruned):
             trainer.run(show_loop_exception_msg=False)
-        return 1.0 - log_report_extension.log[-1]['validation/main/accuracy']
+        return 1.0 - log_report_extension.log[-1]['main/accuracy']
 
     class AllPruner(pfnopt.pruners.BasePruner):
 
