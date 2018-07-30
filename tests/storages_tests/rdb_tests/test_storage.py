@@ -2,6 +2,7 @@ from mock import Mock
 from mock import patch
 import pytest
 import sys
+import tempfile
 from typing import Dict  # NOQA
 import uuid
 
@@ -30,6 +31,14 @@ def test_init():
     version_info = session.query(VersionInfoModel).first()
     assert version_info.schema_version == SCHEMA_VERSION
     assert version_info.library_version == version.__version__
+
+
+def test_init_url_template():
+    # type: ()-> None
+
+    with tempfile.NamedTemporaryFile(suffix='{SCHEMA_VERSION}') as tf:
+        storage = RDBStorage('sqlite:///' + tf.name)
+        assert storage.engine.url.database.endswith(str(SCHEMA_VERSION))
 
 
 def test_init_db_module_import_error():
