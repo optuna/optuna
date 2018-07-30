@@ -72,7 +72,7 @@ class MultiNodeStorageSupplier(StorageSupplier):
             assert isinstance(storage, RDBStorage)
             url = str(storage.engine.url)
         else:
-            url = None
+            url = 'dummy_url'
 
         url = self.comm.mpi_comm.bcast(url)
         return RDBStorage(url)
