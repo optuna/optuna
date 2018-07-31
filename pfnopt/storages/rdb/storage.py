@@ -26,6 +26,8 @@ class RDBStorage(BaseStorage):
 
         connect_args = connect_args or {}
 
+        url = self._fill_storage_url_template(url)
+
         try:
             self.engine = create_engine(url, connect_args=connect_args)
         except ImportError as e:
@@ -383,6 +385,12 @@ class RDBStorage(BaseStorage):
 
         session.add(version_info)
         self._commit_or_rollback_on_integrity_error(session)
+
+    @staticmethod
+    def _fill_storage_url_template(template):
+        # type: (str) -> str
+
+        return template.format(SCHEMA_VERSION=models.SCHEMA_VERSION)
 
     def _commit_or_rollback_on_integrity_error(self, session):
         # type: (orm.Session) -> bool
