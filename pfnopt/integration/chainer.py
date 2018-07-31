@@ -26,7 +26,10 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
 
         if self.pruner_trigger(trainer) and self.observation_key in trainer.observation:
             current_step = getattr(trainer.updater, self.pruner_trigger.unit)
-            current_score = float(trainer.observation[self.observation_key])
+            if isinstance(trainer.observation[self.observation_key], chainer.Variable):
+                current_score = float(trainer.observation[self.observation_key].data)
+            else:
+                current_score = float(trainer.observation[self.observation_key])
             self.trial.report(current_score, step=current_step)
             if self.trial.should_prune(current_step):
                 msg = "Trial was pruned at {} {}.".format(self.pruner_trigger.unit, current_step)
