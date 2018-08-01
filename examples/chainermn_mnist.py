@@ -18,11 +18,14 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 import chainermn
+import numpy as np
 import sys
 
 import pfnopt
 
 
+N_TRAIN_EXAMPLES = 3000
+N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
 
@@ -52,6 +55,11 @@ def objective(trial, comm):
 
     # Setup dataset and iterator.
     train, test = chainer.datasets.get_mnist()
+    rng = np.random.RandomState(0)
+    train = chainer.datasets.SubDataset(
+        train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
+    test = chainer.datasets.SubDataset(
+        test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
 
     train = chainermn.scatter_dataset(train, comm, shuffle=True)
     test = chainermn.scatter_dataset(test, comm)
