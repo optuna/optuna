@@ -1,6 +1,8 @@
 import chainer
 import chainer.links as L
+import numpy as np
 import pytest
+import typing
 
 import pfnopt
 
@@ -9,6 +11,24 @@ parametrize_observation = pytest.mark.parametrize(
     'observation_key',
     ['main/loss', 'validation/main/loss']
 )
+
+
+class Dataset(chainer.dataset.DatasetMixin):
+
+    def __init__(self, values):
+        # type: (typing.List[int]) -> None
+
+        self.values = values
+
+    def __len__(self):
+        # type: () -> int
+
+        return len(self.values)
+
+    def get_example(self, i):
+        # type: (int) -> typing.Tuple[np.ndarray, int]
+
+        return np.array([self.values[i]], np.float32), np.int32(i % 2)
 
 
 class Pruner(pfnopt.pruners.BasePruner):
@@ -35,11 +55,9 @@ def test_chainer_pruning_extension(observation_key):
         optimizer = chainer.optimizers.Adam()
         optimizer.setup(model)
 
-        train, test = chainer.datasets.get_mnist()
-        train = chainer.datasets.SubDataset(train, 0, 16)
-        test = chainer.datasets.SubDataset(test, 0, 16)
-        train_iter = chainer.iterators.SerialIterator(train, 16)
-        test_iter = chainer.iterators.SerialIterator(test, 16, repeat=False, shuffle=False)
+        train_iter = chainer.iterators.SerialIterator(Dataset(list(range(64))), 16)
+        test_iter = chainer.iterators.SerialIterator(Dataset(list(range(32))), 16,
+                                                     repeat=False, shuffle=False)
         updater = chainer.training.StandardUpdater(train_iter, optimizer)
         trainer = chainer.training.Trainer(updater, (1, 'epoch'))
         trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
