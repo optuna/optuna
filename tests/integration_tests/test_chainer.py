@@ -2,7 +2,7 @@ import chainer
 import chainer.links as L
 import numpy as np
 import pytest
-import typing
+import typing  # NOQA
 
 import pfnopt
 
