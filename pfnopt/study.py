@@ -141,7 +141,7 @@ class Study(object):
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
         # Values are dataframe columns such as ('header', 'trial_id') and ('params', 'n_layers').
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
-        header_field_name = 'header'
+        non_nested_field = ''
 
         records = []  # type: List[Dict[Tuple[str, str], Any]]
         for trial in self.trials:
@@ -161,8 +161,8 @@ class Study(object):
                         record[(field, in_field)] = in_value
                         column_agg[field].add((field, in_field))
                 else:
-                    record[(header_field_name, field)] = value
-                    column_agg[field].add((header_field_name, field))
+                    record[(field, non_nested_field)] = value
+                    column_agg[field].add((field, non_nested_field))
             records.append(record)
 
         column_order = list(structs.FrozenTrial._fields) + ['system_attrs']

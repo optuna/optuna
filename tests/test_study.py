@@ -379,14 +379,14 @@ def test_trials_dataframe(storage_mode):
         pfnopt.minimize(f, n_trials=3, study=study)
         df = study.trials_dataframe()
         assert len(df) == 3
-        # header: 5, params: 2, user_attrs: 1
+        # non-nested: 5, params: 2, user_attrs: 1
         assert len(df.columns) == 8
         for i in range(3):
-            assert ('header', 'trial_id') in df.columns  # trial_id depends on other tests.
-            assert df.header.state[i] == pfnopt.structs.TrialState.COMPLETE
-            assert df.header.value[i] == 3.5
-            assert isinstance(df.header.datetime_start[i], pd.Timestamp)
-            assert isinstance(df.header.datetime_complete[i], pd.Timestamp)
+            assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
+            assert df.state[i] == pfnopt.structs.TrialState.COMPLETE
+            assert df.value[i] == 3.5
+            assert isinstance(df.datetime_start[i], pd.Timestamp)
+            assert isinstance(df.datetime_complete[i], pd.Timestamp)
             assert df.params.x[i] == 1
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
@@ -410,14 +410,14 @@ def test_trials_dataframe_with_failure(storage_mode):
         pfnopt.minimize(f, n_trials=3, study=study)
         df = study.trials_dataframe()
         assert len(df) == 3
-        # header: 5, params: 2, user_attrs: 1 system_attrs: 1
+        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 1
         assert len(df.columns) == 9
         for i in range(3):
-            assert ('header', 'trial_id') in df.columns  # trial_id depends on other tests.
-            assert df.header.state[i] == pfnopt.structs.TrialState.FAIL
-            assert df.header.value[i] is None
-            assert isinstance(df.header.datetime_start[i], pd.Timestamp)
-            assert df.header.datetime_complete[i] is None
+            assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
+            assert df.state[i] == pfnopt.structs.TrialState.FAIL
+            assert df.value[i] is None
+            assert isinstance(df.datetime_start[i], pd.Timestamp)
+            assert df.datetime_complete[i] is None
             assert df.params.x[i] == 1
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
