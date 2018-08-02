@@ -1,10 +1,12 @@
 import chainer
 import chainer.links as L
+from chainer.training import triggers
 import numpy as np
 import pytest
 import typing  # NOQA
 
 import pfnopt
+from pfnopt.integration.chainer import ChainerPruningExtension
 
 
 parametrize_observation = pytest.mark.parametrize(
@@ -42,6 +44,23 @@ class Pruner(pfnopt.pruners.BasePruner):
         # type: (pfnopt.storages.BaseStorage, int, int, int) -> bool
 
         return self.is_pruning
+
+
+def test_chainer_pruning_extension_trigger():
+    study = pfnopt.create_study()
+    trial = study._run_trial(func=lambda x: 1.0, catch=(Exception,))
+
+    extension = ChainerPruningExtension(trial, 'main/loss', (1, 'epoch'))
+    assert isinstance(extension.pruner_trigger, triggers.IntervalTrigger)
+    extension = ChainerPruningExtension(trial, 'main/loss',
+                                        triggers.IntervalTrigger(1, 'epoch'))
+    assert isinstance(extension.pruner_trigger, triggers.IntervalTrigger)
+    extension = ChainerPruningExtension(trial, 'main/loss',
+                                        triggers.ManualScheduleTrigger(1, 'epoch'))
+    assert isinstance(extension.pruner_trigger, triggers.ManualScheduleTrigger)
+
+    with pytest.raises(TypeError):
+        ChainerPruningExtension(trial, 'main/loss', triggers.TimeTrigger(1.))
 
 
 @parametrize_observation
