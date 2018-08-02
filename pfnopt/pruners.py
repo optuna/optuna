@@ -30,8 +30,9 @@ class MedianPruner(BasePruner):
 
         if trial_id < self.n_startup_trials:
             return False
+
+        # step starts from 1.
         if step <= self.n_warmup_steps:
-            # step starts from 1.
             return False
 
         best_intermediate_result = storage.get_best_intermediate_result_over_steps(trial_id)
