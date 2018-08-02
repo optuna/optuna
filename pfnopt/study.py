@@ -383,7 +383,7 @@ def minimize(
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
         study=None,  # type: Union[None, str, Study]
-        catch=(Exception,)  # Tuple[Type[Exception]]
+        catch=(Exception,)  # type: Tuple[Type[Exception]]
 ):
     # type: (...) -> Study
 
