@@ -139,7 +139,7 @@ class Study(object):
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
-        # Values are dataframe columns such as ('header', 'trial_id') and ('params', 'n_layers').
+        # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
         non_nested_field = ''
 
