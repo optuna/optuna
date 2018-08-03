@@ -1,49 +1,71 @@
-import pytest
-
 import pfnopt
 
 
-@pytest.mark.parametrize('n_startup_trials', [0, 5])
-def test_median_pruner_n_startup_trials(n_startup_trials):
-    # type: (int) -> None
+def test_median_pruner_without_reports():
+    # type: () -> None
 
-    pruner = pfnopt.pruners.MedianPruner(n_startup_trials, 0)
     study = pfnopt.study.create_study()
-    for count in range(n_startup_trials + 5):
-        trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
-        for step in range(1, 6):
-            # Report a trial count as an objective value that always exceeds a pruner threshold.
-            trial.report(count, step)
-            result = pruner.prune(storage=study.storage, study_id=study.study_id,
-                                  trial_id=trial.trial_id, step=step)
-            if trial.trial_id == 0:
-                # Pruning does not happen at the first trial.
-                assert result is False
-            elif trial.trial_id < n_startup_trials:
-                # Pruning does not happen if the number of trials is less than n_startup_trials.
-                assert result is False
-            else:
-                assert result is True
+    trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+    pruner = pfnopt.pruners.MedianPruner(0, 0)
+
+    # A trial is not pruned if it has no intermediate results.
+    assert not pruner.prune(storage=study.storage, study_id=study.study_id,
+                            trial_id=trial.trial_id, step=1)
 
 
-@pytest.mark.parametrize('n_warmup_steps', [0, 5])
-def test_median_pruner_n_warmup_steps(n_warmup_steps):
-    # type: (int) -> None
+def test_median_pruner_with_only_one_trial():
+    # type: () -> None
 
-    pruner = pfnopt.pruners.MedianPruner(0, n_warmup_steps)
     study = pfnopt.study.create_study()
-    for count in range(5):
-        trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
-        for step in range(1, n_warmup_steps + 6):
-            # Report a trial count as an objective value that always exceeds a pruner threshold.
-            trial.report(count, step)
-            result = pruner.prune(storage=study.storage, study_id=study.study_id,
-                                  trial_id=trial.trial_id, step=step)
-            if trial.trial_id == 0:
-                # Pruning does not happen at the first trial.
-                assert result is False
-            if step <= n_warmup_steps or trial.trial_id == 0:
-                # Pruning does not happen if the number of steps is less than n_warmup_steps.
-                assert result is False
-            else:
-                assert result is True
+    trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+    trial.report(0, 1)
+    pruner = pfnopt.pruners.MedianPruner(0, 0)
+
+    # A first trial is not pruned.
+    assert not pruner.prune(storage=study.storage, study_id=study.study_id,
+                            trial_id=trial.trial_id, step=1)
+
+
+def test_median_pruner_n_startup_trials():
+    # type: () -> None
+
+    pruner = pfnopt.pruners.MedianPruner(2, 0)
+    study = pfnopt.study.create_study()
+
+    # A first trial is not pruned.
+    trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+    trial.report(0, 1)
+
+    # A trial is not pruned during the startup trials.
+    trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+    trial.report(1, 1)
+    assert not pruner.prune(storage=study.storage, study_id=study.study_id,
+                            trial_id=trial.trial_id, step=1)
+
+    # A trial is pruned after the startup trials.
+    trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+    trial.report(2, 1)
+    assert pruner.prune(storage=study.storage, study_id=study.study_id,
+                        trial_id=trial.trial_id, step=1)
+
+
+def test_median_pruner_n_warmup_steps():
+    # type: () -> None
+
+    pruner = pfnopt.pruners.MedianPruner(0, 1)
+    study = pfnopt.study.create_study()
+
+    # A first trial is not pruned.
+    trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+    trial.report(0, 1)
+    trial.report(0, 2)
+
+    # A trial is not pruned during the warm-up steps.
+    trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+    trial.report(1, 1)
+    assert not pruner.prune(storage=study.storage, study_id=study.study_id,
+                            trial_id=trial.trial_id, step=1)
+    # A trial is pruned after the warm-up steps.
+    trial.report(1, 2)
+    assert pruner.prune(storage=study.storage, study_id=study.study_id,
+                        trial_id=trial.trial_id, step=2)

@@ -30,14 +30,19 @@ class MedianPruner(BasePruner):
     def prune(self, storage, study_id, trial_id, step):
         # type: (BaseStorage, int, int, int) -> bool
 
-        if trial_id < self.n_startup_trials:
+        if len(storage.get_all_trials(study_id)) <= self.n_startup_trials:
             return False
 
         # step starts from 1.
         if step <= self.n_warmup_steps:
             return False
 
-        best_intermediate_result = storage.get_best_intermediate_result_over_steps(trial_id)
+        # Check if trial.intermediate_results is empty.
+        try:
+            best_intermediate_result = storage.get_best_intermediate_result_over_steps(trial_id)
+        except ValueError:
+            return False
+
         median = storage.get_median_intermediate_result_over_trials(
             study_id, step)
 
