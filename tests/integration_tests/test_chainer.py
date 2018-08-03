@@ -1,6 +1,7 @@
 import chainer
 import chainer.links as L
 from chainer.training import triggers
+import math
 import numpy as np
 import pytest
 import typing  # NOQA
@@ -9,31 +10,22 @@ import pfnopt
 from pfnopt.integration.chainer import ChainerPruningExtension
 
 
-parametrize_observation = pytest.mark.parametrize(
-    'observation_key',
-    ['main/loss', 'validation/main/loss']
-)
+class FixedValueDataset(chainer.dataset.DatasetMixin):
 
-
-class Dataset(chainer.dataset.DatasetMixin):
-
-    def __init__(self, values):
-        # type: (typing.List[int]) -> None
-
-        self.values = values
+    size = 16
 
     def __len__(self):
         # type: () -> int
 
-        return len(self.values)
+        return self.size
 
     def get_example(self, i):
         # type: (int) -> typing.Tuple[np.ndarray, int]
 
-        return np.array([self.values[i]], np.float32), np.int32(i % 2)
+        return np.array([1.0], np.float32), np.int32(0)
 
 
-class Pruner(pfnopt.pruners.BasePruner):
+class FixedValuePruner(pfnopt.pruners.BasePruner):
 
     def __init__(self, is_pruning):
         # type: (bool) -> None
@@ -48,7 +40,7 @@ class Pruner(pfnopt.pruners.BasePruner):
 
 def test_chainer_pruning_extension_trigger():
     study = pfnopt.create_study()
-    trial = study._run_trial(func=lambda x: 1.0, catch=(Exception,))
+    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
 
     extension = ChainerPruningExtension(trial, 'main/loss', (1, 'epoch'))
     assert isinstance(extension.pruner_trigger, triggers.IntervalTrigger)
@@ -63,36 +55,45 @@ def test_chainer_pruning_extension_trigger():
         ChainerPruningExtension(trial, 'main/loss', triggers.TimeTrigger(1.))
 
 
-@parametrize_observation
-def test_chainer_pruning_extension(observation_key):
-    # type: (str) -> None
+def test_chainer_pruning_extension():
+    # type: () -> None
 
     def objective(trial):
         # type: (pfnopt.trial.Trial) -> float
 
-        model = L.Classifier(chainer.Sequential(L.Linear(None, 10)))
+        model = L.Classifier(chainer.Sequential(L.Linear(None, 2)))
         optimizer = chainer.optimizers.Adam()
         optimizer.setup(model)
 
-        train_iter = chainer.iterators.SerialIterator(Dataset(list(range(64))), 16)
-        test_iter = chainer.iterators.SerialIterator(Dataset(list(range(32))), 16,
-                                                     repeat=False, shuffle=False)
+        train_iter = chainer.iterators.SerialIterator(FixedValueDataset(), 16)
         updater = chainer.training.StandardUpdater(train_iter, optimizer)
         trainer = chainer.training.Trainer(updater, (1, 'epoch'))
-        trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
-        # Type of trainer.observation['main/loss'] is chainer.Variable
-        # while type of trainer.observation['validation/main/loss'] is float.
         trainer.extend(
-            pfnopt.integration.chainer.ChainerPruningExtension(trial, observation_key,
+            pfnopt.integration.chainer.ChainerPruningExtension(trial, 'main/loss',
                                                                (1, 'epoch')))
+
         trainer.run(show_loop_exception_msg=False)
         return 1.0
 
-    study = pfnopt.create_study(pruner=Pruner(True))
+    study = pfnopt.create_study(pruner=FixedValuePruner(True))
     study.run(objective, n_trials=1)
     assert study.trials[0].state == pfnopt.structs.TrialState.PRUNED
 
-    study = pfnopt.create_study(pruner=Pruner(False))
+    study = pfnopt.create_study(pruner=FixedValuePruner(False))
     study.run(objective, n_trials=1)
     assert study.trials[0].state == pfnopt.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+
+
+def test_observation_value():
+    # type: () -> None
+
+    study = pfnopt.create_study()
+    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
+    extension = pfnopt.integration.chainer.ChainerPruningExtension(trial, 'value', (1, 'epoch'))
+
+    assert 1.0 == extension._get_score(1.0)
+    assert 1.0 == extension._get_score(chainer.Variable(np.array([1.0])))
+    assert math.isnan(extension._get_score(float('nan')))
+    with pytest.raises(TypeError):
+        extension._get_score([])

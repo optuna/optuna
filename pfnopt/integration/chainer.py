@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import chainer
 from chainer.training import triggers
+import math
+from typing import Any  # NOQA
 from typing import TYPE_CHECKING
 
 import pfnopt
@@ -28,6 +30,16 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
                 "Invalid trigger class: " + str(pruner_type) + "\n"
                 "Pruner trigger must be an instance of IntervalTrigger or ManualScheduleTrigger.")
 
+    def _get_score(self, observation_value):
+        # type: (Any) -> float
+
+        score = observation_value
+        if isinstance(score, chainer.Variable):
+            score = score.data
+        score = float(score)
+
+        return score
+
     def __call__(self, trainer):
         # type: (chainer.training.Trainer) -> None
 
@@ -37,10 +49,10 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
             return
 
         current_step = getattr(trainer.updater, self.pruner_trigger.unit)
-        if isinstance(trainer.observation[self.observation_key], chainer.Variable):
-            current_score = float(trainer.observation[self.observation_key].data)
-        else:
-            current_score = float(trainer.observation[self.observation_key])
+        current_score = self._get_score(trainer.observation[self.observation_key])
+        if math.isnan(current_score):
+            return
+
         self.trial.report(current_score, step=current_step)
         if self.trial.should_prune(current_step):
             msg = "Trial was pruned at {} {}.".format(self.pruner_trigger.unit, current_step)
