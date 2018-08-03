@@ -22,6 +22,8 @@ class MedianPruner(BasePruner):
     """
 
     def __init__(self, n_startup_trials=5, n_warmup_steps=0):
+        # type: (int, int) -> None
+
         self.n_startup_trials = n_startup_trials
         self.n_warmup_steps = n_warmup_steps
 
