@@ -77,12 +77,16 @@ jobs:
           command: |
             . venv/bin/activate
             pytest tests
+          environment:
+            OMP_NUM_THREADS: 1
 
       - run: &tests-mn
           name: tests-mn
           command: |
             . venv/bin/activate
             mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+          environment:
+            OMP_NUM_THREADS: 1
 
   tests-python35:
     docker:
@@ -126,6 +130,8 @@ jobs:
             do
                python $file
             done
+          environment:
+            OMP_NUM_THREADS: 1
 
       - run: &examples-mn
           name: examples-mn
@@ -134,6 +140,8 @@ jobs:
             STORAGE_URL=sqlite:///example.db
             STUDY_UUID=`pfnopt create-study --storage $STORAGE_URL`
             mpirun -n 2 -- python examples/chainermn_mnist.py $STUDY_UUID $STORAGE_URL
+          environment:
+            OMP_NUM_THREADS: 1
 
   examples-python35:
     docker:
