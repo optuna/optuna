@@ -37,12 +37,10 @@ class MedianPruner(BasePruner):
         if step <= self.n_warmup_steps:
             return False
 
-        # Check if trial.intermediate_results is empty.
-        try:
-            best_intermediate_result = storage.get_best_intermediate_result_over_steps(trial_id)
-        except ValueError:
+        if len(storage.get_trial(trial_id).intermediate_values) == 0:
             return False
 
+        best_intermediate_result = storage.get_best_intermediate_result_over_steps(trial_id)
         median = storage.get_median_intermediate_result_over_trials(
             study_id, step)
 
