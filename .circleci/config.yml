@@ -76,12 +76,14 @@ jobs:
           name: tests
           command: |
             . venv/bin/activate
+            export OMP_NUM_THREADS=1
             pytest tests
 
       - run: &tests-mn
           name: tests-mn
           command: |
             . venv/bin/activate
+            export OMP_NUM_THREADS=1
             mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
 
   tests-python35:
@@ -122,6 +124,7 @@ jobs:
           name: examples
           command: |
             . venv/bin/activate
+            export OMP_NUM_THREADS=1
             for file in `find examples -name '*.py' -not -name 'chainermn_mnist.py'`
             do
                python $file
@@ -131,6 +134,7 @@ jobs:
           name: examples-mn
           command: |
             . venv/bin/activate
+            export OMP_NUM_THREADS=1
             STORAGE_URL=sqlite:///example.db
             STUDY_UUID=`pfnopt create-study --storage $STORAGE_URL`
             mpirun -n 2 -- python examples/chainermn_mnist.py $STUDY_UUID $STORAGE_URL
