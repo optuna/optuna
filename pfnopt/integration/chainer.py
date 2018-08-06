@@ -28,7 +28,8 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
             pruner_type = type(self.pruner_trigger)
             raise TypeError(
                 "Invalid trigger class: " + str(pruner_type) + "\n"
-                "Pruner trigger must be an instance of IntervalTrigger or ManualScheduleTrigger.")
+                "Pruner trigger is supposed to be an instance of "
+                "IntervalTrigger or ManualScheduleTrigger.")
 
     def _get_score(self, observation_value):
         # type: (Any) -> float
