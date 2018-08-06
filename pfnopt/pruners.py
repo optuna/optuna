@@ -33,7 +33,6 @@ class MedianPruner(BasePruner):
         if len(storage.get_all_trials(study_id)) <= self.n_startup_trials:
             return False
 
-        # step starts from 1.
         if step <= self.n_warmup_steps:
             return False
 
