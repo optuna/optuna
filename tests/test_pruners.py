@@ -13,7 +13,7 @@ def test_median_pruner_without_reports():
                             trial_id=trial.trial_id, step=1)
 
 
-def test_median_pruner_with_only_one_trial():
+def test_median_pruner_with_one_trial():
     # type: () -> None
 
     study = pfnopt.study.create_study()
@@ -42,7 +42,7 @@ def test_median_pruner_n_startup_trials():
     assert not pruner.prune(storage=study.storage, study_id=study.study_id,
                             trial_id=trial.trial_id, step=1)
 
-    # A trial is pruned after the startup trials.
+    # A pruner is activated after the startup trials.
     trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
     trial.report(2, 1)
     assert pruner.prune(storage=study.storage, study_id=study.study_id,
@@ -55,7 +55,6 @@ def test_median_pruner_n_warmup_steps():
     pruner = pfnopt.pruners.MedianPruner(0, 1)
     study = pfnopt.study.create_study()
 
-    # A first trial is not pruned.
     trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
     trial.report(0, 1)
     trial.report(0, 2)
@@ -65,7 +64,7 @@ def test_median_pruner_n_warmup_steps():
     trial.report(1, 1)
     assert not pruner.prune(storage=study.storage, study_id=study.study_id,
                             trial_id=trial.trial_id, step=1)
-    # A trial is pruned after the warm-up steps.
+    # A pruner is activated after the warm-up steps.
     trial.report(1, 2)
     assert pruner.prune(storage=study.storage, study_id=study.study_id,
                         trial_id=trial.trial_id, step=2)
