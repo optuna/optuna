@@ -29,6 +29,7 @@ class MedianPruner(BasePruner):
         if trial_id < self.n_startup_trials:
             return False
 
+        # TODO(Yanase): Handle NaN in trial.intermediate_values.
         best_intermediate_result = storage.get_best_intermediate_result_over_steps(trial_id)
         median = storage.get_median_intermediate_result_over_trials(
             study_id, step)

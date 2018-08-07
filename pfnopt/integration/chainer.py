@@ -49,19 +49,22 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
 
         return value
 
+    def _has_new_observation(self, trainer):
+        # type: (chainer.training.Trainer) -> bool
+
+        return self.pruner_trigger(trainer) and self.observation_key in trainer.observation
+
     def __call__(self, trainer):
         # type: (chainer.training.Trainer) -> None
 
-        if not self.pruner_trigger(trainer):
-            return
-        if self.observation_key not in trainer.observation:
+        if not self._has_new_observation(trainer):
             return
 
-        current_step = getattr(trainer.updater, self.pruner_trigger.unit)
         current_score = self._get_float_value(trainer.observation[self.observation_key])
         if math.isnan(current_score):
             return
 
+        current_step = getattr(trainer.updater, self.pruner_trigger.unit)
         self.trial.report(current_score, step=current_step)
         if self.trial.should_prune(current_step):
             message = "Trial was pruned at {} {}.".format(self.pruner_trigger.unit, current_step)

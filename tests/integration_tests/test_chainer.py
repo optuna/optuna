@@ -1,7 +1,10 @@
 import chainer
 import chainer.links as L
 from chainer.training import triggers
+from collections import namedtuple
 import math
+from mock import Mock
+from mock import patch
 import numpy as np
 import pytest
 import typing  # NOQA
@@ -83,6 +86,47 @@ def test_chainer_pruning_extension():
     study.run(objective, n_trials=1)
     assert study.trials[0].state == pfnopt.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+
+
+def test_chainer_pruning_extension_observation_isnan():
+    # type: () -> None
+
+    study = pfnopt.create_study()
+    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
+    extension = ChainerPruningExtension(trial, 'main/loss', (1, 'epoch'))
+
+    MockTrainer = namedtuple('_MockTrainer', ('observation', ))
+    trainer = MockTrainer(observation={'main/loss': 0})
+    nan = float('nan')
+
+    with patch.object(extension, '_has_new_observation', Mock(return_value=True)) as mock_o, \
+            patch.object(extension, '_get_float_value', Mock(return_value=nan)) as mock_v:
+        extension(trainer)
+        assert mock_o.call_count == 1
+        assert mock_v.call_count == 1
+
+
+def test_has_new_observation():
+    # type: () -> None
+
+    study = pfnopt.create_study()
+    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
+    MockTrainer = namedtuple('_MockTrainer', ('observation', ))
+    trainer = MockTrainer(observation={'OK': 0})
+
+    with patch.object(triggers.IntervalTrigger, '__call__', Mock(return_value=False)) as mock:
+        extension = ChainerPruningExtension(trial, 'NG', (1, 'epoch'))
+        assert extension._has_new_observation(trainer) is False
+        extension = ChainerPruningExtension(trial, 'OK', (1, 'epoch'))
+        assert extension._has_new_observation(trainer) is False
+        assert mock.call_count == 2
+
+    with patch.object(triggers.IntervalTrigger, '__call__', Mock(return_value=True)) as mock:
+        extension = ChainerPruningExtension(trial, 'NG', (1, 'epoch'))
+        assert extension._has_new_observation(trainer) is False
+        extension = ChainerPruningExtension(trial, 'OK', (1, 'epoch'))
+        assert extension._has_new_observation(trainer) is True
+        assert mock.call_count == 2
 
 
 def test_get_float_value():
