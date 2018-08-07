@@ -67,6 +67,7 @@ def test_median_pruner_n_warmup_steps():
     trial.report(2, 1)
     assert not pruner.prune(storage=study.storage, study_id=study.study_id,
                             trial_id=trial.trial_id, step=1)
+
     # A pruner is activated after warm-up steps.
     trial.report(2, 2)
     assert pruner.prune(storage=study.storage, study_id=study.study_id,
