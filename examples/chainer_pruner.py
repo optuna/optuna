@@ -82,17 +82,33 @@ def objective(trial):
     # Run!
     trainer.run(show_loop_exception_msg=False)
 
-    # Return the validation error.
-    val_err = 1.0 - log_report_extension.log[-1]['validation/main/accuracy']
-    return val_err
+    # Set the user attributes such as loss and accuracy for train and validation sets.
+    log_last = log_report_extension.log[-1]
+    for key, value in log_last.items():
+        trial.set_user_attr(key, value)
+
+    # Return the validation loss.
+    return log_report_extension.log[-1]['validation/main/loss']
 
 
 if __name__ == '__main__':
     study = pfnopt.minimize(objective, n_trials=100, pruner=pfnopt.pruners.MedianPruner())
     pruned_trials = [t for t in study.trials if t.state == pfnopt.structs.TrialState.PRUNED]
     complete_trials = [t for t in study.trials if t.state == pfnopt.structs.TrialState.COMPLETE]
-    print('Result: ')
+    print('Study statistics: ')
     print('  Number of finished trials: ', len(study.trials))
     print('  Number of pruned trials: ', len(pruned_trials))
     print('  Number of complete trials: ', len(complete_trials))
-    print('  Best value: ', study.best_trial.value)
+
+    print('Best trial:')
+    trial = study.best_trial
+
+    print('  Value: ', trial.value)
+
+    print('  Params: ')
+    for key, value in trial.params.items():
+        print('    {}: {}'.format(key, value))
+
+    print('  User attrs:')
+    for key, value in trial.user_attrs.items():
+        print('    {}: {}'.format(key, value))
