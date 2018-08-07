@@ -47,12 +47,10 @@ def create_model(trial):
 
 
 def objective(trial):
-    # Model and optimizer
     model = L.Classifier(create_model(trial))
     optimizer = chainer.optimizers.Adam()
     optimizer.setup(model)
 
-    # Dataset
     rng = np.random.RandomState(0)
     train, test = chainer.datasets.get_mnist()
     train = chainer.datasets.SubDataset(
@@ -62,11 +60,11 @@ def objective(trial):
     train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE)
     test_iter = chainer.iterators.SerialIterator(test, BATCHSIZE, repeat=False, shuffle=False)
 
-    # Trainer
+    # Setup trainer.
     updater = chainer.training.StandardUpdater(train_iter, optimizer)
     trainer = chainer.training.Trainer(updater, (EPOCH, 'epoch'))
 
-    # Add an extension for Chainer pruner.
+    # Add Chainer extension for pruners.
     trainer.extend(
         pfnopt.integration.ChainerPruningExtension(trial, 'validation/main/loss',
                                                    (PRUNER_INTERVAL, 'epoch'))
@@ -79,15 +77,17 @@ def objective(trial):
     log_report_extension = chainer.training.extensions.LogReport(log_name=None)
     trainer.extend(log_report_extension)
 
-    # Run!
+    # Run training.
+    # Please set show_loop_exception_msg False to inhibit messages about TrialPruned exception.
+    # ChainerPruningExtension raises TrialPruned exception to stop training, and
+    # trainer shows some messages every time it receive TrialPruned.
     trainer.run(show_loop_exception_msg=False)
 
-    # Set the user attributes such as loss and accuracy for train and validation sets.
+    # Save loss and accuracy to user attributes.
     log_last = log_report_extension.log[-1]
     for key, value in log_last.items():
         trial.set_user_attr(key, value)
 
-    # Return the validation loss.
     return log_report_extension.log[-1]['validation/main/loss']
 
 
