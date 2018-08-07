@@ -220,7 +220,7 @@ class Study(object):
 
         try:
             result = func(trial)
-        except pruners.TrialPruned as e:
+        except structs.TrialPruned as e:
             message = 'Setting trial status as {}. {}'.format(
                 structs.TrialState.PRUNED, str(e))
             self.logger.info(message)

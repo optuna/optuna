@@ -36,13 +36,3 @@ class MedianPruner(BasePruner):
         print(step, best_intermediate_result, median)
 
         return best_intermediate_result > median
-
-
-class TrialPruned(Exception):
-
-    """Exception for pruned trials.
-
-     This exception tells a trainer that the current trial was pruned.
-    """
-
-    pass
