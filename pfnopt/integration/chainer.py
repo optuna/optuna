@@ -64,5 +64,5 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
 
         self.trial.report(current_score, step=current_step)
         if self.trial.should_prune(current_step):
-            msg = "Trial was pruned at {} {}.".format(self.pruner_trigger.unit, current_step)
-            raise pfnopt.structs.TrialPruned(msg)
+            message = "Trial was pruned at {} {}.".format(self.pruner_trigger.unit, current_step)
+            raise pfnopt.structs.TrialPruned(message)
