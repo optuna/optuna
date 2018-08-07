@@ -88,12 +88,8 @@ def test_chainer_pruning_extension():
 def test_get_float_value():
     # type: () -> None
 
-    study = pfnopt.create_study()
-    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
-    extension = pfnopt.integration.chainer.ChainerPruningExtension(trial, 'value', (1, 'epoch'))
-
-    assert 1.0 == extension._get_float_value(1.0)
-    assert 1.0 == extension._get_float_value(chainer.Variable(np.array([1.0])))
-    assert math.isnan(extension._get_float_value(float('nan')))
+    assert 1.0 == ChainerPruningExtension._get_float_value(1.0)
+    assert 1.0 == ChainerPruningExtension._get_float_value(chainer.Variable(np.array([1.0])))
+    assert math.isnan(ChainerPruningExtension._get_float_value(float('nan')))
     with pytest.raises(TypeError):
-        extension._get_float_value([])
+        ChainerPruningExtension._get_float_value([])

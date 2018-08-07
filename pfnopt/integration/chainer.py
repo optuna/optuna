@@ -31,15 +31,23 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
                 "Pruner trigger is supposed to be an instance of "
                 "IntervalTrigger or ManualScheduleTrigger.")
 
-    def _get_float_value(self, observation_value):
-        # type: (Any) -> float
+    @staticmethod
+    def _get_float_value(observation_value):
+        # type: (Union[float, chainer.Variable]) -> float
 
-        score = observation_value
-        if isinstance(score, chainer.Variable):
-            score = score.data
-        score = float(score)
+        value = observation_value
+        if isinstance(value, chainer.Variable):
+            value = value.data
 
-        return score
+        try:
+            value = float(value)
+        except TypeError:
+            raise TypeError(
+                'Type of observation value is not supported by ChainerPruningExtension.\n'
+                '{} cannot be casted to float.'.format(type(value))
+            )
+
+        return value
 
     def __call__(self, trainer):
         # type: (chainer.training.Trainer) -> None
