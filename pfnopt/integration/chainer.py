@@ -31,7 +31,7 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
                 "Pruner trigger is supposed to be an instance of "
                 "IntervalTrigger or ManualScheduleTrigger.")
 
-    def _get_score(self, observation_value):
+    def _get_float_value(self, observation_value):
         # type: (Any) -> float
 
         score = observation_value
@@ -50,7 +50,7 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
             return
 
         current_step = getattr(trainer.updater, self.pruner_trigger.unit)
-        current_score = self._get_score(trainer.observation[self.observation_key])
+        current_score = self._get_float_value(trainer.observation[self.observation_key])
         if math.isnan(current_score):
             return
 

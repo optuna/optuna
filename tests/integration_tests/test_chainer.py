@@ -85,15 +85,15 @@ def test_chainer_pruning_extension():
     assert study.trials[0].value == 1.0
 
 
-def test_observation_value():
+def test_get_float_value():
     # type: () -> None
 
     study = pfnopt.create_study()
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
     extension = pfnopt.integration.chainer.ChainerPruningExtension(trial, 'value', (1, 'epoch'))
 
-    assert 1.0 == extension._get_score(1.0)
-    assert 1.0 == extension._get_score(chainer.Variable(np.array([1.0])))
-    assert math.isnan(extension._get_score(float('nan')))
+    assert 1.0 == extension._get_float_value(1.0)
+    assert 1.0 == extension._get_float_value(chainer.Variable(np.array([1.0])))
+    assert math.isnan(extension._get_float_value(float('nan')))
     with pytest.raises(TypeError):
-        extension._get_score([])
+        extension._get_float_value([])
