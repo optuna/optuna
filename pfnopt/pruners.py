@@ -2,6 +2,7 @@ import abc
 import six
 
 from pfnopt.storages import BaseStorage  # NOQA
+from pfnopt.structs import TrialState
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -30,7 +31,10 @@ class MedianPruner(BasePruner):
     def prune(self, storage, study_id, trial_id, step):
         # type: (BaseStorage, int, int, int) -> bool
 
-        if len(storage.get_all_trials(study_id)) <= self.n_startup_trials:
+        # TODO(Yanase): Implement a method of storage to just retrieve the number of trials.
+        n_trials = len([t for t in storage.get_all_trials(study_id)
+                        if t.state == TrialState.COMPLETE])
+        if n_trials < self.n_startup_trials:
             return False
 
         if step <= self.n_warmup_steps:

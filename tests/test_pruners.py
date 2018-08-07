@@ -1,4 +1,5 @@
 import pfnopt
+from pfnopt.structs import TrialState
 
 
 def test_median_pruner_without_reports():
@@ -34,12 +35,14 @@ def test_median_pruner_n_startup_trials():
 
     trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
     trial.report(1, 1)
+    study.storage.set_trial_state(trial.trial_id, TrialState.COMPLETE)
 
     # A pruner is not activated during startup trials.
     trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
     trial.report(2, 1)
     assert not pruner.prune(storage=study.storage, study_id=study.study_id,
                             trial_id=trial.trial_id, step=1)
+    study.storage.set_trial_state(trial.trial_id, TrialState.COMPLETE)
 
     # A pruner is activated after startup trials.
     trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
@@ -57,6 +60,7 @@ def test_median_pruner_n_warmup_steps():
     trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
     trial.report(1, 1)
     trial.report(1, 2)
+    study.storage.set_trial_state(trial.trial_id, TrialState.COMPLETE)
 
     # A pruner is not activated during warm-up steps.
     trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
