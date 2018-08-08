@@ -205,6 +205,7 @@ class InMemoryStorage(base.BaseStorage):
         self._check_study_id(study_id)
         if state is None:
             return len(self.trials)
+
         return len([t for t in self.trials if t.state == state])
 
     def _check_study_id(self, study_id):

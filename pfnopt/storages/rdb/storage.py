@@ -323,6 +323,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
+
         return models.TrialModel.count(study, session, state)
 
     @staticmethod
