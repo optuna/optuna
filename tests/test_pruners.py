@@ -27,7 +27,7 @@ def test_median_pruner_with_one_trial():
                             trial_id=trial.trial_id, step=1)
 
 
-def test_median_pruner_without_intermediate_values():
+def test_median_pruner_intermediate_values():
     # type: () -> None
 
     pruner = pfnopt.pruners.MedianPruner(0, 0)
