@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import chainer
 from chainer.training import triggers
 import math
-from typing import Any  # NOQA
 from typing import TYPE_CHECKING
 
 import pfnopt
@@ -12,7 +11,8 @@ if TYPE_CHECKING:
     from typing import Tuple
     from typing import Union
 
-    TriggerType = Union[Tuple[(int, str)], chainer.training.IntervalTrigger]
+    TriggerType = Union[Tuple[(int, str)], triggers.IntervalTrigger,
+                        triggers.ManualScheduleTrigger]
 
 
 class ChainerPruningExtension(chainer.training.extension.Extension):
