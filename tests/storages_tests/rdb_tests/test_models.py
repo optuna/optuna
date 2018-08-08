@@ -5,28 +5,47 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from pfnopt.storages.rdb.models import BaseModel
+from pfnopt.storages.rdb.models import StudyModel
 from pfnopt.storages.rdb.models import TrialModel
 from pfnopt.storages.rdb.models import VersionInfoModel
 from pfnopt.structs import TrialState
 
 
-def test_trial_model():
-    # type: () -> None
+class TestTrialModel(object):
 
-    engine = create_engine('sqlite:///:memory:')
-    session = Session(bind=engine)
-    BaseModel.metadata.create_all(engine)
+    def get_session(self):
+        engine = create_engine('sqlite:///:memory:')
+        BaseModel.metadata.create_all(engine)
+        return Session(bind=engine)
 
-    datetime_1 = datetime.now()
+    def test_trial_model(self):
+        session = self.get_session()
 
-    session.add(TrialModel(state=TrialState.RUNNING))
-    session.commit()
+        datetime_1 = datetime.now()
 
-    datetime_2 = datetime.now()
+        session.add(TrialModel(state=TrialState.RUNNING))
+        session.commit()
 
-    trial_model = session.query(TrialModel).first()
-    assert datetime_1 < trial_model.datetime_start < datetime_2
-    assert trial_model.datetime_complete is None
+        datetime_2 = datetime.now()
+
+        trial_model = session.query(TrialModel).first()
+        assert datetime_1 < trial_model.datetime_start < datetime_2
+        assert trial_model.datetime_complete is None
+
+    def test_count(self):
+        session = self.get_session()
+
+        study_1 = StudyModel(study_id=1)
+        study_2 = StudyModel(study_id=2)
+
+        session.add(TrialModel(study_id=study_1.study_id, state=TrialState.COMPLETE))
+        session.add(TrialModel(study_id=study_1.study_id, state=TrialState.RUNNING))
+        session.add(TrialModel(study_id=study_2.study_id, state=TrialState.RUNNING))
+        session.commit()
+
+        assert 3 == TrialModel.count(session)
+        assert 2 == TrialModel.count(session, study=study_1)
+        assert 1 == TrialModel.count(session, state=TrialState.COMPLETE)
 
 
 def test_version_info_model():
