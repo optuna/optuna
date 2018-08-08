@@ -42,6 +42,8 @@ class FixedValuePruner(pfnopt.pruners.BasePruner):
 
 
 def test_chainer_pruning_extension_trigger():
+    # type: () -> None
+
     study = pfnopt.create_study()
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
 
