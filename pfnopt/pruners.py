@@ -34,6 +34,10 @@ class MedianPruner(BasePruner):
         # TODO(Yanase): Implement a method of storage to just retrieve the number of trials.
         n_trials = len([t for t in storage.get_all_trials(study_id)
                         if t.state == TrialState.COMPLETE])
+
+        if n_trials == 0:
+            return False
+
         if n_trials < self.n_startup_trials:
             return False
 
