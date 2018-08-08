@@ -324,7 +324,7 @@ class RDBStorage(BaseStorage):
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        return models.TrialModel.count(study, session, state)
+        return models.TrialModel.count(session, study, state)
 
     @staticmethod
     def _merge_trials_orm(
