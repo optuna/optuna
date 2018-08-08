@@ -1,11 +1,20 @@
 from __future__ import absolute_import
 
-import chainer
-from chainer.training import triggers
 import math
 from typing import TYPE_CHECKING
 
 import pfnopt
+
+try:
+    import chainer
+    from chainer.training.extension import Extension
+    from chainer.training import triggers
+    _available = True
+except ImportError as e:
+    _import_error = e
+    Extension = object
+    _available = False
+
 
 if TYPE_CHECKING:
     from typing import Tuple
@@ -15,10 +24,12 @@ if TYPE_CHECKING:
                         triggers.ManualScheduleTrigger]
 
 
-class ChainerPruningExtension(chainer.training.extension.Extension):
+class ChainerPruningExtension(Extension):
 
     def __init__(self, trial, observation_key, pruner_trigger):
         # type: (pfnopt.trial.Trial, str, TriggerType) -> None
+
+        _check_chainer_availability()
 
         self.trial = trial
         self.observation_key = observation_key
@@ -34,6 +45,8 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
     @staticmethod
     def _get_float_value(observation_value):
         # type: (Union[float, chainer.Variable]) -> float
+
+        _check_chainer_availability()
 
         if isinstance(observation_value, chainer.Variable):
             observation_value = observation_value.data
@@ -68,3 +81,14 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
         if self.trial.should_prune(current_step):
             message = "Trial was pruned at {} {}.".format(self.pruner_trigger.unit, current_step)
             raise pfnopt.structs.TrialPruned(message)
+
+
+def _check_chainer_availability():
+    # type: () -> None
+
+    if not _available:
+        raise ImportError(
+            'Chainer is not available. Please install Chainer to use this feature. '
+            'Chainer can be installed by executing `$ pip install chainer`. '
+            'For further information, please refer to the installation guide of Chainer. '
+            '(The actual import error is as follows: ' + str(_import_error) + ')')
