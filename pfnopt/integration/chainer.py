@@ -35,21 +35,20 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
     def _get_float_value(observation_value):
         # type: (Union[float, chainer.Variable]) -> float
 
-        value = observation_value
-        if isinstance(value, chainer.Variable):
-            value = value.data
+        if isinstance(observation_value, chainer.Variable):
+            observation_value = observation_value.data
 
         try:
-            value = float(value)
+            observation_value = float(observation_value)
         except TypeError:
             raise TypeError(
                 'Type of observation value is not supported by ChainerPruningExtension.\n'
-                '{} cannot be casted to float.'.format(type(value))
+                '{} cannot be casted to float.'.format(type(observation_value))
             )
 
-        return value
+        return observation_value
 
-    def _has_new_observation(self, trainer):
+    def _observation_exists(self, trainer):
         # type: (chainer.training.Trainer) -> bool
 
         return self.pruner_trigger(trainer) and self.observation_key in trainer.observation
@@ -57,7 +56,7 @@ class ChainerPruningExtension(chainer.training.extension.Extension):
     def __call__(self, trainer):
         # type: (chainer.training.Trainer) -> None
 
-        if not self._has_new_observation(trainer):
+        if not self._observation_exists(trainer):
             return
 
         current_score = self._get_float_value(trainer.observation[self.observation_key])

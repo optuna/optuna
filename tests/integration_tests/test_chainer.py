@@ -98,17 +98,14 @@ def test_chainer_pruning_extension_observation_isnan():
     extension = ChainerPruningExtension(trial, 'main/loss', (1, 'epoch'))
 
     MockTrainer = namedtuple('_MockTrainer', ('observation', ))
-    trainer = MockTrainer(observation={'main/loss': 0})
-    nan = float('nan')
+    trainer = MockTrainer(observation={'main/loss': float('nan')})
 
-    with patch.object(extension, '_has_new_observation', Mock(return_value=True)) as mock_o, \
-            patch.object(extension, '_get_float_value', Mock(return_value=nan)) as mock_v:
+    with patch.object(extension, '_observation_exists', Mock(return_value=True)) as mock:
         extension(trainer)
-        assert mock_o.call_count == 1
-        assert mock_v.call_count == 1
+        assert mock.call_count == 1
 
 
-def test_has_new_observation():
+def test_observation_exists():
     # type: () -> None
 
     study = pfnopt.create_study()
@@ -116,18 +113,20 @@ def test_has_new_observation():
     MockTrainer = namedtuple('_MockTrainer', ('observation', ))
     trainer = MockTrainer(observation={'OK': 0})
 
+    # Trigger is deactivated. Return False whether trainer has observation or not.
     with patch.object(triggers.IntervalTrigger, '__call__', Mock(return_value=False)) as mock:
         extension = ChainerPruningExtension(trial, 'NG', (1, 'epoch'))
-        assert extension._has_new_observation(trainer) is False
+        assert extension._observation_exists(trainer) is False
         extension = ChainerPruningExtension(trial, 'OK', (1, 'epoch'))
-        assert extension._has_new_observation(trainer) is False
+        assert extension._observation_exists(trainer) is False
         assert mock.call_count == 2
 
+    # Trigger is activated. Return True if trainer has observation.
     with patch.object(triggers.IntervalTrigger, '__call__', Mock(return_value=True)) as mock:
         extension = ChainerPruningExtension(trial, 'NG', (1, 'epoch'))
-        assert extension._has_new_observation(trainer) is False
+        assert extension._observation_exists(trainer) is False
         extension = ChainerPruningExtension(trial, 'OK', (1, 'epoch'))
-        assert extension._has_new_observation(trainer) is True
+        assert extension._observation_exists(trainer) is True
         assert mock.call_count == 2
 
 
