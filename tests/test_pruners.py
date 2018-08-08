@@ -2,18 +2,6 @@ import pfnopt
 from pfnopt.structs import TrialState
 
 
-def test_median_pruner_without_reports():
-    # type: () -> None
-
-    study = pfnopt.study.create_study()
-    trial = pfnopt.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
-    pruner = pfnopt.pruners.MedianPruner(0, 0)
-
-    # A pruner is not activated if no trials are reported.
-    assert not pruner.prune(storage=study.storage, study_id=study.study_id,
-                            trial_id=trial.trial_id, step=1)
-
-
 def test_median_pruner_with_one_trial():
     # type: () -> None
 
