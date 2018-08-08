@@ -5,6 +5,7 @@ import six
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
+from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 
 from pfnopt import distributions  # NOQA
@@ -147,6 +148,12 @@ class BaseStorage(object):
     @abc.abstractmethod
     def get_all_trials(self, study_id):
         # type: (int) -> List[structs.FrozenTrial]
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def count_trials(self, study_id, state=None):
+        # type: (int, Optional[structs.TrialState]) -> int
 
         raise NotImplementedError
 

@@ -317,6 +317,14 @@ class RDBStorage(BaseStorage):
 
         return self._merge_trials_orm(trials, params, values)
 
+    def count_trials(self, study_id, state=None):
+        # type: (int, Optional[structs.TrialState]) -> int
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        return models.TrialModel.count(study, session, state)
+
     @staticmethod
     def _merge_trials_orm(
             trials,  # type: List[models.TrialModel]
