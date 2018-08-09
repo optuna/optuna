@@ -11,21 +11,20 @@ from pfnopt.storages.rdb.models import VersionInfoModel
 from pfnopt.structs import TrialState
 
 
+@pytest.fixture
+def session():
+    # type: () -> Session
+
+    engine = create_engine('sqlite:///:memory:')
+    BaseModel.metadata.create_all(engine)
+    return Session(bind=engine)
+
+
 class TestTrialModel(object):
 
     @staticmethod
-    def get_session():
-        # type: () -> Session
-
-        engine = create_engine('sqlite:///:memory:')
-        BaseModel.metadata.create_all(engine)
-        return Session(bind=engine)
-
-    @staticmethod
-    def test_trial_model():
-        # type: () -> None
-
-        session = TestTrialModel.get_session()
+    def test_trial_model(session):
+        # type: (Session) -> None
 
         datetime_1 = datetime.now()
 
@@ -39,10 +38,8 @@ class TestTrialModel(object):
         assert trial_model.datetime_complete is None
 
     @staticmethod
-    def test_count():
-        # type: () -> None
-
-        session = TestTrialModel.get_session()
+    def test_count(session):
+        # type: (Session) -> None
 
         study_1 = StudyModel(study_id=1)
         study_2 = StudyModel(study_id=2)
@@ -57,12 +54,8 @@ class TestTrialModel(object):
         assert 1 == TrialModel.count(session, state=TrialState.COMPLETE)
 
 
-def test_version_info_model():
-    # type: () -> None
-
-    engine = create_engine('sqlite:///:memory:')
-    session = Session(bind=engine)
-    BaseModel.metadata.create_all(engine)
+def test_version_info_model(session):
+    # type: (Session) -> None
 
     session.add(VersionInfoModel(schema_version=1, library_version='0.0.1'))
     session.commit()
