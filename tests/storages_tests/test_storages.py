@@ -473,7 +473,7 @@ def test_get_all_trials(storage_init_func):
 
 
 @parametrize_storage
-def test_count_trials(storage_init_func):
+def test_get_n_trials(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
@@ -484,8 +484,8 @@ def test_count_trials(storage_init_func):
     _create_new_trial_with_example_trial(
         storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[1])
 
-    assert 2 == storage.count_trials(study_id)
-    assert 1 == storage.count_trials(study_id, TrialState.COMPLETE)
+    assert 2 == storage.get_n_trials(study_id)
+    assert 1 == storage.get_n_trials(study_id, TrialState.COMPLETE)
 
 
 def _create_new_trial_with_example_trial(storage, study_id, distributions, example_trial):

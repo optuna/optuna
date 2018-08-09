@@ -152,7 +152,7 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def count_trials(self, study_id, state=None):
+    def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[structs.TrialState]) -> int
 
         raise NotImplementedError
