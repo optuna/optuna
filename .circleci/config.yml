@@ -12,7 +12,7 @@ workflows:
   daily-build:
     triggers:
       - schedule:
-          cron: "15 0 * * *"
+          cron: "0 15 * * *"
           filters:
             branches:
               only:
