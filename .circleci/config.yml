@@ -84,8 +84,7 @@ jobs:
           name: tests-mn
           command: |
             . venv/bin/activate
-            mpirun -n 2 --report-bindings -- pytest tests/integration_tests/test_chainermn.py
-            mpirun -n 2 --report-bindings --bind-to none -- pytest tests/integration_tests/test_chainermn.py
+            mpirun -n 2 --bind-to none -- pytest tests/integration_tests/test_chainermn.py
           environment:
             OMP_NUM_THREADS: 1
 
