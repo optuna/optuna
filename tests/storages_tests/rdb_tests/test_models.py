@@ -13,13 +13,15 @@ from pfnopt.structs import TrialState
 
 class TestTrialModel(object):
 
-    def get_session(self):
+    @staticmethod
+    def get_session():
         engine = create_engine('sqlite:///:memory:')
         BaseModel.metadata.create_all(engine)
         return Session(bind=engine)
 
-    def test_trial_model(self):
-        session = self.get_session()
+    @staticmethod
+    def test_trial_model():
+        session = TestTrialModel.get_session()
 
         datetime_1 = datetime.now()
 
@@ -32,8 +34,9 @@ class TestTrialModel(object):
         assert datetime_1 < trial_model.datetime_start < datetime_2
         assert trial_model.datetime_complete is None
 
-    def test_count(self):
-        session = self.get_session()
+    @staticmethod
+    def test_count():
+        session = TestTrialModel.get_session()
 
         study_1 = StudyModel(study_id=1)
         study_2 = StudyModel(study_id=2)
