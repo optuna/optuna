@@ -12,8 +12,10 @@ try:
     _available = True
 except ImportError as e:
     _import_error = e
-    Extension = object
+    # ChainerPruningExtension is disabled because Chainer is not available.
     _available = False
+    # This alias is required to avoid ImportError at ChainerPruningExtension definition.
+    Extension = object
 
 
 if TYPE_CHECKING:
