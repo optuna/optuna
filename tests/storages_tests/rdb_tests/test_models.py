@@ -15,12 +15,16 @@ class TestTrialModel(object):
 
     @staticmethod
     def get_session():
+        # type: () -> Session
+
         engine = create_engine('sqlite:///:memory:')
         BaseModel.metadata.create_all(engine)
         return Session(bind=engine)
 
     @staticmethod
     def test_trial_model():
+        # type: () -> None
+
         session = TestTrialModel.get_session()
 
         datetime_1 = datetime.now()
@@ -36,6 +40,8 @@ class TestTrialModel(object):
 
     @staticmethod
     def test_count():
+        # type: () -> None
+
         session = TestTrialModel.get_session()
 
         study_1 = StudyModel(study_id=1)
