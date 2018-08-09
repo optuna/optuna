@@ -1,4 +1,5 @@
 from datetime import datetime
+import math
 import pytest
 from typing import Any  # NOQA
 from typing import Callable  # NOQA
@@ -470,6 +471,71 @@ def test_get_all_trials(storage_init_func):
     # Test getting trials per study.
     trials = sorted(storage.get_all_trials(study_id_2), key=lambda x: x.trial_id)
     _check_example_trial_static_attributes(trials[0], EXAMPLE_TRIALS[0])
+
+
+@parametrize_storage
+def test_get_best_intermediate_result_over_steps(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+    study_id = storage.create_new_study_id()
+
+    # FrozenTrial.intermediate_values has no elements.
+    trial_id_empty = storage.create_new_trial_id(study_id)
+    # TODO(Yanase): Is this error appropriate?
+    with pytest.raises(ValueError):
+        storage.get_best_intermediate_result_over_steps(trial_id_empty)
+
+    # FrozenTrial.intermediate_values has float value only.
+    trial_id_float = storage.create_new_trial_id(study_id)
+    storage.set_trial_intermediate_value(trial_id_float, 0, 0.1)
+    storage.set_trial_intermediate_value(trial_id_float, 1, 0.2)
+    assert 0.1 == storage.get_best_intermediate_result_over_steps(trial_id_float)
+
+    # FrozenTrial.intermediate_values has both a float value and a NaN.
+    trial_id_float_nan = storage.create_new_trial_id(study_id)
+    storage.set_trial_intermediate_value(trial_id_float_nan, 0, 0.3)
+    storage.set_trial_intermediate_value(trial_id_float_nan, 1, float('nan'))
+    assert 0.3 == storage.get_best_intermediate_result_over_steps(trial_id_float_nan)
+
+    # FrozenTrial.intermediate_values has a NaN only.
+    trial_id_nan = storage.create_new_trial_id(storage.create_new_study_id())
+    storage.set_trial_intermediate_value(trial_id_nan, 0, float('nan'))
+    assert math.isnan(storage.get_best_intermediate_result_over_steps(trial_id_nan))
+
+
+@parametrize_storage
+def test_get_median_intermediate_result_over_trials(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+    study_id = storage.create_new_study_id()
+
+    # Study does not have any trials.
+    # TODO(Yanase): Is this behavior appropriate?
+    assert math.isnan(storage.get_median_intermediate_result_over_trials(study_id, 0))
+
+    trial_id_1 = storage.create_new_trial_id(study_id)
+    trial_id_2 = storage.create_new_trial_id(study_id)
+    trial_id_3 = storage.create_new_trial_id(study_id)
+
+    # FrozenTrial.intermediate_values has float values only.
+    storage.set_trial_intermediate_value(trial_id_1, 0, 0.1)
+    storage.set_trial_intermediate_value(trial_id_2, 0, 0.2)
+    storage.set_trial_intermediate_value(trial_id_3, 0, 0.3)
+    assert 0.2 == storage.get_median_intermediate_result_over_trials(study_id, 0)
+
+    # FrozenTrial.intermediate_values has NaNs along with a float value.
+    storage.set_trial_intermediate_value(trial_id_1, 1, 0.1)
+    storage.set_trial_intermediate_value(trial_id_2, 1, float('nan'))
+    storage.set_trial_intermediate_value(trial_id_3, 1, float('nan'))
+    assert 0.1 == storage.get_median_intermediate_result_over_trials(study_id, 1)
+
+    # FrozenTrial.intermediate_values has a NaN only.
+    storage.set_trial_intermediate_value(trial_id_1, 2, float('nan'))
+    storage.set_trial_intermediate_value(trial_id_2, 2, float('nan'))
+    storage.set_trial_intermediate_value(trial_id_3, 2, float('nan'))
+    assert math.isnan(storage.get_median_intermediate_result_over_trials(study_id, 2))
 
 
 def _create_new_trial_with_example_trial(storage, study_id, distributions, example_trial):

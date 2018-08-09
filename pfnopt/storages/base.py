@@ -200,17 +200,19 @@ class BaseStorage(object):
     def get_best_intermediate_result_over_steps(self, trial_id):
         # type: (int) -> float
 
-        return min(self.get_trial(trial_id).intermediate_values.values())
+        values = np.array(list(self.get_trial(trial_id).intermediate_values.values()), np.float)
+        return np.nanmin(values)
 
     def get_median_intermediate_result_over_trials(self, study_id, step):
         # type: (int, int) -> float
 
+        # TODO(Yanase): Remove incomplete trials?
         all_trials = self.get_all_trials(study_id)
 
-        return float(np.median([
+        return float(np.nanmedian(np.array([
             t.intermediate_values[step] for t in all_trials
             if step in t.intermediate_values
-        ]))
+        ], np.float)))
 
     def remove_session(self):
         # type: () -> None
