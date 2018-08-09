@@ -258,6 +258,12 @@ class Study(object):
 
         try:
             result = func(trial)
+        except structs.TrialPruned as e:
+            message = 'Setting trial status as {}. {}'.format(
+                structs.TrialState.PRUNED, str(e))
+            self.logger.info(message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
+            return trial
         except catch as e:
             message = 'Setting trial status as {} because of the following error: {}'.format(
                 structs.TrialState.FAIL, repr(e))

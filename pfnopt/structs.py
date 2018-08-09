@@ -52,3 +52,13 @@ StudySummary = NamedTuple(
      ('user_attrs', Dict[str, Any]),
      ('n_trials', int),
      ('datetime_start', Optional[datetime])])
+
+
+class TrialPruned(Exception):
+
+    """Exception for pruned trials.
+
+     This exception tells a trainer that the current trial was pruned.
+    """
+
+    pass
