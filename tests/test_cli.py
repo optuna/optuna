@@ -138,12 +138,12 @@ def test_studies_command(options):
         # Check study_uuid and n_trials for the first study.
         elms = get_row_elements(3)
         assert elms[0] == study_uuid_1
-        assert elms[2] == '0'
+        assert elms[3] == '0'
 
         # Check study_uuid and n_trials for the second study.
         elms = get_row_elements(4)
         assert elms[0] == study_uuid_2
-        assert elms[2] == '10'
+        assert elms[3] == '10'
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
