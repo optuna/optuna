@@ -23,7 +23,7 @@ def session():
 class TestTrialModel(object):
 
     @staticmethod
-    def test_trial_model(session):
+    def test_default_datetime(session):
         # type: (Session) -> None
 
         datetime_1 = datetime.now()
