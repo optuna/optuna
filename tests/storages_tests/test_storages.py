@@ -80,7 +80,7 @@ def test_create_new_study_id_with_name(storage_init_func):
 
     study_name = 'sample_study_name'
     storage = storage_init_func()
-    study_id = storage.create_new_study_id(study_name)
+    storage.create_new_study_id(study_name)
 
     summaries = storage.get_all_study_summaries()
     assert len(summaries) == 1
