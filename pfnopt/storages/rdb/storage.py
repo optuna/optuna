@@ -40,8 +40,8 @@ class RDBStorage(BaseStorage):
         self._check_table_schema_compatibility()
         self.logger = logging.get_logger(__name__)
 
-    def create_new_study_id(self):
-        # type: () -> int
+    def create_new_study_id(self, study_name=None):
+        # type: (Optional[str]) -> int
 
         session = self.scoped_session()
 
@@ -51,7 +51,8 @@ class RDBStorage(BaseStorage):
             if study is None:
                 break
 
-        study = models.StudyModel(study_uuid=study_uuid, task=structs.StudyTask.NOT_SET)
+        study = models.StudyModel(study_uuid=study_uuid, study_name=study_name,
+                                  task=structs.StudyTask.NOT_SET)
         session.add(study)
         session.commit()
 
@@ -111,6 +112,27 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         return study.study_uuid
+
+    def get_study_id_from_name(self, study_name):
+        # type: (Optional[str]) -> int
+
+        if study_name is None:
+            raise ValueError("study_name is supposed to be str, not None.")
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_or_raise_by_name(study_name, session)
+
+        return study.study_id
+
+    def get_study_name_from_id(self, study_id):
+        # type: (int) -> Optional[str]
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+
+        return study.study_name
 
     def get_study_task(self, study_id):
         # type: (int) -> structs.StudyTask
@@ -172,6 +194,7 @@ class RDBStorage(BaseStorage):
             study_sumarries.append(structs.StudySummary(
                 study_id=study_model.study_id,
                 study_uuid=study_model.study_uuid,
+                study_name=study_model.study_name,
                 task=self.get_study_task(study_model.study_id),
                 best_trial=best_trial,
                 user_attrs=self.get_study_user_attrs(study_model.study_id),
