@@ -54,12 +54,15 @@ class TestTrialModel(object):
         assert 1 == TrialModel.count(session, state=TrialState.COMPLETE)
 
 
-def test_version_info_model(session):
-    # type: (Session) -> None
+class TestVersionInfoModel(object):
 
-    session.add(VersionInfoModel(schema_version=1, library_version='0.0.1'))
-    session.commit()
+    @staticmethod
+    def test_version_info_id_constraint(session):
+        # type: (Session) -> None
 
-    # test check constraint of version_info_id
-    session.add(VersionInfoModel(version_info_id=2, schema_version=2, library_version='0.0.2'))
-    pytest.raises(IntegrityError, lambda: session.commit())
+        session.add(VersionInfoModel(schema_version=1, library_version='0.0.1'))
+        session.commit()
+
+        # Test check constraint of version_info_id.
+        session.add(VersionInfoModel(version_info_id=2, schema_version=2, library_version='0.0.2'))
+        pytest.raises(IntegrityError, lambda: session.commit())
