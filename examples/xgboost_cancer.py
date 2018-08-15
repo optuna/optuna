@@ -11,8 +11,10 @@ We have following two ways to execute this example:
 (1) Execute this code directly.
     $ python xgboost_cancer.py
 
-(2) Execute throurgh CLI.
-    $ pfnopt minimize xgboost_cancer.py objective --create-study --n-trials=100
+
+(2) Execute through CLI.
+    $ pfnopt minimize xgboost_cancer.py objective --create-study --n-trials=100 \
+      --storage sqlite:///example.db
 
 """
 
