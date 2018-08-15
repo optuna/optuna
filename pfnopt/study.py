@@ -52,7 +52,6 @@ class Study(object):
             storage,  # type: Union[None, str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
-            study_name=None  # type: str
     ):
         # type: (...) -> None
 
@@ -326,7 +325,7 @@ def create_study(
         pruner:
             Pruner object that decides early stopping of unpromising trials.
         study_name:
-            Name of study.
+            A human-readable name of a study.
 
     Returns:
         A study object.
