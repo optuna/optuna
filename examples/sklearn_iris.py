@@ -12,7 +12,8 @@ We have the following two ways to execute this example:
 
 
 (2) Execute through CLI.
-    $ pfnopt minimize sklearn_iris.py objective --create-study --n-trials=100
+    $ pfnopt minimize sklearn_iris.py objective --create-study --n-trials=100 \
+      --storage sqlite:///example.db
 
 """
 
