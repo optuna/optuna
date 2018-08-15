@@ -44,7 +44,8 @@ class CreateStudy(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(CreateStudy, self).get_parser(prog_name)
-        parser.add_argument('--name', default=None, help='Name of study.')
+        parser.add_argument('--name', default=None,
+                            help='A human-readable name to distinguish a study from others.')
         return parser
 
     def take_action(self, parsed_args):
