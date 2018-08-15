@@ -116,7 +116,8 @@ def test_studies_command(options):
         study_uuid_1 = storage.get_study_uuid_from_id(storage.create_new_study_id())
 
         # Second study.
-        study_uuid_2 = storage.get_study_uuid_from_id(storage.create_new_study_id())
+        study_uuid_2 = storage.get_study_uuid_from_id(
+            storage.create_new_study_id(study_name='study_2'))
         pfnopt.minimize(objective_func, n_trials=10, storage=storage, study=study_uuid_2)
 
         # Run command.
@@ -138,11 +139,13 @@ def test_studies_command(options):
         # Check study_uuid and n_trials for the first study.
         elms = get_row_elements(3)
         assert elms[0] == study_uuid_1
+        assert len(elms[1]) == 0
         assert elms[3] == '0'
 
         # Check study_uuid and n_trials for the second study.
         elms = get_row_elements(4)
         assert elms[0] == study_uuid_2
+        assert elms[1] == 'study_2'
         assert elms[3] == '10'
 
 
