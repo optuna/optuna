@@ -474,6 +474,22 @@ def test_get_all_trials(storage_init_func):
 
 
 @parametrize_storage
+def test_get_n_trials(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+    study_id = storage.create_new_study_id()
+
+    _create_new_trial_with_example_trial(
+        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0])
+    _create_new_trial_with_example_trial(
+        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[1])
+
+    assert 2 == storage.get_n_trials(study_id)
+    assert 1 == storage.get_n_trials(study_id, TrialState.COMPLETE)
+
+
+@parametrize_storage
 def test_get_best_intermediate_result_over_steps(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
