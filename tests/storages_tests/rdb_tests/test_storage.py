@@ -86,6 +86,16 @@ def test_create_new_study_id_duplicated_uuid():
         assert mock_object.call_count == 3
 
 
+def test_create_new_study_id_duplicated_name():
+    # type: () -> None
+
+    storage = create_test_storage()
+    study_name = 'sample_study_name'
+    storage.create_new_study_id(study_name)
+    with pytest.raises(ValueError):
+        storage.create_new_study_id(study_name)
+
+
 def test_set_trial_param_to_check_distribution_json():
     # type: () -> None
 

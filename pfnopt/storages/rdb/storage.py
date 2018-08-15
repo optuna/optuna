@@ -54,7 +54,9 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel(study_uuid=study_uuid, study_name=study_name,
                                   task=structs.StudyTask.NOT_SET)
         session.add(study)
-        session.commit()
+        if not self._commit_or_rollback_on_integrity_error(session):
+            raise ValueError(
+                "study_name {} already exists. Please use a different name.".format(study_name))
 
         # Set system attribute key and empty value.
         self.set_study_user_attr(study.study_id, SYSTEM_ATTRS_KEY, {})
