@@ -207,9 +207,9 @@ class BaseStorage(object):
     def get_best_intermediate_result_over_steps(self, trial_id):
         # type: (int) -> float
 
-        values = np.array(list(self.get_trial(trial_id).intermediate_values.values()), np.float)
-
-        return np.nanmin(values)
+        return np.nanmin(np.array(
+            list(self.get_trial(trial_id).intermediate_values.values()),
+            np.float))
 
     def get_median_intermediate_result_over_trials(self, study_id, step):
         # type: (int, int) -> float
