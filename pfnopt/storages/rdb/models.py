@@ -158,6 +158,18 @@ class TrialModel(BaseModel):
         return trials
 
     @classmethod
+    def count(cls, session, study=None, state=None):
+        # type: (orm.Session, Optional[StudyModel], Optional[TrialState]) -> int
+
+        trials = session.query(cls)
+        if study is not None:
+            trials = trials.filter(cls.study_id == study.study_id)
+        if state is not None:
+            trials = trials.filter(cls.state == state)
+
+        return trials.count()
+
+    @classmethod
     def all(cls, session):
         # type: (orm.Session) -> List[TrialModel]
 

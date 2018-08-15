@@ -164,6 +164,12 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def get_n_trials(self, study_id, state=None):
+        # type: (int, Optional[structs.TrialState]) -> int
+
+        raise NotImplementedError
+
     def get_best_trial(self, study_id):
         # type: (int) -> structs.FrozenTrial
 

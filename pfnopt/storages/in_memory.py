@@ -218,6 +218,15 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             return copy.deepcopy(self.trials)
 
+    def get_n_trials(self, study_id, state=None):
+        # type: (int, Optional[structs.TrialState]) -> int
+
+        self._check_study_id(study_id)
+        if state is None:
+            return len(self.trials)
+
+        return len([t for t in self.trials if t.state == state])
+
     def _check_study_id(self, study_id):
         # type: (int) -> None
 
