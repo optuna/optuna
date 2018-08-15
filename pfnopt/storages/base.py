@@ -200,19 +200,19 @@ class BaseStorage(object):
     def get_best_intermediate_result_over_steps(self, trial_id):
         # type: (int) -> float
 
-        # TODO(Yanase): Which dtype should we use? float or float32?
-        # TODO(Yanase): np.nanmin raises RuntimeWarning when it encounters all-nan array.
         values = np.array(list(self.get_trial(trial_id).intermediate_values.values()), np.float)
+
         return np.nanmin(values)
 
     def get_median_intermediate_result_over_trials(self, study_id, step):
         # type: (int, int) -> float
 
-        # TODO(Yanase): Remove incomplete trials?
-        all_trials = self.get_all_trials(study_id)
+        all_trials = [t for t in self.get_all_trials(study_id)
+                      if t.state == structs.TrialState.COMPLETE]
 
-        # TODO(Yanase): Which dtype should we use? float or float32?
-        # TODO(Yanase): np.nanmedian raises RuntimeWarning when it encounters all-nan array.
+        if len(all_trials) == 0:
+            raise ValueError("No trials have been completed.")
+
         return float(np.nanmedian(np.array([
             t.intermediate_values[step] for t in all_trials
             if step in t.intermediate_values

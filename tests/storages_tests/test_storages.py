@@ -482,23 +482,22 @@ def test_get_best_intermediate_result_over_steps(storage_init_func):
 
     # FrozenTrial.intermediate_values has no elements.
     trial_id_empty = storage.create_new_trial_id(study_id)
-    # TODO(Yanase): Is this error appropriate?
     with pytest.raises(ValueError):
         storage.get_best_intermediate_result_over_steps(trial_id_empty)
 
-    # FrozenTrial.intermediate_values has float value only.
+    # Input value has no NaNs but float values.
     trial_id_float = storage.create_new_trial_id(study_id)
     storage.set_trial_intermediate_value(trial_id_float, 0, 0.1)
     storage.set_trial_intermediate_value(trial_id_float, 1, 0.2)
     assert 0.1 == storage.get_best_intermediate_result_over_steps(trial_id_float)
 
-    # FrozenTrial.intermediate_values has both a float value and a NaN.
+    # Input value has a float value and a NaN.
     trial_id_float_nan = storage.create_new_trial_id(study_id)
     storage.set_trial_intermediate_value(trial_id_float_nan, 0, 0.3)
     storage.set_trial_intermediate_value(trial_id_float_nan, 1, float('nan'))
     assert 0.3 == storage.get_best_intermediate_result_over_steps(trial_id_float_nan)
 
-    # FrozenTrial.intermediate_values has a NaN only.
+    # Input value has a NaN only.
     trial_id_nan = storage.create_new_trial_id(storage.create_new_study_id())
     storage.set_trial_intermediate_value(trial_id_nan, 0, float('nan'))
     assert math.isnan(storage.get_best_intermediate_result_over_steps(trial_id_nan))
@@ -512,26 +511,31 @@ def test_get_median_intermediate_result_over_trials(storage_init_func):
     study_id = storage.create_new_study_id()
 
     # Study does not have any trials.
-    # TODO(Yanase): Is this behavior appropriate?
-    assert math.isnan(storage.get_median_intermediate_result_over_trials(study_id, 0))
+    with pytest.raises(ValueError):
+        storage.get_median_intermediate_result_over_trials(study_id, 0)
 
     trial_id_1 = storage.create_new_trial_id(study_id)
     trial_id_2 = storage.create_new_trial_id(study_id)
     trial_id_3 = storage.create_new_trial_id(study_id)
 
-    # FrozenTrial.intermediate_values has float values only.
+    # Set trial states complete because this method ignores incomplete trials.
+    storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
+    storage.set_trial_state(trial_id_2, TrialState.COMPLETE)
+    storage.set_trial_state(trial_id_3, TrialState.COMPLETE)
+
+    # Input value has no NaNs but float values.
     storage.set_trial_intermediate_value(trial_id_1, 0, 0.1)
     storage.set_trial_intermediate_value(trial_id_2, 0, 0.2)
     storage.set_trial_intermediate_value(trial_id_3, 0, 0.3)
     assert 0.2 == storage.get_median_intermediate_result_over_trials(study_id, 0)
 
-    # FrozenTrial.intermediate_values has NaNs along with a float value.
+    # Input value has a float value and NaNs.
     storage.set_trial_intermediate_value(trial_id_1, 1, 0.1)
     storage.set_trial_intermediate_value(trial_id_2, 1, float('nan'))
     storage.set_trial_intermediate_value(trial_id_3, 1, float('nan'))
     assert 0.1 == storage.get_median_intermediate_result_over_trials(study_id, 1)
 
-    # FrozenTrial.intermediate_values has a NaN only.
+    # Input value has NaNs only.
     storage.set_trial_intermediate_value(trial_id_1, 2, float('nan'))
     storage.set_trial_intermediate_value(trial_id_2, 2, float('nan'))
     storage.set_trial_intermediate_value(trial_id_3, 2, float('nan'))
