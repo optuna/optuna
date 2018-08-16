@@ -7,12 +7,13 @@ import yaml
 PFNOptConfig = NamedTuple('_BasePFNOptConfig', [('default_storage', Optional[str])])
 
 BASE_PFNOPT_CONFIG = PFNOptConfig(default_storage=None)
+DEFAULT_CONFIG_PATH = os.path.expanduser('~/.pfnopt.yml')
 
 
 def load_pfnopt_config(path=None):
     # type: (Optional[str]) -> PFNOptConfig
 
-    path = path or os.path.expanduser('~/.pfnopt.yml')
+    path = path or DEFAULT_CONFIG_PATH
 
     with open(path, 'r') as fw:
         config_str = fw.read()

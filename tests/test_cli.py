@@ -1,3 +1,5 @@
+import os
+import py  # NOQA
 import pytest
 import re
 import subprocess
@@ -230,3 +232,26 @@ def test_empty_argv():
     command_help_output = str(subprocess.check_output(command_help))
 
     assert command_empty_output == command_help_output
+
+
+def test_get_storage_url_config_not_found(tmpdir):
+    # type: (py.path.local) -> None
+
+    db_url = 'sqlite:///storage.db'
+    assert db_url == pfnopt.cli.get_storage_url(db_url, '~/.pfnopt.yml')
+    assert db_url == pfnopt.cli.get_storage_url(db_url, None)
+
+    tmp_config = tmpdir.join('pfnopt.yml')
+    tmp_config.write('default_storage: sqlite:///config.db')
+    assert 'sqlite:///config.db' == pfnopt.cli.get_storage_url(None, str(tmp_config))
+
+    # Config file does not exists.
+    tmp_dir = tmpdir.mkdir('config-not-found')
+    with pytest.raises(IOError):
+        pfnopt.cli.get_storage_url(None, os.path.join(str(tmp_dir), 'dummy.yml'))
+
+    # Config file does not have default_storage key.
+    tmp_config = tmpdir.join('empty.yml')
+    tmp_config.write('test: abc')
+    with pytest.raises(ValueError):
+        pfnopt.cli.get_storage_url(None, str(tmp_config))
