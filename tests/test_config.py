@@ -41,8 +41,8 @@ def test_load_pfnopt_config_default_config_path():
 
     assert _dummy_home is not None
 
-    with patch.dict(os.environ, {'HOME': _dummy_home}):
-        config_path = os.path.join(_dummy_home, '.pfnopt.yml')
+    config_path = os.path.join(_dummy_home, '.pfnopt.yml')
+    with patch.object(pfnopt.config, 'DEFAULT_CONFIG_PATH', config_path):
         with open(config_path, 'w') as fw:
             fw.write('default_storage: some_storage\n')
 
