@@ -35,7 +35,7 @@ def objective(trial):
     dtrain = xgb.DMatrix(train_x, label=train_y)
     dtest = xgb.DMatrix(test_x, label=test_y)
 
-    n_round = int(trial.suggest_uniform('n_round', 1, 10))
+    n_round = trial.suggest_int('n_round', 1, 9)
     param = {'silent': 1, 'objective': 'binary:logistic',
              'booster': trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart']),
              'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
@@ -43,7 +43,7 @@ def objective(trial):
              }
 
     if param['booster'] == 'gbtree' or param['booster'] == 'dart':
-        param['max_depth'] = int(trial.suggest_uniform('max_depth', 1, 10))
+        param['max_depth'] = trial.suggest_int('max_depth', 1, 9)
         param['ets'] = trial.suggest_loguniform('eta', 1e-8, 1.0)
         param['gamma'] = trial.suggest_loguniform('gamma', 1e-8, 1.0)
         param['grow_policy'] = trial.suggest_categorical('grow_policy', ['depthwise', 'lossguide'])
