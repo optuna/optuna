@@ -80,6 +80,25 @@ def test_create_study_command(options):
         study_id = storage.get_study_id_from_uuid(study_uuid)
         assert study_id == 2
 
+        # Check if a default value of study_name is stored in the storage.
+        assert storage.get_study_name_from_id(study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
+
+
+def test_create_study_command_with_study_name():
+    # type: () -> None
+
+    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
+        storage = RDBStorage(storage_url)
+        study_name = 'test_study'
+
+        # Create study with name.
+        command = ['pfnopt', 'create-study', '--storage', storage_url, '--study_name', study_name]
+        study_uuid = str(subprocess.check_output(command).decode().strip())
+
+        # Check if study_name is stored in the storage.
+        study_id = storage.get_study_id_from_uuid(study_uuid)
+        assert storage.get_study_name_from_id(study_id) == study_name
+
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
 def test_study_set_user_attr_command(options):
@@ -202,6 +221,28 @@ def test_minimize_command(options):
         study = pfnopt.Study(storage=storage_url, study_uuid=study_uuid)
         assert len(study.trials) == 10
         assert 'x' in study.best_params
+
+        # Check if a default value of study_name is stored in the storage.
+        assert storage.get_study_name_from_id(study.study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
+
+
+def test_minimize_command_with_study_name():
+    # type: () -> None
+
+    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
+        storage = RDBStorage(storage_url)
+        study_name = 'test_study'
+
+        # Run minimize with study_name.
+        command = ['pfnopt', 'minimize', '--n-trials', '10', '--create-study',
+                   __file__, 'objective_func', '--storage', storage_url,
+                   '--study_name', study_name]
+        subprocess.check_call(command)
+
+        # Check if study_name is stored in the storage.
+        studies = storage.get_all_study_summaries()
+        assert len(studies) == 1
+        assert studies[0].study_name == study_name
 
 
 def test_minimize_command_inconsistent_args():
