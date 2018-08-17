@@ -44,8 +44,8 @@ class CreateStudy(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(CreateStudy, self).get_parser(prog_name)
-        parser.add_argument('--name', default=None,
-                            help='A human-readable name to distinguish a study from others.')
+        parser.add_argument('--study_name', default=None,
+                            help='A human-readable name of a study to distinguish it from others.')
         return parser
 
     def take_action(self, parsed_args):
@@ -53,7 +53,7 @@ class CreateStudy(BaseCommand):
 
         storage_url = get_storage_url(self.app_args.storage, self.app_args.config)
         storage = pfnopt.storages.RDBStorage(storage_url)
-        study_uuid = pfnopt.create_study(storage, study_name=parsed_args.name).study_uuid
+        study_uuid = pfnopt.create_study(storage, study_name=parsed_args.study_name).study_uuid
         print(study_uuid)
 
 
@@ -148,6 +148,8 @@ class Minimize(BaseCommand):
                                  'number is set to CPU counts.')
         parser.add_argument('--study', help='Study UUID.')
         parser.add_argument('--create-study', action='store_true', help='Create a new study.')
+        parser.add_argument('--study_name', default=None,
+                            help='A human-readable name of a study to distinguish it from others.')
         parser.add_argument('file',
                             help='Python script file where the objective function resides.')
         parser.add_argument('method', help='The method name of the objective function.')
@@ -165,7 +167,7 @@ class Minimize(BaseCommand):
 
         storage_url = get_storage_url(self.app_args.storage, self.app_args.config)
         if parsed_args.create_study:
-            study = pfnopt.create_study(storage=storage_url)
+            study = pfnopt.create_study(storage=storage_url, study_name=parsed_args.study_name)
         else:
             study = pfnopt.Study(storage=storage_url, study_uuid=parsed_args.study)
 
