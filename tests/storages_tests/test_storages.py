@@ -9,6 +9,7 @@ from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import LogUniformDistribution
 from pfnopt.distributions import UniformDistribution
+from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages import BaseStorage  # NOQA
 from pfnopt.storages import InMemoryStorage
@@ -72,7 +73,7 @@ def test_create_new_study_id(storage_init_func):
     summaries = storage.get_all_study_summaries()
     assert len(summaries) == 1
     assert summaries[0].study_id == study_id
-    assert summaries[0].study_name is None
+    assert summaries[0].study_name.startswith(DEFAULT_STUDY_NAME_PREFIX)
 
 
 @parametrize_storage
@@ -131,9 +132,6 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_init_func):
     assert study_id == summary.study_id
     assert storage.get_study_name_from_id(summary.study_id) == summary.study_name
     assert storage.get_study_id_from_name(summary.study_name) == summary.study_id
-
-    with pytest.raises(ValueError):
-        storage.get_study_id_from_name(study_name=None)
 
 
 @parametrize_storage

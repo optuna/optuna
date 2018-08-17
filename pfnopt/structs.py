@@ -47,7 +47,7 @@ StudySummary = NamedTuple(
     'StudySummary',
     [('study_id', int),
      ('study_uuid', str),
-     ('study_name', Optional[str]),
+     ('study_name', str),
      ('task', StudyTask),
      ('best_trial', Optional[FrozenTrial]),
      ('user_attrs', Dict[str, Any]),

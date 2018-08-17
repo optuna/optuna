@@ -29,7 +29,7 @@ class StudyModel(BaseModel):
     __tablename__ = 'studies'
     study_id = Column(Integer, primary_key=True)
     study_uuid = Column(String(255), unique=True)
-    study_name = Column(String(255), unique=True)
+    study_name = Column(String(255), unique=True, nullable=False)
     task = Column(Enum(StudyTask), nullable=False)
 
     @classmethod

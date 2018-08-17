@@ -12,6 +12,7 @@ from pfnopt import distributions  # NOQA
 from pfnopt import structs  # NOQA
 
 SYSTEM_ATTRS_KEY = '__system__'
+DEFAULT_STUDY_NAME_PREFIX = 'no-name-'
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -62,14 +63,13 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def get_study_id_from_name(self, study_name):
-        # type: (Optional[str]) -> int
+        # type: (str) -> int
 
-        # study_name can be None when it is specified by StudySummary.study_name.
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_study_name_from_id(self, study_id):
-        # type: (int) -> Optional[str]
+        # type: (int) -> str
 
         raise NotImplementedError
 

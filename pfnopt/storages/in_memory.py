@@ -8,6 +8,7 @@ from typing import Optional  # NOQA
 
 from pfnopt import distributions  # NOQA
 from pfnopt.storages import base
+from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from pfnopt import structs
 
 
@@ -23,7 +24,7 @@ class InMemoryStorage(base.BaseStorage):
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
         self.task = structs.StudyTask.NOT_SET
         self.study_user_attrs = {}  # type: Dict[str, Any]
-        self.study_name = None  # type: Optional[str]
+        self.study_name = DEFAULT_STUDY_NAME_PREFIX + IN_MEMORY_STORAGE_STUDY_UUID  # type: str
 
         self._lock = threading.Lock()
 
@@ -41,7 +42,9 @@ class InMemoryStorage(base.BaseStorage):
     def create_new_study_id(self, study_name=None):
         # type: (Optional[str]) -> int
 
-        self.study_name = study_name
+        if study_name is not None:
+            self.study_name = study_name
+
         self.study_user_attrs[base.SYSTEM_ATTRS_KEY] = {}
 
         return IN_MEMORY_STORAGE_STUDY_ID  # TODO(akiba)
@@ -74,7 +77,7 @@ class InMemoryStorage(base.BaseStorage):
         return IN_MEMORY_STORAGE_STUDY_UUID
 
     def get_study_id_from_name(self, study_name):
-        # type: (Optional[str]) -> int
+        # type: (str) -> int
 
         if study_name is None:
             raise ValueError("study_name is supposed to be str, not None.")
@@ -84,7 +87,7 @@ class InMemoryStorage(base.BaseStorage):
         return IN_MEMORY_STORAGE_STUDY_ID
 
     def get_study_name_from_id(self, study_id):
-        # type: (int) -> Optional[str]
+        # type: (int) -> str
 
         self._check_study_id(study_id)
         return self.study_name

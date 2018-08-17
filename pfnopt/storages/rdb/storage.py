@@ -13,6 +13,7 @@ import uuid
 from pfnopt import distributions
 from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
+from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb import models
 from pfnopt import structs
@@ -50,6 +51,9 @@ class RDBStorage(BaseStorage):
             study = models.StudyModel.find_by_uuid(study_uuid, session)
             if study is None:
                 break
+
+        if study_name is None:
+            study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
 
         study = models.StudyModel(study_uuid=study_uuid, study_name=study_name,
                                   task=structs.StudyTask.NOT_SET)
@@ -116,10 +120,7 @@ class RDBStorage(BaseStorage):
         return study.study_uuid
 
     def get_study_id_from_name(self, study_name):
-        # type: (Optional[str]) -> int
-
-        if study_name is None:
-            raise ValueError("study_name is supposed to be str, not None.")
+        # type: (str) -> int
 
         session = self.scoped_session()
 
@@ -128,7 +129,7 @@ class RDBStorage(BaseStorage):
         return study.study_id
 
     def get_study_name_from_id(self, study_id):
-        # type: (int) -> Optional[str]
+        # type: (int) -> str
 
         session = self.scoped_session()
 

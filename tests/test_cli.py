@@ -12,6 +12,7 @@ from typing import Type  # NOQA
 
 import pfnopt
 from pfnopt.cli import Studies
+from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from pfnopt.storages import RDBStorage
 from pfnopt.trial import Trial  # NOQA
 
@@ -139,7 +140,7 @@ def test_studies_command(options):
         # Check study_uuid and n_trials for the first study.
         elms = get_row_elements(3)
         assert elms[0] == study_uuid_1
-        assert elms[1] == ''
+        assert elms[1].startswith(DEFAULT_STUDY_NAME_PREFIX)
         assert elms[3] == '0'
 
         # Check study_uuid and n_trials for the second study.
