@@ -234,24 +234,26 @@ def test_empty_argv():
     assert command_empty_output == command_help_output
 
 
-def test_get_storage_url_config_not_found(tmpdir):
+def test_get_storage_url(tmpdir):
     # type: (py.path.local) -> None
 
-    db_url = 'sqlite:///storage.db'
-    assert db_url == pfnopt.cli.get_storage_url(db_url, '~/.pfnopt.yml')
-    assert db_url == pfnopt.cli.get_storage_url(db_url, None)
-
+    storage_in_args = 'sqlite:///args.db'
+    storage_in_config = 'sqlite:///config.db'
     tmp_config = tmpdir.join('pfnopt.yml')
-    tmp_config.write('default_storage: sqlite:///config.db')
-    assert 'sqlite:///config.db' == pfnopt.cli.get_storage_url(None, str(tmp_config))
+    tmp_config.write('default_storage: {}'.format(storage_in_config))
+
+    # storage_url has priority over config_path.
+    assert storage_in_args == pfnopt.cli.get_storage_url(storage_in_args, str(tmp_config))
+    assert storage_in_args == pfnopt.cli.get_storage_url(storage_in_args, None)
+    assert storage_in_config == pfnopt.cli.get_storage_url(None, str(tmp_config))
 
     # Config file does not exists.
-    tmp_dir = tmpdir.mkdir('config-not-found')
+    tmp_dir = tmpdir.mkdir('no-config')
     with pytest.raises(IOError):
         pfnopt.cli.get_storage_url(None, os.path.join(str(tmp_dir), 'dummy.yml'))
 
     # Config file does not have default_storage key.
     tmp_config = tmpdir.join('empty.yml')
-    tmp_config.write('test: abc')
+    tmp_config.write('')
     with pytest.raises(ValueError):
         pfnopt.cli.get_storage_url(None, str(tmp_config))
