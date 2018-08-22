@@ -21,15 +21,22 @@ import pfnopt
 def get_storage_url(storage_url, config_path):
     # type: (Optional[str], Optional[str]) -> str
 
+    # TODO(Yanase): Simplify logic
+    # We have three factor (storage_url, config_path, pfnopt.config.DEFAULT_CONFIG_PATH)
+
+    # --storage option has a top priority.
     if storage_url is not None:
         return storage_url
 
+    # Check 'default_storage' key in config file.
     try:
         storage_url = pfnopt.config.load_pfnopt_config(config_path).default_storage
     except IOError:
-        config_path = config_path or pfnopt.config.DEFAULT_CONFIG_PATH
-        raise IOError('Config file {} not found.'.format(config_path))
+        # Config file was specified, but not exists.
+        if config_path is not None:
+            raise IOError('Config file {} not found.'.format(config_path))
 
+    # Config file exists, but it does not have 'default_storage' key.
     if storage_url is None:
         raise ValueError('Storage URL is specified neither in config file nor --storage option.')
 
