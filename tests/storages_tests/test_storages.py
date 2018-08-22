@@ -5,6 +5,7 @@ from typing import Callable  # NOQA
 from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 
+import pfnopt
 from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import LogUniformDistribution
@@ -17,6 +18,7 @@ from pfnopt.storages import RDBStorage
 from pfnopt.structs import FrozenTrial
 from pfnopt.structs import StudyTask
 from pfnopt.structs import TrialState
+from pfnopt.testing.storage import StorageSupplier
 
 EXAMPLE_SYSTEM_ATTRS = {
     'dataset': 'MNIST',
@@ -58,9 +60,26 @@ EXAMPLE_TRIALS = [
     )
 ]
 
+STORAGE_MODES = [
+    'none',    # We give `None` to storage argument, so InMemoryStorage is used.
+    'new',     # We always create a new sqlite DB file for each experiment.
+    'common',  # We use a sqlite DB file for the whole experiments.
+]
 
 parametrize_storage = pytest.mark.parametrize(
     'storage_init_func', [InMemoryStorage, lambda: RDBStorage('sqlite:///:memory:')])
+
+
+def setup_module():
+    # type: () -> None
+
+    StorageSupplier.setup_common_tempfile()
+
+
+def teardown_module():
+    # type: () -> None
+
+    StorageSupplier.teardown_common_tempfile()
 
 
 @parametrize_storage
@@ -111,27 +130,26 @@ def test_get_study_id_from_uuid_and_get_study_uuid_from_id(storage_init_func):
     assert storage.get_study_id_from_uuid(summary.study_uuid) == summary.study_id
 
 
-@parametrize_storage
-def test_get_study_id_from_name_and_get_study_name_from_id(storage_init_func):
-    # type: (Callable[[], BaseStorage]) -> None
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
+    # type: (str) -> None
 
-    storage = storage_init_func()
+    with StorageSupplier(storage_mode) as storage:
 
-    # Test not existing study.
-    with pytest.raises(ValueError):
-        storage.get_study_id_from_name('dummy-uuid')
+        # Add storage_mode to avoid duplication of study_name.
+        study_name = 'sample_study_name_for_' + storage_mode
+        study = pfnopt.create_study(storage=storage, study_name=study_name)
 
-    with pytest.raises(ValueError):
-        storage.get_study_name_from_id(-1)
+        # Test existing study.
+        assert study.storage.get_study_name_from_id(study.study_id) == study_name
+        assert study.storage.get_study_id_from_name(study_name) == study.study_id
 
-    study_name = 'sample_study_name'
-    # Test existing study.
-    study_id = storage.create_new_study_id(study_name)
-    summary = storage.get_all_study_summaries()[0]
+        # Test not existing study.
+        with pytest.raises(ValueError):
+            study.storage.get_study_id_from_name('dummy-name')
 
-    assert study_id == summary.study_id
-    assert storage.get_study_name_from_id(summary.study_id) == summary.study_name
-    assert storage.get_study_id_from_name(summary.study_name) == summary.study_id
+        with pytest.raises(ValueError):
+            study.storage.get_study_name_from_id(-1)
 
 
 @parametrize_storage
