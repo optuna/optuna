@@ -92,7 +92,7 @@ def test_create_study_command_with_study_name():
         study_name = 'test_study'
 
         # Create study with name.
-        command = ['pfnopt', 'create-study', '--storage', storage_url, '--study_name', study_name]
+        command = ['pfnopt', 'create-study', '--storage', storage_url, '--study-name', study_name]
         study_uuid = str(subprocess.check_output(command).decode().strip())
 
         # Check if study_name is stored in the storage.
@@ -236,7 +236,7 @@ def test_minimize_command_with_study_name():
         # Run minimize with study_name.
         command = ['pfnopt', 'minimize', '--n-trials', '10', '--create-study',
                    __file__, 'objective_func', '--storage', storage_url,
-                   '--study_name', study_name]
+                   '--study-name', study_name]
         subprocess.check_call(command)
 
         # Check if study_name is stored in the storage.

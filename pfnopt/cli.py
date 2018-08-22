@@ -44,7 +44,7 @@ class CreateStudy(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(CreateStudy, self).get_parser(prog_name)
-        parser.add_argument('--study_name', default=None,
+        parser.add_argument('--study-name', default=None,
                             help='A human-readable name of a study to distinguish it from others.')
         return parser
 
@@ -148,7 +148,7 @@ class Minimize(BaseCommand):
                                  'number is set to CPU counts.')
         parser.add_argument('--study', help='Study UUID.')
         parser.add_argument('--create-study', action='store_true', help='Create a new study.')
-        parser.add_argument('--study_name', default=None,
+        parser.add_argument('--study-name', default=None,
                             help='A human-readable name of a study to distinguish it from others.')
         parser.add_argument('file',
                             help='Python script file where the objective function resides.')
