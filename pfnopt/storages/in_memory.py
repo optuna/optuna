@@ -79,8 +79,6 @@ class InMemoryStorage(base.BaseStorage):
     def get_study_id_from_name(self, study_name):
         # type: (str) -> int
 
-        if study_name is None:
-            raise ValueError("study_name is supposed to be str, not None.")
         if study_name != self.study_name:
             raise ValueError("No such study {}.".format(study_name))
 
