@@ -66,6 +66,7 @@ STORAGE_MODES = [
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
 
+# TODO(Yanase): Use Replace StorageSupplier instead of @parametrize_storage.
 parametrize_storage = pytest.mark.parametrize(
     'storage_init_func', [InMemoryStorage, lambda: RDBStorage('sqlite:///:memory:')])
 
