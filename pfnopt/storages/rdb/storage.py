@@ -13,7 +13,6 @@ import uuid
 from pfnopt import distributions
 from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
-from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb import models
 from pfnopt import structs
 from pfnopt import version
@@ -55,9 +54,6 @@ class RDBStorage(BaseStorage):
         session.add(study)
         session.commit()
 
-        # Set system attribute key and empty value.
-        self.set_study_user_attr(study.study_id, SYSTEM_ATTRS_KEY, {})
-
         self.logger.info('A new study created with UUID: {}'.format(study.study_uuid))
 
         return study.study_id
@@ -87,6 +83,22 @@ class RDBStorage(BaseStorage):
         attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
         if attribute is None:
             attribute = models.StudyUserAttributeModel(
+                study_id=study_id, key=key, value_json=json.dumps(value))
+            session.add(attribute)
+        else:
+            attribute.value_json = json.dumps(value)
+
+        session.commit()
+
+    def set_study_system_attr(self, study_id, key, value):
+        # type: (int, str, Any) -> None
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
+        if attribute is None:
+            attribute = models.StudySystemAttributeModel(
                 study_id=study_id, key=key, value_json=json.dumps(value))
             session.add(attribute)
         else:
@@ -130,6 +142,20 @@ class RDBStorage(BaseStorage):
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
+    def get_study_system_attr(self, study_id, key):
+        # type: (int, str) -> Any
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        system_attr = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
+        # TODO(Yanase): KeyError may be inconsistent with ValueError raised by missing study_id.
+        if system_attr is None:
+            raise KeyError(
+                'System attribute {} does not exist in Study {}.'.format(key, study_id))
+
+        return json.loads(system_attr.value_json)
+
     # TODO(sano): Optimize this method to reduce the number of queries.
     def get_all_study_summaries(self):
         # type: () -> List[structs.StudySummary]
@@ -168,6 +194,10 @@ class RDBStorage(BaseStorage):
             if len(study_trial_models) > 0:
                 datetime_start = min([t.datetime_start for t in study_trial_models])
 
+            attributes = models.StudySystemAttributeModel.where_study_id(study_model.study_id,
+                                                                         session)
+            system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
+
             # Consolidate StudySummary.
             study_sumarries.append(structs.StudySummary(
                 study_id=study_model.study_id,
@@ -175,6 +205,7 @@ class RDBStorage(BaseStorage):
                 task=self.get_study_task(study_model.study_id),
                 best_trial=best_trial,
                 user_attrs=self.get_study_user_attrs(study_model.study_id),
+                system_attrs=system_attrs,
                 n_trials=len(study_trial_models),
                 datetime_start=datetime_start
             ))
@@ -189,7 +220,8 @@ class RDBStorage(BaseStorage):
         trial = models.TrialModel(
             study_id=study_id,
             state=structs.TrialState.RUNNING,
-            user_attributes_json=json.dumps({SYSTEM_ATTRS_KEY: {}})
+            user_attributes_json=json.dumps({}),
+            system_attributes_json=json.dumps({})
         )
 
         session.add(trial)
@@ -294,6 +326,18 @@ class RDBStorage(BaseStorage):
 
         session.commit()
 
+    def set_trial_system_attr(self, trial_id, key, value):
+        # type: (int, str, Any) -> None
+
+        session = self.scoped_session()
+
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        loaded_json = json.loads(trial.system_attributes_json)
+        loaded_json[key] = value
+        trial.system_attributes_json = json.dumps(loaded_json)
+
+        session.commit()
+
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
 
@@ -362,6 +406,7 @@ class RDBStorage(BaseStorage):
                 state=trial.state,
                 params=params,
                 user_attrs=json.loads(trial.user_attributes_json),
+                system_attrs=json.loads(trial.system_attributes_json),
                 value=trial.value,
                 intermediate_values=intermediate_values,
                 params_in_internal_repr=params_in_internal_repr,

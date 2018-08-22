@@ -100,6 +100,32 @@ class StudyUserAttributeModel(BaseModel):
         return session.query(cls).filter(cls.study_id == study_id).all()
 
 
+class StudySystemAttributeModel(BaseModel):
+    __tablename__ = 'study_system_attributes'
+    __table_args__ = (UniqueConstraint('study_id', 'key'), )  # type: Any
+    study_system_attribute_id = Column(Integer, primary_key=True)
+    study_id = Column(Integer, ForeignKey('studies.study_id'))
+    key = Column(String(255))
+    value_json = Column(String(255))
+
+    study = orm.relationship(StudyModel)
+
+    @classmethod
+    def find_by_study_and_key(cls, study, key, session):
+        # type: (StudyModel, str, orm.Session) -> Optional[StudySystemAttributeModel]
+
+        attribute = session.query(cls). \
+            filter(cls.study_id == study.study_id).filter(cls.key == key).one_or_none()
+
+        return attribute
+
+    @classmethod
+    def where_study_id(cls, study_id, session):
+        # type: (int, orm.Session) -> List[StudySystemAttributeModel]
+
+        return session.query(cls).filter(cls.study_id == study_id).all()
+
+
 class TrialModel(BaseModel):
     __tablename__ = 'trials'
     trial_id = Column(Integer, primary_key=True)
@@ -107,6 +133,7 @@ class TrialModel(BaseModel):
     state = Column(Enum(TrialState), nullable=False)
     value = Column(Float)
     user_attributes_json = Column(String(255))
+    system_attributes_json = Column(String(255))
     datetime_start = Column(DateTime, default=datetime.now)
     datetime_complete = Column(DateTime)
 

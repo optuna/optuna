@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from pfnopt.storages.rdb.models import BaseModel
 from pfnopt.storages.rdb.models import StudyModel
+from pfnopt.storages.rdb.models import StudySystemAttributeModel
 from pfnopt.storages.rdb.models import TrialModel
 from pfnopt.storages.rdb.models import VersionInfoModel
 from pfnopt.structs import TrialState
@@ -18,6 +19,41 @@ def session():
     engine = create_engine('sqlite:///:memory:')
     BaseModel.metadata.create_all(engine)
     return Session(bind=engine)
+
+
+class TestStudySystemAttributeModel(object):
+
+    @staticmethod
+    def test_find_by_study_and_key(session):
+        study_1 = StudyModel(study_id=1)
+        study_2 = StudyModel(study_id=2)
+        unknown_study = StudyModel(study_id=3)
+
+        session.add(StudySystemAttributeModel(study_id=study_1.study_id, key="a", value_json="1"))
+        session.add(StudySystemAttributeModel(study_id=study_2.study_id, key="b", value_json="2"))
+
+        assert "1" == StudySystemAttributeModel.find_by_study_and_key(study_1, "a",
+                                                                      session).value_json
+        assert "2" == StudySystemAttributeModel.find_by_study_and_key(study_2, "b",
+                                                                      session).value_json
+        assert StudySystemAttributeModel.find_by_study_and_key(study_1, "unknown_key",
+                                                               session) is None
+        assert StudySystemAttributeModel.find_by_study_and_key(unknown_study, "unknown_key",
+                                                               session) is None
+
+    @staticmethod
+    def test_where_study_id(session):
+        study_1 = StudyModel(study_id=1)
+        study_2 = StudyModel(study_id=2)
+        unknown_study = StudyModel(study_id=3)
+
+        session.add(StudySystemAttributeModel(study_id=study_1.study_id, key="a", value_json="1"))
+        session.add(StudySystemAttributeModel(study_id=study_1.study_id, key="b", value_json="2"))
+        session.add(StudySystemAttributeModel(study_id=study_2.study_id, key="c", value_json="3"))
+
+        assert 2 == len(StudySystemAttributeModel.where_study_id(study_1.study_id, session))
+        assert 1 == len(StudySystemAttributeModel.where_study_id(study_2.study_id, session))
+        assert 0 == len(StudySystemAttributeModel.where_study_id(unknown_study.study_id, session))
 
 
 class TestTrialModel(object):
