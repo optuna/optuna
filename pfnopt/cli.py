@@ -97,10 +97,9 @@ class Studies(Lister):
 
         rows = []
         for s in summaries:
-            study_name = '' if s.study_name is None else s.study_name
             start = s.datetime_start.strftime(self._datetime_format) \
                 if s.datetime_start is not None else None
-            row = (s.study_uuid, study_name, s.task.name, s.n_trials, start)
+            row = (s.study_uuid, s.study_name, s.task.name, s.n_trials, start)
             rows.append(row)
 
         return self._study_list_header, tuple(rows)
