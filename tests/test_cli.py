@@ -1,4 +1,3 @@
-import os
 import py  # NOQA
 import pytest
 import re
@@ -239,21 +238,20 @@ def test_get_storage_url(tmpdir):
 
     storage_in_args = 'sqlite:///args.db'
     storage_in_config = 'sqlite:///config.db'
-    tmp_config = tmpdir.join('pfnopt.yml')
-    tmp_config.write('default_storage: {}'.format(storage_in_config))
+    sample_config_file = tmpdir.join('pfnopt.yml')
+    sample_config_file.write('default_storage: {}'.format(storage_in_config))
+
+    sample_config = pfnopt.config.load_pfnopt_config(str(sample_config_file))
+    default_config = pfnopt.config.load_pfnopt_config(None)
 
     # storage_url has priority over config_path.
-    assert storage_in_args == pfnopt.cli.get_storage_url(storage_in_args, str(tmp_config))
-    assert storage_in_args == pfnopt.cli.get_storage_url(storage_in_args, None)
-    assert storage_in_config == pfnopt.cli.get_storage_url(None, str(tmp_config))
-
-    # Config file does not exists.
-    tmp_dir = tmpdir.mkdir('no-config')
-    with pytest.raises(IOError):
-        pfnopt.cli.get_storage_url(None, os.path.join(str(tmp_dir), 'dummy.yml'))
+    assert storage_in_args == pfnopt.cli.get_storage_url(storage_in_args, sample_config)
+    assert storage_in_args == pfnopt.cli.get_storage_url(storage_in_args, default_config)
+    assert storage_in_config == pfnopt.cli.get_storage_url(None, sample_config)
 
     # Config file does not have default_storage key.
-    tmp_config = tmpdir.join('empty.yml')
-    tmp_config.write('')
+    empty_config_file = tmpdir.join('empty.yml')
+    empty_config_file.write('')
+    empty_config = pfnopt.config.load_pfnopt_config(str(empty_config_file))
     with pytest.raises(ValueError):
-        pfnopt.cli.get_storage_url(None, str(tmp_config))
+        pfnopt.cli.get_storage_url(None, empty_config)

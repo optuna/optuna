@@ -18,29 +18,16 @@ from typing import Tuple  # NOQA
 import pfnopt
 
 
-def get_storage_url(storage_url, config_path):
-    # type: (Optional[str], Optional[str]) -> str
+def get_storage_url(storage_url, config):
+    # type: (Optional[str], pfnopt.config.PFNOptConfig) -> str
 
-    # TODO(Yanase): Simplify logic
-    # We have three factor (storage_url, config_path, pfnopt.config.DEFAULT_CONFIG_PATH)
-
-    # --storage option has a top priority.
     if storage_url is not None:
         return storage_url
 
-    # Check 'default_storage' key in config file.
-    try:
-        storage_url = pfnopt.config.load_pfnopt_config(config_path).default_storage
-    except IOError:
-        # Config file was specified, but not exists.
-        if config_path is not None:
-            raise IOError('Config file {} not found.'.format(config_path))
-
-    # Config file exists, but it does not have 'default_storage' key.
-    if storage_url is None:
+    if config.default_storage is None:
         raise ValueError('Storage URL is specified neither in config file nor --storage option.')
 
-    return storage_url
+    return config.default_storage
 
 
 class BaseCommand(Command):
@@ -63,7 +50,8 @@ class CreateStudy(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        storage_url = get_storage_url(self.app_args.storage, self.app_args.config)
+        config = pfnopt.config.load_pfnopt_config(self.app_args.config)
+        storage_url = get_storage_url(self.app_args.storage, config)
         storage = pfnopt.storages.RDBStorage(storage_url)
         study_uuid = pfnopt.create_study(storage).study_uuid
         print(study_uuid)
@@ -83,7 +71,8 @@ class StudySetUserAttribute(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        storage_url = get_storage_url(self.app_args.storage, self.app_args.config)
+        config = pfnopt.config.load_pfnopt_config(self.app_args.config)
+        storage_url = get_storage_url(self.app_args.storage, config)
         study = pfnopt.Study(storage=storage_url, study_uuid=parsed_args.study)
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
@@ -104,7 +93,8 @@ class Studies(Lister):
     def take_action(self, parsed_args):
         # type: (Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]
 
-        storage_url = get_storage_url(self.app_args.storage, self.app_args.config)
+        config = pfnopt.config.load_pfnopt_config(self.app_args.config)
+        storage_url = get_storage_url(self.app_args.storage, config)
         summaries = pfnopt.get_all_study_summaries(storage=storage_url)
 
         rows = []
@@ -132,7 +122,8 @@ class Dashboard(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        storage_url = get_storage_url(self.app_args.storage, self.app_args.config)
+        config = pfnopt.config.load_pfnopt_config(self.app_args.config)
+        storage_url = get_storage_url(self.app_args.storage, config)
         study = pfnopt.Study(storage=storage_url, study_uuid=parsed_args.study)
 
         if parsed_args.out is None:
@@ -174,7 +165,8 @@ class Minimize(BaseCommand):
             raise ValueError('Inconsistent arguments. Either --create-study or --study '
                              'should be specified.')
 
-        storage_url = get_storage_url(self.app_args.storage, self.app_args.config)
+        config = pfnopt.config.load_pfnopt_config(self.app_args.config)
+        storage_url = get_storage_url(self.app_args.storage, config)
         if parsed_args.create_study:
             study = pfnopt.create_study(storage=storage_url)
         else:

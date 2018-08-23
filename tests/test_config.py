@@ -72,6 +72,27 @@ def test_load_pfnopt_config_empty_file():
         assert config == pfnopt.config.BASE_PFNOPT_CONFIG
 
 
+def test_load_pfnopt_config_not_found():
+    # type: () -> None
+
+    assert _dummy_home is not None
+
+    config_path = os.path.join(_dummy_home, 'dummy.yml')
+    with pytest.raises(IOError):
+        pfnopt.config.load_pfnopt_config(config_path)
+
+
+def test_load_pfnopt_config_default_config_not_found():
+    # type: () -> None
+
+    assert _dummy_home is not None
+
+    config_path = os.path.join(_dummy_home, 'dummy.yml')
+    with patch.object(pfnopt.config, 'DEFAULT_CONFIG_PATH', config_path):
+        config = pfnopt.config.load_pfnopt_config()
+        assert config.default_storage is None
+
+
 def test_load_pfnopt_config_non_dict():
     # type: () -> None
 
