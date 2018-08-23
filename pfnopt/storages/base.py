@@ -1,4 +1,5 @@
 import abc
+import copy
 import numpy as np
 import six
 from typing import Any  # NOQA
@@ -173,7 +174,7 @@ class BaseStorage(object):
     def get_trial_system_attr(self, trial_id, key):
         # type: (int, str) -> Any
 
-        return self.get_trial(trial_id).system_attrs[key]
+        return copy.deepcopy(self.get_trial(trial_id).system_attrs[key])
 
     # Methods for the TPE sampler
 
