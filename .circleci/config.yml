@@ -47,7 +47,7 @@ jobs:
             . venv/bin/activate
             python setup.py sdist
             pip install $(ls dist/*.tar.gz)[testing]
-            pip install chainermn
+            pip install chainermn xgboost
 
       - run:
           name: flake8
