@@ -18,6 +18,10 @@ from typing import Tuple  # NOQA
 import pfnopt
 
 
+STORAGE_NOT_SPECIFIED_ERROR_MESSAGE = \
+    'Storage URL is specified neither in config file nor --storage option.'
+
+
 def get_storage_url(storage_url, config):
     # type: (Optional[str], pfnopt.config.PFNOptConfig) -> str
 
@@ -25,7 +29,7 @@ def get_storage_url(storage_url, config):
         return storage_url
 
     if config.default_storage is None:
-        raise ValueError('Storage URL is specified neither in config file nor --storage option.')
+        raise ValueError(STORAGE_NOT_SPECIFIED_ERROR_MESSAGE)
 
     return config.default_storage
 
@@ -219,8 +223,9 @@ class PFNOptApp(App):
         # type: (str, str, Optional[Dict]) -> ArgumentParser
 
         parser = super(PFNOptApp, self).build_option_parser(description, version, argparse_kwargs)
-        parser.add_argument('--config', default=None, help='Config file path.')
-        parser.add_argument('--storage', default=None, help='DB URL.')
+        parser.add_argument('--config', default=None,
+                            help='Config file path. (default=$HOME/.pfnopt.yml)')
+        parser.add_argument('--storage', default=None, help='DB URL. (e.g. sqlite:///example.db)')
         return parser
 
     def configure_logging(self):
@@ -237,6 +242,12 @@ class PFNOptApp(App):
         assert len(stream_handlers) == 1
         stream_handler = stream_handlers[0]
         stream_handler.setFormatter(pfnopt.logging.create_default_formatter())
+
+    def clean_up(self, cmd, result, err):
+        # type: (Command, int, Optional[Exception]) -> None
+
+        if isinstance(err, ValueError) and str(err) == STORAGE_NOT_SPECIFIED_ERROR_MESSAGE:
+            self.parser.print_help()
 
 
 def main():

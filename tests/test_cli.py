@@ -81,6 +81,15 @@ def test_create_study_command(options):
         assert study_id == 2
 
 
+def test_create_study_command_without_storage_url():
+    # type: () -> None
+
+    with pytest.raises(subprocess.CalledProcessError) as err:
+        subprocess.check_output(['pfnopt', 'create-study'])
+    usage = err.value.output.decode()
+    assert usage.startswith('usage:')
+
+
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
 def test_study_set_user_attr_command(options):
     # type: (List[str]) -> None
