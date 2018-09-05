@@ -16,7 +16,7 @@ def load_pfnopt_config(path=None):
     config_path = path or DEFAULT_CONFIG_PATH
 
     if not os.path.exists(config_path):
-        if config_path == path:
+        if path is not None:
             # Config file was specified, but not exists.
             raise IOError('Config file {} not found.'.format(config_path))
         else:
