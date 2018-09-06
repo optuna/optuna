@@ -54,11 +54,28 @@ StudySummary = NamedTuple(
      ('datetime_start', Optional[datetime])])
 
 
-class TrialPruned(Exception):
+class PFNOptError(Exception):
+
+    """Base class for PFNOpt specific errors."""
+
+    pass
+
+
+class TrialPruned(PFNOptError):
 
     """Exception for pruned trials.
 
      This exception tells a trainer that the current trial was pruned.
+    """
+
+    pass
+
+
+class CLIUsageError(PFNOptError):
+
+    """Exception for CLI.
+
+     CLI raises this exception when it receives invalid configuration.
     """
 
     pass
