@@ -16,7 +16,7 @@ from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 
 import pfnopt
-from pfnopt.structs import StorageURLError
+from pfnopt.structs import CLIUsageError
 
 
 def get_storage_url(storage_url, config):
@@ -26,7 +26,7 @@ def get_storage_url(storage_url, config):
         return storage_url
 
     if config.default_storage is None:
-        raise StorageURLError(
+        raise CLIUsageError(
             'Storage URL is specified neither in config file nor --storage option.')
 
     return config.default_storage
@@ -244,7 +244,7 @@ class PFNOptApp(App):
     def clean_up(self, cmd, result, err):
         # type: (Command, int, Optional[Exception]) -> None
 
-        if isinstance(err, StorageURLError):
+        if isinstance(err, CLIUsageError):
             self.parser.print_help()
 
 

@@ -1,6 +1,8 @@
+import os
 import py  # NOQA
 import pytest
 import re
+import shutil
 import subprocess
 import tempfile
 from types import TracebackType  # NOQA
@@ -14,7 +16,7 @@ from typing import Type  # NOQA
 import pfnopt
 from pfnopt.cli import Studies
 from pfnopt.storages import RDBStorage
-from pfnopt.structs import StorageURLError
+from pfnopt.structs import CLIUsageError
 from pfnopt.trial import Trial  # NOQA
 
 
@@ -85,10 +87,16 @@ def test_create_study_command(options):
 def test_create_study_command_without_storage_url():
     # type: () -> None
 
+    dummy_home = tempfile.mkdtemp()
+
+    env = os.environ
+    env['HOME'] = dummy_home
     with pytest.raises(subprocess.CalledProcessError) as err:
-        subprocess.check_output(['pfnopt', 'create-study'])
+        subprocess.check_output(['pfnopt', 'create-study'], env=env)
     usage = err.value.output.decode()
     assert usage.startswith('usage:')
+
+    shutil.rmtree(dummy_home)
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
@@ -263,5 +271,5 @@ def test_get_storage_url(tmpdir):
     empty_config_file = tmpdir.join('empty.yml')
     empty_config_file.write('')
     empty_config = pfnopt.config.load_pfnopt_config(str(empty_config_file))
-    with pytest.raises(StorageURLError):
+    with pytest.raises(CLIUsageError):
         pfnopt.cli.get_storage_url(None, empty_config)

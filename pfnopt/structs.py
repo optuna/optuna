@@ -54,7 +54,14 @@ StudySummary = NamedTuple(
      ('datetime_start', Optional[datetime])])
 
 
-class TrialPruned(Exception):
+class PFNOptError(Exception):
+
+    """Base class for PFNOpt specific errors."""
+
+    pass
+
+
+class TrialPruned(PFNOptError):
 
     """Exception for pruned trials.
 
@@ -64,11 +71,11 @@ class TrialPruned(Exception):
     pass
 
 
-class StorageURLError(Exception):
+class CLIUsageError(PFNOptError):
 
-    """Exception for storage configuration.
+    """Exception for CLI.
 
-     This exception is raised when RDBStorage objects cannot access to a given URL.
+     CLI raises this exception when it receives invalid configuration.
     """
 
     pass
