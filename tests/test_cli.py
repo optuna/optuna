@@ -14,6 +14,7 @@ from typing import Type  # NOQA
 import pfnopt
 from pfnopt.cli import Studies
 from pfnopt.storages import RDBStorage
+from pfnopt.structs import StorageURLError
 from pfnopt.trial import Trial  # NOQA
 
 
@@ -262,5 +263,5 @@ def test_get_storage_url(tmpdir):
     empty_config_file = tmpdir.join('empty.yml')
     empty_config_file.write('')
     empty_config = pfnopt.config.load_pfnopt_config(str(empty_config_file))
-    with pytest.raises(ValueError):
+    with pytest.raises(StorageURLError):
         pfnopt.cli.get_storage_url(None, empty_config)

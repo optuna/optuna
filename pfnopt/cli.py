@@ -16,10 +16,7 @@ from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 
 import pfnopt
-
-
-STORAGE_NOT_SPECIFIED_ERROR_MESSAGE = \
-    'Storage URL is specified neither in config file nor --storage option.'
+from pfnopt.structs import StorageURLError
 
 
 def get_storage_url(storage_url, config):
@@ -29,7 +26,8 @@ def get_storage_url(storage_url, config):
         return storage_url
 
     if config.default_storage is None:
-        raise ValueError(STORAGE_NOT_SPECIFIED_ERROR_MESSAGE)
+        raise StorageURLError(
+            'Storage URL is specified neither in config file nor --storage option.')
 
     return config.default_storage
 
@@ -246,7 +244,7 @@ class PFNOptApp(App):
     def clean_up(self, cmd, result, err):
         # type: (Command, int, Optional[Exception]) -> None
 
-        if isinstance(err, ValueError) and str(err) == STORAGE_NOT_SPECIFIED_ERROR_MESSAGE:
+        if isinstance(err, StorageURLError):
             self.parser.print_help()
 
 

@@ -62,3 +62,13 @@ class TrialPruned(Exception):
     """
 
     pass
+
+
+class StorageURLError(Exception):
+
+    """Exception for storage configuration.
+
+     This exception is raised when RDBStorage objects cannot access to a given URL.
+    """
+
+    pass
