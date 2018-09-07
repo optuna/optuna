@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
@@ -53,7 +54,7 @@ class RDBStorage(BaseStorage):
 
         study = models.StudyModel(study_uuid=study_uuid, task=structs.StudyTask.NOT_SET)
         session.add(study)
-        session.commit()
+        self._commit(session)
 
         # Set system attribute key and empty value.
         self.set_study_user_attr(study.study_id, SYSTEM_ATTRS_KEY, {})
@@ -76,7 +77,7 @@ class RDBStorage(BaseStorage):
 
         study.task = task
 
-        session.commit()
+        self._commit(session)
 
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
@@ -92,7 +93,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        session.commit()
+        self._commit(session)
 
     def get_study_id_from_uuid(self, study_uuid):
         # type: (str) -> int
@@ -193,7 +194,7 @@ class RDBStorage(BaseStorage):
         )
 
         session.add(trial)
-        session.commit()
+        self._commit(session)
 
         return trial.trial_id
 
@@ -207,7 +208,7 @@ class RDBStorage(BaseStorage):
         if state.is_finished():
             trial.datetime_complete = datetime.now()
 
-        session.commit()
+        self._commit(session)
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
         # type: (int, str, float, distributions.BaseDistribution) -> bool
@@ -259,7 +260,7 @@ class RDBStorage(BaseStorage):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         trial.value = value
 
-        session.commit()
+        self._commit(session)
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> bool
@@ -292,7 +293,7 @@ class RDBStorage(BaseStorage):
         loaded_json[key] = value
         trial.user_attributes_json = json.dumps(loaded_json)
 
-        session.commit()
+        self._commit(session)
 
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
@@ -412,6 +413,19 @@ class RDBStorage(BaseStorage):
             return False
 
         return True
+
+    def _commit(self, session):
+        # type: (orm.Session) -> None
+
+        try:
+            session.commit()
+        except SQLAlchemyError as e:
+            session.rollback()
+            message = \
+                'Raising {}. This happens due to a timing issue among threads/processes/nodes. ' \
+                'Another one might have committed an invalid record. ' \
+                '(e.g. exceeding max length or violating unique constraint) .'.format(repr(e))
+            raise structs.StorageInternalError(message)
 
     def remove_session(self):
         # type: () -> None
