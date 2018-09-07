@@ -220,17 +220,23 @@ class BaseStorage(object):
     def get_best_intermediate_result_over_steps(self, trial_id):
         # type: (int) -> float
 
-        return min(self.get_trial(trial_id).intermediate_values.values())
+        return np.nanmin(np.array(
+            list(self.get_trial(trial_id).intermediate_values.values()),
+            np.float))
 
     def get_median_intermediate_result_over_trials(self, study_id, step):
         # type: (int, int) -> float
 
-        all_trials = self.get_all_trials(study_id)
+        all_trials = [t for t in self.get_all_trials(study_id)
+                      if t.state == structs.TrialState.COMPLETE]
 
-        return float(np.median([
+        if len(all_trials) == 0:
+            raise ValueError("No trials have been completed.")
+
+        return float(np.nanmedian(np.array([
             t.intermediate_values[step] for t in all_trials
             if step in t.intermediate_values
-        ]))
+        ], np.float)))
 
     def remove_session(self):
         # type: () -> None

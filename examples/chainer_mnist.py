@@ -13,7 +13,8 @@ We have the following two ways to execute this example:
 
 
 (2) Execute through CLI.
-    $ pfnopt minimize chainer_mnist.py objective --create-study --n-trials=100
+    $ pfnopt minimize chainer_mnist.py objective --create-study --n-trials=100 \
+      --storage sqlite:///example.db
 
 """
 
@@ -37,7 +38,7 @@ EPOCH = 10
 
 def create_model(trial):
     # We optimize the numbers of layers and their units.
-    n_layers = int(trial.suggest_uniform('n_layers', 1, 4))
+    n_layers = trial.suggest_int('n_layers', 1, 3)
 
     layers = []
     for i in range(n_layers):

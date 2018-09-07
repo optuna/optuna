@@ -1,5 +1,8 @@
+import os
+import py  # NOQA
 import pytest
 import re
+import shutil
 import subprocess
 import tempfile
 from types import TracebackType  # NOQA
@@ -14,6 +17,7 @@ import pfnopt
 from pfnopt.cli import Studies
 from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from pfnopt.storages import RDBStorage
+from pfnopt.structs import CLIUsageError
 from pfnopt.trial import Trial  # NOQA
 
 
@@ -98,6 +102,21 @@ def test_create_study_command_with_study_name():
         # Check if study_name is stored in the storage.
         study_id = storage.get_study_id_from_uuid(study_uuid)
         assert storage.get_study_name_from_id(study_id) == study_name
+
+
+def test_create_study_command_without_storage_url():
+    # type: () -> None
+
+    dummy_home = tempfile.mkdtemp()
+
+    env = os.environ
+    env['HOME'] = dummy_home
+    with pytest.raises(subprocess.CalledProcessError) as err:
+        subprocess.check_output(['pfnopt', 'create-study'], env=env)
+    usage = err.value.output.decode()
+    assert usage.startswith('usage:')
+
+    shutil.rmtree(dummy_home)
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
@@ -275,3 +294,27 @@ def test_empty_argv():
     command_help_output = str(subprocess.check_output(command_help))
 
     assert command_empty_output == command_help_output
+
+
+def test_get_storage_url(tmpdir):
+    # type: (py.path.local) -> None
+
+    storage_in_args = 'sqlite:///args.db'
+    storage_in_config = 'sqlite:///config.db'
+    sample_config_file = tmpdir.join('pfnopt.yml')
+    sample_config_file.write('default_storage: {}'.format(storage_in_config))
+
+    sample_config = pfnopt.config.load_pfnopt_config(str(sample_config_file))
+    default_config = pfnopt.config.load_pfnopt_config(None)
+
+    # storage_url has priority over config_path.
+    assert storage_in_args == pfnopt.cli.get_storage_url(storage_in_args, sample_config)
+    assert storage_in_args == pfnopt.cli.get_storage_url(storage_in_args, default_config)
+    assert storage_in_config == pfnopt.cli.get_storage_url(None, sample_config)
+
+    # Config file does not have default_storage key.
+    empty_config_file = tmpdir.join('empty.yml')
+    empty_config_file.write('')
+    empty_config = pfnopt.config.load_pfnopt_config(str(empty_config_file))
+    with pytest.raises(CLIUsageError):
+        pfnopt.cli.get_storage_url(None, empty_config)
