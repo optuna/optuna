@@ -11,6 +11,7 @@ import typing  # NOQA
 
 import pfnopt
 from pfnopt.integration.chainer import ChainerPruningExtension
+from pfnopt.testing.integration import DeterministicPruner
 
 
 class FixedValueDataset(chainer.dataset.DatasetMixin):
@@ -26,19 +27,6 @@ class FixedValueDataset(chainer.dataset.DatasetMixin):
         # type: (int) -> typing.Tuple[np.ndarray, int]
 
         return np.array([1.0], np.float32), np.int32(0)
-
-
-class FixedValuePruner(pfnopt.pruners.BasePruner):
-
-    def __init__(self, is_pruning):
-        # type: (bool) -> None
-
-        self.is_pruning = is_pruning
-
-    def prune(self, storage, study_id, trial_id, step):
-        # type: (pfnopt.storages.BaseStorage, int, int, int) -> bool
-
-        return self.is_pruning
 
 
 def test_chainer_pruning_extension_trigger():
@@ -80,11 +68,11 @@ def test_chainer_pruning_extension():
         trainer.run(show_loop_exception_msg=False)
         return 1.0
 
-    study = pfnopt.create_study(pruner=FixedValuePruner(True))
+    study = pfnopt.create_study(pruner=DeterministicPruner(True))
     study.run(objective, n_trials=1)
     assert study.trials[0].state == pfnopt.structs.TrialState.PRUNED
 
-    study = pfnopt.create_study(pruner=FixedValuePruner(False))
+    study = pfnopt.create_study(pruner=DeterministicPruner(False))
     study.run(objective, n_trials=1)
     assert study.trials[0].state == pfnopt.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
