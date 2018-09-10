@@ -1,10 +1,12 @@
 from collections import defaultdict
 from datetime import datetime
 import json
+import six
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
+import sys
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
@@ -422,10 +424,11 @@ class RDBStorage(BaseStorage):
         except SQLAlchemyError as e:
             session.rollback()
             message = \
-                'Raising {}. This happens due to a timing issue among threads/processes/nodes. ' \
-                'Another one might have committed an invalid record. ' \
+                'Raising {}. This happens due to invalid data in a commit. ' \
                 '(e.g. exceeding max length or violating unique constraint) .'.format(repr(e))
-            raise structs.StorageInternalError(message)
+            six.reraise(structs.StorageInternalError,
+                        structs.StorageInternalError(message),
+                        sys.exc_info()[2])
 
     def remove_session(self):
         # type: () -> None
