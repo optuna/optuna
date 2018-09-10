@@ -267,7 +267,7 @@ class Study(object):
         except catch as e:
             message = 'Setting trial status as {} because of the following error: {}'.format(
                 structs.TrialState.FAIL, repr(e))
-            self.logger.warning(message)
+            self.logger.warning(message, exc_info=True)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             return trial
