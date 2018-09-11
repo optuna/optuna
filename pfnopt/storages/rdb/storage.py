@@ -239,7 +239,7 @@ class RDBStorage(BaseStorage):
         )
 
         param.check_and_add(session)
-        commit_success = self._commit_or_rollback_on_integrity_error(session)
+        commit_success = self._commit_with_integrity_check(session)
 
         return commit_success
 
@@ -281,7 +281,7 @@ class RDBStorage(BaseStorage):
         )
 
         session.add(trial_value)
-        commit_success = self._commit_or_rollback_on_integrity_error(session)
+        commit_success = self._commit_with_integrity_check(session)
 
         return commit_success
 
@@ -394,7 +394,7 @@ class RDBStorage(BaseStorage):
         )
 
         session.add(version_info)
-        self._commit_or_rollback_on_integrity_error(session)
+        self._commit_with_integrity_check(session)
 
     @staticmethod
     def _fill_storage_url_template(template):
@@ -402,7 +402,7 @@ class RDBStorage(BaseStorage):
 
         return template.format(SCHEMA_VERSION=models.SCHEMA_VERSION)
 
-    def _commit_or_rollback_on_integrity_error(self, session):
+    def _commit_with_integrity_check(self, session):
         # type: (orm.Session) -> bool
 
         try:
@@ -425,8 +425,8 @@ class RDBStorage(BaseStorage):
             session.rollback()
             message = \
                 'An exception is raised during the commit. ' \
-                'This usually happens due to invalid data in the commit, ' \
-                'e.g. exceeding max length or violating unique constraint. ' \
+                'This typically happens due to invalid data in the commit, ' \
+                'e.g. exceeding max length. ' \
                 '(The actual exception is as follows: {})'.format(repr(e))
             six.reraise(structs.StorageInternalError,
                         structs.StorageInternalError(message),
