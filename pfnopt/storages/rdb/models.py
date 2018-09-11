@@ -132,8 +132,6 @@ class TrialModel(BaseModel):
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     state = Column(Enum(TrialState), nullable=False)
     value = Column(Float)
-    user_attributes_json = Column(String(MAX_ATTR_LENGTH))
-    system_attributes_json = Column(String(MAX_ATTR_LENGTH))
     datetime_start = Column(DateTime, default=datetime.now)
     datetime_complete = Column(DateTime)
 
