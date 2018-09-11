@@ -424,8 +424,10 @@ class RDBStorage(BaseStorage):
         except SQLAlchemyError as e:
             session.rollback()
             message = \
-                'Raising {}. This happens due to invalid data in a commit. ' \
-                '(e.g. exceeding max length or violating unique constraint) .'.format(repr(e))
+                'An exception is raised during the commit. ' \
+                'This usually happens due to invalid data in the commit, ' \
+                'e.g. exceeding max length or violating unique constraint. ' \
+                '(The actual exception is as follows: {})'.format(repr(e))
             six.reraise(structs.StorageInternalError,
                         structs.StorageInternalError(message),
                         sys.exc_info()[2])
