@@ -1,4 +1,5 @@
 import abc
+import math
 import six
 
 from pfnopt.storages import BaseStorage  # NOQA
@@ -47,9 +48,12 @@ class MedianPruner(BasePruner):
         if len(storage.get_trial(trial_id).intermediate_values) == 0:
             return False
 
-        # TODO(Yanase): Handle NaN in trial.intermediate_values.
         best_intermediate_result = storage.get_best_intermediate_result_over_steps(trial_id)
-        median = storage.get_median_intermediate_result_over_trials(
-            study_id, step)
+        if math.isnan(best_intermediate_result):
+            return True
+
+        median = storage.get_median_intermediate_result_over_trials(study_id, step)
+        if math.isnan(median):
+            return False
 
         return best_intermediate_result > median

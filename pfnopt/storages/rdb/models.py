@@ -18,8 +18,8 @@ from pfnopt import distributions
 from pfnopt.structs import StudyTask
 from pfnopt.structs import TrialState
 
-SCHEMA_VERSION = 7
-
+SCHEMA_VERSION = 8
+MAX_ATTR_LENGTH = 2048
 NOT_FOUND_MSG = 'Record does not exist.'
 
 BaseModel = declarative_base()  # type: Any
@@ -80,7 +80,7 @@ class StudyUserAttributeModel(BaseModel):
     study_user_attribute_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     key = Column(String(255))
-    value_json = Column(String(255))
+    value_json = Column(String(MAX_ATTR_LENGTH))
 
     study = orm.relationship(StudyModel)
 
@@ -106,7 +106,7 @@ class StudySystemAttributeModel(BaseModel):
     study_system_attribute_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     key = Column(String(255))
-    value_json = Column(String(255))
+    value_json = Column(String(MAX_ATTR_LENGTH))
 
     study = orm.relationship(StudyModel)
 
@@ -132,8 +132,8 @@ class TrialModel(BaseModel):
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     state = Column(Enum(TrialState), nullable=False)
     value = Column(Float)
-    user_attributes_json = Column(String(255))
-    system_attributes_json = Column(String(255))
+    user_attributes_json = Column(String(MAX_ATTR_LENGTH))
+    system_attributes_json = Column(String(MAX_ATTR_LENGTH))
     datetime_start = Column(DateTime, default=datetime.now)
     datetime_complete = Column(DateTime)
 
@@ -190,7 +190,7 @@ class TrialUserAttributeModel(BaseModel):
     trial_user_attribute_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
     key = Column(String(255))
-    value_json = Column(String(255))
+    value_json = Column(String(MAX_ATTR_LENGTH))
 
     trial = orm.relationship(TrialModel)
 
@@ -231,7 +231,7 @@ class TrialSystemAttributeModel(BaseModel):
     trial_system_attribute_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
     key = Column(String(255))
-    value_json = Column(String(255))
+    value_json = Column(String(MAX_ATTR_LENGTH))
 
     trial = orm.relationship(TrialModel)
 
