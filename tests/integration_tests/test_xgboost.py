@@ -6,7 +6,7 @@ from pfnopt.integration.xgboost import XGBoostPruningCallback
 from pfnopt.testing.integration import DeterministicPruner
 
 
-def test_xgboost_prunint_extension_call():
+def test_xgboost_pruning_callback_call():
     # type: () -> None
 
     env = xgb.core.CallbackEnv(model='test',
@@ -20,18 +20,18 @@ def test_xgboost_prunint_extension_call():
     # The pruner is deactivated.
     study = pfnopt.create_study(pruner=DeterministicPruner(False))
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
-    extension = XGBoostPruningCallback(trial, 'validation-error')
-    extension(env)
+    pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
+    pruning_callback(env)
 
     # The pruner is activated.
     study = pfnopt.create_study(pruner=DeterministicPruner(True))
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
-    extension = XGBoostPruningCallback(trial, 'validation-error')
+    pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
     with pytest.raises(pfnopt.structs.TrialPruned):
-        extension(env)
+        pruning_callback(env)
 
 
-def test_xgboost_pruning_extension():
+def test_xgboost_pruning_callback():
     # type: () -> None
 
     def objective(trial):
