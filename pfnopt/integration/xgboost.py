@@ -7,11 +7,11 @@ try:
     _available = True
 except ImportError as e:
     _import_error = e
-    # XGBoostPruningExtension is disabled because XGBoost is not available.
+    # XGBoostPruningCallback is disabled because XGBoost is not available.
     _available = False
 
 
-class XGBoostPruningExtension(object):
+class XGBoostPruningCallback(object):
 
     def __init__(self, trial, observation_key):
         # type: (pfnopt.trial.Trial, str) -> None

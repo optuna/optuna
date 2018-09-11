@@ -2,7 +2,7 @@ import pytest
 import xgboost as xgb
 
 import pfnopt
-from pfnopt.integration.xgboost import XGBoostPruningExtension
+from pfnopt.integration.xgboost import XGBoostPruningCallback
 from pfnopt.testing.integration import DeterministicPruner
 
 
@@ -20,13 +20,13 @@ def test_xgboost_prunint_extension_call():
     # The pruner is deactivated.
     study = pfnopt.create_study(pruner=DeterministicPruner(False))
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
-    extension = XGBoostPruningExtension(trial, 'validation-error')
+    extension = XGBoostPruningCallback(trial, 'validation-error')
     extension(env)
 
     # The pruner is activated.
     study = pfnopt.create_study(pruner=DeterministicPruner(True))
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
-    extension = XGBoostPruningExtension(trial, 'validation-error')
+    extension = XGBoostPruningCallback(trial, 'validation-error')
     with pytest.raises(pfnopt.structs.TrialPruned):
         extension(env)
 
@@ -40,7 +40,7 @@ def test_xgboost_pruning_extension():
         dtrain = xgb.DMatrix([[1.]], label=[1.])
         dtest = xgb.DMatrix([[1.]], label=[1.])
 
-        pruning_callback = XGBoostPruningExtension(trial, 'validation-error')
+        pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
         xgb.train({'silent': 1, 'objective': 'binary:logistic'}, dtrain, 1,
                   evals=[(dtest, 'validation')],  verbose_eval=False,
                   callbacks=[pruning_callback])
