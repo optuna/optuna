@@ -1,9 +1,12 @@
 from collections import defaultdict
 from datetime import datetime
 import json
+import six
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
+import sys
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import List  # NOQA
@@ -52,7 +55,7 @@ class RDBStorage(BaseStorage):
 
         study = models.StudyModel(study_uuid=study_uuid, task=structs.StudyTask.NOT_SET)
         session.add(study)
-        session.commit()
+        self._commit(session)
 
         self.logger.info('A new study created with UUID: {}'.format(study.study_uuid))
 
@@ -72,7 +75,7 @@ class RDBStorage(BaseStorage):
 
         study.task = task
 
-        session.commit()
+        self._commit(session)
 
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
@@ -88,7 +91,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        session.commit()
+        self._commit(session)
 
     def set_study_system_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
@@ -229,7 +232,7 @@ class RDBStorage(BaseStorage):
         )
 
         session.add(trial)
-        session.commit()
+        self._commit(session)
 
         return trial.trial_id
 
@@ -243,7 +246,7 @@ class RDBStorage(BaseStorage):
         if state.is_finished():
             trial.datetime_complete = datetime.now()
 
-        session.commit()
+        self._commit(session)
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
         # type: (int, str, float, distributions.BaseDistribution) -> bool
@@ -272,7 +275,7 @@ class RDBStorage(BaseStorage):
         )
 
         param.check_and_add(session)
-        commit_success = self._commit_or_rollback_on_integrity_error(session)
+        commit_success = self._commit_with_integrity_check(session)
 
         return commit_success
 
@@ -295,7 +298,7 @@ class RDBStorage(BaseStorage):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         trial.value = value
 
-        session.commit()
+        self._commit(session)
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> bool
@@ -314,7 +317,7 @@ class RDBStorage(BaseStorage):
         )
 
         session.add(trial_value)
-        commit_success = self._commit_or_rollback_on_integrity_error(session)
+        commit_success = self._commit_with_integrity_check(session)
 
         return commit_success
 
@@ -350,7 +353,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        session.commit()
+        self._commit(session)
 
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
@@ -476,7 +479,7 @@ class RDBStorage(BaseStorage):
         )
 
         session.add(version_info)
-        self._commit_or_rollback_on_integrity_error(session)
+        self._commit_with_integrity_check(session)
 
     @staticmethod
     def _fill_storage_url_template(template):
@@ -484,7 +487,7 @@ class RDBStorage(BaseStorage):
 
         return template.format(SCHEMA_VERSION=models.SCHEMA_VERSION)
 
-    def _commit_or_rollback_on_integrity_error(self, session):
+    def _commit_with_integrity_check(self, session):
         # type: (orm.Session) -> bool
 
         try:
@@ -497,6 +500,22 @@ class RDBStorage(BaseStorage):
             return False
 
         return True
+
+    def _commit(self, session):
+        # type: (orm.Session) -> None
+
+        try:
+            session.commit()
+        except SQLAlchemyError as e:
+            session.rollback()
+            message = \
+                'An exception is raised during the commit. ' \
+                'This typically happens due to invalid data in the commit, ' \
+                'e.g. exceeding max length. ' \
+                '(The actual exception is as follows: {})'.format(repr(e))
+            six.reraise(structs.StorageInternalError,
+                        structs.StorageInternalError(message),
+                        sys.exc_info()[2])
 
     def remove_session(self):
         # type: () -> None

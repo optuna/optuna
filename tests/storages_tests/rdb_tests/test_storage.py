@@ -15,6 +15,7 @@ from pfnopt.storages.rdb.models import StudyModel
 from pfnopt.storages.rdb.models import TrialParamModel
 from pfnopt.storages.rdb.models import VersionInfoModel
 from pfnopt.storages import RDBStorage
+from pfnopt.structs import StorageInternalError
 from pfnopt.structs import StudySummary
 from pfnopt.structs import StudyTask
 from pfnopt.structs import TrialState
@@ -211,3 +212,16 @@ def create_test_storage():
 
     storage = RDBStorage('sqlite:///:memory:')
     return storage
+
+
+def test_commit():
+    # type: () -> None
+
+    storage = create_test_storage()
+    session = storage.scoped_session()
+
+    # This object violates the unique constraint of version_info_id.
+    v = VersionInfoModel(version_info_id=1, schema_version=1, library_version='0.0.1')
+    session.add(v)
+    with pytest.raises(StorageInternalError):
+        storage._commit(session)

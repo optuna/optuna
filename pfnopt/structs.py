@@ -81,3 +81,13 @@ class CLIUsageError(PFNOptError):
     """
 
     pass
+
+
+class StorageInternalError(PFNOptError):
+
+    """Exception for storage operation.
+
+     This error is raised when an operation failed in backend DB of storage.
+    """
+
+    pass
