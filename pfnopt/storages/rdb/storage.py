@@ -107,7 +107,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        session.commit()
+        self._commit(session)
 
     def get_study_id_from_uuid(self, study_uuid):
         # type: (str) -> int
@@ -336,7 +336,8 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        session.commit()
+        # TODO(Yanase): Take care of IntegrityError on multi-worker environment.
+        self._commit(session)
 
     def set_trial_system_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
