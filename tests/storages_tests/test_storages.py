@@ -17,13 +17,11 @@ from pfnopt.structs import FrozenTrial
 from pfnopt.structs import StudyTask
 from pfnopt.structs import TrialState
 
-EXAMPLE_SYSTEM_ATTRS = {
+EXAMPLE_ATTRS = {
     'dataset': 'MNIST',
     'none': None,
     'json_serializable': {'baseline_score': 0.001, 'tags': ['image', 'classification']},
 }
-
-EXAMPLE_USER_ATTRS = EXAMPLE_SYSTEM_ATTRS  # type: Dict[str, Any]
 
 EXAMPLE_DISTRIBUTIONS = {
     'x': UniformDistribution(low=1., high=2.),
@@ -133,9 +131,9 @@ def test_set_and_get_study_user_attrs(storage_init_func):
         assert storage.get_study_user_attrs(study_id)[key] == value
 
     # Test setting value.
-    for key, value in EXAMPLE_USER_ATTRS.items():
+    for key, value in EXAMPLE_ATTRS.items():
         check_set_and_get(key, value)
-    assert storage.get_study_user_attrs(study_id) == EXAMPLE_USER_ATTRS
+    assert storage.get_study_user_attrs(study_id) == EXAMPLE_ATTRS
 
     # Test overwriting value.
     check_set_and_get('dataset', 'ImageNet')
@@ -155,13 +153,13 @@ def test_set_and_get_study_system_attr(storage_init_func):
         assert storage.get_study_system_attr(study_id, key) == value
 
     # Test setting value.
-    for key, value in EXAMPLE_SYSTEM_ATTRS.items():
+    for key, value in EXAMPLE_ATTRS.items():
         check_set_and_get(key, value)
 
     # Test overwriting value.
     check_set_and_get('dataset', 'ImageNet')
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError):
         storage.get_study_system_attr(study_id, 'dummy-key')
 
 
@@ -327,9 +325,9 @@ def test_set_trial_user_attr(storage_init_func):
         assert storage.get_trial(trial_id).user_attrs[key] == value
 
     # Test setting value.
-    for key, value in EXAMPLE_USER_ATTRS.items():
+    for key, value in EXAMPLE_ATTRS.items():
         check_set_and_get(trial_id_1, key, value)
-    assert storage.get_trial(trial_id_1).user_attrs == EXAMPLE_USER_ATTRS
+    assert storage.get_trial(trial_id_1).user_attrs == EXAMPLE_ATTRS
 
     # Test overwriting value.
     check_set_and_get(trial_id_1, 'dataset', 'ImageNet')
@@ -355,10 +353,10 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
         assert storage.get_trial_system_attr(trial_id, key) == value
 
     # Test setting value.
-    for key, value in EXAMPLE_SYSTEM_ATTRS.items():
+    for key, value in EXAMPLE_ATTRS.items():
         check_set_and_get(trial_id_1, key, value)
     system_attrs = storage.get_trial(trial_id_1).system_attrs
-    assert system_attrs == EXAMPLE_SYSTEM_ATTRS
+    assert system_attrs == EXAMPLE_ATTRS
 
     # Test overwriting value.
     check_set_and_get(trial_id_1, 'dataset', 'ImageNet')
@@ -391,7 +389,7 @@ def test_get_all_study_summaries(storage_init_func):
     trial_id_2 = storage.create_new_trial_id(study_id)
     storage.set_trial_value(trial_id_2, 2.0)
 
-    for key, value in EXAMPLE_USER_ATTRS.items():
+    for key, value in EXAMPLE_ATTRS.items():
         storage.set_study_user_attr(study_id, key, value)
 
     summaries = storage.get_all_study_summaries()
@@ -400,7 +398,7 @@ def test_get_all_study_summaries(storage_init_func):
     assert summaries[0].study_id == study_id
     assert summaries[0].study_uuid == storage.get_study_uuid_from_id(study_id)
     assert summaries[0].task == StudyTask.MINIMIZE
-    assert summaries[0].user_attrs == EXAMPLE_USER_ATTRS
+    assert summaries[0].user_attrs == EXAMPLE_ATTRS
     assert summaries[0].n_trials == 2
     assert summaries[0].datetime_start is not None
     assert datetime_1 < summaries[0].datetime_start < datetime_2

@@ -149,9 +149,8 @@ class RDBStorage(BaseStorage):
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
         system_attr = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
-        # TODO(Yanase): KeyError may be inconsistent with ValueError raised by missing study_id.
         if system_attr is None:
-            raise KeyError(
+            raise ValueError(
                 'System attribute {} does not exist in Study {}.'.format(key, study_id))
 
         return json.loads(system_attr.value_json)
