@@ -79,7 +79,7 @@ class StudyUserAttributeModel(BaseModel):
     __table_args__ = (UniqueConstraint('study_id', 'key'), )  # type: Any
     study_user_attribute_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
-    key = Column(String(255))
+    key = Column(String(MAX_ATTR_LENGTH))
     value_json = Column(String(MAX_ATTR_LENGTH))
 
     study = orm.relationship(StudyModel)
@@ -105,7 +105,7 @@ class StudySystemAttributeModel(BaseModel):
     __table_args__ = (UniqueConstraint('study_id', 'key'), )  # type: Any
     study_system_attribute_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
-    key = Column(String(255))
+    key = Column(String(MAX_ATTR_LENGTH))
     value_json = Column(String(MAX_ATTR_LENGTH))
 
     study = orm.relationship(StudyModel)
@@ -187,7 +187,7 @@ class TrialUserAttributeModel(BaseModel):
     __table_args__ = (UniqueConstraint('trial_id', 'key'), )  # type: Any
     trial_user_attribute_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
-    key = Column(String(255))
+    key = Column(String(MAX_ATTR_LENGTH))
     value_json = Column(String(MAX_ATTR_LENGTH))
 
     trial = orm.relationship(TrialModel)
@@ -228,7 +228,7 @@ class TrialSystemAttributeModel(BaseModel):
     __table_args__ = (UniqueConstraint('trial_id', 'key'), )  # type: Any
     trial_system_attribute_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
-    key = Column(String(255))
+    key = Column(String(MAX_ATTR_LENGTH))
     value_json = Column(String(MAX_ATTR_LENGTH))
 
     trial = orm.relationship(TrialModel)
