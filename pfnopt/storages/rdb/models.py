@@ -18,7 +18,7 @@ from pfnopt import distributions
 from pfnopt.structs import StudyTask
 from pfnopt.structs import TrialState
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 7
 MAX_ATTR_LENGTH = 2048
 NOT_FOUND_MSG = 'Record does not exist.'
 
