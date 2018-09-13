@@ -245,25 +245,6 @@ def test_minimize_command(options):
         assert storage.get_study_name_from_id(study.study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
 
 
-def test_minimize_command_with_study_name():
-    # type: () -> None
-
-    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
-        storage = RDBStorage(storage_url)
-        study_name = 'test_study'
-
-        # Run minimize with study_name.
-        command = ['pfnopt', 'minimize', '--n-trials', '10', '--create-study',
-                   __file__, 'objective_func', '--storage', storage_url,
-                   '--study-name', study_name]
-        subprocess.check_call(command)
-
-        # Check if study_name is stored in the storage.
-        studies = storage.get_all_study_summaries()
-        assert len(studies) == 1
-        assert studies[0].study_name == study_name
-
-
 def test_minimize_command_inconsistent_args():
     # type: () -> None
 

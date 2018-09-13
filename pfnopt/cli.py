@@ -154,8 +154,6 @@ class Minimize(BaseCommand):
                                  'number is set to CPU counts.')
         parser.add_argument('--study', help='Study UUID.')
         parser.add_argument('--create-study', action='store_true', help='Create a new study.')
-        parser.add_argument('--study-name', default=None,
-                            help='A human-readable name of a study to distinguish it from others.')
         parser.add_argument('file',
                             help='Python script file where the objective function resides.')
         parser.add_argument('method', help='The method name of the objective function.')
@@ -174,7 +172,7 @@ class Minimize(BaseCommand):
         config = pfnopt.config.load_pfnopt_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
         if parsed_args.create_study:
-            study = pfnopt.create_study(storage=storage_url, study_name=parsed_args.study_name)
+            study = pfnopt.create_study(storage=storage_url)
         else:
             study = pfnopt.Study(storage=storage_url, study_uuid=parsed_args.study)
 
