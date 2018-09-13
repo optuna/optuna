@@ -16,7 +16,6 @@ import uuid
 from pfnopt import distributions
 from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
-from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb import models
 from pfnopt import structs
 from pfnopt import version
@@ -58,9 +57,6 @@ class RDBStorage(BaseStorage):
         session.add(study)
         self._commit(session)
 
-        # Set system attribute key and empty value.
-        self.set_study_user_attr(study.study_id, SYSTEM_ATTRS_KEY, {})
-
         self.logger.info('A new study created with UUID: {}'.format(study.study_uuid))
 
         return study.study_id
@@ -90,6 +86,22 @@ class RDBStorage(BaseStorage):
         attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
         if attribute is None:
             attribute = models.StudyUserAttributeModel(
+                study_id=study_id, key=key, value_json=json.dumps(value))
+            session.add(attribute)
+        else:
+            attribute.value_json = json.dumps(value)
+
+        self._commit(session)
+
+    def set_study_system_attr(self, study_id, key, value):
+        # type: (int, str, Any) -> None
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
+        if attribute is None:
+            attribute = models.StudySystemAttributeModel(
                 study_id=study_id, key=key, value_json=json.dumps(value))
             session.add(attribute)
         else:
@@ -133,6 +145,19 @@ class RDBStorage(BaseStorage):
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
+    def get_study_system_attr(self, study_id, key):
+        # type: (int, str) -> Any
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        system_attr = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
+        if system_attr is None:
+            raise ValueError(
+                'System attribute {} does not exist in the study.'.format(key))
+
+        return json.loads(system_attr.value_json)
+
     # TODO(sano): Optimize this method to reduce the number of queries.
     def get_all_study_summaries(self):
         # type: () -> List[structs.StudySummary]
@@ -143,6 +168,8 @@ class RDBStorage(BaseStorage):
         trial_models = models.TrialModel.all(session)
         param_models = models.TrialParamModel.all(session)
         value_models = models.TrialValueModel.all(session)
+        trial_user_attribute_models = models.TrialUserAttributeModel.all(session)
+        trial_system_attribute_models = models.TrialSystemAttributeModel.all(session)
 
         study_sumarries = []
         for study_model in study_models:
@@ -161,15 +188,24 @@ class RDBStorage(BaseStorage):
                                      if p.trial_id == best_trial_model.trial_id]
                 best_value_models = [v for v in value_models
                                      if v.trial_id == best_trial_model.trial_id]
+                best_trial_user_models = [u for u in trial_user_attribute_models
+                                          if u.trial_id == best_trial_model.trial_id]
+                best_trial_system_models = [s for s in trial_system_attribute_models
+                                            if s.trial_id == best_trial_model.trial_id]
 
                 # Merge model objects related to the best trial.
                 best_trial = self._merge_trials_orm(
-                    [best_trial_model], best_param_models, best_value_models)[0]
+                    [best_trial_model], best_param_models, best_value_models,
+                    best_trial_user_models, best_trial_system_models)[0]
 
             # Find datetime_start.
             datetime_start = None
             if len(study_trial_models) > 0:
                 datetime_start = min([t.datetime_start for t in study_trial_models])
+
+            attributes = models.StudySystemAttributeModel.where_study_id(study_model.study_id,
+                                                                         session)
+            system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
             # Consolidate StudySummary.
             study_sumarries.append(structs.StudySummary(
@@ -178,6 +214,7 @@ class RDBStorage(BaseStorage):
                 task=self.get_study_task(study_model.study_id),
                 best_trial=best_trial,
                 user_attrs=self.get_study_user_attrs(study_model.study_id),
+                system_attrs=system_attrs,
                 n_trials=len(study_trial_models),
                 datetime_start=datetime_start
             ))
@@ -191,8 +228,7 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel(
             study_id=study_id,
-            state=structs.TrialState.RUNNING,
-            user_attributes_json=json.dumps({SYSTEM_ATTRS_KEY: {}})
+            state=structs.TrialState.RUNNING
         )
 
         session.add(trial)
@@ -291,9 +327,32 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        loaded_json = json.loads(trial.user_attributes_json)
-        loaded_json[key] = value
-        trial.user_attributes_json = json.dumps(loaded_json)
+        attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
+        if attribute is None:
+            attribute = models.TrialUserAttributeModel(
+                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            )
+            session.add(attribute)
+        else:
+            attribute.value_json = json.dumps(value)
+
+        # TODO(Yanase): Take care of IntegrityError on multi-worker environment.
+        self._commit(session)
+
+    def set_trial_system_attr(self, trial_id, key, value):
+        # type: (int, str, Any) -> None
+
+        session = self.scoped_session()
+
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
+        if attribute is None:
+            attribute = models.TrialSystemAttributeModel(
+                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            )
+            session.add(attribute)
+        else:
+            attribute.value_json = json.dumps(value)
 
         self._commit(session)
 
@@ -305,8 +364,11 @@ class RDBStorage(BaseStorage):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         params = models.TrialParamModel.where_trial(trial, session)
         values = models.TrialValueModel.where_trial(trial, session)
+        user_attributes = models.TrialUserAttributeModel.where_trial(trial, session)
+        system_attributes = models.TrialSystemAttributeModel.where_trial(trial, session)
 
-        return self._merge_trials_orm([trial], params, values)[0]
+        return self._merge_trials_orm([trial], params, values,
+                                      user_attributes, system_attributes)[0]
 
     def get_all_trials(self, study_id):
         # type: (int) -> List[structs.FrozenTrial]
@@ -317,8 +379,11 @@ class RDBStorage(BaseStorage):
         trials = models.TrialModel.where_study(study, session)
         params = models.TrialParamModel.where_study(study, session)
         values = models.TrialValueModel.where_study(study, session)
+        user_attributes = models.TrialUserAttributeModel.where_study(study, session)
+        system_attributes = models.TrialSystemAttributeModel.where_study(study, session)
 
-        return self._merge_trials_orm(trials, params, values)
+        return self._merge_trials_orm(trials, params, values,
+                                      user_attributes, system_attributes)
 
     def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[structs.TrialState]) -> int
@@ -331,7 +396,9 @@ class RDBStorage(BaseStorage):
     def _merge_trials_orm(
             trials,  # type: List[models.TrialModel]
             trial_params,   # type: List[models.TrialParamModel]
-            trial_intermediate_values  # type: List[models.TrialValueModel]
+            trial_intermediate_values,  # type: List[models.TrialValueModel]
+            trial_user_attrs,  # type: List[models.TrialUserAttributeModel]
+            trial_system_attrs  # type: List[models.TrialSystemAttributeModel]
     ):
         # type: (...) -> List[structs.FrozenTrial]
 
@@ -347,6 +414,16 @@ class RDBStorage(BaseStorage):
         for value in trial_intermediate_values:
             id_to_values[value.trial_id].append(value)
 
+        id_to_user_attrs = \
+            defaultdict(list)  # type: Dict[int, List[models.TrialUserAttributeModel]]
+        for user_attr in trial_user_attrs:
+            id_to_user_attrs[user_attr.trial_id].append(user_attr)
+
+        id_to_system_attrs = \
+            defaultdict(list)  # type: Dict[int, List[models.TrialSystemAttributeModel]]
+        for system_attr in trial_system_attrs:
+            id_to_system_attrs[system_attr.trial_id].append(system_attr)
+
         result = []
         for trial_id, trial in id_to_trial.items():
             params = {}
@@ -360,11 +437,20 @@ class RDBStorage(BaseStorage):
             for value in id_to_values[trial_id]:
                 intermediate_values[value.step] = value.value
 
+            user_attrs = {}
+            for user_attr in id_to_user_attrs[trial_id]:
+                user_attrs[user_attr.key] = json.loads(user_attr.value_json)
+
+            system_attrs = {}
+            for system_attr in id_to_system_attrs[trial_id]:
+                system_attrs[system_attr.key] = json.loads(system_attr.value_json)
+
             result.append(structs.FrozenTrial(
                 trial_id=trial_id,
                 state=trial.state,
                 params=params,
-                user_attrs=json.loads(trial.user_attributes_json),
+                user_attrs=user_attrs,
+                system_attrs=system_attrs,
                 value=trial.value,
                 intermediate_values=intermediate_values,
                 params_in_internal_repr=params_in_internal_repr,

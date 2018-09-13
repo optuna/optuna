@@ -11,8 +11,6 @@ from typing import Tuple  # NOQA
 from pfnopt import distributions  # NOQA
 from pfnopt import structs  # NOQA
 
-SYSTEM_ATTRS_KEY = '__system__'
-
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseStorage(object):
@@ -37,14 +35,11 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
-    # TODO(sano): support setting attribute in a thread-safe way.
+    @abc.abstractmethod
     def set_study_system_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
-        user_attrs = self.get_study_user_attrs(study_id)
-        user_attrs[SYSTEM_ATTRS_KEY][key] = value
-        self.set_study_user_attr(
-            study_id, SYSTEM_ATTRS_KEY, user_attrs[SYSTEM_ATTRS_KEY])
+        raise NotImplementedError
 
     # Basic study access
 
@@ -72,11 +67,11 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def get_study_system_attr(self, study_id, key):
         # type: (int, str) -> Any
 
-        user_attrs = self.get_study_user_attrs(study_id)
-        return copy.deepcopy(user_attrs[SYSTEM_ATTRS_KEY][key])
+        raise NotImplementedError
 
     @abc.abstractmethod
     def get_all_study_summaries(self):
@@ -128,14 +123,11 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
-    # TODO(sano): support setting attribute in a thread-safe way.
+    @abc.abstractmethod
     def set_trial_system_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
 
-        user_attrs = self.get_trial(trial_id).user_attrs
-        user_attrs[SYSTEM_ATTRS_KEY][key] = value
-        self.set_trial_user_attr(
-            trial_id, SYSTEM_ATTRS_KEY, user_attrs[SYSTEM_ATTRS_KEY])
+        raise NotImplementedError
 
     # Basic trial access
 
@@ -182,8 +174,7 @@ class BaseStorage(object):
     def get_trial_system_attr(self, trial_id, key):
         # type: (int, str) -> Any
 
-        user_attrs = self.get_trial(trial_id).user_attrs
-        return copy.deepcopy(user_attrs[SYSTEM_ATTRS_KEY][key])
+        return copy.deepcopy(self.get_trial(trial_id).system_attrs[key])
 
     # Methods for the TPE sampler
 

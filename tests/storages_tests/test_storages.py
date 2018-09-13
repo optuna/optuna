@@ -10,7 +10,6 @@ from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import LogUniformDistribution
 from pfnopt.distributions import UniformDistribution
-from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages import BaseStorage  # NOQA
 from pfnopt.storages import InMemoryStorage
 from pfnopt.storages import RDBStorage
@@ -18,13 +17,11 @@ from pfnopt.structs import FrozenTrial
 from pfnopt.structs import StudyTask
 from pfnopt.structs import TrialState
 
-EXAMPLE_SYSTEM_ATTRS = {
+EXAMPLE_ATTRS = {
     'dataset': 'MNIST',
     'none': None,
     'json_serializable': {'baseline_score': 0.001, 'tags': ['image', 'classification']},
 }
-
-EXAMPLE_USER_ATTRS = dict(EXAMPLE_SYSTEM_ATTRS, **{SYSTEM_ATTRS_KEY: {}})  # type: Dict[str, Any]
 
 EXAMPLE_DISTRIBUTIONS = {
     'x': UniformDistribution(low=1., high=2.),
@@ -36,7 +33,8 @@ EXAMPLE_TRIALS = [
         trial_id=-1,  # dummy id
         value=1.,
         state=TrialState.COMPLETE,
-        user_attrs={SYSTEM_ATTRS_KEY: {}},
+        user_attrs={},
+        system_attrs={},
         params={'x': 0.5, 'y': 'Ginza'},
         intermediate_values={0: 2., 1: 3.},
         params_in_internal_repr={'x': .5, 'y': 2.},
@@ -47,9 +45,8 @@ EXAMPLE_TRIALS = [
         trial_id=-1,  # dummy id
         value=2.,
         state=TrialState.RUNNING,
-        user_attrs={
-            SYSTEM_ATTRS_KEY: {'some_key': 'some_value'},
-            'tags': ['video', 'classification'], 'dataset': 'YouTube-8M'},
+        user_attrs={'tags': ['video', 'classification'], 'dataset': 'YouTube-8M'},
+        system_attrs={'some_key': 'some_value'},
         params={'x': 0.01, 'y': 'Otemachi'},
         intermediate_values={0: -2., 1: -3., 2: 100.},
         params_in_internal_repr={'x': .01, 'y': 0.},
@@ -134,16 +131,16 @@ def test_set_and_get_study_user_attrs(storage_init_func):
         assert storage.get_study_user_attrs(study_id)[key] == value
 
     # Test setting value.
-    for key, value in EXAMPLE_USER_ATTRS.items():
+    for key, value in EXAMPLE_ATTRS.items():
         check_set_and_get(key, value)
-    assert storage.get_study_user_attrs(study_id) == EXAMPLE_USER_ATTRS
+    assert storage.get_study_user_attrs(study_id) == EXAMPLE_ATTRS
 
     # Test overwriting value.
     check_set_and_get('dataset', 'ImageNet')
 
 
 @parametrize_storage
-def test_set_and_get_study_system_attrs(storage_init_func):
+def test_set_and_get_study_system_attr(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
@@ -153,17 +150,17 @@ def test_set_and_get_study_system_attrs(storage_init_func):
         # type: (str, Any) -> None
 
         storage.set_study_system_attr(study_id, key, value)
-        assert storage.get_study_user_attrs(study_id)[SYSTEM_ATTRS_KEY][key] == value
         assert storage.get_study_system_attr(study_id, key) == value
 
     # Test setting value.
-    for key, value in EXAMPLE_SYSTEM_ATTRS.items():
+    for key, value in EXAMPLE_ATTRS.items():
         check_set_and_get(key, value)
-    system_attrs = storage.get_study_user_attrs(study_id)[SYSTEM_ATTRS_KEY]
-    assert system_attrs == EXAMPLE_SYSTEM_ATTRS
 
     # Test overwriting value.
     check_set_and_get('dataset', 'ImageNet')
+
+    with pytest.raises(ValueError):
+        storage.get_study_system_attr(study_id, 'dummy-key')
 
 
 @parametrize_storage
@@ -179,7 +176,8 @@ def test_create_new_trial_id(storage_init_func):
     assert len(trials) == 1
     assert trials[0].trial_id == trial_id
     assert trials[0].state == TrialState.RUNNING
-    assert trials[0].user_attrs == {SYSTEM_ATTRS_KEY: {}}
+    assert trials[0].user_attrs == {}
+    assert trials[0].system_attrs == {}
 
 
 @parametrize_storage
@@ -327,9 +325,9 @@ def test_set_trial_user_attr(storage_init_func):
         assert storage.get_trial(trial_id).user_attrs[key] == value
 
     # Test setting value.
-    for key, value in EXAMPLE_USER_ATTRS.items():
+    for key, value in EXAMPLE_ATTRS.items():
         check_set_and_get(trial_id_1, key, value)
-    assert storage.get_trial(trial_id_1).user_attrs == EXAMPLE_USER_ATTRS
+    assert storage.get_trial(trial_id_1).user_attrs == EXAMPLE_ATTRS
 
     # Test overwriting value.
     check_set_and_get(trial_id_1, 'dataset', 'ImageNet')
@@ -337,7 +335,7 @@ def test_set_trial_user_attr(storage_init_func):
     # Test another trial.
     trial_id_2 = storage.create_new_trial_id(storage.create_new_study_id())
     check_set_and_get(trial_id_2, 'baseline_score', 0.001)
-    assert len(storage.get_trial(trial_id_2).user_attrs) == 2
+    assert len(storage.get_trial(trial_id_2).user_attrs) == 1
     assert storage.get_trial(trial_id_2).user_attrs['baseline_score'] == 0.001
 
 
@@ -352,14 +350,13 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
         # type: (int, str, Any) -> None
 
         storage.set_trial_system_attr(trial_id, key, value)
-        assert storage.get_trial(trial_id).user_attrs[SYSTEM_ATTRS_KEY][key] == value
         assert storage.get_trial_system_attr(trial_id, key) == value
 
     # Test setting value.
-    for key, value in EXAMPLE_SYSTEM_ATTRS.items():
+    for key, value in EXAMPLE_ATTRS.items():
         check_set_and_get(trial_id_1, key, value)
-    system_attrs = storage.get_trial(trial_id_1).user_attrs[SYSTEM_ATTRS_KEY]
-    assert system_attrs == EXAMPLE_SYSTEM_ATTRS
+    system_attrs = storage.get_trial(trial_id_1).system_attrs
+    assert system_attrs == EXAMPLE_ATTRS
 
     # Test overwriting value.
     check_set_and_get(trial_id_1, 'dataset', 'ImageNet')
@@ -367,7 +364,7 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     # Test another trial.
     trial_id_2 = storage.create_new_trial_id(storage.create_new_study_id())
     check_set_and_get(trial_id_2, 'baseline_score', 0.001)
-    system_attrs = storage.get_trial(trial_id_2).user_attrs[SYSTEM_ATTRS_KEY]
+    system_attrs = storage.get_trial(trial_id_2).system_attrs
     assert system_attrs == {'baseline_score': 0.001}
 
 
@@ -392,7 +389,7 @@ def test_get_all_study_summaries(storage_init_func):
     trial_id_2 = storage.create_new_trial_id(study_id)
     storage.set_trial_value(trial_id_2, 2.0)
 
-    for key, value in EXAMPLE_USER_ATTRS.items():
+    for key, value in EXAMPLE_ATTRS.items():
         storage.set_study_user_attr(study_id, key, value)
 
     summaries = storage.get_all_study_summaries()
@@ -401,7 +398,7 @@ def test_get_all_study_summaries(storage_init_func):
     assert summaries[0].study_id == study_id
     assert summaries[0].study_uuid == storage.get_study_uuid_from_id(study_id)
     assert summaries[0].task == StudyTask.MINIMIZE
-    assert summaries[0].user_attrs == EXAMPLE_USER_ATTRS
+    assert summaries[0].user_attrs == EXAMPLE_ATTRS
     assert summaries[0].n_trials == 2
     assert summaries[0].datetime_start is not None
     assert datetime_1 < summaries[0].datetime_start < datetime_2
@@ -577,6 +574,9 @@ def _create_new_trial_with_example_trial(storage, study_id, distributions, examp
 
     for key, value in example_trial.user_attrs.items():
         storage.set_trial_user_attr(trial_id, key, value)
+
+    for key, value in example_trial.system_attrs.items():
+        storage.set_trial_system_attr(trial_id, key, value)
 
     return trial_id
 
