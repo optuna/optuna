@@ -154,7 +154,7 @@ class RDBStorage(BaseStorage):
         system_attr = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
         if system_attr is None:
             raise ValueError(
-                'System attribute {} does not exist in Study {}.'.format(key, study_id))
+                'System attribute {} does not exist in the study.'.format(key))
 
         return json.loads(system_attr.value_json)
 
