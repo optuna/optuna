@@ -24,6 +24,7 @@ class InMemoryStorage(base.BaseStorage):
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
         self.task = structs.StudyTask.NOT_SET
         self.study_user_attrs = {}  # type: Dict[str, Any]
+        self.study_system_attrs = {}  # type: Dict[str, Any]
         self.study_name = DEFAULT_STUDY_NAME_PREFIX + IN_MEMORY_STORAGE_STUDY_UUID  # type: str
 
         self._lock = threading.Lock()
@@ -45,8 +46,6 @@ class InMemoryStorage(base.BaseStorage):
         if study_name is not None:
             self.study_name = study_name
 
-        self.study_user_attrs[base.SYSTEM_ATTRS_KEY] = {}
-
         return IN_MEMORY_STORAGE_STUDY_ID  # TODO(akiba)
 
     def set_study_task(self, study_id, task):
@@ -63,6 +62,12 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             self.study_user_attrs[key] = value
+
+    def set_study_system_attr(self, study_id, key, value):
+        # type: (int, str, Any) -> None
+
+        with self._lock:
+            self.study_system_attrs[key] = value
 
     def get_study_id_from_uuid(self, study_uuid):
         # type: (str) -> int
@@ -101,6 +106,16 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             return copy.deepcopy(self.study_user_attrs)
 
+    def get_study_system_attr(self, study_id, key):
+        # type: (int, str) -> Any
+
+        with self._lock:
+            try:
+                return copy.deepcopy(self.study_system_attrs[key])
+            except KeyError:
+                raise ValueError(
+                    'System attribute {} does not exist in Study {}.'.format(key, study_id))
+
     def get_all_study_summaries(self):
         # type: () -> List[structs.StudySummary]
 
@@ -120,6 +135,7 @@ class InMemoryStorage(base.BaseStorage):
             task=self.task,
             best_trial=best_trial,
             user_attrs=copy.deepcopy(self.study_user_attrs),
+            system_attrs=copy.deepcopy(self.study_system_attrs),
             n_trials=len(self.trials),
             datetime_start=datetime_start
         )]
@@ -135,7 +151,8 @@ class InMemoryStorage(base.BaseStorage):
                     trial_id=trial_id,
                     state=structs.TrialState.RUNNING,
                     params={},
-                    user_attrs={base.SYSTEM_ATTRS_KEY: {}},
+                    user_attrs={},
+                    system_attrs={},
                     value=None,
                     intermediate_values={},
                     params_in_internal_repr={},
@@ -205,6 +222,12 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             self.trials[trial_id].user_attrs[key] = value
+
+    def set_trial_system_attr(self, trial_id, key, value):
+        # type: (int, str, Any) -> None
+
+        with self._lock:
+            self.trials[trial_id].system_attrs[key] = value
 
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial

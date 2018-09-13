@@ -10,7 +10,6 @@ from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import json_to_distribution
 from pfnopt.distributions import UniformDistribution
-from pfnopt.storages.base import SYSTEM_ATTRS_KEY
 from pfnopt.storages.rdb.models import SCHEMA_VERSION
 from pfnopt.storages.rdb.models import StudyModel
 from pfnopt.storages.rdb.models import TrialParamModel
@@ -163,7 +162,8 @@ def test_get_all_study_summaries_with_multiple_studies():
         study_uuid=storage.get_study_uuid_from_id(study_id_1),
         study_name=storage.get_study_name_from_id(study_id_1),
         task=StudyTask.MINIMIZE,
-        user_attrs={SYSTEM_ATTRS_KEY: {}},
+        user_attrs={},
+        system_attrs={},
         best_trial=summaries[0].best_trial,  # This always passes.
         n_trials=2,
         datetime_start=summaries[0].datetime_start  # This always passes.
@@ -173,7 +173,8 @@ def test_get_all_study_summaries_with_multiple_studies():
         study_uuid=storage.get_study_uuid_from_id(study_id_2),
         study_name=storage.get_study_name_from_id(study_id_2),
         task=StudyTask.MAXIMIZE,
-        user_attrs={SYSTEM_ATTRS_KEY: {}},
+        user_attrs={},
+        system_attrs={},
         best_trial=summaries[1].best_trial,  # This always passes.
         n_trials=1,
         datetime_start=summaries[1].datetime_start  # This always passes.
@@ -183,7 +184,8 @@ def test_get_all_study_summaries_with_multiple_studies():
         study_uuid=storage.get_study_uuid_from_id(study_id_3),
         study_name=storage.get_study_name_from_id(study_id_3),
         task=StudyTask.NOT_SET,
-        user_attrs={SYSTEM_ATTRS_KEY: {}},
+        user_attrs={},
+        system_attrs={},
         best_trial=None,
         n_trials=0,
         datetime_start=None

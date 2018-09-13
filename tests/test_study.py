@@ -313,7 +313,7 @@ def test_run_trial(storage_mode):
         expected_message = 'Setting trial status as TrialState.FAIL because of the following ' \
                            'error: ValueError()'
         assert frozen_trial.state == pfnopt.structs.TrialState.FAIL
-        assert frozen_trial.user_attrs['__system__']['fail_reason'] == expected_message
+        assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
@@ -330,7 +330,7 @@ def test_run_trial(storage_mode):
                            'from the objective function cannot be casted to float. Returned ' \
                            'value is: None'
         assert frozen_trial.state == pfnopt.structs.TrialState.FAIL
-        assert frozen_trial.user_attrs['__system__']['fail_reason'] == expected_message
+        assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
         # Test trial with invalid objective value: nan
         def func_nan(_):
@@ -342,7 +342,7 @@ def test_run_trial(storage_mode):
         expected_message = 'Setting trial status as TrialState.FAIL because the objective ' \
                            'function returned nan.'
         assert frozen_trial.state == pfnopt.structs.TrialState.FAIL
-        assert frozen_trial.user_attrs['__system__']['fail_reason'] == expected_message
+        assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
 
 def test_study_pickle():

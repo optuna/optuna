@@ -36,6 +36,7 @@ class FrozenTrial(
          ('datetime_complete', Optional[datetime]),
          ('params', Dict[str, Any]),
          ('user_attrs', Dict[str, Any]),
+         ('system_attrs', Dict[str, Any]),
          ('intermediate_values', Dict[int, float]),
          ('params_in_internal_repr', Dict[str, float]),
          ])):
@@ -51,6 +52,7 @@ StudySummary = NamedTuple(
      ('task', StudyTask),
      ('best_trial', Optional[FrozenTrial]),
      ('user_attrs', Dict[str, Any]),
+     ('system_attrs', Dict[str, Any]),
      ('n_trials', int),
      ('datetime_start', Optional[datetime])])
 

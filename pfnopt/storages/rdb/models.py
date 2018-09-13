@@ -18,7 +18,7 @@ from pfnopt import distributions
 from pfnopt.structs import StudyTask
 from pfnopt.structs import TrialState
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 MAX_ATTR_LENGTH = 2048
 NOT_FOUND_MSG = 'Record does not exist.'
 
@@ -98,7 +98,7 @@ class StudyUserAttributeModel(BaseModel):
     __table_args__ = (UniqueConstraint('study_id', 'key'), )  # type: Any
     study_user_attribute_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
-    key = Column(String(255))
+    key = Column(String(MAX_ATTR_LENGTH))
     value_json = Column(String(MAX_ATTR_LENGTH))
 
     study = orm.relationship(StudyModel)
@@ -119,13 +119,38 @@ class StudyUserAttributeModel(BaseModel):
         return session.query(cls).filter(cls.study_id == study_id).all()
 
 
+class StudySystemAttributeModel(BaseModel):
+    __tablename__ = 'study_system_attributes'
+    __table_args__ = (UniqueConstraint('study_id', 'key'), )  # type: Any
+    study_system_attribute_id = Column(Integer, primary_key=True)
+    study_id = Column(Integer, ForeignKey('studies.study_id'))
+    key = Column(String(MAX_ATTR_LENGTH))
+    value_json = Column(String(MAX_ATTR_LENGTH))
+
+    study = orm.relationship(StudyModel)
+
+    @classmethod
+    def find_by_study_and_key(cls, study, key, session):
+        # type: (StudyModel, str, orm.Session) -> Optional[StudySystemAttributeModel]
+
+        attribute = session.query(cls). \
+            filter(cls.study_id == study.study_id).filter(cls.key == key).one_or_none()
+
+        return attribute
+
+    @classmethod
+    def where_study_id(cls, study_id, session):
+        # type: (int, orm.Session) -> List[StudySystemAttributeModel]
+
+        return session.query(cls).filter(cls.study_id == study_id).all()
+
+
 class TrialModel(BaseModel):
     __tablename__ = 'trials'
     trial_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     state = Column(Enum(TrialState), nullable=False)
     value = Column(Float)
-    user_attributes_json = Column(String(MAX_ATTR_LENGTH))
     datetime_start = Column(DateTime, default=datetime.now)
     datetime_complete = Column(DateTime)
 
@@ -172,6 +197,88 @@ class TrialModel(BaseModel):
     @classmethod
     def all(cls, session):
         # type: (orm.Session) -> List[TrialModel]
+
+        return session.query(cls).all()
+
+
+class TrialUserAttributeModel(BaseModel):
+    __tablename__ = 'trial_user_attributes'
+    __table_args__ = (UniqueConstraint('trial_id', 'key'), )  # type: Any
+    trial_user_attribute_id = Column(Integer, primary_key=True)
+    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
+    key = Column(String(MAX_ATTR_LENGTH))
+    value_json = Column(String(MAX_ATTR_LENGTH))
+
+    trial = orm.relationship(TrialModel)
+
+    @classmethod
+    def find_by_trial_and_key(cls, trial, key, session):
+        # type: (TrialModel, str, orm.Session) -> Optional[TrialUserAttributeModel]
+
+        attribute = session.query(cls). \
+            filter(cls.trial_id == trial.trial_id).filter(cls.key == key).one_or_none()
+
+        return attribute
+
+    @classmethod
+    def where_study(cls, study, session):
+        # type: (StudyModel, orm.Session) -> List[TrialUserAttributeModel]
+
+        trial_user_attributes = session.query(cls).join(TrialModel). \
+            filter(TrialModel.study_id == study.study_id).all()
+
+        return trial_user_attributes
+
+    @classmethod
+    def where_trial(cls, trial, session):
+        # type: (TrialModel, orm.Session) -> List[TrialUserAttributeModel]
+
+        return session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+
+    @classmethod
+    def all(cls, session):
+        # type: (orm.Session) -> List[TrialUserAttributeModel]
+
+        return session.query(cls).all()
+
+
+class TrialSystemAttributeModel(BaseModel):
+    __tablename__ = 'trial_system_attributes'
+    __table_args__ = (UniqueConstraint('trial_id', 'key'), )  # type: Any
+    trial_system_attribute_id = Column(Integer, primary_key=True)
+    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
+    key = Column(String(MAX_ATTR_LENGTH))
+    value_json = Column(String(MAX_ATTR_LENGTH))
+
+    trial = orm.relationship(TrialModel)
+
+    @classmethod
+    def find_by_trial_and_key(cls, trial, key, session):
+        # type: (TrialModel, str, orm.Session) -> Optional[TrialSystemAttributeModel]
+
+        attribute = session.query(cls). \
+            filter(cls.trial_id == trial.trial_id).filter(cls.key == key).one_or_none()
+
+        return attribute
+
+    @classmethod
+    def where_study(cls, study, session):
+        # type: (StudyModel, orm.Session) -> List[TrialSystemAttributeModel]
+
+        trial_system_attributes = session.query(cls).join(TrialModel). \
+            filter(TrialModel.study_id == study.study_id).all()
+
+        return trial_system_attributes
+
+    @classmethod
+    def where_trial(cls, trial, session):
+        # type: (TrialModel, orm.Session) -> List[TrialSystemAttributeModel]
+
+        return session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+
+    @classmethod
+    def all(cls, session):
+        # type: (orm.Session) -> List[TrialSystemAttributeModel]
 
         return session.query(cls).all()
 
