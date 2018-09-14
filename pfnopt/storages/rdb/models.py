@@ -18,7 +18,7 @@ from pfnopt import distributions
 from pfnopt.structs import StudyTask
 from pfnopt.structs import TrialState
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 MAX_ATTR_LENGTH = 2048
 NOT_FOUND_MSG = 'Record does not exist.'
 
@@ -29,6 +29,7 @@ class StudyModel(BaseModel):
     __tablename__ = 'studies'
     study_id = Column(Integer, primary_key=True)
     study_uuid = Column(String(255), unique=True)
+    study_name = Column(String(255), unique=True, nullable=False)
     task = Column(Enum(StudyTask), nullable=False)
 
     @classmethod
@@ -62,6 +63,24 @@ class StudyModel(BaseModel):
         # type: (str, orm.Session) -> StudyModel
 
         study = cls.find_by_uuid(study_uuid, session)
+        if study is None:
+            raise ValueError(NOT_FOUND_MSG)
+
+        return study
+
+    @classmethod
+    def find_by_name(cls, study_name, session):
+        # type: (str, orm.Session) -> Optional[StudyModel]
+
+        study = session.query(cls).filter(cls.study_name == study_name).one_or_none()
+
+        return study
+
+    @classmethod
+    def find_or_raise_by_name(cls, study_name, session):
+        # type: (str, orm.Session) -> StudyModel
+
+        study = cls.find_by_name(study_name, session)
         if study is None:
             raise ValueError(NOT_FOUND_MSG)
 

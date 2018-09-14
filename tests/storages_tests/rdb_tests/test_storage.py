@@ -86,6 +86,16 @@ def test_create_new_study_id_duplicated_uuid():
         assert mock_object.call_count == 3
 
 
+def test_create_new_study_id_duplicated_name():
+    # type: () -> None
+
+    storage = create_test_storage()
+    study_name = 'sample_study_name'
+    storage.create_new_study_id(study_name)
+    with pytest.raises(ValueError):
+        storage.create_new_study_id(study_name)
+
+
 def test_set_trial_param_to_check_distribution_json():
     # type: () -> None
 
@@ -150,6 +160,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     expected_summary_1 = StudySummary(
         study_id=study_id_1,
         study_uuid=storage.get_study_uuid_from_id(study_id_1),
+        study_name=storage.get_study_name_from_id(study_id_1),
         task=StudyTask.MINIMIZE,
         user_attrs={},
         system_attrs={},
@@ -160,6 +171,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     expected_summary_2 = StudySummary(
         study_id=study_id_2,
         study_uuid=storage.get_study_uuid_from_id(study_id_2),
+        study_name=storage.get_study_name_from_id(study_id_2),
         task=StudyTask.MAXIMIZE,
         user_attrs={},
         system_attrs={},
@@ -170,6 +182,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     expected_summary_3 = StudySummary(
         study_id=study_id_3,
         study_uuid=storage.get_study_uuid_from_id(study_id_3),
+        study_name=storage.get_study_name_from_id(study_id_3),
         task=StudyTask.NOT_SET,
         user_attrs={},
         system_attrs={},

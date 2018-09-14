@@ -6,16 +6,19 @@ from typing import Callable  # NOQA
 from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 
+import pfnopt
 from pfnopt.distributions import BaseDistribution  # NOQA
 from pfnopt.distributions import CategoricalDistribution
 from pfnopt.distributions import LogUniformDistribution
 from pfnopt.distributions import UniformDistribution
+from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from pfnopt.storages import BaseStorage  # NOQA
 from pfnopt.storages import InMemoryStorage
 from pfnopt.storages import RDBStorage
 from pfnopt.structs import FrozenTrial
 from pfnopt.structs import StudyTask
 from pfnopt.structs import TrialState
+from pfnopt.testing.storage import StorageSupplier
 
 EXAMPLE_ATTRS = {
     'dataset': 'MNIST',
@@ -55,9 +58,27 @@ EXAMPLE_TRIALS = [
     )
 ]
 
+STORAGE_MODES = [
+    'none',    # We give `None` to storage argument, so InMemoryStorage is used.
+    'new',     # We always create a new sqlite DB file for each experiment.
+    'common',  # We use a sqlite DB file for the whole experiments.
+]
 
+# TODO(Yanase): Replace @parametrize_storage with StorageSupplier.
 parametrize_storage = pytest.mark.parametrize(
     'storage_init_func', [InMemoryStorage, lambda: RDBStorage('sqlite:///:memory:')])
+
+
+def setup_module():
+    # type: () -> None
+
+    StorageSupplier.setup_common_tempfile()
+
+
+def teardown_module():
+    # type: () -> None
+
+    StorageSupplier.teardown_common_tempfile()
 
 
 @parametrize_storage
@@ -70,6 +91,22 @@ def test_create_new_study_id(storage_init_func):
     summaries = storage.get_all_study_summaries()
     assert len(summaries) == 1
     assert summaries[0].study_id == study_id
+    assert summaries[0].study_name.startswith(DEFAULT_STUDY_NAME_PREFIX)
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_create_new_study_id_with_name(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+
+        # Generate unique study_name from the current function name and storage_mode.
+        function_name = test_create_new_study_id_with_name.__name__
+        study_name = function_name + '/' + storage_mode
+        storage = pfnopt.storages.get_storage(storage)
+        study_id = storage.create_new_study_id(study_name)
+
+        assert study_name == storage.get_study_name_from_id(study_id)
 
 
 @parametrize_storage
@@ -92,6 +129,30 @@ def test_get_study_id_from_uuid_and_get_study_uuid_from_id(storage_init_func):
     assert study_id == summary.study_id
     assert storage.get_study_uuid_from_id(summary.study_id) == summary.study_uuid
     assert storage.get_study_id_from_uuid(summary.study_uuid) == summary.study_id
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+
+        # Generate unique study_name from the current function name and storage_mode.
+        function_name = test_get_study_id_from_name_and_get_study_name_from_id.__name__
+        study_name = function_name + '/' + storage_mode
+        storage = pfnopt.storages.get_storage(storage)
+        study = pfnopt.create_study(storage=storage, study_name=study_name)
+
+        # Test existing study.
+        assert storage.get_study_name_from_id(study.study_id) == study_name
+        assert storage.get_study_id_from_name(study_name) == study.study_id
+
+        # Test not existing study.
+        with pytest.raises(ValueError):
+            storage.get_study_id_from_name('dummy-name')
+
+        with pytest.raises(ValueError):
+            storage.get_study_name_from_id(-1)
 
 
 @parametrize_storage
