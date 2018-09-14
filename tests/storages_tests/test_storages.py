@@ -140,7 +140,7 @@ def test_set_and_get_study_user_attrs(storage_init_func):
 
 
 @parametrize_storage
-def test_set_and_get_study_system_attr(storage_init_func):
+def test_set_and_get_study_system_attrs(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
@@ -150,7 +150,7 @@ def test_set_and_get_study_system_attr(storage_init_func):
         # type: (str, Any) -> None
 
         storage.set_study_system_attr(study_id, key, value)
-        assert storage.get_study_system_attr(study_id, key) == value
+        assert storage.get_study_system_attrs(study_id)[key] == value
 
     # Test setting value.
     for key, value in EXAMPLE_ATTRS.items():
@@ -158,9 +158,6 @@ def test_set_and_get_study_system_attr(storage_init_func):
 
     # Test overwriting value.
     check_set_and_get('dataset', 'ImageNet')
-
-    with pytest.raises(ValueError):
-        storage.get_study_system_attr(study_id, 'dummy-key')
 
 
 @parametrize_storage
@@ -350,7 +347,7 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
         # type: (int, str, Any) -> None
 
         storage.set_trial_system_attr(trial_id, key, value)
-        assert storage.get_trial_system_attr(trial_id, key) == value
+        assert storage.get_trial_system_attrs(trial_id)[key] == value
 
     # Test setting value.
     for key, value in EXAMPLE_ATTRS.items():

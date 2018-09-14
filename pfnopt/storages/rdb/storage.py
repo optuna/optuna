@@ -145,18 +145,14 @@ class RDBStorage(BaseStorage):
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
-    def get_study_system_attr(self, study_id, key):
-        # type: (int, str) -> Any
+    def get_study_system_attrs(self, study_id):
+        # type: (int) -> Dict[str, Any]
 
         session = self.scoped_session()
 
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        system_attr = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
-        if system_attr is None:
-            raise ValueError(
-                'System attribute {} does not exist in the study.'.format(key))
+        attributes = models.StudySystemAttributeModel.where_study_id(study_id, session)
 
-        return json.loads(system_attr.value_json)
+        return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
     # TODO(sano): Optimize this method to reduce the number of queries.
     def get_all_study_summaries(self):

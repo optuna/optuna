@@ -87,6 +87,11 @@ class Trial(object):
 
         self.storage.set_trial_user_attr(self.trial_id, key, value)
 
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self.storage.set_trial_system_attr(self.trial_id, key, value)
+
     def _suggest(self, name, distribution):
         # type: (str, distributions.BaseDistribution) -> Any
 
@@ -112,3 +117,9 @@ class Trial(object):
         # type: () -> Dict[str, Any]
 
         return self.storage.get_trial_user_attrs(self.trial_id)
+
+    @property
+    def system_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self.storage.get_trial_system_attrs(self.trial_id)
