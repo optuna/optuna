@@ -11,6 +11,8 @@ from typing import Tuple  # NOQA
 from pfnopt import distributions  # NOQA
 from pfnopt import structs  # NOQA
 
+DEFAULT_STUDY_NAME_PREFIX = 'no-name-'
+
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseStorage(object):
@@ -18,8 +20,8 @@ class BaseStorage(object):
     # Basic study manipulation
 
     @abc.abstractmethod
-    def create_new_study_id(self):
-        # type: () -> int
+    def create_new_study_id(self, study_name=None):
+        # type: (Optional[str]) -> int
 
         raise NotImplementedError
 
@@ -51,6 +53,18 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def get_study_uuid_from_id(self, study_id):
+        # type: (int) -> str
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_study_id_from_name(self, study_name):
+        # type: (str) -> int
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_study_name_from_id(self, study_id):
         # type: (int) -> str
 
         raise NotImplementedError

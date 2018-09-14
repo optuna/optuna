@@ -16,6 +16,7 @@ import uuid
 from pfnopt import distributions
 from pfnopt import logging
 from pfnopt.storages.base import BaseStorage
+from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from pfnopt.storages.rdb import models
 from pfnopt import structs
 from pfnopt import version
@@ -42,8 +43,8 @@ class RDBStorage(BaseStorage):
         self._check_table_schema_compatibility()
         self.logger = logging.get_logger(__name__)
 
-    def create_new_study_id(self):
-        # type: () -> int
+    def create_new_study_id(self, study_name=None):
+        # type: (Optional[str]) -> int
 
         session = self.scoped_session()
 
@@ -53,9 +54,15 @@ class RDBStorage(BaseStorage):
             if study is None:
                 break
 
-        study = models.StudyModel(study_uuid=study_uuid, task=structs.StudyTask.NOT_SET)
+        if study_name is None:
+            study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
+
+        study = models.StudyModel(study_uuid=study_uuid, study_name=study_name,
+                                  task=structs.StudyTask.NOT_SET)
         session.add(study)
-        self._commit(session)
+        if not self._commit_with_integrity_check(session):
+            raise ValueError(
+                "study_name {} already exists. Please use a different name.".format(study_name))
 
         self.logger.info('A new study created with UUID: {}'.format(study.study_uuid))
 
@@ -126,6 +133,24 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         return study.study_uuid
+
+    def get_study_id_from_name(self, study_name):
+        # type: (str) -> int
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_or_raise_by_name(study_name, session)
+
+        return study.study_id
+
+    def get_study_name_from_id(self, study_id):
+        # type: (int) -> str
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+
+        return study.study_name
 
     def get_study_task(self, study_id):
         # type: (int) -> structs.StudyTask
@@ -211,6 +236,7 @@ class RDBStorage(BaseStorage):
             study_sumarries.append(structs.StudySummary(
                 study_id=study_model.study_id,
                 study_uuid=study_model.study_uuid,
+                study_name=study_model.study_name,
                 task=self.get_study_task(study_model.study_id),
                 best_trial=best_trial,
                 user_attrs=self.get_study_user_attrs(study_model.study_id),

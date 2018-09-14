@@ -8,6 +8,7 @@ from typing import Optional  # NOQA
 
 from pfnopt import distributions  # NOQA
 from pfnopt.storages import base
+from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from pfnopt import structs
 
 
@@ -24,6 +25,7 @@ class InMemoryStorage(base.BaseStorage):
         self.task = structs.StudyTask.NOT_SET
         self.study_user_attrs = {}  # type: Dict[str, Any]
         self.study_system_attrs = {}  # type: Dict[str, Any]
+        self.study_name = DEFAULT_STUDY_NAME_PREFIX + IN_MEMORY_STORAGE_STUDY_UUID  # type: str
 
         self._lock = threading.Lock()
 
@@ -38,8 +40,11 @@ class InMemoryStorage(base.BaseStorage):
         self.__dict__.update(state)
         self._lock = threading.Lock()
 
-    def create_new_study_id(self):
-        # type: () -> int
+    def create_new_study_id(self, study_name=None):
+        # type: (Optional[str]) -> int
+
+        if study_name is not None:
+            self.study_name = study_name
 
         return IN_MEMORY_STORAGE_STUDY_ID  # TODO(akiba)
 
@@ -75,6 +80,20 @@ class InMemoryStorage(base.BaseStorage):
 
         self._check_study_id(study_id)
         return IN_MEMORY_STORAGE_STUDY_UUID
+
+    def get_study_id_from_name(self, study_name):
+        # type: (str) -> int
+
+        if study_name != self.study_name:
+            raise ValueError("No such study {}.".format(study_name))
+
+        return IN_MEMORY_STORAGE_STUDY_ID
+
+    def get_study_name_from_id(self, study_id):
+        # type: (int) -> str
+
+        self._check_study_id(study_id)
+        return self.study_name
 
     def get_study_task(self, study_id):
         # type: (int) -> structs.StudyTask
@@ -112,6 +131,7 @@ class InMemoryStorage(base.BaseStorage):
         return [structs.StudySummary(
             study_id=IN_MEMORY_STORAGE_STUDY_ID,
             study_uuid=IN_MEMORY_STORAGE_STUDY_UUID,
+            study_name=self.study_name,
             task=self.task,
             best_trial=best_trial,
             user_attrs=copy.deepcopy(self.study_user_attrs),

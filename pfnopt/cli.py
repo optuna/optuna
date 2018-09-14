@@ -47,6 +47,8 @@ class CreateStudy(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(CreateStudy, self).get_parser(prog_name)
+        parser.add_argument('--study-name', default=None,
+                            help='A human-readable name of a study to distinguish it from others.')
         return parser
 
     def take_action(self, parsed_args):
@@ -55,7 +57,7 @@ class CreateStudy(BaseCommand):
         config = pfnopt.config.load_pfnopt_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
         storage = pfnopt.storages.RDBStorage(storage_url)
-        study_uuid = pfnopt.create_study(storage).study_uuid
+        study_uuid = pfnopt.create_study(storage, study_name=parsed_args.study_name).study_uuid
         print(study_uuid)
 
 
@@ -84,7 +86,7 @@ class StudySetUserAttribute(BaseCommand):
 class Studies(Lister):
 
     _datetime_format = '%Y-%m-%d %H:%M:%S'
-    _study_list_header = ('UUID', 'TASK', 'N_TRIALS', 'DATETIME_START')
+    _study_list_header = ('UUID', 'NAME', 'TASK', 'N_TRIALS', 'DATETIME_START')
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
@@ -103,7 +105,7 @@ class Studies(Lister):
         for s in summaries:
             start = s.datetime_start.strftime(self._datetime_format) \
                 if s.datetime_start is not None else None
-            row = (s.study_uuid, s.task.name, s.n_trials, start)
+            row = (s.study_uuid, s.study_name, s.task.name, s.n_trials, start)
             rows.append(row)
 
         return self._study_list_header, tuple(rows)

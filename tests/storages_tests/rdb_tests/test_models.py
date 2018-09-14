@@ -28,7 +28,7 @@ class TestStudySystemAttributeModel(object):
 
     @staticmethod
     def test_find_by_study_and_key(session):
-        study = StudyModel(study_id=1)
+        study = StudyModel(study_id=1, study_name='test-study')
         session.add(StudySystemAttributeModel(study_id=study.study_id, key='sample-key',
                                               value_json='1'))
         session.commit()
@@ -40,8 +40,8 @@ class TestStudySystemAttributeModel(object):
 
     @staticmethod
     def test_where_study_id(session):
-        sample_study = StudyModel(study_id=1)
-        empty_study = StudyModel(study_id=2)
+        sample_study = StudyModel(study_id=1, study_name='test-study')
+        empty_study = StudyModel(study_id=2, study_name='test-study')
 
         session.add(StudySystemAttributeModel(study_id=sample_study.study_id, key='sample-key',
                                               value_json='1'))
@@ -73,8 +73,8 @@ class TestTrialModel(object):
     def test_count(session):
         # type: (Session) -> None
 
-        study_1 = StudyModel(study_id=1)
-        study_2 = StudyModel(study_id=2)
+        study_1 = StudyModel(study_id=1, study_name='test-study-1')
+        study_2 = StudyModel(study_id=2, study_name='test-study-2')
 
         session.add(TrialModel(study_id=study_1.study_id, state=TrialState.COMPLETE))
         session.add(TrialModel(study_id=study_1.study_id, state=TrialState.RUNNING))
@@ -92,7 +92,7 @@ class TestTrialUserAttributeModel(object):
     def test_find_by_trial_and_key(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1)
+        study = StudyModel(study_id=1, study_name='test-study')
         trial = TrialModel(study_id=study.study_id)
 
         session.add(TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key',
@@ -108,7 +108,7 @@ class TestTrialUserAttributeModel(object):
     def test_where_study(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(study)
@@ -126,7 +126,7 @@ class TestTrialUserAttributeModel(object):
     def test_where_trial(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key',
@@ -142,7 +142,7 @@ class TestTrialUserAttributeModel(object):
     def test_all(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key',
@@ -161,7 +161,7 @@ class TestTrialSystemAttributeModel(object):
     def test_find_by_trial_and_key(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1)
+        study = StudyModel(study_id=1, study_name='test-study')
         trial = TrialModel(study_id=study.study_id)
 
         session.add(TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key',
@@ -177,7 +177,7 @@ class TestTrialSystemAttributeModel(object):
     def test_where_study(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(study)
@@ -195,7 +195,7 @@ class TestTrialSystemAttributeModel(object):
     def test_where_trial(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key',
@@ -211,7 +211,7 @@ class TestTrialSystemAttributeModel(object):
     def test_all(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key',

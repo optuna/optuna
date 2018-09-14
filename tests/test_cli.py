@@ -15,6 +15,7 @@ from typing import Type  # NOQA
 
 import pfnopt
 from pfnopt.cli import Studies
+from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from pfnopt.storages import RDBStorage
 from pfnopt.structs import CLIUsageError
 from pfnopt.trial import Trial  # NOQA
@@ -83,6 +84,25 @@ def test_create_study_command(options):
         study_id = storage.get_study_id_from_uuid(study_uuid)
         assert study_id == 2
 
+        # Check if a default value of study_name is stored in the storage.
+        assert storage.get_study_name_from_id(study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
+
+
+def test_create_study_command_with_study_name():
+    # type: () -> None
+
+    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
+        storage = RDBStorage(storage_url)
+        study_name = 'test_study'
+
+        # Create study with name.
+        command = ['pfnopt', 'create-study', '--storage', storage_url, '--study-name', study_name]
+        study_uuid = str(subprocess.check_output(command).decode().strip())
+
+        # Check if study_name is stored in the storage.
+        study_id = storage.get_study_id_from_uuid(study_uuid)
+        assert storage.get_study_name_from_id(study_id) == study_name
+
 
 def test_create_study_command_without_storage_url():
     # type: () -> None
@@ -135,7 +155,8 @@ def test_studies_command(options):
         study_uuid_1 = storage.get_study_uuid_from_id(storage.create_new_study_id())
 
         # Second study.
-        study_uuid_2 = storage.get_study_uuid_from_id(storage.create_new_study_id())
+        study_uuid_2 = storage.get_study_uuid_from_id(
+            storage.create_new_study_id(study_name='study_2'))
         pfnopt.minimize(objective_func, n_trials=10, storage=storage, study=study_uuid_2)
 
         # Run command.
@@ -157,12 +178,14 @@ def test_studies_command(options):
         # Check study_uuid and n_trials for the first study.
         elms = get_row_elements(3)
         assert elms[0] == study_uuid_1
-        assert elms[2] == '0'
+        assert elms[1].startswith(DEFAULT_STUDY_NAME_PREFIX)
+        assert elms[3] == '0'
 
         # Check study_uuid and n_trials for the second study.
         elms = get_row_elements(4)
         assert elms[0] == study_uuid_2
-        assert elms[2] == '10'
+        assert elms[1] == 'study_2'
+        assert elms[3] == '10'
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
@@ -217,6 +240,9 @@ def test_minimize_command(options):
         study = pfnopt.Study(storage=storage_url, study_uuid=study_uuid)
         assert len(study.trials) == 10
         assert 'x' in study.best_params
+
+        # Check if a default value of study_name is stored in the storage.
+        assert storage.get_study_name_from_id(study.study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
 
 
 def test_minimize_command_inconsistent_args():

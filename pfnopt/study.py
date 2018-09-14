@@ -304,6 +304,7 @@ def create_study(
         storage=None,  # type: Union[None, str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
+        study_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Study
 
@@ -317,6 +318,8 @@ def create_study(
             Sampler object that implements background algorithm for value suggestion.
         pruner:
             Pruner object that decides early stopping of unpromising trials.
+        study_name:
+            A human-readable name of a study.
 
     Returns:
         A study object.
@@ -324,7 +327,7 @@ def create_study(
     """
 
     storage = storages.get_storage(storage)
-    study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
+    study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id(study_name))
     return Study(study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner)
 
 
