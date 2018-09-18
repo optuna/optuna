@@ -1,5 +1,5 @@
 """
-PFNOpt example that demonstrates a pruner for Chainer.
+Optuna example that demonstrates a pruner for Chainer.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
 Chainer and MNIST. We optimize the neural network architecture. Throughout training of

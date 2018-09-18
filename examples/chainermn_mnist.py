@@ -1,10 +1,10 @@
 """
-PFNOpt example that optimizes multi-layer perceptrons using ChainerMN.
+Optuna example that optimizes multi-layer perceptrons using ChainerMN.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
 ChainerMN and MNIST, where architecture of neural network is optimized.
 
-ChainerMN and it's PFNOpt integration are supposed to be invoked via MPI. You can run this example
+ChainerMN and it's Optuna integration are supposed to be invoked via MPI. You can run this example
 as follows:
     $ STORAGE_URL=sqlite:///example.db
     $ STUDY_UUID=`pfnopt create-study --storage $STORAGE_URL`
