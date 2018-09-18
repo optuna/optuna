@@ -24,7 +24,8 @@ def get_install_requires():
 def get_tests_require():
     tests_require = ['pytest', 'hacking', 'mock', 'bokeh']
     if sys.version_info[0] == 3:
-        tests_require.append('mypy')
+        # TODO(Yanase): This is temporal fix to avoid mypy bug about NamedTuple.
+        tests_require.append('mypy==0.620')
     return tests_require
 
 
