@@ -1,5 +1,4 @@
 import abc
-import copy
 import numpy as np
 import six
 from typing import Any  # NOQA
@@ -82,8 +81,8 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_system_attr(self, study_id, key):
-        # type: (int, str) -> Any
+    def get_study_system_attrs(self, study_id):
+        # type: (int) -> Dict[str, Any]
 
         raise NotImplementedError
 
@@ -185,10 +184,10 @@ class BaseStorage(object):
 
         return self.get_trial(trial_id).user_attrs
 
-    def get_trial_system_attr(self, trial_id, key):
-        # type: (int, str) -> Any
+    def get_trial_system_attrs(self, trial_id):
+        # type: (int) -> Dict[str, Any]
 
-        return copy.deepcopy(self.get_trial(trial_id).system_attrs[key])
+        return self.get_trial(trial_id).system_attrs
 
     # Methods for the TPE sampler
 

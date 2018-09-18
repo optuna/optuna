@@ -114,6 +114,12 @@ class Study(object):
 
         return self.storage.get_study_user_attrs(self.study_id)
 
+    @property
+    def system_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self.storage.get_study_system_attrs(self.study_id)
+
     def run(
             self,
             func,  # type: ObjectiveFuncType
@@ -133,6 +139,11 @@ class Study(object):
         # type: (str, Any) -> None
 
         self.storage.set_study_user_attr(self.study_id, key, value)
+
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self.storage.set_study_system_attr(self.study_id, key, value)
 
     def trials_dataframe(self):
         # type: () -> pd.DataFrame
