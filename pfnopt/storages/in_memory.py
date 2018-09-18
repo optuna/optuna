@@ -106,15 +106,11 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             return copy.deepcopy(self.study_user_attrs)
 
-    def get_study_system_attr(self, study_id, key):
-        # type: (int, str) -> Any
+    def get_study_system_attrs(self, study_id):
+        # type: (int) -> Dict[str, Any]
 
         with self._lock:
-            try:
-                return copy.deepcopy(self.study_system_attrs[key])
-            except KeyError:
-                raise ValueError(
-                    'System attribute {} does not exist in Study {}.'.format(key, study_id))
+            return copy.deepcopy(self.study_system_attrs)
 
     def get_all_study_summaries(self):
         # type: () -> List[structs.StudySummary]
