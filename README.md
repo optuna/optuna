@@ -1,4 +1,4 @@
-# PFNOpt
+# Optuna
 
 ## Information for Users
 

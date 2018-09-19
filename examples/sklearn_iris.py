@@ -1,5 +1,5 @@
 """
-PFNOpt example that optimizes a classifier configuration for Iris dataset using sklearn.
+Optuna example that optimizes a classifier configuration for Iris dataset using sklearn.
 
 In this example, we optimize a classifier configuration for Iris dataset. Classifiers are from
 scikit-learn. We optimize both the choice of classifier (among SVC and RandomForest) and their

@@ -1,5 +1,5 @@
 """
-PFNOpt example that optimizes multi-layer perceptrons using Chainer.
+Optuna example that optimizes multi-layer perceptrons using Chainer.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
 Chainer and MNIST. We optimize the neural network architecture as well as the optimizer

@@ -1,5 +1,5 @@
 """
-PFNOpt example that optimizes a simple quadratic function.
+Optuna example that optimizes a simple quadratic function.
 
 In this example, we optimize a simple quadratic function. We also demonstrate how to continue an
 optimization and to use timeouts.
