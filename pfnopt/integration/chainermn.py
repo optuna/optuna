@@ -54,9 +54,9 @@ def minimize_chainermn(
     if isinstance(study.storage, InMemoryStorage):
         raise ValueError('ChainerMN integration is not available with InMemoryStorage.')
 
-    study_uuids = comm.mpi_comm.allgather(study.study_uuid)
-    if len(set(study_uuids)) != 1:
-        raise ValueError('Please make sure an identical study UUID is shared among workers.')
+    study_names = comm.mpi_comm.allgather(study.study_name)
+    if len(set(study_names)) != 1:
+        raise ValueError('Please make sure an identical study name is shared among workers.')
 
     if comm.rank == 0:
         minimize(

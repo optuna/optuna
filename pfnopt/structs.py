@@ -47,7 +47,6 @@ class FrozenTrial(
 StudySummary = NamedTuple(
     'StudySummary',
     [('study_id', int),
-     ('study_uuid', str),
      ('study_name', str),
      ('task', StudyTask),
      ('best_trial', Optional[FrozenTrial]),

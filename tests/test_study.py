@@ -147,14 +147,14 @@ def test_minimize_trivial_rdb_resume_study():
     check_study(study)
 
 
-def test_minimize_trivial_rdb_resume_uuid():
+def test_minimize_trivial_rdb_resume_study_name():
     # type: () -> None
 
     with tempfile.NamedTemporaryFile() as tf:
         db_url = 'sqlite:///{}'.format(tf.name)
         study = pfnopt.create_study(db_url)
-        study_uuid = study.study_uuid
-        study = pfnopt.minimize(func, n_trials=10, storage=db_url, study=study_uuid)
+        study_name = study.study_name
+        study = pfnopt.minimize(func, n_trials=10, storage=db_url, study=study_name)
         check_study(study)
 
 
@@ -273,7 +273,7 @@ def test_get_all_study_summaries(storage_mode):
         summaries = pfnopt.get_all_study_summaries(study.storage)
         summary = [s for s in summaries if s.study_id == study.study_id][0]
 
-        assert summary.study_uuid == study.study_uuid
+        assert summary.study_name == study.study_name
         assert summary.n_trials == 5
 
 
@@ -287,7 +287,7 @@ def test_get_all_study_summaries_with_no_trials(storage_mode):
         summaries = pfnopt.get_all_study_summaries(study.storage)
         summary = [s for s in summaries if s.study_id == study.study_id][0]
 
-        assert summary.study_uuid == study.study_uuid
+        assert summary.study_name == study.study_name
         assert summary.n_trials == 0
         assert summary.datetime_start is None
 

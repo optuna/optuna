@@ -48,25 +48,32 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        while True:
-            study_uuid = str(uuid.uuid4())
-            study = models.StudyModel.find_by_uuid(study_uuid, session)
-            if study is None:
-                break
-
         if study_name is None:
-            study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
+            study_name = self._create_unique_study_name(session)
 
-        study = models.StudyModel(study_uuid=study_uuid, study_name=study_name,
+        study = models.StudyModel(study_name=study_name,
                                   task=structs.StudyTask.NOT_SET)
         session.add(study)
         if not self._commit_with_integrity_check(session):
             raise ValueError(
                 "study_name {} already exists. Please use a different name.".format(study_name))
 
-        self.logger.info('A new study created with UUID: {}'.format(study.study_uuid))
+        self.logger.info('A new study created with name: {}'.format(study.study_name))
 
         return study.study_id
+
+    @staticmethod
+    def _create_unique_study_name(session):
+        # type: (orm.Session) -> str
+
+        while True:
+            study_uuid = str(uuid.uuid4())
+            study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
+            study = models.StudyModel.find_by_name(study_name, session)
+            if study is None:
+                break
+
+        return study_name
 
     # TODO(sano): Prevent simultaneous setting of different tasks by multiple threads/processes.
     def set_study_task(self, study_id, task):
@@ -115,24 +122,6 @@ class RDBStorage(BaseStorage):
             attribute.value_json = json.dumps(value)
 
         self._commit(session)
-
-    def get_study_id_from_uuid(self, study_uuid):
-        # type: (str) -> int
-
-        session = self.scoped_session()
-
-        study = models.StudyModel.find_or_raise_by_uuid(study_uuid, session)
-
-        return study.study_id
-
-    def get_study_uuid_from_id(self, study_id):
-        # type: (int) -> str
-
-        session = self.scoped_session()
-
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-
-        return study.study_uuid
 
     def get_study_id_from_name(self, study_name):
         # type: (str) -> int
@@ -235,7 +224,6 @@ class RDBStorage(BaseStorage):
             # Consolidate StudySummary.
             study_sumarries.append(structs.StudySummary(
                 study_id=study_model.study_id,
-                study_uuid=study_model.study_uuid,
                 study_name=study_model.study_name,
                 task=self.get_study_task(study_model.study_id),
                 best_trial=best_trial,

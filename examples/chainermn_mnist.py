@@ -7,8 +7,8 @@ ChainerMN and MNIST, where architecture of neural network is optimized.
 ChainerMN and it's PFNOpt integration are supposed to be invoked via MPI. You can run this example
 as follows:
     $ STORAGE_URL=sqlite:///example.db
-    $ STUDY_UUID=`pfnopt create-study --storage $STORAGE_URL`
-    $ mpirun -n 2 -- python chainermn_mnist.py $STUDY_UUID $STORAGE_URL
+    $ STUDY_NAME=`pfnopt create-study --storage $STORAGE_URL`
+    $ mpirun -n 2 -- python chainermn_mnist.py $STUDY_NAME $STORAGE_URL
 
 """
 
@@ -87,18 +87,18 @@ def objective(trial, comm):
 
 if __name__ == '__main__':
     # Please make sure common study and storage are shared among nodes.
-    study_uuid = sys.argv[1]
+    study_name = sys.argv[1]
     storage_url = sys.argv[2]
 
     comm = chainermn.create_communicator('naive')
     if comm.rank == 0:
-        print('Study UUID:', study_uuid)
+        print('Study name:', study_name)
         print('Storage URL:', storage_url)
         print('Number of nodes:', comm.size)
 
     # Run optimization!
     study = pfnopt.integration.minimize_chainermn(
-        objective, study_uuid, comm, storage=storage_url, n_trials=25)
+        objective, study_name, comm, storage=storage_url, n_trials=25)
 
     if comm.rank == 0:
         print('Number of finished trials: ', len(study.trials))

@@ -109,28 +109,6 @@ def test_create_new_study_id_with_name(storage_mode):
         assert study_name == storage.get_study_name_from_id(study_id)
 
 
-@parametrize_storage
-def test_get_study_id_from_uuid_and_get_study_uuid_from_id(storage_init_func):
-    # type: (Callable[[], BaseStorage]) -> None
-
-    storage = storage_init_func()
-
-    # Test not existing study.
-    with pytest.raises(ValueError):
-        storage.get_study_id_from_uuid('dummy-uuid')
-
-    with pytest.raises(ValueError):
-        storage.get_study_uuid_from_id(-1)
-
-    # Test existing study.
-    study_id = storage.create_new_study_id()
-    summary = storage.get_all_study_summaries()[0]
-
-    assert study_id == summary.study_id
-    assert storage.get_study_uuid_from_id(summary.study_id) == summary.study_uuid
-    assert storage.get_study_id_from_uuid(summary.study_uuid) == summary.study_id
-
-
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
     # type: (str) -> None
@@ -457,7 +435,7 @@ def test_get_all_study_summaries(storage_init_func):
 
     assert len(summaries) == 1
     assert summaries[0].study_id == study_id
-    assert summaries[0].study_uuid == storage.get_study_uuid_from_id(study_id)
+    assert summaries[0].study_name == storage.get_study_name_from_id(study_id)
     assert summaries[0].task == StudyTask.MINIMIZE
     assert summaries[0].user_attrs == EXAMPLE_ATTRS
     assert summaries[0].n_trials == 2
