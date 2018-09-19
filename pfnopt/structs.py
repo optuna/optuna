@@ -58,7 +58,7 @@ StudySummary = NamedTuple(
 
 class PFNOptError(Exception):
 
-    """Base class for PFNOpt specific errors."""
+    """Base class for Optuna specific errors."""
 
     pass
 

@@ -1,5 +1,5 @@
 """
-PFNOpt example that optimizes a classifier configuration for cancer dataset
+Optuna example that optimizes a classifier configuration for cancer dataset
 using XGBoost.
 
 In this example, we optimize the validation accuracy of cancer detection

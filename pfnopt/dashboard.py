@@ -40,7 +40,7 @@ h1, p {{
 }}
 </style>
 
-<h1>PFNOpt Dashboard (Beta)</h1>
+<h1>Optuna Dashboard (Beta)</h1>
 <p>
 <b>Study name:</b> {study_name}<br>
 </p>
@@ -187,7 +187,7 @@ if _available:
             self.complete_trials_widget = _CompleteTrialsWidget(self.current_trials)
             self.all_trials_widget = _AllTrialsWidget(self.current_trials)
 
-            self.doc.title = 'PFNOpt Dashboard (Beta)'
+            self.doc.title = 'Optuna Dashboard (Beta)'
             header = _HEADER_FORMAT.format(
                 study_name=self.study.study_name)
             self.doc.add_root(
@@ -241,7 +241,7 @@ def _check_bokeh_availability():
 
 def _show_experimental_warning():
     logger = pfnopt.logging.get_logger(__name__)
-    logger.warning('PFNOpt dashboard is still highly experimental. Please use with caution!')
+    logger.warning('Optuna dashboard is still highly experimental. Please use with caution!')
 
 
 def _get_this_source_path():
