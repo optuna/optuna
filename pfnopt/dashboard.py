@@ -42,7 +42,7 @@ h1, p {{
 
 <h1>PFNOpt Dashboard (Beta)</h1>
 <p>
-<b>Study UUID:</b> {study_uuid}<br>
+<b>Study name:</b> {study_name}<br>
 </p>
 '''
 
@@ -189,7 +189,7 @@ if _available:
 
             self.doc.title = 'PFNOpt Dashboard (Beta)'
             header = _HEADER_FORMAT.format(
-                study_uuid=self.study.study_uuid)
+                study_name=self.study.study_name)
             self.doc.add_root(
                 bokeh.layouts.layout([
                     [bokeh.models.widgets.Div(text=header)],
