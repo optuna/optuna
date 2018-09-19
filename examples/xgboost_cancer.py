@@ -13,7 +13,7 @@ We have following two ways to execute this example:
 
 
 (2) Execute through CLI.
-    $ pfnopt minimize xgboost_cancer.py objective --create-study --n-trials=100 \
+    $ optuna minimize xgboost_cancer.py objective --create-study --n-trials=100 \
       --storage sqlite:///example.db
 
 """
@@ -26,7 +26,7 @@ import sklearn.metrics
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
 
-import pfnopt
+import optuna
 
 
 def objective(trial):
@@ -61,5 +61,5 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    study = pfnopt.minimize(objective, n_trials=100)
+    study = optuna.minimize(objective, n_trials=100)
     print(study.best_trial)

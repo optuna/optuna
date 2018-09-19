@@ -16,12 +16,12 @@ from typing import Tuple  # NOQA
 from typing import Type  # NOQA
 from typing import Union  # NOQA
 
-from pfnopt import logging
-from pfnopt import pruners
-from pfnopt import samplers
-from pfnopt import storages
-from pfnopt import structs
-from pfnopt import trial as trial_module
+from optuna import logging
+from optuna import pruners
+from optuna import samplers
+from optuna import storages
+from optuna import structs
+from optuna import trial as trial_module
 
 ObjectiveFuncType = Callable[[trial_module.Trial], float]
 

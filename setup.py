@@ -5,7 +5,7 @@ import sys
 
 
 def get_version():
-    version_filepath = os.path.join(os.path.dirname(__file__), 'pfnopt', 'version.py')
+    version_filepath = os.path.join(os.path.dirname(__file__), 'optuna', 'version.py')
     with open(version_filepath) as f:
         for line in f:
             if line.startswith('__version__'):
@@ -32,7 +32,7 @@ def get_tests_require():
 
 
 setup(
-    name='pfnopt',
+    name='optuna',
     version=get_version(),
     description='',
     author='Takuya Akiba',
@@ -42,6 +42,6 @@ setup(
     tests_require=get_tests_require(),
     extras_require={'testing': get_tests_require()},
     entry_points={
-        'console_scripts': ['pfnopt = pfnopt.cli:main']
+        'console_scripts': ['optuna = optuna.cli:main']
     }
 )

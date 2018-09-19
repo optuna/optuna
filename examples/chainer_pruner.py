@@ -18,7 +18,7 @@ import chainer.links as L
 import numpy as np
 import pkg_resources
 
-import pfnopt
+import optuna
 
 
 if pkg_resources.parse_version(chainer.__version__) < pkg_resources.parse_version('4.0.0'):
@@ -66,7 +66,7 @@ def objective(trial):
 
     # Add Chainer extension for pruners.
     trainer.extend(
-        pfnopt.integration.ChainerPruningExtension(trial, 'validation/main/loss',
+        optuna.integration.ChainerPruningExtension(trial, 'validation/main/loss',
                                                    (PRUNER_INTERVAL, 'epoch'))
     )
 
@@ -92,9 +92,9 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    study = pfnopt.minimize(objective, n_trials=100, pruner=pfnopt.pruners.MedianPruner())
-    pruned_trials = [t for t in study.trials if t.state == pfnopt.structs.TrialState.PRUNED]
-    complete_trials = [t for t in study.trials if t.state == pfnopt.structs.TrialState.COMPLETE]
+    study = optuna.minimize(objective, n_trials=100, pruner=optuna.pruners.MedianPruner())
+    pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
+    complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
     print('Study statistics: ')
     print('  Number of finished trials: ', len(study.trials))
     print('  Number of pruned trials: ', len(pruned_trials))

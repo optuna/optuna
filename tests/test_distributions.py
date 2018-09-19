@@ -3,7 +3,7 @@ import pytest
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 
-from pfnopt import distributions
+from optuna import distributions
 
 EXAMPLE_DISTRIBUTIONS = {
     'u': distributions.UniformDistribution(low=1., high=2.),

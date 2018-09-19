@@ -5,11 +5,11 @@ from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import Type  # NOQA
 
-from pfnopt import create_study
-from pfnopt.integration import minimize_chainermn
-from pfnopt.storages import RDBStorage
-from pfnopt.testing.storage import StorageSupplier
-from pfnopt.trial import Trial  # NOQA
+from optuna import create_study
+from optuna.integration import minimize_chainermn
+from optuna.storages import RDBStorage
+from optuna.testing.storage import StorageSupplier
+from optuna.trial import Trial  # NOQA
 
 try:
     import chainermn

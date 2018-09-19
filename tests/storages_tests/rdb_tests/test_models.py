@@ -4,15 +4,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from pfnopt.storages.rdb.models import BaseModel
-from pfnopt.storages.rdb.models import StudyModel
-from pfnopt.storages.rdb.models import StudySystemAttributeModel
-from pfnopt.storages.rdb.models import TrialModel
-from pfnopt.storages.rdb.models import TrialSystemAttributeModel
-from pfnopt.storages.rdb.models import TrialUserAttributeModel
-from pfnopt.storages.rdb.models import VersionInfoModel
-from pfnopt.structs import StudyTask
-from pfnopt.structs import TrialState
+from optuna.storages.rdb.models import BaseModel
+from optuna.storages.rdb.models import StudyModel
+from optuna.storages.rdb.models import StudySystemAttributeModel
+from optuna.storages.rdb.models import TrialModel
+from optuna.storages.rdb.models import TrialSystemAttributeModel
+from optuna.storages.rdb.models import TrialUserAttributeModel
+from optuna.storages.rdb.models import VersionInfoModel
+from optuna.structs import StudyTask
+from optuna.structs import TrialState
 
 
 @pytest.fixture

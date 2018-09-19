@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING  # NOQA
 
-from pfnopt import distributions
+from optuna import distributions
 
 if TYPE_CHECKING:
-    from pfnopt.study import Study  # NOQA
+    from optuna.study import Study  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA

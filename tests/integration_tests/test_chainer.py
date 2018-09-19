@@ -9,9 +9,9 @@ import numpy as np
 import pytest
 import typing  # NOQA
 
-import pfnopt
-from pfnopt.integration.chainer import ChainerPruningExtension
-from pfnopt.testing.integration import DeterministicPruner
+import optuna
+from optuna.integration.chainer import ChainerPruningExtension
+from optuna.testing.integration import DeterministicPruner
 
 
 class FixedValueDataset(chainer.dataset.DatasetMixin):
@@ -32,7 +32,7 @@ class FixedValueDataset(chainer.dataset.DatasetMixin):
 def test_chainer_pruning_extension_trigger():
     # type: () -> None
 
-    study = pfnopt.create_study()
+    study = optuna.create_study()
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
 
     extension = ChainerPruningExtension(trial, 'main/loss', (1, 'epoch'))
@@ -52,7 +52,7 @@ def test_chainer_pruning_extension():
     # type: () -> None
 
     def objective(trial):
-        # type: (pfnopt.trial.Trial) -> float
+        # type: (optuna.trial.Trial) -> float
 
         model = L.Classifier(chainer.Sequential(L.Linear(None, 2)))
         optimizer = chainer.optimizers.Adam()
@@ -62,26 +62,26 @@ def test_chainer_pruning_extension():
         updater = chainer.training.StandardUpdater(train_iter, optimizer)
         trainer = chainer.training.Trainer(updater, (1, 'epoch'))
         trainer.extend(
-            pfnopt.integration.chainer.ChainerPruningExtension(trial, 'main/loss',
+            optuna.integration.chainer.ChainerPruningExtension(trial, 'main/loss',
                                                                (1, 'epoch')))
 
         trainer.run(show_loop_exception_msg=False)
         return 1.0
 
-    study = pfnopt.create_study(pruner=DeterministicPruner(True))
+    study = optuna.create_study(pruner=DeterministicPruner(True))
     study.run(objective, n_trials=1)
-    assert study.trials[0].state == pfnopt.structs.TrialState.PRUNED
+    assert study.trials[0].state == optuna.structs.TrialState.PRUNED
 
-    study = pfnopt.create_study(pruner=DeterministicPruner(False))
+    study = optuna.create_study(pruner=DeterministicPruner(False))
     study.run(objective, n_trials=1)
-    assert study.trials[0].state == pfnopt.structs.TrialState.COMPLETE
+    assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
 
 def test_chainer_pruning_extension_observation_isnan():
     # type: () -> None
 
-    study = pfnopt.create_study()
+    study = optuna.create_study()
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
     extension = ChainerPruningExtension(trial, 'main/loss', (1, 'epoch'))
 
@@ -96,7 +96,7 @@ def test_chainer_pruning_extension_observation_isnan():
 def test_observation_exists():
     # type: () -> None
 
-    study = pfnopt.create_study()
+    study = optuna.create_study()
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
     MockTrainer = namedtuple('_MockTrainer', ('observation', ))
     trainer = MockTrainer(observation={'OK': 0})

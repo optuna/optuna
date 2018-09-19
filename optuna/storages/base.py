@@ -7,8 +7,8 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 
-from pfnopt import distributions  # NOQA
-from pfnopt import structs  # NOQA
+from optuna import distributions  # NOQA
+from optuna import structs  # NOQA
 
 DEFAULT_STUDY_NAME_PREFIX = 'no-name-'
 

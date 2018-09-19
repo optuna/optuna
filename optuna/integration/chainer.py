@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import math
 from typing import TYPE_CHECKING
 
-import pfnopt
+import optuna
 
 try:
     import chainer
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 class ChainerPruningExtension(Extension):
 
     def __init__(self, trial, observation_key, pruner_trigger):
-        # type: (pfnopt.trial.Trial, str, TriggerType) -> None
+        # type: (optuna.trial.Trial, str, TriggerType) -> None
 
         _check_chainer_availability()
 
@@ -82,7 +82,7 @@ class ChainerPruningExtension(Extension):
         self.trial.report(current_score, step=current_step)
         if self.trial.should_prune(current_step):
             message = "Trial was pruned at {} {}.".format(self.pruner_trigger.unit, current_step)
-            raise pfnopt.structs.TrialPruned(message)
+            raise optuna.structs.TrialPruned(message)
 
 
 def _check_chainer_availability():

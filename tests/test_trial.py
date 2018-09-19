@@ -3,11 +3,11 @@ from mock import patch
 import pytest
 import typing  # NOQA
 
-from pfnopt import distributions
-from pfnopt import samplers
-from pfnopt import storages
-from pfnopt.study import create_study
-from pfnopt.trial import Trial
+from optuna import distributions
+from optuna import samplers
+from optuna import storages
+from optuna.study import create_study
+from optuna.trial import Trial
 
 parametrize_storage = pytest.mark.parametrize(
     'storage_init_func',

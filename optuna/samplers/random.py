@@ -1,9 +1,9 @@
 import numpy
 from typing import Optional  # NOQA
 
-from pfnopt import distributions
-from pfnopt.samplers.base import BaseSampler
-from pfnopt.storages.base import BaseStorage  # NOQA
+from optuna import distributions
+from optuna.samplers.base import BaseSampler
+from optuna.storages.base import BaseStorage  # NOQA
 
 
 class RandomSampler(BaseSampler):
