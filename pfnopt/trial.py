@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from typing import Sequence  # NOQA
     from typing import TypeVar  # NOQA
 
-    T = TypeVar('T')
+    T = TypeVar('T', float, str)
 
 
 class Trial(object):
