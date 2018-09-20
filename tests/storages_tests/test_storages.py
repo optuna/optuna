@@ -6,19 +6,19 @@ from typing import Callable  # NOQA
 from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 
-import pfnopt
-from pfnopt.distributions import BaseDistribution  # NOQA
-from pfnopt.distributions import CategoricalDistribution
-from pfnopt.distributions import LogUniformDistribution
-from pfnopt.distributions import UniformDistribution
-from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
-from pfnopt.storages import BaseStorage  # NOQA
-from pfnopt.storages import InMemoryStorage
-from pfnopt.storages import RDBStorage
-from pfnopt.structs import FrozenTrial
-from pfnopt.structs import StudyTask
-from pfnopt.structs import TrialState
-from pfnopt.testing.storage import StorageSupplier
+import optuna
+from optuna.distributions import BaseDistribution  # NOQA
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
+from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages import BaseStorage  # NOQA
+from optuna.storages import InMemoryStorage
+from optuna.storages import RDBStorage
+from optuna.structs import FrozenTrial
+from optuna.structs import StudyTask
+from optuna.structs import TrialState
+from optuna.testing.storage import StorageSupplier
 
 EXAMPLE_ATTRS = {
     'dataset': 'MNIST',
@@ -103,7 +103,7 @@ def test_create_new_study_id_with_name(storage_mode):
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_create_new_study_id_with_name.__name__
         study_name = function_name + '/' + storage_mode
-        storage = pfnopt.storages.get_storage(storage)
+        storage = optuna.storages.get_storage(storage)
         study_id = storage.create_new_study_id(study_name)
 
         assert study_name == storage.get_study_name_from_id(study_id)
@@ -118,8 +118,8 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_get_study_id_from_name_and_get_study_name_from_id.__name__
         study_name = function_name + '/' + storage_mode
-        storage = pfnopt.storages.get_storage(storage)
-        study = pfnopt.create_study(storage=storage, study_name=study_name)
+        storage = optuna.storages.get_storage(storage)
+        study = optuna.create_study(storage=storage, study_name=study_name)
 
         # Test existing study.
         assert storage.get_study_name_from_id(study.study_id) == study_name

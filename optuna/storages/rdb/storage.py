@@ -13,13 +13,13 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 import uuid
 
-from pfnopt import distributions
-from pfnopt import logging
-from pfnopt.storages.base import BaseStorage
-from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
-from pfnopt.storages.rdb import models
-from pfnopt import structs
-from pfnopt import version
+from optuna import distributions
+from optuna import logging
+from optuna.storages.base import BaseStorage
+from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages.rdb import models
+from optuna import structs
+from optuna import version
 
 
 class RDBStorage(BaseStorage):
@@ -479,8 +479,8 @@ class RDBStorage(BaseStorage):
         if version_info is not None:
             if version_info.schema_version != models.SCHEMA_VERSION:
                 raise RuntimeError(
-                    'The runtime pfnopt version {} is no longer compatible with the table schema '
-                    '(set up by pfnopt {}).'.format(
+                    'The runtime optuna version {} is no longer compatible with the table schema '
+                    '(set up by optuna {}).'.format(
                         version.__version__, version_info.library_version))
             return
 

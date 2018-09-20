@@ -3,11 +3,11 @@ import numpy
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 
-from pfnopt import distributions  # NOQA
-from pfnopt.samplers import _hyperopt
-from pfnopt.samplers import base
-from pfnopt.samplers import random
-from pfnopt.storages.base import BaseStorage  # NOQA
+from optuna import distributions  # NOQA
+from optuna.samplers import _hyperopt
+from optuna.samplers import base
+from optuna.samplers import random
+from optuna.storages.base import BaseStorage  # NOQA
 
 
 class TPESampler(base.BaseSampler):

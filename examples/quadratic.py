@@ -11,13 +11,13 @@ We have the following two ways to execute this example:
 
 
 (2) Execute through CLI.
-    $ pfnopt minimize quadratic.py objective --create-study --n-trials=100 \
+    $ optuna minimize quadratic.py objective --create-study --n-trials=100 \
       --storage sqlite:///example.db
 
 """
 
 
-import pfnopt
+import optuna
 
 
 # Define a simple 2-dimensional objective function whose minimum value is -1 when (x, y) = (0, -1).
@@ -30,15 +30,15 @@ def objective(trial):
 if __name__ == '__main__':
     # Let us minimize the objective function above.
     print('Running 10 trials...')
-    study = pfnopt.minimize(objective, n_trials=10)
+    study = optuna.minimize(objective, n_trials=10)
     print('Best value: {} (params: {})\n'.format(study.best_value, study.best_params))
 
     # We can continue the optimization as follows.
     print('Running 20 additional trials...')
-    pfnopt.minimize(objective, n_trials=20, study=study)
+    optuna.minimize(objective, n_trials=20, study=study)
     print('Best value: {} (params: {})\n'.format(study.best_value, study.best_params))
 
     # We can specify the timeout instead of a number of trials.
     print('Running additional trials in 2 seconds...')
-    pfnopt.minimize(objective, timeout=2.0, study=study)
+    optuna.minimize(objective, timeout=2.0, study=study)
     print('Best value: {} (params: {})\n'.format(study.best_value, study.best_params))

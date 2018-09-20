@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import pfnopt
+import optuna
 
 try:
     import xgboost as xgb  # NOQA
@@ -14,7 +14,7 @@ except ImportError as e:
 class XGBoostPruningCallback(object):
 
     def __init__(self, trial, observation_key):
-        # type: (pfnopt.trial.Trial, str) -> None
+        # type: (optuna.trial.Trial, str) -> None
 
         _check_xgboost_availability()
 
@@ -28,7 +28,7 @@ class XGBoostPruningCallback(object):
         self.trial.report(current_score, step=env.iteration)
         if self.trial.should_prune(env.iteration):
             message = "Trial was pruned at iteration {}.".format(env.iteration)
-            raise pfnopt.structs.TrialPruned(message)
+            raise optuna.structs.TrialPruned(message)
 
 
 def _check_xgboost_availability():

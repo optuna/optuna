@@ -2,8 +2,8 @@ import abc
 import math
 import six
 
-from pfnopt.storages import BaseStorage  # NOQA
-from pfnopt.structs import TrialState
+from optuna.storages import BaseStorage  # NOQA
+from optuna.structs import TrialState
 
 
 @six.add_metaclass(abc.ABCMeta)

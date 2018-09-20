@@ -12,7 +12,7 @@ We have the following two ways to execute this example:
 
 
 (2) Execute through CLI.
-    $ pfnopt minimize sklearn_iris.py objective --create-study --n-trials=100 \
+    $ optuna minimize sklearn_iris.py objective --create-study --n-trials=100 \
       --storage sqlite:///example.db
 
 """
@@ -41,6 +41,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    import pfnopt
-    study = pfnopt.minimize(objective, n_trials=100)
+    import optuna
+    study = optuna.minimize(objective, n_trials=100)
     print(study.best_trial)

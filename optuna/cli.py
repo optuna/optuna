@@ -15,12 +15,12 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 
-import pfnopt
-from pfnopt.structs import CLIUsageError
+import optuna
+from optuna.structs import CLIUsageError
 
 
 def get_storage_url(storage_url, config):
-    # type: (Optional[str], pfnopt.config.PFNOptConfig) -> str
+    # type: (Optional[str], optuna.config.OptunaConfig) -> str
 
     if storage_url is not None:
         return storage_url
@@ -38,7 +38,7 @@ class BaseCommand(Command):
         # type: (List[Any], Dict[str, Any]) -> None
 
         super(BaseCommand, self).__init__(*args, **kwargs)
-        self.logger = pfnopt.logging.get_logger(__name__)
+        self.logger = optuna.logging.get_logger(__name__)
 
 
 class CreateStudy(BaseCommand):
@@ -54,10 +54,10 @@ class CreateStudy(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        config = pfnopt.config.load_pfnopt_config(self.app_args.config)
+        config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
-        storage = pfnopt.storages.RDBStorage(storage_url)
-        study_name = pfnopt.create_study(storage, study_name=parsed_args.study_name).study_name
+        storage = optuna.storages.RDBStorage(storage_url)
+        study_name = optuna.create_study(storage, study_name=parsed_args.study_name).study_name
         print(study_name)
 
 
@@ -75,9 +75,9 @@ class StudySetUserAttribute(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        config = pfnopt.config.load_pfnopt_config(self.app_args.config)
+        config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
-        study = pfnopt.Study(storage=storage_url, study_name=parsed_args.study)
+        study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
         self.logger.info('Attribute successfully written.')
@@ -97,9 +97,9 @@ class Studies(Lister):
     def take_action(self, parsed_args):
         # type: (Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]
 
-        config = pfnopt.config.load_pfnopt_config(self.app_args.config)
+        config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
-        summaries = pfnopt.get_all_study_summaries(storage=storage_url)
+        summaries = optuna.get_all_study_summaries(storage=storage_url)
 
         rows = []
         for s in summaries:
@@ -126,14 +126,14 @@ class Dashboard(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        config = pfnopt.config.load_pfnopt_config(self.app_args.config)
+        config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
-        study = pfnopt.Study(storage=storage_url, study_name=parsed_args.study)
+        study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
 
         if parsed_args.out is None:
-            pfnopt.dashboard.serve(study)
+            optuna.dashboard.serve(study)
         else:
-            pfnopt.dashboard.write(study, parsed_args.out)
+            optuna.dashboard.write(study, parsed_args.out)
             self.logger.info('Report successfully written to: {}'.format(parsed_args.out))
 
 
@@ -169,18 +169,18 @@ class Minimize(BaseCommand):
             raise ValueError('Inconsistent arguments. Either --create-study or --study '
                              'should be specified.')
 
-        config = pfnopt.config.load_pfnopt_config(self.app_args.config)
+        config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
         if parsed_args.create_study:
-            study = pfnopt.create_study(storage=storage_url)
+            study = optuna.create_study(storage=storage_url)
         else:
-            study = pfnopt.Study(storage=storage_url, study_name=parsed_args.study)
+            study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.
         self.app.options.debug = True
 
-        target_module = imp.load_source('pfnopt_target_module', parsed_args.file)
+        target_module = imp.load_source('optuna_target_module', parsed_args.file)
 
         try:
             target_method = getattr(target_module, parsed_args.method)
@@ -189,7 +189,7 @@ class Minimize(BaseCommand):
                 parsed_args.method, parsed_args.file))
             return 1
 
-        pfnopt.minimize(
+        optuna.minimize(
             target_method, n_trials=parsed_args.n_trials,
             timeout=parsed_args.timeout, n_jobs=parsed_args.n_jobs,
             study=study)
@@ -205,15 +205,15 @@ _COMMANDS = {
 }
 
 
-class PFNOptApp(App):
+class OptunaApp(App):
 
     def __init__(self):
         # type: () -> None
 
-        command_manager = CommandManager('pfnopt.command')
-        super(PFNOptApp, self).__init__(
+        command_manager = CommandManager('optuna.command')
+        super(OptunaApp, self).__init__(
             description='',
-            version=pfnopt.__version__,
+            version=optuna.__version__,
             command_manager=command_manager
         )
         for name, cls in _COMMANDS.items():
@@ -222,16 +222,16 @@ class PFNOptApp(App):
     def build_option_parser(self, description, version, argparse_kwargs=None):
         # type: (str, str, Optional[Dict]) -> ArgumentParser
 
-        parser = super(PFNOptApp, self).build_option_parser(description, version, argparse_kwargs)
+        parser = super(OptunaApp, self).build_option_parser(description, version, argparse_kwargs)
         parser.add_argument('--config', default=None,
-                            help='Config file path. (default=$HOME/.pfnopt.yml)')
+                            help='Config file path. (default=$HOME/.optuna.yml)')
         parser.add_argument('--storage', default=None, help='DB URL. (e.g. sqlite:///example.db)')
         return parser
 
     def configure_logging(self):
         # type: () -> None
 
-        super(PFNOptApp, self).configure_logging()
+        super(OptunaApp, self).configure_logging()
 
         # Find the StreamHandler that is configured by super's configure_logging,
         # and replace its formatter with our fancy one.
@@ -241,7 +241,7 @@ class PFNOptApp(App):
             if isinstance(handler, logging.StreamHandler)]
         assert len(stream_handlers) == 1
         stream_handler = stream_handlers[0]
-        stream_handler.setFormatter(pfnopt.logging.create_default_formatter())
+        stream_handler.setFormatter(optuna.logging.create_default_formatter())
 
     def clean_up(self, cmd, result, err):
         # type: (Command, int, Optional[Exception]) -> None
@@ -254,4 +254,4 @@ def main():
     # type: () -> int
 
     argv = sys.argv[1:] if len(sys.argv) > 1 else ['help']
-    return PFNOptApp().run(argv)
+    return OptunaApp().run(argv)

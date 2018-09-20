@@ -18,7 +18,7 @@ import sklearn.metrics
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
 
-import pfnopt
+import optuna
 
 
 def objective(trial):
@@ -46,7 +46,7 @@ def objective(trial):
         param['skip_drop'] = trial.suggest_loguniform('skip_drop', 1e-8, 1.0)
 
     # Add a callback for pruning.
-    pruning_callback = pfnopt.integration.XGBoostPruningCallback(trial, 'validation-error')
+    pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'validation-error')
     bst = xgb.train(param, dtrain, n_round, evals=[(dtest, 'validation')],
                     callbacks=[pruning_callback])
     preds = bst.predict(dtest)
@@ -56,6 +56,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    study = pfnopt.minimize(objective, n_trials=100,
-                            pruner=pfnopt.pruners.MedianPruner(n_warmup_steps=5))
+    study = optuna.minimize(objective, n_trials=100,
+                            pruner=optuna.pruners.MedianPruner(n_warmup_steps=5))
     print(study.best_trial)

@@ -1,9 +1,9 @@
 import pytest
 import xgboost as xgb
 
-import pfnopt
-from pfnopt.integration.xgboost import XGBoostPruningCallback
-from pfnopt.testing.integration import DeterministicPruner
+import optuna
+from optuna.integration.xgboost import XGBoostPruningCallback
+from optuna.testing.integration import DeterministicPruner
 
 
 def test_xgboost_pruning_callback_call():
@@ -18,16 +18,16 @@ def test_xgboost_pruning_callback_call():
                                evaluation_result_list=[['validation-error', 1.]])
 
     # The pruner is deactivated.
-    study = pfnopt.create_study(pruner=DeterministicPruner(False))
+    study = optuna.create_study(pruner=DeterministicPruner(False))
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
     pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
     pruning_callback(env)
 
     # The pruner is activated.
-    study = pfnopt.create_study(pruner=DeterministicPruner(True))
+    study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
     pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
-    with pytest.raises(pfnopt.structs.TrialPruned):
+    with pytest.raises(optuna.structs.TrialPruned):
         pruning_callback(env)
 
 
@@ -35,7 +35,7 @@ def test_xgboost_pruning_callback():
     # type: () -> None
 
     def objective(trial):
-        # type: (pfnopt.trial.Trial) -> float
+        # type: (optuna.trial.Trial) -> float
 
         dtrain = xgb.DMatrix([[1.]], label=[1.])
         dtest = xgb.DMatrix([[1.]], label=[1.])
@@ -46,11 +46,11 @@ def test_xgboost_pruning_callback():
                   callbacks=[pruning_callback])
         return 1.0
 
-    study = pfnopt.create_study(pruner=DeterministicPruner(True))
+    study = optuna.create_study(pruner=DeterministicPruner(True))
     study.run(objective, n_trials=1)
-    assert study.trials[0].state == pfnopt.structs.TrialState.PRUNED
+    assert study.trials[0].state == optuna.structs.TrialState.PRUNED
 
-    study = pfnopt.create_study(pruner=DeterministicPruner(False))
+    study = optuna.create_study(pruner=DeterministicPruner(False))
     study.run(objective, n_trials=1)
-    assert study.trials[0].state == pfnopt.structs.TrialState.COMPLETE
+    assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.

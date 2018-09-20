@@ -6,10 +6,10 @@ from typing import Dict  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 
-from pfnopt import distributions  # NOQA
-from pfnopt.storages import base
-from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
-from pfnopt import structs
+from optuna import distributions  # NOQA
+from optuna.storages import base
+from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
+from optuna import structs
 
 
 IN_MEMORY_STORAGE_STUDY_ID = 0

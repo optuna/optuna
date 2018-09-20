@@ -11,8 +11,8 @@ from typing import Dict  # NOQA
 from typing import IO  # NOQA
 from typing import Optional  # NOQA
 
-import pfnopt
-from pfnopt.testing.storage import StorageSupplier
+import optuna
+from optuna.testing.storage import StorageSupplier
 
 STORAGE_MODES = [
     'none',    # We give `None` to storage argument, so InMemoryStorage is used.
@@ -40,7 +40,7 @@ def teardown_module():
 
 
 def func(trial, x_max=1.0):
-    # type: (pfnopt.trial.Trial, float) -> float
+    # type: (optuna.trial.Trial, float) -> float
 
     x = trial.suggest_uniform('x', -x_max, x_max)
     y = trial.suggest_loguniform('y', 20, 30)
@@ -59,7 +59,7 @@ class Func(object):
         self.x_max = 10.0
 
     def __call__(self, trial):
-        # type: (pfnopt.trial.Trial) -> float
+        # type: (optuna.trial.Trial) -> float
 
         with self.lock:
             self.n_calls += 1
@@ -89,20 +89,20 @@ def check_value(value):
 
 
 def check_frozen_trial(frozen_trial):
-    # type: (pfnopt.structs.FrozenTrial) -> None
+    # type: (optuna.structs.FrozenTrial) -> None
 
-    if frozen_trial.state == pfnopt.structs.TrialState.COMPLETE:
+    if frozen_trial.state == optuna.structs.TrialState.COMPLETE:
         check_params(frozen_trial.params)
         check_value(frozen_trial.value)
 
 
 def check_study(study):
-    # type: (pfnopt.Study) -> None
+    # type: (optuna.Study) -> None
 
     for trial in study.trials:
         check_frozen_trial(trial)
 
-    complete_trials = [t for t in study.trials if t.state == pfnopt.structs.TrialState.COMPLETE]
+    complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
     if len(complete_trials) == 0:
         with pytest.raises(ValueError):
             study.best_params
@@ -119,15 +119,15 @@ def check_study(study):
 def test_minimize_trivial_in_memory_new():
     # type: () -> None
 
-    study = pfnopt.minimize(func, n_trials=10)
+    study = optuna.minimize(func, n_trials=10)
     check_study(study)
 
 
 def test_minimize_trivial_in_memory_resume():
     # type: () -> None
 
-    study = pfnopt.minimize(func, n_trials=10)
-    pfnopt.minimize(func, n_trials=10, study=study)
+    study = optuna.minimize(func, n_trials=10)
+    optuna.minimize(func, n_trials=10, study=study)
     check_study(study)
 
 
@@ -136,14 +136,14 @@ def test_minimize_trivial_rdb_new():
 
     # We prohibit automatic new-study creation when storage is specified.
     with pytest.raises(ValueError):
-        pfnopt.minimize(func, n_trials=10, storage='sqlite:///:memory:')
+        optuna.minimize(func, n_trials=10, storage='sqlite:///:memory:')
 
 
 def test_minimize_trivial_rdb_resume_study():
     # type: () -> None
 
-    study = pfnopt.create_study('sqlite:///:memory:')
-    pfnopt.minimize(func, n_trials=10, study=study)
+    study = optuna.create_study('sqlite:///:memory:')
+    optuna.minimize(func, n_trials=10, study=study)
     check_study(study)
 
 
@@ -152,9 +152,9 @@ def test_minimize_trivial_rdb_resume_study_name():
 
     with tempfile.NamedTemporaryFile() as tf:
         db_url = 'sqlite:///{}'.format(tf.name)
-        study = pfnopt.create_study(db_url)
+        study = optuna.create_study(db_url)
         study_name = study.study_name
-        study = pfnopt.minimize(func, n_trials=10, storage=db_url, study=study_name)
+        study = optuna.minimize(func, n_trials=10, storage=db_url, study=study_name)
         check_study(study)
 
 
@@ -169,8 +169,8 @@ def test_minimize_parallel(n_trials, n_jobs, storage_mode):
     f = Func()
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
-        pfnopt.minimize(f, n_trials=n_trials, n_jobs=n_jobs, study=study)
+        study = optuna.create_study(storage=storage)
+        optuna.minimize(f, n_trials=n_trials, n_jobs=n_jobs, study=study)
         assert f.n_calls == len(study.trials) == n_trials
         check_study(study)
 
@@ -188,8 +188,8 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
     f = Func(sleep_sec=sleep_sec)
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
-        study = pfnopt.minimize(
+        study = optuna.create_study(storage=storage)
+        study = optuna.minimize(
             f, n_trials=n_trials, n_jobs=n_jobs, timeout=timeout_sec, study=study)
 
         assert f.n_calls == len(study.trials)
@@ -208,10 +208,10 @@ def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 def test_minimize_with_incompatible_task(storage_mode):
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
-        study.storage.set_study_task(study.study_id, pfnopt.structs.StudyTask.MAXIMIZE)
+        study = optuna.create_study(storage=storage)
+        study.storage.set_study_task(study.study_id, optuna.structs.StudyTask.MAXIMIZE)
         with pytest.raises(ValueError):
-            pfnopt.minimize(Func(), n_trials=1, n_jobs=1, study=study)
+            optuna.minimize(Func(), n_trials=1, n_jobs=1, study=study)
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -219,17 +219,17 @@ def test_minimize_with_catch(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
+        study = optuna.create_study(storage=storage)
 
         def func_value_error(_):
             raise ValueError
 
         # Test acceptable exception.
-        pfnopt.minimize(func_value_error, n_trials=20, study=study, catch=(ValueError,))
+        optuna.minimize(func_value_error, n_trials=20, study=study, catch=(ValueError,))
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
-            pfnopt.minimize(
+            optuna.minimize(
                 func_value_error, n_trials=20, study=study, catch=(ArithmeticError,))
 
 
@@ -238,7 +238,7 @@ def test_study_set_and_get_user_attrs(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
+        study = optuna.create_study(storage=storage)
 
         study.set_user_attr('dataset', 'MNIST')
         assert study.user_attrs['dataset'] == 'MNIST'
@@ -249,7 +249,7 @@ def test_study_set_and_get_system_attrs(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
+        study = optuna.create_study(storage=storage)
 
         study.set_system_attr('system_message', 'test')
         assert study.system_attrs['system_message'] == 'test'
@@ -260,15 +260,15 @@ def test_trial_set_and_get_user_attrs(storage_mode):
     # type: (str) -> None
 
     def f(trial):
-        # type: (pfnopt.trial.Trial) -> float
+        # type: (optuna.trial.Trial) -> float
 
         trial.set_user_attr('train_accuracy', 1)
         assert trial.user_attrs['train_accuracy'] == 1
         return 0.0
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
-        pfnopt.minimize(f, n_trials=1, study=study)
+        study = optuna.create_study(storage=storage)
+        optuna.minimize(f, n_trials=1, study=study)
         frozen_trial = study.trials[0]
         assert frozen_trial.user_attrs['train_accuracy'] == 1
 
@@ -278,15 +278,15 @@ def test_trial_set_and_get_system_attrs(storage_mode):
     # type: (str) -> None
 
     def f(trial):
-        # type: (pfnopt.trial.Trial) -> float
+        # type: (optuna.trial.Trial) -> float
 
         trial.set_system_attr('system_message', 'test')
         assert trial.system_attrs['system_message'] == 'test'
         return 0.0
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
-        pfnopt.minimize(f, n_trials=1, study=study)
+        study = optuna.create_study(storage=storage)
+        optuna.minimize(f, n_trials=1, study=study)
         frozen_trial = study.trials[0]
         assert frozen_trial.system_attrs['system_message'] == 'test'
 
@@ -296,10 +296,10 @@ def test_get_all_study_summaries(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
-        pfnopt.minimize(Func(), n_trials=5, study=study)
+        study = optuna.create_study(storage=storage)
+        optuna.minimize(Func(), n_trials=5, study=study)
 
-        summaries = pfnopt.get_all_study_summaries(study.storage)
+        summaries = optuna.get_all_study_summaries(study.storage)
         summary = [s for s in summaries if s.study_id == study.study_id][0]
 
         assert summary.study_name == study.study_name
@@ -311,9 +311,9 @@ def test_get_all_study_summaries_with_no_trials(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
+        study = optuna.create_study(storage=storage)
 
-        summaries = pfnopt.get_all_study_summaries(study.storage)
+        summaries = optuna.get_all_study_summaries(study.storage)
         summary = [s for s in summaries if s.study_id == study.study_id][0]
 
         assert summary.study_name == study.study_name
@@ -326,7 +326,7 @@ def test_run_trial(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
+        study = optuna.create_study(storage=storage)
 
         # Test trial without exception.
         study._run_trial(func, catch=(Exception,))
@@ -341,7 +341,7 @@ def test_run_trial(storage_mode):
 
         expected_message = 'Setting trial status as TrialState.FAIL because of the following ' \
                            'error: ValueError()'
-        assert frozen_trial.state == pfnopt.structs.TrialState.FAIL
+        assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
         # Test trial with unacceptable exception.
@@ -358,7 +358,7 @@ def test_run_trial(storage_mode):
         expected_message = 'Setting trial status as TrialState.FAIL because the returned value ' \
                            'from the objective function cannot be casted to float. Returned ' \
                            'value is: None'
-        assert frozen_trial.state == pfnopt.structs.TrialState.FAIL
+        assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
         # Test trial with invalid objective value: nan
@@ -370,14 +370,14 @@ def test_run_trial(storage_mode):
 
         expected_message = 'Setting trial status as TrialState.FAIL because the objective ' \
                            'function returned nan.'
-        assert frozen_trial.state == pfnopt.structs.TrialState.FAIL
+        assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
 
 def test_study_pickle():
     # type: () -> None
 
-    study_1 = pfnopt.minimize(func, n_trials=10)
+    study_1 = optuna.minimize(func, n_trials=10)
     check_study(study_1)
     assert len(study_1.trials) == 10
     dumped_bytes = pickle.dumps(study_1)
@@ -386,7 +386,7 @@ def test_study_pickle():
     check_study(study_2)
     assert len(study_2.trials) == 10
 
-    pfnopt.minimize(func, n_trials=10, study=study_2)
+    optuna.minimize(func, n_trials=10, study=study_2)
     check_study(study_2)
     assert len(study_2.trials) == 20
 
@@ -396,7 +396,7 @@ def test_trials_dataframe(storage_mode):
     # type: (str) -> None
 
     def f(trial):
-        # type: (pfnopt.trial.Trial) -> float
+        # type: (optuna.trial.Trial) -> float
 
         x = trial.suggest_int('x', 1, 1)
         y = trial.suggest_categorical('y', (2.5,))
@@ -404,15 +404,15 @@ def test_trials_dataframe(storage_mode):
         return x + y  # 3.5
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
-        pfnopt.minimize(f, n_trials=3, study=study)
+        study = optuna.create_study(storage=storage)
+        optuna.minimize(f, n_trials=3, study=study)
         df = study.trials_dataframe()
         assert len(df) == 3
         # non-nested: 5, params: 2, user_attrs: 1
         assert len(df.columns) == 8
         for i in range(3):
             assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
-            assert df.state[i] == pfnopt.structs.TrialState.COMPLETE
+            assert df.state[i] == optuna.structs.TrialState.COMPLETE
             assert df.value[i] == 3.5
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
@@ -426,7 +426,7 @@ def test_trials_dataframe_with_failure(storage_mode):
     # type: (str) -> None
 
     def f(trial):
-        # type: (pfnopt.trial.Trial) -> float
+        # type: (optuna.trial.Trial) -> float
 
         x = trial.suggest_int('x', 1, 1)
         y = trial.suggest_categorical('y', (2.5,))
@@ -435,15 +435,15 @@ def test_trials_dataframe_with_failure(storage_mode):
         return x + y  # 3.5
 
     with StorageSupplier(storage_mode) as storage:
-        study = pfnopt.create_study(storage=storage)
-        pfnopt.minimize(f, n_trials=3, study=study)
+        study = optuna.create_study(storage=storage)
+        optuna.minimize(f, n_trials=3, study=study)
         df = study.trials_dataframe()
         assert len(df) == 3
         # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 1
         assert len(df.columns) == 9
         for i in range(3):
             assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
-            assert df.state[i] == pfnopt.structs.TrialState.FAIL
+            assert df.state[i] == optuna.structs.TrialState.FAIL
             assert df.value[i] is None
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert df.datetime_complete[i] is None

@@ -4,20 +4,20 @@ import sys
 import tempfile
 from typing import Dict  # NOQA
 
-from pfnopt.distributions import BaseDistribution  # NOQA
-from pfnopt.distributions import CategoricalDistribution
-from pfnopt.distributions import json_to_distribution
-from pfnopt.distributions import UniformDistribution
-from pfnopt.storages.rdb.models import SCHEMA_VERSION
-from pfnopt.storages.rdb.models import StudyModel
-from pfnopt.storages.rdb.models import TrialParamModel
-from pfnopt.storages.rdb.models import VersionInfoModel
-from pfnopt.storages import RDBStorage
-from pfnopt.structs import StorageInternalError
-from pfnopt.structs import StudySummary
-from pfnopt.structs import StudyTask
-from pfnopt.structs import TrialState
-from pfnopt import version
+from optuna.distributions import BaseDistribution  # NOQA
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import json_to_distribution
+from optuna.distributions import UniformDistribution
+from optuna.storages.rdb.models import SCHEMA_VERSION
+from optuna.storages.rdb.models import StudyModel
+from optuna.storages.rdb.models import TrialParamModel
+from optuna.storages.rdb.models import VersionInfoModel
+from optuna.storages import RDBStorage
+from optuna.structs import StorageInternalError
+from optuna.structs import StudySummary
+from optuna.structs import StudyTask
+from optuna.structs import TrialState
+from optuna import version
 
 
 def test_init():

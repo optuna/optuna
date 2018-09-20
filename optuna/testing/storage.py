@@ -5,7 +5,7 @@ from typing import IO  # NOQA
 from typing import Optional  # NOQA
 from typing import Type  # NOQA
 
-import pfnopt
+import optuna
 
 SQLITE3_TIMEOUT = 300
 
@@ -21,18 +21,18 @@ class StorageSupplier(object):
         self.tempfile = None  # type: Optional[IO[Any]]
 
     def __enter__(self):
-        # type: () -> Optional[pfnopt.storages.BaseStorage]
+        # type: () -> Optional[optuna.storages.BaseStorage]
 
         if self.storage_specifier == 'none':
             return None
         elif self.storage_specifier == 'new':
             self.tempfile = tempfile.NamedTemporaryFile()
             url = 'sqlite:///{}'.format(self.tempfile.name)
-            return pfnopt.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
+            return optuna.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
         elif self.storage_specifier == 'common':
             assert self._common_tempfile is not None
             url = 'sqlite:///{}'.format(self._common_tempfile.name)
-            return pfnopt.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
+            return optuna.storages.RDBStorage(url, connect_args={'timeout': SQLITE3_TIMEOUT})
         else:
             assert False
 
