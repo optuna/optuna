@@ -7,13 +7,8 @@ ChainerMN and MNIST, where architecture of neural network is optimized.
 ChainerMN and it's Optuna integration are supposed to be invoked via MPI. You can run this example
 as follows:
     $ STORAGE_URL=sqlite:///example.db
-<<<<<<< HEAD
-    $ STUDY_NAME=`pfnopt create-study --storage $STORAGE_URL`
+    $ STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
     $ mpirun -n 2 -- python chainermn_mnist.py $STUDY_NAME $STORAGE_URL
-=======
-    $ STUDY_UUID=`optuna create-study --storage $STORAGE_URL`
-    $ mpirun -n 2 -- python chainermn_mnist.py $STUDY_UUID $STORAGE_URL
->>>>>>> rename-optuna
 
 """
 
