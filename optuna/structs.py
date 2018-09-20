@@ -57,14 +57,14 @@ StudySummary = NamedTuple(
      ('datetime_start', Optional[datetime])])
 
 
-class PFNOptError(Exception):
+class OptunaError(Exception):
 
     """Base class for Optuna specific errors."""
 
     pass
 
 
-class TrialPruned(PFNOptError):
+class TrialPruned(OptunaError):
 
     """Exception for pruned trials.
 
@@ -74,7 +74,7 @@ class TrialPruned(PFNOptError):
     pass
 
 
-class CLIUsageError(PFNOptError):
+class CLIUsageError(OptunaError):
 
     """Exception for CLI.
 
@@ -84,7 +84,7 @@ class CLIUsageError(PFNOptError):
     pass
 
 
-class StorageInternalError(PFNOptError):
+class StorageInternalError(OptunaError):
 
     """Exception for storage operation.
 

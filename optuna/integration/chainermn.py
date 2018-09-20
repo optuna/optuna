@@ -4,14 +4,14 @@ from typing import Callable  # NOQA
 from typing import Optional  # NOQA
 from typing import Union  # NOQA
 
-from pfnopt.pruners import BasePruner  # NOQA
-from pfnopt.samplers import BaseSampler  # NOQA
-from pfnopt.storages import BaseStorage  # NOQA
-from pfnopt.storages import InMemoryStorage
-from pfnopt.study import get_study
-from pfnopt.study import minimize
-from pfnopt.study import Study  # NOQA
-from pfnopt.trial import Trial  # NOQA
+from optuna.pruners import BasePruner  # NOQA
+from optuna.samplers import BaseSampler  # NOQA
+from optuna.storages import BaseStorage  # NOQA
+from optuna.storages import InMemoryStorage
+from optuna.study import get_study
+from optuna.study import minimize
+from optuna.study import Study  # NOQA
+from optuna.trial import Trial  # NOQA
 
 try:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA

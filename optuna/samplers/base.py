@@ -1,8 +1,8 @@
 import abc
 import six
 
-from pfnopt.distributions import BaseDistribution  # NOQA
-from pfnopt.storages.base import BaseStorage  # NOQA
+from optuna.distributions import BaseDistribution  # NOQA
+from optuna.storages.base import BaseStorage  # NOQA
 
 
 @six.add_metaclass(abc.ABCMeta)

@@ -13,12 +13,12 @@ from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 from typing import Type  # NOQA
 
-import pfnopt
-from pfnopt.cli import Studies
-from pfnopt.storages.base import DEFAULT_STUDY_NAME_PREFIX
-from pfnopt.storages import RDBStorage
-from pfnopt.structs import CLIUsageError
-from pfnopt.trial import Trial  # NOQA
+import optuna
+from optuna.cli import Studies
+from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages import RDBStorage
+from optuna.structs import CLIUsageError
+from optuna.trial import Trial  # NOQA
 
 
 TEST_CONFIG_TEMPLATE = 'default_storage: sqlite:///{default_storage}\n'
@@ -70,7 +70,7 @@ def test_create_study_command(options):
         storage = RDBStorage(storage_url)
 
         # Create study.
-        command = ['pfnopt', 'create-study']
+        command = ['optuna', 'create-study']
         command = _add_option(command, '--storage', storage_url, 'storage' in options)
         command = _add_option(command, '--config', config_path, 'config' in options)
         subprocess.check_call(command)
@@ -96,7 +96,7 @@ def test_create_study_command_with_study_name():
         study_name = 'test_study'
 
         # Create study with name.
-        command = ['pfnopt', 'create-study', '--storage', storage_url, '--study-name', study_name]
+        command = ['optuna', 'create-study', '--storage', storage_url, '--study-name', study_name]
         study_uuid = str(subprocess.check_output(command).decode().strip())
 
         # Check if study_name is stored in the storage.
@@ -112,7 +112,7 @@ def test_create_study_command_without_storage_url():
     env = os.environ
     env['HOME'] = dummy_home
     with pytest.raises(subprocess.CalledProcessError) as err:
-        subprocess.check_output(['pfnopt', 'create-study'], env=env)
+        subprocess.check_output(['optuna', 'create-study'], env=env)
     usage = err.value.output.decode()
     assert usage.startswith('usage:')
 
@@ -129,7 +129,7 @@ def test_study_set_user_attr_command(options):
         # Create study.
         study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
 
-        base_command = ['pfnopt', 'study', 'set-user-attr', '--study', study_uuid]
+        base_command = ['optuna', 'study', 'set-user-attr', '--study', study_uuid]
         base_command = _add_option(base_command, '--storage', storage_url, 'storage' in options)
         base_command = _add_option(base_command, '--config', config_path, 'config' in options)
 
@@ -157,10 +157,10 @@ def test_studies_command(options):
         # Second study.
         study_uuid_2 = storage.get_study_uuid_from_id(
             storage.create_new_study_id(study_name='study_2'))
-        pfnopt.minimize(objective_func, n_trials=10, storage=storage, study=study_uuid_2)
+        optuna.minimize(objective_func, n_trials=10, storage=storage, study=study_uuid_2)
 
         # Run command.
-        command = ['pfnopt', 'studies']
+        command = ['optuna', 'studies']
         command = _add_option(command, '--storage', storage_url, 'storage' in options)
         command = _add_option(command, '--config', config_path, 'config' in options)
 
@@ -199,7 +199,7 @@ def test_dashboard_command(options):
             storage = RDBStorage(storage_url)
             study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
 
-            command = ['pfnopt', 'dashboard', '--study', study_uuid, '--out', tf_report.name]
+            command = ['optuna', 'dashboard', '--study', study_uuid, '--out', tf_report.name]
             command = _add_option(command, '--storage', storage_url, 'storage' in options)
             command = _add_option(command, '--config', config_path, 'config' in options)
             subprocess.check_call(command)
@@ -224,20 +224,20 @@ def test_minimize_command(options):
     with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
         storage = RDBStorage(storage_url)
 
-        command = ['pfnopt', 'minimize', '--n-trials', '10', '--create-study',
+        command = ['optuna', 'minimize', '--n-trials', '10', '--create-study',
                    __file__, 'objective_func']
         command = _add_option(command, '--storage', storage_url, 'storage' in options)
         command = _add_option(command, '--config', config_path, 'config' in options)
         subprocess.check_call(command)
 
         study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
-        command = ['pfnopt', 'minimize', '--study', study_uuid, '--n-trials', '10',
+        command = ['optuna', 'minimize', '--study', study_uuid, '--n-trials', '10',
                    __file__, 'objective_func']
         command = _add_option(command, '--storage', storage_url, 'storage' in options)
         command = _add_option(command, '--config', config_path, 'config' in options)
         subprocess.check_call(command)
 
-        study = pfnopt.Study(storage=storage_url, study_uuid=study_uuid)
+        study = optuna.Study(storage=storage_url, study_uuid=study_uuid)
         assert len(study.trials) == 10
         assert 'x' in study.best_params
 
@@ -253,14 +253,14 @@ def test_minimize_command_inconsistent_args():
 
         # Feeding neither --create-study nor --study
         with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(['pfnopt', 'minimize', '--storage', db_url, '--n-trials', '10',
+            subprocess.check_call(['optuna', 'minimize', '--storage', db_url, '--n-trials', '10',
                                    __file__, 'objective_func'])
 
         # Feeding both --create-study and --study
         study_uuid = str(subprocess.check_output(
-            ['pfnopt', 'create-study', '--storage', db_url]).decode().strip())
+            ['optuna', 'create-study', '--storage', db_url]).decode().strip())
         with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(['pfnopt', 'minimize', '--storage', db_url, '--n-trials', '10',
+            subprocess.check_call(['optuna', 'minimize', '--storage', db_url, '--n-trials', '10',
                                    __file__, 'objective_func',
                                    '--create-study', '--study', study_uuid])
 
@@ -268,10 +268,10 @@ def test_minimize_command_inconsistent_args():
 def test_empty_argv():
     # type: () -> None
 
-    command_empty = ['pfnopt']
+    command_empty = ['optuna']
     command_empty_output = str(subprocess.check_output(command_empty))
 
-    command_help = ['pfnopt', 'help']
+    command_help = ['optuna', 'help']
     command_help_output = str(subprocess.check_output(command_help))
 
     assert command_empty_output == command_help_output
@@ -282,20 +282,20 @@ def test_get_storage_url(tmpdir):
 
     storage_in_args = 'sqlite:///args.db'
     storage_in_config = 'sqlite:///config.db'
-    sample_config_file = tmpdir.join('pfnopt.yml')
+    sample_config_file = tmpdir.join('optuna.yml')
     sample_config_file.write('default_storage: {}'.format(storage_in_config))
 
-    sample_config = pfnopt.config.load_pfnopt_config(str(sample_config_file))
-    default_config = pfnopt.config.load_pfnopt_config(None)
+    sample_config = optuna.config.load_optuna_config(str(sample_config_file))
+    default_config = optuna.config.load_optuna_config(None)
 
     # storage_url has priority over config_path.
-    assert storage_in_args == pfnopt.cli.get_storage_url(storage_in_args, sample_config)
-    assert storage_in_args == pfnopt.cli.get_storage_url(storage_in_args, default_config)
-    assert storage_in_config == pfnopt.cli.get_storage_url(None, sample_config)
+    assert storage_in_args == optuna.cli.get_storage_url(storage_in_args, sample_config)
+    assert storage_in_args == optuna.cli.get_storage_url(storage_in_args, default_config)
+    assert storage_in_config == optuna.cli.get_storage_url(None, sample_config)
 
     # Config file does not have default_storage key.
     empty_config_file = tmpdir.join('empty.yml')
     empty_config_file.write('')
-    empty_config = pfnopt.config.load_pfnopt_config(str(empty_config_file))
+    empty_config = optuna.config.load_optuna_config(str(empty_config_file))
     with pytest.raises(CLIUsageError):
-        pfnopt.cli.get_storage_url(None, empty_config)
+        optuna.cli.get_storage_url(None, empty_config)

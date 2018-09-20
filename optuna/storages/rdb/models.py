@@ -14,9 +14,9 @@ from typing import Any  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 
-from pfnopt import distributions
-from pfnopt.structs import StudyTask
-from pfnopt.structs import TrialState
+from optuna import distributions
+from optuna.structs import StudyTask
+from optuna.structs import TrialState
 
 SCHEMA_VERSION = 8
 MAX_ATTR_LENGTH = 2048

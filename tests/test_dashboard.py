@@ -1,14 +1,14 @@
 import tempfile
 
-import pfnopt
-import pfnopt.trial
+import optuna
+import optuna.trial
 
 
 def _create_some_study():
-    # type: () -> pfnopt.Study
+    # type: () -> optuna.Study
 
     def f(trial):
-        # type: (pfnopt.trial.Trial) -> float
+        # type: (optuna.trial.Trial) -> float
 
         x = trial.suggest_uniform('x', -10, 10)
         y = trial.suggest_loguniform('y', 10, 20)
@@ -16,7 +16,7 @@ def _create_some_study():
 
         return x ** 2 + y ** 2 + z
 
-    return pfnopt.minimize(f, n_trials=100)
+    return optuna.minimize(f, n_trials=100)
 
 
 def test_write():
@@ -25,7 +25,7 @@ def test_write():
     study = _create_some_study()
 
     with tempfile.NamedTemporaryFile('r') as tf:
-        pfnopt.dashboard.write(study, tf.name)
+        optuna.dashboard.write(study, tf.name)
 
         html = tf.read()
         assert '<body>' in html
