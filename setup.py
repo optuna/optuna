@@ -43,12 +43,9 @@ def find_any_distribution(pkgs):
 
 pfnopt_pkg = find_any_distribution(['pfnopt'])
 if pfnopt_pkg is not None:
-    msg = """
-We detected that PFNOpt is installed in your environment.
-PFNOpt has been renamed Optuna. Please uninstall the old
-PFNOpt in advance as follows:
-    $ pip uninstall pfnopt
-"""
+    msg = 'We detected that PFNOpt is installed in your environment.\n' \
+        'PFNOpt has been renamed Optuna. Please uninstall the old\n' \
+        'PFNOpt in advance (e.g. pip uninstall pfnopt).'
     print(msg)
     exit(1)
 
