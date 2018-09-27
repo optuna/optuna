@@ -69,18 +69,6 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             self.study_system_attrs[key] = value
 
-    def get_study_id_from_uuid(self, study_uuid):
-        # type: (str) -> int
-
-        self._check_study_uuid(study_uuid)
-        return IN_MEMORY_STORAGE_STUDY_ID
-
-    def get_study_uuid_from_id(self, study_id):
-        # type: (int) -> str
-
-        self._check_study_id(study_id)
-        return IN_MEMORY_STORAGE_STUDY_UUID
-
     def get_study_id_from_name(self, study_name):
         # type: (str) -> int
 
@@ -126,7 +114,6 @@ class InMemoryStorage(base.BaseStorage):
 
         return [structs.StudySummary(
             study_id=IN_MEMORY_STORAGE_STUDY_ID,
-            study_uuid=IN_MEMORY_STORAGE_STUDY_UUID,
             study_name=self.study_name,
             task=self.task,
             best_trial=best_trial,
@@ -253,10 +240,3 @@ class InMemoryStorage(base.BaseStorage):
         if study_id != IN_MEMORY_STORAGE_STUDY_ID:
             raise ValueError('study_id is supposed to be {} in {}.'.format(
                 IN_MEMORY_STORAGE_STUDY_ID, self.__class__.__name__))
-
-    def _check_study_uuid(self, study_uuid):
-        # type: (str) -> None
-
-        if study_uuid != IN_MEMORY_STORAGE_STUDY_UUID:
-            raise ValueError('study_uuid is supposed to be {} in {}.'.format(
-                IN_MEMORY_STORAGE_STUDY_UUID, self.__class__.__name__))

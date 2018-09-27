@@ -96,14 +96,14 @@ def test_minimize_chainermn(storage_mode):
         pytest.skip("This test is for multi-node only.")
 
     with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-        # Create and broadcast study_uuid.
-        uuid_local = create_study(storage).study_uuid if comm.rank == 0 else None
-        uuid_bcast = comm.mpi_comm.bcast(uuid_local)
+        # Create and broadcast study_name.
+        name_local = create_study(storage).study_name if comm.rank == 0 else None
+        name_bcast = comm.mpi_comm.bcast(name_local)
 
         # Invoke minimize_chainermn.
         n_trials = 20
         func = Func()
-        study = minimize_chainermn(func, uuid_bcast, comm, storage=storage, n_trials=n_trials)
+        study = minimize_chainermn(func, name_bcast, comm, storage=storage, n_trials=n_trials)
 
         # Assert trial counts.
         assert len(study.trials) == n_trials

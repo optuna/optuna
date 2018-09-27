@@ -34,8 +34,8 @@ class Study(object):
     user-defined attributes of the study itself.
 
     Args:
-        study_uuid:
-            Study's UUID. If this argument is set to None, a new study is created.
+        study_name:
+            Study's name.
         storage:
             Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
             instantiated.
@@ -48,19 +48,19 @@ class Study(object):
 
     def __init__(
             self,
-            study_uuid,  # type: str
+            study_name,  # type: str
             storage,  # type: Union[None, str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
     ):
         # type: (...) -> None
 
-        self.study_uuid = study_uuid
+        self.study_name = study_name
         self.storage = storages.get_storage(storage)
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        self.study_id = self.storage.get_study_id_from_uuid(study_uuid)
+        self.study_id = self.storage.get_study_id_from_name(study_name)
         self.logger = logging.get_logger(__name__)
 
     def __getstate__(self):
@@ -338,8 +338,8 @@ def create_study(
     """
 
     storage = storages.get_storage(storage)
-    study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id(study_name))
-    return Study(study_uuid=study_uuid, storage=storage, sampler=sampler, pruner=pruner)
+    study_name = storage.get_study_name_from_id(storage.create_new_study_id(study_name))
+    return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
 def get_study(
@@ -350,11 +350,11 @@ def get_study(
 ):
     # type: (...) -> Study
 
-    """Return a given study object itself, or instantiate a study object with a given study UUID.
+    """Return a given study object itself, or instantiate a study object with a given study name.
 
     Args:
         study:
-            Study object or its UUID.
+            Study object or its name.
         storage:
             Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
             instantiated.
@@ -384,8 +384,8 @@ def get_study(
 
         return study
     else:
-        # `study` is expected to be a string and interpreted as a study UUID
-        return Study(study_uuid=study, storage=storage, sampler=sampler, pruner=pruner)
+        # `study` is expected to be a string and interpreted as a study name.
+        return Study(study_name=study, storage=storage, sampler=sampler, pruner=pruner)
 
 
 def minimize(
@@ -422,7 +422,7 @@ def minimize(
         pruner:
             Pruner object that decides early stopping of unpromising trials.
         study:
-            Study object or its UUID. If this argument is set to None, a new study is created.
+            Study object or its name. If this argument is set to None, a new study is created.
         catch:
             A study continues to run even when a trial raises one of exceptions specified in this
             argument. Default is (Exception,), where all non-exit exceptions are handled by this
@@ -438,7 +438,7 @@ def minimize(
     else:
         if storage is not None:
             raise ValueError(
-                'When specifying storage, please also specify a study UUID to continue a study. '
+                'When specifying storage, please also specify a study name to continue a study. '
                 'If you want to start a new study, please make a new one using create_study.')
 
         # We start a new study with a new in-memory storage.
@@ -447,8 +447,8 @@ def minimize(
     # Set up StudyTask as MINIMIZE.
     if study.task == structs.StudyTask.MAXIMIZE:
         raise ValueError(
-            'Cannot run minimize task with study UUID {} because it already has been set up as a '
-            'maximize task.'.format(study.study_uuid))
+            'Cannot run minimize task with study name {} because it already has been set up as a '
+            'maximize task.'.format(study.study_name))
     study.storage.set_study_task(study.study_id, structs.StudyTask.MINIMIZE)
 
     study.run(func, n_trials, timeout, n_jobs, catch)

@@ -75,17 +75,14 @@ def test_create_study_command(options):
         command = _add_option(command, '--config', config_path, 'config' in options)
         subprocess.check_call(command)
 
-        # Command output should be in uuid string format.
-        study_uuid = str(subprocess.check_output(command).decode().strip())
-        uuid_re = r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
-        assert re.match(uuid_re, study_uuid) is not None
+        # Command output should be in name string format (no-name + UUID).
+        study_name = str(subprocess.check_output(command).decode().strip())
+        name_re = r'^no-name-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
+        assert re.match(name_re, study_name) is not None
 
-        # study_uuid should be stored in storage.
-        study_id = storage.get_study_id_from_uuid(study_uuid)
+        # study_name should be stored in storage.
+        study_id = storage.get_study_id_from_name(study_name)
         assert study_id == 2
-
-        # Check if a default value of study_name is stored in the storage.
-        assert storage.get_study_name_from_id(study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
 
 
 def test_create_study_command_with_study_name():
@@ -97,10 +94,10 @@ def test_create_study_command_with_study_name():
 
         # Create study with name.
         command = ['optuna', 'create-study', '--storage', storage_url, '--study-name', study_name]
-        study_uuid = str(subprocess.check_output(command).decode().strip())
+        study_name = str(subprocess.check_output(command).decode().strip())
 
         # Check if study_name is stored in the storage.
-        study_id = storage.get_study_id_from_uuid(study_uuid)
+        study_id = storage.get_study_id_from_name(study_name)
         assert storage.get_study_name_from_id(study_id) == study_name
 
 
@@ -127,9 +124,9 @@ def test_study_set_user_attr_command(options):
         storage = RDBStorage(storage_url)
 
         # Create study.
-        study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
+        study_name = storage.get_study_name_from_id(storage.create_new_study_id())
 
-        base_command = ['optuna', 'study', 'set-user-attr', '--study', study_uuid]
+        base_command = ['optuna', 'study', 'set-user-attr', '--study', study_name]
         base_command = _add_option(base_command, '--storage', storage_url, 'storage' in options)
         base_command = _add_option(base_command, '--config', config_path, 'config' in options)
 
@@ -138,7 +135,7 @@ def test_study_set_user_attr_command(options):
             subprocess.check_call(base_command + ['--key', key, '--value', value])
 
         # Attrs should be stored in storage.
-        study_id = storage.get_study_id_from_uuid(study_uuid)
+        study_id = storage.get_study_id_from_name(study_name)
         study_user_attrs = storage.get_study_user_attrs(study_id)
         assert len(study_user_attrs) == 2
         assert all([study_user_attrs[k] == v for k, v in example_attrs.items()])
@@ -152,12 +149,12 @@ def test_studies_command(options):
         storage = RDBStorage(storage_url)
 
         # First study.
-        study_uuid_1 = storage.get_study_uuid_from_id(storage.create_new_study_id())
+        study_name_1 = storage.get_study_name_from_id(storage.create_new_study_id())
 
         # Second study.
-        study_uuid_2 = storage.get_study_uuid_from_id(
+        study_name_2 = storage.get_study_name_from_id(
             storage.create_new_study_id(study_name='study_2'))
-        optuna.minimize(objective_func, n_trials=10, storage=storage, study=study_uuid_2)
+        optuna.minimize(objective_func, n_trials=10, storage=storage, study=study_name_2)
 
         # Run command.
         command = ['optuna', 'studies']
@@ -175,17 +172,15 @@ def test_studies_command(options):
         assert len(rows) == 6
         assert tuple(get_row_elements(1)) == Studies._study_list_header
 
-        # Check study_uuid and n_trials for the first study.
+        # Check study_name and n_trials for the first study.
         elms = get_row_elements(3)
-        assert elms[0] == study_uuid_1
-        assert elms[1].startswith(DEFAULT_STUDY_NAME_PREFIX)
-        assert elms[3] == '0'
+        assert elms[0] == study_name_1
+        assert elms[2] == '0'
 
-        # Check study_uuid and n_trials for the second study.
+        # Check study_name and n_trials for the second study.
         elms = get_row_elements(4)
-        assert elms[0] == study_uuid_2
-        assert elms[1] == 'study_2'
-        assert elms[3] == '10'
+        assert elms[0] == study_name_2
+        assert elms[2] == '10'
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
@@ -197,9 +192,9 @@ def test_dashboard_command(options):
             tempfile.NamedTemporaryFile('r') as tf_report:
 
             storage = RDBStorage(storage_url)
-            study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
+            study_name = storage.get_study_name_from_id(storage.create_new_study_id())
 
-            command = ['optuna', 'dashboard', '--study', study_uuid, '--out', tf_report.name]
+            command = ['optuna', 'dashboard', '--study', study_name, '--out', tf_report.name]
             command = _add_option(command, '--storage', storage_url, 'storage' in options)
             command = _add_option(command, '--config', config_path, 'config' in options)
             subprocess.check_call(command)
@@ -230,14 +225,14 @@ def test_minimize_command(options):
         command = _add_option(command, '--config', config_path, 'config' in options)
         subprocess.check_call(command)
 
-        study_uuid = storage.get_study_uuid_from_id(storage.create_new_study_id())
-        command = ['optuna', 'minimize', '--study', study_uuid, '--n-trials', '10',
+        study_name = storage.get_study_name_from_id(storage.create_new_study_id())
+        command = ['optuna', 'minimize', '--study', study_name, '--n-trials', '10',
                    __file__, 'objective_func']
         command = _add_option(command, '--storage', storage_url, 'storage' in options)
         command = _add_option(command, '--config', config_path, 'config' in options)
         subprocess.check_call(command)
 
-        study = optuna.Study(storage=storage_url, study_uuid=study_uuid)
+        study = optuna.Study(storage=storage_url, study_name=study_name)
         assert len(study.trials) == 10
         assert 'x' in study.best_params
 
@@ -257,12 +252,12 @@ def test_minimize_command_inconsistent_args():
                                    __file__, 'objective_func'])
 
         # Feeding both --create-study and --study
-        study_uuid = str(subprocess.check_output(
+        study_name = str(subprocess.check_output(
             ['optuna', 'create-study', '--storage', db_url]).decode().strip())
         with pytest.raises(subprocess.CalledProcessError):
             subprocess.check_call(['optuna', 'minimize', '--storage', db_url, '--n-trials', '10',
                                    __file__, 'objective_func',
-                                   '--create-study', '--study', study_uuid])
+                                   '--create-study', '--study', study_name])
 
 
 def test_empty_argv():

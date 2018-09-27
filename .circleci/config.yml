@@ -138,8 +138,8 @@ jobs:
           command: |
             . venv/bin/activate
             STORAGE_URL=sqlite:///example.db
-            STUDY_UUID=`optuna create-study --storage $STORAGE_URL`
-            mpirun -n 2 -- python examples/chainermn_mnist.py $STUDY_UUID $STORAGE_URL
+            STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
+            mpirun -n 2 -- python examples/chainermn_mnist.py $STUDY_NAME $STORAGE_URL
           environment:
             OMP_NUM_THREADS: 1
 

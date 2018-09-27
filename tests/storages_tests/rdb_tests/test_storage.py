@@ -1,10 +1,8 @@
-from mock import Mock
 from mock import patch
 import pytest
 import sys
 import tempfile
 from typing import Dict  # NOQA
-import uuid
 
 from optuna.distributions import BaseDistribution  # NOQA
 from optuna.distributions import CategoricalDistribution
@@ -66,24 +64,6 @@ def test_create_new_study_id_multiple_studies():
     assert len(result) == 2
     assert result[0].study_id == study_id_1
     assert result[1].study_id == study_id_2
-
-
-def test_create_new_study_id_duplicated_uuid():
-    # type: () -> None
-
-    mock = Mock()
-    mock.side_effect = ['uuid1', 'uuid1', 'uuid2', 'uuid3']
-
-    with patch.object(uuid, 'uuid4', mock) as mock_object:
-        storage = create_test_storage()
-        session = storage.scoped_session()
-
-        storage.create_new_study_id()
-        study_id = storage.create_new_study_id()
-
-        result = session.query(StudyModel).filter(StudyModel.study_id == study_id).one()
-        assert result.study_uuid == 'uuid2'
-        assert mock_object.call_count == 3
 
 
 def test_create_new_study_id_duplicated_name():
@@ -159,7 +139,6 @@ def test_get_all_study_summaries_with_multiple_studies():
 
     expected_summary_1 = StudySummary(
         study_id=study_id_1,
-        study_uuid=storage.get_study_uuid_from_id(study_id_1),
         study_name=storage.get_study_name_from_id(study_id_1),
         task=StudyTask.MINIMIZE,
         user_attrs={},
@@ -170,7 +149,6 @@ def test_get_all_study_summaries_with_multiple_studies():
     )
     expected_summary_2 = StudySummary(
         study_id=study_id_2,
-        study_uuid=storage.get_study_uuid_from_id(study_id_2),
         study_name=storage.get_study_name_from_id(study_id_2),
         task=StudyTask.MAXIMIZE,
         user_attrs={},
@@ -181,7 +159,6 @@ def test_get_all_study_summaries_with_multiple_studies():
     )
     expected_summary_3 = StudySummary(
         study_id=study_id_3,
-        study_uuid=storage.get_study_uuid_from_id(study_id_3),
         study_name=storage.get_study_name_from_id(study_id_3),
         task=StudyTask.NOT_SET,
         user_attrs={},

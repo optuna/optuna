@@ -57,8 +57,8 @@ class CreateStudy(BaseCommand):
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
         storage = optuna.storages.RDBStorage(storage_url)
-        study_uuid = optuna.create_study(storage, study_name=parsed_args.study_name).study_uuid
-        print(study_uuid)
+        study_name = optuna.create_study(storage, study_name=parsed_args.study_name).study_name
+        print(study_name)
 
 
 class StudySetUserAttribute(BaseCommand):
@@ -67,7 +67,7 @@ class StudySetUserAttribute(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(StudySetUserAttribute, self).get_parser(prog_name)
-        parser.add_argument('--study', required=True, help='Study UUID.')
+        parser.add_argument('--study', required=True, help='Study name.')
         parser.add_argument('--key', '-k', required=True, help='Key of the user attribute.')
         parser.add_argument('--value', '-v', required=True, help='Value to be set.')
         return parser
@@ -77,7 +77,7 @@ class StudySetUserAttribute(BaseCommand):
 
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
-        study = optuna.Study(storage=storage_url, study_uuid=parsed_args.study)
+        study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
         self.logger.info('Attribute successfully written.')
@@ -86,7 +86,7 @@ class StudySetUserAttribute(BaseCommand):
 class Studies(Lister):
 
     _datetime_format = '%Y-%m-%d %H:%M:%S'
-    _study_list_header = ('UUID', 'NAME', 'TASK', 'N_TRIALS', 'DATETIME_START')
+    _study_list_header = ('NAME', 'TASK', 'N_TRIALS', 'DATETIME_START')
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
@@ -105,7 +105,7 @@ class Studies(Lister):
         for s in summaries:
             start = s.datetime_start.strftime(self._datetime_format) \
                 if s.datetime_start is not None else None
-            row = (s.study_uuid, s.study_name, s.task.name, s.n_trials, start)
+            row = (s.study_name, s.task.name, s.n_trials, start)
             rows.append(row)
 
         return self._study_list_header, tuple(rows)
@@ -117,7 +117,7 @@ class Dashboard(BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(Dashboard, self).get_parser(prog_name)
-        parser.add_argument('--study', required=True, help='Study UUID.')
+        parser.add_argument('--study', required=True, help='Study name.')
         parser.add_argument('--out', '-o',
                             help='Output HTML file path. If it is not given, a HTTP server starts '
                                  'and the dashboard is served.')
@@ -128,7 +128,7 @@ class Dashboard(BaseCommand):
 
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
-        study = optuna.Study(storage=storage_url, study_uuid=parsed_args.study)
+        study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
 
         if parsed_args.out is None:
             optuna.dashboard.serve(study)
@@ -152,7 +152,7 @@ class Minimize(BaseCommand):
         parser.add_argument('--n-jobs', type=int, default=1,
                             help='The number of parallel jobs. If this argument is set to -1, the '
                                  'number is set to CPU counts.')
-        parser.add_argument('--study', help='Study UUID.')
+        parser.add_argument('--study', help='Study name.')
         parser.add_argument('--create-study', action='store_true', help='Create a new study.')
         parser.add_argument('file',
                             help='Python script file where the objective function resides.')
@@ -174,7 +174,7 @@ class Minimize(BaseCommand):
         if parsed_args.create_study:
             study = optuna.create_study(storage=storage_url)
         else:
-            study = optuna.Study(storage=storage_url, study_uuid=parsed_args.study)
+            study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.
