@@ -46,7 +46,8 @@ if pfnopt_pkg is not None:
     msg = """
 We detected that PFNOpt is installed in your environment.
 PFNOpt has been renamed Optuna. Please uninstall the old
-PFNOpt in advance.
+PFNOpt in advance as follows:
+    $ pip uninstall pfnopt
 """
     print(msg)
     exit(1)
