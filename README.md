@@ -3,7 +3,7 @@
 ## Information for Users
 
 ```
-$ pip install git+https://github.com/pfnet/pfnopt.git
+$ pip install git+https://github.com/pfnet/optuna.git
 ```
 
 ## Information for Developers
