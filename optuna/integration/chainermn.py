@@ -6,7 +6,7 @@ from typing import Optional  # NOQA
 from optuna.pruners import BasePruner  # NOQA
 from optuna.samplers import BaseSampler  # NOQA
 from optuna.storages import InMemoryStorage
-from optuna.study import minimize
+from optuna.study import optimize
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
 
@@ -58,7 +58,7 @@ def minimize_chainermn(
         raise ValueError('Please make sure an identical study name is shared among workers.')
 
     if comm.rank == 0:
-        minimize(
+        optimize(
             ObjectiveFuncChainerMN(func, comm),
             n_trials=n_trials, timeout=timeout, n_jobs=1, study=study)
         comm.mpi_comm.bcast((False, None))

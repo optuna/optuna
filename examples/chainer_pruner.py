@@ -92,7 +92,7 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    study = optuna.minimize(objective, n_trials=100, pruner=optuna.pruners.MedianPruner())
+    study = optuna.optimize(objective, n_trials=100, pruner=optuna.pruners.MedianPruner())
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
     complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
     print('Study statistics: ')

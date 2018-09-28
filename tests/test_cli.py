@@ -153,7 +153,7 @@ def test_studies_command(options):
 
         # Second study.
         study_2 = optuna.create_study(storage, study_name='study_2')
-        optuna.minimize(objective_func, n_trials=10, study=study_2)
+        optuna.optimize(objective_func, n_trials=10, study=study_2)
 
         # Run command.
         command = ['optuna', 'studies']

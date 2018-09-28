@@ -341,7 +341,7 @@ def create_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
-def minimize(
+def optimize(
         func,  # type: ObjectiveFuncType
         n_trials=None,  # type: Optional[int]
         timeout=None,  # type: Optional[float]
@@ -349,11 +349,12 @@ def minimize(
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
         study=None,  # type: Optional[Study]
+        task=structs.StudyTask.MINIMIZE,  # type: structs.StudyTask
         catch=(Exception,)  # type: Tuple[Type[Exception]]
 ):
     # type: (...) -> Study
 
-    """Minimize an objective function.
+    """Optimize an objective function.
 
     Args:
         func:
@@ -372,6 +373,8 @@ def minimize(
             Pruner object that decides early stopping of unpromising trials.
         study:
             Study object. If this argument is set to None, a new study is created.
+        task:
+            StudyTask object to select minimization or maximization.
         catch:
             A study continues to run even when a trial raises one of exceptions specified in this
             argument. Default is (Exception,), where all non-exit exceptions are handled by this
@@ -386,20 +389,28 @@ def minimize(
         # We start a new study with a new in-memory storage.
         study = create_study(sampler=sampler, pruner=pruner)
 
-    # Set up StudyTask as MINIMIZE.
-    if study.task == structs.StudyTask.MAXIMIZE:
+    if task == structs.StudyTask.NOT_SET:
+        # TODO(Yanase): Implement maximization and fix the message.
         raise ValueError(
-            'Cannot run minimize task with study name {} because it already has been set up as a '
-            'maximize task.'.format(study.study_name))
-    study.storage.set_study_task(study.study_id, structs.StudyTask.MINIMIZE)
+            'Task of study {} is set to `NOT_SET`. '
+            'Please select `MINIMIZE`.'.format(study.study_name))
+
+    # TODO(Yanase): Implement maximization.
+    if task == structs.StudyTask.MAXIMIZE:
+        raise ValueError(
+            'Task of study {} is set to `MAXIMIZE`. '
+            'Currently, Optuna supports `MINIMIZE` only.'.format(study.study_name))
+
+    if study.task == structs.StudyTask.NOT_SET:
+        study.storage.set_study_task(study.study_id, task)
+
+    if study.task != task:
+        raise ValueError(
+            'Cannot run {} task with study {} because it already has been set up as a '
+            '{} task.'.format(task.name, study.study_name, study.task.name))
 
     study.run(func, n_trials, timeout, n_jobs, catch)
     return study
-
-
-# TODO(akiba): implement me
-def maximize():
-    raise NotImplementedError
 
 
 def get_all_study_summaries(storage):
