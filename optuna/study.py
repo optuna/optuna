@@ -37,8 +37,7 @@ class Study(object):
         study_name:
             Study's name.
         storage:
-            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
-            instantiated.
+            Storage object or its DB URL.
         sampler:
             Sampler object that implements background algorithm for value suggestion.
         pruner:
@@ -49,7 +48,7 @@ class Study(object):
     def __init__(
             self,
             study_name,  # type: str
-            storage,  # type: Union[None, str, storages.BaseStorage]
+            storage,  # type: Union[str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
     ):
