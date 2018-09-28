@@ -3,7 +3,6 @@ import multiprocessing
 import pandas as pd
 import pickle
 import pytest
-import tempfile
 import threading
 import time
 from typing import Any  # NOQA
@@ -129,33 +128,6 @@ def test_minimize_trivial_in_memory_resume():
     study = optuna.minimize(func, n_trials=10)
     optuna.minimize(func, n_trials=10, study=study)
     check_study(study)
-
-
-def test_minimize_trivial_rdb_new():
-    # type: () -> None
-
-    # We prohibit automatic new-study creation when storage is specified.
-    with pytest.raises(ValueError):
-        optuna.minimize(func, n_trials=10, storage='sqlite:///:memory:')
-
-
-def test_minimize_trivial_rdb_resume_study():
-    # type: () -> None
-
-    study = optuna.create_study('sqlite:///:memory:')
-    optuna.minimize(func, n_trials=10, study=study)
-    check_study(study)
-
-
-def test_minimize_trivial_rdb_resume_study_name():
-    # type: () -> None
-
-    with tempfile.NamedTemporaryFile() as tf:
-        db_url = 'sqlite:///{}'.format(tf.name)
-        study = optuna.create_study(db_url)
-        study_name = study.study_name
-        study = optuna.minimize(func, n_trials=10, storage=db_url, study=study_name)
-        check_study(study)
 
 
 @pytest.mark.parametrize('n_trials, n_jobs, storage_mode', itertools.product(
