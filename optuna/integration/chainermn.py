@@ -2,13 +2,10 @@ from __future__ import absolute_import
 
 from typing import Callable  # NOQA
 from typing import Optional  # NOQA
-from typing import Union  # NOQA
 
 from optuna.pruners import BasePruner  # NOQA
 from optuna.samplers import BaseSampler  # NOQA
-from optuna.storages import BaseStorage  # NOQA
 from optuna.storages import InMemoryStorage
-from optuna.study import get_study
 from optuna.study import minimize
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
@@ -37,11 +34,10 @@ class ObjectiveFuncChainerMN(object):
 
 def minimize_chainermn(
         func,  # type: Callable[[Trial, CommunicatorBase], float]
-        study,  # type: Union[str, Study]
+        study,  # type: Study
         comm,  # type: CommunicatorBase
         n_trials=None,  # type: Optional[int]
         timeout=None,  # type: Optional[float]
-        storage=None,  # type: Union[None, str, BaseStorage]
         sampler=None,  # type: BaseSampler
         pruner=None,  # type: BasePruner
 ):
@@ -49,7 +45,10 @@ def minimize_chainermn(
 
     _check_chainermn_availability()
 
-    study = get_study(study=study, storage=storage, sampler=sampler, pruner=pruner)
+    if sampler is not None:
+        study.sampler = sampler
+    if pruner is not None:
+        study.pruner = pruner
 
     if isinstance(study.storage, InMemoryStorage):
         raise ValueError('ChainerMN integration is not available with InMemoryStorage.')
