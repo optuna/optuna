@@ -130,6 +130,14 @@ def test_minimize_trivial_in_memory_resume():
     check_study(study)
 
 
+def test_minimize_trivial_rdb_resume_study():
+    # type: () -> None
+
+    study = optuna.create_study('sqlite:///:memory:')
+    optuna.minimize(func, n_trials=10, study=study)
+    check_study(study)
+
+
 @pytest.mark.parametrize('n_trials, n_jobs, storage_mode', itertools.product(
     (0, 1, 2, 50),  # n_trials
     (1, 2, 10, -1),  # n_jobs
