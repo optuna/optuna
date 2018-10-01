@@ -8,7 +8,6 @@ import threading
 import time
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
-from typing import IO  # NOQA
 from typing import Optional  # NOQA
 
 import optuna
@@ -19,12 +18,6 @@ STORAGE_MODES = [
     'new',     # We always create a new sqlite DB file for each experiment.
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
-
-# We need to set the timeout higher to avoid "OperationalError: database is locked",
-# particularly on CircleCI.
-SQLITE3_TIMEOUT = 300
-
-common_tempfile = None  # type: Optional[IO[Any]]
 
 
 def setup_module():
