@@ -149,12 +149,11 @@ def test_studies_command(options):
         storage = RDBStorage(storage_url)
 
         # First study.
-        study_name_1 = storage.get_study_name_from_id(storage.create_new_study_id())
+        study_1 = optuna.create_study(storage)
 
         # Second study.
-        study_name_2 = storage.get_study_name_from_id(
-            storage.create_new_study_id(study_name='study_2'))
-        optuna.minimize(objective_func, n_trials=10, storage=storage, study=study_name_2)
+        study_2 = optuna.create_study(storage, study_name='study_2')
+        optuna.minimize(objective_func, n_trials=10, study=study_2)
 
         # Run command.
         command = ['optuna', 'studies']
@@ -174,12 +173,12 @@ def test_studies_command(options):
 
         # Check study_name and n_trials for the first study.
         elms = get_row_elements(3)
-        assert elms[0] == study_name_1
+        assert elms[0] == study_1.study_name
         assert elms[2] == '0'
 
         # Check study_name and n_trials for the second study.
         elms = get_row_elements(4)
-        assert elms[0] == study_name_2
+        assert elms[0] == study_2.study_name
         assert elms[2] == '10'
 
 

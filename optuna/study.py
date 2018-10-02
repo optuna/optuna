@@ -393,10 +393,9 @@ def minimize(
         n_trials=None,  # type: Optional[int]
         timeout=None,  # type: Optional[float]
         n_jobs=1,  # type: int
-        storage=None,  # type: Union[None, str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
-        study=None,  # type: Union[None, str, Study]
+        study=None,  # type: Optional[Study]
         catch=(Exception,)  # type: Tuple[Type[Exception]]
 ):
     # type: (...) -> Study
@@ -414,15 +413,12 @@ def minimize(
         n_jobs:
             The number of parallel jobs. If this argument is set to -1, the number is set to CPU
             counts.
-        storage:
-            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
-            instantiated.
         sampler:
             Sampler object that implements background algorithm for value suggestion.
         pruner:
             Pruner object that decides early stopping of unpromising trials.
         study:
-            Study object or its name. If this argument is set to None, a new study is created.
+            Study object. If this argument is set to None, a new study is created.
         catch:
             A study continues to run even when a trial raises one of exceptions specified in this
             argument. Default is (Exception,), where all non-exit exceptions are handled by this
@@ -433,14 +429,7 @@ def minimize(
 
     """
 
-    if study is not None:
-        study = get_study(study, storage, sampler, pruner)
-    else:
-        if storage is not None:
-            raise ValueError(
-                'When specifying storage, please also specify a study name to continue a study. '
-                'If you want to start a new study, please make a new one using create_study.')
-
+    if study is None:
         # We start a new study with a new in-memory storage.
         study = create_study(sampler=sampler, pruner=pruner)
 
