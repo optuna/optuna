@@ -90,6 +90,7 @@ if __name__ == '__main__':
     study_name = sys.argv[1]
     storage_url = sys.argv[2]
 
+    study = optuna.Study(study_name, storage_url)
     comm = chainermn.create_communicator('naive')
     if comm.rank == 0:
         print('Study name:', study_name)
@@ -98,7 +99,7 @@ if __name__ == '__main__':
 
     # Run optimization!
     study = optuna.integration.minimize_chainermn(
-        objective, study_name, comm, storage=storage_url, n_trials=25)
+        objective, study, comm, n_trials=25)
 
     if comm.rank == 0:
         print('Number of finished trials: ', len(study.trials))

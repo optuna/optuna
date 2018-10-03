@@ -342,52 +342,6 @@ def create_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
-def get_study(
-        study,  # type: Union[str, Study]
-        storage=None,  # type: Union[None, str, storages.BaseStorage]
-        sampler=None,  # type: samplers.BaseSampler
-        pruner=None,  # type: pruners.BasePruner
-):
-    # type: (...) -> Study
-
-    """Return a given study object itself, or instantiate a study object with a given study name.
-
-    Args:
-        study:
-            Study object or its name.
-        storage:
-            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
-            instantiated.
-        sampler:
-            Sampler object that implements background algorithm for value suggestion.
-        pruner:
-            Pruner object that decides early stopping of unpromising trials.
-
-    Returns:
-        A study object.
-
-    """
-
-    if isinstance(study, Study):
-        if storage is not None:
-            raise ValueError(
-                'Do not give both study and storage objects at the same time. '
-                'When a study is given, its associated storage will be used.')
-        if sampler is not None:
-            raise ValueError(
-                'Do not give both study and sampler objects at the same time. '
-                'When a study is given, its associated sampler will be used.')
-        if pruner is not None:
-            raise ValueError(
-                'Do not give both study and pruner objects at the same time. '
-                'When a study is given, its associated pruner will be used.')
-
-        return study
-    else:
-        # `study` is expected to be a string and interpreted as a study name.
-        return Study(study_name=study, storage=storage, sampler=sampler, pruner=pruner)
-
-
 def minimize(
         func,  # type: ObjectiveFuncType
         n_trials=None,  # type: Optional[int]
