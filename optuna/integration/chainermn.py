@@ -32,23 +32,17 @@ class ObjectiveFuncChainerMN(object):
         return self.objective(trial, self.comm)
 
 
+# TODO(Yanase): Create a Study subclass for ChainerMN and rewrite minimize_chainermn as a method.
 def minimize_chainermn(
         func,  # type: Callable[[Trial, CommunicatorBase], float]
         study,  # type: Study
         comm,  # type: CommunicatorBase
         n_trials=None,  # type: Optional[int]
         timeout=None,  # type: Optional[float]
-        sampler=None,  # type: BaseSampler
-        pruner=None,  # type: BasePruner
 ):
     # type: (...) -> Study
 
     _check_chainermn_availability()
-
-    if sampler is not None:
-        study.sampler = sampler
-    if pruner is not None:
-        study.pruner = pruner
 
     if isinstance(study.storage, InMemoryStorage):
         raise ValueError('ChainerMN integration is not available with InMemoryStorage.')
