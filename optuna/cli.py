@@ -189,10 +189,9 @@ class Minimize(BaseCommand):
                 parsed_args.method, parsed_args.file))
             return 1
 
-        optuna.minimize(
+        study.run(
             target_method, n_trials=parsed_args.n_trials,
-            timeout=parsed_args.timeout, n_jobs=parsed_args.n_jobs,
-            study=study)
+            timeout_seconds=parsed_args.timeout, n_jobs=parsed_args.n_jobs)
         return 0
 
 

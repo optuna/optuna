@@ -62,6 +62,9 @@ class Study(object):
         self.study_id = self.storage.get_study_id_from_name(study_name)
         self.logger = logging.get_logger(__name__)
 
+        # TODO(Yanase): Add `task` as an argument of Study() and check inconsistency of tasks.
+        self.storage.set_study_task(self.study_id, structs.StudyTask.MINIMIZE)
+
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
         state = self.__dict__.copy()
@@ -348,7 +351,6 @@ def minimize(
         n_jobs=1,  # type: int
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
-        study=None,  # type: Optional[Study]
         catch=(Exception,)  # type: Tuple[Type[Exception]]
 ):
     # type: (...) -> Study
@@ -370,8 +372,6 @@ def minimize(
             Sampler object that implements background algorithm for value suggestion.
         pruner:
             Pruner object that decides early stopping of unpromising trials.
-        study:
-            Study object. If this argument is set to None, a new study is created.
         catch:
             A study continues to run even when a trial raises one of exceptions specified in this
             argument. Default is (Exception,), where all non-exit exceptions are handled by this
@@ -382,16 +382,8 @@ def minimize(
 
     """
 
-    if study is None:
-        # We start a new study with a new in-memory storage.
-        study = create_study(sampler=sampler, pruner=pruner)
-
-    # Set up StudyTask as MINIMIZE.
-    if study.task == structs.StudyTask.MAXIMIZE:
-        raise ValueError(
-            'Cannot run minimize task with study name {} because it already has been set up as a '
-            'maximize task.'.format(study.study_name))
-    study.storage.set_study_task(study.study_id, structs.StudyTask.MINIMIZE)
+    # We start a new study with a new in-memory storage.
+    study = create_study(sampler=sampler, pruner=pruner)
 
     study.run(func, n_trials, timeout, n_jobs, catch)
     return study

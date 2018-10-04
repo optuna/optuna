@@ -35,10 +35,10 @@ if __name__ == '__main__':
 
     # We can continue the optimization as follows.
     print('Running 20 additional trials...')
-    optuna.minimize(objective, n_trials=20, study=study)
+    study.run(objective, n_trials=20)
     print('Best value: {} (params: {})\n'.format(study.best_value, study.best_params))
 
     # We can specify the timeout instead of a number of trials.
     print('Running additional trials in 2 seconds...')
-    optuna.minimize(objective, timeout=2.0, study=study)
+    study.run(objective, timeout_seconds=2.0)
     print('Best value: {} (params: {})\n'.format(study.best_value, study.best_params))
