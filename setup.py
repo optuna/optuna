@@ -1,4 +1,5 @@
 import os
+import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
 import sys
@@ -30,6 +31,23 @@ def get_tests_require():
         tests_require.append('mypy==0.620')
     return tests_require
 
+
+def find_any_distribution(pkgs):
+    for pkg in pkgs:
+        try:
+            return pkg_resources.get_distribution(pkg)
+        except pkg_resources.DistributionNotFound:
+            pass
+    return None
+
+
+pfnopt_pkg = find_any_distribution(['pfnopt'])
+if pfnopt_pkg is not None:
+    msg = 'We detected that PFNOpt is installed in your environment.\n' \
+        'PFNOpt has been renamed Optuna. Please uninstall the old\n' \
+        'PFNOpt in advance (e.g. by executing `$ pip uninstall pfnopt`).'
+    print(msg)
+    exit(1)
 
 setup(
     name='optuna',

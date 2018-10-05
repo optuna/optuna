@@ -7,7 +7,6 @@ import threading
 import time
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
-from typing import IO  # NOQA
 from typing import Optional  # NOQA
 
 import optuna
@@ -18,12 +17,6 @@ STORAGE_MODES = [
     'new',     # We always create a new sqlite DB file for each experiment.
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
-
-# We need to set the timeout higher to avoid "OperationalError: database is locked",
-# particularly on CircleCI.
-SQLITE3_TIMEOUT = 300
-
-common_tempfile = None  # type: Optional[IO[Any]]
 
 
 def setup_module():
@@ -126,7 +119,7 @@ def test_optimize_trivial_in_memory_resume():
     # type: () -> None
 
     study = optuna.optimize(func, n_trials=10)
-    optuna.optimize(func, n_trials=10, study=study)
+    study.run(func, n_trials=10)
     check_study(study)
 
 
@@ -134,19 +127,8 @@ def test_optimize_trivial_rdb_resume_study():
     # type: () -> None
 
     study = optuna.create_study('sqlite:///:memory:')
-    optuna.optimize(func, n_trials=10, study=study)
+    study.run(func, n_trials=10)
     check_study(study)
-
-
-def test_optimize_with_inconsistent_tasks():
-    # type: () -> None
-
-    study = optuna.create_study('sqlite:///:memory:')
-    optuna.optimize(func, n_trials=10, study=study)
-
-    with pytest.raises(ValueError):
-        optuna.optimize(func, n_trials=10, study=study,
-                        task=optuna.structs.StudyTask.MAXIMIZE)
 
 
 def test_optimize_with_maximization_task():
@@ -175,7 +157,7 @@ def test_optimize_parallel(n_trials, n_jobs, storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
-        optuna.optimize(f, n_trials=n_trials, n_jobs=n_jobs, study=study)
+        study.run(f, n_trials=n_trials, n_jobs=n_jobs)
         assert f.n_calls == len(study.trials) == n_trials
         check_study(study)
 
@@ -194,8 +176,8 @@ def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
-        study = optuna.optimize(
-            f, n_trials=n_trials, n_jobs=n_jobs, timeout=timeout_sec, study=study)
+        study.run(
+            f, n_trials=n_trials, n_jobs=n_jobs, timeout_seconds=timeout_sec)
 
         assert f.n_calls == len(study.trials)
 
@@ -211,16 +193,7 @@ def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_optimize_with_incompatible_task(storage_mode):
-    with StorageSupplier(storage_mode) as storage:
-        study = optuna.create_study(storage=storage)
-        study.storage.set_study_task(study.study_id, optuna.structs.StudyTask.MAXIMIZE)
-        with pytest.raises(ValueError):
-            optuna.optimize(Func(), n_trials=1, n_jobs=1, study=study)
-
-
-@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_optimize_with_catch(storage_mode):
+def test_minimize_with_catch(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
@@ -230,12 +203,12 @@ def test_optimize_with_catch(storage_mode):
             raise ValueError
 
         # Test acceptable exception.
-        optuna.optimize(func_value_error, n_trials=20, study=study, catch=(ValueError,))
+        study.run(func_value_error, n_trials=20, catch=(ValueError,))
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
-            optuna.optimize(
-                func_value_error, n_trials=20, study=study, catch=(ArithmeticError,))
+            study.run(
+                func_value_error, n_trials=20, catch=(ArithmeticError,))
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -273,7 +246,7 @@ def test_trial_set_and_get_user_attrs(storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
-        optuna.optimize(f, n_trials=1, study=study)
+        study.run(f, n_trials=1)
         frozen_trial = study.trials[0]
         assert frozen_trial.user_attrs['train_accuracy'] == 1
 
@@ -291,7 +264,7 @@ def test_trial_set_and_get_system_attrs(storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
-        optuna.optimize(f, n_trials=1, study=study)
+        study.run(f, n_trials=1)
         frozen_trial = study.trials[0]
         assert frozen_trial.system_attrs['system_message'] == 'test'
 
@@ -302,7 +275,7 @@ def test_get_all_study_summaries(storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
-        optuna.optimize(Func(), n_trials=5, study=study)
+        study.run(Func(), n_trials=5)
 
         summaries = optuna.get_all_study_summaries(study.storage)
         summary = [s for s in summaries if s.study_id == study.study_id][0]
@@ -391,7 +364,7 @@ def test_study_pickle():
     check_study(study_2)
     assert len(study_2.trials) == 10
 
-    optuna.optimize(func, n_trials=10, study=study_2)
+    study_2.run(func, n_trials=10)
     check_study(study_2)
     assert len(study_2.trials) == 20
 
@@ -410,7 +383,7 @@ def test_trials_dataframe(storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
-        optuna.optimize(f, n_trials=3, study=study)
+        study.run(f, n_trials=3)
         df = study.trials_dataframe()
         assert len(df) == 3
         # non-nested: 5, params: 2, user_attrs: 1
@@ -441,7 +414,7 @@ def test_trials_dataframe_with_failure(storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
-        optuna.optimize(f, n_trials=3, study=study)
+        study.run(f, n_trials=3)
         df = study.trials_dataframe()
         assert len(df) == 3
         # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 1
