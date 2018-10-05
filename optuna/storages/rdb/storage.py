@@ -221,7 +221,7 @@ class RDBStorage(BaseStorage):
             study_sumarries.append(structs.StudySummary(
                 study_id=study_model.study_id,
                 study_name=study_model.study_name,
-                task=self.get_study_task(study_model.study_id),
+                direction=self.get_study_task(study_model.study_id),
                 best_trial=best_trial,
                 user_attrs=self.get_study_user_attrs(study_model.study_id),
                 system_attrs=system_attrs,

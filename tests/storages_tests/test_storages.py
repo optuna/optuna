@@ -433,7 +433,7 @@ def test_get_all_study_summaries(storage_init_func):
     assert len(summaries) == 1
     assert summaries[0].study_id == study_id
     assert summaries[0].study_name == storage.get_study_name_from_id(study_id)
-    assert summaries[0].task == StudyTask.MINIMIZE
+    assert summaries[0].direction == StudyTask.MINIMIZE
     assert summaries[0].user_attrs == EXAMPLE_ATTRS
     assert summaries[0].n_trials == 2
     assert summaries[0].datetime_start is not None

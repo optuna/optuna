@@ -131,18 +131,17 @@ def test_optimize_trivial_rdb_resume_study():
     check_study(study)
 
 
-def test_optimize_with_maximization_task():
+def test_optimize_with_direction():
     # type: () -> None
 
-    with pytest.raises(ValueError):
-        optuna.optimize(func, n_trials=10, task=optuna.structs.StudyTask.MAXIMIZE)
-
-
-def test_optimize_with_not_set_task():
-    # type: () -> None
+    study = optuna.optimize(func, n_trials=10, direction='minimize')
+    check_study(study)
 
     with pytest.raises(ValueError):
-        optuna.optimize(func, n_trials=10, task=optuna.structs.StudyTask.NOT_SET)
+        optuna.optimize(func, n_trials=10, direction='maximize')
+
+    with pytest.raises(ValueError):
+        optuna.optimize(func, n_trials=10, direction='test')
 
 
 @pytest.mark.parametrize('n_trials, n_jobs, storage_mode', itertools.product(
