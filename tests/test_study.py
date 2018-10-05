@@ -135,6 +135,7 @@ def test_optimize_with_direction():
     # type: () -> None
 
     study = optuna.optimize(func, n_trials=10, direction='minimize')
+    assert study.direction == optuna.structs.StudyTask.MINIMIZE
     check_study(study)
 
     with pytest.raises(ValueError):
