@@ -21,7 +21,7 @@ class Trial(object):
     suggestion, manage the trial's state, and set/get user-defined attributes of the trial.
 
     Note that this object is seamlessly instantiated and passed to the objective function behind
-    Study.run() method (as well as optimize function); hence, in typical use cases,
+    Study.optimize() method (as well as optimize function); hence, in typical use cases,
     library users do not care about instantiation of this object.
 
     Args:
