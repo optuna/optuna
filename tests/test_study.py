@@ -130,6 +130,10 @@ def test_optimize_trivial_rdb_resume_study():
     study.optimize(func, n_trials=10)
     check_study(study)
 
+    # Optimization directions are inconsistent.
+    with pytest.raises(ValueError):
+        optuna.optimize(func, n_trials=10, direction='maximize')
+
 
 def test_optimize_with_direction():
     # type: () -> None
@@ -193,7 +197,7 @@ def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_minimize_with_catch(storage_mode):
+def test_optimize_with_catch(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:

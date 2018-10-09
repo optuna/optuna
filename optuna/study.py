@@ -42,9 +42,6 @@ class Study(object):
             Sampler object that implements background algorithm for value suggestion.
         pruner:
             Pruner object that decides early stopping of unpromising trials.
-        direction:
-            Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            maximization.
 
     """
 
@@ -54,7 +51,6 @@ class Study(object):
             storage,  # type: Union[str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
-            direction='minimize',  # type: str
     ):
         # type: (...) -> None
 
@@ -65,22 +61,6 @@ class Study(object):
 
         self.study_id = self.storage.get_study_id_from_name(study_name)
         self.logger = logging.get_logger(__name__)
-
-        if direction == 'minimize':
-            _direction = structs.StudyTask.MINIMIZE
-        elif direction == 'maximize':
-            _direction = structs.StudyTask.MAXIMIZE
-        else:
-            raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
-
-        # TODO(Yanase): Implement maximization.
-        if _direction == structs.StudyTask.MAXIMIZE:
-            raise ValueError(
-                'Optimization direction of study {} is set to `MAXIMIZE`. '
-                'Currently, Optuna supports `MINIMIZE` only.'.format(study_name))
-
-        # TODO(Yanase): Change `task` in storages to `direction`.
-        self.storage.set_study_task(self.study_id, _direction)
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -145,9 +125,32 @@ class Study(object):
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
+            direction='minimize',  # type: str
             catch=(Exception,)  # type: Tuple[Type[Exception]]
     ):
         # type: (...) -> None
+
+        if direction == 'minimize':
+            _direction = structs.StudyTask.MINIMIZE
+        elif direction == 'maximize':
+            _direction = structs.StudyTask.MAXIMIZE
+        else:
+            raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
+
+        # TODO(Yanase): Implement maximization.
+        if _direction == structs.StudyTask.MAXIMIZE:
+            raise ValueError(
+                'Optimization direction of study {} is set to `MAXIMIZE`. '
+                'Currently, Optuna supports `MINIMIZE` only.'.format(self.study_name))
+
+        # Set up StudyTask as MINIMIZE.
+        if self.direction == structs.StudyTask.NOT_SET:
+            # TODO(Yanase): Change `task` in storages to `direction`.
+            self.storage.set_study_task(self.study_id, _direction)
+        elif self.direction != _direction:
+            raise ValueError(
+                'Cannot set {} to optimization direction of study {} because it already has been '
+                'set up as {}.'.format(_direction.name, self.study_name, self.direction.name))
 
         if n_jobs == 1:
             self._optimize_sequential(func, n_trials, timeout, catch)
@@ -335,7 +338,6 @@ def create_study(
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
         study_name=None,  # type: Optional[str]
-        direction='minimize',  # type: str
 ):
     # type: (...) -> Study
 
@@ -351,9 +353,6 @@ def create_study(
             Pruner object that decides early stopping of unpromising trials.
         study_name:
             A human-readable name of a study.
-        direction:
-            Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            maximization.
 
     Returns:
         A study object.
@@ -362,8 +361,7 @@ def create_study(
 
     storage = storages.get_storage(storage)
     study_name = storage.get_study_name_from_id(storage.create_new_study_id(study_name))
-    return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner,
-                 direction=direction)
+    return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
 def optimize(
@@ -409,8 +407,8 @@ def optimize(
     """
 
     # We start a new study with a new in-memory storage.
-    study = create_study(sampler=sampler, pruner=pruner, direction=direction)
-    study.optimize(func, n_trials, timeout, n_jobs, catch)
+    study = create_study(sampler=sampler, pruner=pruner)
+    study.optimize(func, n_trials, timeout, n_jobs, direction, catch)
     return study
 
 
