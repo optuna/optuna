@@ -71,7 +71,7 @@ class Study(object):
         elif direction == 'maximize':
             _direction = structs.StudyTask.MAXIMIZE
         else:
-            raise ValueError('Please set either `minimize` or `maximize` to direction.')
+            raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
 
         # TODO(Yanase): Implement maximization.
         if _direction == structs.StudyTask.MAXIMIZE:
