@@ -3,8 +3,6 @@ from __future__ import absolute_import
 from typing import Callable  # NOQA
 from typing import Optional  # NOQA
 
-from optuna.pruners import BasePruner  # NOQA
-from optuna.samplers import BaseSampler  # NOQA
 from optuna.storages import InMemoryStorage
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA

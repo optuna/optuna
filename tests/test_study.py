@@ -108,22 +108,22 @@ def check_study(study):
         check_frozen_trial(study.best_trial)
 
 
-def test_minimize_trivial_in_memory_new():
+def test_optimize_trivial_in_memory_new():
     # type: () -> None
 
-    study = optuna.minimize(func, n_trials=10)
+    study = optuna.optimize(func, n_trials=10)
     check_study(study)
 
 
-def test_minimize_trivial_in_memory_resume():
+def test_optimize_trivial_in_memory_resume():
     # type: () -> None
 
-    study = optuna.minimize(func, n_trials=10)
+    study = optuna.optimize(func, n_trials=10)
     study.run(func, n_trials=10)
     check_study(study)
 
 
-def test_minimize_trivial_rdb_resume_study():
+def test_optimize_trivial_rdb_resume_study():
     # type: () -> None
 
     study = optuna.create_study('sqlite:///:memory:')
@@ -131,12 +131,26 @@ def test_minimize_trivial_rdb_resume_study():
     check_study(study)
 
 
+def test_optimize_with_direction():
+    # type: () -> None
+
+    study = optuna.optimize(func, n_trials=10, direction='minimize')
+    assert study.direction == optuna.structs.StudyTask.MINIMIZE
+    check_study(study)
+
+    with pytest.raises(ValueError):
+        optuna.optimize(func, n_trials=10, direction='maximize')
+
+    with pytest.raises(ValueError):
+        optuna.optimize(func, n_trials=10, direction='test')
+
+
 @pytest.mark.parametrize('n_trials, n_jobs, storage_mode', itertools.product(
     (0, 1, 2, 50),  # n_trials
     (1, 2, 10, -1),  # n_jobs
     STORAGE_MODES,  # storage_mode
 ))
-def test_minimize_parallel(n_trials, n_jobs, storage_mode):
+def test_optimize_parallel(n_trials, n_jobs, storage_mode):
     # type: (int, int, str)-> None
 
     f = Func()
@@ -153,7 +167,7 @@ def test_minimize_parallel(n_trials, n_jobs, storage_mode):
     (1, 2, 10, -1),  # n_jobs
     STORAGE_MODES,  # storage_mode
 ))
-def test_minimize_parallel_timeout(n_trials, n_jobs, storage_mode):
+def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
     # type: (int, int, str) -> None
 
     sleep_sec = 0.1
@@ -341,7 +355,7 @@ def test_run_trial(storage_mode):
 def test_study_pickle():
     # type: () -> None
 
-    study_1 = optuna.minimize(func, n_trials=10)
+    study_1 = optuna.optimize(func, n_trials=10)
     check_study(study_1)
     assert len(study_1.trials) == 10
     dumped_bytes = pickle.dumps(study_1)

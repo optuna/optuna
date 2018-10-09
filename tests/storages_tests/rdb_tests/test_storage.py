@@ -140,7 +140,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     expected_summary_1 = StudySummary(
         study_id=study_id_1,
         study_name=storage.get_study_name_from_id(study_id_1),
-        task=StudyTask.MINIMIZE,
+        direction=StudyTask.MINIMIZE,
         user_attrs={},
         system_attrs={},
         best_trial=summaries[0].best_trial,  # This always passes.
@@ -150,7 +150,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     expected_summary_2 = StudySummary(
         study_id=study_id_2,
         study_name=storage.get_study_name_from_id(study_id_2),
-        task=StudyTask.MAXIMIZE,
+        direction=StudyTask.MAXIMIZE,
         user_attrs={},
         system_attrs={},
         best_trial=summaries[1].best_trial,  # This always passes.
@@ -160,7 +160,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     expected_summary_3 = StudySummary(
         study_id=study_id_3,
         study_name=storage.get_study_name_from_id(study_id_3),
-        task=StudyTask.NOT_SET,
+        direction=StudyTask.NOT_SET,
         user_attrs={},
         system_attrs={},
         best_trial=None,

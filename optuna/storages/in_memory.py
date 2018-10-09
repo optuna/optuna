@@ -115,7 +115,7 @@ class InMemoryStorage(base.BaseStorage):
         return [structs.StudySummary(
             study_id=IN_MEMORY_STORAGE_STUDY_ID,
             study_name=self.study_name,
-            task=self.task,
+            direction=self.task,
             best_trial=best_trial,
             user_attrs=copy.deepcopy(self.study_user_attrs),
             system_attrs=copy.deepcopy(self.study_system_attrs),

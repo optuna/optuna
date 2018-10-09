@@ -42,5 +42,5 @@ def objective(trial):
 
 if __name__ == '__main__':
     import optuna
-    study = optuna.minimize(objective, n_trials=100)
+    study = optuna.optimize(objective, n_trials=100)
     print(study.best_trial)

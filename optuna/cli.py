@@ -105,7 +105,7 @@ class Studies(Lister):
         for s in summaries:
             start = s.datetime_start.strftime(self._datetime_format) \
                 if s.datetime_start is not None else None
-            row = (s.study_name, s.task.name, s.n_trials, start)
+            row = (s.study_name, s.direction.name, s.n_trials, start)
             rows.append(row)
 
         return self._study_list_header, tuple(rows)
