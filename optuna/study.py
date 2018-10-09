@@ -44,7 +44,7 @@ class Study(object):
             Pruner object that decides early stopping of unpromising trials.
         direction:
             Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            'maximization'.
+            maximization.
 
     """
 
@@ -353,7 +353,7 @@ def create_study(
             A human-readable name of a study.
         direction:
             Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            'maximization'.
+            maximization.
 
     Returns:
         A study object.
@@ -397,7 +397,7 @@ def optimize(
             Pruner object that decides early stopping of unpromising trials.
         direction:
             Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            'maximization'.
+            maximization.
         catch:
             A study continues to run even when a trial raises one of exceptions specified in this
             argument. Default is (Exception,), where all non-exit exceptions are handled by this
