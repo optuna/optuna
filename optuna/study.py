@@ -125,33 +125,12 @@ class Study(object):
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
-            direction='minimize',  # type: str
+            direction=None,  # type: Optional[str]
             catch=(Exception,)  # type: Tuple[Type[Exception]]
     ):
         # type: (...) -> None
 
-        if direction == 'minimize':
-            _direction = structs.StudyTask.MINIMIZE
-        elif direction == 'maximize':
-            _direction = structs.StudyTask.MAXIMIZE
-        else:
-            raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
-
-        # TODO(Yanase): Implement maximization.
-        if _direction == structs.StudyTask.MAXIMIZE:
-            raise ValueError(
-                'Optimization direction of study {} is set to `MAXIMIZE`. '
-                'Currently, Optuna supports `MINIMIZE` only.'.format(self.study_name))
-
-        # Set up StudyTask as MINIMIZE.
-        if self.direction == structs.StudyTask.NOT_SET:
-            # TODO(Yanase): Change `task` in storages to `direction`.
-            self.storage.set_study_task(self.study_id, _direction)
-        elif self.direction != _direction:
-            raise ValueError(
-                'Cannot set {} to optimization direction of study {} because it already has been '
-                'set up as {}.'.format(_direction.name, self.study_name, self.direction.name))
-
+        self._set_direction(direction)
         if n_jobs == 1:
             self._optimize_sequential(func, n_trials, timeout, catch)
         else:
@@ -196,6 +175,38 @@ class Study(object):
         columns = sum((sorted(column_agg[k]) for k in structs.FrozenTrial._fields), [])
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+
+    def _set_direction(self, direction=None):
+        # type: (Optional[str]) -> None
+
+        # TODO(Yanase): Implement maximization.
+        if direction == 'maximize':
+            raise ValueError(
+                'Optimization direction of study {} is set to \'maximize\'. '
+                'Currently, Optuna supports \'minimize\' only.'.format(self.study_name))
+
+        if direction is None or direction == 'minimize':
+            direction_obj = structs.StudyTask.MINIMIZE
+        elif direction == 'maximize':
+            direction_obj = structs.StudyTask.MAXIMIZE
+        else:
+            raise ValueError(
+                'Please set one of None, \'minimize\' or \'maximize\' to direction. '
+                'None keeps the current direction if its value has already been set. '
+                'Otherwise, the direction is set to \'minimize\'.')
+
+        if self.direction == structs.StudyTask.NOT_SET:
+            # TODO(Yanase): Change `task` in storages to `direction`.
+            self.storage.set_study_task(self.study_id, direction_obj)
+            return
+
+        if direction is None:
+            return
+
+        if self.direction != direction_obj:
+            raise ValueError(
+                'Cannot set {} to optimization direction of study {} because it already has been '
+                'set up as {}.'.format(direction_obj.name, self.study_name, self.direction.name))
 
     def _optimize_sequential(self, func, n_trials, timeout, catch):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], Tuple[Type[Exception]]) -> None
@@ -371,7 +382,7 @@ def optimize(
         n_jobs=1,  # type: int
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
-        direction='minimize',  # type: str
+        direction=None,  # type: Optional[str]
         catch=(Exception,)  # type: Tuple[Type[Exception]]
 ):
     # type: (...) -> Study
@@ -395,7 +406,7 @@ def optimize(
             Pruner object that decides early stopping of unpromising trials.
         direction:
             Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            maximization.
+            maximization. If this argument is set to None, the direction is set to 'minimize'.
         catch:
             A study continues to run even when a trial raises one of exceptions specified in this
             argument. Default is (Exception,), where all non-exit exceptions are handled by this
