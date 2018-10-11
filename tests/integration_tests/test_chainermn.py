@@ -6,7 +6,7 @@ from typing import Dict  # NOQA
 from typing import Type  # NOQA
 
 from optuna import create_study
-from optuna.integration import minimize_chainermn
+from optuna.integration import ChainerMNStudy
 from optuna.storages import RDBStorage
 from optuna import Study
 from optuna.testing.storage import StorageSupplier
@@ -100,12 +100,12 @@ def test_minimize_chainermn(storage_mode):
         # Create and broadcast study_name.
         name_local = create_study(storage).study_name if comm.rank == 0 else None
         name_bcast = comm.mpi_comm.bcast(name_local)
-        study = Study(name_bcast, storage)
+        study = ChainerMNStudy(Study(name_bcast, storage), comm)
 
         # Invoke minimize_chainermn.
         n_trials = 20
         func = Func()
-        study = minimize_chainermn(func, study, comm, n_trials=n_trials)
+        study.run(func, n_trials=n_trials)
 
         # Assert trial counts.
         assert len(study.trials) == n_trials
