@@ -130,10 +130,6 @@ def test_optimize_trivial_rdb_resume_study():
     study.optimize(func, n_trials=10)
     check_study(study)
 
-    # Optimization directions are inconsistent.
-    with pytest.raises(ValueError):
-        optuna.optimize(func, n_trials=10, direction='maximize')
-
 
 def test_optimize_with_direction():
     # type: () -> None
