@@ -65,7 +65,22 @@ class Study(object):
 
         self.study_id = self.storage.get_study_id_from_name(study_name)
         self.logger = logging.get_logger(__name__)
-        self._set_direction(direction)
+
+        if direction == 'minimize':
+            _direction = structs.StudyTask.MINIMIZE
+        elif direction == 'maximize':
+            _direction = structs.StudyTask.MAXIMIZE
+        else:
+            raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
+
+        # TODO(Yanase): Implement maximization.
+        if _direction == structs.StudyTask.MAXIMIZE:
+            raise ValueError(
+                'Optimization direction of study {} is set to `MAXIMIZE`. '
+                'Currently, Optuna supports `MINIMIZE` only.'.format(study_name))
+
+        # TODO(Yanase): Change `task` in storages to `direction`.
+        self.storage.set_study_task(self.study_id, _direction)
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -178,33 +193,6 @@ class Study(object):
         columns = sum((sorted(column_agg[k]) for k in structs.FrozenTrial._fields), [])
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
-
-    def _set_direction(self, direction):
-        # type: (str) -> None
-
-        # TODO(Yanase): Implement maximization.
-        if direction == 'maximize':
-            raise ValueError(
-                'Optimization direction of study {} is set to \'maximize\'. '
-                'Currently, Optuna supports \'minimize\' only.'.format(self.study_name))
-
-        if direction == 'minimize':
-            direction_obj = structs.StudyTask.MINIMIZE
-        elif direction == 'maximize':
-            direction_obj = structs.StudyTask.MAXIMIZE
-        else:
-            raise ValueError(
-                'Please set one of None, \'minimize\' or \'maximize\' to direction. ')
-
-        if self.direction == structs.StudyTask.NOT_SET:
-            # TODO(Yanase): Change `task` in storages to `direction`.
-            self.storage.set_study_task(self.study_id, direction_obj)
-            return
-
-        if self.direction != direction_obj:
-            raise ValueError(
-                'Cannot set {} to optimization direction of study {} because it already has been '
-                'set up as {}.'.format(direction_obj.name, self.study_name, self.direction.name))
 
     def _optimize_sequential(self, func, n_trials, timeout, catch):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], Tuple[Type[Exception]]) -> None
