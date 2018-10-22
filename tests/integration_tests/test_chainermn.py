@@ -3,6 +3,7 @@ import pytest
 from types import TracebackType  # NOQA
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
+from typing import Optional  # NOQA
 from typing import Type  # NOQA
 
 from optuna import create_study
@@ -66,7 +67,7 @@ class MultiNodeStorageSupplier(StorageSupplier):
 
         super(MultiNodeStorageSupplier, self).__init__(storage_specifier)
         self.comm = comm
-        self.storage = None
+        self.storage = None  # type: Optional[RDBStorage]
 
     def __enter__(self):
         # type: () -> RDBStorage
@@ -127,7 +128,7 @@ class TestChainerMNStudy(object):
 
     @staticmethod
     def test_init_with_incompatible_storage():
-        # type: (str) -> None
+        # type: () -> None
 
         comm = chainermn.create_communicator('naive')
         TestChainerMNStudy._check_multi_node(comm)
