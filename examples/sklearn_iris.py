@@ -12,7 +12,7 @@ We have the following two ways to execute this example:
 
 
 (2) Execute through CLI.
-    $ optuna minimize sklearn_iris.py objective --create-study --n-trials=100 \
+    $ optuna optimize sklearn_iris.py objective --create-study --n-trials=100 \
       --storage sqlite:///example.db
 
 """

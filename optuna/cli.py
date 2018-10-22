@@ -137,12 +137,12 @@ class Dashboard(BaseCommand):
             self.logger.info('Report successfully written to: {}'.format(parsed_args.out))
 
 
-class Minimize(BaseCommand):
+class Optimize(BaseCommand):
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
-        parser = super(Minimize, self).get_parser(prog_name)
+        parser = super(Optimize, self).get_parser(prog_name)
         parser.add_argument('--n-trials', type=int,
                             help='The number of trials. If this argument is not given, as many '
                                  'trials run as possible.')
@@ -154,6 +154,11 @@ class Minimize(BaseCommand):
                                  'number is set to CPU counts.')
         parser.add_argument('--study', help='Study name.')
         parser.add_argument('--create-study', action='store_true', help='Create a new study.')
+        parser.add_argument('--direction', type=str, choices=('minimize', 'maximize'),
+                            default='minimize',
+                            help='Set direction of optimization to a new study.'
+                                 'Set \'minimize\' for minimization and '
+                                 '\'maximize\' for maximization.')
         parser.add_argument('file',
                             help='Python script file where the objective function resides.')
         parser.add_argument('method', help='The method name of the objective function.')
@@ -172,7 +177,7 @@ class Minimize(BaseCommand):
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
         if parsed_args.create_study:
-            study = optuna.create_study(storage=storage_url)
+            study = optuna.create_study(storage=storage_url, direction=parsed_args.direction)
         else:
             study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
 
@@ -200,7 +205,7 @@ _COMMANDS = {
     'study set-user-attr': StudySetUserAttribute,
     'studies': Studies,
     'dashboard': Dashboard,
-    'minimize': Minimize,
+    'optimize': Optimize,
 }
 
 

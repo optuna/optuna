@@ -11,7 +11,7 @@ We have the following two ways to execute this example:
 
 
 (2) Execute through CLI.
-    $ optuna minimize quadratic.py objective --create-study --n-trials=100 \
+    $ optuna optimize quadratic.py objective --create-study --n-trials=100 \
       --storage sqlite:///example.db
 
 """

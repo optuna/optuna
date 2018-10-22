@@ -203,7 +203,7 @@ def test_dashboard_command(options):
             assert 'bokeh' in html
 
 
-# An example of objective functions for testing minimize command
+# An example of objective functions for testing optimize command
 def objective_func(trial):
     # type: (Trial) -> float
 
@@ -212,20 +212,20 @@ def objective_func(trial):
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
-def test_minimize_command(options):
+def test_optimize_command(options):
     # type: (List[str]) -> None
 
     with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
         storage = RDBStorage(storage_url)
 
-        command = ['optuna', 'minimize', '--n-trials', '10', '--create-study',
+        command = ['optuna', 'optimize', '--n-trials', '10', '--create-study',
                    __file__, 'objective_func']
         command = _add_option(command, '--storage', storage_url, 'storage' in options)
         command = _add_option(command, '--config', config_path, 'config' in options)
         subprocess.check_call(command)
 
         study_name = storage.get_study_name_from_id(storage.create_new_study_id())
-        command = ['optuna', 'minimize', '--study', study_name, '--n-trials', '10',
+        command = ['optuna', 'optimize', '--study', study_name, '--n-trials', '10',
                    __file__, 'objective_func']
         command = _add_option(command, '--storage', storage_url, 'storage' in options)
         command = _add_option(command, '--config', config_path, 'config' in options)
@@ -239,7 +239,31 @@ def test_minimize_command(options):
         assert storage.get_study_name_from_id(study.study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
 
 
-def test_minimize_command_inconsistent_args():
+@pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
+def test_optimize_command_with_direction(options):
+    # type: (List[str]) -> None
+
+    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
+        command = ['optuna', 'optimize', '--n-trials', '10', '--create-study',
+                   '--direction', 'maximize', __file__, 'objective_func']
+        command = _add_option(command, '--storage', storage_url, 'storage' in options)
+        command = _add_option(command, '--config', config_path, 'config' in options)
+
+        # Currently, 'maximize' is not implemented.
+        with pytest.raises(subprocess.CalledProcessError):
+            subprocess.check_call(command)
+
+        command = ['optuna', 'optimize', '--n-trials', '10', '--create-study',
+                   '--direction', 'test', __file__, 'objective_func']
+        command = _add_option(command, '--storage', storage_url, 'storage' in options)
+        command = _add_option(command, '--config', config_path, 'config' in options)
+
+        # --direction should be 'minimize' or 'maximize'.
+        with pytest.raises(subprocess.CalledProcessError):
+            subprocess.check_call(command)
+
+
+def test_optimize_command_inconsistent_args():
     # type: () -> None
 
     with tempfile.NamedTemporaryFile() as tf:
@@ -247,14 +271,14 @@ def test_minimize_command_inconsistent_args():
 
         # Feeding neither --create-study nor --study
         with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(['optuna', 'minimize', '--storage', db_url, '--n-trials', '10',
+            subprocess.check_call(['optuna', 'optimize', '--storage', db_url, '--n-trials', '10',
                                    __file__, 'objective_func'])
 
         # Feeding both --create-study and --study
         study_name = str(subprocess.check_output(
             ['optuna', 'create-study', '--storage', db_url]).decode().strip())
         with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(['optuna', 'minimize', '--storage', db_url, '--n-trials', '10',
+            subprocess.check_call(['optuna', 'optimize', '--storage', db_url, '--n-trials', '10',
                                    __file__, 'objective_func',
                                    '--create-study', '--study', study_name])
 
