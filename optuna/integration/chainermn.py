@@ -49,8 +49,8 @@ def minimize_chainermn(
     if isinstance(study.storage, RDBStorage):
         if study.storage.engine.dialect.name == 'sqlite':
             logger = get_logger(__name__)
-            logger.warning('ChainerMN integration may cause synchronization issues '
-                           'when used with SQLite. Please use other DBs like PostgreSQL.')
+            logger.warning('SQLite may cause synchronization problems when used with '
+                           'ChainerMN integration. Please use other DBs like PostgreSQL.')
 
     study_names = comm.mpi_comm.allgather(study.study_name)
     if len(set(study_names)) != 1:
