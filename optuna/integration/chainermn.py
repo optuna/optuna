@@ -49,9 +49,9 @@ def minimize_chainermn(
         raise ValueError('Please make sure an identical study name is shared among workers.')
 
     if comm.rank == 0:
-        study.run(
+        study.optimize(
             ObjectiveFuncChainerMN(func, comm),
-            n_trials=n_trials, timeout_seconds=timeout, n_jobs=1)
+            n_trials=n_trials, timeout=timeout, n_jobs=1)
         comm.mpi_comm.bcast((False, None))
     else:
         while True:

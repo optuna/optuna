@@ -189,9 +189,9 @@ class Minimize(BaseCommand):
                 parsed_args.method, parsed_args.file))
             return 1
 
-        study.run(
+        study.optimize(
             target_method, n_trials=parsed_args.n_trials,
-            timeout_seconds=parsed_args.timeout, n_jobs=parsed_args.n_jobs)
+            timeout=parsed_args.timeout, n_jobs=parsed_args.n_jobs)
         return 0
 
 
