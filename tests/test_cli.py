@@ -116,6 +116,30 @@ def test_create_study_command_without_storage_url():
     shutil.rmtree(dummy_home)
 
 
+def test_create_study_command_with_direction():
+    # type: () -> None
+
+    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
+        storage = RDBStorage(storage_url)
+
+        command = ['optuna', 'create-study', '--storage', storage_url, '--direction', 'minimize']
+        study_name = str(subprocess.check_output(command).decode().strip())
+        study_id = storage.get_study_id_from_name(study_name)
+        assert storage.get_study_task(study_id) == optuna.structs.StudyTask.MINIMIZE
+
+        command = ['optuna', 'create-study', '--storage', storage_url, '--direction', 'maximize']
+
+        # Currently, 'maximize' is not implemented.
+        with pytest.raises(subprocess.CalledProcessError):
+            subprocess.check_call(command)
+
+        command = ['optuna', 'create-study', '--storage', storage_url, '--direction', 'test']
+
+        # --direction should be either 'minimize' or 'maximize'.
+        with pytest.raises(subprocess.CalledProcessError):
+            subprocess.check_call(command)
+
+
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
 def test_study_set_user_attr_command(options):
     # type: (List[str]) -> None
@@ -218,12 +242,6 @@ def test_optimize_command(options):
     with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
         storage = RDBStorage(storage_url)
 
-        command = ['optuna', 'optimize', '--n-trials', '10', '--create-study',
-                   __file__, 'objective_func']
-        command = _add_option(command, '--storage', storage_url, 'storage' in options)
-        command = _add_option(command, '--config', config_path, 'config' in options)
-        subprocess.check_call(command)
-
         study_name = storage.get_study_name_from_id(storage.create_new_study_id())
         command = ['optuna', 'optimize', '--study', study_name, '--n-trials', '10',
                    __file__, 'objective_func']
@@ -239,48 +257,16 @@ def test_optimize_command(options):
         assert storage.get_study_name_from_id(study.study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
 
 
-@pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
-def test_optimize_command_with_direction(options):
-    # type: (List[str]) -> None
-
-    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
-        command = ['optuna', 'optimize', '--n-trials', '10', '--create-study',
-                   '--direction', 'maximize', __file__, 'objective_func']
-        command = _add_option(command, '--storage', storage_url, 'storage' in options)
-        command = _add_option(command, '--config', config_path, 'config' in options)
-
-        # Currently, 'maximize' is not implemented.
-        with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(command)
-
-        command = ['optuna', 'optimize', '--n-trials', '10', '--create-study',
-                   '--direction', 'test', __file__, 'objective_func']
-        command = _add_option(command, '--storage', storage_url, 'storage' in options)
-        command = _add_option(command, '--config', config_path, 'config' in options)
-
-        # --direction should be 'minimize' or 'maximize'.
-        with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(command)
-
-
 def test_optimize_command_inconsistent_args():
     # type: () -> None
 
     with tempfile.NamedTemporaryFile() as tf:
         db_url = 'sqlite:///{}'.format(tf.name)
 
-        # Feeding neither --create-study nor --study
+        # Missing --study
         with pytest.raises(subprocess.CalledProcessError):
             subprocess.check_call(['optuna', 'optimize', '--storage', db_url, '--n-trials', '10',
                                    __file__, 'objective_func'])
-
-        # Feeding both --create-study and --study
-        study_name = str(subprocess.check_output(
-            ['optuna', 'create-study', '--storage', db_url]).decode().strip())
-        with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(['optuna', 'optimize', '--storage', db_url, '--n-trials', '10',
-                                   __file__, 'objective_func',
-                                   '--create-study', '--study', study_name])
 
 
 def test_empty_argv():
