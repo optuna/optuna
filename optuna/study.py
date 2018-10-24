@@ -139,20 +139,20 @@ class Study(object):
 
         return self.storage.get_study_system_attrs(self.study_id)
 
-    def run(
+    def optimize(
             self,
             func,  # type: ObjectiveFuncType
             n_trials=None,  # type: Optional[int]
-            timeout_seconds=None,  # type: Optional[float]
+            timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
             catch=(Exception,)  # type: Tuple[Type[Exception]]
     ):
         # type: (...) -> None
 
         if n_jobs == 1:
-            self._run_sequential(func, n_trials, timeout_seconds, catch)
+            self._optimize_sequential(func, n_trials, timeout, catch)
         else:
-            self._run_parallel(func, n_trials, timeout_seconds, n_jobs, catch)
+            self._optimize_parallel(func, n_trials, timeout, n_jobs, catch)
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -194,7 +194,7 @@ class Study(object):
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
-    def _run_sequential(self, func, n_trials, timeout_seconds, catch):
+    def _optimize_sequential(self, func, n_trials, timeout, catch):
         # type: (ObjectiveFuncType, Optional[int], Optional[float], Tuple[Type[Exception]]) -> None
 
         i_trial = 0
@@ -205,18 +205,18 @@ class Study(object):
                     break
                 i_trial += 1
 
-            if timeout_seconds is not None:
+            if timeout is not None:
                 elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
-                if elapsed_seconds >= timeout_seconds:
+                if elapsed_seconds >= timeout:
                     break
 
             self._run_trial(func, catch)
 
-    def _run_parallel(
+    def _optimize_parallel(
             self,
             func,  # type: ObjectiveFuncType
             n_trials,  # type: Optional[int]
-            timeout_seconds,  # type: Optional[float]
+            timeout,  # type: Optional[float]
             n_jobs,  # type: int
             catch  # type: Tuple[Type[Exception]]
     ):
@@ -250,10 +250,10 @@ class Study(object):
         imap_ite = pool.imap(func_child_thread, [que] * n_jobs, chunksize=1)
 
         while True:
-            if timeout_seconds is not None:
+            if timeout is not None:
                 elapsed_timedelta = datetime.datetime.now() - self.start_datetime
                 elapsed_seconds = elapsed_timedelta.total_seconds()
-                if elapsed_seconds > timeout_seconds:
+                if elapsed_seconds > timeout:
                     break
 
             if n_trials is not None:
@@ -410,7 +410,7 @@ def optimize(
 
     # We start a new study with a new in-memory storage.
     study = create_study(sampler=sampler, pruner=pruner, direction=direction)
-    study.run(func, n_trials, timeout, n_jobs, catch)
+    study.optimize(func, n_trials, timeout, n_jobs, catch)
     return study
 
 

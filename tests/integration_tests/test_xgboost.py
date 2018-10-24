@@ -47,10 +47,10 @@ def test_xgboost_pruning_callback():
         return 1.0
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    study.run(objective, n_trials=1)
+    study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.structs.TrialState.PRUNED
 
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    study.run(objective, n_trials=1)
+    study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.

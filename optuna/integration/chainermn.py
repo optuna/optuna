@@ -51,7 +51,7 @@ class ChainerMNStudy(object):
         super(ChainerMNStudy, self).__setattr__('delegate', study)
         super(ChainerMNStudy, self).__setattr__('comm', comm)
 
-    def run(
+    def optimize(
         self,
         func,  # type: Callable[[Trial, CommunicatorBase], float]
         n_trials=None,  # type: Optional[int]
@@ -63,7 +63,7 @@ class ChainerMNStudy(object):
 
         if self.comm.rank == 0:
             func_mn = ChainerMNObjectiveFunc(func, self.comm)
-            self.delegate.run(func_mn, n_trials, timeout_seconds, n_jobs, catch)
+            self.delegate.optimize(func_mn, n_trials, timeout_seconds, n_jobs, catch)
             self.comm.mpi_comm.bcast((False, None))
         else:
             while True:
