@@ -5,7 +5,9 @@ from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 from typing import Type  # NOQA
 
+from optuna.logging import get_logger
 from optuna.storages import InMemoryStorage
+from optuna.storages import RDBStorage
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
 
@@ -43,6 +45,12 @@ class ChainerMNStudy(object):
 
         if isinstance(study.storage, InMemoryStorage):
             raise ValueError('ChainerMN integration is not available with InMemoryStorage.')
+
+        if isinstance(study.storage, RDBStorage):
+            if study.storage.engine.dialect.name == 'sqlite':
+                logger = get_logger(__name__)
+                logger.warning('SQLite may cause synchronization problems when used with '
+                               'ChainerMN integration. Please use other DBs like PostgreSQL.')
 
         study_names = comm.mpi_comm.allgather(study.study_name)
         if len(set(study_names)) != 1:
