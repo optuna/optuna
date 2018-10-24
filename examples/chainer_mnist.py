@@ -14,7 +14,7 @@ We have the following two ways to execute this example:
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
-    $ optuna optimize chainer_mnist.py objective --n-trials=100 --study $STUDY_NAME \
+    $ optuna study optimize chainer_mnist.py objective --n-trials=100 --study $STUDY_NAME \
       --storage sqlite:///example.db
 
 """

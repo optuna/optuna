@@ -142,12 +142,12 @@ class Dashboard(BaseCommand):
             self.logger.info('Report successfully written to: {}'.format(parsed_args.out))
 
 
-class Optimize(BaseCommand):
+class StudyOptimize(BaseCommand):
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
-        parser = super(Optimize, self).get_parser(prog_name)
+        parser = super(StudyOptimize, self).get_parser(prog_name)
         parser.add_argument('--n-trials', type=int,
                             help='The number of trials. If this argument is not given, as many '
                                  'trials run as possible.')
@@ -194,7 +194,7 @@ _COMMANDS = {
     'study set-user-attr': StudySetUserAttribute,
     'studies': Studies,
     'dashboard': Dashboard,
-    'optimize': Optimize,
+    'study optimize': StudyOptimize,
 }
 
 

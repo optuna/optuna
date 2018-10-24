@@ -227,7 +227,7 @@ def test_dashboard_command(options):
             assert 'bokeh' in html
 
 
-# An example of objective functions for testing optimize command
+# An example of objective functions for testing study optimize command
 def objective_func(trial):
     # type: (Trial) -> float
 
@@ -236,14 +236,14 @@ def objective_func(trial):
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
-def test_optimize_command(options):
+def test_study_optimize_command(options):
     # type: (List[str]) -> None
 
     with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
         storage = RDBStorage(storage_url)
 
         study_name = storage.get_study_name_from_id(storage.create_new_study_id())
-        command = ['optuna', 'optimize', '--study', study_name, '--n-trials', '10',
+        command = ['optuna', 'study', 'optimize', '--study', study_name, '--n-trials', '10',
                    __file__, 'objective_func']
         command = _add_option(command, '--storage', storage_url, 'storage' in options)
         command = _add_option(command, '--config', config_path, 'config' in options)
@@ -257,16 +257,16 @@ def test_optimize_command(options):
         assert storage.get_study_name_from_id(study.study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
 
 
-def test_optimize_command_inconsistent_args():
+def test_study_optimize_command_inconsistent_args():
     # type: () -> None
 
     with tempfile.NamedTemporaryFile() as tf:
         db_url = 'sqlite:///{}'.format(tf.name)
 
-        # Missing --study
+        # --study argument is missing.
         with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(['optuna', 'optimize', '--storage', db_url, '--n-trials', '10',
-                                   __file__, 'objective_func'])
+            subprocess.check_call(['optuna', 'study', 'optimize', '--storage', db_url,
+                                   '--n-trials', '10', __file__, 'objective_func'])
 
 
 def test_empty_argv():
