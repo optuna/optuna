@@ -149,6 +149,27 @@ class Study(object):
     ):
         # type: (...) -> None
 
+        """Optimize an objective function.
+
+        Args:
+            func:
+                A callable that implements objective function.
+            n_trials:
+                The number of trials. If this argument is set to None, as many trials run as
+                possible.
+            timeout:
+                Stop study after the given number of second(s). If this argument is set to None,
+                as many trials run as possible.
+            n_jobs:
+                The number of parallel jobs. If this argument is set to -1, the number is set to
+                CPU counts.
+            catch:
+                A study continues to run even when a trial raises one of exceptions specified in
+                this argument. Default is (Exception,), where all non-exit exceptions are handled
+                by this logic.
+
+        """
+
         if n_jobs == 1:
             self._optimize_sequential(func, n_trials, timeout, catch)
         else:
@@ -364,54 +385,6 @@ def create_study(
     study_name = storage.get_study_name_from_id(storage.create_new_study_id(study_name))
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner,
                  direction=direction)
-
-
-def optimize(
-        func,  # type: ObjectiveFuncType
-        n_trials=None,  # type: Optional[int]
-        timeout=None,  # type: Optional[float]
-        n_jobs=1,  # type: int
-        sampler=None,  # type: samplers.BaseSampler
-        pruner=None,  # type: pruners.BasePruner
-        direction='minimize',  # type: str
-        catch=(Exception,)  # type: Tuple[Type[Exception]]
-):
-    # type: (...) -> Study
-
-    """Optimize an objective function.
-
-    Args:
-        func:
-            A callable that implements objective function.
-        n_trials:
-            The number of trials. If this argument is set to None, as many trials run as possible.
-        timeout:
-            Stop study after the given number of second(s). If this argument is set to None, as
-            many trials run as possible.
-        n_jobs:
-            The number of parallel jobs. If this argument is set to -1, the number is set to CPU
-            counts.
-        sampler:
-            Sampler object that implements background algorithm for value suggestion.
-        pruner:
-            Pruner object that decides early stopping of unpromising trials.
-        direction:
-            Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            maximization.
-        catch:
-            A study continues to run even when a trial raises one of exceptions specified in this
-            argument. Default is (Exception,), where all non-exit exceptions are handled by this
-            logic.
-
-    Returns:
-        A study object.
-
-    """
-
-    # We start a new study with a new in-memory storage.
-    study = create_study(sampler=sampler, pruner=pruner, direction=direction)
-    study.optimize(func, n_trials, timeout, n_jobs, catch)
-    return study
 
 
 def get_all_study_summaries(storage):

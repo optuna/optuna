@@ -107,7 +107,8 @@ def objective(trial):
 
 if __name__ == '__main__':
     import optuna
-    study = optuna.optimize(objective, n_trials=100)
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=100)
 
     print('Number of finished trials: ', len(study.trials))
 
