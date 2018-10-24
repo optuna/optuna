@@ -49,6 +49,10 @@ class CreateStudy(BaseCommand):
         parser = super(CreateStudy, self).get_parser(prog_name)
         parser.add_argument('--study-name', default=None,
                             help='A human-readable name of a study to distinguish it from others.')
+        parser.add_argument('--direction', type=str, choices=('minimize', 'maximize'),
+                            default='minimize',
+                            help='Set direction of optimization to a new study. Set \'minimize\' '
+                                 'for minimization and \'maximize\' for maximization.')
         return parser
 
     def take_action(self, parsed_args):
@@ -57,7 +61,8 @@ class CreateStudy(BaseCommand):
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
         storage = optuna.storages.RDBStorage(storage_url)
-        study_name = optuna.create_study(storage, study_name=parsed_args.study_name).study_name
+        study_name = optuna.create_study(storage, study_name=parsed_args.study_name,
+                                         direction=parsed_args.direction).study_name
         print(study_name)
 
 
@@ -137,12 +142,12 @@ class Dashboard(BaseCommand):
             self.logger.info('Report successfully written to: {}'.format(parsed_args.out))
 
 
-class Minimize(BaseCommand):
+class StudyOptimize(BaseCommand):
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
-        parser = super(Minimize, self).get_parser(prog_name)
+        parser = super(StudyOptimize, self).get_parser(prog_name)
         parser.add_argument('--n-trials', type=int,
                             help='The number of trials. If this argument is not given, as many '
                                  'trials run as possible.')
@@ -152,8 +157,7 @@ class Minimize(BaseCommand):
         parser.add_argument('--n-jobs', type=int, default=1,
                             help='The number of parallel jobs. If this argument is set to -1, the '
                                  'number is set to CPU counts.')
-        parser.add_argument('--study', help='Study name.')
-        parser.add_argument('--create-study', action='store_true', help='Create a new study.')
+        parser.add_argument('--study', required=True, help='Study name.')
         parser.add_argument('file',
                             help='Python script file where the objective function resides.')
         parser.add_argument('method', help='The method name of the objective function.')
@@ -162,19 +166,9 @@ class Minimize(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> int
 
-        if parsed_args.create_study and parsed_args.study:
-            raise ValueError('Inconsistent arguments. Flags --create-study and --study '
-                             'should not be specified at the same time.')
-        if not parsed_args.create_study and not parsed_args.study:
-            raise ValueError('Inconsistent arguments. Either --create-study or --study '
-                             'should be specified.')
-
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
-        if parsed_args.create_study:
-            study = optuna.create_study(storage=storage_url)
-        else:
-            study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
+        study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.
@@ -200,7 +194,7 @@ _COMMANDS = {
     'study set-user-attr': StudySetUserAttribute,
     'studies': Studies,
     'dashboard': Dashboard,
-    'minimize': Minimize,
+    'study optimize': StudyOptimize,
 }
 
 

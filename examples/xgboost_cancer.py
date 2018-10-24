@@ -13,7 +13,8 @@ We have following two ways to execute this example:
 
 
 (2) Execute through CLI.
-    $ optuna minimize xgboost_cancer.py objective --create-study --n-trials=100 \
+    $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
+    $ optuna study optimize xgboost_cancer.py objective --n-trials=100 --study $STUDY_NAME \
       --storage sqlite:///example.db
 
 """
