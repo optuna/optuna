@@ -98,8 +98,8 @@ if __name__ == '__main__':
         print('Number of nodes:', comm.size)
 
     # Run optimization!
-    study = optuna.integration.minimize_chainermn(
-        objective, study, comm, n_trials=25)
+    chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
+    chainermn_study.optimize(objective, n_trials=25)
 
     if comm.rank == 0:
         print('Number of finished trials: ', len(study.trials))

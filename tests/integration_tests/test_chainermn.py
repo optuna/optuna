@@ -3,10 +3,13 @@ import pytest
 from types import TracebackType  # NOQA
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
+from typing import Optional  # NOQA
 from typing import Type  # NOQA
 
 from optuna import create_study
-from optuna.integration import minimize_chainermn
+from optuna.integration import ChainerMNStudy
+from optuna.storages import BaseStorage  # NOQA
+from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna import Study
 from optuna.testing.storage import StorageSupplier
@@ -64,6 +67,7 @@ class MultiNodeStorageSupplier(StorageSupplier):
 
         super(MultiNodeStorageSupplier, self).__init__(storage_specifier)
         self.comm = comm
+        self.storage = None  # type: Optional[RDBStorage]
 
     def __enter__(self):
         # type: () -> RDBStorage
@@ -76,45 +80,101 @@ class MultiNodeStorageSupplier(StorageSupplier):
             url = 'dummy_url'
 
         url = self.comm.mpi_comm.bcast(url)
-        return RDBStorage(url)
+        self.storage = RDBStorage(url)
+        return self.storage
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # type: (Type[BaseException], BaseException, TracebackType) -> None
+
+        # Explicitly call storage's __del__ before sqlite tempfile is deleted.
+        del self.storage
+        gc.collect()
+        self.comm.mpi_comm.barrier()
 
         if self.comm.rank == 0:
             super(MultiNodeStorageSupplier, self).__exit__(exc_type, exc_val, exc_tb)
 
 
-@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_minimize_chainermn(storage_mode):
-    # type: (str) -> None
+@pytest.fixture
+def comm():
+    # type: () -> CommunicatorBase
 
     if not _available:
         pytest.skip('This test requires ChainerMN.')
 
-    comm = chainermn.create_communicator('naive')
-    if comm.size < 2:
-        pytest.skip("This test is for multi-node only.")
+    return chainermn.create_communicator('naive')
 
-    with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-        # Create and broadcast study_name.
+
+class TestChainerMNStudy(object):
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_init(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            mn_study = ChainerMNStudy(study, comm)
+
+            assert mn_study.study_name == study.study_name
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_init_with_multiple_study_names(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        TestChainerMNStudy._check_multi_node(comm)
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            # Create study_name for each rank.
+            name = create_study(storage).study_name
+            study = Study(name, storage)
+
+            with pytest.raises(ValueError):
+                ChainerMNStudy(study, comm)
+
+    @staticmethod
+    def test_init_with_incompatible_storage(comm):
+        # type: (CommunicatorBase) -> None
+
+        study = TestChainerMNStudy._create_shared_study(InMemoryStorage(), comm)
+
+        with pytest.raises(ValueError):
+            ChainerMNStudy(study, comm)
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_optimize(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            mn_study = ChainerMNStudy(study, comm)
+
+            # Invoke optimize.
+            n_trials = 20
+            func = Func()
+            mn_study.optimize(func, n_trials=n_trials)
+
+            # Assert trial counts.
+            assert len(mn_study.trials) == n_trials
+
+            # Assert the same parameters have been suggested among all nodes.
+            for trial in mn_study.trials:
+                assert trial.params == func.suggested_values[trial.trial_id]
+
+    @staticmethod
+    def _create_shared_study(storage, comm):
+        # type: (BaseStorage, CommunicatorBase) -> Study
+
         name_local = create_study(storage).study_name if comm.rank == 0 else None
         name_bcast = comm.mpi_comm.bcast(name_local)
-        study = Study(name_bcast, storage)
 
-        # Invoke minimize_chainermn.
-        n_trials = 20
-        func = Func()
-        study = minimize_chainermn(func, study, comm, n_trials=n_trials)
+        return Study(name_bcast, storage)
 
-        # Assert trial counts.
-        assert len(study.trials) == n_trials
+    @staticmethod
+    def _check_multi_node(comm):
+        # type: (CommunicatorBase) -> None
 
-        # Assert the same parameters have been suggested among all nodes.
-        for trial in study.trials:
-            assert trial.params == func.suggested_values[trial.trial_id]
-
-        # Explicitly call storage's __del__ before sqlite tempfile is deleted.
-        del storage
-        gc.collect()
-        comm.mpi_comm.barrier()
+        if comm.size < 2:
+            pytest.skip('This test is for multi-node only.')
