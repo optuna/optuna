@@ -95,14 +95,22 @@ class MultiNodeStorageSupplier(StorageSupplier):
             super(MultiNodeStorageSupplier, self).__exit__(exc_type, exc_val, exc_tb)
 
 
+@pytest.fixture
+def comm():
+    # type: () -> CommunicatorBase
+
+    if not _available:
+        pytest.skip('This test requires ChainerMN.')
+
+    return chainermn.create_communicator('naive')
+
+
 class TestChainerMNStudy(object):
+
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-    def test_init(storage_mode):
-        # type: (str) -> None
-
-        comm = chainermn.create_communicator('naive')
-        TestChainerMNStudy._check_multi_node(comm)
+    def test_init(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
@@ -112,10 +120,9 @@ class TestChainerMNStudy(object):
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-    def test_init_with_multiple_study_names(storage_mode):
-        # type: (str) -> None
+    def test_init_with_multiple_study_names(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
 
-        comm = chainermn.create_communicator('naive')
         TestChainerMNStudy._check_multi_node(comm)
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
@@ -127,11 +134,8 @@ class TestChainerMNStudy(object):
                 ChainerMNStudy(study, comm)
 
     @staticmethod
-    def test_init_with_incompatible_storage():
-        # type: () -> None
-
-        comm = chainermn.create_communicator('naive')
-        TestChainerMNStudy._check_multi_node(comm)
+    def test_init_with_incompatible_storage(comm):
+        # type: (CommunicatorBase) -> None
 
         study = TestChainerMNStudy._create_shared_study(InMemoryStorage(), comm)
 
@@ -140,11 +144,8 @@ class TestChainerMNStudy(object):
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-    def test_optimize(storage_mode):
-        # type: (str) -> None
-
-        comm = chainermn.create_communicator('naive')
-        TestChainerMNStudy._check_multi_node(comm)
+    def test_optimize(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
@@ -175,8 +176,5 @@ class TestChainerMNStudy(object):
     def _check_multi_node(comm):
         # type: (CommunicatorBase) -> None
 
-        if not _available:
-            pytest.skip('This test requires ChainerMN.')
-
         if comm.size < 2:
-            pytest.skip("This test is for multi-node only.")
+            pytest.skip('This test is for multi-node only.')
