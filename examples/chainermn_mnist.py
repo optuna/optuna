@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
     # Run optimization!
     chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
-    chainermn_study.run(objective, n_trials=25)
+    chainermn_study.optimize(objective, n_trials=25)
 
     if comm.rank == 0:
         print('Number of finished trials: ', len(study.trials))

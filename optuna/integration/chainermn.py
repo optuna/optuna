@@ -55,15 +55,14 @@ class ChainerMNStudy(object):
         self,
         func,  # type: Callable[[Trial, CommunicatorBase], float]
         n_trials=None,  # type: Optional[int]
-        timeout_seconds=None,  # type: Optional[float]
-        n_jobs=1,  # type: int
+        timeout=None,  # type: Optional[float]
         catch=(Exception,),  # type: Tuple[Type[Exception]]
     ):
         # type: (...) -> None
 
         if self.comm.rank == 0:
             func_mn = ChainerMNObjectiveFunc(func, self.comm)
-            self.delegate.optimize(func_mn, n_trials, timeout_seconds, n_jobs, catch)
+            self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
             self.comm.mpi_comm.bcast((False, None))
         else:
             while True:

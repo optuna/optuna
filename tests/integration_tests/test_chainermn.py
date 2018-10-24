@@ -153,7 +153,7 @@ class TestChainerMNStudy(object):
             # Invoke optimize.
             n_trials = 20
             func = Func()
-            mn_study.run(func, n_trials=n_trials)
+            mn_study.optimize(func, n_trials=n_trials)
 
             # Assert trial counts.
             assert len(mn_study.trials) == n_trials
