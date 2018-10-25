@@ -18,7 +18,7 @@ from optuna import distributions
 from optuna.structs import StudyTask
 from optuna.structs import TrialState
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 MAX_ATTR_LENGTH = 2048
 NOT_FOUND_MSG = 'Record does not exist.'
 
