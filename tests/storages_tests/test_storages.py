@@ -16,7 +16,7 @@ from optuna.storages import BaseStorage  # NOQA
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.structs import FrozenTrial
-from optuna.structs import StudyTask
+from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 from optuna.testing.storage import StorageSupplier
 
@@ -134,26 +134,26 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
 
 
 @parametrize_storage
-def test_set_and_get_study_task(storage_init_func):
+def test_set_and_get_study_direction(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
     study_id = storage.create_new_study_id()
 
-    def check_set_and_get(task):
-        # type: (StudyTask) -> None
+    def check_set_and_get(direction):
+        # type: (StudyDirection) -> None
 
-        storage.set_study_task(study_id, task)
-        assert storage.get_study_task(study_id) == task
+        storage.set_study_direction(study_id, direction)
+        assert storage.get_study_direction(study_id) == direction
 
-    assert storage.get_study_task(study_id) == StudyTask.NOT_SET
+    assert storage.get_study_direction(study_id) == StudyDirection.NOT_SET
 
     # Test setting value.
-    check_set_and_get(StudyTask.MINIMIZE)
+    check_set_and_get(StudyDirection.MINIMIZE)
 
     # Test overwriting value.
     with pytest.raises(ValueError):
-        storage.set_study_task(study_id, StudyTask.MAXIMIZE)
+        storage.set_study_direction(study_id, StudyDirection.MAXIMIZE)
 
 
 @parametrize_storage
@@ -411,7 +411,7 @@ def test_get_all_study_summaries(storage_init_func):
     storage = storage_init_func()
     study_id = storage.create_new_study_id()
 
-    storage.set_study_task(study_id, StudyTask.MINIMIZE)
+    storage.set_study_direction(study_id, StudyDirection.MINIMIZE)
 
     datetime_1 = datetime.now()
 
@@ -433,7 +433,7 @@ def test_get_all_study_summaries(storage_init_func):
     assert len(summaries) == 1
     assert summaries[0].study_id == study_id
     assert summaries[0].study_name == storage.get_study_name_from_id(study_id)
-    assert summaries[0].direction == StudyTask.MINIMIZE
+    assert summaries[0].direction == StudyDirection.MINIMIZE
     assert summaries[0].user_attrs == EXAMPLE_ATTRS
     assert summaries[0].n_trials == 2
     assert summaries[0].datetime_start is not None

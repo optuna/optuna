@@ -67,20 +67,19 @@ class Study(object):
         self.logger = logging.get_logger(__name__)
 
         if direction == 'minimize':
-            _direction = structs.StudyTask.MINIMIZE
+            _direction = structs.StudyDirection.MINIMIZE
         elif direction == 'maximize':
-            _direction = structs.StudyTask.MAXIMIZE
+            _direction = structs.StudyDirection.MAXIMIZE
         else:
             raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
 
         # TODO(Yanase): Implement maximization.
-        if _direction == structs.StudyTask.MAXIMIZE:
+        if _direction == structs.StudyDirection.MAXIMIZE:
             raise ValueError(
                 'Optimization direction of study {} is set to `MAXIMIZE`. '
                 'Currently, Optuna supports `MINIMIZE` only.'.format(study_name))
 
-        # TODO(Yanase): Change `task` in storages to `direction`.
-        self.storage.set_study_task(self.study_id, _direction)
+        self.storage.set_study_direction(self.study_id, _direction)
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -117,9 +116,9 @@ class Study(object):
 
     @property
     def direction(self):
-        # type: () -> structs.StudyTask
+        # type: () -> structs.StudyDirection
 
-        return self.storage.get_study_task(self.study_id)
+        return self.storage.get_study_direction(self.study_id)
 
     @property
     def trials(self):

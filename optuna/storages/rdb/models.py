@@ -15,7 +15,7 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 
 from optuna import distributions
-from optuna.structs import StudyTask
+from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 
 SCHEMA_VERSION = 10
@@ -29,7 +29,7 @@ class StudyModel(BaseModel):
     __tablename__ = 'studies'
     study_id = Column(Integer, primary_key=True)
     study_name = Column(String(255), unique=True, nullable=False)
-    task = Column(Enum(StudyTask), nullable=False)
+    direction = Column(Enum(StudyDirection), nullable=False)
 
     @classmethod
     def find_by_id(cls, study_id, session):
