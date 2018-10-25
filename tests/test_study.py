@@ -111,14 +111,16 @@ def check_study(study):
 def test_optimize_trivial_in_memory_new():
     # type: () -> None
 
-    study = optuna.optimize(func, n_trials=10)
+    study = optuna.create_study()
+    study.optimize(func, n_trials=10)
     check_study(study)
 
 
 def test_optimize_trivial_in_memory_resume():
     # type: () -> None
 
-    study = optuna.optimize(func, n_trials=10)
+    study = optuna.create_study()
+    study.optimize(func, n_trials=10)
     study.optimize(func, n_trials=10)
     check_study(study)
 
@@ -134,15 +136,20 @@ def test_optimize_trivial_rdb_resume_study():
 def test_optimize_with_direction():
     # type: () -> None
 
-    study = optuna.optimize(func, n_trials=10, direction='minimize')
+    study = optuna.create_study(direction='minimize')
+    study.optimize(func, n_trials=10)
     assert study.direction == optuna.structs.StudyTask.MINIMIZE
     check_study(study)
 
+    # Currently, maximization is not implemented.
     with pytest.raises(ValueError):
-        optuna.optimize(func, n_trials=10, direction='maximize')
+        study = optuna.create_study(direction='maximize')
+        study.optimize(func, n_trials=10)
+        assert study.direction == optuna.structs.StudyTask.MAXIMIZE
+        check_study(study)
 
     with pytest.raises(ValueError):
-        optuna.optimize(func, n_trials=10, direction='test')
+        optuna.create_study(direction='test')
 
 
 @pytest.mark.parametrize('n_trials, n_jobs, storage_mode', itertools.product(
@@ -355,7 +362,8 @@ def test_run_trial(storage_mode):
 def test_study_pickle():
     # type: () -> None
 
-    study_1 = optuna.optimize(func, n_trials=10)
+    study_1 = optuna.create_study()
+    study_1.optimize(func, n_trials=10)
     check_study(study_1)
     assert len(study_1.trials) == 10
     dumped_bytes = pickle.dumps(study_1)

@@ -16,7 +16,9 @@ def _create_some_study():
 
         return x ** 2 + y ** 2 + z
 
-    return optuna.optimize(f, n_trials=100)
+    study = optuna.create_study()
+    study.optimize(f, n_trials=100)
+    return study
 
 
 def test_write():

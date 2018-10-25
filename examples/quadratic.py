@@ -31,7 +31,8 @@ def objective(trial):
 if __name__ == '__main__':
     # Let us minimize the objective function above.
     print('Running 10 trials...')
-    study = optuna.optimize(objective, n_trials=10)
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=10)
     print('Best value: {} (params: {})\n'.format(study.best_value, study.best_params))
 
     # We can continue the optimization as follows.

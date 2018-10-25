@@ -56,6 +56,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    study = optuna.optimize(objective, n_trials=100,
-                            pruner=optuna.pruners.MedianPruner(n_warmup_steps=5))
+    study = optuna.create_study(pruner=optuna.pruners.MedianPruner(n_warmup_steps=5))
+    study.optimize(objective, n_trials=100)
     print(study.best_trial)
