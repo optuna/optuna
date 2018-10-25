@@ -155,11 +155,14 @@ class Study(object):
             func:
                 A callable that implements objective function.
             n_trials:
-                The number of trials. If this argument is set to None, as many trials run as
-                possible.
+                The number of trials. If n_trials is set to None, there is no limitation on the
+                number of trials. If timeout is also set to None, the study continues to create
+                trials until it receives a termination signal such as Ctrl+C or SIGTERM.
             timeout:
-                Stop study after the given number of second(s). If this argument is set to None,
-                as many trials run as possible.
+                Stop study after the given number of second(s). If timeout is set to None, the
+                study is executed without time limitation. If n_trials is also set to None, the
+                study continues to create trials until it receives a termination signal such as
+                Ctrl+C or SIGTERM.
             n_jobs:
                 The number of parallel jobs. If this argument is set to -1, the number is set to
                 CPU counts.
