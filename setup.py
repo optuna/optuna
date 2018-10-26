@@ -22,14 +22,18 @@ def get_install_requires():
     return install_requires
 
 
-def get_tests_require():
-    tests_require = ['pytest', 'hacking', 'mock', 'bokeh']
+def get_extras_require():
+    extras_require = {
+        'checking': ['pytest', 'hacking'],
+        'testing': ['bokeh', 'chainer>=5.0.0', 'xgboost'],
+    }
     if sys.version_info[0] == 3:
         # TODO(Yanase): Setting mypy version to 0.620 as a temporal fix
         # for the library's problem in handling NamedTuple since 0.630.
         # The problem is tracked at https://github.com/python/mypy/issues/5640.
-        tests_require.append('mypy==0.620')
-    return tests_require
+        extras_require['checking'].append('mypy==0.620')
+    extras_require['circleci'] = extras_require['checking'] + extras_require['testing']
+    return extras_require
 
 
 def find_any_distribution(pkgs):
@@ -57,8 +61,8 @@ setup(
     author_email='akiba@preferred.jp',
     packages=find_packages(),
     install_requires=get_install_requires(),
-    tests_require=get_tests_require(),
-    extras_require={'testing': get_tests_require()},
+    tests_require=get_extras_require()['testing'],
+    extras_require=get_extras_require(),
     entry_points={
         'console_scripts': ['optuna = optuna.cli:main']
     }
