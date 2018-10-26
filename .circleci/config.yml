@@ -58,6 +58,27 @@ jobs:
             mypy --ignore-missing-imports .
             mypy --py2 --ignore-missing-imports .
 
+  document:
+    docker:
+      - image: readthedocs/build:3.0
+    steps:
+      - checkout
+
+      - run:
+          name: install
+          command: |
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            pip install .[document]
+
+      - run:
+          name: build
+          command: |
+            . venv/bin/activate
+            cd docs
+            make html
+
+
   # Unit tests
 
   tests-python36:
