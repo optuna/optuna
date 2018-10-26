@@ -32,7 +32,6 @@ def get_extras_require():
         # for the library's problem in handling NamedTuple since 0.630.
         # The problem is tracked at https://github.com/python/mypy/issues/5640.
         extras_require['checking'].append('mypy==0.620')
-    extras_require['circleci'] = extras_require['checking'] + extras_require['testing']
     return extras_require
 
 

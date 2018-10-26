@@ -38,15 +38,12 @@ jobs:
     steps:
       - checkout
 
-      - run: &install
+      - run:
           name: install
           command: |
-            sudo apt-get update
-            sudo apt-get -y install openmpi-bin libopenmpi-dev
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            python setup.py sdist
-            pip install $(ls dist/*.tar.gz)[circleci]
+            pip install .[checking]
 
       - run:
           name: flake8
@@ -69,7 +66,15 @@ jobs:
     steps:
       - checkout
 
-      - run: *install
+      - run: &install
+          name: install
+          command: |
+            sudo apt-get update
+            sudo apt-get -y install openmpi-bin libopenmpi-dev
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            python setup.py sdist
+            pip install $(ls dist/*.tar.gz)[testing]
 
       - run: &tests
           name: tests
