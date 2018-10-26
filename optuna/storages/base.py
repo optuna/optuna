@@ -31,8 +31,8 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @ abc.abstractmethod
-    def set_study_task(self, study_id, task):
-        # type: (int, structs.StudyTask) -> None
+    def set_study_direction(self, study_id, direction):
+        # type: (int, structs.StudyDirection) -> None
 
         raise NotImplementedError
 
@@ -57,8 +57,8 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @ abc.abstractmethod
-    def get_study_task(self, study_id):
-        # type: (int) -> structs.StudyTask
+    def get_study_direction(self, study_id):
+        # type: (int) -> structs.StudyDirection
 
         raise NotImplementedError
 
@@ -159,7 +159,7 @@ class BaseStorage(object):
         if len(all_trials) == 0:
             raise ValueError('No trials are completed yet.')
 
-        # TODO(sano): Deal with maximize task.
+        # TODO(sano): Deal with maximize direction.
         return min(all_trials, key=lambda t: t.value)
 
     def get_trial_params(self, trial_id):

@@ -91,7 +91,7 @@ class StudySetUserAttribute(BaseCommand):
 class Studies(Lister):
 
     _datetime_format = '%Y-%m-%d %H:%M:%S'
-    _study_list_header = ('NAME', 'TASK', 'N_TRIALS', 'DATETIME_START')
+    _study_list_header = ('NAME', 'DIRECTION', 'N_TRIALS', 'DATETIME_START')
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser

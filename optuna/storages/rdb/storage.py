@@ -52,7 +52,7 @@ class RDBStorage(BaseStorage):
             study_name = self._create_unique_study_name(session)
 
         study = models.StudyModel(study_name=study_name,
-                                  task=structs.StudyTask.NOT_SET)
+                                  direction=structs.StudyDirection.NOT_SET)
         session.add(study)
         if not self._commit_with_integrity_check(session):
             raise ValueError(
@@ -75,19 +75,20 @@ class RDBStorage(BaseStorage):
 
         return study_name
 
-    # TODO(sano): Prevent simultaneous setting of different tasks by multiple threads/processes.
-    def set_study_task(self, study_id, task):
-        # type: (int, structs.StudyTask) -> None
+    # TODO(sano): Prevent simultaneously setting different direction in distributed environments.
+    def set_study_direction(self, study_id, direction):
+        # type: (int, structs.StudyDirection) -> None
 
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        if study.task != structs.StudyTask.NOT_SET and study.task != task:
+        if study.direction != structs.StudyDirection.NOT_SET and study.direction != direction:
             raise ValueError(
-                'Cannot overwrite study task from {} to {}.'.format(study.task, task))
+                'Cannot overwrite study direction from {} to {}.'.format(
+                    study.direction, direction))
 
-        study.task = task
+        study.direction = direction
 
         self._commit(session)
 
@@ -141,14 +142,14 @@ class RDBStorage(BaseStorage):
 
         return study.study_name
 
-    def get_study_task(self, study_id):
-        # type: (int) -> structs.StudyTask
+    def get_study_direction(self, study_id):
+        # type: (int) -> structs.StudyDirection
 
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        return study.task
+        return study.direction
 
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
@@ -191,7 +192,7 @@ class RDBStorage(BaseStorage):
                                       if t.state is structs.TrialState.COMPLETE]
             best_trial = None
             if len(completed_trial_models) > 0:
-                # TODO(sano): Deal with maximize task.
+                # TODO(sano): Deal with maximize direction.
                 best_trial_model = min(completed_trial_models, key=lambda t: t.value)
 
                 best_param_models = [p for p in param_models
@@ -221,7 +222,7 @@ class RDBStorage(BaseStorage):
             study_sumarries.append(structs.StudySummary(
                 study_id=study_model.study_id,
                 study_name=study_model.study_name,
-                direction=self.get_study_task(study_model.study_id),
+                direction=self.get_study_direction(study_model.study_id),
                 best_trial=best_trial,
                 user_attrs=self.get_study_user_attrs(study_model.study_id),
                 system_attrs=system_attrs,
