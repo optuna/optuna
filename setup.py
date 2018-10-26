@@ -25,7 +25,7 @@ def get_install_requires():
 def get_extras_require():
     extras_require = {
         'checking': ['pytest', 'hacking'],
-        'testing': ['bokeh', 'chainer>=5.0.0', 'xgboost'],
+        'testing': ['mock', 'bokeh', 'chainer>=5.0.0', 'xgboost'],
     }
     if sys.version_info[0] == 3:
         # TODO(Yanase): Setting mypy version to 0.620 as a temporal fix
