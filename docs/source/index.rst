@@ -12,6 +12,7 @@ Welcome to Optuna's documentation!
 
    installation
    tutorial/index
+   reference/index
 
 Indices and tables
 ==================
