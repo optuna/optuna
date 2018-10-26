@@ -17,7 +17,7 @@ class BasePruner(object):
 
         """Judge whether the trial should be pruned at the given step.
 
-        Note that this function is not supposed to be called by library users. Instead,
+        Note that this method is not supposed to be called by library users. Instead,
         :method:`optuna.trial.Trial.report` and :method:`optuna.trial.Trial.should_prune` provide
         user interfaces to implement pruning mechanism in an objective function.
 
@@ -55,7 +55,8 @@ class MedianPruner(BasePruner):
 
         .. code::
 
-            >>> import optuna
+            >>> from optuna import create_study
+            >>> from optuna.pruners import MedianPruner
             >>>
             >>> def objective(trial):
             >>>     ...
@@ -79,7 +80,11 @@ class MedianPruner(BasePruner):
     def prune(self, storage, study_id, trial_id, step):
         # type: (BaseStorage, int, int, int) -> bool
 
-        """Please consult the documentation for :method:`BasePruner.prune`."""
+        """Please consult the documentation for :method:`BasePruner.prune`.
+
+        .. seealso::
+            :method:`BasePruner.prune`
+        """
 
         # TODO(Yanase): Implement a method of storage to just retrieve the number of trials.
         n_trials = len([t for t in storage.get_all_trials(study_id)
