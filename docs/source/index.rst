@@ -10,7 +10,8 @@ Welcome to Optuna's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
+   installation
+   tutorial/index
 
 Indices and tables
 ==================
