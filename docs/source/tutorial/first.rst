@@ -1,0 +1,96 @@
+.. _firstopt:
+
+First Optimization
+==================
+
+
+Quadratic Function Example
+--------------------------
+
+Let us try very simple optimization in IPython shell.
+
+.. code-block:: python
+
+    In [1]: import optuna
+
+First, we need to define the objective function. Here, we use a very simple quadratic function as an example of objective function. In practice, it is expected that training of machine learning algorithms is invoked in objective functions, and metrics such as loss or error are reported.
+
+.. code-block:: python
+
+    In [2]: def objective(trial):
+       ...:     x = trial.suggest_uniform('x', -10, 10)
+       ...:     return (x - 2) ** 2
+       ...:
+
+Then, we create a study object and pass the objective function to method ``study.optimize`` to start the optimization as follows.
+
+.. code-block:: python
+
+    In [3]: study = optuna.create_study()
+    In [4]: study.optimize(objective, n_trials=100)
+    [I 2018-05-09 10:03:22,469] Finished a trial resulted in value: 52.9345515866657. Current best value is 52.9345515866657 with parameters: {'x': -5.275613485244093}.
+    [I 2018-05-09 10:03:22,474] Finished a trial resulted in value: 32.82718929591965. Current best value is 32.82718929591965 with parameters: {'x': -3.7295016620924066}.
+    [I 2018-05-09 10:03:22,475] Finished a trial resulted in value: 46.89428737068025. Current best value is 32.82718929591965 with parameters: {'x': -3.7295016620924066}.
+    [I 2018-05-09 10:03:22,476] Finished a trial resulted in value: 100.99613064563654. Current best value is 32.82718929591965 with parameters: {'x': -3.7295016620924066}.
+    [I 2018-05-09 10:03:22,477] Finished a trial resulted in value: 110.56391159932272. Current best value is 32.82718929591965 with parameters: {'x': -3.7295016620924066}.
+    [I 2018-05-09 10:03:22,478] Finished a trial resulted in value: 42.486606942847395. Current best value is 32.82718929591965 with parameters: {'x': -3.7295016620924066}.
+    [I 2018-05-09 10:03:22,479] Finished a trial resulted in value: 1.130813338091735. Current best value is 1.130813338091735 with parameters: {'x': 3.063397074517198}.
+    ...
+    [I 2018-05-09 10:03:23,431] Finished a trial resulted in value: 8.760381111220335. Current best value is 0.0026232243068543526 with parameters: {'x': 1.9487825780924659}.
+
+
+We see that Optuna found the best ``x`` value ``1.9487825780924659``, which is close to the optimal value of ``2``.
+
+Study Object
+------------
+
+Let us clarify the terminology in Optuna as follows.
+
+* **Trial**: A single call of the objective function.
+* **Study**: An optimization session, i.e., a set of trials.
+* **Parameter**: A variable whose value is to be optimized, e.g., ``x`` in the above example.
+
+In Optuna, we use study object to manage optimization. Method ``optuna.create_study`` returns a study object.
+
+.. code-block:: python
+
+    In [4]: study = optuna.create_study()
+    In [5]: study.optimize(objective, n_trials=100)
+
+    In [6]: study
+    Out[6]: <optuna.study.Study at 0x151280b8d0>
+
+A study object has useful properties to analyze the optimization outcome.
+
+.. code-block:: python
+
+    In [7]: study.best_params
+    Out[7]: {'x': 1.9926578647650126}
+
+    In [8]: study.best_value
+    Out[8]: 5.390694980884334e-05
+
+    In [9]: study.best_trial
+    Out[9]: FrozenTrial(trial_id=26, state=<TrialState.COMPLETE: 1>, params={'x': 1.9926578647650126}, user_attrs={}, system_attrs={}, value=5.390694980884334e-05, intermediate_values={}, params_in_internal_repr={'x': 1.9926578647650126}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 87060), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 91010))
+
+    In [10]: study.trials  # all trials
+    Out[10]:
+    [FrozenTrial(trial_id=0, state=<TrialState.COMPLETE: 1>, params={'x': -4.219801301030433}, user_attrs={}, system_attrs={}, value=38.685928224299865, intermediate_values={}, params_in_internal_repr={'x': -4.219801301030433}, datetime_start=datetime.datetime(2018, 5, 9, 10, 22, 59, 983824), datetime_complete=datetime.datetime(2018, 5, 9, 10, 22, 59, 984053)),
+     ...
+     user_attrs={}, system_attrs={}, value=8.2881000286123179, intermediate_values={}, params_in_internal_repr={'x': 4.8789060472013182}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 886434), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 891347))]
+
+    In [11]: len(study.trials)
+    Out[11]: 100
+
+
+By executing ``study.optimize`` again, we can continue the optimization.
+
+.. code-block:: python
+
+    In [12]: study.optimize(objective, n_trials=100)
+    ...
+
+    In [13]: len(study.trials)
+    Out[13]: 200
+
+
