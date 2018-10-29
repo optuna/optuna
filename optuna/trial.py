@@ -339,11 +339,7 @@ class Trial(object):
     def params(self):
         # type: () -> Dict[str, Any]
 
-        """
-
-        A dictionary of parameters to be optimized.
-
-        """
+        """A dictionary of parameters to be optimized."""
 
         return self.storage.get_trial_params(self.trial_id)
 
@@ -351,21 +347,14 @@ class Trial(object):
     def user_attrs(self):
         # type: () -> Dict[str, Any]
 
-        """
+        """A dictionary of user attributes."""
 
-        A dictionary of user attributes.
-
-        """
         return self.storage.get_trial_user_attrs(self.trial_id)
 
     @property
     def system_attrs(self):
         # type: () -> Dict[str, Any]
 
-        """
-
-        A dictionary of system attributes.
-
-        """
+        """A dictionary of system attributes."""
 
         return self.storage.get_trial_system_attrs(self.trial_id)
