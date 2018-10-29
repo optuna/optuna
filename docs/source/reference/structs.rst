@@ -6,7 +6,7 @@ Structs
 .. autoclass:: TrialState
     :members:
 
-.. autoclass:: StudyTask
+.. autoclass:: StudyDirection
     :members:
 
 .. autoclass:: FrozenTrial
