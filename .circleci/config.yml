@@ -5,6 +5,7 @@ workflows:
   commit-build:
     jobs:
       - checks
+      - document
       - tests-python36
       - tests-python35
       - tests-python34
@@ -19,6 +20,7 @@ workflows:
                 - master
     jobs:
       - checks
+      - document
       - tests-python36
       - tests-python35
       - tests-python34
@@ -57,6 +59,27 @@ jobs:
             . venv/bin/activate
             mypy --ignore-missing-imports .
             mypy --py2 --ignore-missing-imports .
+
+  document:
+    docker:
+      - image: readthedocs/build:latest
+    steps:
+      - checkout
+
+      - run:
+          name: install
+          command: |
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            pip install .[document]
+
+      - run:
+          name: build
+          command: |
+            . venv/bin/activate
+            cd docs
+            make html
+
 
   # Unit tests
 
