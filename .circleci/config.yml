@@ -20,6 +20,7 @@ workflows:
                 - master
     jobs:
       - checks
+      - document
       - tests-python36
       - tests-python35
       - tests-python34
