@@ -17,6 +17,7 @@ IN_MEMORY_STORAGE_STUDY_UUID = '00000000-0000-0000-0000-000000000000'
 
 
 class InMemoryStorage(base.BaseStorage):
+    """Storage class that stores data in memory of the Python process."""
 
     def __init__(self):
         # type: () -> None

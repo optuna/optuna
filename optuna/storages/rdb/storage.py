@@ -23,6 +23,12 @@ from optuna import version
 
 
 class RDBStorage(BaseStorage):
+    """Storage class for RDB backend.
+
+    Args:
+        url: URL of the storage.
+        connect_args: Arguments that is passed to :func:`sqlalchemy.engine.create_engine`.
+    """
 
     def __init__(self, url, connect_args=None):
         # type: (str, Optional[Dict[str, Any]]) -> None
