@@ -44,10 +44,9 @@ class Trial(object):
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        """Suggest a parameter value from uniform distribution.
+        """Suggest a value for the continuous parameter.
 
-        The interval of the distribution is ``[low, high)``.
-        # TODO(Yanase): Add explanation of distribution.
+        The value is sampled from the interval ``[low, high)`` in the linear domain.
 
         Example:
 
@@ -77,10 +76,9 @@ class Trial(object):
     def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        """Suggest a parameter value from log-scaled uniform distribution.
+        """Suggest a value for the continuous parameter.
 
-        The interval of the distribution is ``[low, high)``.
-        # TODO(Yanase): Add explanation of distribution.
+        The value is sampled from the interval ``[low, high)`` in the log domain.
 
         Example:
 
@@ -110,10 +108,10 @@ class Trial(object):
     def suggest_discrete_uniform(self, name, low, high, q):
         # type: (str, float, float, float) -> float
 
-        """Suggest a parameter value from discretized Uniform distribution.
+        """Suggest a value for the discrete parameter.
 
-        The interval of the distribution is ``[low, high]``.
-        # TODO(Yanase): Add explanation of distribution.
+        The value is sampled from the discretized interval ``[low, high]`` whose step size is
+        ``q``.
 
         Example:
 
@@ -146,10 +144,9 @@ class Trial(object):
     def suggest_int(self, name, low, high):
         # type: (str, int, int) -> int
 
-        """Suggest a parameter value from uniform distribution of integer.
+        """Suggest a value for the integer parameter.
 
-        The range of this distribution is ``[low, high]``.
-        # TODO(Yanase): Add explanation of distribution.
+        The value is sampled from the integers in ``[low, high]``.
 
         Example:
 
@@ -181,10 +178,9 @@ class Trial(object):
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
 
-        """Suggest a parameter value from categorical distribution.
+        """Suggest a value for the categorical parameter.
 
-        The parameter value is chosen from ``choices``.
-        # TODO(Yanase): Add explanation of distribution.
+        The value is sampled from ``choices``.
 
         Example:
 
