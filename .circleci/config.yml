@@ -62,7 +62,7 @@ jobs:
 
   document:
     docker:
-      - image: readthedocs/build:3.0
+      - image: readthedocs/build:latest
     steps:
       - checkout
 
