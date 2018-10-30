@@ -26,6 +26,7 @@ def get_extras_require():
     extras_require = {
         'checking': ['hacking'],
         'testing': ['pytest', 'mock', 'bokeh', 'chainer>=5.0.0', 'xgboost', 'mpi4py'],
+        'document': ['sphinx', 'sphinx_rtd_theme'],
     }
     if sys.version_info[0] == 3:
         extras_require['checking'].append('mypy')
