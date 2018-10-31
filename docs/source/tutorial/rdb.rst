@@ -1,81 +1,72 @@
 .. _rdb:
 
-Using RDB Backend
-=================
+Saving/Resuming Study with RDB Backend
+==========================================
 
 An RDB backend enables persistent experiments (i.e., to save and resume a study) as well as access to history of studies.
 In addition, we can run multi-node optimization tasks with this feature, which is described in :ref:`distributed`.
 
-In this section, let's try simple examples running on a local environment with sqlite DB.
+In this section, let's try simple examples running on a local environment with SQLite DB.
 
 
-Creating a Study
-----------------
+New Study
+---------
 
-The first step is to run ``optuna create-study`` command specifying a DB's URL.
-
-.. code-block:: bash
-
-    $ optuna create-study --storage=sqlite:///example.db
-    [I 2018-05-09 11:26:34,565] A new study created with name: no-name-cf809196-5431-4a2c-8dbb-954d656c69bd
-    no-name-cf809196-5431-4a2c-8dbb-954d656c69bd
-
-A name is populated to identify this study.
-We can run optimization tasks and access the study's information with this name.
-
-Note: see also ``optuna.create_study`` function, which creates a study via Python API.
-
-
-Persistent Optimization
------------------------
-
-To run a study, create a Study object with additional arguments of the DB's URL and the study's name,
-and then invoke ``study.optimize`` method.
+We can create a persistent study by calling :func:`~optuna.study.create_study` function as follows.
+An SQLite file ``example.db`` is automatically initialized with a new study record.
 
 .. code-block:: python
 
-    study_name = ...  # Put a populated name by `optuna create-study`.
-    study = Study(study_name, 'sqlite:///example.db')
-    study.optimize(objective, n_trials=10)
+    import optuna
+    study_name = 'example-study'  # Unique identifier of the study.
+    study = optuna.create_study(study_name=study_name, storage='sqlite:///example.db')
 
-To resume a study, all we need to do is just invoking the same method in the same way.
-
-``optuna study optimize`` command is also available to start or resume a study, by passing storage and study arguments.
-(Replace STUDY_NAME with a name populated by ``optuna create-study`` command.)
-
-.. code-block:: bash
-
-    $ optuna study optimize hoge.py objective --n-trials=100 --study=<STUDY_NAME> --storage='sqlite:///example.db'
-    [I 2018-05-09 11:53:42,084] Finished a trial resulted in value: 1.5611912329002966. Current best value is 0.0006759211500324974 with parameters: {'x': 1.9740015163897489}.
-    ...
-
-
-Study History
--------------
-
-``optuna studies`` command lists all study records stored in a DB.
-
-.. code-block:: bash
-
-    $ optuna studies --storage='sqlite:///example.db'
-    +----------------------------------------------+-----------+----------+---------------------+
-    | NAME                                         | DIRECTION | N_TRIALS | DATETIME_START      |
-    +----------------------------------------------+-----------+----------+---------------------+
-    | no-name-cf809196-5431-4a2c-8dbb-954d656c69bd | MINIMIZE  |      110 | 2018-05-09 11:53:22 |
-    | no-name-3dd632e9-24a1-43a5-9c9d-bf125bb39f3c | NOT_SET   |        0 | None                |
-    | no-name-7ccf1253-3c89-4811-8a8e-945dd5244fe6 | MINIMIZE  |       98 | 2018-05-09 11:56:28 |
-    +----------------------------------------------+-----------+----------+---------------------+
-
-
-Note: see also ``optuna.get_all_study_summaries`` function, which gets summary of studies via Python API.
-
-To access details of a single study, instantiate ``Study`` object by passing the study's name and DB URL.
-The object provides properties such as ``trials``, ``best_value``, ``best_params``, described in :ref:`firstopt`.
+To run a study, call :func:`~optuna.study.Study.optimize` method passing an objective function.
 
 .. code-block:: python
 
-    study_name = ...  # Put a populated name by `optuna create-study`.
-    study = Study(study_name, 'sqlite:///example.db')
+    def objective(trial):
+        x = trial.suggest_uniform('x', -10, 10)
+        return (x - 2) ** 2
+
+    study.optimize(objective, n_trials=3)
+
+Resume Study
+------------
+
+To resume a study, instantiate a :class:`~optuna.study.Study` object passing the study name ``example-study`` and the DB URL ``sqlite:///example.db``.
+
+.. code-block:: python
+
+    study = optuna.Study(study_name='example-study', storage='sqlite:///example.db')
+    study.optimize(objective, n_trials=3)
+
+Experimental History
+--------------------
+
+We can access histories of studies and trials via the :class:`~optuna.study.Study` class.
+For example, we can get all trials of ``example-study`` as:
+
+.. code-block:: python
+
+    import optuna
+    study = optuna.Study(study_name='example-study', storage='sqlite:///example.db')
+    df = study.trials_dataframe()
+
+The method :func:`~optuna.study.Study.trials_dataframe` returns a pandas dataframe like:
+
+.. code-block:: bash
+
+    trial_id                state       value             datetime_start          datetime_complete    params
+                                                                                                            x
+           1  TrialState.COMPLETE   46.904095 2018-10-31 16:06:28.264950 2018-10-31 16:06:28.296937  8.848656
+           2  TrialState.COMPLETE   25.416075 2018-10-31 16:06:28.310073 2018-10-31 16:06:28.333799 -3.041436
+           3  TrialState.COMPLETE   50.302101 2018-10-31 16:06:28.344672 2018-10-31 16:06:28.364514  9.092397
+           4  TrialState.COMPLETE   53.415845 2018-10-31 16:06:28.380938 2018-10-31 16:06:28.400815 -5.308614
+           5  TrialState.COMPLETE   29.780800 2018-10-31 16:06:28.415496 2018-10-31 16:06:28.449833  7.457179
+           6  TrialState.COMPLETE    6.950141 2018-10-31 16:06:28.466843 2018-10-31 16:06:28.484284  4.636312
+
+A :class:`~optuna.study.Study` object also provides properties such as :attr:`~optuna.study.Study.trials`, :attr:`~optuna.study.Study.best_value`, :attr:`~optuna.study.Study.best_params` (see also :ref:`firstopt`).
 
 .. code-block:: bash
 
