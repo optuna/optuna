@@ -11,6 +11,12 @@ Currently, we support five kinds of parameters.
 .. code-block:: python
 
     def objective(trial):
+        # Categorical parameter
+        optimizer = trial.suggest_categorical('optimizer', ['MomentumSGD', 'Adam'])
+
+        # Int parameter
+        num_layers = trial.suggest_int('num_layers', 1, 3)
+
         # Uniform parameter
         dropout_rate = trial.suggest_uniform('dropout_rate', 0.0, 1.0)
 
@@ -19,12 +25,6 @@ Currently, we support five kinds of parameters.
 
         # Discrete-uniform parameter
         drop_path_rate = trial.suggest_discrete_uniform('drop_path_rate', 0.0, 1.0, 0.1)
-
-        # Int parameter
-        num_layers = trial.suggest_int('num_layers', 1, 3)
-
-        # Categorical parameter
-        optimizer = trial.suggest_categorical('optimizer', ['MomentumSGD', 'Adam'])
 
         ...
 
