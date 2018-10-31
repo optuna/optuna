@@ -51,46 +51,37 @@ Let us clarify the terminology in Optuna as follows.
 * **Parameter**: A variable whose value is to be optimized, e.g., ``x`` in the above example.
 
 In Optuna, we use study object to manage optimization. Method ``optuna.create_study`` returns a study object.
-
-.. code-block:: python
-
-    In [4]: study = optuna.create_study()
-    In [5]: study.optimize(objective, n_trials=100)
-
-    In [6]: study
-    Out[6]: <optuna.study.Study at 0x151280b8d0>
-
 A study object has useful properties to analyze the optimization outcome.
 
 .. code-block:: python
 
-    In [7]: study.best_params
-    Out[7]: {'x': 1.9926578647650126}
+    In [5]: study.best_params
+    Out[5]: {'x': 1.9926578647650126}
 
-    In [8]: study.best_value
-    Out[8]: 5.390694980884334e-05
+    In [6]: study.best_value
+    Out[6]: 5.390694980884334e-05
 
-    In [9]: study.best_trial
-    Out[9]: FrozenTrial(trial_id=26, state=<TrialState.COMPLETE: 1>, params={'x': 1.9926578647650126}, user_attrs={}, system_attrs={}, value=5.390694980884334e-05, intermediate_values={}, params_in_internal_repr={'x': 1.9926578647650126}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 87060), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 91010))
+    In [7]: study.best_trial
+    Out[7]: FrozenTrial(trial_id=26, state=<TrialState.COMPLETE: 1>, params={'x': 1.9926578647650126}, user_attrs={}, system_attrs={}, value=5.390694980884334e-05, intermediate_values={}, params_in_internal_repr={'x': 1.9926578647650126}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 87060), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 91010))
 
-    In [10]: study.trials  # all trials
-    Out[10]:
+    In [8]: study.trials  # all trials
+    Out[8]:
     [FrozenTrial(trial_id=0, state=<TrialState.COMPLETE: 1>, params={'x': -4.219801301030433}, user_attrs={}, system_attrs={}, value=38.685928224299865, intermediate_values={}, params_in_internal_repr={'x': -4.219801301030433}, datetime_start=datetime.datetime(2018, 5, 9, 10, 22, 59, 983824), datetime_complete=datetime.datetime(2018, 5, 9, 10, 22, 59, 984053)),
      ...
      user_attrs={}, system_attrs={}, value=8.2881000286123179, intermediate_values={}, params_in_internal_repr={'x': 4.8789060472013182}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 886434), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 891347))]
 
-    In [11]: len(study.trials)
-    Out[11]: 100
+    In [9]: len(study.trials)
+    Out[9]: 100
 
 
 By executing ``study.optimize`` again, we can continue the optimization.
 
 .. code-block:: python
 
-    In [12]: study.optimize(objective, n_trials=100)
+    In [10]: study.optimize(objective, n_trials=100)
     ...
 
-    In [13]: len(study.trials)
-    Out[13]: 200
+    In [11]: len(study.trials)
+    Out[11]: 200
 
 
