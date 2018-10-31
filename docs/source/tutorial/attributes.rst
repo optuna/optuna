@@ -9,7 +9,8 @@ This feature is to annotate experiments with user-defined attributes.
 Adding User Attributes to Studies
 ---------------------------------
 
-A ``Study`` object provides ``set_user_attr`` method to register a pair of key and value as an user-defined attribute.
+A :class:`~optuna.study.Study` object provides :func:`~optuna.study.Study.set_user_attr` method to
+register a pair of key and value as an user-defined attribute.
 A key is supposed to be a ``str``, and a value be any object serializable with ``json.dumps``.
 
 .. code-block:: python
@@ -20,13 +21,14 @@ A key is supposed to be a ``str``, and a value be any object serializable with `
     study.set_user_attr('dataset', 'MNIST')
 
 
-We can access annotated attributes with ``user_attrs`` property.
+We can access annotated attributes with :attr:`~optuna.study.Study.user_attr` property.
 
 .. code-block:: python
 
     study.user_attrs  # {'contributors': ['Akiba', 'Sano'], 'dataset': 'MNIST'}
 
-``StudySummary`` object, which can be retrieved using ``get_all_study_summaries``, also contains user-defined attributes.
+:class:`~optuna.struct.StudySummary` object, which can be retrieved by
+:func:`~optuna.study.get_all_study_summaries`, also contains user-defined attributes.
 
 .. code-block:: python
 
@@ -40,7 +42,8 @@ We can access annotated attributes with ``user_attrs`` property.
 Adding User Attributes to Trials
 --------------------------------
 
-As with ``Study``, a ``Trial`` object provides ``set_user_attr`` method.
+As with :class:`~optuna.study.Study`, a :class:`~optuna.trial.Trial` object provides
+:func:`~optuna.trial.Trial.set_user_attr` method.
 Attributes are set inside an objective function.
 
 .. code-block:: python
@@ -64,4 +67,5 @@ We can access annotated attributes as:
 
     study.trials[0].user_attrs  # {'accuracy': 0.83}
 
-Note that, in this example, the attribute is not annotated to a ``Study`` but a single ``Trial``.
+Note that, in this example, the attribute is not annotated to a :class:`~optuna.study.Study`
+but a single :class:`~optuna.trial.Trial`.
