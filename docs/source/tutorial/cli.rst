@@ -3,7 +3,19 @@
 Command-Line Interface
 ======================
 
-Let us assume you are not in IPython shell and writing a Python script files instead.
+.. csv-table::
+   :header: Command, Description
+   :widths: 20, 40
+
+    create-study, Create a new study.
+    dashboard, Launch web dashboard (beta).
+    studies, Show a list of studies.
+    study optimize, Start optimization of a study.
+    study set-user-attr, Set a user attribute to a study.
+
+Optuna provides command-line interface as shown in the above table.
+
+Let us assume you are not in IPython shell and writing Python script files instead.
 It is totally fine to write scripts like the following:
 
 .. code-block:: python
