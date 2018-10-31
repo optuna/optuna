@@ -7,9 +7,9 @@ Tutorial
     :maxdepth: 2
 
    first
-   cli
    configuration
    rdb
    distributed
+   cli
    attributes
    pruning
