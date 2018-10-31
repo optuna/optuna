@@ -83,12 +83,14 @@ class Study(object):
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
+
         state = self.__dict__.copy()
         del state['logger']
         return state
 
     def __setstate__(self, state):
         # type: (Dict[Any, Any]) -> None
+
         self.__dict__.update(state)
         self.logger = logging.get_logger(__name__)
 
@@ -96,11 +98,15 @@ class Study(object):
     def best_params(self):
         # type: () -> Dict[str, Any]
 
+        """Parameters of the best trial in the study."""
+
         return self.best_trial.params
 
     @property
     def best_value(self):
         # type: () -> float
+
+        """The best objective value in the study."""
 
         best_value = self.best_trial.value
         if best_value is None:
@@ -112,11 +118,15 @@ class Study(object):
     def best_trial(self):
         # type: () -> structs.FrozenTrial
 
+        """The best trial in the study."""
+
         return self.storage.get_best_trial(self.study_id)
 
     @property
     def direction(self):
         # type: () -> structs.StudyDirection
+
+        """The direction of the study."""
 
         return self.storage.get_study_direction(self.study_id)
 
@@ -124,17 +134,23 @@ class Study(object):
     def trials(self):
         # type: () -> List[structs.FrozenTrial]
 
+        """All trials in the study."""
+
         return self.storage.get_all_trials(self.study_id)
 
     @property
     def user_attrs(self):
         # type: () -> Dict[str, Any]
 
+        """A dictionary of user attributes."""
+
         return self.storage.get_study_user_attrs(self.study_id)
 
     @property
     def system_attrs(self):
         # type: () -> Dict[str, Any]
+
+        """A dictionary of system attributes."""
 
         return self.storage.get_study_system_attrs(self.study_id)
 
@@ -180,15 +196,56 @@ class Study(object):
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
 
+        """Set a user attribute to the study.
+
+        Args:
+            key: A key string of the attribute.
+            value: A value of the attribute. The value should be JSON serializable.
+
+        """
+
         self.storage.set_study_user_attr(self.study_id, key, value)
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
 
+        """Set a system attribute to the study.
+
+        Note that Optuna internally uses this method to save system messages. Please use
+        :method:`Study.set_user_attr` to set users' attributes.
+
+        Args:
+            key: A key string of the attribute.
+            value: A value of the attribute. The value should be JSON serializable.
+
+        """
+
         self.storage.set_study_system_attr(self.study_id, key, value)
 
     def trials_dataframe(self):
         # type: () -> pd.DataFrame
+
+        """Export trials as a pandas DataFrame.
+
+        The pandas DataFrame provides useful features to analyze studies such as drawing
+        a histogram of objective values and exporting trials as a CSV file. Note that some
+        columns like ``params`` and ``user_attrs`` have a hierarchical structure. Please
+        refer to the example below to access DataFrame elements.
+
+        Example:
+
+            Get an objective value and a value of parameter 'x' in the first row.
+
+            >>> df = study.trials_dataframe()
+            >>> df.value[0]
+            0.0
+            >>> df.params.x[0]
+            1.0
+
+        Returns:
+            A pandas DataFrame of trials in the study.
+
+        """
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
