@@ -6,7 +6,7 @@ Advanced Configurations
 Defining Parameter Spaces
 -------------------------
 
-Currently, we support four kinds of parameters.
+Currently, we support five kinds of parameters.
 
 .. code-block:: python
 
@@ -17,11 +17,14 @@ Currently, we support four kinds of parameters.
         # Loguniform parameter
         learning_rate = trial.suggest_loguniform('learning_rate', 1e-5, 1e-2)
 
-        # Categorical parameter
-        optimizer = trial.suggest_categorical('optimizer', ['MomentumSGD', 'Adam'])
+        # Discrete-uniform parameter
+        drop_path_rate = trial.suggest_discrete_uniform('drop_path_rate', 0.0, 1.0, 0.1)
 
         # Int parameter
         num_layers = trial.suggest_int('num_layers', 1, 3)
+
+        # Categorical parameter
+        optimizer = trial.suggest_categorical('optimizer', ['MomentumSGD', 'Adam'])
 
         ...
 

@@ -8,7 +8,7 @@ Tutorial
 
    first
    cli
-   configuration
+   configurations
    rdb
    distributed
    attributes
