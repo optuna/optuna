@@ -22,7 +22,7 @@ First, we need to define the objective function. Here, we use a very simple quad
        ...:     return (x - 2) ** 2
        ...:
 
-Then, we create a study object and pass the objective function to method ``study.optimize`` to start the optimization as follows.
+Then, we create a study object and pass the objective function to method :func:`~optuna.study.Study.optimize` to start the optimization as follows.
 
 .. code-block:: python
 
@@ -50,7 +50,7 @@ Let us clarify the terminology in Optuna as follows.
 * **Study**: An optimization session, i.e., a set of trials.
 * **Parameter**: A variable whose value is to be optimized, e.g., ``x`` in the above example.
 
-In Optuna, we use study object to manage optimization. Method ``optuna.create_study`` returns a study object.
+In Optuna, we use study object to manage optimization. Method :func:`~optuna.study.create_study` returns a study object.
 A study object has useful properties to analyze the optimization outcome.
 
 .. code-block:: python
@@ -74,7 +74,7 @@ A study object has useful properties to analyze the optimization outcome.
     Out[9]: 100
 
 
-By executing ``study.optimize`` again, we can continue the optimization.
+By executing :func:`~optuna.study.Study.optimize` again, we can continue the optimization.
 
 .. code-block:: python
 
