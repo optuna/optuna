@@ -70,10 +70,10 @@ The difficulty of optimization increases roughly exponentially with regard to th
 We recommend not to add unimportant parameters.
 
 
-Arguments for ``study.optimize``
+Arguments for `Study.optimize`
 --------------------------------
 
-Method ``study.optimize`` (and ``optuna study optimize`` CLI command as well)
+Method :func:`~optuna.study.Study.optimize` (and ``optuna study optimize`` CLI command as well)
 has several useful options such as ``timeout``.
 Please refer to its docstring.
 
