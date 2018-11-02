@@ -9,51 +9,63 @@ This feature is to annotate experiments with user-defined attributes.
 Adding User Attributes to Studies
 ---------------------------------
 
-A ``Study`` object provides ``set_user_attr`` method to register a pair of key and value as an user-defined attribute.
+A :class:`~optuna.study.Study` object provides :func:`~optuna.study.Study.set_user_attr` method to
+register a pair of key and value as an user-defined attribute.
 A key is supposed to be a ``str``, and a value be any object serializable with ``json.dumps``.
 
 .. code-block:: python
 
-    study = ...  # type: optuna.Study
+    import optuna
+    study = optuna.create_study(storage='sqlite:///example.db')
     study.set_user_attr('contributors', ['Akiba', 'Sano'])
     study.set_user_attr('dataset', 'MNIST')
 
 
-We can access annotated attributes with ``user_attrs`` property.
+We can access annotated attributes with :attr:`~optuna.study.Study.user_attr` property.
 
 .. code-block:: python
 
     study.user_attrs  # {'contributors': ['Akiba', 'Sano'], 'dataset': 'MNIST'}
 
-``get_all_study_summaries`` method also collects user-defined attributes for each study.
+:class:`~optuna.struct.StudySummary` object, which can be retrieved by
+:func:`~optuna.study.get_all_study_summaries`, also contains user-defined attributes.
 
 .. code-block:: python
 
-    study_summaries = optuna.get_all_study_summaries(storage_url)
+    study_summaries = optuna.get_all_study_summaries('sqlite:///example.db')
     study_summaries[0].user_attrs  # {'contributors': ['Akiba', 'Sano'], 'dataset': 'MNIST'}
 
-Note: see also ``optuna study set-user-attr`` command, which set an attribute via command line interface.
+.. seealso::
+    ``optuna study set-user-attr`` command, which set an attribute via command line interface.
 
 
 Adding User Attributes to Trials
 --------------------------------
 
-As with ``Study``, a ``Trial`` object provides ``set_user_attr`` method.
+As with :class:`~optuna.study.Study`, a :class:`~optuna.trial.Trial` object provides
+:func:`~optuna.trial.Trial.set_user_attr` method.
 Attributes are set inside an objective function.
 
 .. code-block:: python
 
     def objective(trial):
-        trial.set_user_attr('task', 'quadratic function')
+        iris = sklearn.datasets.load_iris()
+        x, y = iris.data, iris.target
 
-        x = trial.suggest_uniform('x', -10, 10)
-        return (x - 2) ** 2
+        svc_c = trial.suggest_loguniform('svc_c', 1e-10, 1e10)
+        clf = sklearn.svm.SVC(C=svc_c)
+        accuracy = sklearn.model_selection.cross_val_score(clf, x, y).mean()
+
+        trial.set_user_attr('accuracy', accuracy)
+
+        return 1.0 - accuracy  # return error for minimization
 
 
 We can access annotated attributes as:
 
 .. code-block:: python
 
-    study.trials[0].user_attrs['task']  # 'quadratic function'
+    study.trials[0].user_attrs  # {'accuracy': 0.83}
 
-Note that, in this example, the attribute is not annotated to a ``Study`` but a single ``Trial``.
+Note that, in this example, the attribute is not annotated to a :class:`~optuna.study.Study`
+but a single :class:`~optuna.trial.Trial`.
