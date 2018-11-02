@@ -7,7 +7,7 @@ Tutorial
     :maxdepth: 2
 
    first
-   configuration
+   configurations
    rdb
    distributed
    cli
