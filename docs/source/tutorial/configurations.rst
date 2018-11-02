@@ -6,22 +6,25 @@ Advanced Configurations
 Defining Parameter Spaces
 -------------------------
 
-Currently, we support four kinds of parameters.
+Currently, we support five kinds of parameters.
 
 .. code-block:: python
 
     def objective(trial):
+        # Categorical parameter
+        optimizer = trial.suggest_categorical('optimizer', ['MomentumSGD', 'Adam'])
+
+        # Int parameter
+        num_layers = trial.suggest_int('num_layers', 1, 3)
+
         # Uniform parameter
         dropout_rate = trial.suggest_uniform('dropout_rate', 0.0, 1.0)
 
         # Loguniform parameter
         learning_rate = trial.suggest_loguniform('learning_rate', 1e-5, 1e-2)
 
-        # Categorical parameter
-        optimizer = trial.suggest_categorical('optimizer', ['MomentumSGD', 'Adam'])
-
-        # Int parameter
-        num_layers = trial.suggest_int('num_layers', 1, 3)
+        # Discrete-uniform parameter
+        drop_path_rate = trial.suggest_discrete_uniform('drop_path_rate', 0.0, 1.0, 0.1)
 
         ...
 
@@ -67,10 +70,10 @@ The difficulty of optimization increases roughly exponentially with regard to th
 We recommend not to add unimportant parameters.
 
 
-Arguments for ``study.optimize``
+Arguments for `Study.optimize`
 --------------------------------
 
-Method ``study.optimize`` (and ``optuna study optimize`` CLI command as well)
+Method :func:`~optuna.study.Study.optimize` (and ``optuna study optimize`` CLI command as well)
 has several useful options such as ``timeout``.
 Please refer to its docstring.
 
