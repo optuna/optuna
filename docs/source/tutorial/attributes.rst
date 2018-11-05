@@ -36,7 +36,7 @@ We can access annotated attributes with :attr:`~optuna.study.Study.user_attr` pr
     study_summaries[0].user_attrs  # {'contributors': ['Akiba', 'Sano'], 'dataset': 'MNIST'}
 
 .. seealso::
-    ``optuna study set-user-attr`` command, which set an attribute via command line interface.
+    ``optuna study set-user-attr`` command, which sets an attribute via command line interface.
 
 
 Adding User Attributes to Trials
