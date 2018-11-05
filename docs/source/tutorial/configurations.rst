@@ -78,4 +78,4 @@ has several useful options such as ``timeout``.
 Please refer to its docstring.
 
 **FYI**: If you don't give neither ``n_trials`` nor ``timeout`` options, the optimization continues until it receives a termination signal such as Ctrl+C or SIGTERM.
-This feature is useful for certain use cases, e.g., when it is hard to estimate appropriate computational costs required to optimize your objective function.
+This feature is useful for certain use cases, e.g., when it is hard to estimate computational costs required to optimize your objective function.
