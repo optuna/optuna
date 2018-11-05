@@ -13,6 +13,7 @@ from optuna.storages.rdb.models import StudyModel
 from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
+from optuna.structs import DuplicatedStudyError
 from optuna.structs import StorageInternalError
 from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
@@ -72,7 +73,7 @@ def test_create_new_study_id_duplicated_name():
     storage = create_test_storage()
     study_name = 'sample_study_name'
     storage.create_new_study_id(study_name)
-    with pytest.raises(ValueError):
+    with pytest.raises(DuplicatedStudyError):
         storage.create_new_study_id(study_name)
 
 

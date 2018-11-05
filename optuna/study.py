@@ -359,6 +359,7 @@ def create_study(
         pruner=None,  # type: pruners.BasePruner
         study_name=None,  # type: Optional[str]
         direction='minimize',  # type: str
+        exist_ok=False,  # type: bool
 ):
     # type: (...) -> Study
 
@@ -377,6 +378,10 @@ def create_study(
         direction:
             Direction of optimization. Set 'minimize' for minimization and 'maximize' for
             maximization.
+        exist_ok:
+            If this argument is set to :obj:`False` and the specified ``study_name`` already
+            exists in the ``storage``, a :obj:`ValueError` is raised; otherwise, no exception is
+            raised.
 
     Returns:
         A study object.
@@ -384,7 +389,18 @@ def create_study(
     """
 
     storage = storages.get_storage(storage)
-    study_name = storage.get_study_name_from_id(storage.create_new_study_id(study_name))
+
+    try:
+        study_id = storage.create_new_study_id(study_name)
+    except structs.DuplicatedStudyError as e:
+        if exist_ok:
+            assert study_name is not None
+            study_id = storage.get_study_id_from_name(study_name)
+        else:
+            raise e
+
+    study_name = storage.get_study_name_from_id(study_id)
+
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner,
                  direction=direction)
 

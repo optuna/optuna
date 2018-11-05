@@ -437,3 +437,20 @@ def test_trials_dataframe_with_failure(storage_mode):
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
             assert ('system_attrs', 'fail_reason') in df.columns
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_create_study(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        # Test creating a new study.
+        study = optuna.create_study(storage=storage, exist_ok=False)
+
+        if not isinstance(study.storage, optuna.storages.InMemoryStorage):
+            # Test exist_ok=True with existing study.
+            optuna.create_study(study_name=study.study_name, storage=storage, exist_ok=True)
+
+            # Test exist_ok=False with existing study.
+            with pytest.raises(optuna.structs.DuplicatedStudyError):
+                optuna.create_study(study_name=study.study_name, storage=storage, exist_ok=False)

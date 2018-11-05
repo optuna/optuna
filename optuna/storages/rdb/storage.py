@@ -55,7 +55,7 @@ class RDBStorage(BaseStorage):
                                   direction=structs.StudyDirection.NOT_SET)
         session.add(study)
         if not self._commit_with_integrity_check(session):
-            raise ValueError(
+            raise structs.DuplicatedStudyError(
                 "study_name {} already exists. Please use a different name.".format(study_name))
 
         self.logger.info('A new study created with name: {}'.format(study.study_name))
