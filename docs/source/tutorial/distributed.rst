@@ -12,7 +12,7 @@ First, create a shared study using ``optuna create-study`` command (or using :fu
     $ optuna create-study --study-name "distributed-example" --storage "sqlite:///example.db"
     [I 2018-10-31 18:21:57,885] A new study created with name: distributed-example
 
-Then, write an optimization script. Let's assume that ``hoge.py`` contains the following code.
+Then, write an optimization script. Let's assume that ``foo.py`` contains the following code.
 
 .. code-block:: python
 
@@ -34,7 +34,7 @@ Process 1:
 
 .. code-block:: bash
 
-    $ python hoge.py
+    $ python foo.py
     [I 2018-10-31 18:46:44,308] Finished a trial resulted in value: 1.1097007755908204. Current best value is 0.00020881104123229936 with parameters: {'x': 2.014450295541348}.
     [I 2018-10-31 18:46:44,361] Finished a trial resulted in value: 0.5186699439824186. Current best value is 0.00020881104123229936 with parameters: {'x': 2.014450295541348}.
     ...
@@ -43,7 +43,7 @@ Process 2 (the same command as process 1):
 
 .. code-block:: bash
 
-    $ python hoge.py
+    $ python foo.py
     [I 2018-10-31 18:47:02,912] Finished a trial resulted in value: 29.821448668796563. Current best value is 0.00020881104123229936 with parameters: {'x': 2.014450295541348}.
     [I 2018-10-31 18:47:02,968] Finished a trial resulted in value: 0.7962498978463782. Current best value is 0.00020881104123229936 with parameters: {'x': 2.014450295541348}.
     ...
