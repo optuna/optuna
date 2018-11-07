@@ -28,6 +28,24 @@ if TYPE_CHECKING:
 
 class ChainerPruningExtension(Extension):
 
+    """Chainer extension to prune unpromising trials.
+
+    Args:
+        trial:
+            A trial corresponding to the current evaluation of the objective function.
+        observation_key:
+            An evaluation metric for pruning, e.g., ``main/loss`` and
+            ``validation/main/accuracy``. Please refer to
+            `chainer.Reporter reference <https://docs.chainer.org/en/stable/reference/
+            util/generated/chainer.Reporter.html>`_ for further details.
+        pruner_trigger:
+            A trigger to execute pruning. ``pruner_trigger`` is an instance of
+            `IntervalTrigger <https://docs.chainer.org/en/stable/reference/generated/
+            chainer.training.triggers.IntervalTrigger.html>`_ or
+            `ManualScheduleTrigger <https://docs.chainer.org/en/stable/reference/generated/
+            chainer.training.triggers.ManualScheduleTrigger.html>`_.
+    """
+
     def __init__(self, trial, observation_key, pruner_trigger):
         # type: (optuna.trial.Trial, str, TriggerType) -> None
 

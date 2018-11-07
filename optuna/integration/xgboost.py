@@ -13,6 +13,18 @@ except ImportError as e:
 
 class XGBoostPruningCallback(object):
 
+    """Callback for XGBoost to prune unpromising trials.
+
+    Args:
+        trial:
+            A trial corresponding to the current evaluation of the objective function.
+        observation_key:
+            An evaluation metric for pruning, e.g., ``validation-error`` and
+            ``validation-merror``. Please refer to ``eval_metric`` in
+            `XGBoost reference <https://xgboost.readthedocs.io/en/latest/parameter.html>`_
+            for further details.
+    """
+
     def __init__(self, trial, observation_key):
         # type: (optuna.trial.Trial, str) -> None
 

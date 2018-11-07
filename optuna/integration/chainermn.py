@@ -20,6 +20,17 @@ except ImportError as e:
 
 
 class ChainerMNObjectiveFunc(object):
+
+    """A wrapper of a objective function to incorporate Optuna with ChainerMN.
+
+    Args:
+        func:
+            A callable that implements objective function.
+        comm:
+            `A ChainerMN communicator <https://chainermn.readthedocs.io/en/stable/reference/
+            #communicators>`_.
+    """
+
     def __init__(self, func, comm):
         # type: (Callable[[Trial, CommunicatorBase], float], CommunicatorBase) -> None
 
@@ -34,6 +45,17 @@ class ChainerMNObjectiveFunc(object):
 
 
 class ChainerMNStudy(object):
+
+    """A wrapper of :class:`~optuna.study.Study` to incorporate Optuna with ChainerMN.
+
+    Args:
+        study:
+            A study object.
+        comm:
+            `A ChainerMN communicator <https://chainermn.readthedocs.io/en/stable/reference/
+            #communicators>`_.
+    """
+
     def __init__(
         self,
         study,  # type: Study
@@ -67,6 +89,26 @@ class ChainerMNStudy(object):
         catch=(Exception,),  # type: Tuple[Type[Exception]]
     ):
         # type: (...) -> None
+
+        """Optimize an objective function.
+
+        Args
+            func:
+                A callable that implements an objective function.
+            n_trials:
+                The number of trials. If n_trials is set to None, there is no limitation on the
+                number of trials. If timeout is also set to None, the study continues to create
+                trials until it receives a termination signal such as Ctrl+C or SIGTERM.
+            timeout:
+                Stop study after the given number of second(s). If timeout is set to None, the
+                study is executed without time limitation. If n_trials is also set to None, the
+                study continues to create trials until it receives a termination signal such as
+                Ctrl+C or SIGTERM.
+            catch:
+                A study continues to run even when a trial raises one of exceptions specified in
+                this argument. Default is (Exception,), where all non-exit exceptions are handled
+                by this logic.
+        """
 
         if self.comm.rank == 0:
             func_mn = ChainerMNObjectiveFunc(func, self.comm)
