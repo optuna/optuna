@@ -30,6 +30,17 @@ class ChainerPruningExtension(Extension):
 
     """Chainer extension to prune unpromising trials.
 
+    Example:
+
+        Add a pruning extension which observes validation losses to
+        `Chainer Trainer <https://docs.chainer.org/en/stable/reference/generated/
+        chainer.training.Trainer.html>`_.
+
+        .. code::
+
+            trainer.extend(
+                ChainerPruningExtension(trial, 'validation/main/loss', (1, 'epoch')))
+
     Args:
         trial:
             A trial corresponding to the current evaluation of the objective function.

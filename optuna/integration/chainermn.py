@@ -27,8 +27,8 @@ class ChainerMNObjectiveFunc(object):
         func:
             A callable that implements objective function.
         comm:
-            `A ChainerMN communicator <https://chainermn.readthedocs.io/en/stable/reference/
-            #communicators>`_.
+            A `ChainerMN communicator <https://docs.chainer.org/en/stable/chainermn/reference/
+            index.html#communicators>`_.
     """
 
     def __init__(self, func, comm):
@@ -48,12 +48,28 @@ class ChainerMNStudy(object):
 
     """A wrapper of :class:`~optuna.study.Study` to incorporate Optuna with ChainerMN.
 
+    .. seealso::
+        :class:`~optuna.integration.chainermn.ChainerMNStudy` provides the same interface as
+        :class:`~optuna.study.Study`. Please refer to :class:`optuna.study.Study` for further
+        details.
+
+    Example:
+
+        Optimize a objective function that trains neural network written with ChainerMN.
+
+        .. code::
+
+            comm = chainermn.create_communicator('naive')
+            study = optuna.Study(study_name, storage_url)
+            chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
+            chainermn_study.optimize(objective, n_trials=25)
+
     Args:
         study:
-            A study object.
+            A :class:`~optuna.study.Study` object.
         comm:
-            `A ChainerMN communicator <https://chainermn.readthedocs.io/en/stable/reference/
-            #communicators>`_.
+            A `ChainerMN communicator <https://docs.chainer.org/en/stable/chainermn/reference/
+            index.html#communicators>`_.
     """
 
     def __init__(
@@ -92,22 +108,8 @@ class ChainerMNStudy(object):
 
         """Optimize an objective function.
 
-        Args
-            func:
-                A callable that implements an objective function.
-            n_trials:
-                The number of trials. If n_trials is set to None, there is no limitation on the
-                number of trials. If timeout is also set to None, the study continues to create
-                trials until it receives a termination signal such as Ctrl+C or SIGTERM.
-            timeout:
-                Stop study after the given number of second(s). If timeout is set to None, the
-                study is executed without time limitation. If n_trials is also set to None, the
-                study continues to create trials until it receives a termination signal such as
-                Ctrl+C or SIGTERM.
-            catch:
-                A study continues to run even when a trial raises one of exceptions specified in
-                this argument. Default is (Exception,), where all non-exit exceptions are handled
-                by this logic.
+        This method provides the same interface as :func:`optuna.study.Study.optimize` except
+        the absence of ``n_jobs`` argument.
         """
 
         if self.comm.rank == 0:

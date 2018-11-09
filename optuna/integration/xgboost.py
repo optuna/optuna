@@ -15,6 +15,17 @@ class XGBoostPruningCallback(object):
 
     """Callback for XGBoost to prune unpromising trials.
 
+    Example:
+
+        Add a pruning callback which observes validation errors to training of an XGBoost model.
+
+        .. code::
+
+                pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
+                bst = xgb.train(param, dtrain, n_round, evals=[(dtest, 'validation')],
+                                callbacks=[pruning_callback])
+
+
     Args:
         trial:
             A trial corresponding to the current evaluation of the objective function.
