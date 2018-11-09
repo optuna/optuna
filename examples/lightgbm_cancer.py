@@ -19,8 +19,6 @@ We have following two ways to execute this example:
 
 """
 
-from __future__ import division
-
 import lightgbm as lgb
 import numpy as np
 import sklearn.datasets
