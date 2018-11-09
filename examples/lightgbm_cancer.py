@@ -49,11 +49,12 @@ def objective(trial):
         param['top_rate'] = trial.suggest_uniform('top_rate', 0.0, 1.0)
         param['other_rate'] = trial.suggest_uniform('other_rate', 0.0, 1.0 - param['top_rate'])
 
-    bst = lgb.train(param, dtrain, num_round)
-    preds = bst.predict(test_x)
+    gbm = lgb.train(param, dtrain, num_round)
+    preds = gbm.predict(test_x)
     pred_labels = np.rint(preds)
     accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
     return 1.0 - accuracy
+
 
 if __name__ == '__main__':
     study = optuna.create_study()

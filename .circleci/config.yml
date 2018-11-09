@@ -147,7 +147,7 @@ jobs:
           name: install
           command: |
             . venv/bin/activate
-            pip install chainer scikit-learn xgboost lightgbm
+            pip install chainer lightgbm scikit-learn xgboost
 
       - run: &examples
           name: examples
