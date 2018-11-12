@@ -21,12 +21,12 @@ class Trial(object):
     suggestion, manage the trial's state, and set/get user-defined attributes of the trial.
 
     Note that this object is seamlessly instantiated and passed to the objective function behind
-    Study.optimize() method (as well as optimize function); hence, in typical use cases,
-    library users do not care about instantiation of this object.
+    :func:`optuna.study.Study.optimize()` method (as well as optimize function); hence, in typical
+    use cases, library users do not care about instantiation of this object.
 
     Args:
         study:
-            A study object.
+            A :class:`~optuna.study.Study` object.
         trial_id:
             A trial ID populated by a storage object.
 
@@ -50,14 +50,14 @@ class Trial(object):
 
         Example:
 
-            Suggest a dropout rate for a layer of a neural network.
+            Suggest a dropout rate for neural network training.
 
             .. code::
 
                 >>> def objective(trial):
                 >>>     ...
                 >>>     dropout_rate = trial.suggest_unifrom('dropout_rate', 0, 1.0)
-                >>>     layer = chainer.functions.dropout(layer, ratio=dropout_rate)
+                >>>     ...
 
         Args:
             name:
@@ -82,14 +82,16 @@ class Trial(object):
 
         Example:
 
-            Suggest learning rate of neural network training.
+            Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/generated/
+            sklearn.svm.SVC.html>`_.
 
             .. code::
 
                 >>> def objective(trial):
                 >>>     ...
-                >>>     lr = trial.suggest_logunifrom('lr', 1e-5, 1e-1)
-                >>>     optimizer = chainer.optimizers.MomentumSGD(lr=lr)
+                >>>     c = trial.suggest_logunifrom('c', 1e-5, 1e2)
+                >>>     clf = sklearn.svm.SVC(C=c)
+                >>>     ...
 
         Args:
             name:
@@ -115,14 +117,17 @@ class Trial(object):
 
         Example:
 
-            Suggest a gradient-clipping threshold of neural-network training.
+            Suggest a fraction of samples used for fitting the individual learners of
+            `GradientBoostingClassifier <https://scikit-learn.org/stable/modules/generated/
+            sklearn.ensemble.GradientBoostingClassifier.html>`_.
 
             .. code::
 
                 >>> def objective(trial):
                 >>>     ...
-                >>>     clip = trial.suggest_discrete_uniform('gradient_clipping', 0.5, 5.0, 0.5)
-                >>>     optimizer = chainer.optimizers.GradientClipping(threshold=clip)
+                >>>     subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
+                >>>     clf = sklearn.ensemble.GradientBoostingClassifier(subsample=subsample)
+                >>>     ...
 
         Args:
             name:
@@ -150,16 +155,16 @@ class Trial(object):
 
         Example:
 
-            Suggest the number of layers of multilayer perceptrons.
+            Suggest the number of trees in `RandomForestClassifier <https://scikit-learn.org/
+            stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
 
             .. code::
 
                 >>> def objective(trial):
                 >>>     ...
-                >>>     n_layers = trial.suggest_int('n_layers', 1, 3)
-                >>>     layers = [chainer.links.Linear(None, 128) for _ in range(n_layers)]
-                >>>     layers.append(chainer.links.Linear(None, 10))
-                >>>     chainer.Sequential(*layers)
+                >>>     n_estimators = trial.suggest_int('n_estimators', 50, 400)
+                >>>     clf = sklearn.ensemble.RandomForestClassifier(n_estimators=n_estimators)
+                >>>     ...
 
         Args:
             name:
@@ -184,17 +189,16 @@ class Trial(object):
 
         Example:
 
-            Suggest optimizers of neural network training.
+            Suggest a kernel function of `SVC <https://scikit-learn.org/stable/modules/generated/
+            sklearn.svm.SVC.html>`_.
 
             .. code::
 
                 >>> def objective(trial):
                 >>>     ...
-                >>>     name = trial.suggest_categorical('optimizer', ['Adam', 'MomentumSGD'])
-                >>>     if name == 'Adam':
-                >>>         optimizer = chainer.optimizers.Adam()
-                >>>     else:
-                >>>         optimizer = chainer.optimizers.MomentumSGD()
+                >>>     kernel = trial.suggest_categorical('kernel', ['linear', 'poly', 'rbf'])
+                >>>     clf = sklearn.svm.SVC(kernel=kernel)
+                >>>     ...
 
         Args:
             name:
@@ -212,14 +216,15 @@ class Trial(object):
     def report(self, value, step=None):
         # type: (float, Optional[int]) -> None
 
-        """Report objective function value to storage.
+        """Report an objective function value to storage.
 
-        If step is set to None, the value is stored to storage as a final value of the trial.
+        If step is set to None, the value is stored as a final value of the trial.
         Otherwise, it is saved as an intermediate value.
 
         Example:
 
-            Report intermediate scores of SGDClassifier training
+            Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
+            generated/sklearn.linear_model.SGDClassifier.html>`_ training
 
             .. code::
 
@@ -238,7 +243,7 @@ class Trial(object):
             value:
                 A value returned from the objective function.
             step:
-                Step of the trial (e.g., Epoch of neural-network training).
+                Step of the trial (e.g., Epoch of neural network training).
         """
 
         self.storage.set_trial_value(self.trial_id, value)
@@ -251,11 +256,12 @@ class Trial(object):
         """Judge whether the trial should be pruned.
 
         This method calls prune method of the pruner, which judges whether the trial should
-        be pruned at the given step. Please refer to the example code of :method:`Trial.report`.
+        be pruned at the given step. Please refer to the example code of
+        :func:`optuna.trial.Trial.report`.
 
         Args:
             step:
-                Step of the trial (e.g., epoch of neural-network training).
+                Step of the trial (e.g., epoch of neural network training).
 
         Returns:
             A boolean value. If True, the trial should be pruned. Otherwise, the trial will be
@@ -272,19 +278,17 @@ class Trial(object):
 
         """Set user attributes to the trial.
 
-        The user attributes in the trial can be access via :method:`Trial.user_attrs`.
+        The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
 
         Example:
 
-            Save fixed hyperparameters of neural-network training:
+            Save fixed hyperparameters of neural network training:
 
             .. code::
 
-                >>> BATCHSIZE = 128
-                >>>
                 >>> def objective(trial):
                 >>>     ...
-                >>>     trial.set_user_attr('BATCHSIZE', BATCHSIZE)
+                >>>     trial.set_user_attr('BATCHSIZE', 128)
                 >>>
                 >>> study.best_trial.user_attrs
                 {'BATCHSIZE': 128}
@@ -305,7 +309,7 @@ class Trial(object):
         """Set system attributes to the trial.
 
         Note that Optuna internally uses this method to save system messages such as failure
-        reason of trials. Please use :method:`Trial.set_user_attr` to set users'
+        reason of trials. Please use :func:`~optuna.trial.Trial.set_user_attr` to set users'
         attributes.
 
         Args:
@@ -335,7 +339,11 @@ class Trial(object):
     def params(self):
         # type: () -> Dict[str, Any]
 
-        """A dictionary of parameters to be optimized."""
+        """Return parameters to be optimized.
+
+        Returns:
+            A dictionary containing all parameters.
+        """
 
         return self.storage.get_trial_params(self.trial_id)
 
@@ -343,7 +351,11 @@ class Trial(object):
     def user_attrs(self):
         # type: () -> Dict[str, Any]
 
-        """A dictionary of user attributes."""
+        """Return user attributes.
+
+        Returns:
+            A dictionary containing all user attributes.
+        """
 
         return self.storage.get_trial_user_attrs(self.trial_id)
 
@@ -351,6 +363,10 @@ class Trial(object):
     def system_attrs(self):
         # type: () -> Dict[str, Any]
 
-        """A dictionary of system attributes."""
+        """Return system attributes.
+
+        Returns:
+            A dictionary containing all system attributes.
+        """
 
         return self.storage.get_trial_system_attrs(self.trial_id)
