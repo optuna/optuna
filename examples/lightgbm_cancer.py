@@ -55,4 +55,14 @@ def objective(trial):
 if __name__ == '__main__':
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
-    print(study.best_trial)
+
+    print('Number of finished trials: {}'.format(len(study.trials)))
+
+    print('Best trial:')
+    trial = study.best_trial
+
+    print('  Value: {}'.format(trial.value))
+
+    print('  Params: ')
+    for key, value in trial.params.items():
+        print('    {}: {}'.format(key, value))
