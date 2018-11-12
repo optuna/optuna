@@ -82,8 +82,8 @@ class Trial(object):
 
         Example:
 
-            Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/generated/
-            sklearn.svm.SVC.html>`_.
+            Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/
+            generated/sklearn.svm.SVC.html>`_.
 
             .. code::
 
