@@ -1,10 +1,8 @@
 """
-Optuna example that optimizes a classifier configuration for cancer dataset
-using LightGBM.
+Optuna example that optimizes a classifier configuration for cancer dataset using LightGBM.
 
-In this example, we optimize the validation accuracy of cancer detection
-using LightGBM. We optimize both the choice of booster model and their hyper
-parameters.
+In this example, we optimize the validation accuracy of cancer detection using LightGBM.
+We optimize both the choice of booster model and their hyper parameters.
 
 We have following two ways to execute this example:
 
