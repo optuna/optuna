@@ -21,8 +21,8 @@ class LightGBMPruningCallback(object):
 
         .. code::
 
-                param = {'objective': 'binary', 'metric': 'binary_logloss'}
-                pruning_callback = LightGBMPruningCallback(trial, 'validation-binary_logloss')
+                param = {'objective': 'binary', 'metric': 'binary_error'}
+                pruning_callback = LightGBMPruningCallback(trial, 'validation-binary_error')
                 gbm = lgb.train(param, dtrain, num_round,
                                 valid_sets=[dtest], valid_names=['validation'],
                                 callbacks=[pruning_callback])

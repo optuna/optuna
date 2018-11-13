@@ -25,7 +25,7 @@ def objective(trial):
     dtest = lgb.Dataset(test_x, label=test_y)
 
     num_round = trial.suggest_int('num_round', 1, 500)
-    param = {'objective': 'binary', 'metric': 'binary_logloss', 'verbosity': -1,
+    param = {'objective': 'binary', 'metric': 'binary_error', 'verbosity': -1,
              'boosting_type': trial.suggest_categorical('boosting', ['gbdt', 'dart', 'goss']),
              'num_leaves': trial.suggest_int('num_leaves', 10, 1000),
              'learning_rate': trial.suggest_loguniform('learning_rate', 1e-8, 1.0)
@@ -40,7 +40,7 @@ def objective(trial):
 
     # Add a callback for pruning.
     pruning_callback = optuna.integration.LightGBMPruningCallback(
-        trial, 'validation-binary_logloss')
+        trial, 'validation-binary_error')
     gbm = lgb.train(param, dtrain, num_round,
                     valid_sets=[dtest], valid_names=['validation'],
                     verbose_eval=False,

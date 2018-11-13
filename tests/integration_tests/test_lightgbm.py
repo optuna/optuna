@@ -15,18 +15,18 @@ def test_lightgbm_pruning_callback_call():
         begin_iteration=0,
         end_iteration=1,
         iteration=1,
-        evaluation_result_list=[('validation', 'binary_logloss', 1., False)])
+        evaluation_result_list=[('validation', 'binary_error', 1., False)])
 
     # The pruner is deactivated.
     study = optuna.create_study(pruner=DeterministicPruner(False))
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
-    pruning_callback = LightGBMPruningCallback(trial, 'validation-binary_logloss')
+    pruning_callback = LightGBMPruningCallback(trial, 'validation-binary_error')
     pruning_callback(env)
 
     # The pruner is activated.
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
-    pruning_callback = LightGBMPruningCallback(trial, 'validation-binary_logloss')
+    pruning_callback = LightGBMPruningCallback(trial, 'validation-binary_error')
     with pytest.raises(optuna.structs.TrialPruned):
         pruning_callback(env)
 
@@ -40,8 +40,8 @@ def test_lightgbm_pruning_callback():
         dtrain = lgb.Dataset([[1.]], label=[1.])
         dtest = lgb.Dataset([[1.]], label=[1.])
 
-        pruning_callback = LightGBMPruningCallback(trial, 'validation-binary_logloss')
-        lgb.train({'objective': 'binary', 'metric': 'binary_logloss'}, dtrain, 1,
+        pruning_callback = LightGBMPruningCallback(trial, 'validation-binary_error')
+        lgb.train({'objective': 'binary', 'metric': 'binary_error'}, dtrain, 1,
                   valid_sets=[dtest], valid_names=['validation'], verbose_eval=False,
                   callbacks=[pruning_callback])
         return 1.0
