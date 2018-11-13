@@ -20,7 +20,6 @@ _default_handler = None  # type: Optional[logging.Handler]
 
 def create_default_formatter():
     # type: () -> colorlog.ColoredFormatter
-
     """Create a default formatter of log messages."""
 
     return colorlog.ColoredFormatter(
@@ -81,7 +80,6 @@ def _reset_library_root_logger():
 
 def get_logger(name):
     # type: (str) -> logging.Logger
-
     """Return a logger with the specified name."""
 
     _configure_library_root_logger()
@@ -90,7 +88,6 @@ def get_logger(name):
 
 def get_verbosity():
     # type: () -> int
-
     """Return the current level for this logger.
 
     Returns:
@@ -112,7 +109,6 @@ def get_verbosity():
 
 def set_verbosity(verbosity):
     # type: (int) -> None
-
     """Set the level for this logger.
 
     Args:
@@ -126,7 +122,6 @@ def set_verbosity(verbosity):
 
 def disable_default_handler():
     # type: () -> None
-
     """Disable the default handler of the Optuna's root logger.
 
     Example:
@@ -153,7 +148,6 @@ def disable_default_handler():
 
 def enable_default_handler():
     # type: () -> None
-
     """Enable the default handler of the Optuna's root logger.
 
     Please refer to the example shown in :func:`~optuna.logging.disable_default_handler()`.
