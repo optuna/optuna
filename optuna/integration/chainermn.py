@@ -55,7 +55,7 @@ class ChainerMNStudy(object):
 
     Example:
 
-        Optimize a objective function that trains neural network written with ChainerMN.
+        Optimize an objective function that trains neural network written with ChainerMN.
 
         .. code::
 
