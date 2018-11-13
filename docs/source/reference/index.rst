@@ -7,7 +7,6 @@ API Reference
     :maxdepth: 2
 
     config
-    distributions
     integration
     logging
     pruners
