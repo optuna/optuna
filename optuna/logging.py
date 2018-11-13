@@ -95,6 +95,15 @@ def get_verbosity():
 
     Returns:
         Logging level, e.g., ``optuna.logging.DEBUG`` and ``optuna.logging.INFO``.
+
+    .. note::
+        Optuna has following logging levels:
+
+        - ``optuna.logging.CRITICAL``, ``optuna.logging.FATAL``
+        - ``optuna.logging.ERROR``
+        - ``optuna.logging.WARNING``, ``optuna.logging.WARN``
+        - ``optuna.logging.INFO``
+        - ``optuna.logging.DEBUG``
     """
 
     _configure_library_root_logger()
@@ -118,11 +127,11 @@ def set_verbosity(verbosity):
 def disable_default_handler():
     # type: () -> None
 
-    """Disable the default handler of the root logger.
+    """Disable the default handler of the Optuna's root logger.
 
     Example:
 
-        Stop and then resume logging to stdout.
+        Stop and then resume logging to standard output.
 
         .. code::
 
@@ -145,7 +154,10 @@ def disable_default_handler():
 def enable_default_handler():
     # type: () -> None
 
-    """Enable the default handler of the root logger."""
+    """Enable the default handler of the Optuna's root logger.
+
+    Please refer to the example shown in :func:`~optuna.logging.disable_default_handler()`.
+    """
 
     _configure_library_root_logger()
 

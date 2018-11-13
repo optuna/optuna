@@ -3,8 +3,6 @@
 Logging
 =======
 
-.. autofunction:: create_default_formatter
-
 .. autofunction:: get_logger
 
 .. autofunction:: get_verbosity
