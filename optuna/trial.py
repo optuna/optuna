@@ -17,7 +17,7 @@ class Trial(object):
 
     """A trial is a process of evaluating an objective function.
 
-    This object is passed to an objective function, and provides interfaces to get parameter
+    This object is passed to an objective function and provides interfaces to get parameter
     suggestion, manage the trial's state, and set/get user-defined attributes of the trial.
 
     Note that this object is seamlessly instantiated and passed to the objective function behind
@@ -175,7 +175,7 @@ class Trial(object):
                 Upper endpoint of the interval. ``high`` can be suggested from the distribution.
 
         Returns:
-            A integer value sampled from uniform distribution.
+            An integer value sampled from uniform distribution.
         """
 
         return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
