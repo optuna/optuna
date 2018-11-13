@@ -102,7 +102,6 @@ class Study(object):
     @property
     def best_params(self):
         # type: () -> Dict[str, Any]
-
         """Return parameters of the best trial in the :class:`~optuna.study.Study`.
 
         Returns:
@@ -114,7 +113,6 @@ class Study(object):
     @property
     def best_value(self):
         # type: () -> float
-
         """Return the best objective value in the :class:`~optuna.study.Study`.
 
         Returns:
@@ -130,7 +128,6 @@ class Study(object):
     @property
     def best_trial(self):
         # type: () -> structs.FrozenTrial
-
         """Return the best trial in the :class:`~optuna.study.Study`.
 
         Returns:
@@ -142,7 +139,6 @@ class Study(object):
     @property
     def direction(self):
         # type: () -> structs.StudyDirection
-
         """Return the direction of the :class:`~optuna.study.Study`.
 
         Returns:
@@ -154,7 +150,6 @@ class Study(object):
     @property
     def trials(self):
         # type: () -> List[structs.FrozenTrial]
-
         """Return all trials in the :class:`~optuna.study.Study`.
 
         Returns:
@@ -166,7 +161,6 @@ class Study(object):
     @property
     def user_attrs(self):
         # type: () -> Dict[str, Any]
-
         """Return user attributes.
 
         Returns:
@@ -178,7 +172,6 @@ class Study(object):
     @property
     def system_attrs(self):
         # type: () -> Dict[str, Any]
-
         """Return system attributes.
 
         Returns:
@@ -228,7 +221,6 @@ class Study(object):
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
-
         """Set a user attribute to the :class:`~optuna.study.Study`.
 
         Args:
@@ -241,7 +233,6 @@ class Study(object):
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
-
         """Set a system attribute to the :class:`~optuna.study.Study`.
 
         Note that Optuna internally uses this method to save system messages. Please use
@@ -257,7 +248,6 @@ class Study(object):
 
     def trials_dataframe(self):
         # type: () -> pd.DataFrame
-
         """Export trials as a pandas DataFrame_.
 
         The DataFrame_ provides various features to analyze studies. It is also useful to draw a
