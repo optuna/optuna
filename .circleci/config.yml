@@ -5,6 +5,8 @@ workflows:
   commit-build:
     jobs:
       - checks
+      - document
+      - tests-python37
       - tests-python36
       - tests-python35
       - tests-python34
@@ -19,10 +21,13 @@ workflows:
                 - master
     jobs:
       - checks
+      - document
+      - tests-python37
       - tests-python36
       - tests-python35
       - tests-python34
       - tests-python27
+      - examples-python37
       - examples-python36
       - examples-python35
       - examples-python34
@@ -34,7 +39,7 @@ jobs:
 
   checks:
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.7
     steps:
       - checkout
 
@@ -58,11 +63,32 @@ jobs:
             mypy --ignore-missing-imports .
             mypy --py2 --ignore-missing-imports .
 
+  document:
+    docker:
+      - image: readthedocs/build:latest
+    steps:
+      - checkout
+
+      - run:
+          name: install
+          command: |
+            python -m venv venv || virtualenv venv
+            . venv/bin/activate
+            pip install .[document]
+
+      - run:
+          name: build
+          command: |
+            . venv/bin/activate
+            cd docs
+            make html
+
+
   # Unit tests
 
-  tests-python36:
+  tests-python37:
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.7
     steps:
       - checkout
 
@@ -92,6 +118,12 @@ jobs:
           environment:
             OMP_NUM_THREADS: 1
 
+  tests-python36:
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      [checkout, run: *install, run: *tests, run: *tests-mn]
+
   tests-python35:
     docker:
       - image: circleci/python:3.5
@@ -112,9 +144,9 @@ jobs:
 
   # Examples
 
-  examples-python36:
+  examples-python37:
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.7
     steps:
       - checkout
 
@@ -124,7 +156,7 @@ jobs:
           name: install
           command: |
             . venv/bin/activate
-            pip install chainer scikit-learn xgboost
+            pip install chainer lightgbm scikit-learn xgboost
 
       - run: &examples
           name: examples
@@ -146,6 +178,12 @@ jobs:
             mpirun -n 2 -- python examples/chainermn_mnist.py $STUDY_NAME $STORAGE_URL
           environment:
             OMP_NUM_THREADS: 1
+
+  examples-python36:
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
 
   examples-python35:
     docker:
