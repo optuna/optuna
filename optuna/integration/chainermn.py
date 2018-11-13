@@ -21,7 +21,7 @@ except ImportError as e:
 
 class ChainerMNObjectiveFunc(object):
 
-    """A wrapper of a objective function to incorporate Optuna with ChainerMN.
+    """A wrapper of an objective function to incorporate Optuna with ChainerMN.
 
     Args:
         func:
