@@ -196,7 +196,6 @@ class Study(object):
             catch=(Exception,)  # type: Tuple[Type[Exception]]
     ):
         # type: (...) -> None
-
         """Optimize an objective function.
 
         Args:
@@ -456,7 +455,6 @@ def create_study(
         direction='minimize',  # type: str
 ):
     # type: (...) -> Study
-
     """Create a new :class:`~optuna.study.Study`.
 
     Args:
@@ -489,7 +487,6 @@ def create_study(
 
 def get_all_study_summaries(storage):
     # type: (Union[str, storages.BaseStorage]) -> List[structs.StudySummary]
-
     """Get all history of studies stored in a specified storage.
 
     Args:

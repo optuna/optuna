@@ -192,7 +192,7 @@ class BaseStorage(object):
                 param_name in t.params and
                 t.state is structs.TrialState.COMPLETE)
             # TODO(Akiba): We also want to use pruned results
-            ]
+        ]
 
     # Methods for the median pruner
 
