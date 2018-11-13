@@ -46,7 +46,7 @@ class Trial(object):
 
         """Suggest a value for the continuous parameter.
 
-        The value is sampled from the interval ``[low, high)`` in the linear domain.
+        The value is sampled from the range ``[low, high)`` in the linear domain.
 
         Example:
 
@@ -63,9 +63,10 @@ class Trial(object):
             name:
                 A parameter name.
             low:
-                Lower endpoint of the interval. ``low`` can be suggested from the distribution.
+                Lower endpoint of the range of the distribution. ``low`` is included in the range.
             high:
-                Upper endpoint of the interval. ``high`` is not suggested from the distribution.
+                Upper endpoint of the range of the distribution. ``high`` is excluded from the
+                range.
 
         Returns:
             A float value sampled from uniform distribution.
@@ -78,7 +79,7 @@ class Trial(object):
 
         """Suggest a value for the continuous parameter.
 
-        The value is sampled from the interval ``[low, high)`` in the log domain.
+        The value is sampled from the range ``[low, high)`` in the log domain.
 
         Example:
 
@@ -97,9 +98,10 @@ class Trial(object):
             name:
                 A parameter name.
             low:
-                Lower endpoint of the interval. ``low`` can be suggested from the distribution.
+                Lower endpoint of the range of the distribution. ``low`` is included in the range.
             high:
-                Upper endpoint of the interval. ``high`` is not suggested from the distribution.
+                Upper endpoint of the range of the distribution. ``high`` is excluded from the
+                range.
 
         Returns:
             A float value sampled from log-scaled uniform distribution.
@@ -112,7 +114,7 @@ class Trial(object):
 
         """Suggest a value for the discrete parameter.
 
-        The value is sampled from the discretized interval ``[low, high]`` whose step size is
+        The value is sampled from the range ``[low, high]``, and the step of discretization is
         ``q``.
 
         Example:
@@ -133,11 +135,11 @@ class Trial(object):
             name:
                 A parameter name.
             low:
-                Lower endpoint of the interval. ``low`` can be suggested from the distribution.
+                Lower endpoint of the range of the distribution. ``low`` is included in the range.
             high:
-                Upper endpoint of the interval. ``high`` can be suggested from the distribution.
+                Upper endpoint of the range of the distribution. ``high`` is included in the range.
             q:
-                A quantization step of the distribution.
+                A step of discretization.
 
         Returns:
             A float value sampled from discretized uniform distribution.
@@ -170,9 +172,9 @@ class Trial(object):
             name:
                 A parameter name.
             low:
-                Lower endpoint of the interval. ``low`` can be suggested from the distribution.
+                Lower endpoint of the range of the distribution. ``low`` is included in the range.
             high:
-                Upper endpoint of the interval. ``high`` can be suggested from the distribution.
+                Upper endpoint of the range of the distribution. ``high`` is included in the range.
 
         Returns:
             An integer value sampled from uniform distribution.
