@@ -3,8 +3,6 @@
 Logging
 =======
 
-.. autofunction:: get_logger
-
 .. autofunction:: get_verbosity
 
 .. autofunction:: set_verbosity

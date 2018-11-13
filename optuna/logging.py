@@ -20,7 +20,10 @@ _default_handler = None  # type: Optional[logging.Handler]
 
 def create_default_formatter():
     # type: () -> colorlog.ColoredFormatter
-    """Create a default formatter of log messages."""
+    """Create a default formatter of log messages.
+
+    This function is not supposed to be directly accessed by library users.
+    """
 
     return colorlog.ColoredFormatter(
         '%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s')
@@ -80,7 +83,10 @@ def _reset_library_root_logger():
 
 def get_logger(name):
     # type: (str) -> logging.Logger
-    """Return a logger with the specified name."""
+    """Return a logger with the specified name.
+
+    This function is not supposed to be directly accessed by library users.
+    """
 
     _configure_library_root_logger()
     return logging.getLogger(name)
