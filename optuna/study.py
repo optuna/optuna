@@ -38,7 +38,7 @@ class Study(object):
             Study's name. Each study has a unique name as an identifier.
         storage:
             Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
-            <https://www.sqlalchemy.org/>`_ to handle databases, Please refer to `SQLAlchemy's
+            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
             document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
             further details.
         sampler:
@@ -449,7 +449,7 @@ def create_study(
 
     Args:
         storage:
-            Database URL. If this argument is set to None, an in-memory storage is used and the
+            Database URL. If this argument is set to None, in-memory storage is used, and the
             :class:`~optuna.study.Study` will not be persistent.
         sampler:
             :class:`~optuna.samplers.BaseSampler` object that implements background algorithm for
