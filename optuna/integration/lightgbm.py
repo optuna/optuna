@@ -56,7 +56,9 @@ class LightGBMPruningCallback(object):
             key = '{}-{}'.format(valid_name, metric_name)
             if key == self.observation_key:
                 if is_higher_better:
-                    current_score = 1 - current_score
+                    raise ValueError(
+                        'Pruning using metrics to be maximized has not been supported yet '
+                        '(validation_name: {}, metric_name: {})'.format(valid_name, metric_name))
 
                 self.trial.report(current_score, step=env.iteration)
                 if self.trial.should_prune(env.iteration):
