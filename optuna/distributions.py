@@ -19,7 +19,6 @@ class BaseDistribution(object):
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> Any
-
         """Convert internal representation of a parameter value into external representation.
 
         Args:
@@ -34,7 +33,6 @@ class BaseDistribution(object):
 
     def to_internal_repr(self, param_value_in_external_repr):
         # type: (Any) -> float
-
         """Convert external representation of a parameter value into internal representation.
 
         Args:
@@ -162,7 +160,6 @@ DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution,
 
 def json_to_distribution(json_str):
     # type: (str) -> BaseDistribution
-
     """Deserialize a distribution in JSON format.
 
     Args:
@@ -186,7 +183,6 @@ def json_to_distribution(json_str):
 
 def distribution_to_json(dist):
     # type: (BaseDistribution) -> str
-
     """Serialize a distribution to JSON format.
 
     Args:
@@ -202,7 +198,6 @@ def distribution_to_json(dist):
 
 def check_distribution_compatibility(dist_old, dist_new):
     # type: (BaseDistribution, BaseDistribution) -> None
-
     """A function to check compatibility of two distributions.
 
     Note that this method is not supposed to be called by library users.
