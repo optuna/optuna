@@ -105,7 +105,6 @@ class ChainerMNStudy(object):
         catch=(Exception,),  # type: Tuple[Type[Exception]]
     ):
         # type: (...) -> None
-
         """Optimize an objective function.
 
         This method provides the same interface as :func:`optuna.study.Study.optimize` except
