@@ -48,8 +48,8 @@ class Study(object):
             A subclass object of :class:`~optuna.pruners.BasePruner`. It decides early stopping
             of unpromising trials.
         direction:
-            Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            maximization. Note that 'maximize' is currently unsupported.
+            Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
+            maximization. Note that ``maximize`` is currently unsupported.
 
     """
 
@@ -195,17 +195,18 @@ class Study(object):
             func:
                 A callable that implements objective function.
             n_trials:
-                The number of trials. If n_trials is set to None, there is no limitation on the
-                number of trials. If timeout is also set to None, the study continues to create
-                trials until it receives a termination signal such as Ctrl+C or SIGTERM.
+                The number of trials. If this argument is set to :obj:`None`, there is no
+                limitation on the number of trials. If :obj:`timeout` is also set to :obj:`None`,
+                the study continues to create trials until it receives a termination signal such
+                as Ctrl+C or SIGTERM.
             timeout:
-                Stop study after the given number of second(s). If timeout is set to None, the
-                study is executed without time limitation. If n_trials is also set to None, the
-                study continues to create trials until it receives a termination signal such as
-                Ctrl+C or SIGTERM.
+                Stop study after the given number of second(s). If this argument is set to
+                :obj:`None`, the study is executed without time limitation. If :obj:`n_trials` is
+                also set to :obj:`None`, the study continues to create trials until it receives a
+                termination signal such as Ctrl+C or SIGTERM.
             n_jobs:
-                The number of parallel jobs. If this argument is set to -1, the number is set to
-                CPU counts.
+                The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
+                set to CPU counts.
             catch:
                 A study continues to run even when a trial raises one of exceptions specified in
                 this argument. Default is (`Exception <https://docs.python.org/3/library/
@@ -461,8 +462,8 @@ def create_study(
             Study's name. If this argument is set to None, a unique name is generated
             automatically.
         direction:
-            Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            maximization. Note that 'maximize' is currently unsupported.
+            Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
+            maximization. Note that ``maximize`` is currently unsupported.
 
     Returns:
         A :class:`~optuna.study.Study` object.
