@@ -30,21 +30,26 @@ class Study(object):
 
     """A study corresponds to an optimization task, i.e., a set of trials.
 
-    This object provides interfaces to run a new trial, access trials' history, set/get
-    user-defined attributes of the study itself.
+    This object provides interfaces to run a new :class:`~optuna.trial.Trial`, access trials'
+    history, set/get user-defined attributes of the study itself.
 
     Args:
         study_name:
-            Study's name.
+            Study's name. Each study has a unique name as an identifier.
         storage:
-            Storage object or its DB URL.
+            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
+            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
+            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
+            further details.
         sampler:
-            Sampler object that implements background algorithm for value suggestion.
+            A subclass object of :class:`~optuna.samplers.BaseSampler`. It implements background
+            algorithm for value suggestion.
         pruner:
-            Pruner object that decides early stopping of unpromising trials.
+            A subclass object of :class:`~optuna.pruners.BasePruner`. It decides early stopping
+            of unpromising trials.
         direction:
-            Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            maximization.
+            Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
+            maximization. Note that ``maximize`` is currently unsupported.
 
     """
 
@@ -83,24 +88,36 @@ class Study(object):
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
+
         state = self.__dict__.copy()
         del state['logger']
         return state
 
     def __setstate__(self, state):
         # type: (Dict[Any, Any]) -> None
+
         self.__dict__.update(state)
         self.logger = logging.get_logger(__name__)
 
     @property
     def best_params(self):
         # type: () -> Dict[str, Any]
+        """Return parameters of the best trial in the :class:`~optuna.study.Study`.
+
+        Returns:
+            A dictionary containing parameters of the best trial.
+        """
 
         return self.best_trial.params
 
     @property
     def best_value(self):
         # type: () -> float
+        """Return the best objective value in the :class:`~optuna.study.Study`.
+
+        Returns:
+            A float representing the best objective value.
+        """
 
         best_value = self.best_trial.value
         if best_value is None:
@@ -111,30 +128,55 @@ class Study(object):
     @property
     def best_trial(self):
         # type: () -> structs.FrozenTrial
+        """Return the best trial in the :class:`~optuna.study.Study`.
+
+        Returns:
+            A :class:`~optuna.structs.FrozenTrial` object of the best trial.
+        """
 
         return self.storage.get_best_trial(self.study_id)
 
     @property
     def direction(self):
         # type: () -> structs.StudyDirection
+        """Return the direction of the :class:`~optuna.study.Study`.
+
+        Returns:
+            A :class:`~optuna.structs.StudyDirection` object.
+        """
 
         return self.storage.get_study_direction(self.study_id)
 
     @property
     def trials(self):
         # type: () -> List[structs.FrozenTrial]
+        """Return all trials in the :class:`~optuna.study.Study`.
+
+        Returns:
+            A list of :class:`~optuna.structs.FrozenTrial` objects.
+        """
 
         return self.storage.get_all_trials(self.study_id)
 
     @property
     def user_attrs(self):
         # type: () -> Dict[str, Any]
+        """Return user attributes.
+
+        Returns:
+            A dictionary containing all user attributes.
+        """
 
         return self.storage.get_study_user_attrs(self.study_id)
 
     @property
     def system_attrs(self):
         # type: () -> Dict[str, Any]
+        """Return system attributes.
+
+        Returns:
+            A dictionary containing all system attributes.
+        """
 
         return self.storage.get_study_system_attrs(self.study_id)
 
@@ -153,20 +195,22 @@ class Study(object):
             func:
                 A callable that implements objective function.
             n_trials:
-                The number of trials. If n_trials is set to None, there is no limitation on the
-                number of trials. If timeout is also set to None, the study continues to create
-                trials until it receives a termination signal such as Ctrl+C or SIGTERM.
+                The number of trials. If this argument is set to :obj:`None`, there is no
+                limitation on the number of trials. If :obj:`timeout` is also set to :obj:`None`,
+                the study continues to create trials until it receives a termination signal such
+                as Ctrl+C or SIGTERM.
             timeout:
-                Stop study after the given number of second(s). If timeout is set to None, the
-                study is executed without time limitation. If n_trials is also set to None, the
-                study continues to create trials until it receives a termination signal such as
-                Ctrl+C or SIGTERM.
+                Stop study after the given number of second(s). If this argument is set to
+                :obj:`None`, the study is executed without time limitation. If :obj:`n_trials` is
+                also set to :obj:`None`, the study continues to create trials until it receives a
+                termination signal such as Ctrl+C or SIGTERM.
             n_jobs:
-                The number of parallel jobs. If this argument is set to -1, the number is set to
-                CPU counts.
+                The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
+                set to CPU counts.
             catch:
                 A study continues to run even when a trial raises one of exceptions specified in
-                this argument. Default is (Exception,), where all non-exit exceptions are handled
+                this argument. Default is (`Exception <https://docs.python.org/3/library/
+                exceptions.html#Exception>`_,), where all non-exit exceptions are handled
                 by this logic.
 
         """
@@ -178,16 +222,58 @@ class Study(object):
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
+        """Set a user attribute to the :class:`~optuna.study.Study`.
+
+        Args:
+            key: A key string of the attribute.
+            value: A value of the attribute. The value should be JSON serializable.
+
+        """
 
         self.storage.set_study_user_attr(self.study_id, key, value)
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
+        """Set a system attribute to the :class:`~optuna.study.Study`.
+
+        Note that Optuna internally uses this method to save system messages. Please use
+        :func:`~optuna.study.Study.set_user_attr` to set users' attributes.
+
+        Args:
+            key: A key string of the attribute.
+            value: A value of the attribute. The value should be JSON serializable.
+
+        """
 
         self.storage.set_study_system_attr(self.study_id, key, value)
 
     def trials_dataframe(self):
         # type: () -> pd.DataFrame
+        """Export trials as a pandas DataFrame_.
+
+        The DataFrame_ provides various features to analyze studies. It is also useful to draw a
+        histogram of objective values and to export trials as a CSV file. Note that DataFrames
+        returned by :func:`~optuna.study.Study.trials_dataframe()` employ MultiIndex_, and columns
+        have a hierarchical structure. Please refer to the example below to access DataFrame
+        elements.
+
+        Example:
+
+            Get an objective value and a value of parameter ``x`` in the first row.
+
+            >>> df = study.trials_dataframe()
+            >>> df
+            >>> df.value[0]
+            0.0
+            >>> df.params.x[0]
+            1.0
+
+        Returns:
+            A pandas DataFrame_ of trials in the :class:`~optuna.study.Study`.
+
+        .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
+        .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
+        """
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
@@ -360,24 +446,27 @@ def create_study(
         direction='minimize',  # type: str
 ):
     # type: (...) -> Study
-    """Create a new study.
+    """Create a new :class:`~optuna.study.Study`.
 
     Args:
         storage:
-            Storage object or its DB URL. If this argument is set to None, an InMemoryStorage is
-            instantiated.
+            Database URL. If this argument is set to None, in-memory storage is used, and the
+            :class:`~optuna.study.Study` will not be persistent.
         sampler:
-            Sampler object that implements background algorithm for value suggestion.
+            A subclass object of :class:`~optuna.samplers.BaseSampler`. It implements background
+            algorithm for value suggestion.
         pruner:
-            Pruner object that decides early stopping of unpromising trials.
+            A subclass object of :class:`~optuna.pruners.BasePruner`. It decides early stopping
+            of unpromising trials.
         study_name:
-            A human-readable name of a study.
+            Study's name. If this argument is set to None, a unique name is generated
+            automatically.
         direction:
-            Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            maximization.
+            Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
+            maximization. Note that ``maximize`` is currently unsupported.
 
     Returns:
-        A study object.
+        A :class:`~optuna.study.Study` object.
 
     """
 
@@ -393,10 +482,10 @@ def get_all_study_summaries(storage):
 
     Args:
         storage:
-            Storage object or its DB URL.
+            Database URL.
 
     Returns:
-        List of study history summarized as StudySummary objects.
+        List of study history summarized as :class:`~optuna.structs.StudySummary` objects.
 
     """
 
