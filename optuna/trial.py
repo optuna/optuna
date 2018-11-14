@@ -28,7 +28,7 @@ class Trial(object):
         study:
             A :class:`~optuna.study.Study` object.
         trial_id:
-            A trial ID populated by a storage object.
+            A trial ID that is automatically generated.
 
     """
 
@@ -218,9 +218,9 @@ class Trial(object):
     def report(self, value, step=None):
         # type: (float, Optional[int]) -> None
 
-        """Report an objective function value to storage.
+        """Report an objective function value.
 
-        If step is set to None, the value is stored as a final value of the trial.
+        If step is set to :obj:`None`, the value is stored as a final value of the trial.
         Otherwise, it is saved as an intermediate value.
 
         Example:
@@ -266,8 +266,8 @@ class Trial(object):
                 Step of the trial (e.g., epoch of neural network training).
 
         Returns:
-            A boolean value. If True, the trial should be pruned. Otherwise, the trial will be
-            continued.
+            A boolean value. If :obj:`True`, the trial should be pruned. Otherwise, the trial will
+            be continued.
         """
 
         # TODO(akiba): remove `step` argument
