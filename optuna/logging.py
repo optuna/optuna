@@ -94,7 +94,7 @@ def get_logger(name):
 
 def get_verbosity():
     # type: () -> int
-    """Return the current level for this logger.
+    """Return the current level for the Optuna's root logger.
 
     Returns:
         Logging level, e.g., ``optuna.logging.DEBUG`` and ``optuna.logging.INFO``.
@@ -115,7 +115,7 @@ def get_verbosity():
 
 def set_verbosity(verbosity):
     # type: (int) -> None
-    """Set the level for this logger.
+    """Set the level for the Optuna's root logger.
 
     Args:
         verbosity:
