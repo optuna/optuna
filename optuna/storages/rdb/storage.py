@@ -539,7 +539,6 @@ class RDBStorage(BaseStorage):
 
     def remove_session(self):
         # type: () -> None
-
         """Removes the current session.
 
         A session is stored in SQLAlchemy's ThreadLocalRegistry for each thread. This method
