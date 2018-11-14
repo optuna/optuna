@@ -1,4 +1,6 @@
 .. _pruning:
 
-Pruning unpromising trials
+Pruning Unpromising Trials
 ==========================
+
+Coming soon.

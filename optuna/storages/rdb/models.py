@@ -15,11 +15,15 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 
 from optuna import distributions
-from optuna.structs import StudyTask
+from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 
-SCHEMA_VERSION = 9
-MAX_ATTR_LENGTH = 2048
+SCHEMA_VERSION = 11
+
+MAX_INDEXED_STRING_LENGTH = 512
+MAX_STRING_LENGTH = 2048
+MAX_VERSION_LENGTH = 256
+
 NOT_FOUND_MSG = 'Record does not exist.'
 
 BaseModel = declarative_base()  # type: Any
@@ -28,8 +32,8 @@ BaseModel = declarative_base()  # type: Any
 class StudyModel(BaseModel):
     __tablename__ = 'studies'
     study_id = Column(Integer, primary_key=True)
-    study_name = Column(String(255), unique=True, nullable=False)
-    task = Column(Enum(StudyTask), nullable=False)
+    study_name = Column(String(MAX_INDEXED_STRING_LENGTH), index=True, unique=True, nullable=False)
+    direction = Column(Enum(StudyDirection), nullable=False)
 
     @classmethod
     def find_by_id(cls, study_id, session):
@@ -79,8 +83,8 @@ class StudyUserAttributeModel(BaseModel):
     __table_args__ = (UniqueConstraint('study_id', 'key'), )  # type: Any
     study_user_attribute_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
-    key = Column(String(MAX_ATTR_LENGTH))
-    value_json = Column(String(MAX_ATTR_LENGTH))
+    key = Column(String(MAX_INDEXED_STRING_LENGTH))
+    value_json = Column(String(MAX_STRING_LENGTH))
 
     study = orm.relationship(StudyModel)
 
@@ -105,8 +109,8 @@ class StudySystemAttributeModel(BaseModel):
     __table_args__ = (UniqueConstraint('study_id', 'key'), )  # type: Any
     study_system_attribute_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
-    key = Column(String(MAX_ATTR_LENGTH))
-    value_json = Column(String(MAX_ATTR_LENGTH))
+    key = Column(String(MAX_INDEXED_STRING_LENGTH))
+    value_json = Column(String(MAX_STRING_LENGTH))
 
     study = orm.relationship(StudyModel)
 
@@ -187,8 +191,8 @@ class TrialUserAttributeModel(BaseModel):
     __table_args__ = (UniqueConstraint('trial_id', 'key'), )  # type: Any
     trial_user_attribute_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
-    key = Column(String(MAX_ATTR_LENGTH))
-    value_json = Column(String(MAX_ATTR_LENGTH))
+    key = Column(String(MAX_INDEXED_STRING_LENGTH))
+    value_json = Column(String(MAX_STRING_LENGTH))
 
     trial = orm.relationship(TrialModel)
 
@@ -228,8 +232,8 @@ class TrialSystemAttributeModel(BaseModel):
     __table_args__ = (UniqueConstraint('trial_id', 'key'), )  # type: Any
     trial_system_attribute_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
-    key = Column(String(MAX_ATTR_LENGTH))
-    value_json = Column(String(MAX_ATTR_LENGTH))
+    key = Column(String(MAX_INDEXED_STRING_LENGTH))
+    value_json = Column(String(MAX_STRING_LENGTH))
 
     trial = orm.relationship(TrialModel)
 
@@ -269,9 +273,9 @@ class TrialParamModel(BaseModel):
     __table_args__ = (UniqueConstraint('trial_id', 'param_name'), )  # type: Any
     param_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey('trials.trial_id'))
-    param_name = Column(String(255))
+    param_name = Column(String(MAX_INDEXED_STRING_LENGTH))
     param_value = Column(Float)
-    distribution_json = Column(String(255))
+    distribution_json = Column(String(MAX_STRING_LENGTH))
 
     trial = orm.relationship(TrialModel)
 
@@ -389,7 +393,7 @@ class VersionInfoModel(BaseModel):
     __table_args__ = (CheckConstraint('version_info_id=1'), )  # type: Any
     version_info_id = Column(Integer, primary_key=True, autoincrement=False, default=1)
     schema_version = Column(Integer)
-    library_version = Column(String(255))
+    library_version = Column(String(MAX_VERSION_LENGTH))
 
     @classmethod
     def find(cls, session):

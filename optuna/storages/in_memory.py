@@ -22,7 +22,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: () -> None
         self.trials = []  # type: List[structs.FrozenTrial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
-        self.task = structs.StudyTask.NOT_SET
+        self.direction = structs.StudyDirection.NOT_SET
         self.study_user_attrs = {}  # type: Dict[str, Any]
         self.study_system_attrs = {}  # type: Dict[str, Any]
         self.study_name = DEFAULT_STUDY_NAME_PREFIX + IN_MEMORY_STORAGE_STUDY_UUID  # type: str
@@ -48,14 +48,15 @@ class InMemoryStorage(base.BaseStorage):
 
         return IN_MEMORY_STORAGE_STUDY_ID  # TODO(akiba)
 
-    def set_study_task(self, study_id, task):
-        # type: (int, structs.StudyTask) -> None
+    def set_study_direction(self, study_id, direction):
+        # type: (int, structs.StudyDirection) -> None
 
         with self._lock:
-            if self.task != structs.StudyTask.NOT_SET and self.task != task:
+            if self.direction != structs.StudyDirection.NOT_SET and self.direction != direction:
                 raise ValueError(
-                    'Cannot overwrite study task from {} to {}.'.format(self.task, task))
-            self.task = task
+                    'Cannot overwrite study direction from {} to {}.'.format(
+                        self.direction, direction))
+            self.direction = direction
 
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
@@ -83,10 +84,10 @@ class InMemoryStorage(base.BaseStorage):
         self._check_study_id(study_id)
         return self.study_name
 
-    def get_study_task(self, study_id):
-        # type: (int) -> structs.StudyTask
+    def get_study_direction(self, study_id):
+        # type: (int) -> structs.StudyDirection
 
-        return self.task
+        return self.direction
 
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
@@ -115,7 +116,7 @@ class InMemoryStorage(base.BaseStorage):
         return [structs.StudySummary(
             study_id=IN_MEMORY_STORAGE_STUDY_ID,
             study_name=self.study_name,
-            direction=self.task,
+            direction=self.direction,
             best_trial=best_trial,
             user_attrs=copy.deepcopy(self.study_user_attrs),
             system_attrs=copy.deepcopy(self.study_system_attrs),

@@ -19,7 +19,7 @@ class TrialState(enum.Enum):
         return self == TrialState.COMPLETE or self == TrialState.PRUNED
 
 
-class StudyTask(enum.Enum):
+class StudyDirection(enum.Enum):
 
     NOT_SET = 0
     MINIMIZE = 1
@@ -48,7 +48,7 @@ StudySummary = NamedTuple(
     'StudySummary',
     [('study_id', int),
      ('study_name', str),
-     ('direction', StudyTask),
+     ('direction', StudyDirection),
      ('best_trial', Optional[FrozenTrial]),
      ('user_attrs', Dict[str, Any]),
      ('system_attrs', Dict[str, Any]),

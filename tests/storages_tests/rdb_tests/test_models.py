@@ -11,7 +11,7 @@ from optuna.storages.rdb.models import TrialModel
 from optuna.storages.rdb.models import TrialSystemAttributeModel
 from optuna.storages.rdb.models import TrialUserAttributeModel
 from optuna.storages.rdb.models import VersionInfoModel
-from optuna.structs import StudyTask
+from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 
 
@@ -108,7 +108,7 @@ class TestTrialUserAttributeModel(object):
     def test_where_study(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(study)
@@ -126,7 +126,7 @@ class TestTrialUserAttributeModel(object):
     def test_where_trial(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key',
@@ -142,7 +142,7 @@ class TestTrialUserAttributeModel(object):
     def test_all(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key',
@@ -177,7 +177,7 @@ class TestTrialSystemAttributeModel(object):
     def test_where_study(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(study)
@@ -195,7 +195,7 @@ class TestTrialSystemAttributeModel(object):
     def test_where_trial(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key',
@@ -211,7 +211,7 @@ class TestTrialSystemAttributeModel(object):
     def test_all(session):
         # type: (Session) -> None
 
-        study = StudyModel(study_id=1, study_name='test-study', task=StudyTask.MINIMIZE)
+        study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key',

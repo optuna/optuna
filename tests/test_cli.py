@@ -125,7 +125,7 @@ def test_create_study_command_with_direction():
         command = ['optuna', 'create-study', '--storage', storage_url, '--direction', 'minimize']
         study_name = str(subprocess.check_output(command).decode().strip())
         study_id = storage.get_study_id_from_name(study_name)
-        assert storage.get_study_task(study_id) == optuna.structs.StudyTask.MINIMIZE
+        assert storage.get_study_direction(study_id) == optuna.structs.StudyDirection.MINIMIZE
 
         command = ['optuna', 'create-study', '--storage', storage_url, '--direction', 'maximize']
 
@@ -214,17 +214,17 @@ def test_dashboard_command(options):
             StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path), \
             tempfile.NamedTemporaryFile('r') as tf_report:
 
-            storage = RDBStorage(storage_url)
-            study_name = storage.get_study_name_from_id(storage.create_new_study_id())
+        storage = RDBStorage(storage_url)
+        study_name = storage.get_study_name_from_id(storage.create_new_study_id())
 
-            command = ['optuna', 'dashboard', '--study', study_name, '--out', tf_report.name]
-            command = _add_option(command, '--storage', storage_url, 'storage' in options)
-            command = _add_option(command, '--config', config_path, 'config' in options)
-            subprocess.check_call(command)
+        command = ['optuna', 'dashboard', '--study', study_name, '--out', tf_report.name]
+        command = _add_option(command, '--storage', storage_url, 'storage' in options)
+        command = _add_option(command, '--config', config_path, 'config' in options)
+        subprocess.check_call(command)
 
-            html = tf_report.read()
-            assert '<body>' in html
-            assert 'bokeh' in html
+        html = tf_report.read()
+        assert '<body>' in html
+        assert 'bokeh' in html
 
 
 # An example of objective functions for testing study optimize command

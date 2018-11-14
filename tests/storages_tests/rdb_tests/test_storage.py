@@ -14,8 +14,8 @@ from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
 from optuna.structs import StorageInternalError
+from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
-from optuna.structs import StudyTask
 from optuna.structs import TrialState
 from optuna import version
 
@@ -109,7 +109,7 @@ def test_get_all_study_summaries_with_multiple_studies():
 
     # Set up a MINIMIZE study.
     study_id_1 = storage.create_new_study_id()
-    storage.set_study_task(study_id_1, StudyTask.MINIMIZE)
+    storage.set_study_direction(study_id_1, StudyDirection.MINIMIZE)
 
     trial_id_1_1 = storage.create_new_trial_id(study_id_1)
     trial_id_1_2 = storage.create_new_trial_id(study_id_1)
@@ -122,7 +122,7 @@ def test_get_all_study_summaries_with_multiple_studies():
 
     # Set up a MAXIMIZE study.
     study_id_2 = storage.create_new_study_id()
-    storage.set_study_task(study_id_2, StudyTask.MAXIMIZE)
+    storage.set_study_direction(study_id_2, StudyDirection.MAXIMIZE)
 
     # TODO(sano): Add more trials after implementing maximize.
     trial_id_2_1 = storage.create_new_trial_id(study_id_2)
@@ -140,7 +140,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     expected_summary_1 = StudySummary(
         study_id=study_id_1,
         study_name=storage.get_study_name_from_id(study_id_1),
-        direction=StudyTask.MINIMIZE,
+        direction=StudyDirection.MINIMIZE,
         user_attrs={},
         system_attrs={},
         best_trial=summaries[0].best_trial,  # This always passes.
@@ -150,7 +150,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     expected_summary_2 = StudySummary(
         study_id=study_id_2,
         study_name=storage.get_study_name_from_id(study_id_2),
-        direction=StudyTask.MAXIMIZE,
+        direction=StudyDirection.MAXIMIZE,
         user_attrs={},
         system_attrs={},
         best_trial=summaries[1].best_trial,  # This always passes.
@@ -160,7 +160,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     expected_summary_3 = StudySummary(
         study_id=study_id_3,
         study_name=storage.get_study_name_from_id(study_id_3),
-        direction=StudyTask.NOT_SET,
+        direction=StudyDirection.NOT_SET,
         user_attrs={},
         system_attrs={},
         best_trial=None,
