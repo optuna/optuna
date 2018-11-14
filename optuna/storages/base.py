@@ -15,6 +15,13 @@ DEFAULT_STUDY_NAME_PREFIX = 'no-name-'
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseStorage(object):
+    """Base class for storages.
+
+    This class is not supposed to be directly accessed by library users.
+
+    Storage classes abstract a backend database and provide library internal interfaces to
+    read/write history of studies and trials.
+    """
 
     # Basic study manipulation
 
