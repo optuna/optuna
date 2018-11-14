@@ -23,6 +23,8 @@ class ChainerMNObjectiveFunc(object):
 
     """A wrapper of an objective function to incorporate Optuna with ChainerMN.
 
+    Note that this class is not supposed to be used by library users.
+
     Args:
         func:
             A callable that implements objective function.

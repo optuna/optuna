@@ -43,7 +43,8 @@ class ChainerPruningExtension(Extension):
 
     Args:
         trial:
-            A trial corresponding to the current evaluation of the objective function.
+            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            objective function.
         observation_key:
             An evaluation metric for pruning, e.g., ``main/loss`` and
             ``validation/main/accuracy``. Please refer to
@@ -54,7 +55,10 @@ class ChainerPruningExtension(Extension):
             `IntervalTrigger <https://docs.chainer.org/en/stable/reference/generated/
             chainer.training.triggers.IntervalTrigger.html>`_ or
             `ManualScheduleTrigger <https://docs.chainer.org/en/stable/reference/generated/
-            chainer.training.triggers.ManualScheduleTrigger.html>`_.
+            chainer.training.triggers.ManualScheduleTrigger.html>`_. `IntervalTrigger <https://
+            docs.chainer.org/en/stable/reference/generated/chainer.training.triggers.
+            IntervalTrigger.html>`_ can be specified by a tuple of the interval length and its
+            unit like ``(1, 'epoch')``.
     """
 
     def __init__(self, trial, observation_key, pruner_trigger):

@@ -28,7 +28,8 @@ class XGBoostPruningCallback(object):
 
     Args:
         trial:
-            A trial corresponding to the current evaluation of the objective function.
+            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            objective function.
         observation_key:
             An evaluation metric for pruning, e.g., ``validation-error`` and
             ``validation-merror``. Please refer to ``eval_metric`` in
