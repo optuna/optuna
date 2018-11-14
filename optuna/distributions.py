@@ -108,6 +108,10 @@ def check_distribution_compatibility(dist_old, dist_new):
     if dist_old.__class__ != dist_new.__class__:
         raise ValueError('Cannot set different distribution kind to the same parameter name.')
 
-    if isinstance(dist_old, CategoricalDistribution) and dist_old.choices != dist_new.choices:
+    if not isinstance(dist_old, CategoricalDistribution):
+        return
+    if not isinstance(dist_new, CategoricalDistribution):
+        return
+    if dist_old.choices != dist_new.choices:
         raise ValueError(
             CategoricalDistribution.__name__ + ' does not support dynamic value space.')
