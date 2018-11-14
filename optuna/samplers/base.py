@@ -33,8 +33,6 @@ class BaseSampler(object):
         Returns:
             A float value in the internal representation of Optuna.
 
-            .. seealso::
-                :attr:`optuna.structs.FrozenTrial.params_in_internal_repr`
         """
 
         raise NotImplementedError
