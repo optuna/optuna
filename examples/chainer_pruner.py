@@ -1,9 +1,10 @@
 """
 Optuna example that demonstrates a pruner for Chainer.
 
-In this example, we optimize the validation loss of hand-written digit recognition using
-Chainer and MNIST. We optimize the neural network architecture. Throughout training of
-neural networks, a pruner observes intermediate results and stops unpromising trials.
+In this example, we optimize the hyperparameters of a neural network for hand-written
+digit recognition in terms of validation loss. The network is implemented by Chainer and
+evaluated by MNIST dataset. Throughout the training of neural networks, a pruner observes
+intermediate results and stops unpromising trials.
 
 You can run this example as follows:
     $ python chainer_pruner.py
