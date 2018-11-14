@@ -25,6 +25,8 @@ from optuna import version
 class RDBStorage(BaseStorage):
     """Storage class for RDB backend.
 
+    This class is not supposed to be directly accessed by library users.
+
     Args:
         url: URL of the storage.
         connect_args: Arguments that is passed to :func:`sqlalchemy.engine.create_engine`.
