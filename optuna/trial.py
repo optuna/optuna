@@ -63,13 +63,13 @@ class Trial(object):
             name:
                 A parameter name.
             low:
-                Lower endpoint of the range of the distribution. ``low`` is included in the range.
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of the distribution. ``high`` is excluded from the
+                Upper endpoint of the range of suggested values. ``high`` is excluded from the
                 range.
 
         Returns:
-            A float value sampled from uniform distribution.
+            A suggested float value.
         """
 
         return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
@@ -98,13 +98,13 @@ class Trial(object):
             name:
                 A parameter name.
             low:
-                Lower endpoint of the range of the distribution. ``low`` is included in the range.
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of the distribution. ``high`` is excluded from the
+                Upper endpoint of the range of suggested values. ``high`` is excluded from the
                 range.
 
         Returns:
-            A float value sampled from log-scaled uniform distribution.
+            A suggested float value.
         """
 
         return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
@@ -135,14 +135,14 @@ class Trial(object):
             name:
                 A parameter name.
             low:
-                Lower endpoint of the range of the distribution. ``low`` is included in the range.
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of the distribution. ``high`` is included in the range.
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
             q:
                 A step of discretization.
 
         Returns:
-            A float value sampled from discretized uniform distribution.
+            A suggested float value.
         """
 
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
@@ -172,12 +172,12 @@ class Trial(object):
             name:
                 A parameter name.
             low:
-                Lower endpoint of the range of the distribution. ``low`` is included in the range.
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of the distribution. ``high`` is included in the range.
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
 
         Returns:
-            An integer value sampled from uniform distribution.
+            A suggested integer value.
         """
 
         return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
@@ -209,7 +209,7 @@ class Trial(object):
                 Candidates of parameter values.
 
         Returns:
-            A value sampled from categorical distribution.
+            A suggested value.
         """
 
         choices = tuple(choices)
