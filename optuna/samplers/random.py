@@ -7,14 +7,30 @@ from optuna.storages.base import BaseStorage  # NOQA
 
 
 class RandomSampler(BaseSampler):
+    """Sampler using random sampling.
+
+    Example:
+
+        .. code::
+
+            >>> study = optuna.create_study(sampler=RandomSampler())
+            >>> study.optimize(objective, direction='minimize')
+
+        Args:
+            seed: Seed for random number generator.
+    """
 
     def __init__(self, seed=None):
         # type: (Optional[int]) -> None
+
         self.seed = seed
         self.rng = numpy.random.RandomState(seed)
 
     def sample(self, storage, study_id, param_name, param_distribution):
         # type: (BaseStorage, int, str, distributions.BaseDistribution) -> float
+
+        """Please consult the documentation for :func:`BaseSampler.sample`."""
+
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self.rng.uniform(param_distribution.low, param_distribution.high)
         elif isinstance(param_distribution, distributions.LogUniformDistribution):

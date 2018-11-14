@@ -26,12 +26,10 @@ def get_extras_require():
     extras_require = {
         'checking': ['hacking'],
         'testing': ['pytest', 'mock', 'bokeh', 'chainer>=5.0.0', 'xgboost', 'mpi4py'],
+        'document': ['sphinx', 'sphinx_rtd_theme'],
     }
     if sys.version_info[0] == 3:
-        # TODO(Yanase): Setting mypy version to 0.620 as a temporal fix
-        # for the library's problem in handling NamedTuple since 0.630.
-        # The problem is tracked at https://github.com/python/mypy/issues/5640.
-        extras_require['checking'].append('mypy==0.620')
+        extras_require['checking'].append('mypy')
     return extras_require
 
 

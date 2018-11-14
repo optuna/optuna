@@ -12,6 +12,21 @@ from optuna.storages.base import BaseStorage  # NOQA
 
 class TPESampler(base.BaseSampler):
 
+    # todo(sano): add args description after refactoring the module.
+    """Sampler using tree-structured Parzen estimator (TPE).
+
+    Please refer to `the original paper
+    <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
+    for a detailed description of TPE algorithm.
+
+    Example:
+
+        .. code::
+
+            >>> study = optuna.create_study(sampler=TPESampler())
+            >>> study.optimize(objective, direction='minimize')
+    """
+
     def __init__(self,
                  prior_weight=_hyperopt.default_prior_weight,
                  n_startup_trials=_hyperopt.default_n_startup_trials,
@@ -30,6 +45,9 @@ class TPESampler(base.BaseSampler):
 
     def sample(self, storage, study_id, param_name, param_distribution):
         # type: (BaseStorage, int, str, distributions.BaseDistribution) -> float
+
+        """Please consult the documentation for :func:`BaseSampler.sample`."""
+
         observation_pairs = storage.get_trial_param_result_pairs(
             study_id, param_name)
         n = len(observation_pairs)
