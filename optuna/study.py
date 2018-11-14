@@ -42,14 +42,14 @@ class Study(object):
             document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
             further details.
         sampler:
-            :class:`~optuna.samplers.BaseSampler` object that implements background algorithm for
-            value suggestion.
+            A subclass object of :class:`~optuna.samplers.BaseSampler`. It implements background
+            algorithm for value suggestion.
         pruner:
-            :class:`~optuna.pruners.BasePruner` object that decides early stopping of unpromising
-            trials.
+            A subclass object of :class:`~optuna.pruners.BasePruner`. It decides early stopping
+            of unpromising trials.
         direction:
             Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            maximization.
+            maximization. Note that 'maximize' is currently unsupported.
 
     """
 
@@ -452,17 +452,17 @@ def create_study(
             Database URL. If this argument is set to None, in-memory storage is used, and the
             :class:`~optuna.study.Study` will not be persistent.
         sampler:
-            :class:`~optuna.samplers.BaseSampler` object that implements background algorithm for
-            value suggestion.
+            A subclass object of :class:`~optuna.samplers.BaseSampler`. It implements background
+            algorithm for value suggestion.
         pruner:
-            :class:`~optuna.pruners.BasePruner` object that decides early stopping of unpromising
-            trials.
+            A subclass object of :class:`~optuna.pruners.BasePruner`. It decides early stopping
+            of unpromising trials.
         study_name:
             Study's name. If this argument is set to None, a unique name is generated
             automatically.
         direction:
             Direction of optimization. Set 'minimize' for minimization and 'maximize' for
-            maximization.
+            maximization. Note that 'maximize' is currently unsupported.
 
     Returns:
         A :class:`~optuna.study.Study` object.
