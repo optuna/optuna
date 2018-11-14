@@ -29,7 +29,8 @@ class LightGBMPruningCallback(object):
 
     Args:
         trial:
-            A trial corresponding to the current evaluation of the objective function.
+            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of
+            the objective function.
         observation_key:
             A key used for identifying evaluation metric for pruning.
             This key consists of ``"{VALIDATION_NAME}-{METRIC_NAME}"`` where
