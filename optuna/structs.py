@@ -8,17 +8,17 @@ from typing import Optional
 
 class TrialState(enum.Enum):
 
-    """State of a trial.
+    """State of a :class:`~optuna.trial.Trial`.
 
     Attributes:
         RUNNING:
-            Trial is running.
+            The :class:`~optuna.trial.Trial` is running.
         COMPLETE:
-            Trial has been finished without any error.
+            The :class:`~optuna.trial.Trial` has been finished without any error.
         PRUNED:
-            Trial has been pruned with :class:`TrialPruned`.
+            The :class:`~optuna.trial.Trial` has been pruned with :class:`TrialPruned`.
         FAIL:
-            Trial has failed due to an uncaught error.
+            The :class:`~optuna.trial.Trial` has failed due to an uncaught error.
     """
 
     RUNNING = 0
@@ -34,15 +34,15 @@ class TrialState(enum.Enum):
 
 class StudyDirection(enum.Enum):
 
-    """StudyDirection represents whether the study minimizes or maximizes the objective function.
+    """Direction of a :class:`~optuna.study.Study`.
 
     Attributes:
         NOT_SET:
             Direction has not been set.
         MNIMIZE:
-            Study minimizes the objective function.
+            :class:`~optuna.study.Study` minimizes the objective function.
         MAXIMIZE:
-            Study maximizes the objective function.
+            :class:`~optuna.study.Study` maximizes the objective function.
     """
 
     NOT_SET = 0
@@ -65,29 +65,30 @@ class FrozenTrial(
          ('params_in_internal_repr', Dict[str, float]),
          ])):
 
-    """A FrozenTrial object holds the status and results of a trial.
+    """Status and results of a :class:`~optuna.trial.Trial`.
 
     Attributes:
         trial_id:
-            Identifier of the trial.
+            Identifier of the :class:`~optuna.trial.Trial`.
         state:
-            :class:`TrialState` of the trial.
+            :class:`TrialState` of the :class:`~optuna.trial.Trial`.
         value:
-            Objective value of the trial.
+            Objective value of the :class:`~optuna.trial.Trial`.
         datetime_start:
-            Datetime where the trial started.
+            Datetime where the :class:`~optuna.trial.Trial` started.
         datetime_complete:
-            Datetime where the trial finished.
+            Datetime where the :class:`~optuna.trial.Trial` finished.
         params:
             Dictionary that contains suggested parameters.
         user_attrs:
-            Dictionary that contains the trial's attributes set with
+            Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
         system_attrs:
-            Dictionary that contains the trial's attributes internally set by Optuna.
+            Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` internally
+            set by Optuna.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
-        prams_in_internal_repr:
+        params_in_internal_repr:
             Optuna's internal representation of :attr:`params`.
     """
 
@@ -106,29 +107,29 @@ class StudySummary(
          ('n_trials', int),
          ('datetime_start', Optional[datetime])])):
 
-    """A StudySummary object hold basic attributes and aggregated results of a study.
+    """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
 
-    .. seealso::
-        :func:`optuna.study.get_all_study_summaries`
+    See also :func:`optuna.study.get_all_study_summaries`.
 
     Attributes:
         study_id:
-            Identifier of the study.
+            Identifier of the :class:`~optuna.study.Study`.
         study_name:
-            Name of the study.
+            Name of the :class:`~optuna.study.Study`.
         direction:
-            :class:`StudyDirection` of the study.
+            :class:`StudyDirection` of the :class:`~optuna.study.Study`.
         best_trial:
-            :class:`FrozenTrial` with best objective value in the study.
+            :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
         user_attrs:
-            Dictionary that contains the trial's attributes set with
+            Dictionary that contains the attributes of the :class:`~optuna.study.Study` set with
             :func:`optuna.study.Study.set_user_attr`.
         system_attrs:
-            Dictionary that contains the study's attributes internally set by Optuna.
+            Dictionary that contains the attributes of the :class:`~optuna.study.Study` internally
+            set by Optuna.
         n_trials:
-            The number of trials ran in the study.
+            The number of trials ran in the :class:`~optuna.study.Study`.
         datetime_start:
-            Datetime where the study started.
+            Datetime where the :class:`~optuna.study.Study` started.
     """
 
 
@@ -143,8 +144,9 @@ class TrialPruned(OptunaError):
 
     """Exception for pruned trials.
 
-    This error tells a trainer that the current trial was pruned. It is supposed to be raised
-    after :func:`optuna.trial.Trial.should_prune` as shown in the following example.
+    This error tells a trainer that the current :class:`~optuna.trial.Trial` was pruned. It is
+    supposed to be raised after :func:`optuna.trial.Trial.should_prune` as shown in the following
+    example.
 
     Example:
 
