@@ -42,11 +42,11 @@ class Study(object):
             document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
             further details.
         sampler:
-            A subclass object of :class:`~optuna.samplers.BaseSampler`. It implements background
-            algorithm for value suggestion.
+            A sampler object that implements background algorithm for value suggestion. See also
+            :class:`~optuna.samplers`.
         pruner:
-            A subclass object of :class:`~optuna.pruners.BasePruner`. It decides early stopping
-            of unpromising trials.
+            A pruner object that decides early stopping of unpromising trials. See also
+            :class:`~optuna.pruners`.
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization. Note that ``maximize`` is currently unsupported.
@@ -453,11 +453,11 @@ def create_study(
             Database URL. If this argument is set to None, in-memory storage is used, and the
             :class:`~optuna.study.Study` will not be persistent.
         sampler:
-            A subclass object of :class:`~optuna.samplers.BaseSampler`. It implements background
-            algorithm for value suggestion.
+            A sampler object that implements background algorithm for value suggestion. See also
+            :class:`~optuna.samplers`.
         pruner:
-            A subclass object of :class:`~optuna.pruners.BasePruner`. It decides early stopping
-            of unpromising trials.
+            A pruner object that decides early stopping of unpromising trials. See also
+            :class:`~optuna.pruners`.
         study_name:
             Study's name. If this argument is set to None, a unique name is generated
             automatically.
