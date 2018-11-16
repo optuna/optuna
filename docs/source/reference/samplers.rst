@@ -3,11 +3,10 @@
 Samplers
 ========
 
-.. autoclass:: BaseSampler
-    :members:
-
 .. autoclass:: RandomSampler
     :members:
+    :exclude-members: sample
 
 .. autoclass:: TPESampler
     :members:
+    :exclude-members: sample

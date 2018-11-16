@@ -1,5 +1,10 @@
 # This file is from the hyperopt project
 
+from typing import Dict, Any
+from scipy.special import erf
+import numpy as np
+import time
+import logging
 """
 Copyright (c) 2013, James Bergstra
 All rights reserved.
@@ -36,12 +41,6 @@ __authors__ = "James Bergstra"
 __license__ = "3-clause BSD License"
 __contact__ = "github.com/jaberg/hyperopt"
 
-import logging
-import time
-
-import numpy as np
-from scipy.special import erf
-from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +81,7 @@ def categorical_lpdf(sample, p, upper):
 # -- Bounded Gaussian Mixture Model (BGMM)
 
 def GMM1(weights, mus, sigmas, low=None, high=None, q=None, rng=None,
-        size=()):
+         size=()):
     """Sample from truncated 1-D Gaussian Mixture Model"""
     weights, mus, sigmas = map(np.asarray, (weights, mus, sigmas))
     assert len(weights) == len(mus) == len(sigmas)
@@ -106,7 +105,7 @@ def GMM1(weights, mus, sigmas, low=None, high=None, q=None, rng=None,
             if low <= draw < high:
                 samples.append(draw)
     samples = np.reshape(np.asarray(samples), size)
-    #print 'SAMPLES', samples
+    # print 'SAMPLES', samples
     if q is None:
         return samples
     else:
@@ -123,7 +122,7 @@ def normal_cdf(x, mu, sigma):
 def GMM1_lpdf(samples, weights, mus, sigmas, low=None, high=None, q=None):
     verbose = 0
     samples, weights, mus, sigmas = map(np.asarray,
-            (samples, weights, mus, sigmas))
+                                        (samples, weights, mus, sigmas))
     if samples.size == 0:
         return np.asarray([])
     if weights.ndim != 1:
@@ -149,9 +148,9 @@ def GMM1_lpdf(samples, weights, mus, sigmas, low=None, high=None, q=None):
         p_accept = 1
     else:
         p_accept = np.sum(
-                weights * (
-                    normal_cdf(high, mus, sigmas)
-                    - normal_cdf(low, mus, sigmas)))
+            weights * (
+                normal_cdf(high, mus, sigmas)
+                - normal_cdf(low, mus, sigmas)))
 
     if q is None:
         dist = samples[:, None] - mus
@@ -224,24 +223,24 @@ def qlognormal_lpdf(x, mu, sigma, q):
 
     # XXX: subtracting two numbers potentially very close together.
     return np.log(
-            lognormal_cdf(x, mu, sigma)
-            - lognormal_cdf(x - q, mu, sigma))
+        lognormal_cdf(x, mu, sigma)
+        - lognormal_cdf(x - q, mu, sigma))
 
 
 def LGMM1(weights, mus, sigmas, low=None, high=None, q=None,
-        rng=None, size=()):
+          rng=None, size=()):
     weights, mus, sigmas = map(np.asarray, (weights, mus, sigmas))
     n_samples = np.prod(size)
     #n_components = len(weights)
     if low is None and high is None:
         active = np.argmax(
-                rng.multinomial(1, weights, (n_samples,)),
-                axis=1)
+            rng.multinomial(1, weights, (n_samples,)),
+            axis=1)
         assert len(active) == n_samples
         samples = np.exp(
-                rng.normal(
-                    loc=mus[active],
-                    scale=sigmas[active]))
+            rng.normal(
+                loc=mus[active],
+                scale=sigmas[active]))
     else:
         # -- draw from truncated components
         # TODO: one-sided-truncation
@@ -271,7 +270,7 @@ def logsum_rows(x):
 
 def LGMM1_lpdf(samples, weights, mus, sigmas, low=None, high=None, q=None):
     samples, weights, mus, sigmas = map(np.asarray,
-            (samples, weights, mus, sigmas))
+                                        (samples, weights, mus, sigmas))
     assert weights.ndim == 1
     assert mus.ndim == 1
     assert sigmas.ndim == 1
@@ -283,9 +282,9 @@ def LGMM1_lpdf(samples, weights, mus, sigmas, low=None, high=None, q=None):
         p_accept = 1
     else:
         p_accept = np.sum(
-                weights * (
-                    normal_cdf(high, mus, sigmas)
-                    - normal_cdf(low, mus, sigmas)))
+            weights * (
+                normal_cdf(high, mus, sigmas)
+                - normal_cdf(low, mus, sigmas)))
 
     if q is None:
         # compute the lpdf of each sample under each component
@@ -343,8 +342,8 @@ def adaptive_parzen_normal_orig(mus, prior_weight, prior_mu, prior_sigma):
         mus = mus[order]
         sigma = np.zeros_like(mus)
         sigma[1:-1] = np.maximum(
-                mus[1:-1] - mus[0:-2],
-                mus[2:] - mus[1:-1])
+            mus[1:-1] - mus[0:-2],
+            mus[2:] - mus[1:-1])
         if len(mus) > 2:
             lsigma = mus[2] - mus[0]
             usigma = mus[-1] - mus[-3]
@@ -373,13 +372,13 @@ def adaptive_parzen_normal_orig(mus, prior_weight, prior_mu, prior_sigma):
     # -- magic formula:
     minsigma = prior_sigma / np.sqrt(1 + len(mus))
 
-    #print 'maxsigma, minsigma', maxsigma, minsigma
+    # print 'maxsigma, minsigma', maxsigma, minsigma
     sigma = np.clip(sigma, minsigma, maxsigma)
 
     weights = np.ones(len(mus), dtype=mus.dtype)
     weights[0] = prior_weight
 
-    #print weights.dtype
+    # print weights.dtype
     weights = weights / weights.sum()
     if 0:
         print('WEIGHTS', weights)
@@ -406,8 +405,10 @@ def linear_forgetting_weights(N, LF):
 # XXX: make TPE do a post-inference pass over the pyll graph and insert
 # non-default LF argument
 # @scope.define_info(o_len=3)
+
+
 def adaptive_parzen_normal(mus, prior_weight, prior_mu, prior_sigma,
-        LF=DEFAULT_LF):
+                           LF=DEFAULT_LF):
     """
     mus - matrix (N, M) of M, N-dimensional component centers
     """
@@ -442,8 +443,8 @@ def adaptive_parzen_normal(mus, prior_weight, prior_mu, prior_sigma,
         srtd_mus[prior_pos + 1:] = mus[order[prior_pos:]]
         sigma = np.zeros_like(srtd_mus)
         sigma[1:-1] = np.maximum(
-                srtd_mus[1:-1] - srtd_mus[0:-2],
-                srtd_mus[2:] - srtd_mus[1:-1])
+            srtd_mus[1:-1] - srtd_mus[0:-2],
+            srtd_mus[2:] - srtd_mus[1:-1])
         lsigma = srtd_mus[1] - srtd_mus[0]
         usigma = srtd_mus[-1] - srtd_mus[-2]
         sigma[0] = lsigma
@@ -465,7 +466,7 @@ def adaptive_parzen_normal(mus, prior_weight, prior_mu, prior_sigma,
     maxsigma = prior_sigma / 1.0
     minsigma = prior_sigma / min(100.0, (1.0 + len(srtd_mus)))
 
-    #print 'maxsigma, minsigma', maxsigma, minsigma
+    # print 'maxsigma, minsigma', maxsigma, minsigma
     sigma = np.clip(sigma, minsigma, maxsigma)
 
     sigma[prior_pos] = prior_sigma
@@ -474,8 +475,7 @@ def adaptive_parzen_normal(mus, prior_weight, prior_mu, prior_sigma,
     assert minsigma > 0
     assert np.all(sigma > 0), (sigma.min(), minsigma, maxsigma)
 
-
-    #print weights.dtype
+    # print weights.dtype
     srtd_weights /= srtd_weights.sum()
     if 0:
         print('WEIGHTS', srtd_weights)
@@ -497,9 +497,9 @@ def ap_uniform_sampler(obs, prior_weight, low, high, size=(), rng=None):
     prior_mu = 0.5 * (high + low)
     prior_sigma = 1.0 * (high - low)
     weights, mus, sigmas = adaptive_parzen_normal(obs,
-            prior_weight, prior_mu, prior_sigma)
+                                                  prior_weight, prior_mu, prior_sigma)
     return GMM1(weights, mus, sigmas, low=low, high=high, q=None,
-            size=size, rng=rng)
+                size=size, rng=rng)
 
 
 # @adaptive_parzen_sampler('quniform')
@@ -507,14 +507,14 @@ def ap_quniform_sampler(obs, prior_weight, low, high, q, size=(), rng=None):
     prior_mu = 0.5 * (high + low)
     prior_sigma = 1.0 * (high - low)
     weights, mus, sigmas = adaptive_parzen_normal(obs,
-            prior_weight, prior_mu, prior_sigma)
+                                                  prior_weight, prior_mu, prior_sigma)
     return GMM1(weights, mus, sigmas, low=low, high=high, q=q,
-            size=size, rng=rng)
+                size=size, rng=rng)
 
 
 def broadcast_best(samples, below_llik, above_llik):
     if len(samples):
-        #print 'AA2', dict(zip(samples, below_llik - above_llik))
+        # print 'AA2', dict(zip(samples, below_llik - above_llik))
         score = below_llik - above_llik
         if len(samples) != len(score):
             raise ValueError()
@@ -534,7 +534,8 @@ def sample_uniform(obs_below, obs_above, prior_weight, low, high, size=(), rng=N
     prior_sigma = 1.0 * (high - low)
 
     # Below
-    weights_b, mus_b, sigmas_b = adaptive_parzen_normal(obs_below, prior_weight, prior_mu, prior_sigma)
+    weights_b, mus_b, sigmas_b = adaptive_parzen_normal(
+        obs_below, prior_weight, prior_mu, prior_sigma)
     samples_b = GMM1(
         weights_b, mus_b, sigmas_b,
         low=low, high=high, q=None, size=size, rng=rng)
@@ -543,7 +544,8 @@ def sample_uniform(obs_below, obs_above, prior_weight, low, high, size=(), rng=N
         low=low, high=high, q=None)
 
     # Above
-    weights_a, mus_a, sigmas_a = adaptive_parzen_normal(obs_above, prior_weight, prior_mu, prior_sigma)
+    weights_a, mus_a, sigmas_a = adaptive_parzen_normal(
+        obs_above, prior_weight, prior_mu, prior_sigma)
     llik_a = GMM1_lpdf(
         samples_b, weights_a, mus_a, sigmas_a,
         low=low, high=high, q=None)
@@ -606,7 +608,6 @@ def sample_quniform(obs_below, obs_above, prior_weight, low, high, q, size=(), r
 
 def categorical(p, upper=None, rng=None, size=()):
     # From pyll/stochastic.py
-
     """Draws i with probability p[i]"""
     if len(p) == 1 and isinstance(p[0], np.ndarray):
         p = p[0]
@@ -664,12 +665,6 @@ def sample_categorical(obs_below, obs_above, prior_weight, upper, size=(), rng=N
     llik_a = categorical_lpdf(samples_b, pseudocounts_a, upper=upper)
 
     return broadcast_best(samples_b, llik_b, llik_a)[0]
-
-
-
-
-
-
 
 
 """
@@ -783,13 +778,15 @@ def ap_categorical_sampler(obs, prior_weight, p, upper=None,
 #
 
 # @scope.define_info(o_len=2)
+
+
 def ap_filter_trials(o_idxs, o_vals, l_idxs, l_vals, gamma,
-        gamma_cap=DEFAULT_LF):
+                     gamma_cap=DEFAULT_LF):
     """Return the elements of o_vals that correspond to trials whose losses
     were above gamma, or below gamma.
     """
     o_idxs, o_vals, l_idxs, l_vals = map(np.asarray, [o_idxs, o_vals, l_idxs,
-        l_vals])
+                                                      l_vals])
 
     # XXX if this is working, refactor this sort for efficiency
 
@@ -797,15 +794,14 @@ def ap_filter_trials(o_idxs, o_vals, l_idxs, l_vals, gamma,
     n_below = min(int(np.ceil(gamma * np.sqrt(len(l_vals)))), gamma_cap)
     l_order = np.argsort(l_vals)
 
-
     keep_idxs = set(l_idxs[l_order[:n_below]])
     below = [v for i, v in zip(o_idxs, o_vals) if i in keep_idxs]
 
     keep_idxs = set(l_idxs[l_order[n_below:]])
     above = [v for i, v in zip(o_idxs, o_vals) if i in keep_idxs]
 
-    #print 'AA0', below
-    #print 'AA1', above
+    # print 'AA0', below
+    # print 'AA1', above
 
     '''
     print('ap_filter_trials')
@@ -815,7 +811,6 @@ def ap_filter_trials(o_idxs, o_vals, l_idxs, l_vals, gamma,
     '''
 
     return np.asarray(below), np.asarray(above)
-
 
 
 default_prior_weight = 1.0

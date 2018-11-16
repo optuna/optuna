@@ -20,6 +20,11 @@ _default_handler = None  # type: Optional[logging.Handler]
 
 def create_default_formatter():
     # type: () -> colorlog.ColoredFormatter
+    """Create a default formatter of log messages.
+
+    This function is not supposed to be directly accessed by library users.
+    """
+
     return colorlog.ColoredFormatter(
         '%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s')
 
@@ -78,6 +83,10 @@ def _reset_library_root_logger():
 
 def get_logger(name):
     # type: (str) -> logging.Logger
+    """Return a logger with the specified name.
+
+    This function is not supposed to be directly accessed by library users.
+    """
 
     _configure_library_root_logger()
     return logging.getLogger(name)
@@ -85,6 +94,20 @@ def get_logger(name):
 
 def get_verbosity():
     # type: () -> int
+    """Return the current level for the Optuna's root logger.
+
+    Returns:
+        Logging level, e.g., ``optuna.logging.DEBUG`` and ``optuna.logging.INFO``.
+
+    .. note::
+        Optuna has following logging levels:
+
+        - ``optuna.logging.CRITICAL``, ``optuna.logging.FATAL``
+        - ``optuna.logging.ERROR``
+        - ``optuna.logging.WARNING``, ``optuna.logging.WARN``
+        - ``optuna.logging.INFO``
+        - ``optuna.logging.DEBUG``
+    """
 
     _configure_library_root_logger()
     return _get_library_root_logger().getEffectiveLevel()
@@ -92,6 +115,12 @@ def get_verbosity():
 
 def set_verbosity(verbosity):
     # type: (int) -> None
+    """Set the level for the Optuna's root logger.
+
+    Args:
+        verbosity:
+            Logging level, e.g., ``optuna.logging.DEBUG`` and ``optuna.logging.INFO``.
+    """
 
     _configure_library_root_logger()
     _get_library_root_logger().setLevel(verbosity)
@@ -99,6 +128,23 @@ def set_verbosity(verbosity):
 
 def disable_default_handler():
     # type: () -> None
+    """Disable the default handler of the Optuna's root logger.
+
+    Example:
+
+        Stop and then resume logging to standard output.
+
+        .. code::
+
+            >> study = optuna.create_study()
+            >> optuna.logging.disable_default_handler()
+            >> study.optimize(objective, n_trials=10)
+            >> len(study.trials)
+            10
+            >> optuna.logging.enable_default_handler()
+            >> study.optimize(objective, n_trials=10)
+            [I 2018-11-07 16:11:28,285] Finished a trial resulted in value: 3787.44371584515. ...
+    """
 
     _configure_library_root_logger()
 
@@ -108,6 +154,10 @@ def disable_default_handler():
 
 def enable_default_handler():
     # type: () -> None
+    """Enable the default handler of the Optuna's root logger.
+
+    Please refer to the example shown in :func:`~optuna.logging.disable_default_handler()`.
+    """
 
     _configure_library_root_logger()
 
