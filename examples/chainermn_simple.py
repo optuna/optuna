@@ -8,7 +8,7 @@ ChainerMN and it's Optuna integration are supposed to be invoked via MPI. You ca
 as follows:
     $ STORAGE_URL=sqlite:///example.db
     $ STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
-    $ mpirun -n 2 -- python chainermn_mnist.py $STUDY_NAME $STORAGE_URL
+    $ mpirun -n 2 -- python chainermn_simple.py $STUDY_NAME $STORAGE_URL
 
 """
 
