@@ -53,9 +53,8 @@ based on the history of previously evaluated *trials*.
 Optuna supports multiple sampling algorithms such as random search and [Tree-structured Parzen
 Estimator](https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf).
 
-Please see [examples](https://github.com/pfnet/optuna/tree/master/examples) to check Optuna
-applications to various machine learning library such as
-[scikit-learn](https://scikit-learn.org/stable/), [Chainer](https://chainer.org/),
+Please see [examples](./examples) to check Optuna applications to various machine learning library
+such as [scikit-learn](https://scikit-learn.org/stable/), [Chainer](https://chainer.org/),
 [XGBoost](https://xgboost.readthedocs.io/en/latest/) and
 [LightGBM](https://lightgbm.readthedocs.io/en/latest/).
 
@@ -72,8 +71,8 @@ Optuna supports Python 2.7 and Python 3.4 or newer.
 ## Contribution
 
 Any contributions to Optuna are welcome! When you send a pull request, please follow the
-[contribution guide](https://github.com/pfnet/optuna/tree/master/CONTRIBUTING.md).
+[contribution guide](./CONTRIBUTING.md).
 
 ## License
 
-MIT License (see [LICENSE](https://github.com/pfnet/optuna/tree/master/LICENSE)).
+MIT License (see [LICENSE](./LICENSE)).
