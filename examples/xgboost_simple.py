@@ -1,12 +1,21 @@
 """
-Optuna example that demonstrates a pruner for XGBoost.
+Optuna example that optimizes a classifier configuration for cancer dataset
+using XGBoost.
 
-In this example, we optimize the validation accuracy of cancer detection using XGBoost.
-We optimize both the choice of booster model and their hyper parameters. Throughout
-training of models, a pruner observes intermediate results and stop unpromising trials.
+In this example, we optimize the validation accuracy of cancer detection
+using XGBoost. We optimize both the choice of booster model and their hyper
+parameters.
 
-You can run this example as follows:
-    $ python xgboost_pruner.py
+We have following two ways to execute this example:
+
+(1) Execute this code directly.
+    $ python xgboost_simple.py
+
+
+(2) Execute through CLI.
+    $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
+    $ optuna study optimize xgboost_simple.py objective --n-trials=100 --study $STUDY_NAME \
+      --storage sqlite:///example.db
 
 """
 
@@ -22,7 +31,7 @@ import optuna
 
 
 def objective(trial):
-    data, target = sklearn.datasets.load_breast_cancer(return_X_y=True)
+    (data, target) = sklearn.datasets.load_breast_cancer(return_X_y=True)
     train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.25)
     dtrain = xgb.DMatrix(train_x, label=train_y)
     dtest = xgb.DMatrix(test_x, label=test_y)
@@ -45,10 +54,7 @@ def objective(trial):
         param['rate_drop'] = trial.suggest_loguniform('rate_drop', 1e-8, 1.0)
         param['skip_drop'] = trial.suggest_loguniform('skip_drop', 1e-8, 1.0)
 
-    # Add a callback for pruning.
-    pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'validation-error')
-    bst = xgb.train(param, dtrain, n_round, evals=[(dtest, 'validation')],
-                    callbacks=[pruning_callback])
+    bst = xgb.train(param, dtrain, n_round)
     preds = bst.predict(dtest)
     pred_labels = np.rint(preds)
     accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
@@ -56,6 +62,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    study = optuna.create_study(pruner=optuna.pruners.MedianPruner(n_warmup_steps=5))
+    study = optuna.create_study()
     study.optimize(objective, n_trials=100)
     print(study.best_trial)

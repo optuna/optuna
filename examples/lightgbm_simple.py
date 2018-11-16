@@ -7,12 +7,12 @@ We optimize both the choice of booster model and their hyper parameters.
 We have following two ways to execute this example:
 
 (1) Execute this code directly.
-    $ python lightgbm_cancer.py
+    $ python lightgbm_simple.py
 
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
-    $ optuna study optimize lightgbm_cancer.py objective --n-trials=100 --study $STUDY_NAME \
+    $ optuna study optimize lightgbm_simple.py objective --n-trials=100 --study $STUDY_NAME \
       --storage sqlite:///example.db
 
 """
