@@ -6,12 +6,13 @@ We use [CircleCI](https://circleci.com/) for continuous integration, so please s
 
 ## Coding standards
 
-We use `flake8` for code format checking and `mypy` for static type checking.
-To check you code, run:
+Please apply `flake8` (code style checker) and `mypy` (static type checker) as follows:
 
 ```
 $ circleci build --job checks
 ```
+
+If any warnings or errors are emitted, please fix them.
 
 Note that we use comment-style type annotation for compatibility with Python 2.
 
@@ -27,7 +28,7 @@ We use `pytest` for unit tests. To execute the tests on Python 3.7, run:
 $ circleci build --job tests-python37
 ```
 
-Please ensure that your code works without any errors by running following jobs:
+Please make sure that following jobs work without any errors in your environment:
 
 - `tests-python27`
 - `tests-python34`
@@ -35,13 +36,14 @@ Please ensure that your code works without any errors by running following jobs:
 - `tests-python36`
 - `tests-python37`
 
-We execute all examples as smoke testing. To execute examples on Python 3.7, run:
+We also test Optuna code using examples. The following command executes all examples in
+Python 3.7:
 
 ```
 $ circleci build --job examples-python37
 ```
 
-Please ensure that your code works without any errors by running following jobs:
+Please check your code by running the following jobs:
 
 - `examples-python27`
 - `examples-python34`
