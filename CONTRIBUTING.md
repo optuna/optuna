@@ -4,6 +4,7 @@ Before creating new PRs, please check your code in your local environment.
 We use [CircleCI](https://circleci.com/) for continuous integration, so please setup
 [CircleCI Local CLI](https://circleci.com/docs/2.0/local-cli/) in advance.  
 
+
 ## Coding standards
 
 Please apply `flake8` (code style checker) and `mypy` (static type checker) as follows:
@@ -50,3 +51,14 @@ Please check your code by running the following jobs:
 - `examples-python35`
 - `examples-python36`
 - `examples-python37`
+
+
+## Documents
+
+We use `sphinx` to generate tutorial and API reference. To make the documents, run:
+
+```
+$ circleci build --job document
+```
+
+Please make sure that you can generate the documents without any errors.
