@@ -1,64 +1,71 @@
 import numpy
-from typing import NamedTuple  # NOQA
-from typing import Optional  # NOQA
+from numpy import ndarray
 from typing import Callable  # NOQA
 from typing import List  # NOQA
-from typing import Union  # NOQA
+from typing import NamedTuple  # NOQA
+from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 
-GeneralizedList = Union[List, numpy.ndarray]
 
-
-class ParzenEstimatorParameters(NamedTuple):
-    consider_prior: bool
-    prior_weight: Optional[float]
-    consider_magic_clip: bool
-    consider_endpoints: bool
-    weights: Callable[[int], GeneralizedList]
+class ParzenEstimatorParameters(
+    NamedTuple(
+        '_ParzenEstimatorParameters',
+        [('consider_prior', bool),
+         ('prior_weight', Optional[float]),
+         ('consider_magic_clip', bool),
+         ('consider_endpoints', bool),
+         ('weights', Callable[[int], ndarray]),
+         ])):
+    pass
 
 
 class ParzenEstimator(object):
-    def __init__(self,
-                 mus,  # type: List[float]
-                 low,  # type: float
-                 high,  # type: float
-                 parameters  # type: ParzenEstimatorParameters
-                 ):
+    def __init__(
+            self,
+            mus,  # type: ndarray[float]
+            low,  # type: float
+            high,  # type: float
+            parameters  # type: ParzenEstimatorParameters
+    ):
         # type: (...) -> None
-        s_weights, s_mus, sigmas = ParzenEstimator.__calculate(mus,
-                                                               low,
-                                                               high,
-                                                               parameters.consider_prior,
-                                                               parameters.prior_weight,
-                                                               parameters.consider_magic_clip,
-                                                               parameters.consider_endpoints,
-                                                               parameters.weights)
-        self.weights = s_weights
-        self.mus = s_mus
-        self.sigmas = sigmas
+
+        s_weights, s_mus, sigmas = ParzenEstimator._calculate(
+            mus,
+            low,
+            high,
+            parameters.consider_prior,
+            parameters.prior_weight,
+            parameters.consider_magic_clip,
+            parameters.consider_endpoints,
+            parameters.weights)
+        self.weights = numpy.asarray(s_weights)
+        self.mus = numpy.asarray(s_mus)
+        self.sigmas = numpy.asarray(sigmas)
 
     @classmethod
-    def __calculate(cls,
-                    mus,  # type: List[float]
-                    low,  # type: float
-                    high,  # type: float
-                    consider_prior,  # type: bool
-                    prior_weight,  # type: Optional[float]
-                    consider_magic_clip,  # type: bool
-                    consider_endpoints,  # type: bool
-                    weights_func  # type: Callable[[int], GeneralizedList]
-                    ):
+    def _calculate(
+            cls,
+            mus,  # type: ndarray[float]
+            low,  # type: float
+            high,  # type: float
+            consider_prior,  # type: bool
+            prior_weight,  # type: Optional[float]
+            consider_magic_clip,  # type: bool
+            consider_endpoints,  # type: bool
+            weights_func  # type: Callable[[int], ndarray[float]]
+    ):
         # type: (...) -> Tuple[List[float], List[float], List[float]]
+
         mus = numpy.asarray(mus)
         if consider_prior:
             prior_mu = 0.5 * (low + high)
             prior_sigma = 1.0 * (high - low)
-            if len(mus) == 0:
+            if mus.size == 0:
                 sorted_mus = numpy.asarray([prior_mu])
                 sigma = numpy.asarray([prior_sigma])
                 prior_pos = 0
-                order = []
-            elif len(mus) == 1:
+                order = []  # type: List[int]
+            elif mus.size == 1:
                 if prior_mu < mus[0]:
                     prior_pos = 0
                     sorted_mus = numpy.asarray([prior_mu, mus[0]])
@@ -70,9 +77,8 @@ class ParzenEstimator(object):
                 order = [0]
             else:  # len(mus) >= 2
                 # decide where prior is placed
-                order = numpy.argsort(mus)
+                order = numpy.argsort(mus).astype(int)
                 prior_pos = numpy.searchsorted(mus[order], prior_mu)
-
                 # decide mus
                 sorted_mus = numpy.zeros(len(mus) + 1)
                 sorted_mus[:prior_pos] = mus[order[:prior_pos]]
@@ -91,7 +97,7 @@ class ParzenEstimator(object):
                 sigma = sigma[1:-1]
 
             # decide weights
-            unsorted_weights = weights_func(len(mus))
+            unsorted_weights = weights_func(mus.size)
             sorted_weights = numpy.zeros_like(sorted_mus)
             sorted_weights[:prior_pos] = unsorted_weights[order[:prior_pos]]
             sorted_weights[prior_pos] = prior_weight
