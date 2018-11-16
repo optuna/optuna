@@ -17,6 +17,11 @@ $ pip install git+https://github.com/pfnet/optuna.git
 
 Optuna supports Python 2.7 and Python 3.4 or newer.
 
+## Contribution
+
+Any contributions to Optuna are welcome! When you send a pull request, please follow the
+[contribution guide](https://github.com/pfnet/optuna/tree/master/CONTRIBUTING.md).
+
 ## License
 
-MIT License (see `LICENSE` file).
+MIT License (see [LICENSE](https://github.com/pfnet/optuna/tree/master/LICENSE)).
