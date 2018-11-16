@@ -7,7 +7,8 @@ We use [CircleCI](https://circleci.com/) for continuous integration, so please s
 
 ## Coding standards
 
-Please apply `flake8` (code style checker) and `mypy` (static type checker) as follows:
+Please apply [flake8](http://flake8.pycqa.org) (code style checker) and
+[mypy](http://mypy-lang.org/) (static type checker) as follows:
 
 ```
 $ circleci build --job checks
@@ -23,7 +24,7 @@ Note that we use comment-style type annotation for compatibility with Python 2.
 
 ## Tests
 
-We use `pytest` for unit tests. To execute the tests on Python 3.7, run:
+We use [pytest](https://docs.pytest.org/) for unit tests. To execute the tests on Python 3.7, run:
 
 ```
 $ circleci build --job tests-python37
@@ -55,7 +56,8 @@ Please check your code by running the following jobs:
 
 ## Documents
 
-We use `sphinx` to generate tutorial and API reference. To make the documents, run:
+We use [sphinx](http://www.sphinx-doc.org) to generate tutorial and API reference. To make the
+documents, run:
 
 ```
 $ circleci build --job document
