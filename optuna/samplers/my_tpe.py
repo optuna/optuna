@@ -64,6 +64,7 @@ class MyTPESampler(base.BaseSampler):
         self.n_startup_trials = n_startup_trials
         self.n_ei_candidates = n_ei_candidates
         self.gamma = gamma
+        self.weights = weights
         self.seed = seed
 
         self.rng = numpy.random.RandomState(seed)
@@ -82,23 +83,18 @@ class MyTPESampler(base.BaseSampler):
             list(range(n)), [p[1] for p in observation_pairs])
 
         if isinstance(param_distribution, distributions.UniformDistribution):
-            print("uniform")  # TODO(imamura): remove later
             return self._sample_uniform(
                 param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
-            print("loguniform")  # TODO(imamura): remove later
             return self._sample_loguniform(
                 param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
-            print("descrite")  # TODO(imamura): remove later
             return self._sample_discrete_uniform(
                 param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            print("int")  # TODO(imamura): remove later
             return self._sample_int(
                 param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
-            print("categorical")  # TODO(imamura): remove later
             return self._sample_categorical(
                 param_distribution, below_param_values, above_param_values)
         else:
@@ -130,8 +126,6 @@ class MyTPESampler(base.BaseSampler):
                                                  low=distribution.low,
                                                  high=distribution.high,
                                                  parameters=self.parzen_estimator_parameters)
-        print("_make_parzen_estimator_for_below_end")
-        print("_GMM_for_below_start")
         samples_b = self._GMM(weights=parzen_estimator_below.weights,
                               mus=parzen_estimator_below.mus,
                               sigmas=parzen_estimator_below.sigmas,
@@ -139,8 +133,6 @@ class MyTPESampler(base.BaseSampler):
                               high=distribution.high,
                               q=None,
                               size=size)
-        print("_GMM_for_below_end")
-        print("_GMM_log_pdf_for_below_start")
         log_likelihoods_b = self._GMM_log_pdf(samples=samples_b,
                                               weights=parzen_estimator_below.weights,
                                               mus=parzen_estimator_below.mus,
@@ -148,16 +140,12 @@ class MyTPESampler(base.BaseSampler):
                                               low=distribution.low,
                                               high=distribution.high,
                                               q=None)
-        print("_GMM_log_pdf_for_below_end")
 
         # From above, make log-likelihoods
-        print("_make_parzen_estimator_for_above_start")
         parzen_estimator_above = ParzenEstimator(mus=above,
                                                  low=distribution.low,
                                                  high=distribution.high,
                                                  parameters=self.parzen_estimator_parameters)
-        print("_make_parzen_estimator_for_above_end")
-        print("_GMM_log_pdf_for_above_start")
         log_likelihoods_a = self._GMM_log_pdf(samples=samples_b,
                                               weights=parzen_estimator_above.weights,
                                               mus=parzen_estimator_above.mus,
@@ -165,13 +153,8 @@ class MyTPESampler(base.BaseSampler):
                                               low=distribution.low,
                                               high=distribution.high,
                                               q=None)
-        print("_GMM_log_pdf_for_above_end")
-
-        print("_compare_start")
-        hoge = MyTPESampler._compare(
+        return MyTPESampler._compare(
             samples=samples_b, log_l=log_likelihoods_b, log_g=log_likelihoods_a)[0]
-        print("_compare_end")
-        return hoge
 
     def _sample_loguniform(self, distribution, below, above):
         # type: (distributions.LogUniformDistribution, List[float], List[float]) -> float
@@ -215,9 +198,8 @@ class MyTPESampler(base.BaseSampler):
                                               q=None,
                                               is_log=True)
 
-        hoge = MyTPESampler._compare(
+        return MyTPESampler._compare(
             samples=samples_b, log_l=log_likelihoods_b, log_g=log_likelihoods_a)[0]
-        return hoge
 
     def _sample_discrete_uniform(self, distribution, below, above):
         # type: (distributions.DiscreteUniformDistribution, List[float], List[float]) -> float
