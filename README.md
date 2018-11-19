@@ -31,7 +31,7 @@ optimization *studies*.
 ```python
 import ...
 
-# Define an objective function to be maximized.
+# Define an objective function to be minimized.
 def objective(trial):
 
     # Invoke suggest methods of a Trial object to generate hyperparameters.
@@ -48,9 +48,9 @@ def objective(trial):
     score = sklearn.model_selection.cross_val_score(classifier_obj , x, y)
     accuracy = score.mean()
     
-    return accuracy  # A objective value linked with the Trial object.
+    return 1.0 - accuracy  # A objective value linked with the Trial object.
 
-study = optuna.create_study(direction='maximize')  # Create a new study.
+study = optuna.create_study()  # Create a new study.
 study.optimize(objective , n_trials=100)  # Invoke optimization of the objective function.
 ```
 
