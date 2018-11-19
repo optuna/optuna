@@ -1,8 +1,9 @@
 # Contributing guidelines
 
-Before creating new pull requests, please check your code in your local environment.
-We use [CircleCI](https://circleci.com/) for continuous integration, so please setup
-[CircleCI Local CLI](https://circleci.com/docs/2.0/local-cli/) in advance.  
+Once you send a pull request, it is automatically tested on [CircleCI](https://circleci.com/).
+Please setup
+[CircleCI Local CLI](https://circleci.com/docs/2.0/local-cli/) and check your code in your local
+environment before submitting the pull request.
 
 
 ## Coding standards
