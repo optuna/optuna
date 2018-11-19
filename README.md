@@ -23,9 +23,9 @@ We use the terms *study* and *trial* as follows:
 - Trial: a single execution of the objective function
 
 Please refer to sample code below. The goal of a *study* is to find out the optimal set of
-hyperparameter values (e.g., `classifier` and `svm_c`) through multiple *trials* (`n_trials=100`).
-Optuna is a framework designed for the automation and the acceleration of the optimization
-*studies*.
+hyperparameter values (e.g., `classifier` and `svm_c`) through multiple *trials* (e.g.,
+`n_trials=100`). Optuna is a framework designed for the automation and the acceleration of the
+optimization *studies*.
 
 
 ```python
