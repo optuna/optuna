@@ -77,4 +77,4 @@ If you want to save and resume studies,  it's handy to use SQLite as the local s
     study = optuna.create_study(study_name='foo_study', storage='sqlite://example.db')
     study.optimize(objective)  # The state of `study` will be persisted to the local SQLite file
 
-Please see :doc:`tutorial/rdb` for more details.
+Please see :ref:`rdb` for more details.
