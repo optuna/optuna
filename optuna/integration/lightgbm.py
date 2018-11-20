@@ -22,9 +22,8 @@ class LightGBMPruningCallback(object):
         .. code::
 
                 param = {'objective': 'binary', 'metric': 'binary_error'}
-                pruning_callback = LightGBMPruningCallback(trial, 'validation-binary_error')
-                gbm = lgb.train(param, dtrain, num_round,
-                                valid_sets=[dtest], valid_names=['validation'],
+                pruning_callback = LightGBMPruningCallback(trial, 'binary_error')
+                gbm = lgb.train(param, dtrain, num_round, valid_sets=[dtest],
                                 callbacks=[pruning_callback])
 
     Args:
@@ -32,30 +31,33 @@ class LightGBMPruningCallback(object):
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of
             the objective function.
         observation_key:
-            A key used for identifying evaluation metric for pruning.
-            This key consists of ``"{VALIDATION_NAME}-{METRIC_NAME}"`` where
-            ``{VALIDATION_NAME}`` is the name specified by ``valid_names`` option of
+            An evaluation metric for pruning, e.g., ``binary_error`` and ``multi_error``.
+            Please refer to
+            `LightGBM reference
+            <https://lightgbm.readthedocs.io/en/latest/Parameters.html#metric>`_
+            for further details.
+        valid_name:
+            The name of the observation target validation.
+            Validation names are specified by ``valid_names`` option of
             `train method
-            <https://lightgbm.readthedocs.io/en/latest/Python-API.html#lightgbm.train>`_
-            and ``{METRIC_NAME}`` is the name of the
-            `metric <https://lightgbm.readthedocs.io/en/latest/Parameters.html#metric>`_
-            used for pruning.
+            <https://lightgbm.readthedocs.io/en/latest/Python-API.html#lightgbm.train>`_.
+            If omitted, ``valid_0`` is used which is the default name of the first validation.
     """
 
-    def __init__(self, trial, observation_key):
-        # type: (optuna.trial.Trial, str) -> None
+    def __init__(self, trial, observation_key, valid_name='valid_0'):
+        # type: (optuna.trial.Trial, str, str) -> None
 
         _check_lightgbm_availability()
 
         self.trial = trial
+        self.valid_name = valid_name
         self.observation_key = observation_key
 
     def __call__(self, env):
         # type: (lgb.callback.CallbackEnv) -> None
 
         for valid_name, metric_name, current_score, is_higher_better in env.evaluation_result_list:
-            key = '{}-{}'.format(valid_name, metric_name)
-            if key == self.observation_key:
+            if valid_name == self.valid_name and metric_name == self.observation_key:
                 # TODO(ohta): Deal with maximize direction
                 if is_higher_better:
                     raise ValueError(
@@ -69,8 +71,9 @@ class LightGBMPruningCallback(object):
                 return None
 
         raise ValueError(
-            'The entry associated to the observation key "' + self.observation_key + '" '
-            'is not found in the evaluation result list ' + str(env.evaluation_result_list))
+            'The entry associated to the validation name "{}" and the metric name "{}" '
+            'is not found in the evaluation result list {}'.format(
+                self.valid_name, self.observation_key, str(env.evaluation_result_list)))
 
 
 def _check_lightgbm_availability():

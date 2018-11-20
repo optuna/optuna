@@ -39,12 +39,9 @@ def objective(trial):
         param['other_rate'] = trial.suggest_uniform('other_rate', 0.0, 1.0 - param['top_rate'])
 
     # Add a callback for pruning.
-    pruning_callback = optuna.integration.LightGBMPruningCallback(
-        trial, 'validation-binary_error')
-    gbm = lgb.train(param, dtrain, num_round,
-                    valid_sets=[dtest], valid_names=['validation'],
-                    verbose_eval=False,
-                    callbacks=[pruning_callback])
+    pruning_callback = optuna.integration.LightGBMPruningCallback(trial, 'binary_error')
+    gbm = lgb.train(param, dtrain, num_round, valid_sets=[dtest],
+                    verbose_eval=False, callbacks=[pruning_callback])
 
     preds = gbm.predict(test_x)
     pred_labels = np.rint(preds)
