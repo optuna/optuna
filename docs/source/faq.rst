@@ -1,12 +1,11 @@
 FAQ
 ===
 
-How do I use Optuna for Chainer, XGBoost, LightGBM, and others?
----------------------------------------------------------------
+How do I use Optuna for my favorite ML library?
+-----------------------------------------------
 
-Using Optuna with those is easy.
-Please refer to `examples <https://github.com/pfnet/optuna/tree/master/examples>`_ for code that works.
-Besides, we provide various :doc:`integrations <reference/integration>` for advanced features (e.g., pruning, distributed optimization).
+Optuna is compatible with most ML libraries, and it's easy to use Optuna for those.
+For examples that actually perform optimization using Optuna, please refer to `examples <https://github.com/pfnet/optuna/tree/master/examples>`_.
 
 
 How to define objective functions that have own arguments?
