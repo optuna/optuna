@@ -11,11 +11,13 @@ For examples that actually perform optimization using Optuna, please refer to `e
 How to define objective functions that have own arguments?
 ----------------------------------------------------------
 
-There are two methods to realize it.
+There are two ways to realize it.
 
 First, callable classes can be used for that purpose as follows:
 
 .. code-block:: python
+
+    import optuna
 
     class Objective(object):
         def __init__(self, min, max):
@@ -25,22 +27,31 @@ First, callable classes can be used for that purpose as follows:
 
         def __call__(self, trial):
             # Calculate an objective value by using the extra arguments.
-            x = trial.sugget_uniform('x', self.min, self.max)
+            x = trial.suggest_uniform('x', self.min, self.max)
             return (x - 2) ** 2
 
+    # Execute an optimization by using an `Objective` instance.
     study = optuna.create_study()
-    study.optimize(Object(-100, 100), n_trials=100)
+    study.optimize(Objective(-100, 100), n_trials=100)
 
 
-Second, using ``lambda`` or ``functools.partial`` for creating functions (closures) that hold extra parameters.
-Below is an example that uses ``lambda``:
+Second, using ``lambda`` or ``functools.partial`` for creating functions (closures) that hold extra arguments.
+Below is an example that uses ``functools.partial``:
 
 .. code-block:: python
 
+    from functools import partial
+    import optuna
+
+    # Objective function that takes three arguments.
+    def objective(min, max, trial):
+        x = trial.suggest_uniform('x', min, max)
+        return (x - 2) ** 2
+
+    # Extra arguments.
     min = -100
     max = 100
 
-    objective = lamba trial: (trial.sugget_uniform('x', min, max) - 2) ** 2
-
+    # Execute an optimization by using a partial evaluated objective function.
     study = optuna.create_study()
-    study.optimize(Object(-100, 100), n_trials=100)
+    study.optimize(partial(objective, min, max), n_trials=100)
