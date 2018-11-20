@@ -2,7 +2,7 @@
 Optuna example that demonstrates a pruner.
 
 In this example, we optimize a classifier configuration using scikit-learn. Note that, to enable
-the pruning feature, the following 2 methods are invoked after each step of the itrative training.
+the pruning feature, the following 2 methods are invoked after each step of the iterative training.
 
 (1) :func:`optuna.trial.Trial.report`
 (2) :func:`optuna.trial.Trial.should_prune`
