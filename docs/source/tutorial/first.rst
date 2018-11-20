@@ -22,6 +22,9 @@ First, we need to define the objective function. Here, we use a very simple quad
        ...:     return (x - 2) ** 2
        ...:
 
+``trial`` is the only argument passed to objective functions. It provides interfaces to get parameter suggestion, manage the trial’s state, and set/get user-defined attributes of the trial.
+
+
 Then, we create a study object and pass the objective function to method :func:`~optuna.study.Study.optimize` to start the optimization as follows.
 
 .. code-block:: python
@@ -83,5 +86,3 @@ By executing :func:`~optuna.study.Study.optimize` again, we can continue the opt
 
     In [11]: len(study.trials)
     Out[11]: 200
-
-
