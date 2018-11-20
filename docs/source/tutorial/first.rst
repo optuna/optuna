@@ -22,10 +22,13 @@ First, we need to define the objective function. Here, we use a very simple quad
        ...:     return (x - 2) ** 2
        ...:
 
-``trial`` is the only argument passed to objective functions. It provides interfaces to get parameter suggestion, manage the trial’s state, and set/get user-defined attributes of the trial.
+The aim of us is to find the value of ``x`` that minimizes the result of ``objective`` function by using Optuna. This is what we call "optimization".
 
+``trial`` is created by Optuna before each invocation of ``objective`` function.
+It provides APIs such as ``suggest_uniform``.
+Through ``suggest_uniform``, the objective function can know the value of ``x`` to be used next for reaching the optimal value.
 
-Then, we create a study object and pass the objective function to method :func:`~optuna.study.Study.optimize` to start the optimization as follows.
+To start the optimization, we create a study object and pass the objective function to method :func:`~optuna.study.Study.optimize` as follows.
 
 .. code-block:: python
 
