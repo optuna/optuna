@@ -56,6 +56,7 @@ class LightGBMPruningCallback(object):
         for valid_name, metric_name, current_score, is_higher_better in env.evaluation_result_list:
             key = '{}-{}'.format(valid_name, metric_name)
             if key == self.observation_key:
+                # TODO(ohta): Deal with maximize direction
                 if is_higher_better:
                     raise ValueError(
                         'Pruning using metrics to be maximized has not been supported yet '
