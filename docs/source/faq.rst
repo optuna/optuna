@@ -55,3 +55,26 @@ Below is an example that uses ``functools.partial``:
     # Execute an optimization by using a partial evaluated objective function.
     study = optuna.create_study()
     study.optimize(partial(objective, min, max), n_trials=100)
+
+
+Can I use Optuna without remote RDB servers?
+--------------------------------------------
+
+Yes, it's possible.
+
+In the simplest form, Optuna works with in-memory storage:
+
+.. code-block:: python
+
+    study = optuna.create_study()
+    study.optimize(objective)
+
+
+If you want to save and resume studies,  it's handy to use SQLite as the local storage:
+
+.. code-block:: python
+
+    study = optuna.create_study(study_name='foo_study', storage='sqlite://example.db')
+    study.optimize(objective)  # The state of `study` will be persisted to the local SQLite file
+
+Please see :doc:`tutorial/rdb` for more details.
