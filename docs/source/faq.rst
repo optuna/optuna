@@ -5,7 +5,7 @@ How do I use Optuna for my favorite ML library?
 -----------------------------------------------
 
 Optuna is compatible with most ML libraries, and it's easy to use Optuna for those.
-For examples that actually perform optimization using Optuna, please refer to `examples <https://github.com/pfnet/optuna/tree/master/examples>`_.
+Please refer to `examples <https://github.com/pfnet/optuna/tree/master/examples>`_.
 
 
 How to define objective functions that have own arguments?
@@ -35,7 +35,7 @@ First, callable classes can be used for that purpose as follows:
     study.optimize(Objective(-100, 100), n_trials=100)
 
 
-Second, using ``lambda`` or ``functools.partial`` for creating functions (closures) that hold extra arguments.
+Second, you can use ``lambda`` or ``functools.partial`` for creating functions (closures) that hold extra arguments.
 Below is an example that uses ``functools.partial``:
 
 .. code-block:: python
@@ -74,7 +74,7 @@ If you want to save and resume studies,  it's handy to use SQLite as the local s
 
 .. code-block:: python
 
-    study = optuna.create_study(study_name='foo_study', storage='sqlite://example.db')
-    study.optimize(objective)  # The state of `study` will be persisted to the local SQLite file
+    study = optuna.create_study(study_name='foo_study', storage='sqlite:///example.db')
+    study.optimize(objective)  # The state of `study` will be persisted to the local SQLite file.
 
 Please see :ref:`rdb` for more details.
