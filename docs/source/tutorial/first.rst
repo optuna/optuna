@@ -22,11 +22,11 @@ First, we need to define the objective function. Here, we use a very simple quad
        ...:     return (x - 2) ** 2
        ...:
 
-The aim of us is to find the value of ``x`` that minimizes the result of ``objective`` function by using Optuna. This is what we call "optimization".
+Our goal is to find out ``x`` that minimizes the output of ``objective`` function, which we refer to as "optimization." During the optimization, Optuna repeatedly invokes and evaluates the objective function with different values of ``x``.
 
-``trial`` is created by Optuna before each invocation of ``objective`` function.
-It provides APIs such as ``suggest_uniform``.
-Through ``suggest_uniform``, the objective function can know the value of ``x`` to be used next for reaching the optimal value.
+A :class:`~optuna.trial.Trial` object corresponds to a single execution of the objective function and is internally instantiated upon each invocation of the function.
+
+The `suggest` APIs (e.g., :func:`~optuna.trial.Trial.suggest_uniform`) are called inside the objective function to obtain parameters for a trial.
 
 To start the optimization, we create a study object and pass the objective function to method :func:`~optuna.study.Study.optimize` as follows.
 
