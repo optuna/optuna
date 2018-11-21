@@ -2,11 +2,11 @@
 Optuna example that demonstrates a pruner for LightGBM.
 
 In this example, we optimize the validation accuracy of cancer detection using LightGBM.
-We optimize both the choice of booster model and their hyper parameters. Throughout
+We optimize both the choice of booster model and their hyperparameters. Throughout
 training of models, a pruner observes intermediate results and stop unpromising trials.
 
 You can run this example as follows:
-    $ python lightgbm_pruner.py
+    $ python lightgbm_integration.py
 
 """
 import lightgbm as lgb
