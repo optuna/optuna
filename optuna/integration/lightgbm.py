@@ -30,7 +30,7 @@ class LightGBMPruningCallback(object):
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of
             the objective function.
-        observation_key:
+        metric:
             An evaluation metric for pruning, e.g., ``binary_error`` and ``multi_error``.
             Please refer to
             `LightGBM reference
@@ -44,25 +44,25 @@ class LightGBMPruningCallback(object):
             If omitted, ``valid_0`` is used which is the default name of the first validation.
     """
 
-    def __init__(self, trial, observation_key, valid_name='valid_0'):
+    def __init__(self, trial, metric, valid_name='valid_0'):
         # type: (optuna.trial.Trial, str, str) -> None
 
         _check_lightgbm_availability()
 
         self.trial = trial
         self.valid_name = valid_name
-        self.observation_key = observation_key
+        self.metric = metric
 
     def __call__(self, env):
         # type: (lgb.callback.CallbackEnv) -> None
 
-        for valid_name, metric_name, current_score, is_higher_better in env.evaluation_result_list:
-            if valid_name == self.valid_name and metric_name == self.observation_key:
+        for valid_name, metric, current_score, is_higher_better in env.evaluation_result_list:
+            if valid_name == self.valid_name and metric == self.metric:
                 # TODO(ohta): Deal with maximize direction
                 if is_higher_better:
                     raise ValueError(
                         'Pruning using metrics to be maximized has not been supported yet '
-                        '(validation_name: {}, metric_name: {}).'.format(valid_name, metric_name))
+                        '(validation_name: {}, metric: {}).'.format(valid_name, metric))
 
                 self.trial.report(current_score, step=env.iteration)
                 if self.trial.should_prune(env.iteration):
@@ -73,7 +73,7 @@ class LightGBMPruningCallback(object):
         raise ValueError(
             'The entry associated with the validation name "{}" and the metric name "{}" '
             'is not found in the evaluation result list {}.'.format(
-                self.valid_name, self.observation_key, str(env.evaluation_result_list)))
+                self.valid_name, self.metric, str(env.evaluation_result_list)))
 
 
 def _check_lightgbm_availability():
