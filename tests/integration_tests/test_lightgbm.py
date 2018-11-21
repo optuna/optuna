@@ -34,17 +34,6 @@ def test_lightgbm_pruning_callback_call():
 def test_lightgbm_pruning_callback():
     # type: () -> None
 
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
-
-        dtrain = lgb.Dataset([[1.]], label=[1.])
-        dtest = lgb.Dataset([[1.]], label=[1.])
-
-        pruning_callback = LightGBMPruningCallback(trial, 'binary_error')
-        lgb.train({'objective': 'binary', 'metric': 'binary_error'}, dtrain, 1,
-                  valid_sets=[dtest], verbose_eval=False, callbacks=[pruning_callback])
-        return 1.0
-
     study = optuna.create_study(pruner=DeterministicPruner(True))
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.structs.TrialState.PRUNED
@@ -54,26 +43,10 @@ def test_lightgbm_pruning_callback():
     assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.
 
-
-def test_lightgbm_pruning_callback_with_custom_validation_name():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
-
-        dtrain = lgb.Dataset([[1.]], label=[1.])
-        dtest = lgb.Dataset([[1.]], label=[1.])
-
-        custom_valid_name = 'my_validation'
-        pruning_callback = LightGBMPruningCallback(trial, 'binary_error',
-                                                   valid_name=custom_valid_name)
-        lgb.train({'objective': 'binary', 'metric': 'binary_error'}, dtrain, 1,
-                  valid_sets=[dtest], valid_names=[custom_valid_name],
-                  verbose_eval=False, callbacks=[pruning_callback])
-        return 1.0
-
+    # Use non default validation name.
+    custom_valid_name = 'my_validation'
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    study.optimize(objective, n_trials=1)
+    study.optimize(lambda trial: objective(trial, valid_name=custom_valid_name), n_trials=1)
     assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.
 
@@ -81,44 +54,37 @@ def test_lightgbm_pruning_callback_with_custom_validation_name():
 def test_lightgbm_pruning_callback_errors():
     # type: () -> None
 
-    def objective(trial, observation_key, valid_name='valid_0'):
-        # type: (optuna.trial.Trial, str, str) -> float
-
-        dtrain = lgb.Dataset([[1.]], label=[1.])
-        dtest = lgb.Dataset([[1.]], label=[1.])
-
-        pruning_callback = LightGBMPruningCallback(trial, observation_key, valid_name=valid_name)
-        lgb.train({'objective': 'binary', 'metric': ['auc', 'binary_error']}, dtrain, 1,
-                  valid_sets=[dtest], verbose_eval=False, callbacks=[pruning_callback])
-        return 1.0
-
     # "maximize" direction isn't supported yet.
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    trial = study._run_trial(lambda trial: objective(trial, 'auc'), catch=(ValueError,))
-    frozen_trial = study.storage.get_trial(trial.trial_id)
+    with pytest.raises(ValueError):
+        study.optimize(lambda trial: objective(trial, metric='auc'), n_trials=1, catch=())
 
-    expected_message_prefix = "Setting trial status as TrialState.FAIL because of the following " \
-                              "error: ValueError('Pruning using me"
-    assert frozen_trial.state == optuna.structs.TrialState.FAIL
-    assert frozen_trial.system_attrs['fail_reason'][:100] == expected_message_prefix
-
-    # Unknown observation key (i.e., metric name)
+    # Unknown metric
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    trial = study._run_trial(lambda trial: objective(trial, 'foo_metric'), catch=(ValueError,))
-    frozen_trial = study.storage.get_trial(trial.trial_id)
-
-    expected_message_prefix = "Setting trial status as TrialState.FAIL because of the following " \
-                              "error: ValueError('The entry associ"
-    assert frozen_trial.state == optuna.structs.TrialState.FAIL
-    assert frozen_trial.system_attrs['fail_reason'][:100] == expected_message_prefix
+    with pytest.raises(ValueError):
+        study.optimize(lambda trial: objective(trial, metric='foo_metric'), n_trials=1, catch=())
 
     # Unknown validation name
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    trial = study._run_trial(lambda trial: objective(trial, 'binary_error', 'valid_1'),
-                             catch=(ValueError,))
-    frozen_trial = study.storage.get_trial(trial.trial_id)
+    with pytest.raises(ValueError):
+        study.optimize(lambda trial: objective(trial, valid_name='valid_1',
+                                               force_default_valid_names=True),
+                       n_trials=1, catch=())
 
-    expected_message_prefix = "Setting trial status as TrialState.FAIL because of the following " \
-                              "error: ValueError('The entry associ"
-    assert frozen_trial.state == optuna.structs.TrialState.FAIL
-    assert frozen_trial.system_attrs['fail_reason'][:100] == expected_message_prefix
+
+def objective(trial, metric='binary_error', valid_name='valid_0', force_default_valid_names=False):
+    # type: (optuna.trial.Trial, str, str, bool) -> float
+
+    dtrain = lgb.Dataset([[1.]], label=[1.])
+    dtest = lgb.Dataset([[1.]], label=[1.])
+
+    if force_default_valid_names:
+        valid_names = None
+    else:
+        valid_names = [valid_name]
+
+    pruning_callback = LightGBMPruningCallback(trial, metric, valid_name=valid_name)
+    lgb.train({'objective': 'binary', 'metric': ['auc', 'binary_error']}, dtrain, 1,
+              valid_sets=[dtest], valid_names=valid_names,
+              verbose_eval=False, callbacks=[pruning_callback])
+    return 1.0
