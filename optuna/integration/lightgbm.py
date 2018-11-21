@@ -62,7 +62,7 @@ class LightGBMPruningCallback(object):
                 if is_higher_better:
                     raise ValueError(
                         'Pruning using metrics to be maximized has not been supported yet '
-                        '(validation_name: {}, metric_name: {})'.format(valid_name, metric_name))
+                        '(validation_name: {}, metric_name: {}).'.format(valid_name, metric_name))
 
                 self.trial.report(current_score, step=env.iteration)
                 if self.trial.should_prune(env.iteration):
@@ -71,8 +71,8 @@ class LightGBMPruningCallback(object):
                 return None
 
         raise ValueError(
-            'The entry associated to the validation name "{}" and the metric name "{}" '
-            'is not found in the evaluation result list {}'.format(
+            'The entry associated with the validation name "{}" and the metric name "{}" '
+            'is not found in the evaluation result list {}.'.format(
                 self.valid_name, self.observation_key, str(env.evaluation_result_list)))
 
 
