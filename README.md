@@ -1,50 +1,77 @@
-# Optuna
+# Optuna: A hyperparameter optimization framework
 
-## Information for Users
+*Optuna* is an automatic hyperparameter optimization software framework, particularly designed
+for machine learning. It features an imperative, *define-by-run* style user API. Thanks to our
+*define-by-run* API, the code written with Optuna enjoys high modularity, and the user of
+Optuna can dynamically construct the search spaces for the hyperparameters.
+
+
+## Key Features
+
+Optuna has modern functionalities as follows:
+
+- Parallel distributed optimization
+- Pruning of unpromising trials
+- Web dashboard
+
+
+## Basic Concepts
+
+We use the terms *study* and *trial* as follows:
+
+- Study: optimization based on an objective function
+- Trial: a single execution of the objective function
+
+Please refer to sample code below. The goal of a *study* is to find out the optimal set of
+hyperparameter values (e.g., `classifier` and `svm_c`) through multiple *trials* (e.g.,
+`n_trials=100`). Optuna is a framework designed for the automation and the acceleration of the
+optimization *studies*.
+
+
+```python
+import ...
+
+# Define an objective function to be minimized.
+def objective(trial):
+
+    # Invoke suggest methods of a Trial object to generate hyperparameters.
+    classifier_name = trial.suggest_categorical('classifier', ['SVC', 'RandomForest'])
+    if classifier_name == 'SVC':
+        svc_c = trial.suggest_loguniform('svc_c', 1e-10, 1e10)
+        classifier_obj = sklearn.svm.SVC(C=svc_c)
+    else:
+        rf_max_depth = trial.suggest_int('rf_max_depth', 2, 32)
+        classifier_obj = sklearn.ensemble.RandomForestClassifier(max_depth=rf_max_depth)
+
+    iris = sklearn.datasets.load_iris()
+    x, y = iris.data , iris.target
+    score = sklearn.model_selection.cross_val_score(classifier_obj , x, y)
+    accuracy = score.mean()
+    
+    return 1.0 - accuracy  # A objective value linked with the Trial object.
+
+study = optuna.create_study()  # Create a new study.
+study.optimize(objective , n_trials=100)  # Invoke optimization of the objective function.
+```
+
+
+## Installation
+
+To install Optuna, use `pip` as follows:
 
 ```
 $ pip install git+https://github.com/pfnet/optuna.git
 ```
 
-## Information for Developers
-
-### Format and Lint
+Optuna supports Python 2.7 and Python 3.4 or newer.
 
 
-We use `flake8` and `autopep8`. To install, run:
+## Contribution
 
-```
-$ pip install hacking flake8 autopep8
-```
-
-To format and make changes to Python codes in place, run the following at the repository root:
-
-```
-$ autopep8 . -r --in-place
-```
-
-Lint:
-
-```
-$ flake8 .
-```
+Any contributions to Optuna are welcome! When you send a pull request, please follow the
+[contribution guide](./CONTRIBUTING.md).
 
 
-### Static Type Checking
+## License
 
-We use `mypy`. To install, run:
-
-```
-$ pip install mypy
-```
-
-To invoke static type checking, run:
-
-```
-$ mypy --ignore-missing-imports .
-```
-
-We use comment-style type annotation for compatibility with Python 2.
-
-* [PEP484](https://www.python.org/dev/peps/pep-0484/)
-* [Syntax cheat sheet](http://mypy.readthedocs.io/en/latest/cheat_sheet.html)
+MIT License (see [LICENSE](./LICENSE)).
