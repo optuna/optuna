@@ -2,7 +2,7 @@ FAQ
 ===
 
 Can I use Optuna with X? (where X is your favorite ML library)
--------------------------------------------------------------
+--------------------------------------------------------------
 
 Optuna is compatible with most ML libraries, and it's easy to use Optuna with those.
 Please refer to `examples <https://github.com/pfnet/optuna/tree/master/examples>`_.
