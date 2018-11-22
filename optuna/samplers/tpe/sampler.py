@@ -383,7 +383,8 @@ class TPESampler(base.BaseSampler):
                 mahalanobis = (distance / numpy.maximum(sigmas, EPS)) ** 2
                 Z = numpy.sqrt(2 * numpy.pi) * sigmas
                 coefficient = weights / Z / p_accept
-                # coefficient = weights / Z  # (TODO) We decide which "coefficient" is good, later.
+                # coefficient = weights / Z
+                # TODO(Imamura) We decide which "coefficient" is good, later.
                 return_val = TPESampler._logsum_rows(- 0.5 *
                                                      mahalanobis + numpy.log(coefficient))
         else:
