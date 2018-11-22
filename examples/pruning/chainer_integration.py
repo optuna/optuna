@@ -6,7 +6,7 @@ Chainer and MNIST. We optimize the neural network architecture. Throughout train
 neural networks, a pruner observes intermediate results and stops unpromising trials.
 
 You can run this example as follows:
-    $ python chainer_pruning.py
+    $ python chainer_integration.py
 
 """
 

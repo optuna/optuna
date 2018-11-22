@@ -6,7 +6,7 @@ We optimize both the choice of booster model and their hyperparameters. Througho
 training of models, a pruner observes intermediate results and stop unpromising trials.
 
 You can run this example as follows:
-    $ python xgboost_pruning.py
+    $ python xgboost_integration.py
 
 """
 
