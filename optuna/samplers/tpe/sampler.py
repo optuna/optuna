@@ -83,6 +83,7 @@ class TPESampler(base.BaseSampler):
             list(range(n)), [p[0] for p in observation_pairs],
             list(range(n)), [p[1] for p in observation_pairs])
 
+        print(param_distribution.__class__.__name__)
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._sample_uniform(
                 param_distribution, below_param_values, above_param_values)
@@ -199,6 +200,8 @@ class TPESampler(base.BaseSampler):
             high=high,
             q=None,
             is_log=True)
+
+        print(samples_b)
 
         return TPESampler._compare(
             samples=samples_b, log_l=log_likelihoods_b, log_g=log_likelihoods_a)[0]
@@ -323,12 +326,13 @@ class TPESampler(base.BaseSampler):
 
         if low >= high:
             raise ValueError("low >= high", (low, high))
-        samples = ndarray([], dtype=float)
+        samples = numpy.asarray([], dtype=float)
         while samples.size < n_samples:
             active = numpy.argmax(self.rng.multinomial(1, weights))
             draw = self.rng.normal(loc=mus[active], scale=sigmas[active])
             if low <= draw <= high:
                 samples = numpy.append(samples, draw)
+
         samples = numpy.reshape(samples, size)
 
         if is_log:
@@ -350,7 +354,7 @@ class TPESampler(base.BaseSampler):
     ):
         # type: (...) -> ndarray[float]
 
-        EPS = 1e-10
+        EPS = 0.
         weights = parzen_estimator.weights
         mus = parzen_estimator.mus
         sigmas = parzen_estimator.sigmas
@@ -381,7 +385,8 @@ class TPESampler(base.BaseSampler):
                 distance = samples[:, None] - mus
                 mahalanobis = (distance / numpy.maximum(sigmas, EPS)) ** 2
                 Z = numpy.sqrt(2 * numpy.pi) * sigmas
-                coefficient = weights / Z / p_accept
+                # coefficient = weights / Z / p_accept
+                coefficient = weights / Z  # (TODO) We decide which "coefficient" is good, later.
                 return_val = TPESampler._logsum_rows(- 0.5 *
                                                      mahalanobis + numpy.log(coefficient))
         else:
@@ -468,7 +473,8 @@ class TPESampler(base.BaseSampler):
             best = numpy.argmax(score)
             return [samples[best]] * samples.size
         else:
-            return []
+            # return []
+            raise ValueError("samples should be non-empty")
 
     @classmethod
     def _logsum_rows(cls, x):
