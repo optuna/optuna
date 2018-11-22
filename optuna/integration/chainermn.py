@@ -4,6 +4,7 @@ from typing import Callable  # NOQA
 from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 from typing import Type  # NOQA
+from typing import Union  # NOQA
 
 from optuna.logging import get_logger
 from optuna.storages import InMemoryStorage
@@ -104,7 +105,7 @@ class ChainerMNStudy(object):
         func,  # type: Callable[[Trial, CommunicatorBase], float]
         n_trials=None,  # type: Optional[int]
         timeout=None,  # type: Optional[float]
-        catch=(Exception,),  # type: Tuple[Type[Exception]]
+        catch=(Exception,),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
