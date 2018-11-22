@@ -67,7 +67,7 @@ Executing the script above:
     [I 2018-11-21 17:27:59,202] Setting trial status as TrialState.PRUNED.
     ...
 
-We can see: ``Setting trial status as TrialState.PRUNED``.
+We can see ``Setting trial status as TrialState.PRUNED`` in the log messages.
 This means several trials are stopped before they finish all iterations.
 
 
