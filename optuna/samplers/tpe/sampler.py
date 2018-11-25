@@ -129,155 +129,88 @@ class TPESampler(base.BaseSampler):
     def _sample_uniform(self, distribution, below, above):
         # type: (distributions.UniformDistribution, ndarray[float], ndarray[float]) -> float
 
-        size = (self.n_ei_candidates,)
-        # First, we make samples and log-likelihoods from below data.
-        parzen_estimator_below = ParzenEstimator(
-            mus=below,
-            low=distribution.low,
-            high=distribution.high,
-            parameters=self.parzen_estimator_parameters)
-        samples_b = self._sample_from_GMM(
-            parzen_estimator=parzen_estimator_below,
-            low=distribution.low,
-            high=distribution.high,
-            q=None,
-            size=size)
-        log_likelihoods_b = self._GMM_log_pdf(
-            samples=samples_b,
-            parzen_estimator=parzen_estimator_below,
-            low=distribution.low,
-            high=distribution.high,
-            q=None)
-
-        # Second, we make log-likelihoods from above data and samples from GMM.
-        parzen_estimator_above = ParzenEstimator(
-            mus=above,
-            low=distribution.low,
-            high=distribution.high,
-            parameters=self.parzen_estimator_parameters)
-        log_likelihoods_a = self._GMM_log_pdf(
-            samples=samples_b,
-            parzen_estimator=parzen_estimator_above,
-            low=distribution.low,
-            high=distribution.high,
-            q=None)
-        return TPESampler._compare(
-            samples=samples_b, log_l=log_likelihoods_b, log_g=log_likelihoods_a)[0]
+        low = distribution.low
+        high = distribution.high
+        return self._sample_numerical(low, high, below, above)
 
     def _sample_loguniform(self, distribution, below, above):
         # type: (distributions.LogUniformDistribution, ndarray[float], ndarray[float]) -> float
 
-        low = numpy.log(distribution.low)
-        high = numpy.log(distribution.high)
-        size = (self.n_ei_candidates,)
-        # First, we make samples and log-likelihoods from below data.
-        parzen_estimator_below = ParzenEstimator(
-            mus=numpy.log(below), low=low, high=high, parameters=self.parzen_estimator_parameters)
-        samples_b = self._sample_from_GMM(
-            parzen_estimator=parzen_estimator_below,
-            low=low,
-            high=high,
-            q=None,
-            is_log=True,
-            size=size)
-        log_likelihoods_b = self._GMM_log_pdf(
-            samples=samples_b,
-            parzen_estimator=parzen_estimator_below,
-            low=low,
-            high=high,
-            q=None,
-            is_log=True)
-
-        # Second, we make log-likelihoods from above data and samples from GMM.
-        parzen_estimator_above = ParzenEstimator(
-            mus=numpy.log(above), low=low, high=high, parameters=self.parzen_estimator_parameters)
-
-        log_likelihoods_a = self._GMM_log_pdf(
-            samples=samples_b,
-            parzen_estimator=parzen_estimator_above,
-            low=low,
-            high=high,
-            q=None,
-            is_log=True)
-
-        return TPESampler._compare(
-            samples=samples_b, log_l=log_likelihoods_b, log_g=log_likelihoods_a)[0]
+        low = distribution.low
+        high = distribution.high
+        return self._sample_numerical(low, high, below, above, is_log=True)
 
     def _sample_discrete_uniform(self, distribution, below, above):
         # type:(distributions.DiscreteUniformDistribution, ndarray[float], ndarray[float]) -> float
 
-        # First, we make samples and log-likelihoods from below data.
         low = distribution.low - 0.5 * distribution.q
         high = distribution.high + 0.5 * distribution.q
-        size = (self.n_ei_candidates,)
+        q = distribution.q
 
-        parzen_estimator_below = ParzenEstimator(
-            mus=below, low=low, high=high, parameters=self.parzen_estimator_parameters)
-        samples_b = self._sample_from_GMM(
-            parzen_estimator=parzen_estimator_below,
-            low=low,
-            high=high,
-            q=distribution.q,
-            size=size)
-        log_likelihoods_b = self._GMM_log_pdf(
-            samples=samples_b,
-            parzen_estimator=parzen_estimator_below,
-            low=low,
-            high=high,
-            q=distribution.q)
-
-        # Second, we make log-likelihoods from above data and samples from GMM.
-        parzen_estimator_above = ParzenEstimator(
-            mus=above, low=low, high=high, parameters=self.parzen_estimator_parameters)
-
-        log_likelihoods_a = self._GMM_log_pdf(
-            samples=samples_b,
-            parzen_estimator=parzen_estimator_above,
-            low=low,
-            high=high,
-            q=distribution.q)
-
-        best_sample = TPESampler._compare(
-            samples=samples_b, log_l=log_likelihoods_b, log_g=log_likelihoods_a)[0]
+        best_sample = self._sample_numerical(low, high, below, above, q=q)
         return min(max(best_sample, low), high)
 
     def _sample_int(self, distribution, below, above):
         # type: (distributions.IntUniformDistribution, ndarray[float], ndarray[float]) -> float
 
-        # First, we make samples and log-likelihoods from below data.
         q = 1.0
         low = distribution.low - 0.5 * q
         high = distribution.high + 0.5 * q
+        return int(self._sample_numerical(low, high, below, above, q=q))
+
+    def _sample_numerical(
+            self,
+            low,  # type: float
+            high,  # type: float
+            below,  # type: ndarray[float]
+            above,  # type: ndarray[float]
+            q=None,  # type: Optional[float]
+            is_log=False  # type: bool
+    ):
+        # type: (...) -> float
+        if is_log:
+            low = numpy.log(low)
+            high = numpy.log(high)
+            below = numpy.log(below)
+            above = numpy.log(above)
+
         size = (self.n_ei_candidates,)
 
         parzen_estimator_below = ParzenEstimator(
-            mus=below, low=low, high=high, parameters=self.parzen_estimator_parameters)
+            mus=below,
+            low=low,
+            high=high,
+            parameters=self.parzen_estimator_parameters)
         samples_b = self._sample_from_GMM(
             parzen_estimator=parzen_estimator_below,
             low=low,
             high=high,
             q=q,
+            is_log=is_log,
             size=size)
         log_likelihoods_b = self._GMM_log_pdf(
             samples=samples_b,
             parzen_estimator=parzen_estimator_below,
             low=low,
             high=high,
-            q=q)
+            q=q,
+            is_log=is_log)
 
-        # Second, we make log-likelihoods from above data and samples from GMM.
         parzen_estimator_above = ParzenEstimator(
-            mus=above, low=low, high=high, parameters=self.parzen_estimator_parameters)
+            mus=numpy.log(above),
+            low=low, high=high,
+            parameters=self.parzen_estimator_parameters)
 
         log_likelihoods_a = self._GMM_log_pdf(
             samples=samples_b,
             parzen_estimator=parzen_estimator_above,
             low=low,
             high=high,
-            q=q)
+            q=q,
+            is_log=is_log)
 
-        return int(TPESampler._compare(
-            samples=samples_b, log_l=log_likelihoods_b, log_g=log_likelihoods_a)[0])
+        return TPESampler._compare(
+            samples=samples_b, log_l=log_likelihoods_b, log_g=log_likelihoods_a)[0]
 
     def _sample_categorical(self, distribution, below, above):
         # type: (distributions.CategoricalDistribution, ndarray[float], ndarray[float]) -> float
