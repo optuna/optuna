@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 from numpy import ndarray
 import scipy.special
 from typing import Callable  # NOQA
@@ -14,44 +14,38 @@ from optuna.samplers.tpe.parzen_estimator import ParzenEstimator  # NOQA
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters  # NOQA
 from optuna.storages.base import BaseStorage  # NOQA
 
-default_consider_prior = True
-default_prior_weight = 1.0
-default_consider_magic_clip = True
-default_consider_endpoints = False
-default_n_startup_trials = 4
-default_n_ei_candidates = 24
 EPS = 1e-12
 
 
 def default_gamma(x):
     # type: (int) -> int
 
-    return min(int(numpy.ceil(0.25 * numpy.sqrt(x))), 25)
+    return min(int(np.ceil(0.25 * np.sqrt(x))), 25)
 
 
 def default_weights(x):
     # type: (int) -> ndarray
 
     if x == 0:
-        return numpy.asarray([])
+        return np.asarray([])
     elif x < 25:
-        return numpy.ones(x)
+        return np.ones(x)
     else:
-        ramp = numpy.linspace(1.0 / x, 1.0, num=x - 25)
-        flat = numpy.ones(25)
-        return numpy.concatenate([ramp, flat], axis=0)
+        ramp = np.linspace(1.0 / x, 1.0, num=x - 25)
+        flat = np.ones(25)
+        return np.concatenate([ramp, flat], axis=0)
 
 
 class TPESampler(base.BaseSampler):
 
     def __init__(
             self,
-            consider_prior=default_consider_prior,  # type: bool
-            prior_weight=default_prior_weight,  # type: Optional[float]
-            consider_magic_clip=default_consider_magic_clip,  # type: bool
-            consider_endpoints=default_consider_endpoints,  # type: bool
-            n_startup_trials=default_n_startup_trials,  # type: int
-            n_ei_candidates=default_n_ei_candidates,  # type: int
+            consider_prior=True,  # type: bool
+            prior_weight=1.0,  # type: Optional[float]
+            consider_magic_clip=True,  # type: bool
+            consider_endpoints=False,  # type: bool
+            n_startup_trials=4,  # type: int
+            n_ei_candidates=24,  # type: int
             gamma=default_gamma,  # type: Callable[[int], int]
             weights=default_weights,  # type: Callable[[int], ndarray]
             seed=None  # type: Optional[int]
@@ -67,7 +61,7 @@ class TPESampler(base.BaseSampler):
         self.weights = weights
         self.seed = seed
 
-        self.rng = numpy.random.RandomState(seed)
+        self.rng = np.random.RandomState(seed)
         self.random_sampler = random.RandomSampler(seed=seed)
 
     def sample(self, storage, study_id, param_name, param_distribution):
@@ -110,13 +104,13 @@ class TPESampler(base.BaseSampler):
     ):
         # type: (...) -> Tuple[ndarray[float], ndarray[float]]
 
-        config_idxs, config_vals, loss_idxs, loss_vals = map(numpy.asarray,
+        config_idxs, config_vals, loss_idxs, loss_vals = map(np.asarray,
                                                              [config_idxs,
                                                               config_vals,
                                                               loss_idxs,
                                                               loss_vals])
         n_below = self.gamma(config_vals.size)
-        loss_ascending = numpy.argsort(loss_vals)
+        loss_ascending = np.argsort(loss_vals)
 
         keep_idxs = set(loss_idxs[loss_ascending[:n_below]])
         below = [v for i, v in zip(config_idxs, config_vals) if i in keep_idxs]
@@ -124,6 +118,8 @@ class TPESampler(base.BaseSampler):
         keep_idxs = set(loss_idxs[loss_ascending[n_below:]])
         above = [v for i, v in zip(config_idxs, config_vals) if i in keep_idxs]
 
+        below = np.asarray(below, dtype=float)
+        above = np.asarray(above, dtype=float)
         return below, above
 
     def _sample_uniform(self, distribution, below, above):
@@ -168,11 +164,12 @@ class TPESampler(base.BaseSampler):
             is_log=False  # type: bool
     ):
         # type: (...) -> float
+
         if is_log:
-            low = numpy.log(low)
-            high = numpy.log(high)
-            below = numpy.log(below)
-            above = numpy.log(above)
+            low = np.log(low)
+            high = np.log(high)
+            below = np.log(below)
+            above = np.log(above)
 
         size = (self.n_ei_candidates,)
 
@@ -181,14 +178,14 @@ class TPESampler(base.BaseSampler):
             low=low,
             high=high,
             parameters=self.parzen_estimator_parameters)
-        samples_b = self._sample_from_GMM(
+        samples_b = self._sample_from_gmm(
             parzen_estimator=parzen_estimator_below,
             low=low,
             high=high,
             q=q,
             is_log=is_log,
             size=size)
-        log_likelihoods_b = self._GMM_log_pdf(
+        log_likelihoods_b = self._gmm_log_pdf(
             samples=samples_b,
             parzen_estimator=parzen_estimator_below,
             low=low,
@@ -197,11 +194,11 @@ class TPESampler(base.BaseSampler):
             is_log=is_log)
 
         parzen_estimator_above = ParzenEstimator(
-            mus=numpy.log(above),
+            mus=np.log(above),
             low=low, high=high,
             parameters=self.parzen_estimator_parameters)
 
-        log_likelihoods_a = self._GMM_log_pdf(
+        log_likelihoods_a = self._gmm_log_pdf(
             samples=samples_b,
             parzen_estimator=parzen_estimator_above,
             low=low,
@@ -222,14 +219,14 @@ class TPESampler(base.BaseSampler):
         size = (self.n_ei_candidates,)
 
         weights_b = self.weights(len(below))
-        counts_b = numpy.bincount(below, minlength=upper, weights=weights_b)
+        counts_b = np.bincount(below, minlength=upper, weights=weights_b)
         pseudocounts_b = counts_b + self.prior_weight
         pseudocounts_b /= pseudocounts_b.sum()
-        samples_b = self._categorical(pseudocounts_b, size=size)
+        samples_b = self._sample_from_categorical_dist(pseudocounts_b, size=size)
         log_likelihoods_b = TPESampler._categorical_log_pdf(samples_b, list(pseudocounts_b))
 
         weights_a = self.weights(len(above))
-        counts_a = numpy.bincount(above, minlength=upper, weights=weights_a)
+        counts_a = np.bincount(above, minlength=upper, weights=weights_a)
         pseudocounts_a = counts_a + self.prior_weight
         pseudocounts_a /= pseudocounts_a.sum()
         log_likelihoods_a = TPESampler._categorical_log_pdf(samples_b, list(pseudocounts_a))
@@ -237,7 +234,7 @@ class TPESampler(base.BaseSampler):
         return int(TPESampler._compare(
             samples=samples_b, log_l=log_likelihoods_b, log_g=log_likelihoods_a)[0])
 
-    def _sample_from_GMM(
+    def _sample_from_gmm(
             self,
             parzen_estimator,  # type: ParzenEstimator
             low,  # type: float
@@ -251,29 +248,29 @@ class TPESampler(base.BaseSampler):
         weights = parzen_estimator.weights
         mus = parzen_estimator.mus
         sigmas = parzen_estimator.sigmas
-        weights, mus, sigmas = map(numpy.asarray, (weights, mus, sigmas))
-        n_samples = numpy.prod(size)
+        weights, mus, sigmas = map(np.asarray, (weights, mus, sigmas))
+        n_samples = np.prod(size)
 
         if low >= high:
             raise ValueError("low >= high", (low, high))
-        samples = numpy.asarray([], dtype=float)
+        samples = np.asarray([], dtype=float)
         while samples.size < n_samples:
-            active = numpy.argmax(self.rng.multinomial(1, weights))
+            active = np.argmax(self.rng.multinomial(1, weights))
             draw = self.rng.normal(loc=mus[active], scale=sigmas[active])
             if low <= draw <= high:
-                samples = numpy.append(samples, draw)
+                samples = np.append(samples, draw)
 
-        samples = numpy.reshape(samples, size)
+        samples = np.reshape(samples, size)
 
         if is_log:
-            samples = numpy.exp(samples)
+            samples = np.exp(samples)
 
         if q is None:
-            return list(samples)
+            return samples
         else:
-            return list(numpy.round(samples / q) * q)
+            return np.round(samples / q) * q
 
-    def _GMM_log_pdf(
+    def _gmm_log_pdf(
             self,
             samples,  # type: ndarray[float]
             parzen_estimator,  # type: ParzenEstimator
@@ -284,13 +281,12 @@ class TPESampler(base.BaseSampler):
     ):
         # type: (...) -> ndarray[float]
 
-        EPS = 0.
         weights = parzen_estimator.weights
         mus = parzen_estimator.mus
         sigmas = parzen_estimator.sigmas
-        samples, weights, mus, sigmas = map(numpy.asarray, (samples, weights, mus, sigmas))
+        samples, weights, mus, sigmas = map(np.asarray, (samples, weights, mus, sigmas))
         if samples.size == 0:
-            return []
+            return np.asarray([], dtype=float)
         if weights.ndim != 1:
             raise ValueError("need vector of weights", weights.shape)
         if mus.ndim != 1:
@@ -300,84 +296,76 @@ class TPESampler(base.BaseSampler):
         _samples = samples
         samples = _samples.flatten()
 
-        p_accept = numpy.sum(weights * (TPESampler._normal_cdf(high, mus, sigmas)
-                                        - TPESampler._normal_cdf(low, mus, sigmas)))
+        p_accept = np.sum(weights * (TPESampler._normal_cdf(high, mus, sigmas)
+                                     - TPESampler._normal_cdf(low, mus, sigmas)))
 
         if q is None:
+            jacobian = samples[:, None] if is_log else np.ones(samples.shape)[:, None]
             if is_log:
-                distance = numpy.log(samples[:, None]) - mus
-                mahalanobis = (distance / numpy.maximum(sigmas, EPS)) ** 2
-                Z = numpy.sqrt(2 * numpy.pi) * sigmas * samples[:, None]
-                coefficient = weights / Z / p_accept
-                return_val = TPESampler._logsum_rows(- 0.5 *
-                                                     mahalanobis + numpy.log(coefficient))
+                distance = np.log(samples[:, None]) - mus
             else:
                 distance = samples[:, None] - mus
-                mahalanobis = (distance / numpy.maximum(sigmas, EPS)) ** 2
-                Z = numpy.sqrt(2 * numpy.pi) * sigmas
-                coefficient = weights / Z / p_accept
-                # coefficient = weights / Z
-                # TODO(Imamura) We decide which "coefficient" is good, later.
-                return_val = TPESampler._logsum_rows(- 0.5 *
-                                                     mahalanobis + numpy.log(coefficient))
+            mahalanobis = (distance / np.maximum(sigmas, EPS)) ** 2
+            Z = np.sqrt(2 * np.pi) * sigmas * jacobian
+            coefficient = weights / Z / p_accept
+            return_val = TPESampler._logsum_rows(- 0.5 *
+                                                 mahalanobis + np.log(coefficient))
         else:
-            probabilities = numpy.zeros(samples.shape, dtype='float64')
+            probabilities = np.zeros(samples.shape, dtype='float64')
+            cdf_func = TPESampler._log_normal_cdf if is_log else TPESampler._normal_cdf
             for w, mu, sigma in zip(weights, mus, sigmas):
                 if is_log:
-                    upper_bound = numpy.minimum(samples + q / 2.0, numpy.exp(high))
-                    lower_bound = numpy.maximum(samples - q / 2.0, numpy.exp(low))
-                    lower_bound = numpy.maximum(0, lower_bound)
-                    inc_amt = w * TPESampler._log_normal_cdf(upper_bound, mu, sigma)
-                    inc_amt -= w * TPESampler._log_normal_cdf(lower_bound, mu, sigma)
+                    upper_bound = np.minimum(samples + q / 2.0, np.exp(high))
+                    lower_bound = np.maximum(samples - q / 2.0, np.exp(low))
+                    lower_bound = np.maximum(0, lower_bound)
                 else:
-                    upper_bound = numpy.minimum(samples + q / 2.0, high)
-                    lower_bound = numpy.maximum(samples - q / 2.0, low)
-                    inc_amt = w * TPESampler._normal_cdf(upper_bound, mu, sigma)
-                    inc_amt -= w * TPESampler._normal_cdf(lower_bound, mu, sigma)
+                    upper_bound = np.minimum(samples + q / 2.0, high)
+                    lower_bound = np.maximum(samples - q / 2.0, low)
+                inc_amt = w * cdf_func(upper_bound, mu, sigma)
+                inc_amt -= w * cdf_func(lower_bound, mu, sigma)
                 probabilities += inc_amt
-            return_val = numpy.log(probabilities + EPS) - numpy.log(p_accept + EPS)
+            return_val = np.log(probabilities + EPS) - np.log(p_accept + EPS)
 
         return_val.shape = _samples.shape
         return return_val
 
-    def _categorical(self, p, size=()):
+    def _sample_from_categorical_dist(self, probabilities, size=()):
         # type: (Union[ndarray[float], ndarray], Tuple) -> Union[ndarray[float], ndarray]
 
-        if p.size == 1 and isinstance(p[0], ndarray):
-            p = p[0]
-        p = numpy.asarray(p)
+        if probabilities.size == 1 and isinstance(probabilities[0], ndarray):
+            probabilities = probabilities[0]
+        probabilities = np.asarray(probabilities)
 
         if size == ():
             size = (1,)
-        elif isinstance(size, (int, numpy.number)):
+        elif isinstance(size, (int, np.number)):
             size = (size,)
         else:
             size = tuple(size)
 
         if size == (0,):
-            return numpy.asarray([])
+            return np.asarray([], dtype=float)
         assert len(size)
 
-        if p.ndim == 0:
-            raise NotImplementedError
-        elif p.ndim == 1:
-            n_draws = int(numpy.prod(size))
-            sample = self.rng.multinomial(n=1, pvals=p, size=int(n_draws))
-            assert sample.shape == size + (p.size,)
-            return_val = numpy.dot(sample, numpy.arange(p.size))
+        if probabilities.ndim == 1:
+            n_draws = int(np.prod(size))
+            sample = self.rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
+            assert sample.shape == size + (probabilities.size,)
+            return_val = np.dot(sample, np.arange(probabilities.size))
             return_val.shape = size
             return return_val
-        elif p.ndim == 2:
-            n_draws_, n_choices = p.shape
+        elif probabilities.ndim == 2:
+            n_draws_, n_choices = probabilities.shape
             n_draws, = size
             assert n_draws_ == n_draws
-            return_val = [numpy.where(self.rng.multinomial(pvals=[ii], n=1))[0][0]
+            return_val = [np.where(self.rng.multinomial(pvals=[ii], n=1))[0][0]
                           for ii in range(n_draws_)]
-            return_val = numpy.asarray(return_val)
+            return_val = np.asarray(return_val)
             return_val.shape = size
             return return_val
         else:
-            raise NotImplementedError
+            raise ValueError("The input dimension of p is {}. It should be 1 or 2.",
+                             probabilities.ndim)
 
     @classmethod
     def _categorical_log_pdf(
@@ -388,39 +376,39 @@ class TPESampler(base.BaseSampler):
         # type: (...) -> Union[ndarray[float], ndarray]
 
         if sample.size:
-            return numpy.log(numpy.asarray(p)[sample])
+            return np.log(np.asarray(p)[sample])
         else:
-            return numpy.asarray([])
+            return np.asarray([])
 
     @classmethod
     def _compare(cls, samples, log_l, log_g):
         # type: (ndarray[float], ndarray[float], ndarray[float]) -> ndarray[float]
 
-        samples, log_l, log_g = map(numpy.asarray, (samples, log_l, log_g))
+        samples, log_l, log_g = map(np.asarray, (samples, log_l, log_g))
         if samples.size:
             score = log_l - log_g
             if samples.size != score.size:
                 raise ValueError()
-            best = numpy.argmax(score)
-            return [samples[best]] * samples.size
+            best = np.argmax(score)
+            return np.asarray([samples[best]] * samples.size)
         else:
-            return []
+            return np.asarray([])
 
     @classmethod
     def _logsum_rows(cls, x):
         # type: (ndarray[float]) -> ndarray
 
-        x = numpy.asarray(x)
+        x = np.asarray(x)
         m = x.max(axis=1)
-        return numpy.log(numpy.exp(x - m[:, None]).sum(axis=1)) + m
+        return np.log(np.exp(x - m[:, None]).sum(axis=1)) + m
 
     @classmethod
     def _normal_cdf(cls, x, mu, sigma):
         # type: (float, ndarray[float], ndarray[float]) -> ndarray
 
-        mu, sigma = map(numpy.asarray, (mu, sigma))
+        mu, sigma = map(np.asarray, (mu, sigma))
         top = x - mu
-        bottom = numpy.maximum(numpy.sqrt(2) * sigma, EPS)
+        bottom = np.maximum(np.sqrt(2) * sigma, EPS)
         z = top / bottom
         return 0.5 * (1 + scipy.special.erf(z))
 
@@ -428,14 +416,14 @@ class TPESampler(base.BaseSampler):
     def _log_normal_cdf(cls, x, mu, sigma):
         # type: (float, ndarray[float], ndarray[float]) -> ndarray
 
-        mu, sigma = map(numpy.asarray, (mu, sigma))
+        mu, sigma = map(np.asarray, (mu, sigma))
         if x < 0:
             raise ValueError("negative argument is given to _lognormal_cdf", x)
-        olderr = numpy.seterr(divide='ignore')
+        olderr = np.seterr(divide='ignore')
         try:
-            top = numpy.log(numpy.maximum(x, EPS)) - mu
-            bottom = numpy.maximum(numpy.sqrt(2) * sigma, EPS)
+            top = np.log(np.maximum(x, EPS)) - mu
+            bottom = np.maximum(np.sqrt(2) * sigma, EPS)
             z = top / bottom
             return .5 + .5 * scipy.special.erf(z)
         finally:
-            numpy.seterr(**olderr)
+            np.seterr(**olderr)
