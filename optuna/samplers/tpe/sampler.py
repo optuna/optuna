@@ -194,7 +194,7 @@ class TPESampler(base.BaseSampler):
             is_log=is_log)
 
         parzen_estimator_above = ParzenEstimator(
-            mus=np.log(above),
+            mus=above,
             low=low, high=high,
             parameters=self.parzen_estimator_parameters)
 
