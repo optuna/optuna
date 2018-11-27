@@ -57,18 +57,20 @@ class LightGBMPruningCallback(object):
         # type: (lgb.callback.CallbackEnv) -> None
 
         for valid_name, metric, current_score, is_higher_better in env.evaluation_result_list:
-            if valid_name == self.valid_name and metric == self.metric:
-                # TODO(ohta): Deal with maximize direction
-                if is_higher_better:
-                    raise ValueError(
-                        'Pruning using metrics to be maximized has not been supported yet '
-                        '(validation_name: {}, metric: {}).'.format(valid_name, metric))
+            if valid_name != self.valid_name or metric != self.metric:
+                continue
 
-                self.trial.report(current_score, step=env.iteration)
-                if self.trial.should_prune(env.iteration):
-                    message = "Trial was pruned at iteration {}.".format(env.iteration)
-                    raise optuna.structs.TrialPruned(message)
-                return None
+            # TODO(ohta): Deal with maximize direction
+            if is_higher_better:
+                raise ValueError(
+                    'Pruning using metrics to be maximized has not been supported yet '
+                    '(validation_name: {}, metric: {}).'.format(valid_name, metric))
+
+            self.trial.report(current_score, step=env.iteration)
+            if self.trial.should_prune(env.iteration):
+                message = "Trial was pruned at iteration {}.".format(env.iteration)
+                raise optuna.structs.TrialPruned(message)
+            return None
 
         raise ValueError(
             'The entry associated with the validation name "{}" and the metric name "{}" '
