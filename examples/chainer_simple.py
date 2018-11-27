@@ -9,12 +9,12 @@ subset of it.
 We have the following two ways to execute this example:
 
 (1) Execute this code directly.
-    $ python chainer_mnist.py
+    $ python chainer_simple.py
 
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
-    $ optuna study optimize chainer_mnist.py objective --n-trials=100 --study $STUDY_NAME \
+    $ optuna study optimize chainer_simple.py objective --n-trials=100 --study $STUDY_NAME \
       --storage sqlite:///example.db
 
 """

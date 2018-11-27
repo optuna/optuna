@@ -7,7 +7,7 @@ evaluated by MNIST dataset. Throughout the training of neural networks, a pruner
 intermediate results and stops unpromising trials.
 
 You can run this example as follows:
-    $ python chainer_pruner.py
+    $ python chainer_integration.py
 
 """
 
