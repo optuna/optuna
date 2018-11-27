@@ -37,7 +37,7 @@ class LightGBMPruningCallback(object):
             <https://lightgbm.readthedocs.io/en/latest/Parameters.html#metric>`_
             for further details.
         valid_name:
-            The name of the observation target validation.
+            The name of the target validation.
             Validation names are specified by ``valid_names`` option of
             `train method
             <https://lightgbm.readthedocs.io/en/latest/Python-API.html#lightgbm.train>`_.
