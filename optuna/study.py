@@ -186,7 +186,7 @@ class Study(object):
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
-            catch=(Exception,)  # type: Tuple[Type[Exception]]
+            catch=(Exception,)  # type: Union[Tuple[()], Tuple[Type[Exception]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -302,8 +302,14 @@ class Study(object):
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
-    def _optimize_sequential(self, func, n_trials, timeout, catch):
-        # type: (ObjectiveFuncType, Optional[int], Optional[float], Tuple[Type[Exception]]) -> None
+    def _optimize_sequential(
+            self,
+            func,  # type: ObjectiveFuncType
+            n_trials,  # type: Optional[int]
+            timeout,  # type: Optional[float]
+            catch  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+    ):
+        # type: (...) -> None
 
         i_trial = 0
         time_start = datetime.datetime.now()
@@ -326,7 +332,7 @@ class Study(object):
             n_trials,  # type: Optional[int]
             timeout,  # type: Optional[float]
             n_jobs,  # type: int
-            catch  # type: Tuple[Type[Exception]]
+            catch  # type: Union[Tuple[()], Tuple[Type[Exception]]]
     ):
         # type: (...) -> None
 
@@ -383,7 +389,7 @@ class Study(object):
         que.join_thread()
 
     def _run_trial(self, func, catch):
-        # type: (ObjectiveFuncType, Tuple[Type[Exception]]) -> trial_module.Trial
+        # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
         trial_id = self.storage.create_new_trial_id(self.study_id)
         trial = trial_module.Trial(self, trial_id)
