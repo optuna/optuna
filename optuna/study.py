@@ -43,12 +43,12 @@ class Study(object):
             further details.
         sampler:
             A sampler object that implements background algorithm for value suggestion.
-            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used as the default.
-            See also :class:`~optuna.samplers`.
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
+            as the default. See also :class:`~optuna.samplers`.
         pruner:
             A pruner object that decides early stopping of unpromising trials.
-            If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used as the default.
-            See also :class:`~optuna.pruners`.
+            If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
+            as the default. See also :class:`~optuna.pruners`.
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization. Note that ``maximize`` is currently unsupported.
