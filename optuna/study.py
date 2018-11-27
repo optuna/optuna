@@ -42,11 +42,13 @@ class Study(object):
             document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
             further details.
         sampler:
-            A sampler object that implements background algorithm for value suggestion. See also
-            :class:`~optuna.samplers`.
+            A sampler object that implements background algorithm for value suggestion.
+            If ``None`` is specified, :class:`~optuna.samplers.TPESampler` is used as the default.
+            See also :class:`~optuna.samplers`.
         pruner:
-            A pruner object that decides early stopping of unpromising trials. See also
-            :class:`~optuna.pruners`.
+            A pruner object that decides early stopping of unpromising trials.
+            If ``None`` is specified, :class:`~optuna.pruners.MedianPruner` is used as the default.
+            See also :class:`~optuna.pruners`.
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization. Note that ``maximize`` is currently unsupported.
