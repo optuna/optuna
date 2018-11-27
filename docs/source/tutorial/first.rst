@@ -13,7 +13,7 @@ Let us try very simple optimization in IPython shell.
 
     In [1]: import optuna
 
-First, we need to define the objective function. Here, we use a very simple quadratic function as an example of objective function. In practice, it is expected that training of machine learning algorithms is invoked in objective functions, and metrics such as loss or error are reported.
+Here, we use a very simple quadratic function as an example of objective function.
 
 .. code-block:: python
 
@@ -43,9 +43,13 @@ To start the optimization, we create a study object and pass the objective funct
     [I 2018-05-09 10:03:22,479] Finished a trial resulted in value: 1.130813338091735. Current best value is 1.130813338091735 with parameters: {'x': 3.063397074517198}.
     ...
     [I 2018-05-09 10:03:23,431] Finished a trial resulted in value: 8.760381111220335. Current best value is 0.0026232243068543526 with parameters: {'x': 1.9487825780924659}.
+    In [5]: study.best_params
+    Out[5]: {'x': 1.9487825780924659}
 
+We can see that Optuna found the best ``x`` value ``1.9487825780924659``, which is close to the optimal value of ``2``.
 
-We see that Optuna found the best ``x`` value ``1.9487825780924659``, which is close to the optimal value of ``2``.
+.. note::
+    In practice, it is expected that training of machine learning algorithms is invoked in objective functions, and metrics such as loss or error are reported.
 
 Study Object
 ------------
