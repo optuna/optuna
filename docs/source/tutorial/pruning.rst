@@ -76,6 +76,7 @@ Integration Modules for Pruning
 To implement pruning mechanism in much simpler forms, Optuna provides integration modules for the following libraries.
 
 - XGBoost: :class:`optuna.integration.XGBoostPruningCallback`
+- LightGBM: :class:`optuna.integration.LightGBMPruningCallback`
 - Chainer: :class:`optuna.integration.ChainerPruningExtension`
 
 For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
