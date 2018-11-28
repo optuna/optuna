@@ -1,4 +1,4 @@
-<div align="center"><img src="docs/image/optuna-logo.png" width="400"/></div>
+<div align="center"><img src="docs/image/optuna-logo.png" width="800"/></div>
 
 # Optuna: A hyperparameter optimization framework
 
