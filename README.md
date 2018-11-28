@@ -1,5 +1,10 @@
 # Optuna: A hyperparameter optimization framework
 
+[![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/pfnet/optuna)
+[![CircleCI](https://circleci.com/gh/pfnet/optuna.svg?style=svg)](https://circleci.com/gh/pfnet/optuna)
+[![Read the Docs](https://readthedocs.org/projects/optuna/badge/?version=stable)](https://optuna.readthedocs.io/en/stable/)
+
 *Optuna* is an automatic hyperparameter optimization software framework, particularly designed
 for machine learning. It features an imperative, *define-by-run* style user API. Thanks to our
 *define-by-run* API, the code written with Optuna enjoys high modularity, and the user of
