@@ -180,21 +180,21 @@ class TPESampler(base.BaseSampler):
 
         size = (self.n_ei_candidates,)
 
-        parzen_estimator_below = ParzenEstimator(
+        parzen_estimator_belowelow = ParzenEstimator(
             mus=below,
             low=low,
             high=high,
             parameters=self.parzen_estimator_parameters)
-        samples_b = self._sample_from_gmm(
-            parzen_estimator=parzen_estimator_below,
+        samples_below = self._sample_from_gmm(
+            parzen_estimator=parzen_estimator_belowelow,
             low=low,
             high=high,
             q=q,
             is_log=is_log,
             size=size)
-        log_likelihoods_b = self._gmm_log_pdf(
-            samples=samples_b,
-            parzen_estimator=parzen_estimator_below,
+        log_likelihoods_below = self._gmm_log_pdf(
+            samples=samples_below,
+            parzen_estimator=parzen_estimator_belowelow,
             low=low,
             high=high,
             q=q,
@@ -205,8 +205,8 @@ class TPESampler(base.BaseSampler):
             low=low, high=high,
             parameters=self.parzen_estimator_parameters)
 
-        log_likelihoods_a = self._gmm_log_pdf(
-            samples=samples_b,
+        log_likelihoods_above = self._gmm_log_pdf(
+            samples=samples_below,
             parzen_estimator=parzen_estimator_above,
             low=low,
             high=high,
@@ -214,7 +214,7 @@ class TPESampler(base.BaseSampler):
             is_log=is_log)
 
         return TPESampler._compare(
-            samples=samples_b, log_l=log_likelihoods_b, log_g=log_likelihoods_a)[0]
+            samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above)[0]
 
     def _sample_categorical(self, distribution, below, above):
         # type: (distributions.CategoricalDistribution, np.ndarray, np.ndarray) -> float
@@ -227,16 +227,16 @@ class TPESampler(base.BaseSampler):
 
         weights_below = self.weights(len(below))
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
-        pseudocounts_below = counts_below + self.prior_weight
-        pseudocounts_below /= pseudocounts_below.sum()
-        samples_below = self._sample_from_categorical_dist(pseudocounts_below, size=size)
-        log_likelihoods_below = TPESampler._categorical_log_pdf(samples_below, pseudocounts_below)
+        weighted_below = counts_below + self.prior_weight
+        weighted_below /= weighted_below.sum()
+        samples_below = self._sample_from_categorical_dist(weighted_below, size=size)
+        log_likelihoods_below = TPESampler._categorical_log_pdf(samples_below, weighted_below)
 
         weights_above = self.weights(len(above))
         counts_above = np.bincount(above, minlength=upper, weights=weights_above)
-        pseudocounts_above = counts_above + self.prior_weight
-        pseudocounts_above /= pseudocounts_above.sum()
-        log_likelihoods_above = TPESampler._categorical_log_pdf(samples_below, pseudocounts_above)
+        weighted_above = counts_above + self.prior_weight
+        weighted_above /= weighted_above.sum()
+        log_likelihoods_above = TPESampler._categorical_log_pdf(samples_below, weighted_above)
 
         return int(TPESampler._compare(
             samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above)[0])
@@ -422,9 +422,9 @@ class TPESampler(base.BaseSampler):
         # type: (float, np.ndarray, np.ndarray) -> np.ndarray
 
         mu, sigma = map(np.asarray, (mu, sigma))
-        top = x - mu
-        bottom = np.maximum(np.sqrt(2) * sigma, EPS)
-        z = top / bottom
+        denominator = x - mu
+        numerator = np.maximum(np.sqrt(2) * sigma, EPS)
+        z = denominator / numerator
         return 0.5 * (1 + scipy.special.erf(z))
 
     @classmethod
@@ -434,11 +434,7 @@ class TPESampler(base.BaseSampler):
         mu, sigma = map(np.asarray, (mu, sigma))
         if x < 0:
             raise ValueError("Negative argument is given to _lognormal_cdf. x: {}".format(x))
-        olderr = np.seterr(divide='ignore')
-        try:
-            top = np.log(np.maximum(x, EPS)) - mu
-            bottom = np.maximum(np.sqrt(2) * sigma, EPS)
-            z = top / bottom
-            return .5 + .5 * scipy.special.erf(z)
-        finally:
-            np.seterr(**olderr)
+        denominator = np.log(np.maximum(x, EPS)) - mu
+        numerator = np.maximum(np.sqrt(2) * sigma, EPS)
+        z = denominator / numerator
+        return .5 + .5 * scipy.special.erf(z)
