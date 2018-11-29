@@ -22,7 +22,7 @@ class ParzenEstimatorParameters(
 class ParzenEstimator(object):
     def __init__(
             self,
-            mus,  # type: ndarray[float]
+            mus,  # type: ndarray
             low,  # type: float
             high,  # type: float
             parameters  # type: ParzenEstimatorParameters
@@ -45,14 +45,14 @@ class ParzenEstimator(object):
     @classmethod
     def _calculate(
             cls,
-            mus,  # type: ndarray[float]
+            mus,  # type: ndarray
             low,  # type: float
             high,  # type: float
             consider_prior,  # type: bool
             prior_weight,  # type: Optional[float]
             consider_magic_clip,  # type: bool
             consider_endpoints,  # type: bool
-            weights_func  # type: Callable[[int], ndarray[float]]
+            weights_func  # type: Callable[[int], ndarray]
     ):
         # type: (...) -> Tuple[List[float], List[float], List[float]]
 
@@ -94,26 +94,23 @@ class ParzenEstimator(object):
             sigma = sigma[1:-1]
 
         # We decide the weights.
+        unsorted_weights = weights_func(mus.size)
         if consider_prior:
-            unsorted_weights = weights_func(mus.size)
             sorted_weights = numpy.zeros_like(sorted_mus)
             sorted_weights[:prior_pos] = unsorted_weights[order[:prior_pos]]
             sorted_weights[prior_pos] = prior_weight
             sorted_weights[prior_pos + 1:] = unsorted_weights[order[prior_pos:]]
-            sorted_weights /= sorted_weights.sum()
         else:
-            unsorted_weights = weights_func(len(mus))
             sorted_weights = unsorted_weights[order]
-            sorted_weights /= sorted_weights.sum()
+        sorted_weights /= sorted_weights.sum()
 
+        # We adjust the range of the 'sigma' according to the 'consider_magic_clip' flag.
+        maxsigma = 1.0 * (high - low)
         if consider_magic_clip:
-            maxsigma = 1.0 * (high - low)
             minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(sorted_mus)))
-            sigma = numpy.clip(sigma, minsigma, maxsigma)
         else:
-            maxsigma = 1.0 * (high - low)
             minsigma = 0.0
-            sigma = numpy.clip(sigma, maxsigma, minsigma)
+        sigma = numpy.clip(sigma, maxsigma, minsigma)
 
         sorted_weights = list(sorted_weights)
         sorted_mus = list(sorted_mus)
