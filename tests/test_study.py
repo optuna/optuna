@@ -10,6 +10,7 @@ from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 
 import optuna
+from optuna import structs
 from optuna.testing.storage import StorageSupplier
 
 STORAGE_MODES = [
@@ -437,3 +438,77 @@ def test_trials_dataframe_with_failure(storage_mode):
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
             assert ('system_attrs', 'fail_reason') in df.columns
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_create_study(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        # Test creating a new study.
+        study = optuna.create_study(storage=storage, exist_ok=False)
+
+        if not isinstance(study.storage, optuna.storages.InMemoryStorage):
+            # Test exist_ok=True with existing study.
+            optuna.create_study(study_name=study.study_name, storage=storage, exist_ok=True)
+
+            # Test exist_ok=False with existing study.
+            with pytest.raises(optuna.structs.DuplicatedStudyError):
+                optuna.create_study(study_name=study.study_name, storage=storage, exist_ok=False)
+
+
+def test_create_study_parallel():
+    # type: () -> None
+
+    def create_study(results, i, storage, exist_ok):
+        try:
+            study = optuna.create_study(study_name='foo', storage=storage, exist_ok=exist_ok)
+            results[i] = study.study_id
+        except structs.DuplicatedStudyError:
+            results[i] = False
+
+    n_threads = 100
+
+    # exist_ok=True
+    with StorageSupplier('new') as storage:
+        exist_ok = True
+        results = [None] * n_threads
+        threads = []
+        for i in range(n_threads):
+            thread = threading.Thread(target=create_study, args=(results, i, storage, exist_ok))
+            threads.append(thread)
+
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
+        # All threads should succeeded to retrieve the same `study_id`.
+        study_id = results[0]
+        assert study_id is not None and study_id is not False
+        for result in results:
+            assert result == study_id
+
+    # exist_ok=False
+    with StorageSupplier('new') as storage:
+        exist_ok = False
+        results = [None] * n_threads
+        threads = []
+        for i in range(n_threads):
+            thread = threading.Thread(target=create_study, args=(results, i, storage, exist_ok))
+            threads.append(thread)
+
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
+        # Only one of the threads should succeeded to create the study.
+        n_created = 0
+        for result in results:
+            assert result is not None
+            if result is not False:
+                n_created += 1
+        assert n_created == 1

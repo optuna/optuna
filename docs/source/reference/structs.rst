@@ -26,3 +26,6 @@ Structs
 
 .. autoclass:: StorageInternalError
     :members:
+
+.. autoclass:: DuplicatedStudyError
+    :members:

@@ -452,6 +452,7 @@ def create_study(
         pruner=None,  # type: pruners.BasePruner
         study_name=None,  # type: Optional[str]
         direction='minimize',  # type: str
+        exist_ok=False,  # type: bool
 ):
     # type: (...) -> Study
     """Create a new :class:`~optuna.study.Study`.
@@ -472,6 +473,12 @@ def create_study(
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization. Note that ``maximize`` is currently unsupported.
+        exist_ok:
+            Flag for controlling the behavior when study names conflict.
+            If a study named ``study_name`` already exists in the ``storage``,
+            a :class:`~optuna.structs.DuplicatedStudyError` is raised if ``exist_ok`` is
+            set to :obj:`False`.
+            Otherwise the creation of the study is skipped and no exception is raised.
 
     Returns:
         A :class:`~optuna.study.Study` object.
@@ -479,7 +486,21 @@ def create_study(
     """
 
     storage = storages.get_storage(storage)
-    study_name = storage.get_study_name_from_id(storage.create_new_study_id(study_name))
+    try:
+        study_id = storage.create_new_study_id(study_name)
+    except structs.DuplicatedStudyError:
+        if exist_ok:
+            assert study_name is not None
+
+            logger = logging.get_logger(__name__)
+            logger.info('The same name study exists in the storage. '
+                        'It is reused instead of creating a new one.')
+            study_id = storage.get_study_id_from_name(study_name)
+        else:
+            raise
+
+    study_name = storage.get_study_name_from_id(study_id)
+
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner,
                  direction=direction)
 
