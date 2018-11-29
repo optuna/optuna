@@ -62,7 +62,7 @@ study.optimize(objective , n_trials=100)  # Invoke optimization of the objective
 To install Optuna, use `pip` as follows:
 
 ```
-$ pip install git+https://github.com/pfnet/optuna.git
+$ pip install optuna
 ```
 
 Optuna supports Python 2.7 and Python 3.4 or newer.
