@@ -1,3 +1,5 @@
+<div align="center"><img src="docs/image/optuna-logo.png" width="800"/></div>
+
 # Optuna: A hyperparameter optimization framework
 
 *Optuna* is an automatic hyperparameter optimization software framework, particularly designed
