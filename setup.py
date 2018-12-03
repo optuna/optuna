@@ -56,6 +56,7 @@ setup(
     description='',
     author='Takuya Akiba',
     author_email='akiba@preferred.jp',
+    url='https://optuna.org/',
     packages=find_packages(),
     install_requires=get_install_requires(),
     tests_require=get_extras_require()['testing'],
