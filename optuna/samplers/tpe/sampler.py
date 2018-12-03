@@ -44,7 +44,7 @@ class TPESampler(base.BaseSampler):
             prior_weight=1.0,  # type: Optional[float]
             consider_magic_clip=True,  # type: bool
             consider_endpoints=False,  # type: bool
-            n_startup_trials=4,  # type: int
+            n_startup_trials=10,  # type: int
             n_ei_candidates=24,  # type: int
             gamma=default_gamma,  # type: Callable[[int], int]
             weights=default_weights,  # type: Callable[[int], np.ndarray]
