@@ -65,7 +65,7 @@ class Study(object):
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
             direction='minimize',  # type: str
-            seed=None  # type: Optional[int]
+            seed=None,  # type: Optional[int]
     ):
         # type: (...) -> None
 
@@ -456,6 +456,7 @@ def create_study(
         pruner=None,  # type: pruners.BasePruner
         study_name=None,  # type: Optional[str]
         direction='minimize',  # type: str
+        seed=None,  # type: Optional[int]
 ):
     # type: (...) -> Study
     """Create a new :class:`~optuna.study.Study`.
@@ -476,6 +477,9 @@ def create_study(
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization. Note that ``maximize`` is currently unsupported.
+        seed:
+            Seed for random number generator that will be used in
+            :class:`~optuna.samplers.TPESampler` as the default.
 
     Returns:
         A :class:`~optuna.study.Study` object.
@@ -485,7 +489,7 @@ def create_study(
     storage = storages.get_storage(storage)
     study_name = storage.get_study_name_from_id(storage.create_new_study_id(study_name))
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner,
-                 direction=direction)
+                 direction=direction, seed=seed)
 
 
 def get_all_study_summaries(storage):
