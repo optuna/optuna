@@ -474,8 +474,8 @@ def create_study(
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization. Note that ``maximize`` is currently unsupported.
         exist_ok:
-            Flag for controlling the behavior when study names conflict.
-            If a study named ``study_name`` already exists in the ``storage``,
+            Flag to control the behavior to handle a conflict of study names.
+            In the case where a study named ``study_name`` already exists in the ``storage``,
             a :class:`~optuna.structs.DuplicatedStudyError` is raised if ``exist_ok`` is
             set to :obj:`False`.
             Otherwise the creation of the study is skipped and no exception is raised.
@@ -493,8 +493,8 @@ def create_study(
             assert study_name is not None
 
             logger = logging.get_logger(__name__)
-            logger.info('The same name study exists in the storage. '
-                        'It is reused instead of creating a new one.')
+            logger.info('The study name {} is duplicated with the existing study.'
+                        'It is reused instead of creating a new one.'.format(study_name))
             study_id = storage.get_study_id_from_name(study_name)
         else:
             raise

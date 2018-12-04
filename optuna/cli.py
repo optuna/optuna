@@ -55,8 +55,7 @@ class CreateStudy(BaseCommand):
                                  'for minimization and \'maximize\' for maximization.')
         parser.add_argument('--exist-ok', default=False, action='store_true',
                             help='If specified, the creation of the study is skipped '
-                                 'without any error even if the same name study already '
-                                 'exists in the storage.')
+                                 'without any error when the study name is duplicated.')
         return parser
 
     def take_action(self, parsed_args):
