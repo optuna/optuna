@@ -53,8 +53,8 @@ class Study(object):
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization. Note that ``maximize`` is currently unsupported.
         seed:
-            Seed for random number generator that will be used in :class:`~optuna.samplers.TPESampler`
-            as the default.
+            Seed for random number generator that will be used in
+            :class:`~optuna.samplers.TPESampler` as the default.
 
     """
 
