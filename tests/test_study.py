@@ -325,8 +325,8 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_value_error, catch=(ValueError,))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
-        expected_message = '[2] Setting trial status as TrialState.FAIL because of the following ' \
-                           'error: ValueError()'
+        expected_message = '[2] Setting trial status as TrialState.FAIL ' \
+                           'because of the following error: ValueError()'
         assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
@@ -342,9 +342,9 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_none, catch=(Exception,))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
-        expected_message = '[4] Setting trial status as TrialState.FAIL because the returned value ' \
-                           'from the objective function cannot be casted to float. Returned ' \
-                           'value is: None'
+        expected_message = '[4] Setting trial status as TrialState.FAIL ' \
+                           'because the returned value from the objective function cannot ' \
+                           'be casted to float. Returned value is: None'
         assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
@@ -356,8 +356,8 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_nan, catch=(Exception,))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
-        expected_message = '[5] Setting trial status as TrialState.FAIL because the objective ' \
-                           'function returned nan.'
+        expected_message = '[5] Setting trial status as TrialState.FAIL ' \
+                           'because the objective function returned nan.'
         assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
