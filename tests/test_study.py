@@ -313,7 +313,7 @@ def test_run_trial(storage_mode):
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
 
-        # Test trial without exception.
+        # 1st time test trial without exception.
         study._run_trial(func, catch=(Exception,))
         check_study(study)
 
@@ -321,15 +321,16 @@ def test_run_trial(storage_mode):
         def func_value_error(_):
             raise ValueError
 
+        # 2nd time test trial
         trial = study._run_trial(func_value_error, catch=(ValueError,))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
-        expected_message = 'Setting trial status as TrialState.FAIL because of the following ' \
+        expected_message = '[2] Setting trial status as TrialState.FAIL because of the following ' \
                            'error: ValueError()'
         assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
-        # Test trial with unacceptable exception.
+        # 3rd time test trial with unacceptable exception.
         with pytest.raises(ValueError):
             study._run_trial(func_value_error, catch=(ArithmeticError,))
 
@@ -337,10 +338,11 @@ def test_run_trial(storage_mode):
         def func_none(_):
             return None
 
+        # 4th time test trial
         trial = study._run_trial(func_none, catch=(Exception,))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
-        expected_message = 'Setting trial status as TrialState.FAIL because the returned value ' \
+        expected_message = '[4] Setting trial status as TrialState.FAIL because the returned value ' \
                            'from the objective function cannot be casted to float. Returned ' \
                            'value is: None'
         assert frozen_trial.state == optuna.structs.TrialState.FAIL
@@ -350,10 +352,11 @@ def test_run_trial(storage_mode):
         def func_nan(_):
             return float('nan')
 
+        # 5th time test trial
         trial = study._run_trial(func_nan, catch=(Exception,))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
-        expected_message = 'Setting trial status as TrialState.FAIL because the objective ' \
+        expected_message = '[5] Setting trial status as TrialState.FAIL because the objective ' \
                            'function returned nan.'
         assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
