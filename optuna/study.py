@@ -73,6 +73,8 @@ class Study(object):
         self.study_id = self.storage.get_study_id_from_name(study_name)
         self.logger = logging.get_logger(__name__)
 
+        self._n_trials = None
+
         if direction == 'minimize':
             _direction = structs.StudyDirection.MINIMIZE
         elif direction == 'maximize':
@@ -216,7 +218,7 @@ class Study(object):
                 by this logic.
 
         """
-
+        self._n_trials = n_trials
         if n_jobs == 1:
             self._optimize_sequential(func, n_trials, timeout, catch)
         else:
@@ -396,17 +398,24 @@ class Study(object):
         trial_id = self.storage.create_new_trial_id(self.study_id)
         trial = trial_module.Trial(self, trial_id)
 
+        if self._n_trials:
+            prefix_msg_nth_trial = '[{}/{}] '.format(len(self.trials), self._n_trials)
+        else:
+            prefix_msg_nth_trial = '[{}] '.format(len(self.trials))
+
         try:
             result = func(trial)
         except structs.TrialPruned as e:
             message = 'Setting trial status as {}. {}'.format(
                 structs.TrialState.PRUNED, str(e))
+            message = prefix_msg_nth_trial + message
             self.logger.info(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
         except catch as e:
             message = 'Setting trial status as {} because of the following error: {}'.format(
                 structs.TrialState.FAIL, repr(e))
+            message = prefix_msg_nth_trial + message
             self.logger.warning(message, exc_info=True)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
@@ -418,6 +427,7 @@ class Study(object):
             message = 'Setting trial status as {} because the returned value from the ' \
                       'objective function cannot be casted to float. Returned value is: ' \
                       '{}'.format(structs.TrialState.FAIL, repr(result))
+            message = prefix_msg_nth_trial + message
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
@@ -426,6 +436,7 @@ class Study(object):
         if math.isnan(result):
             message = 'Setting trial status as {} because the objective function returned ' \
                       '{}.'.format(structs.TrialState.FAIL, result)
+            message = prefix_msg_nth_trial + message
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
@@ -440,10 +451,16 @@ class Study(object):
     def _log_completed_trial(self, value):
         # type: (float) -> None
 
+        if self._n_trials:
+            prefix_msg_nth_trial = '[{}/{}] '.format(len(self.trials), self._n_trials)
+        else:
+            prefix_msg_nth_trial = '[{}] '.format(len(self.trials))
+
         self.logger.info(
+            prefix_msg_nth_trial +
             'Finished a trial resulted in value: {}. '
             'Current best value is {} with parameters: {}.'.format(
-                value, self.best_value, self.best_params))
+                len(self.trials), self._n_trials, value, self.best_value, self.best_params))
 
 
 def create_study(
