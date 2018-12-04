@@ -1,3 +1,5 @@
+import abc
+import six
 from typing import TYPE_CHECKING  # NOQA
 
 from optuna import distributions
@@ -13,7 +15,78 @@ if TYPE_CHECKING:
     T = TypeVar('T', float, str)
 
 
-class Trial(object):
+@six.add_metaclass(abc.ABCMeta)
+class BaseTrial(object):
+    """Base class for trials.
+
+    Note that this class is not supposed to be directly accessed by library users.
+    """
+
+    def suggest_uniform(self, name, low, high):
+        # type: (str, float, float) -> float
+
+        raise NotImplementedError
+
+    def suggest_loguniform(self, name, low, high):
+        # type: (str, float, float) -> float
+
+        raise NotImplementedError
+
+    def suggest_discrete_uniform(self, name, low, high, q):
+        # type: (str, float, float, float) -> float
+
+        raise NotImplementedError
+
+    def suggest_int(self, name, low, high):
+        # type: (str, int, int) -> int
+
+        raise NotImplementedError
+
+    def suggest_categorical(self, name, choices):
+        # type: (str, Sequence[T]) -> T
+
+        raise NotImplementedError
+
+    def report(self, value, step=None):
+        # type: (float, Optional[int]) -> None
+
+        raise NotImplementedError
+
+    def should_prune(self, step):
+        # type: (int) -> bool
+
+        raise NotImplementedError
+
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        raise NotImplementedError
+
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        raise NotImplementedError
+
+    @property
+    def params(self):
+        # type: () -> Dict[str, Any]
+
+        raise NotImplementedError
+
+    @property
+    def user_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        raise NotImplementedError
+
+    @property
+    def system_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        raise NotImplementedError
+
+
+class Trial(BaseTrial):
 
     """A trial is a process of evaluating an objective function.
 
@@ -372,3 +445,116 @@ class Trial(object):
         """
 
         return self.storage.get_trial_system_attrs(self.trial_id)
+
+
+class FixedTrial(BaseTrial):
+
+    """A trial class which suggests a fixed value for each parameter.
+
+    This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests pre-defined
+    parameter values. The parameter values can be determined at the construction of the
+    :class:`~optuna.trial.FixedTrial` object. In contrast to :class:`~optuna.trial.Trial`,
+    :class:`~optuna.trial.FixedTrial` does not depend on :class:`~optuna.study.Study`, and it is
+    useful to deploy optimization results.
+
+    Example:
+
+        Evaluate an objective function with parameter values given by a user:
+
+        .. code::
+
+            >>> def objective(trial):
+            >>>     x = trial.suggest_uniform('x', -100, 100)
+            >>>     y = trial.suggest_categorical('y', (-1, 0, 1))
+            >>>     return x ** 2 + y
+            >>>
+            >>> objective(FixedTrial({'x': 1, 'y': 0}))
+            1
+
+    .. note::
+        Please refer to :class:`~optuna.trial.Trial` for details of methods and properties.
+
+    Args:
+        params:
+            A dictionary containing all parameters.
+
+    """
+
+    def __init__(self, params):
+        # type: (Dict[str, Any]) -> None
+
+        self._params = params
+        self._user_attrs = {}  # type: Dict[str, Any]
+        self._system_attrs = {}  # type: Dict[str, Any]
+
+    def suggest_uniform(self, name, low, high):
+        # type: (str, float, float) -> float
+
+        return self._suggest(name)
+
+    def suggest_loguniform(self, name, low, high):
+        # type: (str, float, float) -> float
+
+        return self._suggest(name)
+
+    def suggest_discrete_uniform(self, name, low, high, q):
+        # type: (str, float, float, float) -> float
+
+        return self._suggest(name)
+
+    def suggest_int(self, name, low, high):
+        # type: (str, int, int) -> int
+
+        return self._suggest(name)
+
+    def suggest_categorical(self, name, choices):
+        # type: (str, Sequence[T]) -> T
+
+        return self._suggest(name)
+
+    def _suggest(self, name):
+        # type: (str) -> Any
+
+        if name not in self._params:
+            raise ValueError('The value of the parameter \'{}\' is not found. Please set it at '
+                             'the construction of the FixedTrial object.'.format(name))
+
+        return self._params[name]
+
+    def report(self, value, step=None):
+        # type: (float, Optional[int]) -> None
+
+        pass
+
+    def should_prune(self, step):
+        # type: (int) -> bool
+
+        return False
+
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self._user_attrs[key] = value
+
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self._system_attrs[key] = value
+
+    @property
+    def params(self):
+        # type: () -> Dict[str, Any]
+
+        return self._params
+
+    @property
+    def user_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self._user_attrs
+
+    @property
+    def system_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self._system_attrs
