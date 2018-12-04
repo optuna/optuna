@@ -52,6 +52,9 @@ class Study(object):
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization. Note that ``maximize`` is currently unsupported.
+        seed:
+            Seed for random number generator that will be used in :class:`~optuna.samplers.TPESampler`
+            as the default.
 
     """
 
@@ -62,12 +65,13 @@ class Study(object):
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
             direction='minimize',  # type: str
+            seed=None  # type: Optional[int]
     ):
         # type: (...) -> None
 
         self.study_name = study_name
         self.storage = storages.get_storage(storage)
-        self.sampler = sampler or samplers.TPESampler()
+        self.sampler = sampler or samplers.TPESampler(seed=seed)
         self.pruner = pruner or pruners.MedianPruner()
 
         self.study_id = self.storage.get_study_id_from_name(study_name)
