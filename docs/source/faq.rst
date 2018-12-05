@@ -77,3 +77,15 @@ If you want to save and resume studies,  it's handy to use SQLite as the local s
     study.optimize(objective)  # The state of `study` will be persisted to the local SQLite file.
 
 Please see :ref:`rdb` for more details.
+
+
+I want to make the behavior of a sampler deterministic.
+-------------------------------------------------------
+
+You can specify your favorite random seed via ``seed`` argument of :class:`~optuna.samplers.RandomSampler` or :class:`~optuna.samplers.TPESampler` as follows:
+
+.. code-block:: python
+
+    sampler = TPESampler(seed = 10)
+    study = optuna.create_study(sampler = sampler)
+    study.optimize(objective)
