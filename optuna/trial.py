@@ -455,7 +455,7 @@ class FixedTrial(BaseTrial):
     parameter values. The parameter values can be determined at the construction of the
     :class:`~optuna.trial.FixedTrial` object. In contrast to :class:`~optuna.trial.Trial`,
     :class:`~optuna.trial.FixedTrial` does not depend on :class:`~optuna.study.Study`, and it is
-    useful to deploy optimization results.
+    useful for deploying optimization results.
 
     Example:
 
