@@ -206,6 +206,34 @@ def test_studies_command(options):
         assert elms[2] == '10'
 
 
+def test_create_study_command_with_exist_ok():
+    # type: () -> None
+
+    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
+        storage = RDBStorage(storage_url)
+        study_name = 'test_study'
+
+        # Create study with name.
+        command = ['optuna', 'create-study', '--storage', storage_url, '--study-name', study_name]
+        study_name = str(subprocess.check_output(command).decode().strip())
+
+        # Check if study_name is stored in the storage.
+        study_id = storage.get_study_id_from_name(study_name)
+        assert storage.get_study_name_from_id(study_id) == study_name
+
+        # Try to create the same name study without `--exist-ok` flag (error).
+        command = ['optuna', 'create-study', '--storage', storage_url, '--study-name', study_name]
+        with pytest.raises(subprocess.CalledProcessError):
+            subprocess.check_output(command)
+
+        # Try to create the same name study with `--exist-ok` flag (OK).
+        command = ['optuna', 'create-study', '--storage',
+                   storage_url, '--study-name', study_name, '--exist-ok']
+        study_name = str(subprocess.check_output(command).decode().strip())
+        new_study_id = storage.get_study_id_from_name(study_name)
+        assert study_id == new_study_id  # The existing study instance is reused.
+
+
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
 def test_dashboard_command(options):
     # type: (List[str]) -> None
