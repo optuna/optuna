@@ -10,7 +10,6 @@ from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 
 import optuna
-from optuna import structs
 from optuna.testing.storage import StorageSupplier
 
 STORAGE_MODES = [
