@@ -77,3 +77,23 @@ If you want to save and resume studies,  it's handy to use SQLite as the local s
     study.optimize(objective)  # The state of `study` will be persisted to the local SQLite file.
 
 Please see :ref:`rdb` for more details.
+
+
+How to change logging levels of Optuna?
+---------------------------------------
+
+By default, Optuna shows log messages at the ``optuna.logging.INFO`` level.
+You can change logging levels by using  :func:`optuna.logging.set_verbosity`.
+
+For instance, you can stop showing each trial result as follows:
+
+.. code-block:: python
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    study = optuna.create_study()
+    study.optimize(objective)
+    # Logs like '[I 2018-12-05 11:41:42,324] Finished a trial resulted in value:...' are disabled.
+
+
+Please refer to :class:`optuna.logging` for further details.
