@@ -86,6 +86,6 @@ You can specify your favorite random seed via ``seed`` argument of :class:`~optu
 
 .. code-block:: python
 
-    sampler = TPESampler(seed = 10)
-    study = optuna.create_study(sampler = sampler)
+    sampler = TPESampler(seed=10)
+    study = optuna.create_study(sampler=sampler)
     study.optimize(objective)
