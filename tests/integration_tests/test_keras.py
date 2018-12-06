@@ -1,8 +1,9 @@
 import numpy as np
-import pytest
-from keras import Sequential
-from keras.layers import Dense
 
+import pytest
+
+from keras.layers import Dense
+from keras import Sequential
 
 import optuna
 from optuna.integration import KerasPruningCallback
