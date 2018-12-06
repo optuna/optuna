@@ -126,6 +126,8 @@ class Dashboard(BaseCommand):
         parser.add_argument('--out', '-o',
                             help='Output HTML file path. If it is not given, a HTTP server starts '
                                  'and the dashboard is served.')
+        parser.add_argument('--allow-websocket-origin', dest='bokeh_allow_websocket_origin',
+                            help='bokeh --allow_websocket_origin parameter for access from remote access')
         return parser
 
     def take_action(self, parsed_args):
@@ -136,7 +138,7 @@ class Dashboard(BaseCommand):
         study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
 
         if parsed_args.out is None:
-            optuna.dashboard.serve(study)
+            optuna.dashboard.serve(study, parsed_args.bokeh_allow_websocket_origin)
         else:
             optuna.dashboard.write(study, parsed_args.out)
             self.logger.info('Report successfully written to: {}'.format(parsed_args.out))

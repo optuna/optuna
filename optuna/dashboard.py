@@ -255,7 +255,7 @@ def _get_this_source_path():
     return path
 
 
-def serve(study):
+def serve(study, bokeh_allow_websocket_origin=None):
     # type: (optuna.study.Study) -> None
 
     global _mode, _study
@@ -278,7 +278,10 @@ def serve(study):
     # for some reason, we found that the CDS update is not reflected to browsers, at least on Bokeh
     # version 0.12.15. In addition, we will need to do many configuration to servers, which can be
     # done automatically with the following one line. So, for now, we decided to use this way.
-    bokeh.command.bootstrap.main(['bokeh', 'serve', '--show', _get_this_source_path()])
+    command = ['bokeh', 'serve', '--show', _get_this_source_path()]
+    if bokeh_allow_websocket_origin is not None:
+        command.extend(['--allow-websocket-origin', bokeh_allow_websocket_origin])
+    bokeh.command.bootstrap.main(command)
 
 
 def write(study, out_path):
