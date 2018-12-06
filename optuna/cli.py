@@ -127,7 +127,8 @@ class Dashboard(BaseCommand):
                             help='Output HTML file path. If it is not given, a HTTP server starts '
                                  'and the dashboard is served.')
         parser.add_argument('--allow-websocket-origin', dest='bokeh_allow_websocket_origin',
-                            help='bokeh --allow_websocket_origin parameter for access from remote access')
+                            help='bokeh --allow_websocket_origin parameter for access from remote'
+                                 'access')
         return parser
 
     def take_action(self, parsed_args):
