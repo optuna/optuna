@@ -79,7 +79,7 @@ If you want to save and resume studies,  it's handy to use SQLite as the local s
 Please see :ref:`rdb` for more details.
 
 
-How to change logging levels of Optuna?
+How to suppress log messages of Optuna?
 ---------------------------------------
 
 By default, Optuna shows log messages at the ``optuna.logging.INFO`` level.
