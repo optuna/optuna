@@ -35,9 +35,10 @@ class KerasPruningCallback(Callback):
             objective function.
         observation_key:
             An evaluation metric for pruning, e.g., ``val/loss`` and
-            ``val/acc``. Please refer to
-            `keras.Model reference <https://keras.io/models/about-keras-models/>`_ for further details. 
-    """  # NOQA
+            ``val/acc``. Please refer to `keras.Model reference
+            <https://keras.io/models/about-keras-models/>`_ for further details.
+    """
+
     def __init__(self, trial, observation_key):
         # type: (optuna.trial.Trial, str) -> None
 
