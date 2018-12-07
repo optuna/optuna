@@ -97,3 +97,38 @@ For instance, you can stop showing each trial result as follows:
 
 
 Please refer to :class:`optuna.logging` for further details.
+
+
+How does Optuna handle NaNs and errors reported by the objective function?
+--------------------------------------------------------------------------
+
+Optuna treats such trials as failures (i.e., :obj:`~optuna.structs.TrialState.FAIL`) and continues the study.
+The Optuna's system process will not be crashed by any objective values or errors raised in objective functions.
+
+You can find the failed trials in log messages.
+Errors raised in objective functions are shown as follows:
+
+.. code-block:: sh
+
+    [W 2018-12-07 16:38:36,889] Setting trial status as TrialState.FAIL because of \
+    the following error: ValueError('A sample error in objective.')
+
+And trials which returned :obj:`NaN` are shown as follows:
+
+
+.. code-block:: sh
+
+    [W 2018-12-07 16:41:59,000] Setting trial status as TrialState.FAIL because the \
+    objective function returned nan.
+
+You can also find the failed trials by checking the trial states as follows:
+
+.. code-block:: python
+
+    study.trials_dataframe()
+
+.. csv-table::
+
+    trial_id,state,value,...,params,system_attrs
+    0,TrialState.FAIL,,...,0,Setting trial status as TrialState.FAIL because of the following error: ValueError('A test error in objective.')
+    1,TrialState.COMPLETE,1269,...,1,
