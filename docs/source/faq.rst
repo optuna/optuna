@@ -79,6 +79,26 @@ If you want to save and resume studies,  it's handy to use SQLite as the local s
 Please see :ref:`rdb` for more details.
 
 
+How to suppress log messages of Optuna?
+---------------------------------------
+
+By default, Optuna shows log messages at the ``optuna.logging.INFO`` level.
+You can change logging levels by using  :func:`optuna.logging.set_verbosity`.
+
+For instance, you can stop showing each trial result as follows:
+
+.. code-block:: python
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    study = optuna.create_study()
+    study.optimize(objective)
+    # Logs like '[I 2018-12-05 11:41:42,324] Finished a trial resulted in value:...' are disabled.
+
+
+Please refer to :class:`optuna.logging` for further details.
+
+
 How can I obtain reproducible optimization results?
 ---------------------------------------------------
 
@@ -95,4 +115,5 @@ However, there are two caveats.
 First, when optimizing a study in distributed or parallel mode, there is inherent non-determinism.
 Thus it is very difficult to reproduce the same results in such condition.
 
-Second, if your objective function behaves in a non-deterministic way (i.e., it does not return the same value nevertheless the same parameters were suggested), you cannot reproduce an optimization. To deal with this problem, please set an option (e.g., random seed) to make the behavior deterministic if your optimization target (e.g., an ML library) provides it.
+Second, if your objective function behaves in a non-deterministic way (i.e., it does not return the same value nevertheless the same parameters were suggested), you cannot reproduce an optimization.
+To deal with this problem, please set an option (e.g., random seed) to make the behavior deterministic if your optimization target (e.g., an ML library) provides it.
