@@ -42,6 +42,7 @@ class LightGBMPruningCallback(object):
             `train method
             <https://lightgbm.readthedocs.io/en/latest/Python-API.html#lightgbm.train>`_.
             If omitted, ``valid_0`` is used which is the default name of the first validation.
+            This argument will be ignored if you are calling lgb.cv instead of lgb.train.
     """
 
     def __init__(self, trial, metric, valid_name='valid_0'):
@@ -56,10 +57,7 @@ class LightGBMPruningCallback(object):
     def __call__(self, env):
         # type: (lgb.callback.CallbackEnv) -> None
 
-        for valid_name, metric, current_score, is_higher_better in env.evaluation_result_list:
-            if valid_name != self.valid_name or metric != self.metric:
-                continue
-
+        def _decide_pruning(valid_name, metric, current_score, is_higher_better):
             # TODO(ohta): Deal with maximize direction
             if is_higher_better:
                 raise ValueError(
@@ -71,6 +69,17 @@ class LightGBMPruningCallback(object):
                 message = "Trial was pruned at iteration {}.".format(env.iteration)
                 raise optuna.structs.TrialPruned(message)
             return None
+
+        is_cv = len(env.evaluation_result_list[0]) == 5
+        if is_cv:
+            valid_name, metric, current_score, is_higher_better, _ = env.evaluation_result_list[0]
+            _decide_pruning(valid_name, metric, current_score, is_higher_better)
+        elif not is_cv:
+            for valid_name, metric, current_score, is_higher_better in env.evaluation_result_list:
+                if valid_name != self.valid_name or metric != self.metric:
+                    continue
+                _decide_pruning(valid_name, metric, current_score, is_higher_better)
+                return None
 
         raise ValueError(
             'The entry associated with the validation name "{}" and the metric name "{}" '
