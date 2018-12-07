@@ -1,4 +1,16 @@
+<div align="center"><img src="docs/image/optuna-logo.png" width="800"/></div>
+
 # Optuna: A hyperparameter optimization framework
+
+[![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/pfnet/optuna)
+[![CircleCI](https://circleci.com/gh/pfnet/optuna.svg?style=svg)](https://circleci.com/gh/pfnet/optuna)
+[![Read the Docs](https://readthedocs.org/projects/optuna/badge/?version=stable)](https://optuna.readthedocs.io/en/stable/)
+
+[**Website**](https://optuna.org/)
+| [**Docs**](https://optuna.readthedocs.io/en/stable/)
+| [**Install Guide**](https://optuna.readthedocs.io/en/stable/installation.html)
+| [**Tutorial**](https://optuna.readthedocs.io/en/stable/tutorial/index.html)
 
 *Optuna* is an automatic hyperparameter optimization software framework, particularly designed
 for machine learning. It features an imperative, *define-by-run* style user API. Thanks to our
@@ -60,7 +72,7 @@ study.optimize(objective , n_trials=100)  # Invoke optimization of the objective
 To install Optuna, use `pip` as follows:
 
 ```
-$ pip install git+https://github.com/pfnet/optuna.git
+$ pip install optuna
 ```
 
 Optuna supports Python 2.7 and Python 3.4 or newer.

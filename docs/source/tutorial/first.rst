@@ -13,7 +13,7 @@ Let us try very simple optimization in IPython shell.
 
     In [1]: import optuna
 
-First, we need to define the objective function. Here, we use a very simple quadratic function as an example of objective function. In practice, it is expected that training of machine learning algorithms is invoked in objective functions, and metrics such as loss or error are reported.
+Here, we use a very simple quadratic function as an example of objective function.
 
 .. code-block:: python
 
@@ -22,7 +22,13 @@ First, we need to define the objective function. Here, we use a very simple quad
        ...:     return (x - 2) ** 2
        ...:
 
-Then, we create a study object and pass the objective function to method :func:`~optuna.study.Study.optimize` to start the optimization as follows.
+Our goal is to find out ``x`` that minimizes the output of ``objective`` function, which we refer to as "optimization." During the optimization, Optuna repeatedly invokes and evaluates the objective function with different values of ``x``.
+
+A :class:`~optuna.trial.Trial` object corresponds to a single execution of the objective function and is internally instantiated upon each invocation of the function.
+
+The `suggest` APIs (e.g., :func:`~optuna.trial.Trial.suggest_uniform`) are called inside the objective function to obtain parameters for a trial.
+
+To start the optimization, we create a study object and pass the objective function to method :func:`~optuna.study.Study.optimize` as follows.
 
 .. code-block:: python
 
@@ -37,9 +43,13 @@ Then, we create a study object and pass the objective function to method :func:`
     [I 2018-05-09 10:03:22,479] Finished a trial resulted in value: 1.130813338091735. Current best value is 1.130813338091735 with parameters: {'x': 3.063397074517198}.
     ...
     [I 2018-05-09 10:03:23,431] Finished a trial resulted in value: 8.760381111220335. Current best value is 0.0026232243068543526 with parameters: {'x': 1.9487825780924659}.
+    In [5]: study.best_params
+    Out[5]: {'x': 1.9487825780924659}
 
+We can see that Optuna found the best ``x`` value ``1.9487825780924659``, which is close to the optimal value of ``2``.
 
-We see that Optuna found the best ``x`` value ``1.9487825780924659``, which is close to the optimal value of ``2``.
+.. note::
+    In practice, it is expected that training of machine learning algorithms is invoked in objective functions, and metrics such as loss or error are reported.
 
 Study Object
 ------------
@@ -83,5 +93,3 @@ By executing :func:`~optuna.study.Study.optimize` again, we can continue the opt
 
     In [11]: len(study.trials)
     Out[11]: 200
-
-

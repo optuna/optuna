@@ -42,11 +42,13 @@ class Study(object):
             document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
             further details.
         sampler:
-            A sampler object that implements background algorithm for value suggestion. See also
-            :class:`~optuna.samplers`.
+            A sampler object that implements background algorithm for value suggestion.
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
+            as the default. See also :class:`~optuna.samplers`.
         pruner:
-            A pruner object that decides early stopping of unpromising trials. See also
-            :class:`~optuna.pruners`.
+            A pruner object that decides early stopping of unpromising trials.
+            If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
+            as the default. See also :class:`~optuna.pruners`.
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization. Note that ``maximize`` is currently unsupported.
@@ -186,7 +188,7 @@ class Study(object):
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
-            catch=(Exception,)  # type: Tuple[Type[Exception]]
+            catch=(Exception,)  # type: Union[Tuple[()], Tuple[Type[Exception]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -302,8 +304,14 @@ class Study(object):
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
-    def _optimize_sequential(self, func, n_trials, timeout, catch):
-        # type: (ObjectiveFuncType, Optional[int], Optional[float], Tuple[Type[Exception]]) -> None
+    def _optimize_sequential(
+            self,
+            func,  # type: ObjectiveFuncType
+            n_trials,  # type: Optional[int]
+            timeout,  # type: Optional[float]
+            catch  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+    ):
+        # type: (...) -> None
 
         i_trial = 0
         time_start = datetime.datetime.now()
@@ -326,7 +334,7 @@ class Study(object):
             n_trials,  # type: Optional[int]
             timeout,  # type: Optional[float]
             n_jobs,  # type: int
-            catch  # type: Tuple[Type[Exception]]
+            catch  # type: Union[Tuple[()], Tuple[Type[Exception]]]
     ):
         # type: (...) -> None
 
@@ -383,7 +391,7 @@ class Study(object):
         que.join_thread()
 
     def _run_trial(self, func, catch):
-        # type: (ObjectiveFuncType, Tuple[Type[Exception]]) -> trial_module.Trial
+        # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
         trial_id = self.storage.create_new_trial_id(self.study_id)
         trial = trial_module.Trial(self, trial_id)

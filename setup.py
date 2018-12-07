@@ -25,7 +25,7 @@ def get_install_requires():
 def get_extras_require():
     extras_require = {
         'checking': ['hacking'],
-        'testing': ['pytest', 'mock', 'bokeh', 'chainer>=5.0.0', 'xgboost', 'mpi4py'],
+        'testing': ['pytest', 'mock', 'bokeh', 'chainer>=5.0.0', 'xgboost', 'mpi4py', 'lightgbm'],
         'document': ['sphinx', 'sphinx_rtd_theme'],
     }
     if sys.version_info[0] == 3:
@@ -56,6 +56,7 @@ setup(
     description='',
     author='Takuya Akiba',
     author_email='akiba@preferred.jp',
+    url='https://optuna.org/',
     packages=find_packages(),
     install_requires=get_install_requires(),
     tests_require=get_extras_require()['testing'],

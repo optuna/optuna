@@ -9,5 +9,8 @@ Integration
 .. autoclass:: ChainerMNStudy
     :members:
 
+.. autoclass:: LightGBMPruningCallback
+    :members:
+
 .. autoclass:: XGBoostPruningCallback
     :members:

@@ -1,15 +1,16 @@
 Installation
 ============
 
-.. todo(sano) delete this note.
-.. note::
-    Please reach out to the Optuna development team to install the library.
-    PyPI pip installation is not available until we start open sourcing Optuna.
+Optuna supports Python 2.7 and Python 3.4 or newer.
 
+We recommend to install Optuna via pip:
 
-.. todo(sano) uncomment pip installation guide.
-.. We recommend to install Optuna via pip::
-..    $ pip install optuna
+.. code-block:: bash
 
+    $ pip install optuna
 
-.. todo(sano) Write installation step from master branch.
+You can also install the development version of Optuna from master branch of Git repository:
+
+.. code-block:: bash
+
+    $ pip install git+https://github.com/pfnet/optuna.git
