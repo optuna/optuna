@@ -2,8 +2,15 @@ import numpy as np
 
 import pytest
 
-from keras.layers import Dense
-from keras import Sequential
+# TODO(higumachan): remove this "try-except" section
+#                   after Tensorflow supports Python 3.7 officially.
+try:
+    from keras.layers import Dense
+    from keras import Sequential
+    _available = True
+except ImportError:
+    _available = False
+
 
 import optuna
 from optuna.integration import KerasPruningCallback
@@ -15,6 +22,12 @@ def test_keras_pruning_callback():
 
     def objective(trial):
         # type: (optuna.trial.Trial) -> float
+
+        # TODO(higumachan): remove this "if" section
+        #                   after Tensorflow supports Python 3.7 officially.
+        if not _available:
+            pytest.skip('This test requires keras '
+                        'but this version can not install keras(tensorflow) with pip.')
 
         model = Sequential()
         model.add(Dense(1, activation='sigmoid', input_dim=20))
@@ -44,6 +57,12 @@ def test_keras_pruning_callback():
 
 def test_keras_pruning_callback_observation_isnan():
     # type: () -> None
+
+    # TODO(higumachan): remove this "if" section
+    #                   after Tensorflow supports Python 3.7 officially.
+    if not _available:
+        pytest.skip('This test requires keras '
+                    'but this version can not install keras(tensorflow) with pip.')
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))

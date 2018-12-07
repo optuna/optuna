@@ -26,7 +26,10 @@ def get_extras_require():
     extras_require = {
         'checking': ['hacking'],
         'testing': ['pytest', 'mock', 'bokeh', 'chainer>=5.0.0', 'xgboost',
-                    'mpi4py', 'lightgbm', 'keras', 'tensorflow'],
+                    'mpi4py', 'lightgbm'],
+        # TODO(higumachan): 'keras' merge to 'testing'
+        #                   after Tensorflow supports Python 3.7 officially.
+        'keras': ['keras', 'tensorflow'],
         'document': ['sphinx', 'sphinx_rtd_theme'],
     }
     if sys.version_info[0] == 3:
