@@ -79,13 +79,20 @@ If you want to save and resume studies,  it's handy to use SQLite as the local s
 Please see :ref:`rdb` for more details.
 
 
-I want to make the behavior of a sampler deterministic.
--------------------------------------------------------
+How can I obtain reproducible optimization results?
+---------------------------------------------------
 
-You can specify your favorite random seed via ``seed`` argument of :class:`~optuna.samplers.RandomSampler` or :class:`~optuna.samplers.TPESampler` as follows:
+To make the parameters suggested by Optuna reproducible, you can specify a fixed random seed via ``seed`` argument of :class:`~optuna.samplers.RandomSampler` or :class:`~optuna.samplers.TPESampler` as follows:
 
 .. code-block:: python
 
-    sampler = TPESampler(seed=10)
+    sampler = TPESampler(seed=10)  # Make the sampler behave in a deterministic way.
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective)
+
+However, there are two caveats.
+
+First, when optimizing a study in distributed or parallel mode, there is inherent non-determinism.
+Thus it is impossible (or, at least, very difficult) to reproduce the same results in such condition.
+
+Second, if your objective function behaves in a non-deterministic way (i.e., it does not return the same value nevertheless the same parameters were suggested), it is impossible to reproduce an optimization, too.
