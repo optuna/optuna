@@ -114,6 +114,7 @@ However, there are two caveats.
 
 First, when optimizing a study in distributed or parallel mode, there is inherent non-determinism.
 Thus it is very difficult to reproduce the same results in such condition.
+We recommend executing optimization of a study sequentially if you would like to reproduce the result.
 
-Second, if your objective function behaves in a non-deterministic way (i.e., it does not return the same value nevertheless the same parameters were suggested), you cannot reproduce an optimization.
+Second, if your objective function behaves in a non-deterministic way (i.e., it does not return the same value even if the same parameters were suggested), you cannot reproduce an optimization.
 To deal with this problem, please set an option (e.g., random seed) to make the behavior deterministic if your optimization target (e.g., an ML library) provides it.
