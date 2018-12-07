@@ -28,7 +28,7 @@ def get_extras_require():
         'testing': ['pytest', 'mock', 'bokeh', 'chainer>=5.0.0', 'xgboost', 'mpi4py', 'lightgbm'],
         'document': ['sphinx', 'sphinx_rtd_theme'],
     }
-    if sys.version_info[0] == 3:
+    if sys.version_info >= (3, 4):  # requires Python 3.4 or later
         extras_require['checking'].append('mypy')
     return extras_require
 
