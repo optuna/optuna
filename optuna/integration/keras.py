@@ -66,6 +66,6 @@ def _check_keras_availability():
     if not _available:
         raise ImportError(
             'Keras is not available. Please install Keras to use this feature. '
-            'Keras can be installed by executing `$ pip install chainer`. '
+            'Keras can be installed by executing `$ pip install keras tensorflow`. '
             'For further information, please refer to the installation guide of Keras. '
             '(The actual import error is as follows: ' + str(_import_error) + ')')

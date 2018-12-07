@@ -42,7 +42,7 @@ def test_keras_pruning_callback():
     assert study.trials[0].value == 1.0
 
 
-def test_chainer_pruning_extension_observation_isnan():
+def test_keras_pruning_callback_observation_isnan():
     # type: () -> None
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
