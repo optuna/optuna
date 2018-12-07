@@ -106,7 +106,7 @@ Optuna saves hyperparameter values with its corresponding objective value to sto
 but it discards intermediate objects such as machine learning models and neural network weights.
 To save models or weights, please use features of the machine learning library you used.
 
-We recommend to save :obj:`~optuna.trial.Trial.trail_id` with a model in order to identify its corresponding trial.
+We recommend saving :obj:`~optuna.trial.Trial.trail_id` with a model in order to identify its corresponding trial.
 For example, you can save SVM models trained in the objective function as follows:
 
 .. code-block:: python
