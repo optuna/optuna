@@ -135,8 +135,7 @@ class Dashboard(BaseCommand):
                                  '--allow-websocket-origin option. Please refer to '
                                  'https://bokeh.pydata.org/en/latest/docs/'
                                  'reference/command/subcommands/serve.html '
-                                 'for more details.'
-                                 'access')
+                                 'for more details.')
         return parser
 
     def take_action(self, parsed_args):
