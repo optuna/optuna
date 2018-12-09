@@ -1,6 +1,6 @@
+from functools import partial
 import lightgbm as lgb
 import pytest
-from functools import partial
 
 import optuna
 from optuna.integration.lightgbm import LightGBMPruningCallback
@@ -17,7 +17,7 @@ def test_lightgbm_pruning_callback_call():
         end_iteration=1,
         iteration=1,
         evaluation_result_list=[('validation', 'binary_error', 1., False)])
-    
+
     env_cv = lgb.callback.CallbackEnv(
         model='test',
         params={},
@@ -41,7 +41,7 @@ def test_lightgbm_pruning_callback_call():
         pruning_callback(env)
         pruning_callback(env_cv)
 
-test_lightgbm_pruning_callback_call()
+
 def test_lightgbm_pruning_callback():
     # type: () -> None
 
@@ -65,7 +65,8 @@ def test_lightgbm_pruning_callback():
     study.optimize(lambda trial: objective(trial, valid_name=custom_valid_name), n_trials=1)
     assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.
-    study.optimize(lambda trial: objective(trial, valid_name=custom_valid_name, cv=True), n_trials=1)
+    study.optimize(lambda trial: objective(trial, valid_name=custom_valid_name, cv=True),
+                   n_trials=1)
     assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.
 
@@ -83,21 +84,23 @@ def test_lightgbm_pruning_callback_errors():
     study = optuna.create_study(pruner=DeterministicPruner(False))
     with pytest.raises(ValueError):
         study.optimize(lambda trial: objective(trial, metric='foo_metric'), n_trials=1, catch=())
-        study.optimize(lambda trial: objective(trial, metric='foo_metric', cv=True), n_trials=1, catch=())
+        study.optimize(lambda trial: objective(trial, metric='foo_metric', cv=True),
+                       n_trials=1, catch=())
 
     # Unknown validation name
     study = optuna.create_study(pruner=DeterministicPruner(False))
     with pytest.raises(ValueError):
         study.optimize(lambda trial: objective(trial, valid_name='valid_1',
-                                force_default_valid_names=True),
+                       force_default_valid_names=True),
                        n_trials=1, catch=())
         study.optimize(lambda trial: objective(trial, valid_name='valid_1',
-                                force_default_valid_names=True, cv=True),
-        n_trials=1, catch=())
+                       force_default_valid_names=True, cv=True),
+                       n_trials=1, catch=())
 
 
-def objective(trial, metric='binary_error', valid_name='valid_0', force_default_valid_names=False, cv=False):
-    # type: (optuna.trial.Trial, str, str, bool) -> float
+def objective(trial, metric='binary_error', valid_name='valid_0',
+              force_default_valid_names=False, cv=False):
+    # type: (optuna.trial.Trial, str, str, bool, bool) -> float
 
     dtrain = lgb.Dataset([[1.]], label=[1.])
     dtest = lgb.Dataset([[1.]], label=[1.])
@@ -110,9 +113,9 @@ def objective(trial, metric='binary_error', valid_name='valid_0', force_default_
     pruning_callback = LightGBMPruningCallback(trial, metric, valid_name=valid_name)
     if cv:
         lgb.cv({'objective': 'binary', 'metric': ['auc', 'binary_error']}, dtrain, 1,
-              verbose_eval=False, callbacks=[pruning_callback])
+               verbose_eval=False, callbacks=[pruning_callback])
     elif not cv:
         lgb.train({'objective': 'binary', 'metric': ['auc', 'binary_error']}, dtrain, 1,
-                valid_sets=[dtest], valid_names=valid_names,
-                verbose_eval=False, callbacks=[pruning_callback])
+                  valid_sets=[dtest], valid_names=valid_names,
+                  verbose_eval=False, callbacks=[pruning_callback])
     return 1.0
