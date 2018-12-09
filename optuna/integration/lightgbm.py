@@ -81,10 +81,10 @@ class LightGBMPruningCallback(object):
                 _decide_pruning(valid_name, metric, current_score, is_higher_better)
                 return None
 
-        raise ValueError(
-            'The entry associated with the validation name "{}" and the metric name "{}" '
-            'is not found in the evaluation result list {}.'.format(
-                self.valid_name, self.metric, str(env.evaluation_result_list)))
+            raise ValueError(
+                'The entry associated with the validation name "{}" and the metric name "{}" '
+                'is not found in the evaluation result list {}.'.format(
+                    self.valid_name, self.metric, str(env.evaluation_result_list)))
 
 
 def _check_lightgbm_availability():
