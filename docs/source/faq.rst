@@ -120,10 +120,9 @@ For example, you can save SVM models trained in the objective function as follow
         joblib.dump(clf, '{}.joblib'.format(trial.trial_id))
         return 1.0 - accuracy_score(y_test, clf.predict(X_test))
 
-    if __name__ == '__main__':
-        study = optuna.create_study()
-        study.optimize(objective, n_trials=100)
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=100)
 
-        # Load the best model.
-        best_clf = joblib.load('{}.joblib'.format(study.best_trial.trial_id))
-        print(accuracy_score(y_test, best_clf.predict(X_test)))
+    # Load the best model.
+    best_clf = joblib.load('{}.joblib'.format(study.best_trial.trial_id))
+    print(accuracy_score(y_test, best_clf.predict(X_test)))
