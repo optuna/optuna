@@ -184,3 +184,19 @@ You can also find the failed trials by checking the trial states as follows:
     trial_id,state,value,...,params,system_attrs
     0,TrialState.FAIL,,...,0,Setting trial status as TrialState.FAIL because of the following error: ValueError('A test error in objective.')
     1,TrialState.COMPLETE,1269,...,1,
+
+
+How to specify the GPU (CUDA) used during execution of a study?
+---------------------------------------------------------------
+
+If your optimization target supports GPU (CUDA) acceleration and you want to specify which GPU is used, the easiest way is to set ``CUDA_VISIBLE_DEVICES`` environment variable:
+
+.. code-block:: bash
+
+    # Specify to use the first GPU.
+    $ export CUDA_VISIBLE_DEVICES=0
+
+    # Execute an optimization in which the specified GPU will be used.
+    $ optuna study optimize foo.py objective --study bar --storage sqlite:///baz.db
+
+Please refer to `CUDA C Programming Guide <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_ for further details.
