@@ -99,11 +99,11 @@ For instance, you can stop showing each trial result as follows:
 Please refer to :class:`optuna.logging` for further details.
 
 
-How does Optuna handle NaNs and errors reported by the objective function?
+How does Optuna handle NaNs and exceptions reported by the objective function?
 --------------------------------------------------------------------------
 
 Optuna treats such trials as failures (i.e., :obj:`~optuna.structs.TrialState.FAIL`) and continues the study.
-The Optuna's system process will not be crashed by any objective values or errors raised in objective functions.
+The Optuna's system process will not be crashed by any objective values or exceptions raised in objective functions.
 
 You can find the failed trials in log messages.
 Errors raised in objective functions are shown as follows:
