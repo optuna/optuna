@@ -36,6 +36,33 @@ def test_median_pruner_intermediate_values():
                         trial_id=trial.trial_id, step=1)
 
 
+def test_median_pruner_intermediate_values_nan():
+    # type: () -> None
+
+    pruner = optuna.pruners.MedianPruner(0, 0)
+    study = optuna.study.create_study()
+
+    trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+    trial.report(float('nan'), 1)
+    # A pruner is not activated if the study does not have any previous trials.
+    assert not pruner.prune(storage=study.storage, study_id=study.study_id,
+                            trial_id=trial.trial_id, step=1)
+    study.storage.set_trial_state(trial.trial_id, TrialState.COMPLETE)
+
+    trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+    trial.report(float('nan'), 1)
+    # A pruner is activated if the best intermediate value of this trial is NaN.
+    assert pruner.prune(storage=study.storage, study_id=study.study_id,
+                        trial_id=trial.trial_id, step=1)
+    study.storage.set_trial_state(trial.trial_id, TrialState.COMPLETE)
+
+    trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+    trial.report(1, 1)
+    # A pruner is not activated if the median intermediate value is NaN.
+    assert not pruner.prune(storage=study.storage, study_id=study.study_id,
+                            trial_id=trial.trial_id, step=1)
+
+
 def test_median_pruner_n_startup_trials():
     # type: () -> None
 

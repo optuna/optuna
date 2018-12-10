@@ -108,9 +108,6 @@ class ChainerPruningExtension(Extension):
             return
 
         current_score = self._get_float_value(trainer.observation[self.observation_key])
-        if math.isnan(current_score):
-            return
-
         current_step = getattr(trainer.updater, self.pruner_trigger.unit)
         self.trial.report(current_score, step=current_step)
         if self.trial.should_prune(current_step):
