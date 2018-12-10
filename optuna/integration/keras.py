@@ -1,10 +1,8 @@
 from __future__ import absolute_import
 
-import math
+from typing import Dict  # NOQA
 
 import optuna
-
-from typing import Dict  # NOQA
 
 try:
     from keras.callbacks import Callback
@@ -26,34 +24,34 @@ class KerasPruningCallback(Callback):
 
         .. code::
 
-            model.fit(X, y,
-                callbacks=KerasPruningCallback(trial, 'val/loss'))
+            model.fit(X, y, callbacks=KerasPruningCallback(trial, 'val/loss'))
 
     Args:
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
             objective function.
-        observation_key:
-            An evaluation metric for pruning, e.g., ``val/loss`` and
-            ``val/acc``. Please refer to `keras.Model reference
-            <https://keras.io/models/about-keras-models/>`_ for further details.
+        monitor:
+            An evaluation metric for pruning, e.g., ``val_loss`` and
+            ``val_acc``. Please refer to `keras.Callback reference
+            <https://keras.io/callbacks/#callback>`_ for further details.
     """
 
-    def __init__(self, trial, observation_key):
+    def __init__(self, trial, monitor):
         # type: (optuna.trial.Trial, str) -> None
+
+        super(KerasPruningCallback, self).__init__()
 
         _check_keras_availability()
 
         self.trial = trial
-        self.observation_key = observation_key
+        self.monitor = monitor
 
     def on_epoch_end(self, epoch, logs=None):
         # type: (int, Dict[str, float]) -> None
+
         logs = logs or {}
-        current_score = logs.get(self.observation_key)
+        current_score = logs.get(self.monitor)
         if current_score is None:
-            return
-        if math.isnan(current_score):
             return
         self.trial.report(current_score, step=epoch)
         if self.trial.should_prune(epoch):
