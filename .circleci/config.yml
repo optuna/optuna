@@ -25,6 +25,7 @@ workflows:
       - tests-python37
       - tests-python36
       - tests-python35
+      - tests-python35_1
       - tests-python34
       - tests-python27
       - examples-python37
@@ -127,6 +128,13 @@ jobs:
   tests-python35:
     docker:
       - image: circleci/python:3.5
+    steps:
+      [checkout, run: *install, run: *tests, run: *tests-mn]
+
+  # for testing usage of typing module
+  tests-python35_1:
+    docker:
+      - image: circleci/python:3.5.1
     steps:
       [checkout, run: *install, run: *tests, run: *tests-mn]
 
