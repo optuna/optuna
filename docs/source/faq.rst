@@ -129,3 +129,25 @@ For example, you can save SVM models trained in the objective function as follow
     with open('{}.pickle'.format(study.best_trial.trial_id), 'rb') as fin:
         best_clf = pickle.load(fin)
     print(accuracy_score(y_test, best_clf.predict(X_test)))
+
+
+How can I obtain reproducible optimization results?
+---------------------------------------------------
+
+To make the parameters suggested by Optuna reproducible, you can specify a fixed random seed via ``seed`` argument of :class:`~optuna.samplers.RandomSampler` or :class:`~optuna.samplers.TPESampler` as follows:
+
+.. code-block:: python
+
+    sampler = TPESampler(seed=10)  # Make the sampler behave in a deterministic way.
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective)
+
+However, there are two caveats.
+
+First, when optimizing a study in distributed or parallel mode, there is inherent non-determinism.
+Thus it is very difficult to reproduce the same results in such condition.
+We recommend executing optimization of a study sequentially if you would like to reproduce the result.
+
+Second, if your objective function behaves in a non-deterministic way (i.e., it does not return the same value even if the same parameters were suggested), you cannot reproduce an optimization.
+To deal with this problem, please set an option (e.g., random seed) to make the behavior deterministic if your optimization target (e.g., an ML library) provides it.
+
