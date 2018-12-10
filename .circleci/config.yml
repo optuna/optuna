@@ -8,6 +8,7 @@ workflows:
       - document
       - tests-python37
       - tests-python36
+      - tests-python35_1
       - tests-python35
       - tests-python34
       - tests-python27
