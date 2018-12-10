@@ -99,8 +99,8 @@ For instance, you can stop showing each trial result as follows:
 Please refer to :class:`optuna.logging` for further details.
 
 
-How to save a machine learning model trained in an objective function?
-----------------------------------------------------------------------
+How to save machine learning models trained in objective functions?
+-------------------------------------------------------------------
 
 Optuna saves hyperparameter values with its corresponding objective value to storage,
 but it discards intermediate objects such as machine learning models and neural network weights.
@@ -117,12 +117,15 @@ For example, you can save SVM models trained in the objective function as follow
         clf.fit(X_train, y_train)
 
         # Save a trained model to a file.
-        joblib.dump(clf, '{}.joblib'.format(trial.trial_id))
+        with open('{}.pickle'.format(trial.trial_id), 'wb') as fout:
+            pickle.dump(clf, fout)
         return 1.0 - accuracy_score(y_test, clf.predict(X_test))
+
 
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
 
     # Load the best model.
-    best_clf = joblib.load('{}.joblib'.format(study.best_trial.trial_id))
+    with open('{}.pickle'.format(study.best_trial.trial_id), 'rb') as fin:
+        best_clf = pickle.load(fin)
     print(accuracy_score(y_test, best_clf.predict(X_test)))
