@@ -99,6 +99,38 @@ For instance, you can stop showing each trial result as follows:
 Please refer to :class:`optuna.logging` for further details.
 
 
+How to save machine learning models trained in objective functions?
+-------------------------------------------------------------------
+
+Optuna saves hyperparameter values with its corresponding objective value to storage,
+but it discards intermediate objects such as machine learning models and neural network weights.
+To save models or weights, please use features of the machine learning library you used.
+
+We recommend saving :obj:`~optuna.trial.Trial.trail_id` with a model in order to identify its corresponding trial.
+For example, you can save SVM models trained in the objective function as follows:
+
+.. code-block:: python
+
+    def objective(trial):
+        svc_c = trial.suggest_loguniform('svc_c', 1e-10, 1e10)
+        clf = sklearn.svm.SVC(C=svc_c)
+        clf.fit(X_train, y_train)
+
+        # Save a trained model to a file.
+        with open('{}.pickle'.format(trial.trial_id), 'wb') as fout:
+            pickle.dump(clf, fout)
+        return 1.0 - accuracy_score(y_test, clf.predict(X_test))
+
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=100)
+
+    # Load the best model.
+    with open('{}.pickle'.format(study.best_trial.trial_id), 'rb') as fin:
+        best_clf = pickle.load(fin)
+    print(accuracy_score(y_test, best_clf.predict(X_test)))
+
+
 How can I obtain reproducible optimization results?
 ---------------------------------------------------
 
@@ -118,3 +150,4 @@ We recommend executing optimization of a study sequentially if you would like to
 
 Second, if your objective function behaves in a non-deterministic way (i.e., it does not return the same value even if the same parameters were suggested), you cannot reproduce an optimization.
 To deal with this problem, please set an option (e.g., random seed) to make the behavior deterministic if your optimization target (e.g., an ML library) provides it.
+
