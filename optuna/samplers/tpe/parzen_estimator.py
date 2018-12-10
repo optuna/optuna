@@ -110,7 +110,7 @@ class ParzenEstimator(object):
             minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(sorted_mus)))
         else:
             minsigma = 0.0
-        sigma = numpy.clip(sigma, maxsigma, minsigma)
+        sigma = numpy.clip(sigma, minsigma, maxsigma)
 
         sorted_weights = list(sorted_weights)
         sorted_mus = list(sorted_mus)
