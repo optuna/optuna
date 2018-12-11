@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 
-from typing import TYPE_CHECKING
-
 import optuna
+from optuna import types
 
 try:
     import chainer
@@ -17,7 +16,7 @@ except ImportError as e:
     Extension = object
 
 
-if TYPE_CHECKING:
+if types.TYPE_CHECKING:
     from typing import Tuple
     from typing import Union
 
