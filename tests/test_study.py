@@ -445,15 +445,16 @@ def test_create_study(storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         # Test creating a new study.
-        study = optuna.create_study(storage=storage, exist_ok=False)
+        study = optuna.create_study(storage=storage, load_if_exists=False)
 
-        # Test exist_ok=True with existing study.
-        optuna.create_study(study_name=study.study_name, storage=storage, exist_ok=True)
+        # Test `load_if_exists=True` with existing study.
+        optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=True)
 
         if isinstance(study.storage, optuna.storages.InMemoryStorage):
             # `InMemoryStorage` does not share study's namespace (i.e., no name conflicts occur).
-            optuna.create_study(study_name=study.study_name, storage=storage, exist_ok=False)
+            optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=False)
         else:
-            # Test exist_ok=False with existing study.
+            # Test `load_if_exists=False` with existing study.
             with pytest.raises(optuna.structs.DuplicatedStudyError):
-                optuna.create_study(study_name=study.study_name, storage=storage, exist_ok=False)
+                optuna.create_study(study_name=study.study_name, storage=storage,
+                                    load_if_exists=False)

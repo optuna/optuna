@@ -64,8 +64,9 @@ class RDBStorage(BaseStorage):
         session.add(study)
         if not self._commit_with_integrity_check(session):
             raise structs.DuplicatedStudyError(
-                "study_name {} already exists. Please use a different name or "
-                "set `exist_ok` flag.".format(study_name))
+                "Another study with name '{}' already exists. "
+                "Please specify a different name, or reuse the existing one "
+                "by setting `load_if_exists` or `--skip-if-exists` flag.".format(study_name))
 
         self.logger.info('A new study created with name: {}'.format(study.study_name))
 
