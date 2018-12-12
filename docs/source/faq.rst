@@ -153,7 +153,7 @@ To deal with this problem, please set an option (e.g., random seed) to make the 
 
 
 How does Optuna handle NaNs and exceptions reported by the objective function?
---------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 Optuna treats such trials as failures (i.e., :obj:`~optuna.structs.TrialState.FAIL`) and continues the study.
 The Optuna's system process will not be crashed by any objective values or exceptions raised in objective functions.
