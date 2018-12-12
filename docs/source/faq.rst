@@ -184,3 +184,25 @@ You can also find the failed trials by checking the trial states as follows:
     trial_id,state,value,...,params,system_attrs
     0,TrialState.FAIL,,...,0,Setting trial status as TrialState.FAIL because of the following error: ValueError('A test error in objective.')
     1,TrialState.COMPLETE,1269,...,1,
+
+
+How can I use two GPUs for evaluating two trials simultaneously?
+----------------------------------------------------------------
+
+If your optimization target supports GPU (CUDA) acceleration and you want to specify which GPU is used, the easiest way is to set ``CUDA_VISIBLE_DEVICES`` environment variable:
+
+.. code-block:: bash
+
+    # On a terminal.
+    #
+    # Specify to use the first GPU, and run an optimization.
+    $ export CUDA_VISIBLE_DEVICES=0
+    $ optuna study optimize foo.py objective --study foo --storage sqlite:///example.db
+
+    # On another terminal.
+    #
+    # Specify to use the second GPU, and run another optimization.
+    $ export CUDA_VISIBLE_DEVICES=1
+    $ optuna study optimize bar.py objective --study bar --storage sqlite:///example.db
+
+Please refer to `CUDA C Programming Guide <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_ for further details.
