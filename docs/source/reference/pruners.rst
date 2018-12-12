@@ -3,10 +3,10 @@
 Pruners
 =======
 
-.. autoclass:: ASHAPruner
+.. autoclass:: MedianPruner
     :members:
     :exclude-members: prune
 
-.. autoclass:: MedianPruner
+.. autoclass:: SuccessiveHalvingPruner
     :members:
     :exclude-members: prune

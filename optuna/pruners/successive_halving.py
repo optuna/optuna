@@ -6,7 +6,7 @@ from optuna.structs import FrozenTrial  # NOQA
 from typing import List  # NOQA
 
 
-class ASHAPruner(BasePruner):
+class SuccessiveHalvingPruner(BasePruner):
 
     """Pruner using the Asynchronous Successive Halving Algorithm (ASHA).
 
@@ -19,11 +19,11 @@ class ASHAPruner(BasePruner):
     Please refer to `the original paper <http://arxiv.org/abs/1810.05934>`_
     for a detailed description of ASHA.
 
-    Note that, unlike the paper, ``ASHAPruner`` recognizes only "number of steps" as the resource
-    consumed by a trial (in the paper, for example, input data size can be treated as a resource).
-    Besides, it does not have a parameter to restrict the maximum resource usage (called ``R`` in
-    the paper). The maximum number of steps executed by a trial is implicitly limited by users via
-    implementation specific parameters (e.g., `step number in simple.py
+    Note that, unlike the paper, ``SuccessiveHalvingPruner`` recognizes only "number of steps" as
+    the resource consumed by a trial (in the paper, for example, input data size can be treated as
+    a resource). Besides, it does not have a parameter to restrict the maximum resource usage
+    (called ``R`` in the paper). The maximum number of steps executed by a trial is implicitly
+    limited by users via implementation specific parameters (e.g., `step number in simple.py
     <https://github.com/pfnet/optuna/tree/c5777b3e/examples/pruning/simple.py#L31>`_,
     `epoch number in chainer_integration.py
     <https://github.com/pfnet/optuna/tree/c5777b3e/examples/pruning/chainer_integration.py#L65>`_).
@@ -35,12 +35,12 @@ class ASHAPruner(BasePruner):
         .. code::
 
             >>> from optuna import create_study
-            >>> from optuna.pruners import ASHAPruner
+            >>> from optuna.pruners import SuccessiveHalvingPruner
             >>>
             >>> def objective(trial):
             >>>     ...
             >>>
-            >>> study = create_study(pruner=ASHAPruner())
+            >>> study = create_study(pruner=SuccessiveHalvingPruner())
             >>> study.optimize(objective)
 
     Args:
