@@ -255,7 +255,7 @@ def _get_this_source_path():
     return path
 
 
-def serve(study, bokeh_allow_websocket_origins=[]):
+def serve(study, bokeh_allow_websocket_origins=None):
     # type: (optuna.study.Study, List[str]) -> None
 
     global _mode, _study
@@ -279,8 +279,9 @@ def serve(study, bokeh_allow_websocket_origins=[]):
     # version 0.12.15. In addition, we will need to do many configuration to servers, which can be
     # done automatically with the following one line. So, for now, we decided to use this way.
     command = ['bokeh', 'serve', '--show', _get_this_source_path()]
-    for bokeh_allow_websocket_origin in bokeh_allow_websocket_origins:
-        command.extend(['--allow-websocket-origin', bokeh_allow_websocket_origin])
+    if bokeh_allow_websocket_origins is not None:
+        for bokeh_allow_websocket_origin in bokeh_allow_websocket_origins:
+            command.extend(['--allow-websocket-origin', bokeh_allow_websocket_origin])
     bokeh.command.bootstrap.main(command)
 
 
