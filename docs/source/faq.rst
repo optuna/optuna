@@ -97,3 +97,112 @@ For instance, you can stop showing each trial result as follows:
 
 
 Please refer to :class:`optuna.logging` for further details.
+
+
+How to save machine learning models trained in objective functions?
+-------------------------------------------------------------------
+
+Optuna saves hyperparameter values with its corresponding objective value to storage,
+but it discards intermediate objects such as machine learning models and neural network weights.
+To save models or weights, please use features of the machine learning library you used.
+
+We recommend saving :obj:`~optuna.trial.Trial.trail_id` with a model in order to identify its corresponding trial.
+For example, you can save SVM models trained in the objective function as follows:
+
+.. code-block:: python
+
+    def objective(trial):
+        svc_c = trial.suggest_loguniform('svc_c', 1e-10, 1e10)
+        clf = sklearn.svm.SVC(C=svc_c)
+        clf.fit(X_train, y_train)
+
+        # Save a trained model to a file.
+        with open('{}.pickle'.format(trial.trial_id), 'wb') as fout:
+            pickle.dump(clf, fout)
+        return 1.0 - accuracy_score(y_test, clf.predict(X_test))
+
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=100)
+
+    # Load the best model.
+    with open('{}.pickle'.format(study.best_trial.trial_id), 'rb') as fin:
+        best_clf = pickle.load(fin)
+    print(accuracy_score(y_test, best_clf.predict(X_test)))
+
+
+How can I obtain reproducible optimization results?
+---------------------------------------------------
+
+To make the parameters suggested by Optuna reproducible, you can specify a fixed random seed via ``seed`` argument of :class:`~optuna.samplers.RandomSampler` or :class:`~optuna.samplers.TPESampler` as follows:
+
+.. code-block:: python
+
+    sampler = TPESampler(seed=10)  # Make the sampler behave in a deterministic way.
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective)
+
+However, there are two caveats.
+
+First, when optimizing a study in distributed or parallel mode, there is inherent non-determinism.
+Thus it is very difficult to reproduce the same results in such condition.
+We recommend executing optimization of a study sequentially if you would like to reproduce the result.
+
+Second, if your objective function behaves in a non-deterministic way (i.e., it does not return the same value even if the same parameters were suggested), you cannot reproduce an optimization.
+To deal with this problem, please set an option (e.g., random seed) to make the behavior deterministic if your optimization target (e.g., an ML library) provides it.
+
+
+How does Optuna handle NaNs and exceptions reported by the objective function?
+--------------------------------------------------------------------------
+
+Optuna treats such trials as failures (i.e., :obj:`~optuna.structs.TrialState.FAIL`) and continues the study.
+The Optuna's system process will not be crashed by any objective values or exceptions raised in objective functions.
+
+You can find the failed trials in log messages.
+Errors raised in objective functions are shown as follows:
+
+.. code-block:: sh
+
+    [W 2018-12-07 16:38:36,889] Setting trial status as TrialState.FAIL because of \
+    the following error: ValueError('A sample error in objective.')
+
+And trials which returned :obj:`NaN` are shown as follows:
+
+.. code-block:: sh
+
+    [W 2018-12-07 16:41:59,000] Setting trial status as TrialState.FAIL because the \
+    objective function returned nan.
+
+You can also find the failed trials by checking the trial states as follows:
+
+.. code-block:: python
+
+    study.trials_dataframe()
+
+.. csv-table::
+
+    trial_id,state,value,...,params,system_attrs
+    0,TrialState.FAIL,,...,0,Setting trial status as TrialState.FAIL because of the following error: ValueError('A test error in objective.')
+    1,TrialState.COMPLETE,1269,...,1,
+
+
+How can I use two GPUs for evaluating two trials simultaneously?
+----------------------------------------------------------------
+
+If your optimization target supports GPU (CUDA) acceleration and you want to specify which GPU is used, the easiest way is to set ``CUDA_VISIBLE_DEVICES`` environment variable:
+
+.. code-block:: bash
+
+    # On a terminal.
+    #
+    # Specify to use the first GPU, and run an optimization.
+    $ export CUDA_VISIBLE_DEVICES=0
+    $ optuna study optimize foo.py objective --study foo --storage sqlite:///example.db
+
+    # On another terminal.
+    #
+    # Specify to use the second GPU, and run another optimization.
+    $ export CUDA_VISIBLE_DEVICES=1
+    $ optuna study optimize bar.py objective --study bar --storage sqlite:///example.db
+
+Please refer to `CUDA C Programming Guide <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_ for further details.

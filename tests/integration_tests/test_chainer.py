@@ -11,6 +11,7 @@ import typing  # NOQA
 
 import optuna
 from optuna.integration.chainer import ChainerPruningExtension
+from optuna.structs import TrialPruned
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -78,18 +79,20 @@ def test_chainer_pruning_extension():
     assert study.trials[0].value == 1.0
 
 
-def test_chainer_pruning_extension_observation_isnan():
+def test_chainer_pruning_extension_observation_nan():
     # type: () -> None
 
-    study = optuna.create_study()
+    study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
     extension = ChainerPruningExtension(trial, 'main/loss', (1, 'epoch'))
 
-    MockTrainer = namedtuple('_MockTrainer', ('observation', ))
-    trainer = MockTrainer(observation={'main/loss': float('nan')})
+    MockTrainer = namedtuple('_MockTrainer', ('observation', 'updater'))
+    MockUpdater = namedtuple('_MockUpdater', ('epoch'))
+    trainer = MockTrainer(observation={'main/loss': float('nan')}, updater=MockUpdater(1))
 
     with patch.object(extension, '_observation_exists', Mock(return_value=True)) as mock:
-        extension(trainer)
+        with pytest.raises(TrialPruned):
+            extension(trainer)
         assert mock.call_count == 1
 
 

@@ -1,10 +1,10 @@
 import abc
 import six
-from typing import TYPE_CHECKING  # NOQA
 
 from optuna import distributions
+from optuna import types
 
-if TYPE_CHECKING:
+if types.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
