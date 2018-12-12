@@ -180,13 +180,13 @@ class TPESampler(base.BaseSampler):
 
         size = (self.n_ei_candidates,)
 
-        parzen_estimator_belowelow = ParzenEstimator(
+        parzen_estimator_below = ParzenEstimator(
             mus=below,
             low=low,
             high=high,
             parameters=self.parzen_estimator_parameters)
         samples_below = self._sample_from_gmm(
-            parzen_estimator=parzen_estimator_belowelow,
+            parzen_estimator=parzen_estimator_below,
             low=low,
             high=high,
             q=q,
@@ -194,7 +194,7 @@ class TPESampler(base.BaseSampler):
             size=size)
         log_likelihoods_below = self._gmm_log_pdf(
             samples=samples_below,
-            parzen_estimator=parzen_estimator_belowelow,
+            parzen_estimator=parzen_estimator_below,
             low=low,
             high=high,
             q=q,
