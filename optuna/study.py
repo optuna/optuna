@@ -494,7 +494,7 @@ def create_study(
 
             logger = logging.get_logger(__name__)
             logger.info("Using an existing study with name '{}' instead of "
-                        "creating a new one".format(study_name))
+                        "creating a new one.".format(study_name))
             study_id = storage.get_study_id_from_name(study_name)
         else:
             raise
