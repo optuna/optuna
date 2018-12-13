@@ -59,9 +59,9 @@ class ParzenEstimator(object):
         mus = numpy.asarray(mus)
         sigma = numpy.asarray([], dtype=float)
         prior_pos = 0
-        prior_sigma = 1.0 * (high - low)
         if consider_prior:
             prior_mu = 0.5 * (low + high)
+            prior_sigma = 1.0 * (high - low)
             if mus.size == 0:
                 sorted_mus = numpy.asarray([prior_mu])
                 sigma = numpy.asarray([prior_sigma])
