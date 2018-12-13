@@ -14,7 +14,7 @@ class SuccessiveHalvingPruner(BasePruner):
     When a trial completed the current rung, it competes with other trials that have completed
     the same rung. And if it wins the competition, the trial will be promoted to the next rung
     for continuing the work. Conversely, the losers will be pruned there.
-    This process is repeated by recursively until the trial finishes.
+    This process is repeated until the trial finishes.
 
     Please refer to `the original paper <http://arxiv.org/abs/1810.05934>`_
     for a detailed description of ASHA.
@@ -62,21 +62,24 @@ class SuccessiveHalvingPruner(BasePruner):
             The point is determined by the expression ``r * (eta ** s)``.
     """
 
-    def __init__(self, r=1, eta=4, s=0):
+    def __init__(self, min_resource=1, reduction_factor=4, n_warmup_rungs=0):
         # type: (int, int, int) -> None
 
-        if r < 1:
-            raise ValueError('`r` must be greater than `0`')
+        if min_resource < 1:
+            raise ValueError('The value of `min_resource` is {}, '
+                             'but must be `min_resource >= 1`'.format(min_resource))
 
-        if eta < 2:
-            raise ValueError('`eta` must be greater than `1`')
+        if reduction_factor < 2:
+            raise ValueError('The value of `reduction_factor` is {}, '
+                             'but must be `reduction_factor >= 2`'.format(reduction_factor))
 
-        if s < 0:
-            raise ValueError('`s` must be positive')
+        if n_warmup_rungs < 0:
+            raise ValueError('The value of `n_warmup_rungs` is {}, '
+                             'but must be `n_warmup_rungs >= 0`'.format(n_warmup_rungs))
 
-        self.r = r
-        self.eta = eta
-        self.s = s
+        self.min_resource = min_resource
+        self.reduction_factor = reduction_factor
+        self.n_warmup_rungs = n_warmup_rungs
 
     def prune(self, storage, study_id, trial_id, step):
         # type: (BaseStorage, int, int, int) -> bool
@@ -86,11 +89,11 @@ class SuccessiveHalvingPruner(BasePruner):
         if len(trial.intermediate_values) == 0:
             return False
 
-        rung = get_current_rung(trial)
+        rung = self._get_current_rung(trial)
         value = trial.intermediate_values[step]
         all_trials = None
         while True:
-            promotion_step = self.r * (self.eta ** (self.s + rung))
+            promotion_step = self.min_resource * (self.reduction_factor ** rung)
             if step < promotion_step:
                 return False
 
@@ -114,7 +117,7 @@ class SuccessiveHalvingPruner(BasePruner):
         competing_values.append(value)
         competing_values.sort()
 
-        promotable_idx = (len(competing_values) // self.eta) - 1
+        promotable_idx = (len(competing_values) // self.reduction_factor) - 1
         if promotable_idx == -1:
             # Optuna does not support to suspend/resume ongoing trials.
             #
@@ -128,18 +131,17 @@ class SuccessiveHalvingPruner(BasePruner):
         # TODO(ohta): Deal with maximize direction.
         return value <= competing_values[promotable_idx]
 
+    def _get_current_rung(self, trial):
+        # type: (FrozenTrial) -> int
+
+        # Below loop takes `O(log step)` iterations.
+        rung = self.n_warmup_rungs
+        while completed_rung_key(rung) in trial.system_attrs:
+            rung += 1
+        return rung
+
 
 def completed_rung_key(rung):
     # type: (int) -> str
 
     return 'completed_rung_{}'.format(rung)
-
-
-def get_current_rung(trial):
-    # type: (FrozenTrial) -> int
-
-    # Below loop takes `O(log step)` iterations.
-    rung = 0
-    while completed_rung_key(rung) in trial.system_attrs:
-        rung += 1
-    return rung

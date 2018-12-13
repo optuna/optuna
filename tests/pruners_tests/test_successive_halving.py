@@ -7,7 +7,8 @@ def test_successive_halving_pruner_with_one_trial():
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
     trial.report(1, 1)
-    pruner = optuna.pruners.SuccessiveHalvingPruner(r=1, eta=2, s=0)
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=2, n_warmup_rungs=0)
 
     # A pruner is not activated at a first trial.
     assert not pruner.prune(study.storage, study.study_id, trial.trial_id, step=1)
@@ -16,7 +17,8 @@ def test_successive_halving_pruner_with_one_trial():
 def test_successive_halving_pruner_intermediate_values():
     # type: () -> None
 
-    pruner = optuna.pruners.SuccessiveHalvingPruner(r=1, eta=2, s=0)
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=2, n_warmup_rungs=0)
     study = optuna.study.create_study()
 
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
@@ -37,7 +39,8 @@ def test_successive_halving_pruner_intermediate_values():
 def test_successive_halving_pruner_up_to_third_rung():
     # type: () -> None
 
-    pruner = optuna.pruners.SuccessiveHalvingPruner(r=1, eta=2, s=0)
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=2, n_warmup_rungs=0)
     study = optuna.study.create_study()
 
     # Report 7 trials in advance.
@@ -71,7 +74,8 @@ def test_successive_halving_pruner_up_to_third_rung():
 def test_successive_halving_pruner_first_trial_always_wins():
     # type: () -> None
 
-    pruner = optuna.pruners.SuccessiveHalvingPruner(r=1, eta=2, s=0)
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=2, n_warmup_rungs=0)
     study = optuna.study.create_study()
 
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
@@ -89,13 +93,14 @@ def test_successive_halving_pruner_first_trial_always_wins():
     assert 'completed_rung_4' not in trial.system_attrs
 
 
-def test_successive_halving_pruner_r_parameter():
+def test_successive_halving_pruner_min_resource_parameter():
     # type: () -> None
 
     study = optuna.study.create_study()
 
-    # r=1: The rung 0 ends at step 1.
-    pruner = optuna.pruners.SuccessiveHalvingPruner(r=1, eta=2, s=0)
+    # min_resource=1: The rung 0 ends at step 1.
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=2, n_warmup_rungs=0)
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
 
     trial.report(1, step=1)
@@ -103,8 +108,9 @@ def test_successive_halving_pruner_r_parameter():
     assert 'completed_rung_0' in trial.system_attrs
     assert 'completed_rung_1' not in trial.system_attrs
 
-    # r=2: The rung 0 ends at step 2.
-    pruner = optuna.pruners.SuccessiveHalvingPruner(r=2, eta=2, s=0)
+    # min_resource=2: The rung 0 ends at step 2.
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=2, reduction_factor=2, n_warmup_rungs=0)
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
 
     trial.report(1, step=1)
@@ -117,11 +123,12 @@ def test_successive_halving_pruner_r_parameter():
     assert 'completed_rung_1' not in trial.system_attrs
 
 
-def test_successive_halving_pruner_eta_parameter():
+def test_successive_halving_pruner_reduction_factor_parameter():
     study = optuna.study.create_study()
 
-    # eta=2: The rung 0 ends at step 1.
-    pruner = optuna.pruners.SuccessiveHalvingPruner(r=1, eta=2, s=0)
+    # reduction_factor=2: The rung 0 ends at step 1.
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=2, n_warmup_rungs=0)
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
 
     trial.report(1, step=1)
@@ -129,8 +136,9 @@ def test_successive_halving_pruner_eta_parameter():
     assert 'completed_rung_0' in trial.system_attrs
     assert 'completed_rung_1' not in trial.system_attrs
 
-    # eta=3: The rung 1 ends at step 3.
-    pruner = optuna.pruners.SuccessiveHalvingPruner(r=1, eta=3, s=0)
+    # reduction_factor=3: The rung 1 ends at step 3.
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=3, n_warmup_rungs=0)
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
 
     trial.report(1, step=1)
@@ -148,26 +156,30 @@ def test_successive_halving_pruner_eta_parameter():
     assert 'completed_rung_2' not in trial.system_attrs
 
 
-def test_successive_halving_pruner_s_parameter():
+def test_successive_halving_pruner_n_warmup_rungs_parameter():
     study = optuna.study.create_study()
 
-    # s=0: The rung 0 ends at step 1.
-    pruner = optuna.pruners.SuccessiveHalvingPruner(r=1, eta=2, s=0)
+    # n_warmup_rungs=0: The rung 0 ends at step 1.
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=2, n_warmup_rungs=0)
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
 
     trial.report(1, step=1)
     assert not pruner.prune(study.storage, study.study_id, trial.trial_id, step=1)
     assert 'completed_rung_0' in trial.system_attrs
 
-    # s=1: The rung 0 ends at step 2.
-    pruner = optuna.pruners.SuccessiveHalvingPruner(r=1, eta=2, s=1)
+    # n_warmup_rungs=1: The rung 0 ends at step 2.
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=2, n_warmup_rungs=1)
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
 
     trial.report(1, step=1)
     assert not pruner.prune(study.storage, study.study_id, trial.trial_id, step=1)
     assert 'completed_rung_0' not in trial.system_attrs
+    assert 'completed_rung_1' not in trial.system_attrs
 
     trial.report(1, step=2)
     assert not pruner.prune(study.storage, study.study_id, trial.trial_id, step=2)
-    assert 'completed_rung_0' in trial.system_attrs
-    assert 'completed_rung_1' not in trial.system_attrs
+    assert 'completed_rung_0' not in trial.system_attrs
+    assert 'completed_rung_1' in trial.system_attrs
+    assert 'completed_rung_2' not in trial.system_attrs
