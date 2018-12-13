@@ -111,6 +111,8 @@ class ParzenEstimator(object):
         else:
             minsigma = 0.0
         sigma = numpy.clip(sigma, minsigma, maxsigma)
+        if consider_prior:
+            sigma[prior_pos] = prior_sigma
 
         sorted_weights = list(sorted_weights)
         sorted_mus = list(sorted_mus)
