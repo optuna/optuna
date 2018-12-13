@@ -1,4 +1,8 @@
+import itertools
 import numpy as np
+import pytest
+from typing import Dict  # NOQA
+from typing import List  # NOQA
 
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
 from optuna.samplers.tpe.sampler import default_weights
@@ -7,79 +11,54 @@ from optuna.samplers.tpe.sampler import default_weights
 class TestParzenEstimator(object):
 
     @staticmethod
-    def test_calculate_with_prior():
-        # type: () -> None
+    @pytest.mark.parametrize('mus, prior, magic_clip, endpoints',
+                             itertools.product(
+                                 ([], [0.4], [-0.4, 0.4]),  # mus
+                                 (True, False),  # prior
+                                 (True, False),  # magic_clip
+                                 (True, False),  # endpoints
+                             ))
+    def test_calculate_shape_check(mus, prior, magic_clip, endpoints):
+        # type: (List[float], bool, bool, bool) -> None
 
-        consider_prior = True
-        consider_magic_clip = True
-        consider_endpoints = False
-        # If no observation exists, the function returns the prior Gaussian distribution.
-        weights, mus, sigma = ParzenEstimator._calculate([], -1.0, 1.0, prior_weight=1.0,
-                                                         consider_prior=consider_prior,
-                                                         consider_magic_clip=consider_magic_clip,
-                                                         consider_endpoints=consider_endpoints,
-                                                         weights_func=default_weights)
-        np.testing.assert_almost_equal(weights, [1.0])
-        np.testing.assert_almost_equal(mus, [0.0])
-        np.testing.assert_almost_equal(sigma, [2.0])
+        s_weights, s_mus, s_sigmas = \
+            ParzenEstimator._calculate(mus, -1.0, 1.0, prior_weight=1.0,
+                                       consider_prior=prior,
+                                       consider_magic_clip=magic_clip,
+                                       consider_endpoints=endpoints,
+                                       weights_func=default_weights)
 
-        # If a single observation exists, the function returns two Gaussian distributions.
-        weights, mus, sigma = ParzenEstimator._calculate([0.4], -1., 1., prior_weight=1.,
-                                                         consider_prior=consider_prior,
-                                                         consider_magic_clip=consider_magic_clip,
-                                                         consider_endpoints=consider_endpoints,
-                                                         weights_func=default_weights)
-        # TODO(Yanase): Check values
-        assert len(weights) == 2
-        assert len(mus) == 2
-        assert len(sigma) == 2
+        # Result contains an additional value for a prior distribution if prior is True.
+        assert len(s_weights) == len(mus) + int(prior)
+        assert len(s_mus) == len(mus) + int(prior)
+        assert len(s_sigmas) == len(mus) + int(prior)
 
-        # If two observation exist, the function returns three Gaussian distributions.
-        weights, mus, sigma = ParzenEstimator._calculate([-0.4, 0.4], -1., 1., prior_weight=1.,
-                                                         consider_prior=consider_prior,
-                                                         consider_magic_clip=consider_magic_clip,
-                                                         consider_endpoints=consider_endpoints,
-                                                         weights_func=default_weights)
-        # TODO(Yanase): Check values
-        assert len(weights) == 3
-        assert len(mus) == 3
-        assert len(sigma) == 3
-
+    # TODO(Yanase): Improve test coverage for prior, magic_clip, and endpoints.
     @staticmethod
-    def test_calculate_without_prior():
-        # type: () -> None
+    @pytest.mark.parametrize(
+        'mus, flags, expected',
+        [[[], {'prior': False, 'magic_clip': False, 'endpoints': True},
+          {'weights': [], 'mus': [], 'sigmas': []}],
+         [[], {'prior': True, 'magic_clip': False, 'endpoints': True},
+          {'weights': [1.0], 'mus': [0.0], 'sigmas': [2.0]}],
+         [[0.4], {'prior': True, 'magic_clip': False, 'endpoints': True},
+          {'weights': [0.5, 0.5], 'mus': [0.0, 0.4], 'sigmas': [2.0, 0.6]}],
+         [[-0.4], {'prior': True, 'magic_clip': False, 'endpoints': True},
+          {'weights': [0.5, 0.5], 'mus': [-0.4, 0.0], 'sigmas': [0.6, 2.0]}],
+         [[-0.4, 0.4], {'prior': True, 'magic_clip': False, 'endpoints': True},
+          {'weights': [1.0 / 3] * 3, 'mus': [-0.4, 0.0, 0.4], 'sigmas': [0.6, 2.0, 0.6]}],
+         ])
+    def test_calculate(mus, flags, expected):
+        # type: (List[float], Dict[str, bool], Dict[str, List[float]]) -> None
 
-        consider_prior = False
-        consider_magic_clip = True
-        consider_endpoints = False
-        # If no observation exists, the function returns no distribution.
-        weights, mus, sigma = ParzenEstimator._calculate([], -1.0, 1.0, prior_weight=1.0,
-                                                         consider_prior=consider_prior,
-                                                         consider_magic_clip=consider_magic_clip,
-                                                         consider_endpoints=consider_endpoints,
-                                                         weights_func=default_weights)
-        assert len(weights) == 0
-        assert len(mus) == 0
-        assert len(sigma) == 0
+        s_weights, s_mus, s_sigmas = \
+            ParzenEstimator._calculate(mus, -1.0, 1.0, prior_weight=1.0,
+                                       consider_prior=flags['prior'],
+                                       consider_magic_clip=flags['magic_clip'],
+                                       consider_endpoints=flags['endpoints'],
+                                       weights_func=default_weights)
 
-        # If a single observation exists, the function returns one Gaussian distributions.
-        weights, mus, sigma = ParzenEstimator._calculate([0.4], -1., 1., prior_weight=1.,
-                                                         consider_prior=consider_prior,
-                                                         consider_magic_clip=consider_magic_clip,
-                                                         consider_endpoints=consider_endpoints,
-                                                         weights_func=default_weights)
-        # TODO(Yanase): Check values
-        assert len(weights) == 1
-        assert len(mus) == 1
-        assert len(sigma) == 1
-
-        # If two observation exist, the function returns two Gaussian distributions.
-        weights, mus, sigma = ParzenEstimator._calculate([-0.4, 0.4], -1., 1., prior_weight=1.,
-                                                         consider_prior=consider_prior,
-                                                         consider_magic_clip=consider_magic_clip,
-                                                         consider_endpoints=consider_endpoints,
-                                                         weights_func=default_weights)
-        # TODO(Yanase): Check values
-        assert len(weights) == 2
-        assert len(mus) == 2
-        assert len(sigma) == 2
+        # Result contains an additional value for a prior distribution if consider_prior is True.
+        np.testing.assert_almost_equal(s_weights, expected['weights'])
+        np.testing.assert_almost_equal(s_mus, expected['mus'])
+        np.testing.assert_almost_equal(s_sigmas, expected['sigmas'])
