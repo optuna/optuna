@@ -47,52 +47,58 @@ def create_model(trial):
     return chainer.Sequential(*layers)
 
 
-def objective(trial):
-    model = L.Classifier(create_model(trial))
-    optimizer = chainer.optimizers.Adam()
-    optimizer.setup(model)
+class Objective(object):
+    def __init__(self, train, test):
+        rng = np.random.RandomState(0)
+        self.train = chainer.datasets.SubDataset(
+            train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
+        self.test = chainer.datasets.SubDataset(
+            test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
 
-    rng = np.random.RandomState(0)
-    train, test = chainer.datasets.get_mnist()
-    train = chainer.datasets.SubDataset(
-        train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
-    test = chainer.datasets.SubDataset(
-        test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
-    train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE)
-    test_iter = chainer.iterators.SerialIterator(test, BATCHSIZE, repeat=False, shuffle=False)
+    def __call__(self, trial):
+        model = L.Classifier(create_model(trial))
+        optimizer = chainer.optimizers.Adam()
+        optimizer.setup(model)
 
-    # Setup trainer.
-    updater = chainer.training.StandardUpdater(train_iter, optimizer)
-    trainer = chainer.training.Trainer(updater, (EPOCH, 'epoch'))
+        train_iter = chainer.iterators.SerialIterator(self.train, BATCHSIZE)
+        test_iter = chainer.iterators.SerialIterator(
+            self.test, BATCHSIZE, repeat=False, shuffle=False)
 
-    # Add Chainer extension for pruners.
-    trainer.extend(
-        optuna.integration.ChainerPruningExtension(trial, 'validation/main/loss',
-                                                   (PRUNER_INTERVAL, 'epoch'))
-    )
+        # Setup trainer.
+        updater = chainer.training.StandardUpdater(train_iter, optimizer)
+        trainer = chainer.training.Trainer(updater, (EPOCH, 'epoch'))
 
-    trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
-    trainer.extend(chainer.training.extensions.PrintReport(
-        ['epoch', 'main/loss', 'validation/main/loss',
-         'main/accuracy', 'validation/main/accuracy']))
-    log_report_extension = chainer.training.extensions.LogReport(log_name=None)
-    trainer.extend(log_report_extension)
+        # Add Chainer extension for pruners.
+        trainer.extend(
+            optuna.integration.ChainerPruningExtension(trial, 'validation/main/loss',
+                                                       (PRUNER_INTERVAL, 'epoch'))
+        )
 
-    # Run training.
-    # Please set show_loop_exception_msg False to inhibit messages about TrialPruned exception.
-    # ChainerPruningExtension raises TrialPruned exception to stop training, and
-    # trainer shows some messages every time it receive TrialPruned.
-    trainer.run(show_loop_exception_msg=False)
+        trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
+        trainer.extend(chainer.training.extensions.PrintReport(
+            ['epoch', 'main/loss', 'validation/main/loss',
+             'main/accuracy', 'validation/main/accuracy']))
+        log_report_extension = chainer.training.extensions.LogReport(log_name=None)
+        trainer.extend(log_report_extension)
 
-    # Save loss and accuracy to user attributes.
-    log_last = log_report_extension.log[-1]
-    for key, value in log_last.items():
-        trial.set_user_attr(key, value)
+        # Run training.
+        # Please set show_loop_exception_msg False to inhibit messages about TrialPruned exception.
+        # ChainerPruningExtension raises TrialPruned exception to stop training, and
+        # trainer shows some messages every time it receive TrialPruned.
+        trainer.run(show_loop_exception_msg=False)
 
-    return log_report_extension.log[-1]['validation/main/loss']
+        # Save loss and accuracy to user attributes.
+        log_last = log_report_extension.log[-1]
+        for key, value in log_last.items():
+            trial.set_user_attr(key, value)
+
+        return log_report_extension.log[-1]['validation/main/loss']
 
 
 if __name__ == '__main__':
+    train, test = chainer.datasets.get_mnist()
+    objective = Objective(train, test)
+
     study = optuna.create_study(pruner=optuna.pruners.MedianPruner())
     study.optimize(objective, n_trials=100)
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]

@@ -19,30 +19,37 @@ import sklearn.model_selection
 import optuna
 
 
-def objective(trial):
-    iris = sklearn.datasets.load_iris()
-    classes = list(set(iris.target))
-    train_x, test_x, train_y, test_y = \
-        sklearn.model_selection.train_test_split(iris.data, iris.target, test_size=0.25)
+class Objective(object):
+    def __init__(self, iris):
+        self.iris = iris
 
-    alpha = trial.suggest_loguniform('alpha', 1e-5, 1e-1)
-    clf = sklearn.linear_model.SGDClassifier(alpha=alpha)
+    def __call__(self, trial):
+        classes = list(set(self.iris.target))
+        train_x, test_x, train_y, test_y = \
+            sklearn.model_selection.train_test_split(
+                self.iris.data, self.iris.target, test_size=0.25)
 
-    for step in range(100):
-        clf.partial_fit(train_x, train_y, classes=classes)
+        alpha = trial.suggest_loguniform('alpha', 1e-5, 1e-1)
+        clf = sklearn.linear_model.SGDClassifier(alpha=alpha)
 
-        # Report intermediate objective value.
-        intermediate_value = 1.0 - clf.score(test_x, test_y)
-        trial.report(intermediate_value, step)
+        for step in range(100):
+            clf.partial_fit(train_x, train_y, classes=classes)
 
-        # Handle pruning based on the intermediate value.
-        if trial.should_prune(step):
-            raise optuna.structs.TrialPruned()
+            # Report intermediate objective value.
+            intermediate_value = 1.0 - clf.score(test_x, test_y)
+            trial.report(intermediate_value, step)
 
-    return 1.0 - clf.score(test_x, test_y)
+            # Handle pruning based on the intermediate value.
+            if trial.should_prune(step):
+                raise optuna.structs.TrialPruned()
+
+        return 1.0 - clf.score(test_x, test_y)
 
 
 if __name__ == '__main__':
+    iris = sklearn.datasets.load_iris()
+    objective = Objective(iris)
+
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
 

@@ -67,46 +67,54 @@ def create_optimizer(trial, model):
     return optimizer
 
 
-def objective(trial):
-    # Model and optimizer
-    model = L.Classifier(create_model(trial))
-    optimizer = create_optimizer(trial, model)
+class Objective(object):
+    def __init__(self, train, test):
+        # Dataset
+        rng = np.random.RandomState(0)
+        self.train = chainer.datasets.SubDataset(
+            train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
+        self.test = chainer.datasets.SubDataset(
+            test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
 
-    # Dataset
-    rng = np.random.RandomState(0)
-    train, test = chainer.datasets.get_mnist()
-    train = chainer.datasets.SubDataset(
-        train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
-    test = chainer.datasets.SubDataset(
-        test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
-    train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE)
-    test_iter = chainer.iterators.SerialIterator(test, BATCHSIZE, repeat=False, shuffle=False)
+    def __call__(self, trial):
+        # Model and optimizer
+        model = L.Classifier(create_model(trial))
+        optimizer = create_optimizer(trial, model)
 
-    # Trainer
-    updater = chainer.training.StandardUpdater(train_iter, optimizer)
-    trainer = chainer.training.Trainer(updater, (EPOCH, 'epoch'))
-    trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
-    log_report_extension = chainer.training.extensions.LogReport(log_name=None)
-    trainer.extend(chainer.training.extensions.PrintReport(
-        ['epoch', 'main/loss', 'validation/main/loss',
-         'main/accuracy', 'validation/main/accuracy']))
-    trainer.extend(log_report_extension)
+        # Iterator
+        train_iter = chainer.iterators.SerialIterator(self.train, BATCHSIZE)
+        test_iter = chainer.iterators.SerialIterator(
+            self.test, BATCHSIZE, repeat=False, shuffle=False)
 
-    # Run!
-    trainer.run()
+        # Trainer
+        updater = chainer.training.StandardUpdater(train_iter, optimizer)
+        trainer = chainer.training.Trainer(updater, (EPOCH, 'epoch'))
+        trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
+        log_report_extension = chainer.training.extensions.LogReport(log_name=None)
+        trainer.extend(chainer.training.extensions.PrintReport(
+            ['epoch', 'main/loss', 'validation/main/loss',
+             'main/accuracy', 'validation/main/accuracy']))
+        trainer.extend(log_report_extension)
 
-    # Set the user attributes such as loss and accuracy for train and validation sets
-    log_last = log_report_extension.log[-1]
-    for key, value in log_last.items():
-        trial.set_user_attr(key, value)
+        # Run!
+        trainer.run()
 
-    # Return the validation error
-    val_err = 1.0 - log_report_extension.log[-1]['validation/main/accuracy']
-    return val_err
+        # Set the user attributes such as loss and accuracy for train and validation sets
+        log_last = log_report_extension.log[-1]
+        for key, value in log_last.items():
+            trial.set_user_attr(key, value)
+
+            # Return the validation error
+            val_err = 1.0 - log_report_extension.log[-1]['validation/main/accuracy']
+            return val_err
 
 
 if __name__ == '__main__':
     import optuna
+
+    train, test = chainer.datasets.get_mnist()
+    objective = Objective(train, test)
+
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
 

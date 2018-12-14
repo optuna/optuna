@@ -44,45 +44,47 @@ def create_model(trial):
     return chainer.Sequential(*layers)
 
 
-def objective(trial, comm):
-    # Sample an architecture.
-    model = L.Classifier(create_model(trial))
+class Objective(object):
+    def __init__(self, train, test):
+        # Setup dataset.
+        rng = np.random.RandomState(0)
+        self.train = chainer.datasets.SubDataset(
+            train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
+        self.test = chainer.datasets.SubDataset(
+            test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
 
-    # Setup optimizer.
-    optimizer = chainer.optimizers.MomentumSGD()
-    optimizer.setup(model)
-    optimizer = chainermn.create_multi_node_optimizer(optimizer, comm)
+    def __call__(self, trial, comm):
+        # Sample an architecture.
+        model = L.Classifier(create_model(trial))
 
-    # Setup dataset and iterator.
-    train, test = chainer.datasets.get_mnist()
-    rng = np.random.RandomState(0)
-    train = chainer.datasets.SubDataset(
-        train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
-    test = chainer.datasets.SubDataset(
-        test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
+        # Setup optimizer.
+        optimizer = chainer.optimizers.MomentumSGD()
+        optimizer.setup(model)
+        optimizer = chainermn.create_multi_node_optimizer(optimizer, comm)
 
-    train = chainermn.scatter_dataset(train, comm, shuffle=True)
-    test = chainermn.scatter_dataset(test, comm)
+        # Setup iterator.
+        train = chainermn.scatter_dataset(self.train, comm, shuffle=True)
+        test = chainermn.scatter_dataset(self.test, comm)
 
-    train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE, shuffle=True)
-    test_iter = chainer.iterators.SerialIterator(test, BATCHSIZE, repeat=False, shuffle=False)
+        train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE, shuffle=True)
+        test_iter = chainer.iterators.SerialIterator(test, BATCHSIZE, repeat=False, shuffle=False)
 
-    # Setup trainer.
-    updater = chainer.training.StandardUpdater(train_iter, optimizer)
-    trainer = chainer.training.Trainer(updater, (EPOCH, 'epoch'))
+        # Setup trainer.
+        updater = chainer.training.StandardUpdater(train_iter, optimizer)
+        trainer = chainer.training.Trainer(updater, (EPOCH, 'epoch'))
 
-    if comm.rank == 0:
-        trainer.extend(chainer.training.extensions.ProgressBar())
+        if comm.rank == 0:
+            trainer.extend(chainer.training.extensions.ProgressBar())
 
-    # Run training.
-    trainer.run()
+        # Run training.
+        trainer.run()
 
-    # Evaluate.
-    evaluator = chainer.training.extensions.Evaluator(test_iter, model)
-    evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
-    report = evaluator()
+        # Evaluate.
+        evaluator = chainer.training.extensions.Evaluator(test_iter, model)
+        evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
+        report = evaluator()
 
-    return 1.0 - report['main/accuracy']
+        return 1.0 - report['main/accuracy']
 
 
 if __name__ == '__main__':
@@ -96,6 +98,9 @@ if __name__ == '__main__':
         print('Study name:', study_name)
         print('Storage URL:', storage_url)
         print('Number of nodes:', comm.size)
+
+    train, test = chainer.datasets.get_mnist()
+    objective = Objective(train, test)
 
     # Run optimization!
     chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
