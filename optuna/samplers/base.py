@@ -13,7 +13,6 @@ class BaseSampler(object):
     @abc.abstractmethod
     def sample(self, storage, study_id, param_name, param_distribution):
         # type: (BaseStorage, int, str, BaseDistribution) -> float
-
         """Sample a parameter based on the previous trials and the given distribution.
 
         Note that this method is not supposed to be called by library users. Instead,

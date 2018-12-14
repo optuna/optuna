@@ -30,7 +30,6 @@ DEFAULT_CONFIG_PATH = os.path.expanduser('~/.optuna.yml')
 
 def load_optuna_config(path=None):
     # type: (Optional[str]) -> OptunaConfig
-
     """Load use-defined configurations from the specified file path.
 
     Note that this functions is not supposed to be called by library users.
