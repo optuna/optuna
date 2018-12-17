@@ -73,6 +73,10 @@ def objective(trial):
     optimizer = create_optimizer(trial, model)
 
     # Dataset
+    #
+    # To improve performace, please refer to the FAQ entry
+    # "How to reuse the same training/test dataset across each trial run?"
+    # (https://optuna.readthedocs.io/en/stable/faq.html).
     rng = np.random.RandomState(0)
     train, test = chainer.datasets.get_mnist()
     train = chainer.datasets.SubDataset(

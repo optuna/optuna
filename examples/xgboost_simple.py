@@ -31,6 +31,9 @@ import optuna
 
 
 def objective(trial):
+    # To improve performace, please refer to the FAQ entry
+    # "How to reuse the same training/test dataset across each trial run?"
+    # (https://optuna.readthedocs.io/en/stable/faq.html).
     (data, target) = sklearn.datasets.load_breast_cancer(return_X_y=True)
     train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.25)
     dtrain = xgb.DMatrix(train_x, label=train_y)

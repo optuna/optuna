@@ -25,6 +25,9 @@ import sklearn.svm
 
 
 def objective(trial):
+    # To improve performace, please refer to the FAQ entry
+    # "How to reuse the same training/test dataset across each trial run?"
+    # (https://optuna.readthedocs.io/en/stable/faq.html).
     iris = sklearn.datasets.load_iris()
     x, y = iris.data, iris.target
 

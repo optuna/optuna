@@ -20,6 +20,9 @@ import optuna
 
 
 def objective(trial):
+    # To improve performace, please refer to the FAQ entry
+    # "How to reuse the same training/test dataset across each trial run?"
+    # (https://optuna.readthedocs.io/en/stable/faq.html).
     iris = sklearn.datasets.load_iris()
     classes = list(set(iris.target))
     train_x, test_x, train_y, test_y = \
