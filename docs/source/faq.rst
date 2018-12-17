@@ -56,6 +56,30 @@ Below is an example that uses ``lambda``:
     study.optimize(lambda trial: objective(trial, min_x, max_x), n_trials=100)
 
 
+How to reuse the same training/test dataset across each trial run?
+------------------------------------------------------------------
+
+It is possible by utilizing the way described in the previous QA.
+For example, the following code uses `lambda` to load the Iris dataset outside the objective function:
+
+.. code-block:: python
+
+    def objective(trial, iris):
+        x, y = iris.data, iris.target  # Reuse the Iris dataset.
+
+        svc_c = trial.suggest_loguniform('svc_c', 1e-10, 1e10)
+        classifier_obj = sklearn.svm.SVC(C=svc_c)
+
+        score = sklearn.model_selection.cross_val_score(classifier_obj, x, y, n_jobs=-1)
+        return 1.0 - score.mean()
+
+    iris = sklearn.datasets.load_iris()  # Load the dataset outside the objective function.
+    study = optuna.create_study()
+    study.optimize(lambda trial: objective(trial, iris), n_trials=100)
+
+Please refer to `sklearn_addtitional_args.py <https://github.com/pfnet/optuna/blob/36f6760033bf107df3a30ca20e73669c1c33b631/examples/sklearn_additional_args.py>`_ for a running example that uses an objective class.
+
+
 Can I use Optuna without remote RDB servers?
 --------------------------------------------
 
