@@ -122,25 +122,34 @@ jobs:
     docker:
       - image: circleci/python:3.6
     steps:
-      [checkout, run: *install, run: *tests, run: *tests-mn]
+      - checkout
+      - run: *install
+      # TODO(higumachan): remove this "run" section after Tensorflow supports Python 3.7 officially.
+      - run: &keras-install
+          name: install-keras
+          command: |
+            . venv/bin/activate
+            pip install .[keras]
+      - run: *tests
+      - run: *tests-mn
 
   tests-python35:
     docker:
       - image: circleci/python:3.5
     steps:
-      [checkout, run: *install, run: *tests, run: *tests-mn]
+      [checkout, run: *install, run: *keras-install, run: *tests, run: *tests-mn]
 
   tests-python34:
     docker:
       - image: circleci/python:3.4
     steps:
-      [checkout, run: *install, run: *tests, run: *tests-mn]
+      [checkout, run: *install, run: *keras-install, run: *tests, run: *tests-mn]
 
   tests-python27:
     docker:
       - image: circleci/python:2.7
     steps:
-      [checkout, run: *install, run: *tests, run: *tests-mn]
+      [checkout, run: *install, run: *keras-install, run: *tests, run: *tests-mn]
 
   # Examples
 

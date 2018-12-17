@@ -78,6 +78,7 @@ To implement pruning mechanism in much simpler forms, Optuna provides integratio
 - XGBoost: :class:`optuna.integration.XGBoostPruningCallback`
 - LightGBM: :class:`optuna.integration.LightGBMPruningCallback`
 - Chainer: :class:`optuna.integration.ChainerPruningExtension`
+- Keras: :class:`optuna.integration.KerasPruningCallback`
 
 For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
 (See also `example <https://github.com/pfnet/optuna/blob/master/examples/pruning/xgboost_integration.py>`_ for the entire script.)
