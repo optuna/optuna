@@ -102,7 +102,7 @@ class SuccessiveHalvingPruner(BasePruner):
         value = trial.intermediate_values[step]
         all_trials = None
         while True:
-            # If we obey the paper faithfully, the below expression should be likeg
+            # If we obey the paper faithfully, the below expression should be like
             # `self.min_resource * (self.reduction_factor ** (self.n_warmup_rungs + rung))`.
             # But, we prioritized understandability and moved the use of `self.n_warmup_rungs`
             # into `_get_current_rung` method.
