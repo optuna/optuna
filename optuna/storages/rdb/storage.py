@@ -256,6 +256,9 @@ class RDBStorage(BaseStorage):
         session.add(trial)
         self._commit(session)
 
+        serial_number = trial.count_past_trials(session)
+        self.set_trial_system_attr(trial.trial_id, 'serial_number', serial_number)
+
         return trial.trial_id
 
     def set_trial_state(self, trial_id, state):

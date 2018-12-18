@@ -140,7 +140,7 @@ class InMemoryStorage(base.BaseStorage):
                     state=structs.TrialState.RUNNING,
                     params={},
                     user_attrs={},
-                    system_attrs={},
+                    system_attrs={'serial_number': trial_id},
                     value=None,
                     intermediate_values={},
                     params_in_internal_repr={},

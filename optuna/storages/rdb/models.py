@@ -185,6 +185,13 @@ class TrialModel(BaseModel):
 
         return session.query(cls).all()
 
+    def count_past_trials(self, session):
+        # type: (orm.Session) -> int
+
+        trials = session.query(TrialModel).filter(TrialModel.study_id == self.study_id,
+                                                  TrialModel.trial_id < self.trial_id)
+        return trials.count()
+
 
 class TrialUserAttributeModel(BaseModel):
     __tablename__ = 'trial_user_attributes'
