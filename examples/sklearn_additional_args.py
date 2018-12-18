@@ -7,7 +7,7 @@ instead of loading it in each trial execution. This will speed up the execution 
 compared to `sklearn_simple.py`.
 
 You can run this example as follows:
-    $ python sklearn_objective_class.py
+    $ python sklearn_additional_args.py
 
 """
 
@@ -19,7 +19,7 @@ import sklearn.svm
 
 class Objective(object):
     def __init__(self, iris):
-        self.iris = sklearn.datasets.load_iris()
+        self.iris = iris
 
     def __call__(self, trial):
         x, y = self.iris.data, self.iris.target
