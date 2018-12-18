@@ -52,7 +52,7 @@ def objective(trial):
     optimizer = chainer.optimizers.Adam()
     optimizer.setup(model)
 
-    # To improve performace, please refer to the FAQ entry
+    # To reduce the overhead of loading the dataset, please refer to the FAQ entry
     # "How to reuse the same training/test dataset across each trial run?"
     # (https://optuna.readthedocs.io/en/stable/faq.html).
     rng = np.random.RandomState(0)

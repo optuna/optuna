@@ -55,7 +55,7 @@ def objective(trial, comm):
 
     # Setup dataset and iterator.
     #
-    # To improve performace, please refer to the FAQ entry
+    # To reduce the overhead of loading the dataset, please refer to the FAQ entry
     # "How to reuse the same training/test dataset across each trial run?"
     # (https://optuna.readthedocs.io/en/stable/faq.html).
     train, test = chainer.datasets.get_mnist()

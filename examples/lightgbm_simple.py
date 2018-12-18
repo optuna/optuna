@@ -27,7 +27,7 @@ import optuna
 
 
 def objective(trial):
-    # To improve performace, please refer to the FAQ entry
+    # To reduce the overhead of loading the dataset, please refer to the FAQ entry
     # "How to reuse the same training/test dataset across each trial run?"
     # (https://optuna.readthedocs.io/en/stable/faq.html).
     data, target = sklearn.datasets.load_breast_cancer(return_X_y=True)
