@@ -47,14 +47,13 @@ def create_model(trial):
     return chainer.Sequential(*layers)
 
 
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-fun-additional-args).
 def objective(trial):
     model = L.Classifier(create_model(trial))
     optimizer = chainer.optimizers.Adam()
     optimizer.setup(model)
 
-    # To reduce the overhead of loading the dataset, please refer to the FAQ entry
-    # "How to reuse the same training/test dataset across each trial run?"
-    # (https://optuna.readthedocs.io/en/stable/faq.html).
     rng = np.random.RandomState(0)
     train, test = chainer.datasets.get_mnist()
     train = chainer.datasets.SubDataset(

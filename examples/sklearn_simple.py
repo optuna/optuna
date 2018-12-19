@@ -24,10 +24,9 @@ import sklearn.model_selection
 import sklearn.svm
 
 
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-fun-additional-args).
 def objective(trial):
-    # To reduce the overhead of loading the dataset, please refer to the FAQ entry
-    # "How to reuse the same training/test dataset across each trial run?"
-    # (https://optuna.readthedocs.io/en/stable/faq.html).
     iris = sklearn.datasets.load_iris()
     x, y = iris.data, iris.target
 
