@@ -36,7 +36,6 @@ def objective(trial):
     dtrain = xgb.DMatrix(train_x, label=train_y)
     dtest = xgb.DMatrix(test_x, label=test_y)
 
-    n_round = trial.suggest_int('n_round', 1, 9)
     param = {'silent': 1, 'objective': 'binary:logistic',
              'booster': trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart']),
              'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
@@ -54,7 +53,7 @@ def objective(trial):
         param['rate_drop'] = trial.suggest_loguniform('rate_drop', 1e-8, 1.0)
         param['skip_drop'] = trial.suggest_loguniform('skip_drop', 1e-8, 1.0)
 
-    bst = xgb.train(param, dtrain, n_round)
+    bst = xgb.train(param, dtrain)
     preds = bst.predict(dtest)
     pred_labels = np.rint(preds)
     accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
