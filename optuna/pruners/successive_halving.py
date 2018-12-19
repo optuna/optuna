@@ -8,22 +8,16 @@ from typing import List  # NOQA
 
 class SuccessiveHalvingPruner(BasePruner):
 
-    """Pruner using the Asynchronous Successive Halving Algorithm (ASHA).
+    """Pruner using Asynchronous Successive Halving Algorithm.
 
-    ASHA is an algorithm that enables to tune hyperparameters in massively parallel settings.
-    It defines rounds (named "rung") started from ``0``.
-    When a trial completed the current rung, it competes with other trials that have completed
-    the same rung. And if it wins the competition, the trial will be promoted to the next rung
-    for continuing the work. Conversely, the losers will be pruned there.
-    This process is repeated until the trial finishes. Please refer to
-    `the original paper <http://arxiv.org/abs/1810.05934>`_
-    for a detailed description of the algorithm.
+    `Successive Halving <https://arxiv.org/abs/1502.07943>`_ is a bandit-based algorithm to
+    identify the best one among multiple configurations. This class implements an asynchronous
+    version of Successive Halving. Please refer to the paper of
+    `Asynchronous Successive Halving <http://arxiv.org/abs/1810.05934>`_ for detailed descriptions.
 
-    Note that, unlike the paper, ``SuccessiveHalvingPruner`` recognizes only "number of steps" as
-    the resource consumed by a trial (in the paper, for example, the input data size can be treated
-    as a resource). Besides, it does not have a parameter to restrict the maximum resource usage
-    (called ``R`` in the paper). The maximum number of steps executed by a trial is implicitly
-    limited by users via implementation specific parameters (e.g., ``step`` number in `simple.py
+    Note that, this class does not take care of the parameter for the maximum
+    resource, referred to as ``R`` in the paper. The maximum resource allocated to a trial is
+    typically limited inside the objective function (e.g., ``step`` number in `simple.py
     <https://github.com/pfnet/optuna/tree/c5777b3e/examples/pruning/simple.py#L31>`_,
     ``EPOCH`` number in `chainer_integration.py
     <https://github.com/pfnet/optuna/tree/c5777b3e/examples/pruning/chainer_integration.py#L65>`_).
@@ -46,32 +40,31 @@ class SuccessiveHalvingPruner(BasePruner):
     Args:
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial
-            (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is denoted by "r").
+            (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
+            referred to as "r").
 
             More precisely, a trial is never pruned until it executes
-            ``min_resource * reduction_factor`` steps
-            (i.e., the completion point of the first rung). When it completes the first rung,
-            it will be promoted to the next rung only if the value of the trial is placed in
+            ``min_resource * (reduction_factor ** min_early_stopping_rate)`` steps
+            (i.e., the completion point of the first rung). When the trial completes the first
+            rung, it will be promoted to the next rung only if the value of the trial is placed in
             the top ``1/reduction_factor`` fraction of the whole trials that already have reached
             the point (otherwise it will be pruned there). If the trial won
             the competition, it continues to execute its work until the next rung completion point
-            (i.e., ``min_resource * (reduction_factor ** rung)`` steps) is
-            reached and then repeats the same process with a new ``rung``.
-
-            Please see also the description about ``n_warmup_rungs``
-            if you would specify the value of ``n_warmup_rungs`` other than ``0``.
+            (i.e., ``min_resource * (reduction_factor ** (min_early_stopping_rate + rung))`` steps)
+            is reached and then repeats the same process with a new ``rung``.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials
-            (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is denoted by "eta").
+            (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
+            referred to as "eta").
             At the completion point of each rung, about ``1/reduction_factor`` trials
             will be promoted.
-        n_warmup_rungs:
-            A parameter for specifying the first rung from which competitions occur
-            (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is denoted by "s").
-            Until completing the rung, all trials will be promoted unconditionally.
+        min_early_stopping_rate:
+            A parameter for specifying the minimum early-stopping rate
+            (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
+            referred to as "s").
     """
 
-    def __init__(self, min_resource=1, reduction_factor=4, n_warmup_rungs=0):
+    def __init__(self, min_resource=1, reduction_factor=4, min_early_stopping_rate=0):
         # type: (int, int, int) -> None
 
         if min_resource < 1:
@@ -82,13 +75,14 @@ class SuccessiveHalvingPruner(BasePruner):
             raise ValueError('The value of `reduction_factor` is {}, '
                              'but must be `reduction_factor >= 2`'.format(reduction_factor))
 
-        if n_warmup_rungs < 0:
-            raise ValueError('The value of `n_warmup_rungs` is {}, '
-                             'but must be `n_warmup_rungs >= 0`'.format(n_warmup_rungs))
+        if min_early_stopping_rate < 0:
+            raise ValueError(
+                'The value of `min_early_stopping_rate` is {}, '
+                'but must be `min_early_stopping_rate >= 0`'.format(min_early_stopping_rate))
 
         self.min_resource = min_resource
         self.reduction_factor = reduction_factor
-        self.n_warmup_rungs = n_warmup_rungs
+        self.min_early_stopping_rate = min_early_stopping_rate
 
     def prune(self, storage, study_id, trial_id, step):
         # type: (BaseStorage, int, int, int) -> bool
@@ -102,12 +96,8 @@ class SuccessiveHalvingPruner(BasePruner):
         value = trial.intermediate_values[step]
         all_trials = None
         while True:
-            # If we obey the paper faithfully, the below expression should be like
-            # `self.min_resource * (self.reduction_factor ** (self.n_warmup_rungs + rung))`.
-            # But, we prioritized understandability and moved the use of `self.n_warmup_rungs`
-            # into `_get_current_rung` method.
-            # This modification does not affect the intrinsic behavior of the algorithm.
-            promotion_step = self.min_resource * (self.reduction_factor ** rung)
+            promotion_step = self.min_resource * \
+                (self.reduction_factor ** (self.min_early_stopping_rate + rung))
             if step < promotion_step:
                 return False
 
@@ -149,7 +139,7 @@ class SuccessiveHalvingPruner(BasePruner):
         # type: (FrozenTrial) -> int
 
         # Below loop takes `O(log step)` iterations.
-        rung = self.n_warmup_rungs
+        rung = 0
         while completed_rung_key(rung) in trial.system_attrs:
             rung += 1
         return rung
