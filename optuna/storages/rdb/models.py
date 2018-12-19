@@ -6,6 +6,7 @@ from sqlalchemy import Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
+from sqlalchemy import func
 from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
@@ -188,9 +189,10 @@ class TrialModel(BaseModel):
     def count_past_trials(self, session):
         # type: (orm.Session) -> int
 
-        trials = session.query(TrialModel).filter(TrialModel.study_id == self.study_id,
-                                                  TrialModel.trial_id < self.trial_id)
-        return trials.count()
+        trial_count = session.query(func.count(TrialModel.trial_id))\
+            .filter(TrialModel.study_id == self.study_id,
+                    TrialModel.trial_id < self.trial_id)
+        return trial_count.scalar()
 
 
 class TrialUserAttributeModel(BaseModel):
