@@ -378,8 +378,9 @@ def test_study_pickle():
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_trials_dataframe(storage_mode):
-    # type: (str) -> None
+@pytest.mark.parametrize('show_internal_fields', [True, False])
+def test_trials_dataframe(storage_mode, show_internal_fields):
+    # type: (str, bool) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
@@ -392,10 +393,15 @@ def test_trials_dataframe(storage_mode):
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
-        df = study.trials_dataframe()
+        print(study.trials[0].params_in_internal_repr)
+        df = study.trials_dataframe(show_internal_fields=show_internal_fields)
         assert len(df) == 3
-        # non-nested: 5, params: 2, user_attrs: 1
-        assert len(df.columns) == 8
+        # non-nested: 5, params: 2, user_attrs: 1 and 8 in total.
+        if show_internal_fields:
+            # params_in_internal_repr: 2
+            assert len(df.columns) == 8 + 2
+        else:
+            assert len(df.columns) == 8
         for i in range(3):
             assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
             assert df.state[i] == optuna.structs.TrialState.COMPLETE
@@ -405,6 +411,9 @@ def test_trials_dataframe(storage_mode):
             assert df.params.x[i] == 1
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
+            if show_internal_fields:
+                assert ('params_in_internal_repr', 'x') in df.columns
+                assert ('params_in_internal_repr', 'y') in df.columns
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
