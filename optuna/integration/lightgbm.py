@@ -59,6 +59,7 @@ class LightGBMPruningCallback(object):
 
         def _decide_pruning(valid_name, metric, current_score, is_higher_better):
             # TODO(ohta): Deal with maximize direction
+
             if is_higher_better:
                 raise ValueError(
                     'Pruning using metrics to be maximized has not been supported yet '
@@ -72,8 +73,13 @@ class LightGBMPruningCallback(object):
 
         is_cv = len(env.evaluation_result_list[0]) == 5
         if is_cv:
-            valid_name, metric, current_score, is_higher_better, _ = env.evaluation_result_list[0]
-            _decide_pruning(valid_name, metric, current_score, is_higher_better)
+            self.valid_name = 'cv_agg'
+            for valid_name, metric, current_score, is_higher_better, _ in\
+                    env.evaluation_result_list:
+                if valid_name != self.valid_name or metric != self.metric:
+                    continue
+                _decide_pruning(valid_name, metric, current_score, is_higher_better)
+                return None
         elif not is_cv:
             for valid_name, metric, current_score, is_higher_better in env.evaluation_result_list:
                 if valid_name != self.valid_name or metric != self.metric:
@@ -81,10 +87,10 @@ class LightGBMPruningCallback(object):
                 _decide_pruning(valid_name, metric, current_score, is_higher_better)
                 return None
 
-            raise ValueError(
-                'The entry associated with the validation name "{}" and the metric name "{}" '
-                'is not found in the evaluation result list {}.'.format(
-                    self.valid_name, self.metric, str(env.evaluation_result_list)))
+        raise ValueError(
+            'The entry associated with the validation name "{}" and the metric name "{}" '
+            'is not found in the evaluation result list {}.'.format(
+                self.valid_name, self.metric, str(env.evaluation_result_list)))
 
 
 def _check_lightgbm_availability():
