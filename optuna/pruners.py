@@ -14,7 +14,6 @@ class BasePruner(object):
     @abc.abstractmethod
     def prune(self, storage, study_id, trial_id, step):
         # type: (BaseStorage, int, int, int) -> bool
-
         """Judge whether the trial should be pruned at the given step.
 
         Note that this method is not supposed to be called by library users. Instead,
@@ -75,7 +74,6 @@ class MedianPruner(BasePruner):
 
     def prune(self, storage, study_id, trial_id, step):
         # type: (BaseStorage, int, int, int) -> bool
-
         """Please consult the documentation for :func:`BasePruner.prune`."""
 
         # TODO(Yanase): Implement a method of storage to just retrieve the number of trials.
