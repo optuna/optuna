@@ -53,7 +53,8 @@ class StudyDirection(enum.Enum):
 class FrozenTrial(
     NamedTuple(
         '_BaseFrozenTrial',
-        [('trial_id', int),
+        [('internal_trial_id', int),
+         ('trial_id', int),
          ('state', TrialState),
          ('value', Optional[float]),
          ('datetime_start', Optional[datetime]),
@@ -68,8 +69,11 @@ class FrozenTrial(
     """Status and results of a :class:`~optuna.trial.Trial`.
 
     Attributes:
+        internal_trial_id:
+            Internal identifier of the :class:`~optuna.trial.Trial`, which is unique in storage.
         trial_id:
-            Identifier of the :class:`~optuna.trial.Trial`.
+            Identifier of the :class:`~optuna.trial.Trial`, which is unique and consecutive in a
+            study.
         state:
             :class:`TrialState` of the :class:`~optuna.trial.Trial`.
         value:
@@ -92,7 +96,7 @@ class FrozenTrial(
             Optuna's internal representation of :attr:`params`.
     """
 
-    internal_fields = ['params_in_internal_repr']
+    internal_fields = ['params_in_internal_repr', 'internal_trial_id']
 
 
 class StudySummary(

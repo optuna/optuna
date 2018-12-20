@@ -393,24 +393,24 @@ class Study(object):
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
-        trial_id = self.storage.create_new_trial_id(self.study_id)
-        trial = trial_module.Trial(self, trial_id)
-        trial_serial_number = trial.system_attrs['serial_number']
+        internal_trial_id = self.storage.create_new_trial_id(self.study_id)
+        trial = trial_module.Trial(self, internal_trial_id)
+        public_trial_id = trial.trial_id
 
         try:
             result = func(trial)
         except structs.TrialPruned as e:
             message = 'Setting status of trial #{} as {}. {}'.format(
-                trial_serial_number, structs.TrialState.PRUNED, str(e))
+                public_trial_id, structs.TrialState.PRUNED, str(e))
             self.logger.info(message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
+            self.storage.set_trial_state(internal_trial_id, structs.TrialState.PRUNED)
             return trial
         except catch as e:
             message = 'Setting status of trial #{} as {} because of the following error: {}' \
-                .format(trial_serial_number, structs.TrialState.FAIL, repr(e))
+                .format(public_trial_id, structs.TrialState.FAIL, repr(e))
             self.logger.warning(message, exc_info=True)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
-            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.storage.set_trial_state(internal_trial_id, structs.TrialState.FAIL)
+            self.storage.set_trial_system_attr(internal_trial_id, 'fail_reason', message)
             return trial
 
         try:
@@ -418,33 +418,33 @@ class Study(object):
         except (ValueError, TypeError,):
             message = 'Setting status of trial #{} as {} because the returned value from the ' \
                       'objective function cannot be casted to float. Returned value is: ' \
-                      '{}'.format(trial_serial_number, structs.TrialState.FAIL, repr(result))
+                      '{}'.format(public_trial_id, structs.TrialState.FAIL, repr(result))
             self.logger.warning(message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
-            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.storage.set_trial_state(internal_trial_id, structs.TrialState.FAIL)
+            self.storage.set_trial_system_attr(internal_trial_id, 'fail_reason', message)
             return trial
 
         if math.isnan(result):
             message = 'Setting status of trial #{} as {} because the objective function ' \
-                      'returned {}.'.format(trial_serial_number, structs.TrialState.FAIL, result)
+                      'returned {}.'.format(public_trial_id, structs.TrialState.FAIL, result)
             self.logger.warning(message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
-            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.storage.set_trial_state(internal_trial_id, structs.TrialState.FAIL)
+            self.storage.set_trial_system_attr(internal_trial_id, 'fail_reason', message)
             return trial
 
         trial.report(result)
-        self.storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
-        self._log_completed_trial(trial_serial_number, result)
+        self.storage.set_trial_state(internal_trial_id, structs.TrialState.COMPLETE)
+        self._log_completed_trial(public_trial_id, result)
 
         return trial
 
-    def _log_completed_trial(self, trial_serial_number, value):
+    def _log_completed_trial(self, trial_id, value):
         # type: (int, float) -> None
 
         self.logger.info(
             'Finished trial #{} resulted in value: {}. '
             'Current best value is {} with parameters: {}.'.format(
-                trial_serial_number, value, self.best_value, self.best_params))
+                trial_id, value, self.best_value, self.best_params))
 
 
 def create_study(

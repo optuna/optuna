@@ -180,6 +180,24 @@ class RDBStorage(BaseStorage):
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
+    def get_trial_user_attrs(self, trial_id):
+        # type: (int) -> Dict[str, Any]
+
+        session = self.scoped_session()
+
+        attributes = models.TrialUserAttributeModel.where_trial_id(trial_id, session)
+
+        return {attr.key: json.loads(attr.value_json) for attr in attributes}
+
+    def get_trial_system_attrs(self, trial_id):
+        # type: (int) -> Dict[str, Any]
+
+        session = self.scoped_session()
+
+        attributes = models.TrialSystemAttributeModel.where_trial_id(trial_id, session)
+
+        return {attr.key: json.loads(attr.value_json) for attr in attributes}
+
     # TODO(sano): Optimize this method to reduce the number of queries.
     def get_all_study_summaries(self):
         # type: () -> List[structs.StudySummary]
@@ -256,8 +274,11 @@ class RDBStorage(BaseStorage):
         session.add(trial)
         self._commit(session)
 
-        serial_number = trial.count_past_trials(session)
-        self.set_trial_system_attr(trial.trial_id, 'serial_number', serial_number)
+        # trial.trial_id is unique in storage and sometime not consecutive in a study.
+        # We use trial.trial_id as internal identifier, and create public_trial_id,
+        # which is unique and consecutive in a study.
+        public_trial_id = trial.count_past_trials(session)
+        self.set_trial_system_attr(trial.trial_id, 'public_trial_id', public_trial_id)
 
         return trial.trial_id
 
@@ -450,27 +471,30 @@ class RDBStorage(BaseStorage):
             id_to_system_attrs[system_attr.trial_id].append(system_attr)
 
         result = []
-        for trial_id, trial in id_to_trial.items():
+        for internal_trial_id, trial in id_to_trial.items():
             params = {}
             params_in_internal_repr = {}
-            for param in id_to_params[trial_id]:
+            for param in id_to_params[internal_trial_id]:
                 distribution = distributions.json_to_distribution(param.distribution_json)
                 params[param.param_name] = distribution.to_external_repr(param.param_value)
                 params_in_internal_repr[param.param_name] = param.param_value
 
             intermediate_values = {}
-            for value in id_to_values[trial_id]:
+            for value in id_to_values[internal_trial_id]:
                 intermediate_values[value.step] = value.value
 
             user_attrs = {}
-            for user_attr in id_to_user_attrs[trial_id]:
+            for user_attr in id_to_user_attrs[internal_trial_id]:
                 user_attrs[user_attr.key] = json.loads(user_attr.value_json)
 
             system_attrs = {}
-            for system_attr in id_to_system_attrs[trial_id]:
+            for system_attr in id_to_system_attrs[internal_trial_id]:
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
+            trial_id = system_attrs.pop('public_trial_id', internal_trial_id)
+
             result.append(structs.FrozenTrial(
+                internal_trial_id=internal_trial_id,
                 trial_id=trial_id,
                 state=trial.state,
                 params=params,

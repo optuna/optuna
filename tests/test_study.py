@@ -322,7 +322,7 @@ def test_run_trial(storage_mode):
             raise ValueError
 
         trial = study._run_trial(func_value_error, catch=(ValueError,))
-        frozen_trial = study.storage.get_trial(trial.trial_id)
+        frozen_trial = study.storage.get_trial(trial.internal_trial_id)
 
         expected_message = 'Setting status of trial #1 as TrialState.FAIL because of the ' \
                            'following error: ValueError()'
@@ -338,7 +338,7 @@ def test_run_trial(storage_mode):
             return None
 
         trial = study._run_trial(func_none, catch=(Exception,))
-        frozen_trial = study.storage.get_trial(trial.trial_id)
+        frozen_trial = study.storage.get_trial(trial.internal_trial_id)
 
         expected_message = 'Setting status of trial #3 as TrialState.FAIL because the returned ' \
                            'value from the objective function cannot be casted to float. ' \
@@ -351,7 +351,7 @@ def test_run_trial(storage_mode):
             return float('nan')
 
         trial = study._run_trial(func_nan, catch=(Exception,))
-        frozen_trial = study.storage.get_trial(trial.trial_id)
+        frozen_trial = study.storage.get_trial(trial.internal_trial_id)
 
         expected_message = 'Setting status of trial #4 as TrialState.FAIL because the ' \
                            'objective function returned nan.'
@@ -394,8 +394,8 @@ def test_trials_dataframe(storage_mode):
         study.optimize(f, n_trials=3)
         df = study.trials_dataframe()
         assert len(df) == 3
-        # non-nested: 5, params: 2, user_attrs: 1, system_attrs: 1
-        assert len(df.columns) == 9
+        # non-nested: 5, params: 2, user_attrs: 1
+        assert len(df.columns) == 8
         for i in range(3):
             assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
             assert df.state[i] == optuna.structs.TrialState.COMPLETE
@@ -405,7 +405,6 @@ def test_trials_dataframe(storage_mode):
             assert df.params.x[i] == 1
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
-            assert ('system_attrs', 'serial_number') in df.columns
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -426,8 +425,8 @@ def test_trials_dataframe_with_failure(storage_mode):
         study.optimize(f, n_trials=3)
         df = study.trials_dataframe()
         assert len(df) == 3
-        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 2
-        assert len(df.columns) == 10
+        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 1
+        assert len(df.columns) == 9
         for i in range(3):
             assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
             assert df.state[i] == optuna.structs.TrialState.FAIL
@@ -438,7 +437,6 @@ def test_trials_dataframe_with_failure(storage_mode):
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
             assert ('system_attrs', 'fail_reason') in df.columns
-            assert ('system_attrs', 'serial_number') in df.columns
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)

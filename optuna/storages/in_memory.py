@@ -133,14 +133,16 @@ class InMemoryStorage(base.BaseStorage):
 
         self._check_study_id(study_id)
         with self._lock:
+            # InMemoryStorage has only one study, and internal_trial_id is equal to trial_id.
             trial_id = len(self.trials)
             self.trials.append(
                 structs.FrozenTrial(
+                    internal_trial_id=trial_id,
                     trial_id=trial_id,
                     state=structs.TrialState.RUNNING,
                     params={},
                     user_attrs={},
-                    system_attrs={'serial_number': trial_id},
+                    system_attrs={},
                     value=None,
                     intermediate_values={},
                     params_in_internal_repr={},

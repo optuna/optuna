@@ -227,7 +227,13 @@ class TrialUserAttributeModel(BaseModel):
     def where_trial(cls, trial, session):
         # type: (TrialModel, orm.Session) -> List[TrialUserAttributeModel]
 
-        return session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+        return cls.where_trial_id(trial.trial_id, session)
+
+    @classmethod
+    def where_trial_id(cls, trial_id, session):
+        # type: (int, orm.Session) -> List[TrialUserAttributeModel]
+
+        return session.query(cls).filter(cls.trial_id == trial_id).all()
 
     @classmethod
     def all(cls, session):
@@ -268,7 +274,13 @@ class TrialSystemAttributeModel(BaseModel):
     def where_trial(cls, trial, session):
         # type: (TrialModel, orm.Session) -> List[TrialSystemAttributeModel]
 
-        return session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+        return cls.where_trial_id(trial.trial_id, session)
+
+    @classmethod
+    def where_trial_id(cls, trial_id, session):
+        # type: (int, orm.Session) -> List[TrialSystemAttributeModel]
+
+        return session.query(cls).filter(cls.trial_id == trial_id).all()
 
     @classmethod
     def all(cls, session):

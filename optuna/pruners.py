@@ -12,7 +12,7 @@ class BasePruner(object):
     """Base class for pruners."""
 
     @abc.abstractmethod
-    def prune(self, storage, study_id, trial_id, step):
+    def prune(self, storage, study_id, internal_trial_id, step):
         # type: (BaseStorage, int, int, int) -> bool
 
         """Judge whether the trial should be pruned at the given step.
@@ -26,8 +26,10 @@ class BasePruner(object):
                 Storage object.
             study_id:
                 Identifier of the target study.
-            trial_id:
-                Identifier of the target trial.
+            internal_trial_id:
+                Identifier of the target trial. Please specify
+                :func:`optuna.trial.Trial.internal_trial_id` which is unique in storage.
+                If you set :func:`optuna.trial.Trial.trial_id`, pruners may not work correctly.
             step:
                 Step number.
 
@@ -73,7 +75,7 @@ class MedianPruner(BasePruner):
         self.n_startup_trials = n_startup_trials
         self.n_warmup_steps = n_warmup_steps
 
-    def prune(self, storage, study_id, trial_id, step):
+    def prune(self, storage, study_id, internal_trial_id, step):
         # type: (BaseStorage, int, int, int) -> bool
 
         """Please consult the documentation for :func:`BasePruner.prune`."""
@@ -91,10 +93,11 @@ class MedianPruner(BasePruner):
         if step <= self.n_warmup_steps:
             return False
 
-        if len(storage.get_trial(trial_id).intermediate_values) == 0:
+        if len(storage.get_trial(internal_trial_id).intermediate_values) == 0:
             return False
 
-        best_intermediate_result = storage.get_best_intermediate_result_over_steps(trial_id)
+        best_intermediate_result = \
+            storage.get_best_intermediate_result_over_steps(internal_trial_id)
         if math.isnan(best_intermediate_result):
             return True
 

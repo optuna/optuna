@@ -52,10 +52,10 @@ class Func(object):
         y = trial.suggest_loguniform('y', 20, 30)
         z = trial.suggest_categorical('z', (-1.0, 1.0))
 
-        self.suggested_values[trial.trial_id] = {}
-        self.suggested_values[trial.trial_id]['x'] = x
-        self.suggested_values[trial.trial_id]['y'] = y
-        self.suggested_values[trial.trial_id]['z'] = z
+        self.suggested_values[trial.internal_trial_id] = {}
+        self.suggested_values[trial.internal_trial_id]['x'] = x
+        self.suggested_values[trial.internal_trial_id]['y'] = y
+        self.suggested_values[trial.internal_trial_id]['z'] = z
 
         return (x - 2) ** 2 + (y - 25) ** 2 + z
 
@@ -161,7 +161,7 @@ class TestChainerMNStudy(object):
 
             # Assert the same parameters have been suggested among all nodes.
             for trial in mn_study.trials:
-                assert trial.params == func.suggested_values[trial.trial_id]
+                assert trial.params == func.suggested_values[trial.internal_trial_id]
 
     @staticmethod
     def _create_shared_study(storage, comm):

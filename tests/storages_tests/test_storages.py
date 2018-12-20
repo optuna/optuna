@@ -33,6 +33,7 @@ EXAMPLE_DISTRIBUTIONS = {
 
 EXAMPLE_TRIALS = [
     FrozenTrial(
+        internal_trial_id=-1,  # dummy id
         trial_id=-1,  # dummy id
         value=1.,
         state=TrialState.COMPLETE,
@@ -45,6 +46,7 @@ EXAMPLE_TRIALS = [
         datetime_complete=None  # dummy
     ),
     FrozenTrial(
+        internal_trial_id=-1,  # dummy id
         trial_id=-1,  # dummy id
         value=2.,
         state=TrialState.RUNNING,
@@ -210,10 +212,10 @@ def test_create_new_trial_id(storage_init_func):
 
     trials = storage.get_all_trials(study_id)
     assert len(trials) == 1
-    assert trials[0].trial_id == trial_id
+    assert trials[0].internal_trial_id == trial_id
+    assert trials[0].trial_id == 0  # Public trial_id always starts at 0.
     assert trials[0].state == TrialState.RUNNING
     assert trials[0].user_attrs == {}
-    assert trials[0].system_attrs == {'serial_number': 0}
 
 
 @parametrize_storage
@@ -392,7 +394,6 @@ def test_set_and_get_trial_system_attr(storage_init_func):
     for key, value in EXAMPLE_ATTRS.items():
         check_set_and_get(trial_id_1, key, value)
     system_attrs = storage.get_trial(trial_id_1).system_attrs
-    del system_attrs['serial_number']
     assert system_attrs == EXAMPLE_ATTRS
 
     # Test overwriting value.
@@ -402,7 +403,6 @@ def test_set_and_get_trial_system_attr(storage_init_func):
     trial_id_2 = storage.create_new_trial_id(storage.create_new_study_id())
     check_set_and_get(trial_id_2, 'baseline_score', 0.001)
     system_attrs = storage.get_trial(trial_id_2).system_attrs
-    del system_attrs['serial_number']
     assert system_attrs == {'baseline_score': 0.001}
 
 
@@ -625,17 +625,9 @@ def _check_example_trial_static_attributes(trial_1, trial_2):
     assert trial_1 is not None
     assert trial_2 is not None
 
-    # Remove serial_number in system_attrs because it is not a static attribute.
-    trial_1_system_attrs = trial_1.system_attrs
-    if 'serial_number' in trial_1_system_attrs:
-        del trial_1_system_attrs['serial_number']
-    trial_2_system_attrs = trial_2.system_attrs
-    if 'serial_number' in trial_2_system_attrs:
-        del trial_2_system_attrs['serial_number']
-
-    trial_1 = trial_1._replace(trial_id=-1, datetime_start=None, datetime_complete=None,
-                               system_attrs=trial_1_system_attrs)
-    trial_2 = trial_2._replace(trial_id=-1, datetime_start=None, datetime_complete=None,
-                               system_attrs=trial_2_system_attrs)
+    trial_1 = trial_1._replace(internal_trial_id=-1, trial_id=-1, datetime_start=None,
+                               datetime_complete=None)
+    trial_2 = trial_2._replace(internal_trial_id=-1, trial_id=-1, datetime_start=None,
+                               datetime_complete=None)
 
     assert trial_1 == trial_2
