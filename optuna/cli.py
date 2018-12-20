@@ -53,6 +53,9 @@ class CreateStudy(BaseCommand):
                             default='minimize',
                             help='Set direction of optimization to a new study. Set \'minimize\' '
                                  'for minimization and \'maximize\' for maximization.')
+        parser.add_argument('--skip-if-exists', default=False, action='store_true',
+                            help='If specified, the creation of the study is skipped '
+                                 'without any error when the study name is duplicated.')
         return parser
 
     def take_action(self, parsed_args):
@@ -62,7 +65,8 @@ class CreateStudy(BaseCommand):
         storage_url = get_storage_url(self.app_args.storage, config)
         storage = optuna.storages.RDBStorage(storage_url)
         study_name = optuna.create_study(storage, study_name=parsed_args.study_name,
-                                         direction=parsed_args.direction).study_name
+                                         direction=parsed_args.direction,
+                                         load_if_exists=parsed_args.skip_if_exists).study_name
         print(study_name)
 
 

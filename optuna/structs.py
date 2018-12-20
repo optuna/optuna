@@ -181,3 +181,13 @@ class StorageInternalError(OptunaError):
     """
 
     pass
+
+
+class DuplicatedStudyError(OptunaError):
+
+    """Exception for a duplicated study name.
+
+    This error is raised when a specified study name already exists in the storage.
+    """
+
+    pass
