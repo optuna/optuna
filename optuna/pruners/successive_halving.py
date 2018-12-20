@@ -1,9 +1,9 @@
 import math
+from typing import List  # NOQA
 
 from optuna.pruners.base import BasePruner
 from optuna.storages import BaseStorage  # NOQA
 from optuna.structs import FrozenTrial  # NOQA
-from typing import List  # NOQA
 
 
 class SuccessiveHalvingPruner(BasePruner):
