@@ -43,15 +43,15 @@ class SuccessiveHalvingPruner(BasePruner):
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
             referred to as "r").
 
-            More precisely, a trial is never pruned until it executes
+            A trial is never pruned until it executes
             ``min_resource * (reduction_factor ** min_early_stopping_rate)`` steps
             (i.e., the completion point of the first rung). When the trial completes the first
             rung, it will be promoted to the next rung only if the value of the trial is placed in
-            the top ``1/reduction_factor`` fraction of the whole trials that already have reached
+            the top ``1/reduction_factor`` fraction of the all trials that already have reached
             the point (otherwise it will be pruned there). If the trial won
-            the competition, it continues to execute its work until the next rung completion point
+            the competition, it runs until the next completion point
             (i.e., ``min_resource * (reduction_factor ** (min_early_stopping_rate + rung))`` steps)
-            is reached and then repeats the same process with a new ``rung``.
+            and repeats the same procedure.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
@@ -92,7 +92,7 @@ class SuccessiveHalvingPruner(BasePruner):
         if len(trial.intermediate_values) == 0:
             return False
 
-        rung = self._get_current_rung(trial)
+        rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
         all_trials = None
         while True:
@@ -107,16 +107,16 @@ class SuccessiveHalvingPruner(BasePruner):
             if all_trials is None:
                 all_trials = storage.get_all_trials(study_id)
 
-            storage.set_trial_system_attr(trial_id, completed_rung_key(rung), value)
-            if not self._is_promotable(storage, rung, value, all_trials):
+            storage.set_trial_system_attr(trial_id, _completed_rung_key(rung), value)
+            if not self._is_promotable(rung, value, all_trials):
                 return True
 
             rung += 1
 
-    def _is_promotable(self, storage, rung, value, all_trials):
-        # type: (BaseStorage, int, float, List[FrozenTrial]) -> bool
+    def _is_promotable(self, rung, value, all_trials):
+        # type: (int, float, List[FrozenTrial]) -> bool
 
-        key = completed_rung_key(rung)
+        key = _completed_rung_key(rung)
         competing_values = [t.system_attrs[key] for t in all_trials if key in t.system_attrs]
         competing_values.append(value)
         competing_values.sort()
@@ -125,27 +125,25 @@ class SuccessiveHalvingPruner(BasePruner):
         if promotable_idx == -1:
             # Optuna does not support to suspend/resume ongoing trials.
             #
-            # As a result, a trial that has reached early to a rung cannot wait for
-            # the following trials even if the rung contains only trials less than `eta`.
-            #
-            # So, we allow the first `eta - 1` trials to become promotable
-            # if its value is the smallest among the trials that already have reached the rung.
+            # For the first `eta - 1` trials, this implementation promotes a trial if its
+            # intermediate value is the smallest one among the trials that have completed the rung.
             promotable_idx = 0
 
         # TODO(ohta): Deal with maximize direction.
         return value <= competing_values[promotable_idx]
 
-    def _get_current_rung(self, trial):
-        # type: (FrozenTrial) -> int
 
-        # Below loop takes `O(log step)` iterations.
-        rung = 0
-        while completed_rung_key(rung) in trial.system_attrs:
-            rung += 1
-        return rung
+def _get_current_rung(trial):
+    # type: (FrozenTrial) -> int
+
+    # The following loop takes `O(log step)` iterations.
+    rung = 0
+    while _completed_rung_key(rung) in trial.system_attrs:
+        rung += 1
+    return rung
 
 
-def completed_rung_key(rung):
+def _completed_rung_key(rung):
     # type: (int) -> str
 
     return 'completed_rung_{}'.format(rung)
