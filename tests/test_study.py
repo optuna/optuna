@@ -378,8 +378,8 @@ def test_study_pickle():
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('show_internal_fields', [True, False])
-def test_trials_dataframe(storage_mode, show_internal_fields):
+@pytest.mark.parametrize('include_internal_fields', [True, False])
+def test_trials_dataframe(storage_mode, include_internal_fields):
     # type: (str, bool) -> None
 
     def f(trial):
@@ -394,10 +394,10 @@ def test_trials_dataframe(storage_mode, show_internal_fields):
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
         print(study.trials[0].params_in_internal_repr)
-        df = study.trials_dataframe(show_internal_fields=show_internal_fields)
+        df = study.trials_dataframe(include_internal_fields=include_internal_fields)
         assert len(df) == 3
         # non-nested: 5, params: 2, user_attrs: 1 and 8 in total.
-        if show_internal_fields:
+        if include_internal_fields:
             # params_in_internal_repr: 2
             assert len(df.columns) == 8 + 2
         else:
@@ -411,7 +411,7 @@ def test_trials_dataframe(storage_mode, show_internal_fields):
             assert df.params.x[i] == 1
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
-            if show_internal_fields:
+            if include_internal_fields:
                 assert ('params_in_internal_repr', 'x') in df.columns
                 assert ('params_in_internal_repr', 'y') in df.columns
 
