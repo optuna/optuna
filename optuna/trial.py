@@ -402,6 +402,18 @@ class Trial(BaseTrial):
         return param_value
 
     @property
+    def number(self):
+        # type: () -> int
+        """Return trial's number which is consecutive and unique in a study.
+
+        Returns:
+            A trial number.
+        """
+
+        # For studies created by optuna<=0.5.0, return trial_id if the trial number is not found.
+        return self.system_attrs.get('number', self.trial_id)
+
+    @property
     def params(self):
         # type: () -> Dict[str, Any]
         """Return parameters to be optimized.

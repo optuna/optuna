@@ -274,6 +274,9 @@ class RDBStorage(BaseStorage):
         session.add(trial)
         self._commit(session)
 
+        trial_number = trial.count_past_trials(session)
+        self.set_trial_system_attr(trial.trial_id, 'number', trial_number)
+
         return trial.trial_id
 
     def set_trial_state(self, trial_id, state):
@@ -485,8 +488,10 @@ class RDBStorage(BaseStorage):
             for system_attr in id_to_system_attrs[trial_id]:
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
+            trial_number = system_attrs.pop('number', trial_id)
+
             result.append(structs.FrozenTrial(
-                trial_id=trial_id,
+                number=trial_number,
                 state=trial.state,
                 params=params,
                 user_attrs=user_attrs,
@@ -495,7 +500,8 @@ class RDBStorage(BaseStorage):
                 intermediate_values=intermediate_values,
                 params_in_internal_repr=params_in_internal_repr,
                 datetime_start=trial.datetime_start,
-                datetime_complete=trial.datetime_complete
+                datetime_complete=trial.datetime_complete,
+                trial_id=trial_id
             ))
 
         return result

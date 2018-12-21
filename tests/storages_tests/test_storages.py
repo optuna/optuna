@@ -33,7 +33,7 @@ EXAMPLE_DISTRIBUTIONS = {
 
 EXAMPLE_TRIALS = [
     FrozenTrial(
-        trial_id=-1,  # dummy id
+        number=0,  # dummy
         value=1.,
         state=TrialState.COMPLETE,
         user_attrs={},
@@ -42,10 +42,11 @@ EXAMPLE_TRIALS = [
         intermediate_values={0: 2., 1: 3.},
         params_in_internal_repr={'x': .5, 'y': 2.},
         datetime_start=None,  # dummy
-        datetime_complete=None  # dummy
+        datetime_complete=None,  # dummy
+        trial_id=-1,  # dummy id
     ),
     FrozenTrial(
-        trial_id=-1,  # dummy id
+        number=0,  # dummy
         value=2.,
         state=TrialState.RUNNING,
         user_attrs={'tags': ['video', 'classification'], 'dataset': 'YouTube-8M'},
@@ -54,7 +55,8 @@ EXAMPLE_TRIALS = [
         intermediate_values={0: -2., 1: -3., 2: 100.},
         params_in_internal_repr={'x': .01, 'y': 0.},
         datetime_start=None,  # dummy
-        datetime_complete=None  # dummy
+        datetime_complete=None,  # dummy
+        trial_id=-1,  # dummy id
     )
 ]
 
@@ -211,6 +213,7 @@ def test_create_new_trial_id(storage_init_func):
     trials = storage.get_all_trials(study_id)
     assert len(trials) == 1
     assert trials[0].trial_id == trial_id
+    assert trials[0].number == 0
     assert trials[0].state == TrialState.RUNNING
     assert trials[0].user_attrs == {}
     assert trials[0].system_attrs == {}
@@ -623,7 +626,7 @@ def _check_example_trial_static_attributes(trial_1, trial_2):
     assert trial_1 is not None
     assert trial_2 is not None
 
-    trial_1 = trial_1._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
-    trial_2 = trial_2._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
+    trial_1 = trial_1._replace(trial_id=-1, number=0, datetime_start=None, datetime_complete=None)
+    trial_2 = trial_2._replace(trial_id=-1, number=0, datetime_start=None, datetime_complete=None)
 
     assert trial_1 == trial_2

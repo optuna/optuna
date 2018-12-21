@@ -136,7 +136,7 @@ class InMemoryStorage(base.BaseStorage):
             trial_id = len(self.trials)
             self.trials.append(
                 structs.FrozenTrial(
-                    trial_id=trial_id,
+                    number=trial_id,
                     state=structs.TrialState.RUNNING,
                     params={},
                     user_attrs={},
@@ -145,7 +145,8 @@ class InMemoryStorage(base.BaseStorage):
                     intermediate_values={},
                     params_in_internal_repr={},
                     datetime_start=datetime.now(),
-                    datetime_complete=None
+                    datetime_complete=None,
+                    trial_id=trial_id
                 )
             )
         return trial_id
