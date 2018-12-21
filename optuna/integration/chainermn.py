@@ -9,6 +9,7 @@ from typing import Union  # NOQA
 from optuna.logging import get_logger
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
+from optuna.structs import TrialPruned
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
 
@@ -124,7 +125,19 @@ class ChainerMNStudy(object):
                 if not has_next_trial:
                     break
                 trial = Trial(self.delegate, trial_id)
-                func(trial, self.comm)
+                try:
+                    # We assume that if a node raises an exception, all other nodes does it.
+                    func(trial, self.comm)
+                except TrialPruned:
+                    pass
+                except catch:
+                    # We assume that the rank-0 node handles `TrialPruned` and `catch` exceptions,
+                    # so those are simply ignored in other nodes.
+                    pass
+                except Exception:
+                    # The rank-0 should have terminated by the same exception,
+                    # so we leave the loop.
+                    break
 
     def __getattr__(self, attr_name):
         return getattr(self.delegate, attr_name)
