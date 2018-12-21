@@ -6,6 +6,7 @@ from sqlalchemy import Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
+from sqlalchemy import func
 from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
@@ -171,13 +172,13 @@ class TrialModel(BaseModel):
     def count(cls, session, study=None, state=None):
         # type: (orm.Session, Optional[StudyModel], Optional[TrialState]) -> int
 
-        trials = session.query(cls)
+        trial_count = session.query(func.count(cls.trial_id))
         if study is not None:
-            trials = trials.filter(cls.study_id == study.study_id)
+            trial_count = trial_count.filter(cls.study_id == study.study_id)
         if state is not None:
-            trials = trials.filter(cls.state == state)
+            trial_count = trial_count.filter(cls.state == state)
 
-        return trials.count()
+        return trial_count.scalar()
 
     @classmethod
     def all(cls, session):
