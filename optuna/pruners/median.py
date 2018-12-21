@@ -44,9 +44,7 @@ class MedianPruner(BasePruner):
         # type: (BaseStorage, int, int, int) -> bool
         """Please consult the documentation for :func:`BasePruner.prune`."""
 
-        # TODO(Yanase): Implement a method of storage to just retrieve the number of trials.
-        n_trials = len([t for t in storage.get_all_trials(study_id)
-                        if t.state == TrialState.COMPLETE])
+        n_trials = storage.get_n_trials(study_id, TrialState.COMPLETE)
 
         if n_trials == 0:
             return False

@@ -28,7 +28,6 @@ class RandomSampler(BaseSampler):
 
     def sample(self, storage, study_id, param_name, param_distribution):
         # type: (BaseStorage, int, str, distributions.BaseDistribution) -> float
-
         """Please consult the documentation for :func:`BaseSampler.sample`."""
 
         if isinstance(param_distribution, distributions.UniformDistribution):

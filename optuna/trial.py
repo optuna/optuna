@@ -116,7 +116,6 @@ class Trial(BaseTrial):
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
-
         """Suggest a value for the continuous parameter.
 
         The value is sampled from the range ``[low, high)`` in the linear domain.
@@ -149,7 +148,6 @@ class Trial(BaseTrial):
 
     def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
-
         """Suggest a value for the continuous parameter.
 
         The value is sampled from the range ``[low, high)`` in the log domain.
@@ -184,7 +182,6 @@ class Trial(BaseTrial):
 
     def suggest_discrete_uniform(self, name, low, high, q):
         # type: (str, float, float, float) -> float
-
         """Suggest a value for the discrete parameter.
 
         The value is sampled from the range ``[low, high]``, and the step of discretization is
@@ -223,7 +220,6 @@ class Trial(BaseTrial):
 
     def suggest_int(self, name, low, high):
         # type: (str, int, int) -> int
-
         """Suggest a value for the integer parameter.
 
         The value is sampled from the integers in ``[low, high]``.
@@ -257,7 +253,6 @@ class Trial(BaseTrial):
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
-
         """Suggest a value for the categorical parameter.
 
         The value is sampled from ``choices``.
@@ -290,7 +285,6 @@ class Trial(BaseTrial):
 
     def report(self, value, step=None):
         # type: (float, Optional[int]) -> None
-
         """Report an objective function value.
 
         If step is set to :obj:`None`, the value is stored as a final value of the trial.
@@ -327,7 +321,6 @@ class Trial(BaseTrial):
 
     def should_prune(self, step):
         # type: (int) -> bool
-
         """Judge whether the trial should be pruned.
 
         This method calls prune method of the pruner, which judges whether the trial should
@@ -350,7 +343,6 @@ class Trial(BaseTrial):
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
-
         """Set user attributes to the trial.
 
         The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
@@ -380,7 +372,6 @@ class Trial(BaseTrial):
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
-
         """Set system attributes to the trial.
 
         Note that Optuna internally uses this method to save system messages such as failure
@@ -413,7 +404,6 @@ class Trial(BaseTrial):
     @property
     def params(self):
         # type: () -> Dict[str, Any]
-
         """Return parameters to be optimized.
 
         Returns:
@@ -425,7 +415,6 @@ class Trial(BaseTrial):
     @property
     def user_attrs(self):
         # type: () -> Dict[str, Any]
-
         """Return user attributes.
 
         Returns:
@@ -437,7 +426,6 @@ class Trial(BaseTrial):
     @property
     def system_attrs(self):
         # type: () -> Dict[str, Any]
-
         """Return system attributes.
 
         Returns:
