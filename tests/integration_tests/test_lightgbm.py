@@ -84,7 +84,7 @@ def test_lightgbm_pruning_callback_errors(cv):
     with pytest.raises(ValueError):
         # `'valid_name'` will be ignored if `cv == True`, since it will be fixed to `'agg_cv'``
         study.optimize(lambda trial: objective(trial, valid_name='valid_1',
-                       force_default_valid_names=True),
+                                               force_default_valid_names=True),
                        n_trials=1, catch=())
 
 
