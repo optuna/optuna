@@ -41,7 +41,7 @@ class SuccessiveHalvingPruner(BasePruner):
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
-            referred to as "r").
+            referred to as ``r``).
 
             A trial is never pruned until it executes
             ``min_resource * (reduction_factor ** min_early_stopping_rate)`` steps
@@ -55,13 +55,13 @@ class SuccessiveHalvingPruner(BasePruner):
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
-            referred to as "eta").
+            referred to as ``eta``).
             At the completion point of each rung, about ``1/reduction_factor`` trials
             will be promoted.
         min_early_stopping_rate:
             A parameter for specifying the minimum early-stopping rate
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
-            referred to as "s").
+            referred to as ``s``).
     """
 
     def __init__(self, min_resource=1, reduction_factor=4, min_early_stopping_rate=0):
