@@ -180,6 +180,24 @@ class RDBStorage(BaseStorage):
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
+    def get_trial_user_attrs(self, trial_id):
+        # type: (int) -> Dict[str, Any]
+
+        session = self.scoped_session()
+
+        attributes = models.TrialUserAttributeModel.where_trial_id(trial_id, session)
+
+        return {attr.key: json.loads(attr.value_json) for attr in attributes}
+
+    def get_trial_system_attrs(self, trial_id):
+        # type: (int) -> Dict[str, Any]
+
+        session = self.scoped_session()
+
+        attributes = models.TrialSystemAttributeModel.where_trial_id(trial_id, session)
+
+        return {attr.key: json.loads(attr.value_json) for attr in attributes}
+
     # TODO(sano): Optimize this method to reduce the number of queries.
     def get_all_study_summaries(self):
         # type: () -> List[structs.StudySummary]
