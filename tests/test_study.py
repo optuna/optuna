@@ -393,7 +393,6 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
-        print(study.trials[0].params_in_internal_repr)
         df = study.trials_dataframe(include_internal_fields=include_internal_fields)
         assert len(df) == 3
         # non-nested: 5, params: 2, user_attrs: 1 and 8 in total.
