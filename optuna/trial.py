@@ -410,8 +410,13 @@ class Trial(BaseTrial):
             A trial number.
         """
 
-        # For studies created by optuna<=0.5.0, return trial_id if the trial number is not found.
-        return self.system_attrs.get('number', self.trial_id)
+        trial_number = self.system_attrs.get('number')
+        if trial_number is None:
+            # If storage is InMemoryStorage or study is created by optuna<=0.5.0,
+            # trial number is not found. Create new one.
+            return self.storage.create_new_trial_number(self.trial_id)
+
+        return trial_number
 
     @property
     def params(self):

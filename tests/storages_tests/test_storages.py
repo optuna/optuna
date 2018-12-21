@@ -220,6 +220,17 @@ def test_create_new_trial_id(storage_init_func):
 
 
 @parametrize_storage
+def test_create_new_trial_number(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+
+    study_id = storage.create_new_study_id()
+    trial_id = storage.create_new_trial_id(study_id)
+    assert storage.create_new_trial_number(trial_id) == 0
+
+
+@parametrize_storage
 def test_set_trial_state(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 

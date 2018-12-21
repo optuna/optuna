@@ -96,6 +96,12 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def create_new_trial_number(self, trial_id):
+        # type: (int) -> int
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None
 

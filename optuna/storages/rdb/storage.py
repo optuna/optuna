@@ -274,10 +274,20 @@ class RDBStorage(BaseStorage):
         session.add(trial)
         self._commit(session)
 
+        self.create_new_trial_number(trial.trial_id)
+
+        return trial.trial_id
+
+    def create_new_trial_number(self, trial_id):
+        # type: (int) -> int
+
+        session = self.scoped_session()
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+
         trial_number = trial.count_past_trials(session)
         self.set_trial_system_attr(trial.trial_id, 'number', trial_number)
 
-        return trial.trial_id
+        return trial_number
 
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None

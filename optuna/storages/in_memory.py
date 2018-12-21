@@ -151,6 +151,11 @@ class InMemoryStorage(base.BaseStorage):
             )
         return trial_id
 
+    def create_new_trial_number(self, trial_id):
+        # type: (int) -> int
+
+        return trial_id
+
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None
 
