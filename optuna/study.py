@@ -249,7 +249,7 @@ class Study(object):
 
         self.storage.set_study_system_attr(self.study_id, key, value)
 
-    def trials_dataframe(self, show_internal_fields=False):
+    def trials_dataframe(self, include_internal_fields=False):
         # type: (bool) -> pd.DataFrame
         """Export trials as a pandas DataFrame_.
 
@@ -271,7 +271,7 @@ class Study(object):
             1.0
 
         Args:
-            show_internal_fields:
+            include_internal_fields:
                 By default, internal fields of :class:`~optuna.structs.FrozenTrial` are excluded
                 from a DataFrame of trials. If this argument is :obj:`True`, they will be included
                 in the DataFrame.
@@ -295,7 +295,7 @@ class Study(object):
 
             record = {}
             for field, value in trial_dict.items():
-                if not show_internal_fields and field in structs.FrozenTrial.internal_fields:
+                if not include_internal_fields and field in structs.FrozenTrial.internal_fields:
                     continue
                 if isinstance(value, dict):
                     for in_field, in_value in value.items():
