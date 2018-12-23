@@ -18,7 +18,7 @@ def fixed_value_input_fn():
     x_train = np.zeros([16, 20])
     y_train = np.zeros(16)
     dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-    dataset = dataset.shuffle(128).repeat().batch(16)
+    dataset = dataset.repeat().batch(8)
     iterator = dataset.make_one_shot_iterator()
     features, labels = iterator.get_next()
     return {"x": features}, labels
