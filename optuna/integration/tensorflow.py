@@ -42,7 +42,7 @@ class TensorFlowPruningHook(tf.train.SessionRunHook):
         metric:
             An evaluation metric for pruning, e.g., ``accuracy`` and ``loss``.
         is_higher_better:
-           It should be True if you use a metric to be maximize such as ``loss`.
+           It should be True if you use a metric to be maximize such as ``loss``.
         run_every_steps:
            An interval to watch the summary file.
     """
