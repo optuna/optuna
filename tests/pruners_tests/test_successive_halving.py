@@ -1,17 +1,6 @@
+import pytest
+
 import optuna
-
-
-def test_successive_halving_pruner_with_one_trial():
-    # type: () -> None
-
-    study = optuna.study.create_study()
-    trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
-    trial.report(1, 1)
-    pruner = optuna.pruners.SuccessiveHalvingPruner(
-        min_resource=1, reduction_factor=2, min_early_stopping_rate=0)
-
-    # A pruner is not activated at a first trial.
-    assert not pruner.prune(study.storage, study.study_id, trial.trial_id, step=1)
 
 
 def test_successive_halving_pruner_intermediate_values():
@@ -36,7 +25,7 @@ def test_successive_halving_pruner_intermediate_values():
     assert pruner.prune(study.storage, study.study_id, trial.trial_id, step=1)
 
 
-def test_successive_halving_pruner_up_to_third_rung():
+def test_successive_halving_pruner_rung_check():
     # type: () -> None
 
     pruner = optuna.pruners.SuccessiveHalvingPruner(
@@ -71,7 +60,7 @@ def test_successive_halving_pruner_up_to_third_rung():
     assert 'completed_rung_3' not in trial.system_attrs
 
 
-def test_successive_halving_pruner_first_trial_always_wins():
+def test_successive_halving_pruner_first_trial_is_not_pruned():
     # type: () -> None
 
     pruner = optuna.pruners.SuccessiveHalvingPruner(
@@ -82,7 +71,7 @@ def test_successive_halving_pruner_first_trial_always_wins():
     for i in range(10):
         trial.report(1, step=i)
 
-        # The first trial always wins.
+        # The first trial is not pruned.
         assert not pruner.prune(study.storage, study.study_id, trial.trial_id, step=i)
 
     # The trial completed until rung 3.
@@ -93,10 +82,34 @@ def test_successive_halving_pruner_first_trial_always_wins():
     assert 'completed_rung_4' not in trial.system_attrs
 
 
+def test_successive_halving_pruner_with_nan():
+    # type: () -> None
+
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=2, reduction_factor=2, min_early_stopping_rate=0)
+    study = optuna.study.create_study()
+
+    trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+
+    # A pruner is not activated if the step is not a rung completion point.
+    trial.report(float('nan'), step=1)
+    assert not pruner.prune(study.storage, study.study_id, trial.trial_id, step=1)
+
+    # A pruner is activated if the step is a rung completion point and
+    # the intermediate value is NaN.
+    trial.report(float('nan'), step=2)
+    assert pruner.prune(study.storage, study.study_id, trial.trial_id, step=2)
+
+
 def test_successive_halving_pruner_min_resource_parameter():
     # type: () -> None
 
     study = optuna.study.create_study()
+
+    # min_resource=0: Error (must be `min_resource >= 1`).
+    with pytest.raises(ValueError):
+        optuna.pruners.SuccessiveHalvingPruner(
+            min_resource=0, reduction_factor=2, min_early_stopping_rate=0)
 
     # min_resource=1: The rung 0 ends at step 1.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
@@ -124,7 +137,14 @@ def test_successive_halving_pruner_min_resource_parameter():
 
 
 def test_successive_halving_pruner_reduction_factor_parameter():
+    # type: () -> None
+
     study = optuna.study.create_study()
+
+    # reduction_factor=1: Error (must be `reduction_factor >= 2`).
+    with pytest.raises(ValueError):
+        optuna.pruners.SuccessiveHalvingPruner(
+            min_resource=1, reduction_factor=1, min_early_stopping_rate=0)
 
     # reduction_factor=2: The rung 0 ends at step 1.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
@@ -157,7 +177,14 @@ def test_successive_halving_pruner_reduction_factor_parameter():
 
 
 def test_successive_halving_pruner_min_early_stopping_rate_parameter():
+    # type: () -> None
+
     study = optuna.study.create_study()
+
+    # min_early_stopping_rate=-1: Error (must be `min_early_stopping_rate >= 0`).
+    with pytest.raises(ValueError):
+        optuna.pruners.SuccessiveHalvingPruner(
+            min_resource=1, reduction_factor=2, min_early_stopping_rate=-1)
 
     # min_early_stopping_rate=0: The rung 0 ends at step 1.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
