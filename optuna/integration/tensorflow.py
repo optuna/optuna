@@ -5,14 +5,16 @@ import optuna
 
 try:
     import tensorflow as tf
+    from tensorflow.train import SessionRunHook
     _available = True
 except ImportError as e:
     _import_error = e
     # PruningHook is disabled because TensorFlow is not available.
     _available = False
+    SessionRunHook = object
 
 
-class TensorFlowPruningHook(tf.train.SessionRunHook):
+class TensorFlowPruningHook(SessionRunHook):
     """TensorFlow SessionRunHook to prune umpromising trials.
 
     Example:
