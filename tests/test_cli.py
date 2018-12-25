@@ -255,6 +255,26 @@ def test_dashboard_command(options):
         assert 'bokeh' in html
 
 
+@pytest.mark.parametrize('origins', [['192.168.111.1:5006'],
+                                     ['192.168.111.1:5006', '192.168.111.2:5006']])
+def test_dashboard_command_with_allow_websocket_origin(origins):
+    with \
+            StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path), \
+            tempfile.NamedTemporaryFile('r') as tf_report:
+
+        storage = RDBStorage(storage_url)
+        study_name = storage.get_study_name_from_id(storage.create_new_study_id())
+        command = ['optuna', 'dashboard', '--study', study_name, '--out', tf_report.name,
+                   '--storage', storage_url]
+        for origin in origins:
+            command.extend(['--allow-websocket-origin', origin])
+        subprocess.check_call(command)
+
+        html = tf_report.read()
+        assert '<body>' in html
+        assert 'bokeh' in html
+
+
 # An example of objective functions for testing study optimize command
 def objective_func(trial):
     # type: (Trial) -> float
