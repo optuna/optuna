@@ -256,7 +256,7 @@ def _get_this_source_path():
 
 
 def serve(study, bokeh_allow_websocket_origins=None):
-    # type: (optuna.study.Study, List[str]) -> None
+    # type: (optuna.study.Study, Optional[List[str]]) -> None
 
     global _mode, _study
 
