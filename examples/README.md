@@ -15,7 +15,7 @@ This page contains a list of example codes written with Optuna.
 * [LighGBM](./lightgbm_simple.py)
 * [XGBoost](./xgboost_simple.py)
 
-### An example where a objective function uses additional arguments
+### An example where an objective function uses additional arguments
 
 The following example demonstrates how to implement an objective function that uses additional arguments other than `trial`.
 * [scikit-learn (callable class version)](./sklearn_additional_args.py)
