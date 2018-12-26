@@ -206,3 +206,32 @@ If your optimization target supports GPU (CUDA) acceleration and you want to spe
     $ optuna study optimize bar.py objective --study bar --storage sqlite:///example.db
 
 Please refer to `CUDA C Programming Guide <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_ for further details.
+
+
+How can I test my objective functions?
+--------------------------------------
+
+When we test objective functions, we want to use fixed parameter values instead of parameter values suggested by samplers.
+For such purpose, you can use :class:`~optuna.trial.FixedTrial`, which suggests fixed parameter values based on a given dictionary of parameters.
+For instance, we can input arbitrary values of :math:`x` and :math:`y` to the objective function :math:`x + y` as follows:
+
+.. code-block:: python
+
+    def objective(trial):
+        x = trial.suggest_uniform('x', -1.0, 1.0)
+        y = trial.suggest_int('y', -5, 5)
+        return x + y
+
+    objective(FixedTrial({'x': 1.0, 'y': -1}))  # 0.0
+    objective(FixedTrial({'x': -1.0, 'y': -6}))  # -7.0
+
+
+Using :class:`~optuna.trial.FixedTrial`, we can write unit tests as follows:
+
+.. code-block:: python
+
+    # A test function of pytest
+    def test_objective():
+        assert 1.0 == objective(FixedTrial({'x': 1.0, 'y': 0}))
+        assert -1.0 == objective(FixedTrial({'x': 0.0, 'y': -1}))
+        assert 0.0 == objective(FixedTrial({'x': -1.0, 'y': 1}))
