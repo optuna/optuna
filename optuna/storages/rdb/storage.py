@@ -117,7 +117,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        self._commit(session)
+        self._commit_with_integrity_check(session)
 
     def set_study_system_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
@@ -133,7 +133,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        self._commit(session)
+        self._commit_with_integrity_check(session)
 
     def get_study_id_from_name(self, study_name):
         # type: (str) -> int
@@ -358,8 +358,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        # TODO(Yanase): Take care of IntegrityError on multi-worker environment.
-        self._commit(session)
+        self._commit_with_integrity_check(session)
 
     def set_trial_system_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
@@ -376,7 +375,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        self._commit(session)
+        self._commit_with_integrity_check(session)
 
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
