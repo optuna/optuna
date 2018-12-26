@@ -19,7 +19,7 @@ class TensorFlowPruningHook(SessionRunHook):
 
     Example:
 
-        Add a pruning SessionRunHook which observes validation scores to training of a TensorFlow's Estimator.
+        Add a pruning SessionRunHook for a TensorFlow's Estimator.
 
         .. code::
 

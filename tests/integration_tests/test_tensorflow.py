@@ -29,7 +29,8 @@ def test_tensorflow_pruning_hook():
 
     # TODO(sfujiwara): remove this "if" section after TensorFlow supports Python 3.7.
     if not _available:
-        pytest.skip('This test requires TensorFlow but this version can not install TensorFlow with pip.')
+        pytest.skip('This test requires TensorFlow '
+                    'but this version can not install TensorFlow with pip.')
 
     def objective(trial):
         # type: (optuna.trial.Trial) -> float
@@ -48,7 +49,11 @@ def test_tensorflow_pruning_hook():
             is_higher_better=True,
             run_every_steps=5,
         )
-        train_spec = tf.estimator.TrainSpec(input_fn=fixed_value_input_fn, max_steps=100, hooks=[hook])
+        train_spec = tf.estimator.TrainSpec(
+            input_fn=fixed_value_input_fn,
+            max_steps=100,
+            hooks=[hook]
+        )
         eval_spec = tf.estimator.EvalSpec(input_fn=fixed_value_input_fn, steps=1, hooks=[])
         tf.estimator.train_and_evaluate(estimator=clf, train_spec=train_spec, eval_spec=eval_spec)
         return 1.0
