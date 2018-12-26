@@ -8,7 +8,7 @@ Optuna is compatible with most ML libraries, and it's easy to use Optuna with th
 Please refer to `examples <https://github.com/pfnet/optuna/tree/master/examples>`_.
 
 
-.. _objective-fun-additional-args:
+.. _objective-func-additional-args:
 
 How to define objective functions that have own arguments?
 ----------------------------------------------------------

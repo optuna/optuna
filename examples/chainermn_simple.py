@@ -45,7 +45,7 @@ def create_model(trial):
 
 
 # FYI: Objective functions can take additional arguments
-# (https://optuna.readthedocs.io/en/stable/faq.html#objective-fun-additional-args).
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial, comm):
     # Sample an architecture.
     model = L.Classifier(create_model(trial))
