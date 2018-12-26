@@ -9,13 +9,13 @@ try:
     _available = True
 except ImportError as e:
     _import_error = e
-    # PruningHook is disabled because TensorFlow is not available.
+    # TensorFlowPruningHook is disabled because TensorFlow is not available.
     _available = False
     SessionRunHook = object
 
 
 class TensorFlowPruningHook(SessionRunHook):
-    """TensorFlow SessionRunHook to prune umpromising trials.
+    """TensorFlow SessionRunHook to prune unpromising trials.
 
     Example:
 
@@ -23,13 +23,14 @@ class TensorFlowPruningHook(SessionRunHook):
 
         .. code::
 
-                optuna_pruning_hook = OptunaPruningHook(
+                pruning_hook = TensorFlowPruningHook(
                     trial=trial,
                     estimator=clf,
                     metric="accuracy",
                     is_higher_better=True,
                     run_every_steps=10,
                 )
+                hooks = [pruning_hook]
                 tf.estimator.train_and_evaluate(
                     clf,
                     tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=500, hooks=hooks),
@@ -40,7 +41,7 @@ class TensorFlowPruningHook(SessionRunHook):
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of
             the objective function.
         estimator:
-            A :estimator which you will use.
+            An estimator which you will use.
         metric:
             An evaluation metric for pruning, e.g., ``accuracy`` and ``loss``.
         is_higher_better:
