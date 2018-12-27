@@ -50,6 +50,8 @@ class TensorFlowPruningHook(SessionRunHook):
            An interval to watch the summary file.
     """
     def __init__(self, trial, estimator, metric, is_higher_better, run_every_steps):
+        # type: (optuna.trial.Trial, tf.estimator.Estimator, str, bool, int) -> None
+
         self.trial = trial
         self.estimator = estimator
         self.current_summary_step = -1
@@ -59,14 +61,20 @@ class TensorFlowPruningHook(SessionRunHook):
         self._timer = tf.train.SecondOrStepTimer(every_secs=None, every_steps=run_every_steps)
 
     def begin(self):
+        # type: () -> None
+
         self._global_step_tensor = tf.train.get_global_step()
 
     def before_run(self, run_context):
+        # type: (tf.train.SessionRunContext) -> tf.train.SessionRunArgs
+
         del run_context
         return tf.train.SessionRunArgs(self._global_step_tensor)
 
-    def after_run(self, run_context, run_value):
-        global_step = run_value.results
+    def after_run(self, run_context, run_values):
+        # type: (tf.train.SessionRunContext, tf.train.SessionRunValues) -> None
+
+        global_step = run_values.results
         # Get eval metrics every n steps
         if self._timer.should_trigger_for_step(global_step):
             eval_metrics = tf.contrib.estimator.read_eval_metrics(self.estimator.eval_dir())

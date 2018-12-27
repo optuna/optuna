@@ -1,6 +1,7 @@
 import numpy as np
 
 import pytest
+import typing  # NOQA
 
 try:
     import tensorflow as tf
@@ -15,6 +16,8 @@ from optuna.testing.integration import DeterministicPruner
 
 
 def fixed_value_input_fn():
+    # type: () -> typing.Tuple[typing.Dict[str, tf.Tensor], tf.Tensor]
+
     x_train = np.zeros([16, 20])
     y_train = np.zeros(16)
     dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
