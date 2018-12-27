@@ -24,7 +24,7 @@ def test_lightgbm_pruning_callback_call(cv):
 
     if cv:
         env = callback_env(evaluation_result_list=[(('cv_agg', 'binary_error', 1., False, 1.))])
-    elif not cv:
+    else:
         env = callback_env(evaluation_result_list=[('validation', 'binary_error', 1., False)])
 
     # The pruner is deactivated.
@@ -47,7 +47,6 @@ def test_lightgbm_pruning_callback(cv):
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     study.optimize(partial(objective, cv=cv), n_trials=1)
-    print(study.trials[0])
     assert study.trials[0].state == optuna.structs.TrialState.PRUNED
 
     study = optuna.create_study(pruner=DeterministicPruner(False))
@@ -79,13 +78,14 @@ def test_lightgbm_pruning_callback_errors(cv):
         study.optimize(lambda trial: objective(trial, metric='foo_metric', cv=cv),
                        n_trials=1, catch=())
 
-    # Unknown validation name
-    study = optuna.create_study(pruner=DeterministicPruner(False))
-    with pytest.raises(ValueError):
-        # `'valid_name'` will be ignored if `cv == True`, since it will be fixed to `'agg_cv'``
-        study.optimize(lambda trial: objective(trial, valid_name='valid_1',
-                                               force_default_valid_names=True),
-                       n_trials=1, catch=())
+    if not cv:
+        # Unknown validation name
+        study = optuna.create_study(pruner=DeterministicPruner(False))
+        with pytest.raises(ValueError):
+            # `'valid_name'` will be ignored if `cv == True`, since it will be fixed to `'agg_cv'``
+            study.optimize(lambda trial: objective(trial, valid_name='valid_1',
+                                                   force_default_valid_names=True),
+                           n_trials=1, catch=())
 
 
 def objective(trial, metric='binary_error', valid_name='valid_0',
@@ -104,7 +104,7 @@ def objective(trial, metric='binary_error', valid_name='valid_0',
     if cv:
         lgb.cv({'objective': 'binary', 'metric': ['auc', 'binary_error']}, dtrain, 1,
                verbose_eval=False, nfold=2, callbacks=[pruning_callback])
-    elif not cv:
+    else:
         lgb.train({'objective': 'binary', 'metric': ['auc', 'binary_error']}, dtrain, 1,
                   valid_sets=[dtest], valid_names=valid_names,
                   verbose_eval=False, callbacks=[pruning_callback])
