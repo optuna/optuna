@@ -3,6 +3,7 @@ import datetime
 import math
 import multiprocessing
 import multiprocessing.pool
+from multiprocessing import Queue  # NOQA
 import pandas as pd
 from six.moves import queue
 import time
@@ -355,6 +356,8 @@ class Study(object):
         # A queue is passed to each thread. When True is received, then the thread continues
         # the evaluation. When False is received, then it quits.
         def func_child_thread(que):
+            # type: (Queue) -> None
+
             while que.get():
                 self._run_trial(func, catch)
             self.storage.remove_session()

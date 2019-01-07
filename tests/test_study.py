@@ -207,6 +207,8 @@ def test_optimize_with_catch(storage_mode):
         study = optuna.create_study(storage=storage)
 
         def func_value_error(_):
+            # type: (optuna.trial.Trial) -> float
+
             raise ValueError
 
         # Test acceptable exception.
@@ -319,6 +321,8 @@ def test_run_trial(storage_mode):
 
         # Test trial with acceptable exception.
         def func_value_error(_):
+            # type: (optuna.trial.Trial) -> float
+
             raise ValueError
 
         trial = study._run_trial(func_value_error, catch=(ValueError,))
@@ -335,7 +339,9 @@ def test_run_trial(storage_mode):
 
         # Test trial with invalid objective value: None
         def func_none(_):
-            return None
+            # type: (optuna.trial.Trial) -> float
+
+            return None  # type: ignore
 
         trial = study._run_trial(func_none, catch=(Exception,))
         frozen_trial = study.storage.get_trial(trial.trial_id)
@@ -348,6 +354,8 @@ def test_run_trial(storage_mode):
 
         # Test trial with invalid objective value: nan
         def func_nan(_):
+            # type: (optuna.trial.Trial) -> float
+
             return float('nan')
 
         trial = study._run_trial(func_nan, catch=(Exception,))

@@ -1,11 +1,17 @@
 import os
 import pkg_resources
+from pkg_resources import Distribution  # NOQA
 from setuptools import find_packages
 from setuptools import setup
 import sys
+from typing import Dict  # NOQA
+from typing import List  # NOQA
+from typing import Optional  # NOQA
 
 
 def get_version():
+    # type: () -> str
+
     version_filepath = os.path.join(os.path.dirname(__file__), 'optuna', 'version.py')
     with open(version_filepath) as f:
         for line in f:
@@ -15,6 +21,8 @@ def get_version():
 
 
 def get_install_requires():
+    # type: () -> List[str]
+
     install_requires = [
         'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'cliff', 'colorlog', 'pandas']
     if sys.version_info[0] == 2:
@@ -23,6 +31,8 @@ def get_install_requires():
 
 
 def get_extras_require():
+    # type: () -> Dict[str, List[str]]
+
     extras_require = {
         'checking': ['autopep8', 'hacking'],
         'testing': ['pytest', 'mock', 'bokeh', 'chainer>=5.0.0', 'xgboost', 'mpi4py', 'lightgbm'],
@@ -36,6 +46,8 @@ def get_extras_require():
 
 
 def find_any_distribution(pkgs):
+    # type: (List[str]) -> Optional[Distribution]
+
     for pkg in pkgs:
         try:
             return pkg_resources.get_distribution(pkg)
