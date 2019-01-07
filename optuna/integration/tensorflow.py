@@ -77,6 +77,7 @@ class TensorFlowPruningHook(SessionRunHook):
         global_step = run_values.results
         # Get eval metrics every n steps
         if self._timer.should_trigger_for_step(global_step):
+            self._timer.update_last_triggered_step(global_step)
             eval_metrics = tf.contrib.estimator.read_eval_metrics(self.estimator.eval_dir())
         else:
             eval_metrics = None
