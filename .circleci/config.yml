@@ -66,8 +66,8 @@ jobs:
           name: mypy
           command: |
             . venv/bin/activate
-            mypy --ignore-missing-imports .
-            mypy --py2 --ignore-missing-imports .
+            mypy --disallow-untyped-defs --ignore-missing-imports .
+            mypy --py2 --disallow-untyped-defs --ignore-missing-imports .
 
   document:
     docker:
