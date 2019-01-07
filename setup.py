@@ -4,9 +4,16 @@ from pkg_resources import Distribution  # NOQA
 from setuptools import find_packages
 from setuptools import setup
 import sys
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
+
+try:
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+except ImportError:
+    # Built-in `typing` module is only available in Python 3.5 or newer.
+    # The above imports are only used by `mypy`, so we simply ignore them
+    # if they are unavailable in the execution environment.
+    pass
 
 
 def get_version():
