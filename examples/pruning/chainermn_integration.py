@@ -81,17 +81,14 @@ def objective(trial, comm):
     log_report_extension = chainer.training.extensions.LogReport(log_name=None)
     trainer.extend(log_report_extension)
 
+    if comm.rank == 0:
+        trainer.extend(chainer.training.extensions.ProgressBar())
+
     # Run training.
     # Please set show_loop_exception_msg False to inhibit messages about TrialPruned exception.
     # ChainerPruningExtension raises TrialPruned exception to stop training, and
     # trainer shows some messages every time it receive TrialPruned.
     trainer.run(show_loop_exception_msg=False)
-
-    if comm.rank == 0:
-        trainer.extend(chainer.training.extensions.ProgressBar())
-
-    # Run training.
-    trainer.run()
 
     # Evaluate.
     evaluator = chainer.training.extensions.Evaluator(test_iter, model)
