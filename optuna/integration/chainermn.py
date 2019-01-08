@@ -126,18 +126,17 @@ class ChainerMNStudy(object):
                     break
                 trial = Trial(self.delegate, trial_id)
                 try:
-                    # We assume that if a node raises an exception, all other nodes does it.
                     func(trial, self.comm)
+
+                    # We assume that if a node raises an exception,
+                    # all other nodes will do the same.
+                    #
+                    # The responsibility to handle expected exceptions (i.e., `TrialPruned` and
+                    # `catch`) is in the rank-0 node, so other nodes simply ignore them.
                 except TrialPruned:
                     pass
                 except catch:
-                    # We assume that the rank-0 node handles `TrialPruned` and `catch` exceptions,
-                    # so those are simply ignored in other nodes.
                     pass
-                except Exception:
-                    # The rank-0 should have terminated by the same exception,
-                    # so we leave the loop.
-                    break
 
     def __getattr__(self, attr_name):
         return getattr(self.delegate, attr_name)
