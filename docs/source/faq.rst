@@ -223,7 +223,7 @@ For instance, you can input arbitrary values of :math:`x` and :math:`y` to the o
         return x + y
 
     objective(FixedTrial({'x': 1.0, 'y': -1}))  # 0.0
-    objective(FixedTrial({'x': -1.0, 'y': -6}))  # -7.0
+    objective(FixedTrial({'x': -1.0, 'y': -4}))  # -5.0
 
 
 Using :class:`~optuna.trial.FixedTrial`, you can write unit tests as follows:
