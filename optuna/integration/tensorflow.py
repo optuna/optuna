@@ -45,7 +45,7 @@ class TensorFlowPruningHook(SessionRunHook):
         metric:
             An evaluation metric for pruning, e.g., ``accuracy`` and ``loss``.
         is_higher_better:
-           It should be True if you use a metric to be maximize such as ``loss``.
+           It should be :obj:`True` if you use a metric to be maximize such as ``accuracy``.
         run_every_steps:
            An interval to watch the summary file.
     """
@@ -57,34 +57,34 @@ class TensorFlowPruningHook(SessionRunHook):
         self.current_summary_step = -1
         self.metric = metric
         self.is_higher_better = is_higher_better
-        self._global_step_tensor = None
-        self._timer = tf.train.SecondOrStepTimer(every_secs=None, every_steps=run_every_steps)
+        self.global_step_tensor = None
+        self.timer = tf.train.SecondOrStepTimer(every_secs=None, every_steps=run_every_steps)
 
     def begin(self):
         # type: () -> None
 
-        self._global_step_tensor = tf.train.get_global_step()
+        self.global_step_tensor = tf.train.get_global_step()
 
     def before_run(self, run_context):
         # type: (tf.train.SessionRunContext) -> tf.train.SessionRunArgs
 
         del run_context
-        return tf.train.SessionRunArgs(self._global_step_tensor)
+        return tf.train.SessionRunArgs(self.global_step_tensor)
 
     def after_run(self, run_context, run_values):
         # type: (tf.train.SessionRunContext, tf.train.SessionRunValues) -> None
 
         global_step = run_values.results
-        # Get eval metrics every n steps
-        if self._timer.should_trigger_for_step(global_step):
-            self._timer.update_last_triggered_step(global_step)
+        # Get eval metrics every n steps.
+        if self.timer.should_trigger_for_step(global_step):
+            self.timer.update_last_triggered_step(global_step)
             eval_metrics = tf.contrib.estimator.read_eval_metrics(self.estimator.eval_dir())
         else:
             eval_metrics = None
         if eval_metrics:
             summary_step = next(reversed(eval_metrics))
             latest_eval_metrics = eval_metrics[summary_step]
-            # If there exists a new evaluation summary
+            # If there exists a new evaluation summary.
             if summary_step > self.current_summary_step:
                 if self.is_higher_better:
                     current_score = 1.0 - latest_eval_metrics[self.metric]
