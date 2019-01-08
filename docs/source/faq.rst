@@ -211,8 +211,8 @@ Please refer to `CUDA C Programming Guide <https://docs.nvidia.com/cuda/cuda-c-p
 How can I test my objective functions?
 --------------------------------------
 
-When you test objective functions, you may want to use fixed parameter values instead of parameter values suggested by samplers.
-For such purpose, you can use :class:`~optuna.trial.FixedTrial`, which suggests fixed parameter values based on a given dictionary of parameters.
+When you test objective functions, you may prefer fixed parameter values to sampled ones.
+In that case, you can use :class:`~optuna.trial.FixedTrial`, which suggests fixed parameter values based on a given dictionary of parameters.
 For instance, you can input arbitrary values of :math:`x` and :math:`y` to the objective function :math:`x + y` as follows:
 
 .. code-block:: python
