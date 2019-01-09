@@ -131,7 +131,7 @@ class ChainerMNStudy(object):
                     # We assume that if a node raises an exception,
                     # all other nodes will do the same.
                     #
-                    # The responsibility to handle expected exceptions (i.e., `TrialPruned` and
+                    # The responsibility to handle acceptable exceptions (i.e., `TrialPruned` and
                     # `catch`) is in the rank-0 node, so other nodes simply ignore them.
                 except TrialPruned:
                     pass
