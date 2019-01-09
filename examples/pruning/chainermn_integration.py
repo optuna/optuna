@@ -78,7 +78,8 @@ def objective(trial, comm):
         optuna.integration.ChainerPruningExtension(trial, 'validation/main/loss',
                                                    (PRUNER_INTERVAL, 'epoch'))
     )
-    trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
+    evaluator = chainer.training.extensions.Evaluator(test_iter, model)
+    trainer.extend(chainermn.create_multi_node_evaluator(evaluator, comm))
     log_report_extension = chainer.training.extensions.LogReport(log_name=None)
     trainer.extend(log_report_extension)
 
