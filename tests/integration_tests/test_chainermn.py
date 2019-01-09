@@ -8,10 +8,14 @@ from typing import Type  # NOQA
 
 from optuna import create_study
 from optuna.integration import ChainerMNStudy
+from optuna.pruners import BasePruner  # NOQA
 from optuna.storages import BaseStorage  # NOQA
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
+from optuna.structs import TrialPruned
+from optuna.structs import TrialState
 from optuna import Study
+from optuna.testing.integration import DeterministicPruner
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial  # NOQA
 
@@ -57,7 +61,12 @@ class Func(object):
         self.suggested_values[trial.trial_id]['y'] = y
         self.suggested_values[trial.trial_id]['z'] = z
 
-        return (x - 2) ** 2 + (y - 25) ** 2 + z
+        v = (x - 2) ** 2 + (y - 25) ** 2 + z
+        trial.report(v, 0)
+        if trial.should_prune(0):
+            raise TrialPruned()
+
+        return v
 
 
 class MultiNodeStorageSupplier(StorageSupplier):
@@ -164,13 +173,32 @@ class TestChainerMNStudy(object):
                 assert trial.params == func.suggested_values[trial.trial_id]
 
     @staticmethod
-    def _create_shared_study(storage, comm):
-        # type: (BaseStorage, CommunicatorBase) -> Study
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_pruning(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            pruner = DeterministicPruner(True)
+            study = TestChainerMNStudy._create_shared_study(storage, comm, pruner=pruner)
+            mn_study = ChainerMNStudy(study, comm)
+
+            # Invoke optimize.
+            n_trials = 20
+            func = Func()
+            mn_study.optimize(func, n_trials=n_trials)
+
+            # Assert pruned trial count.
+            pruned_trials = [t for t in mn_study.trials if t.state == TrialState.PRUNED]
+            assert len(pruned_trials) == n_trials
+
+    @staticmethod
+    def _create_shared_study(storage, comm, pruner=None):
+        # type: (BaseStorage, CommunicatorBase, Optional[BasePruner]) -> Study
 
         name_local = create_study(storage).study_name if comm.rank == 0 else None
         name_bcast = comm.mpi_comm.bcast(name_local)
 
-        return Study(name_bcast, storage)
+        return Study(name_bcast, storage, pruner=pruner)
 
     @staticmethod
     def _check_multi_node(comm):
