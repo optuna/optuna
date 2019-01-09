@@ -24,6 +24,8 @@ import sklearn.model_selection
 import sklearn.svm
 
 
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     iris = sklearn.datasets.load_iris()
     x, y = iris.data, iris.target

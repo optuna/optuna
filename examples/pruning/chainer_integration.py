@@ -47,6 +47,8 @@ def create_model(trial):
     return chainer.Sequential(*layers)
 
 
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     model = L.Classifier(create_model(trial))
     optimizer = chainer.optimizers.Adam()

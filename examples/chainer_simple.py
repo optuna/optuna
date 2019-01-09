@@ -67,6 +67,8 @@ def create_optimizer(trial, model):
     return optimizer
 
 
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     # Model and optimizer
     model = L.Classifier(create_model(trial))

@@ -26,6 +26,8 @@ from sklearn.model_selection import train_test_split
 import optuna
 
 
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     data, target = sklearn.datasets.load_breast_cancer(return_X_y=True)
     train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.25)
