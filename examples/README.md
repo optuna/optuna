@@ -25,3 +25,4 @@ In addition, integration modules are available for the following libraries, prov
 
 * [pruning with Chainer integration module](./pruning/chainer_integration.py)
 * [pruning with XGBoost integration module](./pruning/xgboost_integration.py)
+* [pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
