@@ -44,10 +44,11 @@ def teardown_module():
 
 class Func(object):
 
-    def __init__(self):
-        # type: () -> None
+    def __init__(self, exception=None):
+        # type: (Optional[Exception]) -> None
 
         self.suggested_values = {}  # type: Dict[int, Dict[str, Any]]
+        self.exception = exception
 
     def __call__(self, trial, comm):
         # type: (Trial, CommunicatorBase) -> float
@@ -65,6 +66,9 @@ class Func(object):
         trial.report(v, 0)
         if trial.should_prune(0):
             raise TrialPruned()
+
+        if self.exception is not None:
+            raise self.exception
 
         return v
 
@@ -189,6 +193,24 @@ class TestChainerMNStudy(object):
 
             # Assert pruned trial count.
             pruned_trials = [t for t in mn_study.trials if t.state == TrialState.PRUNED]
+            assert len(pruned_trials) == n_trials
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_failure(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            mn_study = ChainerMNStudy(study, comm)
+
+            # Invoke optimize.
+            n_trials = 20
+            func = Func(exception=ValueError())
+            mn_study.optimize(func, n_trials=n_trials)
+
+            # Assert failed trial count.
+            pruned_trials = [t for t in mn_study.trials if t.state == TrialState.FAIL]
             assert len(pruned_trials) == n_trials
 
     @staticmethod
