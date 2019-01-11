@@ -108,18 +108,29 @@ class SuccessiveHalvingPruner(BasePruner):
                 all_trials = storage.get_all_trials(study_id)
 
             storage.set_trial_system_attr(trial_id, _completed_rung_key(rung), value)
-            if not self._is_promotable(rung, value, all_trials):
+            if not self._is_promotable(rung, value, trial, all_trials):
                 return True
 
             rung += 1
 
-    def _is_promotable(self, rung, value, all_trials):
-        # type: (int, float, List[FrozenTrial]) -> bool
+    def _is_promotable(self, rung, value, trial, all_trials):
+        # type: (int, float, FrozenTrial, List[FrozenTrial]) -> bool
 
         key = _completed_rung_key(rung)
         competing_values = [t.system_attrs[key] for t in all_trials if key in t.system_attrs]
         competing_values.append(value)
         competing_values.sort()
+
+        prev_rung = rung - 1
+        is_first_trial = len(competing_values) == 1
+        if is_first_trial and _completed_rung_key(prev_rung) in trial.system_attrs:
+            # If this trial is the first one that has completed the rung,
+            # the value may be not so good because there might be not actual competitions
+            # in the past rungs.
+            # Therefore we make the trial re-compete in the previous rung and
+            # prune it if it's value is bad.
+            prev_value = trial.system_attrs[_completed_rung_key(prev_rung)]
+            return self._is_promotable(prev_rung, prev_value, trial, all_trials)
 
         promotable_idx = (len(competing_values) // self.reduction_factor) - 1
         if promotable_idx == -1:

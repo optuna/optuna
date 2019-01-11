@@ -82,6 +82,37 @@ def test_successive_halving_pruner_first_trial_is_not_pruned():
     assert 'completed_rung_4' not in trial.system_attrs
 
 
+def test_successive_halving_pruner_first_trial_recompete():
+    # type: () -> None
+
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=2, min_early_stopping_rate=0)
+    study = optuna.study.create_study()
+
+    trial0 = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+    trial1 = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
+
+    bad_value = 1.0  # The value of `trial0`
+    good_value = 0.5  # The value of `trial1`
+
+    # `trial0` is promoted to the second rung because it is the first trial.
+    trial0.report(bad_value, step=1)
+    assert not pruner.prune(study.storage, study.study_id, trial0.trial_id, step=1)
+
+    # `trial1` is promoted to the second rung because its value is good.
+    trial1.report(good_value, step=1)
+    assert not pruner.prune(study.storage, study.study_id, trial1.trial_id, step=1)
+
+    # `trial0` is not promoted to the third rung because
+    # it re-competes in the first rung and loses to `trial1`.
+    trial0.report(bad_value, step=2)
+    assert pruner.prune(study.storage, study.study_id, trial0.trial_id, step=2)
+
+    # `trial1` also re-competes in the first rung but it is promoted because its value is good.
+    trial1.report(good_value, step=2)
+    assert not pruner.prune(study.storage, study.study_id, trial1.trial_id, step=2)
+
+
 def test_successive_halving_pruner_with_nan():
     # type: () -> None
 
