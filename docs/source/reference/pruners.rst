@@ -3,6 +3,10 @@
 Pruners
 =======
 
+.. autoclass:: HyperbandPruner
+    :members:
+    :exclude-members: prune
+
 .. autoclass:: MedianPruner
     :members:
     :exclude-members: prune
