@@ -49,6 +49,9 @@ class TensorFlowPruningHook(SessionRunHook):
         run_every_steps:
            An interval to watch the summary file.
     """
+
+    # TODO(sano): Remove is_higher_better after implementing maximize.
+    # TODO(sano): Get the information from StudyDirection.
     def __init__(self, trial, estimator, metric, is_higher_better, run_every_steps):
         # type: (optuna.trial.Trial, tf.estimator.Estimator, str, bool, int) -> None
 
@@ -86,6 +89,7 @@ class TensorFlowPruningHook(SessionRunHook):
             latest_eval_metrics = eval_metrics[summary_step]
             # If there exists a new evaluation summary.
             if summary_step > self.current_summary_step:
+                # TODO(sano): Remove the following if block after implementing maximize.
                 if self.is_higher_better:
                     current_score = 1.0 - latest_eval_metrics[self.metric]
                 else:
