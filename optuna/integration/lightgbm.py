@@ -62,6 +62,7 @@ class LightGBMPruningCallback(object):
         # If this callback has been passed to `lightgbm.cv` function,
         # the value of `is_cv` becomes `True`. See also:
         # https://github.com/Microsoft/LightGBM/blob/v2.2.2/python-package/lightgbm/engine.py#L329
+        # Note that `5` is not the number of folds but the length of sequence.
         is_cv = len(env.evaluation_result_list) > 0 and len(env.evaluation_result_list[0]) == 5
         if is_cv:
             target_valid_name = 'cv_agg'
