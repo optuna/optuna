@@ -99,7 +99,7 @@ def test_successive_halving_pruner_first_trial_recompete():
     trial0.report(bad_value, step=1)
     assert not pruner.prune(study.storage, study.study_id, trial0.trial_id, step=1)
 
-    # `trial1` is promoted to the second rung because its value is good.
+    # `trial1` is promoted to the second rung because its value is better than `trial0`.
     trial1.report(good_value, step=1)
     assert not pruner.prune(study.storage, study.study_id, trial1.trial_id, step=1)
 
@@ -108,7 +108,7 @@ def test_successive_halving_pruner_first_trial_recompete():
     trial0.report(bad_value, step=2)
     assert pruner.prune(study.storage, study.study_id, trial0.trial_id, step=2)
 
-    # `trial1` also re-competes in the first rung but it is promoted because its value is good.
+    # `trial1` is promoted to the third rung because its value is better than `trial0`.
     trial1.report(good_value, step=2)
     assert not pruner.prune(study.storage, study.study_id, trial1.trial_id, step=2)
 
