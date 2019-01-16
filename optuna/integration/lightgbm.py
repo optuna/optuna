@@ -23,8 +23,7 @@ class LightGBMPruningCallback(object):
 
                 param = {'objective': 'binary', 'metric': 'binary_error'}
                 pruning_callback = LightGBMPruningCallback(trial, 'binary_error')
-                gbm = lgb.train(param, dtrain, num_round, valid_sets=[dtest],
-                                callbacks=[pruning_callback])
+                gbm = lgb.train(param, dtrain, valid_sets=[dtest], callbacks=[pruning_callback])
 
     Args:
         trial:

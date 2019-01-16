@@ -22,7 +22,7 @@ class XGBoostPruningCallback(object):
         .. code::
 
                 pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
-                bst = xgb.train(param, dtrain, n_round, evals=[(dtest, 'validation')],
+                bst = xgb.train(param, dtrain, evals=[(dtest, 'validation')],
                                 callbacks=[pruning_callback])
 
 
