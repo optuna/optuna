@@ -38,7 +38,8 @@ def objective(trial):
         rf_max_depth = int(trial.suggest_loguniform('rf_max_depth', 2, 32))
         classifier_obj = sklearn.ensemble.RandomForestClassifier(max_depth=rf_max_depth)
 
-    score = sklearn.model_selection.cross_val_score(classifier_obj, x, y, n_jobs=-1)
+    cv = sklearn.model_selection.ShuffleSplit()
+    score = sklearn.model_selection.cross_val_score(classifier_obj, x, y, n_jobs=-1, cv=cv)
     accuracy = score.mean()
     return 1.0 - accuracy
 
