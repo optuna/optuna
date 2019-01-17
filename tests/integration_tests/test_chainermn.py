@@ -6,8 +6,10 @@ from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 from typing import Type  # NOQA
 
+import optuna
 from optuna import create_study
 from optuna.integration import ChainerMNStudy
+from optuna.pruners import BasePruner  # NOQA
 from optuna.storages import BaseStorage  # NOQA
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
@@ -26,6 +28,7 @@ except ImportError:
 
 
 STORAGE_MODES = ['new', 'common']
+PRUNER_TYPES = ['median', 'successive_halving']
 
 
 def setup_module():
@@ -167,11 +170,13 @@ class TestChainerMNStudy(object):
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-    def test_pruning(storage_mode, comm):
-        # type: (str, CommunicatorBase) -> None
+    @pytest.mark.parametrize('pruner_type', PRUNER_TYPES)
+    def test_pruning(storage_mode, pruner_type, comm):
+        # type: (str, str, CommunicatorBase) -> None
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            pruner = _make_pruner(pruner_type)
+            study = TestChainerMNStudy._create_shared_study(storage, comm, pruner=pruner)
             mn_study = ChainerMNStudy(study, comm)
 
             def objective(_trial, _comm):
@@ -223,13 +228,13 @@ class TestChainerMNStudy(object):
             assert len(aborted_trials) == 1
 
     @staticmethod
-    def _create_shared_study(storage, comm):
-        # type: (BaseStorage, CommunicatorBase) -> Study
+    def _create_shared_study(storage, comm, pruner=None):
+        # type: (BaseStorage, CommunicatorBase, BasePruner) -> Study
 
         name_local = create_study(storage).study_name if comm.rank == 0 else None
         name_bcast = comm.mpi_comm.bcast(name_local)
 
-        return Study(name_bcast, storage)
+        return Study(name_bcast, storage, pruner=pruner)
 
     @staticmethod
     def _check_multi_node(comm):
@@ -237,3 +242,14 @@ class TestChainerMNStudy(object):
 
         if comm.size < 2:
             pytest.skip('This test is for multi-node only.')
+
+
+def _make_pruner(pruner_type):
+    # type: (str) -> BasePruner
+
+    if pruner_type == 'median':
+        return optuna.pruners.MedianPruner()
+    elif pruner_type == 'successive_halving':
+        return optuna.pruners.SuccessiveHalvingPruner()
+    else:
+        raise ValueError('Unknown pruner type: {}'.format(pruner_type))
