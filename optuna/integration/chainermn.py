@@ -7,6 +7,8 @@ from typing import Type  # NOQA
 from typing import Union  # NOQA
 
 from optuna.logging import get_logger
+from optuna.pruners import BasePruner  # NOQA
+from optuna.storages import BaseStorage  # NOQA
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.structs import TrialPruned
@@ -98,6 +100,7 @@ class ChainerMNStudy(object):
         if len(set(study_names)) != 1:
             raise ValueError('Please make sure an identical study name is shared among workers.')
 
+        study.pruner = ChainerMNPruner(pruner=study.pruner, comm=comm)
         super(ChainerMNStudy, self).__setattr__('delegate', study)
         super(ChainerMNStudy, self).__setattr__('comm', comm)
 
@@ -154,3 +157,28 @@ def _check_chainermn_availability():
             'ChainerMN can be installed by executing `$ pip install chainermn`. '
             'For further information, please refer to the installation guide of ChainerMN. '
             '(The actual import error is as follows: ' + str(_import_error) + ')')
+
+
+class ChainerMNPruner(BasePruner):
+    def __init__(self, pruner, comm):
+        # type: (BasePruner, CommunicatorBase) -> None
+
+        self.delegate = pruner
+        self.comm = comm
+
+    def prune(self, storage, study_id, trial_id, step):
+        # type: (BaseStorage, int, int, int) -> bool
+
+        if self.comm.rank == 0:
+            try:
+                result = self.delegate.prune(storage, study_id, trial_id, step)
+                self.comm.mpi_comm.bcast(result)
+                return result
+            except Exception as e:
+                self.comm.mpi_comm.bcase(e)
+                raise
+        else:
+            result = self.comm.mpi_comm.bcast(None)
+            if isinstance(result, Exception):
+                raise result
+            return result
