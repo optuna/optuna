@@ -30,7 +30,7 @@ def get_extras_require():
         'keras': ['keras', 'tensorflow'],
         'document': ['sphinx', 'sphinx_rtd_theme'],
     }
-    if sys.version_info >= (3, 4):  # requires Python 3.4 or later
+    if sys.version_info >= (3, 5):  # mypy does not support Python 2.x.
         extras_require['checking'].append('mypy')
     return extras_require
 
