@@ -79,6 +79,7 @@ To implement pruning mechanism in much simpler forms, Optuna provides integratio
 - LightGBM: :class:`optuna.integration.LightGBMPruningCallback`
 - Chainer: :class:`optuna.integration.ChainerPruningExtension`
 - Keras: :class:`optuna.integration.KerasPruningCallback`
+- TensorFlow :class:`optuna.integration.TensorFlowPruningHook`
 
 For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
 (See also `example <https://github.com/pfnet/optuna/blob/master/examples/pruning/xgboost_integration.py>`_ for the entire script.)
@@ -86,5 +87,4 @@ For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces prun
 .. code-block:: python
 
         pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'validation-error')
-        bst = xgb.train(param, dtrain, n_round, evals=[(dtest, 'validation')],
-                        callbacks=[pruning_callback])
+        bst = xgb.train(param, dtrain, evals=[(dtest, 'validation')], callbacks=[pruning_callback])
