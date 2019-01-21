@@ -258,6 +258,8 @@ def test_dashboard_command(options):
 @pytest.mark.parametrize('origins', [['192.168.111.1:5006'],
                                      ['192.168.111.1:5006', '192.168.111.2:5006']])
 def test_dashboard_command_with_allow_websocket_origin(origins):
+    # type: (List[str]) -> None
+
     with \
             StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path), \
             tempfile.NamedTemporaryFile('r') as tf_report:

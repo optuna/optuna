@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from typing import Any  # NOQA
 from typing import Callable  # NOQA
 from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
@@ -127,9 +128,13 @@ class ChainerMNStudy(object):
                 func(trial, self.comm)
 
     def __getattr__(self, attr_name):
+        # type: (str) -> Any
+
         return getattr(self.delegate, attr_name)
 
     def __setattr__(self, attr_name, value):
+        # type: (str, Any) -> None
+
         setattr(self.delegate, attr_name, value)
 
 
