@@ -175,7 +175,7 @@ class ChainerMNPruner(BasePruner):
                 self.comm.mpi_comm.bcast(result)
                 return result
             except Exception as e:
-                self.comm.mpi_comm.bcase(e)
+                self.comm.mpi_comm.bcast(e)
                 raise
         else:
             result = self.comm.mpi_comm.bcast(None)
