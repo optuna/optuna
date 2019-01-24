@@ -22,6 +22,7 @@ def plot_intermediate_values(study):
         The following code snippet shows how to plot intermediate values inside Jupyter Notebook.
 
         .. code::
+
             import optuna
 
             def objective(trial):
