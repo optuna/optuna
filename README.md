@@ -56,14 +56,14 @@ def objective(trial):
         classifier_obj = sklearn.ensemble.RandomForestClassifier(max_depth=rf_max_depth)
 
     iris = sklearn.datasets.load_iris()
-    x, y = iris.data , iris.target
-    score = sklearn.model_selection.cross_val_score(classifier_obj , x, y)
+    x, y = iris.data, iris.target
+    score = sklearn.model_selection.cross_val_score(classifier_obj, x, y)
     accuracy = score.mean()
     
     return 1.0 - accuracy  # A objective value linked with the Trial object.
 
 study = optuna.create_study()  # Create a new study.
-study.optimize(objective , n_trials=100)  # Invoke optimization of the objective function.
+study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
 ```
 
 
