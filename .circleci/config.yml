@@ -164,14 +164,6 @@ jobs:
             . venv/bin/activate
             pip install chainer lightgbm scikit-learn xgboost
 
-            # Using numpy-v1.16.0, the execution of `chainermn_simple.py` fails by memory shortage.
-            # To deal with this problem, we fix the version of numpy to v1.15.4.
-            #
-            # TODO(ohta):
-            # numpy-v1.16.1 may resolve this issue (https://github.com/numpy/numpy/pull/12624).
-            # Try the version when it is released.
-            pip install --force-reinstall numpy==1.15.4
-
       - run: &examples
           name: examples
           command: |
