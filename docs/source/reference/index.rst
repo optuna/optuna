@@ -13,3 +13,4 @@ API Reference
     structs
     study
     trial
+    visualization

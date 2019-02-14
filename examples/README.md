@@ -32,3 +32,7 @@ In addition, integration modules are available for the following libraries, prov
 * [pruning with XGBoost integration module](./pruning/xgboost_integration.py)
 * [pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
 * [pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
+
+### Examples of Visualization
+
+* [plotting learning curves](./visualization/plot_intermediate_values.ipynb)

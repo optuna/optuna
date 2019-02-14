@@ -231,6 +231,8 @@ if _available:
 
 
 def _check_bokeh_availability():
+    # type: () -> None
+
     if not _available:
         raise ImportError(
             'Bokeh is not available. Please install Bokeh to use the dashboard. '
@@ -240,6 +242,8 @@ def _check_bokeh_availability():
 
 
 def _show_experimental_warning():
+    # type: () -> None
+
     logger = optuna.logging.get_logger(__name__)
     logger.warning('Optuna dashboard is still highly experimental. Please use with caution!')
 

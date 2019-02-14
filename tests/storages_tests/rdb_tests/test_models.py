@@ -28,18 +28,23 @@ class TestStudySystemAttributeModel(object):
 
     @staticmethod
     def test_find_by_study_and_key(session):
+        # type: (Session) -> None
+
         study = StudyModel(study_id=1, study_name='test-study')
         session.add(StudySystemAttributeModel(study_id=study.study_id, key='sample-key',
                                               value_json='1'))
         session.commit()
 
-        assert '1' == StudySystemAttributeModel.find_by_study_and_key(study, 'sample-key',
-                                                                      session).value_json
+        attr = StudySystemAttributeModel.find_by_study_and_key(study, 'sample-key', session)
+        assert attr is not None and '1' == attr.value_json
+
         assert StudySystemAttributeModel.find_by_study_and_key(study, 'not-found',
                                                                session) is None
 
     @staticmethod
     def test_where_study_id(session):
+        # type: (Session) -> None
+
         sample_study = StudyModel(study_id=1, study_name='test-study')
         empty_study = StudyModel(study_id=2, study_name='test-study')
 
