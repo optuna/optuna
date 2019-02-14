@@ -23,7 +23,7 @@ except ImportError as e:
     _available = False
 
 
-class ChainerMNObjectiveFunc(object):
+class _ChainerMNObjectiveFunc(object):
 
     """A wrapper of an objective function to incorporate Optuna with ChainerMN.
 
@@ -100,7 +100,7 @@ class ChainerMNStudy(object):
         if len(set(study_names)) != 1:
             raise ValueError('Please make sure an identical study name is shared among workers.')
 
-        study.pruner = ChainerMNPruner(pruner=study.pruner, comm=comm)
+        study.pruner = _ChainerMNPruner(pruner=study.pruner, comm=comm)
         super(ChainerMNStudy, self).__setattr__('delegate', study)
         super(ChainerMNStudy, self).__setattr__('comm', comm)
 
@@ -119,7 +119,7 @@ class ChainerMNStudy(object):
         """
 
         if self.comm.rank == 0:
-            func_mn = ChainerMNObjectiveFunc(func, self.comm)
+            func_mn = _ChainerMNObjectiveFunc(func, self.comm)
             self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
             self.comm.mpi_comm.bcast((False, None))
         else:
@@ -159,7 +159,7 @@ def _check_chainermn_availability():
             '(The actual import error is as follows: ' + str(_import_error) + ')')
 
 
-class ChainerMNPruner(BasePruner):
+class _ChainerMNPruner(BasePruner):
     def __init__(self, pruner, comm):
         # type: (BasePruner, CommunicatorBase) -> None
 
