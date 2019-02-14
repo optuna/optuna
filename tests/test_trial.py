@@ -12,8 +12,7 @@ from optuna.trial import Trial
 
 parametrize_storage = pytest.mark.parametrize(
     'storage_init_func',
-    [storages.InMemoryStorage, lambda: storages.RDBStorage('sqlite:///:memory:')]
-)
+    [storages.InMemoryStorage, lambda: storages.RDBStorage('sqlite:///:memory:')])
 
 
 @parametrize_storage

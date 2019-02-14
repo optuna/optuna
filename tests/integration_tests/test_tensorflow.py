@@ -9,7 +9,6 @@ try:
 except ImportError:
     _available = False
 
-
 import optuna
 from optuna.integration import TensorFlowPruningHook
 from optuna.testing.integration import DeterministicPruner
@@ -53,10 +52,7 @@ def test_tensorflow_pruning_hook():
             run_every_steps=5,
         )
         train_spec = tf.estimator.TrainSpec(
-            input_fn=fixed_value_input_fn,
-            max_steps=100,
-            hooks=[hook]
-        )
+            input_fn=fixed_value_input_fn, max_steps=100, hooks=[hook])
         eval_spec = tf.estimator.EvalSpec(input_fn=fixed_value_input_fn, steps=1, hooks=[])
         tf.estimator.train_and_evaluate(estimator=clf, train_spec=train_spec, eval_spec=eval_spec)
         return 1.0

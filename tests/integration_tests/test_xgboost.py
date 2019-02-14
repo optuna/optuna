@@ -9,23 +9,24 @@ from optuna.testing.integration import DeterministicPruner
 def test_xgboost_pruning_callback_call():
     # type: () -> None
 
-    env = xgb.core.CallbackEnv(model='test',
-                               cvfolds=1,
-                               begin_iteration=0,
-                               end_iteration=1,
-                               rank=1,
-                               iteration=1,
-                               evaluation_result_list=[['validation-error', 1.]])
+    env = xgb.core.CallbackEnv(
+        model='test',
+        cvfolds=1,
+        begin_iteration=0,
+        end_iteration=1,
+        rank=1,
+        iteration=1,
+        evaluation_result_list=[['validation-error', 1.]])
 
     # The pruner is deactivated.
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
+    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception, ))
     pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
     pruning_callback(env)
 
     # The pruner is activated.
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
+    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception, ))
     pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
     with pytest.raises(optuna.structs.TrialPruned):
         pruning_callback(env)
@@ -41,8 +42,14 @@ def test_xgboost_pruning_callback():
         dtest = xgb.DMatrix([[1.]], label=[1.])
 
         pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
-        xgb.train({'silent': 1, 'objective': 'binary:logistic'}, dtrain, 1,
-                  evals=[(dtest, 'validation')],  verbose_eval=False,
+        xgb.train({
+            'silent': 1,
+            'objective': 'binary:logistic'
+        },
+                  dtrain,
+                  1,
+                  evals=[(dtest, 'validation')],
+                  verbose_eval=False,
                   callbacks=[pruning_callback])
         return 1.0
 
