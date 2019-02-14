@@ -2,13 +2,15 @@ import gc
 import pytest
 from types import TracebackType  # NOQA
 from typing import Any  # NOQA
+from typing import Callable  # NOQA
 from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 from typing import Type  # NOQA
 
-import optuna
+
 from optuna import create_study
 from optuna.integration import ChainerMNStudy
+from optuna import pruners
 from optuna.pruners import BasePruner  # NOQA
 from optuna.storages import BaseStorage  # NOQA
 from optuna.storages import InMemoryStorage
@@ -28,7 +30,7 @@ except ImportError:
 
 
 STORAGE_MODES = ['new', 'common']
-PRUNER_TYPES = ['median', 'successive_halving']
+PRUNER_INIT_FUNCS = [lambda: pruners.MedianPruner(), lambda: pruners.SuccessiveHalvingPruner()]
 
 
 def setup_module():
@@ -170,16 +172,18 @@ class TestChainerMNStudy(object):
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-    @pytest.mark.parametrize('pruner_type', PRUNER_TYPES)
-    def test_pruning(storage_mode, pruner_type, comm):
-        # type: (str, str, CommunicatorBase) -> None
+    @pytest.mark.parametrize('pruner_init_func', PRUNER_INIT_FUNCS)
+    def test_pruning(storage_mode, pruner_init_func, comm):
+        # type: (str, Callable[[], BasePruner], CommunicatorBase) -> None
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
-            pruner = _make_pruner(pruner_type)
+            pruner = pruner_init_func()
             study = TestChainerMNStudy._create_shared_study(storage, comm, pruner=pruner)
             mn_study = ChainerMNStudy(study, comm)
 
             def objective(_trial, _comm):
+                # type: (Trial, bool) -> float
+
                 raise TrialPruned  # Always be pruned.
 
             # Invoke optimize.
@@ -203,6 +207,8 @@ class TestChainerMNStudy(object):
             mn_study = ChainerMNStudy(study, comm)
 
             def objective(_trial, _comm):
+                # type: (Trial, bool) -> float
+
                 raise ValueError  # Always fails.
 
             # Invoke optimize in which `ValueError` is accepted.
@@ -242,14 +248,3 @@ class TestChainerMNStudy(object):
 
         if comm.size < 2:
             pytest.skip('This test is for multi-node only.')
-
-
-def _make_pruner(pruner_type):
-    # type: (str) -> BasePruner
-
-    if pruner_type == 'median':
-        return optuna.pruners.MedianPruner()
-    elif pruner_type == 'successive_halving':
-        return optuna.pruners.SuccessiveHalvingPruner()
-    else:
-        raise ValueError('Unknown pruner type: {}'.format(pruner_type))
