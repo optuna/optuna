@@ -151,7 +151,7 @@ class TPESampler(base.BaseSampler):
         q = distribution.q
 
         best_sample = self._sample_numerical(low, high, below, above, q=q)
-        return min(max(best_sample, low), high)
+        return min(max(best_sample, distribution.low), distribution.high)
 
     def _sample_int(self, distribution, below, above):
         # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> float
