@@ -148,17 +148,6 @@ class ChainerMNStudy(object):
         setattr(self.delegate, attr_name, value)
 
 
-def _check_chainermn_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            'ChainerMN is not available. Please install ChainerMN to use this feature. '
-            'ChainerMN can be installed by executing `$ pip install chainermn`. '
-            'For further information, please refer to the installation guide of ChainerMN. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
-
-
 class _ChainerMNPruner(BasePruner):
     def __init__(self, pruner, comm):
         # type: (BasePruner, CommunicatorBase) -> None
@@ -182,3 +171,14 @@ class _ChainerMNPruner(BasePruner):
             if isinstance(result, Exception):
                 raise result
             return result
+
+
+def _check_chainermn_availability():
+    # type: () -> None
+
+    if not _available:
+        raise ImportError(
+            'ChainerMN is not available. Please install ChainerMN to use this feature. '
+            'ChainerMN can be installed by executing `$ pip install chainermn`. '
+            'For further information, please refer to the installation guide of ChainerMN. '
+            '(The actual import error is as follows: ' + str(_import_error) + ')')
