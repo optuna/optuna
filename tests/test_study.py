@@ -402,7 +402,7 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
         else:
             assert len(df.columns) == 8
         for i in range(3):
-            assert ('number', '') in df.columns  # trial_number depends on other tests.
+            assert df.number[i] == i
             assert df.state[i] == optuna.structs.TrialState.COMPLETE
             assert df.value[i] == 3.5
             assert isinstance(df.datetime_start[i], pd.Timestamp)
@@ -411,7 +411,7 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
             if include_internal_fields:
-                assert ('trial_id', '') in df.columns
+                assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
                 assert ('params_in_internal_repr', 'x') in df.columns
                 assert ('params_in_internal_repr', 'y') in df.columns
 
@@ -437,7 +437,7 @@ def test_trials_dataframe_with_failure(storage_mode):
         # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 1
         assert len(df.columns) == 9
         for i in range(3):
-            assert ('number', '') in df.columns  # trial_id depends on other tests.
+            assert df.number[i] == i
             assert df.state[i] == optuna.structs.TrialState.FAIL
             assert df.value[i] is None
             assert isinstance(df.datetime_start[i], pd.Timestamp)
