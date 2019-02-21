@@ -46,11 +46,11 @@ def test_xgboost_pruning_callback():
             'silent': 1,
             'objective': 'binary:logistic'
         },
-                  dtrain,
-                  1,
-                  evals=[(dtest, 'validation')],
-                  verbose_eval=False,
-                  callbacks=[pruning_callback])
+            dtrain,
+            1,
+            evals=[(dtest, 'validation')],
+            verbose_eval=False,
+            callbacks=[pruning_callback])
         return 1.0
 
     study = optuna.create_study(pruner=DeterministicPruner(True))

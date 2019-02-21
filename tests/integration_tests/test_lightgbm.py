@@ -109,20 +109,20 @@ def objective(trial,
             'objective': 'binary',
             'metric': ['auc', 'binary_error']
         },
-               dtrain,
-               1,
-               verbose_eval=False,
-               nfold=2,
-               callbacks=[pruning_callback])
+            dtrain,
+            1,
+            verbose_eval=False,
+            nfold=2,
+            callbacks=[pruning_callback])
     else:
         lgb.train({
             'objective': 'binary',
             'metric': ['auc', 'binary_error']
         },
-                  dtrain,
-                  1,
-                  valid_sets=[dtest],
-                  valid_names=valid_names,
-                  verbose_eval=False,
-                  callbacks=[pruning_callback])
+            dtrain,
+            1,
+            valid_sets=[dtest],
+            valid_names=valid_names,
+            verbose_eval=False,
+            callbacks=[pruning_callback])
     return 1.0
