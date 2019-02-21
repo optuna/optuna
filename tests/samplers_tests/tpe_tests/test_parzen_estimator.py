@@ -9,15 +9,15 @@ from optuna.samplers.tpe.sampler import default_weights
 
 
 class TestParzenEstimator(object):
-
     @staticmethod
-    @pytest.mark.parametrize('mus, prior, magic_clip, endpoints',
-                             itertools.product(
-                                 ([], [0.4], [-0.4, 0.4]),  # mus
-                                 (True, False),  # prior
-                                 (True, False),  # magic_clip
-                                 (True, False),  # endpoints
-                             ))
+    @pytest.mark.parametrize(
+        'mus, prior, magic_clip, endpoints',
+        itertools.product(
+            ([], [0.4], [-0.4, 0.4]),  # mus
+            (True, False),  # prior
+            (True, False),  # magic_clip
+            (True, False),  # endpoints
+        ))
     def test_calculate_shape_check(mus, prior, magic_clip, endpoints):
         # type: (List[float], bool, bool, bool) -> None
 
@@ -35,19 +35,53 @@ class TestParzenEstimator(object):
 
     # TODO(Yanase): Improve test coverage for prior, magic_clip, and endpoints.
     @staticmethod
-    @pytest.mark.parametrize(
-        'mus, flags, expected',
-        [[[], {'prior': False, 'magic_clip': False, 'endpoints': True},
-          {'weights': [], 'mus': [], 'sigmas': []}],
-         [[], {'prior': True, 'magic_clip': False, 'endpoints': True},
-          {'weights': [1.0], 'mus': [0.0], 'sigmas': [2.0]}],
-         [[0.4], {'prior': True, 'magic_clip': False, 'endpoints': True},
-          {'weights': [0.5, 0.5], 'mus': [0.0, 0.4], 'sigmas': [2.0, 0.6]}],
-         [[-0.4], {'prior': True, 'magic_clip': False, 'endpoints': True},
-          {'weights': [0.5, 0.5], 'mus': [-0.4, 0.0], 'sigmas': [0.6, 2.0]}],
-         [[-0.4, 0.4], {'prior': True, 'magic_clip': False, 'endpoints': True},
-          {'weights': [1.0 / 3] * 3, 'mus': [-0.4, 0.0, 0.4], 'sigmas': [0.6, 2.0, 0.6]}],
-         ])
+    @pytest.mark.parametrize('mus, flags, expected', [
+        [[], {
+            'prior': False,
+            'magic_clip': False,
+            'endpoints': True
+        }, {
+            'weights': [],
+            'mus': [],
+            'sigmas': []
+        }],
+        [[], {
+            'prior': True,
+            'magic_clip': False,
+            'endpoints': True
+        }, {
+            'weights': [1.0],
+            'mus': [0.0],
+            'sigmas': [2.0]
+        }],
+        [[0.4], {
+            'prior': True,
+            'magic_clip': False,
+            'endpoints': True
+        }, {
+            'weights': [0.5, 0.5],
+            'mus': [0.0, 0.4],
+            'sigmas': [2.0, 0.6]
+        }],
+        [[-0.4], {
+            'prior': True,
+            'magic_clip': False,
+            'endpoints': True
+        }, {
+            'weights': [0.5, 0.5],
+            'mus': [-0.4, 0.0],
+            'sigmas': [0.6, 2.0]
+        }],
+        [[-0.4, 0.4], {
+            'prior': True,
+            'magic_clip': False,
+            'endpoints': True
+        }, {
+            'weights': [1.0 / 3] * 3,
+            'mus': [-0.4, 0.0, 0.4],
+            'sigmas': [0.6, 2.0, 0.6]
+        }],
+    ])
     def test_calculate(mus, flags, expected):
         # type: (List[float], Dict[str, bool], Dict[str, List[float]]) -> None
 

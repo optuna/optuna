@@ -6,7 +6,6 @@ from optuna.structs import TrialState
 
 
 class MedianPruner(BasePruner):
-
     """Pruner using the median stopping rule.
 
     Prune if the trial's best intermediate result is worse than median of intermediate results of

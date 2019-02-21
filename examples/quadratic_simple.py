@@ -17,7 +17,6 @@ We have the following two ways to execute this example:
 
 """
 
-
 import optuna
 
 
@@ -25,7 +24,7 @@ import optuna
 def objective(trial):
     x = trial.suggest_uniform('x', -100, 100)
     y = trial.suggest_categorical('y', [-1, 0, 1])
-    return x ** 2 + y
+    return x**2 + y
 
 
 if __name__ == '__main__':

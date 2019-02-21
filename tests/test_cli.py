@@ -20,12 +20,10 @@ from optuna.storages import RDBStorage
 from optuna.structs import CLIUsageError
 from optuna.trial import Trial  # NOQA
 
-
 TEST_CONFIG_TEMPLATE = 'default_storage: sqlite:///{default_storage}\n'
 
 
 class StorageConfigSupplier(object):
-
     def __init__(self, config_template):
         # type: (str) -> None
 
@@ -190,7 +188,7 @@ def test_studies_command(options):
         def get_row_elements(row_index):
             # type: (int) -> List[str]
 
-            return [r.strip() for r in rows[row_index].split('|')[1: -1]]
+            return [r.strip() for r in rows[row_index].split('|')[1:-1]]
 
         assert len(rows) == 6
         assert tuple(get_row_elements(1)) == Studies._study_list_header
@@ -227,8 +225,10 @@ def test_create_study_command_with_skip_if_exists():
             subprocess.check_output(command)
 
         # Try to create the same name study with `--skip-if-exists` flag (OK).
-        command = ['optuna', 'create-study', '--storage',
-                   storage_url, '--study-name', study_name, '--skip-if-exists']
+        command = [
+            'optuna', 'create-study', '--storage', storage_url, '--study-name', study_name,
+            '--skip-if-exists'
+        ]
         study_name = str(subprocess.check_output(command).decode().strip())
         new_study_id = storage.get_study_id_from_name(study_name)
         assert study_id == new_study_id  # The existing study instance is reused.
@@ -255,8 +255,8 @@ def test_dashboard_command(options):
         assert 'bokeh' in html
 
 
-@pytest.mark.parametrize('origins', [['192.168.111.1:5006'],
-                                     ['192.168.111.1:5006', '192.168.111.2:5006']])
+@pytest.mark.parametrize('origins',
+                         [['192.168.111.1:5006'], ['192.168.111.1:5006', '192.168.111.2:5006']])
 def test_dashboard_command_with_allow_websocket_origin(origins):
     # type: (List[str]) -> None
 
@@ -266,8 +266,10 @@ def test_dashboard_command_with_allow_websocket_origin(origins):
 
         storage = RDBStorage(storage_url)
         study_name = storage.get_study_name_from_id(storage.create_new_study_id())
-        command = ['optuna', 'dashboard', '--study', study_name, '--out', tf_report.name,
-                   '--storage', storage_url]
+        command = [
+            'optuna', 'dashboard', '--study', study_name, '--out', tf_report.name, '--storage',
+            storage_url
+        ]
         for origin in origins:
             command.extend(['--allow-websocket-origin', origin])
         subprocess.check_call(command)
@@ -282,7 +284,7 @@ def objective_func(trial):
     # type: (Trial) -> float
 
     x = trial.suggest_uniform('x', -10, 10)
-    return (x + 5) ** 2
+    return (x + 5)**2
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
@@ -293,8 +295,10 @@ def test_study_optimize_command(options):
         storage = RDBStorage(storage_url)
 
         study_name = storage.get_study_name_from_id(storage.create_new_study_id())
-        command = ['optuna', 'study', 'optimize', '--study', study_name, '--n-trials', '10',
-                   __file__, 'objective_func']
+        command = [
+            'optuna', 'study', 'optimize', '--study', study_name, '--n-trials', '10', __file__,
+            'objective_func'
+        ]
         command = _add_option(command, '--storage', storage_url, 'storage' in options)
         command = _add_option(command, '--config', config_path, 'config' in options)
         subprocess.check_call(command)
@@ -315,8 +319,10 @@ def test_study_optimize_command_inconsistent_args():
 
         # --study argument is missing.
         with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(['optuna', 'study', 'optimize', '--storage', db_url,
-                                   '--n-trials', '10', __file__, 'objective_func'])
+            subprocess.check_call([
+                'optuna', 'study', 'optimize', '--storage', db_url, '--n-trials', '10', __file__,
+                'objective_func'
+            ])
 
 
 def test_empty_argv():

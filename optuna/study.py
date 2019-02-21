@@ -28,7 +28,6 @@ ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
 class Study(object):
-
     """A study corresponds to an optimization task, i.e., a set of trials.
 
     This object provides interfaces to run a new :class:`~optuna.trial.Trial`, access trials'
@@ -83,9 +82,8 @@ class Study(object):
 
         # TODO(Yanase): Implement maximization.
         if _direction == structs.StudyDirection.MAXIMIZE:
-            raise ValueError(
-                'Optimization direction of study {} is set to `MAXIMIZE`. '
-                'Currently, Optuna supports `MINIMIZE` only.'.format(study_name))
+            raise ValueError('Optimization direction of study {} is set to `MAXIMIZE`. '
+                             'Currently, Optuna supports `MINIMIZE` only.'.format(study_name))
 
         self.storage.set_study_direction(self.study_id, _direction)
 
@@ -189,7 +187,7 @@ class Study(object):
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
-            catch=(Exception,)  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            catch=(Exception, )  # type: Union[Tuple[()], Tuple[Type[Exception]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -408,8 +406,7 @@ class Study(object):
         try:
             result = func(trial)
         except structs.TrialPruned as e:
-            message = 'Setting trial status as {}. {}'.format(
-                structs.TrialState.PRUNED, str(e))
+            message = 'Setting trial status as {}. {}'.format(structs.TrialState.PRUNED, str(e))
             self.logger.info(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
@@ -423,7 +420,10 @@ class Study(object):
 
         try:
             result = float(result)
-        except (ValueError, TypeError,):
+        except (
+                ValueError,
+                TypeError,
+        ):
             message = 'Setting trial status as {} because the returned value from the ' \
                       'objective function cannot be casted to float. Returned value is: ' \
                       '{}'.format(structs.TrialState.FAIL, repr(result))
@@ -449,10 +449,9 @@ class Study(object):
     def _log_completed_trial(self, value):
         # type: (float) -> None
 
-        self.logger.info(
-            'Finished a trial resulted in value: {}. '
-            'Current best value is {} with parameters: {}.'.format(
-                value, self.best_value, self.best_params))
+        self.logger.info('Finished a trial resulted in value: {}. '
+                         'Current best value is {} with parameters: {}.'.format(
+                             value, self.best_value, self.best_params))
 
 
 def create_study(
@@ -510,8 +509,12 @@ def create_study(
 
     study_name = storage.get_study_name_from_id(study_id)
 
-    return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner,
-                 direction=direction)
+    return Study(
+        study_name=study_name,
+        storage=storage,
+        sampler=sampler,
+        pruner=pruner,
+        direction=direction)
 
 
 def get_all_study_summaries(storage):

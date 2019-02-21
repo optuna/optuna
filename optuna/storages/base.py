@@ -37,7 +37,7 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
-    @ abc.abstractmethod
+    @abc.abstractmethod
     def set_study_direction(self, study_id, direction):
         # type: (int, structs.StudyDirection) -> None
 
@@ -63,7 +63,7 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
-    @ abc.abstractmethod
+    @abc.abstractmethod
     def get_study_direction(self, study_id):
         # type: (int) -> structs.StudyDirection
 
@@ -192,37 +192,36 @@ class BaseStorage(object):
         # Be careful: this method returns param values in internal representation
         all_trials = self.get_all_trials(study_id)
 
-        return [
-            (t.params_in_internal_repr[param_name], t.value)
-            for t in all_trials
-            if (t.value is not None and
-                param_name in t.params and
-                t.state is structs.TrialState.COMPLETE)
-            # TODO(Akiba): We also want to use pruned results
-        ]
+        return [(t.params_in_internal_repr[param_name], t.value) for t in all_trials
+                if (t.value is not None and param_name in t.params
+                    and t.state is structs.TrialState.COMPLETE)
+                # TODO(Akiba): We also want to use pruned results
+                ]
 
     # Methods for the median pruner
 
     def get_best_intermediate_result_over_steps(self, trial_id):
         # type: (int) -> float
 
-        return np.nanmin(np.array(
-            list(self.get_trial(trial_id).intermediate_values.values()),
-            np.float))
+        return np.nanmin(
+            np.array(list(self.get_trial(trial_id).intermediate_values.values()), np.float))
 
     def get_median_intermediate_result_over_trials(self, study_id, step):
         # type: (int, int) -> float
 
-        all_trials = [t for t in self.get_all_trials(study_id)
-                      if t.state == structs.TrialState.COMPLETE]
+        all_trials = [
+            t for t in self.get_all_trials(study_id) if t.state == structs.TrialState.COMPLETE
+        ]
 
         if len(all_trials) == 0:
             raise ValueError("No trials have been completed.")
 
-        return float(np.nanmedian(np.array([
-            t.intermediate_values[step] for t in all_trials
-            if step in t.intermediate_values
-        ], np.float)))
+        return float(
+            np.nanmedian(
+                np.array([
+                    t.intermediate_values[step]
+                    for t in all_trials if step in t.intermediate_values
+                ], np.float)))
 
     def remove_session(self):
         # type: () -> None

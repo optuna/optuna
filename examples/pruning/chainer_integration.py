@@ -21,10 +21,8 @@ import pkg_resources
 
 import optuna
 
-
 if pkg_resources.parse_version(chainer.__version__) < pkg_resources.parse_version('4.0.0'):
     raise RuntimeError('Chainer>=4.0.0 is required for this example.')
-
 
 N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
@@ -58,8 +56,7 @@ def objective(trial):
     train, test = chainer.datasets.get_mnist()
     train = chainer.datasets.SubDataset(
         train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
-    test = chainer.datasets.SubDataset(
-        test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
+    test = chainer.datasets.SubDataset(test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
     train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE)
     test_iter = chainer.iterators.SerialIterator(test, BATCHSIZE, repeat=False, shuffle=False)
 
@@ -70,13 +67,14 @@ def objective(trial):
     # Add Chainer extension for pruners.
     trainer.extend(
         optuna.integration.ChainerPruningExtension(trial, 'validation/main/loss',
-                                                   (PRUNER_INTERVAL, 'epoch'))
-    )
+                                                   (PRUNER_INTERVAL, 'epoch')))
 
     trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
-    trainer.extend(chainer.training.extensions.PrintReport(
-        ['epoch', 'main/loss', 'validation/main/loss',
-         'main/accuracy', 'validation/main/accuracy']))
+    trainer.extend(
+        chainer.training.extensions.PrintReport([
+            'epoch', 'main/loss', 'validation/main/loss', 'main/accuracy',
+            'validation/main/accuracy'
+        ]))
     log_report_extension = chainer.training.extensions.LogReport(log_name=None)
     trainer.extend(log_report_extension)
 

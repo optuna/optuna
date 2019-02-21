@@ -38,11 +38,13 @@ def objective(trial):
     dtrain = xgb.DMatrix(train_x, label=train_y)
     dtest = xgb.DMatrix(test_x, label=test_y)
 
-    param = {'silent': 1, 'objective': 'binary:logistic',
-             'booster': trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart']),
-             'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
-             'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0)
-             }
+    param = {
+        'silent': 1,
+        'objective': 'binary:logistic',
+        'booster': trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart']),
+        'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
+        'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0)
+    }
 
     if param['booster'] == 'gbtree' or param['booster'] == 'dart':
         param['max_depth'] = trial.suggest_int('max_depth', 1, 9)

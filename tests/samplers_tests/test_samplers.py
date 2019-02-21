@@ -4,11 +4,8 @@ import typing  # NOQA
 
 import optuna
 
-
 parametrize_sampler = pytest.mark.parametrize(
-    'sampler_class',
-    [optuna.samplers.RandomSampler, optuna.samplers.TPESampler]
-)
+    'sampler_class', [optuna.samplers.RandomSampler, optuna.samplers.TPESampler])
 
 
 @parametrize_sampler

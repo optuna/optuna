@@ -15,17 +15,15 @@ except ImportError as e:
     # This alias is required to avoid ImportError at ChainerPruningExtension definition.
     Extension = object
 
-
 if types.TYPE_CHECKING:
     from typing import Tuple
     from typing import Union
 
-    TriggerType = Union[Tuple[(int, str)], triggers.IntervalTrigger,
-                        triggers.ManualScheduleTrigger]
+    TriggerType = Union[Tuple[(int,
+                               str)], triggers.IntervalTrigger, triggers.ManualScheduleTrigger]
 
 
 class ChainerPruningExtension(Extension):
-
     """Chainer extension to prune unpromising trials.
 
     Example:
@@ -67,13 +65,12 @@ class ChainerPruningExtension(Extension):
         self.trial = trial
         self.observation_key = observation_key
         self.pruner_trigger = chainer.training.get_trigger(pruner_trigger)
-        if not (isinstance(self.pruner_trigger, triggers.IntervalTrigger) or
-                isinstance(self.pruner_trigger, triggers.ManualScheduleTrigger)):
+        if not (isinstance(self.pruner_trigger, triggers.IntervalTrigger)
+                or isinstance(self.pruner_trigger, triggers.ManualScheduleTrigger)):
             pruner_type = type(self.pruner_trigger)
-            raise TypeError(
-                "Invalid trigger class: " + str(pruner_type) + "\n"
-                "Pruner trigger is supposed to be an instance of "
-                "IntervalTrigger or ManualScheduleTrigger.")
+            raise TypeError("Invalid trigger class: " + str(pruner_type) + "\n"
+                            "Pruner trigger is supposed to be an instance of "
+                            "IntervalTrigger or ManualScheduleTrigger.")
 
     @staticmethod
     def _get_float_value(observation_value):
@@ -89,8 +86,7 @@ class ChainerPruningExtension(Extension):
         except TypeError:
             raise TypeError(
                 'Type of observation value is not supported by ChainerPruningExtension.\n'
-                '{} cannot be casted to float.'.format(type(observation_value))
-            )
+                '{} cannot be casted to float.'.format(type(observation_value)))
 
         return observation_value
 

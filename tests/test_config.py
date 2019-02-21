@@ -7,7 +7,6 @@ from typing import Optional  # NOQA
 
 import optuna
 
-
 _dummy_home = None  # type: Optional[str]
 
 
