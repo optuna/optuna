@@ -394,6 +394,8 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
         df = study.trials_dataframe(include_internal_fields=include_internal_fields)
+        # Change index to access rows via trial number.
+        df.set_index(('number', ''), inplace=True, drop=False)
         assert len(df) == 3
         # non-nested: 5, params: 2, user_attrs: 1 and 8 in total.
         if include_internal_fields:
@@ -401,6 +403,7 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
             assert len(df.columns) == 8 + 3
         else:
             assert len(df.columns) == 8
+
         for i in range(3):
             assert df.number[i] == i
             assert df.state[i] == optuna.structs.TrialState.COMPLETE
@@ -433,6 +436,8 @@ def test_trials_dataframe_with_failure(storage_mode):
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
         df = study.trials_dataframe()
+        # Change index to access rows via trial number.
+        df.set_index(('number', ''), inplace=True, drop=False)
         assert len(df) == 3
         # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 1
         assert len(df.columns) == 9
