@@ -7,7 +7,6 @@ from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 from typing import Type  # NOQA
 
-
 from optuna import create_study
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
@@ -209,7 +208,7 @@ class TestChainerMNStudy(object):
 
             # Invoke optimize in which `ValueError` is accepted.
             n_trials = 20
-            mn_study.optimize(objective, n_trials=n_trials, catch=(ValueError,))
+            mn_study.optimize(objective, n_trials=n_trials, catch=(ValueError, ))
 
             # Assert trial count.
             assert len(mn_study.trials) == n_trials
