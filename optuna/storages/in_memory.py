@@ -11,7 +11,6 @@ from optuna.storages import base
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna import structs
 
-
 IN_MEMORY_STORAGE_STUDY_ID = 0
 IN_MEMORY_STORAGE_STUDY_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -57,9 +56,8 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             if self.direction != structs.StudyDirection.NOT_SET and self.direction != direction:
-                raise ValueError(
-                    'Cannot overwrite study direction from {} to {}.'.format(
-                        self.direction, direction))
+                raise ValueError('Cannot overwrite study direction from {} to {}.'.format(
+                    self.direction, direction))
             self.direction = direction
 
     def set_study_user_attr(self, study_id, key, value):
@@ -117,16 +115,17 @@ class InMemoryStorage(base.BaseStorage):
         if len(self.trials) > 0:
             datetime_start = min([t.datetime_start for t in self.trials])
 
-        return [structs.StudySummary(
-            study_id=IN_MEMORY_STORAGE_STUDY_ID,
-            study_name=self.study_name,
-            direction=self.direction,
-            best_trial=best_trial,
-            user_attrs=copy.deepcopy(self.study_user_attrs),
-            system_attrs=copy.deepcopy(self.study_system_attrs),
-            n_trials=len(self.trials),
-            datetime_start=datetime_start
-        )]
+        return [
+            structs.StudySummary(
+                study_id=IN_MEMORY_STORAGE_STUDY_ID,
+                study_name=self.study_name,
+                direction=self.direction,
+                best_trial=best_trial,
+                user_attrs=copy.deepcopy(self.study_user_attrs),
+                system_attrs=copy.deepcopy(self.study_system_attrs),
+                n_trials=len(self.trials),
+                datetime_start=datetime_start)
+        ]
 
     def create_new_trial_id(self, study_id):
         # type: (int) -> int
@@ -145,9 +144,7 @@ class InMemoryStorage(base.BaseStorage):
                     intermediate_values={},
                     params_in_internal_repr={},
                     datetime_start=datetime.now(),
-                    datetime_complete=None
-                )
-            )
+                    datetime_complete=None))
         return trial_id
 
     def set_trial_state(self, trial_id, state):
@@ -165,8 +162,8 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             # Check param distribution compatibility with previous trial(s).
             if param_name in self.param_distribution:
-                distributions.check_distribution_compatibility(
-                    self.param_distribution[param_name], distribution)
+                distributions.check_distribution_compatibility(self.param_distribution[param_name],
+                                                               distribution)
 
             # Check param has not been set; otherwise, return False.
             param_value_external = distribution.to_external_repr(param_value_internal)

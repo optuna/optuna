@@ -22,7 +22,6 @@ try:
 except ImportError:
     _available = False
 
-
 STORAGE_MODES = ['new', 'common']
 
 
@@ -39,7 +38,6 @@ def teardown_module():
 
 
 class Func(object):
-
     def __init__(self):
         # type: () -> None
 
@@ -57,11 +55,10 @@ class Func(object):
         self.suggested_values[trial.trial_id]['y'] = y
         self.suggested_values[trial.trial_id]['z'] = z
 
-        return (x - 2) ** 2 + (y - 25) ** 2 + z
+        return (x - 2)**2 + (y - 25)**2 + z
 
 
 class MultiNodeStorageSupplier(StorageSupplier):
-
     def __init__(self, storage_specifier, comm):
         # type: (str, CommunicatorBase) -> None
 
@@ -106,7 +103,6 @@ def comm():
 
 
 class TestChainerMNStudy(object):
-
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
     def test_init(storage_mode, comm):

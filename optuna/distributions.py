@@ -10,7 +10,6 @@ from typing import Union
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseDistribution(object):
-
     """Base class for distributions.
 
     Note that distribution classes are not supposed to be called by library users.
@@ -53,10 +52,8 @@ class BaseDistribution(object):
 
 
 class UniformDistribution(
-    NamedTuple(
-        '_BaseUniformDistribution',
-        [('low', float), ('high', float)]), BaseDistribution):
-
+        NamedTuple('_BaseUniformDistribution', [('low', float), ('high', float)]),
+        BaseDistribution):
     """A uniform distribution in the linear domain.
 
     Attributes:
@@ -70,10 +67,8 @@ class UniformDistribution(
 
 
 class LogUniformDistribution(
-    NamedTuple(
-        '_BaseLogUniformDistribution',
-        [('low', float), ('high', float)]), BaseDistribution):
-
+        NamedTuple('_BaseLogUniformDistribution', [('low', float), ('high', float)]),
+        BaseDistribution):
     """A uniform distribution in the log domain.
 
     Attributes:
@@ -87,10 +82,8 @@ class LogUniformDistribution(
 
 
 class DiscreteUniformDistribution(
-    NamedTuple(
-        '_BaseDiscreteUniformDistribution',
-        [('low', float), ('high', float), ('q', float)]), BaseDistribution):
-
+        NamedTuple('_BaseDiscreteUniformDistribution', [('low', float), ('high', float),
+                                                        ('q', float)]), BaseDistribution):
     """A discretized uniform distribution in the linear domain.
 
     Attributes:
@@ -106,10 +99,8 @@ class DiscreteUniformDistribution(
 
 
 class IntUniformDistribution(
-    NamedTuple(
-        '_BaseIntUniformDistribution',
-        [('low', int), ('high', int)]), BaseDistribution):
-
+        NamedTuple('_BaseIntUniformDistribution', [('low', int), ('high', int)]),
+        BaseDistribution):
     """A uniform distribution on integers.
 
     Attributes:
@@ -131,10 +122,8 @@ class IntUniformDistribution(
 
 
 class CategoricalDistribution(
-    NamedTuple(
-        '_BaseCategoricalDistribution',
-        [('choices', Tuple[Union[float, str], ...])]), BaseDistribution):
-
+        NamedTuple('_BaseCategoricalDistribution', [('choices', Tuple[Union[float, str], ...])]),
+        BaseDistribution):
     """A categorical distribution.
 
     Attributes:
@@ -153,9 +142,8 @@ class CategoricalDistribution(
         return self.choices.index(param_value_in_external_repr)
 
 
-DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution,
-                        DiscreteUniformDistribution, IntUniformDistribution,
-                        CategoricalDistribution)
+DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, DiscreteUniformDistribution,
+                        IntUniformDistribution, CategoricalDistribution)
 
 
 def json_to_distribution(json_str):
@@ -218,5 +206,5 @@ def check_distribution_compatibility(dist_old, dist_new):
     if not isinstance(dist_new, CategoricalDistribution):
         return
     if dist_old.choices != dist_new.choices:
-        raise ValueError(
-            CategoricalDistribution.__name__ + ' does not support dynamic value space.')
+        raise ValueError(CategoricalDistribution.__name__ +
+                         ' does not support dynamic value space.')

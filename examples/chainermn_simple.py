@@ -23,7 +23,6 @@ import sys
 
 import optuna
 
-
 N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
@@ -44,6 +43,8 @@ def create_model(trial):
     return chainer.Sequential(*layers)
 
 
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial, comm):
     # Sample an architecture.
     model = L.Classifier(create_model(trial))
@@ -58,8 +59,7 @@ def objective(trial, comm):
     rng = np.random.RandomState(0)
     train = chainer.datasets.SubDataset(
         train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
-    test = chainer.datasets.SubDataset(
-        test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
+    test = chainer.datasets.SubDataset(test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
 
     train = chainermn.scatter_dataset(train, comm, shuffle=True)
     test = chainermn.scatter_dataset(test, comm)

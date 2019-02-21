@@ -37,7 +37,6 @@ def default_weights(x):
 
 
 class TPESampler(base.BaseSampler):
-
     def __init__(
             self,
             consider_prior=True,  # type: bool
@@ -74,33 +73,33 @@ class TPESampler(base.BaseSampler):
             return self.random_sampler.sample(storage, study_id, param_name, param_distribution)
 
         below_param_values, above_param_values = self._split_observation_pairs(
-            list(range(n)), [p[0] for p in observation_pairs],
-            list(range(n)), [p[1] for p in observation_pairs])
+            list(range(n)), [p[0] for p in observation_pairs], list(range(n)),
+            [p[1] for p in observation_pairs])
 
         if isinstance(param_distribution, distributions.UniformDistribution):
-            return self._sample_uniform(
-                param_distribution, below_param_values, above_param_values)
+            return self._sample_uniform(param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
-            return self._sample_loguniform(
-                param_distribution, below_param_values, above_param_values)
+            return self._sample_loguniform(param_distribution, below_param_values,
+                                           above_param_values)
         elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
-            return self._sample_discrete_uniform(
-                param_distribution, below_param_values, above_param_values)
+            return self._sample_discrete_uniform(param_distribution, below_param_values,
+                                                 above_param_values)
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            return self._sample_int(
-                param_distribution, below_param_values, above_param_values)
+            return self._sample_int(param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
-            return self._sample_categorical(
-                param_distribution, below_param_values, above_param_values)
+            return self._sample_categorical(param_distribution, below_param_values,
+                                            above_param_values)
         else:
-            distribution_list = [distributions.UniformDistribution.__name__,
-                                 distributions.LogUniformDistribution.__name__,
-                                 distributions.DiscreteUniformDistribution.__name__,
-                                 distributions.IntUniformDistribution.__name__,
-                                 distributions.CategoricalDistribution.__name__]
+            distribution_list = [
+                distributions.UniformDistribution.__name__,
+                distributions.LogUniformDistribution.__name__,
+                distributions.DiscreteUniformDistribution.__name__,
+                distributions.IntUniformDistribution.__name__,
+                distributions.CategoricalDistribution.__name__
+            ]
             raise NotImplementedError("The distribution {} is not implemented. "
-                                      "The parameter distribution should be one of the {}"
-                                      .format(param_distribution, distribution_list))
+                                      "The parameter distribution should be one of the {}".format(
+                                          param_distribution, distribution_list))
 
     def _split_observation_pairs(
             self,
@@ -111,11 +110,8 @@ class TPESampler(base.BaseSampler):
     ):
         # type: (...) -> Tuple[np.ndarray, np.ndarray]
 
-        config_idxs, config_vals, loss_idxs, loss_vals = map(np.asarray,
-                                                             [config_idxs,
-                                                              config_vals,
-                                                              loss_idxs,
-                                                              loss_vals])
+        config_idxs, config_vals, loss_idxs, loss_vals = map(
+            np.asarray, [config_idxs, config_vals, loss_idxs, loss_vals])
         n_below = self.gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
 
@@ -178,13 +174,10 @@ class TPESampler(base.BaseSampler):
             below = np.log(below)
             above = np.log(above)
 
-        size = (self.n_ei_candidates,)
+        size = (self.n_ei_candidates, )
 
         parzen_estimator_below = ParzenEstimator(
-            mus=below,
-            low=low,
-            high=high,
-            parameters=self.parzen_estimator_parameters)
+            mus=below, low=low, high=high, parameters=self.parzen_estimator_parameters)
         samples_below = self._sample_from_gmm(
             parzen_estimator=parzen_estimator_below,
             low=low,
@@ -201,9 +194,7 @@ class TPESampler(base.BaseSampler):
             is_log=is_log)
 
         parzen_estimator_above = ParzenEstimator(
-            mus=above,
-            low=low, high=high,
-            parameters=self.parzen_estimator_parameters)
+            mus=above, low=low, high=high, parameters=self.parzen_estimator_parameters)
 
         log_likelihoods_above = self._gmm_log_pdf(
             samples=samples_below,
@@ -223,7 +214,7 @@ class TPESampler(base.BaseSampler):
         below = list(map(int, below))
         above = list(map(int, above))
         upper = len(choices)
-        size = (self.n_ei_candidates,)
+        size = (self.n_ei_candidates, )
 
         weights_below = self.weights(len(below))
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
@@ -238,8 +229,10 @@ class TPESampler(base.BaseSampler):
         weighted_above /= weighted_above.sum()
         log_likelihoods_above = TPESampler._categorical_log_pdf(samples_below, weighted_above)
 
-        return int(TPESampler._compare(
-            samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above)[0])
+        return int(
+            TPESampler._compare(
+                samples=samples_below, log_l=log_likelihoods_below,
+                log_g=log_likelihoods_above)[0])
 
     def _sample_from_gmm(
             self,
@@ -307,8 +300,9 @@ class TPESampler(base.BaseSampler):
         _samples = samples
         samples = _samples.flatten()
 
-        p_accept = np.sum(weights * (TPESampler._normal_cdf(high, mus, sigmas)
-                                     - TPESampler._normal_cdf(low, mus, sigmas)))
+        p_accept = np.sum(
+            weights *
+            (TPESampler._normal_cdf(high, mus, sigmas) - TPESampler._normal_cdf(low, mus, sigmas)))
 
         if q is None:
             jacobian = samples[:, None] if is_log else np.ones(samples.shape)[:, None]
@@ -316,11 +310,10 @@ class TPESampler(base.BaseSampler):
                 distance = np.log(samples[:, None]) - mus
             else:
                 distance = samples[:, None] - mus
-            mahalanobis = (distance / np.maximum(sigmas, EPS)) ** 2
+            mahalanobis = (distance / np.maximum(sigmas, EPS))**2
             Z = np.sqrt(2 * np.pi) * sigmas * jacobian
             coefficient = weights / Z / p_accept
-            return_val = TPESampler._logsum_rows(- 0.5 *
-                                                 mahalanobis + np.log(coefficient))
+            return_val = TPESampler._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
         else:
             probabilities = np.zeros(samples.shape, dtype=float)
             cdf_func = TPESampler._log_normal_cdf if is_log else TPESampler._normal_cdf
@@ -348,20 +341,20 @@ class TPESampler(base.BaseSampler):
         probabilities = np.asarray(probabilities)
 
         if size == ():
-            size = (1,)
+            size = (1, )
         elif isinstance(size, (int, np.number)):
-            size = (size,)
+            size = (size, )
         else:
             size = tuple(size)
 
-        if size == (0,):
+        if size == (0, ):
             return np.asarray([], dtype=float)
         assert len(size)
 
         if probabilities.ndim == 1:
             n_draws = int(np.prod(size))
             sample = self.rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
-            assert sample.shape == size + (probabilities.size,)
+            assert sample.shape == size + (probabilities.size, )
             return_val = np.dot(sample, np.arange(probabilities.size))
             return_val.shape = size
             return return_val
@@ -369,8 +362,9 @@ class TPESampler(base.BaseSampler):
             n_draws_, n_choices = probabilities.shape
             n_draws, = size
             assert n_draws_ == n_draws
-            return_val = [np.where(self.rng.multinomial(pvals=[ii], n=1))[0][0]
-                          for ii in range(n_draws_)]
+            return_val = [
+                np.where(self.rng.multinomial(pvals=[ii], n=1))[0][0] for ii in range(n_draws_)
+            ]
             return_val = np.asarray(return_val)
             return_val.shape = size
             return return_val
@@ -401,8 +395,8 @@ class TPESampler(base.BaseSampler):
             if samples.size != score.size:
                 raise ValueError("The size of the 'samples' and that of the 'score' "
                                  "should be same. "
-                                 "But (samples.size, score.size) = ({}, {})"
-                                 .format(samples.size, score.size))
+                                 "But (samples.size, score.size) = ({}, {})".format(
+                                     samples.size, score.size))
 
             best = np.argmax(score)
             return np.asarray([samples[best]] * samples.size)

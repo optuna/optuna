@@ -7,7 +7,6 @@ from typing import Optional
 
 
 class TrialState(enum.Enum):
-
     """State of a :class:`~optuna.trial.Trial`.
 
     Attributes:
@@ -33,7 +32,6 @@ class TrialState(enum.Enum):
 
 
 class StudyDirection(enum.Enum):
-
     """Direction of a :class:`~optuna.study.Study`.
 
     Attributes:
@@ -51,20 +49,18 @@ class StudyDirection(enum.Enum):
 
 
 class FrozenTrial(
-    NamedTuple(
-        '_BaseFrozenTrial',
-        [('trial_id', int),
-         ('state', TrialState),
-         ('value', Optional[float]),
-         ('datetime_start', Optional[datetime]),
-         ('datetime_complete', Optional[datetime]),
-         ('params', Dict[str, Any]),
-         ('user_attrs', Dict[str, Any]),
-         ('system_attrs', Dict[str, Any]),
-         ('intermediate_values', Dict[int, float]),
-         ('params_in_internal_repr', Dict[str, float]),
-         ])):
-
+        NamedTuple('_BaseFrozenTrial', [
+            ('trial_id', int),
+            ('state', TrialState),
+            ('value', Optional[float]),
+            ('datetime_start', Optional[datetime]),
+            ('datetime_complete', Optional[datetime]),
+            ('params', Dict[str, Any]),
+            ('user_attrs', Dict[str, Any]),
+            ('system_attrs', Dict[str, Any]),
+            ('intermediate_values', Dict[int, float]),
+            ('params_in_internal_repr', Dict[str, float]),
+        ])):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
     Attributes:
@@ -96,17 +92,12 @@ class FrozenTrial(
 
 
 class StudySummary(
-    NamedTuple(
-        'StudySummary',
-        [('study_id', int),
-         ('study_name', str),
-         ('direction', StudyDirection),
-         ('best_trial', Optional[FrozenTrial]),
-         ('user_attrs', Dict[str, Any]),
-         ('system_attrs', Dict[str, Any]),
-         ('n_trials', int),
-         ('datetime_start', Optional[datetime])])):
-
+        NamedTuple('StudySummary', [('study_id', int), ('study_name', str),
+                                    ('direction', StudyDirection),
+                                    ('best_trial', Optional[FrozenTrial]),
+                                    ('user_attrs', Dict[str, Any]),
+                                    ('system_attrs', Dict[str, Any]), ('n_trials', int),
+                                    ('datetime_start', Optional[datetime])])):
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
 
     See also :func:`optuna.study.get_all_study_summaries`.
@@ -134,14 +125,12 @@ class StudySummary(
 
 
 class OptunaError(Exception):
-
     """Base class for Optuna specific errors."""
 
     pass
 
 
 class TrialPruned(OptunaError):
-
     """Exception for pruned trials.
 
     This error tells a trainer that the current :class:`~optuna.trial.Trial` was pruned. It is
@@ -164,7 +153,6 @@ class TrialPruned(OptunaError):
 
 
 class CLIUsageError(OptunaError):
-
     """Exception for CLI.
 
     CLI raises this exception when it receives invalid configuration.
@@ -174,7 +162,6 @@ class CLIUsageError(OptunaError):
 
 
 class StorageInternalError(OptunaError):
-
     """Exception for storage operation.
 
     This error is raised when an operation failed in backend DB of storage.
@@ -184,7 +171,6 @@ class StorageInternalError(OptunaError):
 
 
 class DuplicatedStudyError(OptunaError):
-
     """Exception for a duplicated study name.
 
     This error is raised when a specified study name already exists in the storage.

@@ -15,6 +15,11 @@ This page contains a list of example codes written with Optuna.
 * [LighGBM](./lightgbm_simple.py)
 * [XGBoost](./xgboost_simple.py)
 
+### An example where an objective function uses additional arguments
+
+The following example demonstrates how to implement an objective function that uses additional arguments other than `trial`.
+* [scikit-learn (callable class version)](./sklearn_additional_args.py)
+
 ### Examples of Pruning
 
 The following example demonstrates how to implement pruning logic with Optuna.
@@ -25,3 +30,8 @@ In addition, integration modules are available for the following libraries, prov
 
 * [pruning with Chainer integration module](./pruning/chainer_integration.py)
 * [pruning with XGBoost integration module](./pruning/xgboost_integration.py)
+* [pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
+
+### Examples of Visualization
+
+* [plotting learning curves](./visualization/plot_intermediate_values.ipynb)

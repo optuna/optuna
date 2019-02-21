@@ -38,12 +38,10 @@ $ circleci build --job tests-python37
 Please make sure that the following jobs work without any errors in your environment:
 
 - `tests-python27`
-- `tests-python34`
 - `tests-python35`
 - `tests-python36`
 - `tests-python37`
 - `examples-python27`
-- `examples-python34`
 - `examples-python35`
 - `examples-python36`
 - `examples-python37`

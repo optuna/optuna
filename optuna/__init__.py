@@ -10,6 +10,7 @@ from optuna import structs  # NOQA
 from optuna import study  # NOQA
 from optuna import trial  # NOQA
 from optuna import version  # NOQA
+from optuna import visualization  # NOQA
 
 from optuna.study import create_study  # NOQA
 from optuna.study import get_all_study_summaries  # NOQA

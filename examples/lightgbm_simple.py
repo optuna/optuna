@@ -26,17 +26,21 @@ from sklearn.model_selection import train_test_split
 import optuna
 
 
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     data, target = sklearn.datasets.load_breast_cancer(return_X_y=True)
     train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.25)
     dtrain = lgb.Dataset(train_x, label=train_y)
 
-    num_round = trial.suggest_int('num_round', 1, 500)
-    param = {'objective': 'binary', 'metric': 'binary_logloss', 'verbosity': -1,
-             'boosting_type': trial.suggest_categorical('boosting', ['gbdt', 'dart', 'goss']),
-             'num_leaves': trial.suggest_int('num_leaves', 10, 1000),
-             'learning_rate': trial.suggest_loguniform('learning_rate', 1e-8, 1.0)
-             }
+    param = {
+        'objective': 'binary',
+        'metric': 'binary_logloss',
+        'verbosity': -1,
+        'boosting_type': trial.suggest_categorical('boosting', ['gbdt', 'dart', 'goss']),
+        'num_leaves': trial.suggest_int('num_leaves', 10, 1000),
+        'learning_rate': trial.suggest_loguniform('learning_rate', 1e-8, 1.0)
+    }
 
     if param['boosting_type'] == 'dart':
         param['drop_rate'] = trial.suggest_loguniform('drop_rate', 1e-8, 1.0)
@@ -45,7 +49,7 @@ def objective(trial):
         param['top_rate'] = trial.suggest_uniform('top_rate', 0.0, 1.0)
         param['other_rate'] = trial.suggest_uniform('other_rate', 0.0, 1.0 - param['top_rate'])
 
-    gbm = lgb.train(param, dtrain, num_round)
+    gbm = lgb.train(param, dtrain)
     preds = gbm.predict(test_x)
     pred_labels = np.rint(preds)
     accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)

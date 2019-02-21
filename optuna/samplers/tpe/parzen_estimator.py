@@ -8,14 +8,13 @@ from typing import Tuple  # NOQA
 
 
 class ParzenEstimatorParameters(
-    NamedTuple(
-        '_ParzenEstimatorParameters',
-        [('consider_prior', bool),
-         ('prior_weight', Optional[float]),
-         ('consider_magic_clip', bool),
-         ('consider_endpoints', bool),
-         ('weights', Callable[[int], ndarray]),
-         ])):
+        NamedTuple('_ParzenEstimatorParameters', [
+            ('consider_prior', bool),
+            ('prior_weight', Optional[float]),
+            ('consider_magic_clip', bool),
+            ('consider_endpoints', bool),
+            ('weights', Callable[[int], ndarray]),
+        ])):
     pass
 
 
@@ -30,14 +29,8 @@ class ParzenEstimator(object):
         # type: (...) -> None
 
         s_weights, s_mus, sigmas = ParzenEstimator._calculate(
-            mus,
-            low,
-            high,
-            parameters.consider_prior,
-            parameters.prior_weight,
-            parameters.consider_magic_clip,
-            parameters.consider_endpoints,
-            parameters.weights)
+            mus, low, high, parameters.consider_prior, parameters.prior_weight,
+            parameters.consider_magic_clip, parameters.consider_endpoints, parameters.weights)
         self.weights = numpy.asarray(s_weights)
         self.mus = numpy.asarray(s_mus)
         self.sigmas = numpy.asarray(sigmas)

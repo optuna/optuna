@@ -21,18 +21,21 @@ import xgboost as xgb
 import optuna
 
 
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     data, target = sklearn.datasets.load_breast_cancer(return_X_y=True)
     train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.25)
     dtrain = xgb.DMatrix(train_x, label=train_y)
     dtest = xgb.DMatrix(test_x, label=test_y)
 
-    n_round = trial.suggest_int('n_round', 1, 9)
-    param = {'silent': 1, 'objective': 'binary:logistic',
-             'booster': trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart']),
-             'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
-             'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0)
-             }
+    param = {
+        'silent': 1,
+        'objective': 'binary:logistic',
+        'booster': trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart']),
+        'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
+        'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0)
+    }
 
     if param['booster'] == 'gbtree' or param['booster'] == 'dart':
         param['max_depth'] = trial.suggest_int('max_depth', 1, 9)
@@ -47,8 +50,7 @@ def objective(trial):
 
     # Add a callback for pruning.
     pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'validation-error')
-    bst = xgb.train(param, dtrain, n_round, evals=[(dtest, 'validation')],
-                    callbacks=[pruning_callback])
+    bst = xgb.train(param, dtrain, evals=[(dtest, 'validation')], callbacks=[pruning_callback])
     preds = bst.predict(dtest)
     pred_labels = np.rint(preds)
     accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
