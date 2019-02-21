@@ -42,7 +42,7 @@ def get_extras_require():
     # type: () -> Dict[str, List[str]]
 
     extras_require = {
-        'checking': ['hacking', 'yapf'],
+        'checking': ['autopep8', 'hacking'],
         'testing':
         ['pytest', 'mock', 'bokeh', 'plotly', 'chainer>=5.0.0', 'xgboost', 'mpi4py', 'lightgbm'],
         # TODO(higumachan): merge 'keras' to 'testing' after Tensorflow supports Python 3.7.

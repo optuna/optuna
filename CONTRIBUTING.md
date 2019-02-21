@@ -15,9 +15,9 @@ $ circleci build --job checks
 ```
 
 The above job contains following checkers:
+- [autopep8](https://github.com/hhatto/autopep8)
 - [flake8](http://flake8.pycqa.org)
 - [mypy](http://mypy-lang.org/)
-- [yapf](https://github.com/google/yapf)
 
 If any warnings or errors are emitted, please fix them.
 

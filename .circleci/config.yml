@@ -48,10 +48,10 @@ jobs:
             pip install .[checking]
 
       - run:
-          name: yapf
+          name: autopep8
           command: |
             . venv/bin/activate
-            yapf . -r --diff
+            autopep8 . -r --diff --exit-code
 
       - run:
           name: flake8
