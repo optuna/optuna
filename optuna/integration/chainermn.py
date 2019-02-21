@@ -25,7 +25,6 @@ except ImportError as e:
 
 
 class _ChainerMNObjectiveFunc(object):
-
     """A wrapper of an objective function to incorporate Optuna with ChainerMN.
 
     Note that this class is not supposed to be used by library users.
@@ -52,7 +51,6 @@ class _ChainerMNObjectiveFunc(object):
 
 
 class ChainerMNStudy(object):
-
     """A wrapper of :class:`~optuna.study.Study` to incorporate Optuna with ChainerMN.
 
     .. seealso::
@@ -80,9 +78,9 @@ class ChainerMNStudy(object):
     """
 
     def __init__(
-        self,
-        study,  # type: Study
-        comm,  # type: CommunicatorBase
+            self,
+            study,  # type: Study
+            comm,  # type: CommunicatorBase
     ):
         # type: (...) -> None
 
@@ -106,11 +104,11 @@ class ChainerMNStudy(object):
         super(ChainerMNStudy, self).__setattr__('comm', comm)
 
     def optimize(
-        self,
-        func,  # type: Callable[[Trial, CommunicatorBase], float]
-        n_trials=None,  # type: Optional[int]
-        timeout=None,  # type: Optional[float]
-        catch=(Exception,),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            self,
+            func,  # type: Callable[[Trial, CommunicatorBase], float]
+            n_trials=None,  # type: Optional[int]
+            timeout=None,  # type: Optional[float]
+            catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.

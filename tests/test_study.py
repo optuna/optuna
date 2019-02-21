@@ -13,8 +13,8 @@ import optuna
 from optuna.testing.storage import StorageSupplier
 
 STORAGE_MODES = [
-    'none',    # We give `None` to storage argument, so InMemoryStorage is used.
-    'new',     # We always create a new sqlite DB file for each experiment.
+    'none',  # We give `None` to storage argument, so InMemoryStorage is used.
+    'new',  # We always create a new sqlite DB file for each experiment.
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
 
@@ -37,11 +37,10 @@ def func(trial, x_max=1.0):
     x = trial.suggest_uniform('x', -x_max, x_max)
     y = trial.suggest_loguniform('y', 20, 30)
     z = trial.suggest_categorical('z', (-1.0, 1.0))
-    return (x - 2) ** 2 + (y - 25) ** 2 + z
+    return (x - 2)**2 + (y - 25)**2 + z
 
 
 class Func(object):
-
     def __init__(self, sleep_sec=None):
         # type: (Optional[float]) -> None
 
@@ -77,7 +76,7 @@ def check_value(value):
     # type: (Optional[float]) -> None
 
     assert isinstance(value, float)
-    assert -1.0 <= value <= 12.0 ** 2 + 5.0 ** 2 + 1.0
+    assert -1.0 <= value <= 12.0**2 + 5.0**2 + 1.0
 
 
 def check_frozen_trial(frozen_trial):
@@ -152,11 +151,13 @@ def test_optimize_with_direction():
         optuna.create_study(direction='test')
 
 
-@pytest.mark.parametrize('n_trials, n_jobs, storage_mode', itertools.product(
-    (0, 1, 2, 50),  # n_trials
-    (1, 2, 10, -1),  # n_jobs
-    STORAGE_MODES,  # storage_mode
-))
+@pytest.mark.parametrize(
+    'n_trials, n_jobs, storage_mode',
+    itertools.product(
+        (0, 1, 2, 50),  # n_trials
+        (1, 2, 10, -1),  # n_jobs
+        STORAGE_MODES,  # storage_mode
+    ))
 def test_optimize_parallel(n_trials, n_jobs, storage_mode):
     # type: (int, int, str)-> None
 
@@ -169,11 +170,13 @@ def test_optimize_parallel(n_trials, n_jobs, storage_mode):
         check_study(study)
 
 
-@pytest.mark.parametrize('n_trials, n_jobs, storage_mode', itertools.product(
-    (0, 1, 2, 50, None),  # n_trials
-    (1, 2, 10, -1),  # n_jobs
-    STORAGE_MODES,  # storage_mode
-))
+@pytest.mark.parametrize(
+    'n_trials, n_jobs, storage_mode',
+    itertools.product(
+        (0, 1, 2, 50, None),  # n_trials
+        (1, 2, 10, -1),  # n_jobs
+        STORAGE_MODES,  # storage_mode
+    ))
 def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
     # type: (int, int, str) -> None
 
@@ -183,8 +186,7 @@ def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
-        study.optimize(
-            f, n_trials=n_trials, n_jobs=n_jobs, timeout=timeout_sec)
+        study.optimize(f, n_trials=n_trials, n_jobs=n_jobs, timeout=timeout_sec)
 
         assert f.n_calls == len(study.trials)
 
@@ -212,12 +214,11 @@ def test_optimize_with_catch(storage_mode):
             raise ValueError
 
         # Test acceptable exception.
-        study.optimize(func_value_error, n_trials=20, catch=(ValueError,))
+        study.optimize(func_value_error, n_trials=20, catch=(ValueError, ))
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
-            study.optimize(
-                func_value_error, n_trials=20, catch=(ArithmeticError,))
+            study.optimize(func_value_error, n_trials=20, catch=(ArithmeticError, ))
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -316,7 +317,7 @@ def test_run_trial(storage_mode):
         study = optuna.create_study(storage=storage)
 
         # Test trial without exception.
-        study._run_trial(func, catch=(Exception,))
+        study._run_trial(func, catch=(Exception, ))
         check_study(study)
 
         # Test trial with acceptable exception.
@@ -325,7 +326,7 @@ def test_run_trial(storage_mode):
 
             raise ValueError
 
-        trial = study._run_trial(func_value_error, catch=(ValueError,))
+        trial = study._run_trial(func_value_error, catch=(ValueError, ))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
         expected_message = 'Setting trial status as TrialState.FAIL because of the following ' \
@@ -335,7 +336,7 @@ def test_run_trial(storage_mode):
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
-            study._run_trial(func_value_error, catch=(ArithmeticError,))
+            study._run_trial(func_value_error, catch=(ArithmeticError, ))
 
         # Test trial with invalid objective value: None
         def func_none(_):
@@ -343,7 +344,7 @@ def test_run_trial(storage_mode):
 
             return None  # type: ignore
 
-        trial = study._run_trial(func_none, catch=(Exception,))
+        trial = study._run_trial(func_none, catch=(Exception, ))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
         expected_message = 'Setting trial status as TrialState.FAIL because the returned value ' \
@@ -358,7 +359,7 @@ def test_run_trial(storage_mode):
 
             return float('nan')
 
-        trial = study._run_trial(func_nan, catch=(Exception,))
+        trial = study._run_trial(func_nan, catch=(Exception, ))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
         expected_message = 'Setting trial status as TrialState.FAIL because the objective ' \
@@ -394,7 +395,7 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
         # type: (optuna.trial.Trial) -> float
 
         x = trial.suggest_int('x', 1, 1)
-        y = trial.suggest_categorical('y', (2.5,))
+        y = trial.suggest_categorical('y', (2.5, ))
         trial.set_user_attr('train_loss', 3)
         return x + y  # 3.5
 
@@ -431,7 +432,7 @@ def test_trials_dataframe_with_failure(storage_mode):
         # type: (optuna.trial.Trial) -> float
 
         x = trial.suggest_int('x', 1, 1)
-        y = trial.suggest_categorical('y', (2.5,))
+        y = trial.suggest_categorical('y', (2.5, ))
         trial.set_user_attr('train_loss', 3)
         raise ValueError()
         return x + y  # 3.5
@@ -472,5 +473,5 @@ def test_create_study(storage_mode):
         else:
             # Test `load_if_exists=False` with existing study.
             with pytest.raises(optuna.structs.DuplicatedStudyError):
-                optuna.create_study(study_name=study.study_name, storage=storage,
-                                    load_if_exists=False)
+                optuna.create_study(
+                    study_name=study.study_name, storage=storage, load_if_exists=False)

@@ -6,7 +6,6 @@ from optuna.storages import BaseStorage  # NOQA
 
 @six.add_metaclass(abc.ABCMeta)
 class BasePruner(object):
-
     """Base class for pruners."""
 
     @abc.abstractmethod

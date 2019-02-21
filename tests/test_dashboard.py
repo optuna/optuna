@@ -14,7 +14,7 @@ def _create_some_study():
         y = trial.suggest_loguniform('y', 10, 20)
         z = trial.suggest_categorical('z', (10, 20.5, 30))
 
-        return x ** 2 + y ** 2 + z
+        return x**2 + y**2 + z
 
     study = optuna.create_study()
     study.optimize(f, n_trials=100)

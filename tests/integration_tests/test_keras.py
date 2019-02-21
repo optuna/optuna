@@ -10,7 +10,6 @@ try:
 except ImportError:
     _available = False
 
-
 import optuna
 from optuna.integration import KerasPruningCallback
 from optuna.testing.integration import DeterministicPruner
@@ -29,17 +28,14 @@ def test_keras_pruning_callback():
 
         model = Sequential()
         model.add(Dense(1, activation='sigmoid', input_dim=20))
-        model.compile(optimizer='rmsprop',
-                      loss='binary_crossentropy',
-                      metrics=['accuracy'])
+        model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
         model.fit(
             np.zeros((16, 20), np.float32),
-            np.zeros((16,), np.int32),
+            np.zeros((16, ), np.int32),
             batch_size=1,
             epochs=1,
             callbacks=[KerasPruningCallback(trial, 'acc')],
-            verbose=0
-        )
+            verbose=0)
 
         return 1.0
 
@@ -62,7 +58,7 @@ def test_keras_pruning_callback_observation_isnan():
                     'but this version can not install keras(tensorflow) with pip.')
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
+    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception, ))
     callback = KerasPruningCallback(trial, 'loss')
 
     with pytest.raises(optuna.structs.TrialPruned):

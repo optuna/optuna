@@ -25,10 +25,8 @@ import optuna.logging
 import optuna.structs
 import optuna.study
 
-
 _mode = None  # type: Optional[str]
 _study = None  # type: Optional[optuna.study.Study]
-
 
 _HEADER_FORMAT = '''
 <style>
@@ -48,16 +46,14 @@ h1, p {{
 
 _DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
-
 if _available:
-    class _CompleteTrialsWidget(object):
 
+    class _CompleteTrialsWidget(object):
         def __init__(self, trials):
             # type: (List[optuna.structs.FrozenTrial]) -> None
 
             complete_trials = [
-                trial for trial in trials
-                if trial.state == optuna.structs.TrialState.COMPLETE
+                trial for trial in trials if trial.state == optuna.structs.TrialState.COMPLETE
             ]
             self.trial_ids = set([trial.trial_id for trial in complete_trials])
 
@@ -101,7 +97,6 @@ if _available:
                 self.cds.stream(stream_dict)
 
     class _AllTrialsWidget(object):
-
         def __init__(self, trials):
             # type: (List[optuna.structs.FrozenTrial]) -> None
 
@@ -113,17 +108,11 @@ if _available:
             return bokeh.models.widgets.DataTable(
                 source=self.cds,
                 columns=[
-                    bokeh.models.widgets.TableColumn(field=field, title=field)
-                    for field in [
-                        'trial_id',
-                        'state',
-                        'value',
-                        'params',
-                        'datetime_start',
+                    bokeh.models.widgets.TableColumn(field=field, title=field) for field in [
+                        'trial_id', 'state', 'value', 'params', 'datetime_start',
                         'datetime_complete'
                     ]
-                ]
-            )
+                ])
 
         def update(
                 self,
@@ -141,10 +130,7 @@ if _available:
                     modified_trials.append(new_trial)
 
             patch_dict = self.trials_to_dict(modified_trials)
-            patch_dict = {
-                k: list(zip(modified_indices, v))
-                for k, v in patch_dict.items()
-            }
+            patch_dict = {k: list(zip(modified_indices, v)) for k, v in patch_dict.items()}
             self.cds.patch(patch_dict)
 
             self.cds.stream(self.trials_to_dict(new_trials[len(old_trials):]))
@@ -158,18 +144,17 @@ if _available:
                 'state': [trial.state.name for trial in trials],
                 'value': [trial.value for trial in trials],
                 'params': [str(trial.params) for trial in trials],
-                'datetime_start':
-                    [trial.datetime_start.strftime(_DATETIME_FORMAT)
-                     if trial.datetime_start is not None else None
-                     for trial in trials],
-                'datetime_complete':
-                    [trial.datetime_complete.strftime(_DATETIME_FORMAT)
-                     if trial.datetime_complete is not None else None
-                     for trial in trials],
+                'datetime_start': [
+                    trial.datetime_start.strftime(_DATETIME_FORMAT)
+                    if trial.datetime_start is not None else None for trial in trials
+                ],
+                'datetime_complete': [
+                    trial.datetime_complete.strftime(_DATETIME_FORMAT)
+                    if trial.datetime_complete is not None else None for trial in trials
+                ],
             }
 
     class _DashboardApp(object):
-
         def __init__(self, study, launch_update_thread):
             # type: (optuna.study.Study, bool) -> None
 
@@ -188,14 +173,12 @@ if _available:
             self.all_trials_widget = _AllTrialsWidget(self.current_trials)
 
             self.doc.title = 'Optuna Dashboard (Beta)'
-            header = _HEADER_FORMAT.format(
-                study_name=self.study.study_name)
+            header = _HEADER_FORMAT.format(study_name=self.study.study_name)
             self.doc.add_root(
-                bokeh.layouts.layout([
-                    [bokeh.models.widgets.Div(text=header)],
-                    [self.complete_trials_widget.create_figure()],
-                    [self.all_trials_widget.create_table()]
-                ], sizing_mode='scale_width'))
+                bokeh.layouts.layout([[bokeh.models.widgets.Div(text=header)],
+                                      [self.complete_trials_widget.create_figure()],
+                                      [self.all_trials_widget.create_table()]],
+                                     sizing_mode='scale_width'))
 
             if self.launch_update_thread:
                 thread = threading.Thread(target=self.thread_loop)

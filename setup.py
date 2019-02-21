@@ -31,7 +31,8 @@ def get_install_requires():
     # type: () -> List[str]
 
     install_requires = [
-        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'cliff', 'colorlog', 'pandas']
+        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'cliff', 'colorlog', 'pandas'
+    ]
     if sys.version_info[0] == 2:
         install_requires.extend(['enum34'])
     return install_requires
@@ -42,8 +43,8 @@ def get_extras_require():
 
     extras_require = {
         'checking': ['autopep8', 'hacking'],
-        'testing': ['pytest', 'mock', 'bokeh', 'plotly', 'chainer>=5.0.0', 'xgboost', 'mpi4py',
-                    'lightgbm'],
+        'testing':
+        ['pytest', 'mock', 'bokeh', 'plotly', 'chainer>=5.0.0', 'xgboost', 'mpi4py', 'lightgbm'],
         # TODO(higumachan): merge 'keras' to 'testing' after Tensorflow supports Python 3.7.
         'keras': ['keras', 'tensorflow'],
         'document': ['sphinx', 'sphinx_rtd_theme'],
@@ -83,7 +84,4 @@ setup(
     install_requires=get_install_requires(),
     tests_require=get_extras_require()['testing'],
     extras_require=get_extras_require(),
-    entry_points={
-        'console_scripts': ['optuna = optuna.cli:main']
-    }
-)
+    entry_points={'console_scripts': ['optuna = optuna.cli:main']})

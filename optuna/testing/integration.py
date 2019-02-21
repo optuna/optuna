@@ -2,7 +2,6 @@ import optuna
 
 
 class DeterministicPruner(optuna.pruners.BasePruner):
-
     def __init__(self, is_pruning):
         # type: (bool) -> None
 

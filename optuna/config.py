@@ -4,11 +4,7 @@ from typing import Optional
 import yaml
 
 
-class OptunaConfig(
-    NamedTuple(
-        '_BaseOptunaConfig',
-        [('default_storage', Optional[str])])):
-
+class OptunaConfig(NamedTuple('_BaseOptunaConfig', [('default_storage', Optional[str])])):
     """An OptunaConfig object holds user-defined configurations of Optuna CLI.
 
     Attributes:

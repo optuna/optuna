@@ -166,8 +166,7 @@ def test_get_all_study_summaries_with_multiple_studies():
         system_attrs={},
         best_trial=None,
         n_trials=0,
-        datetime_start=None
-    )
+        datetime_start=None)
 
     assert summaries[0] == expected_summary_1
     assert summaries[1] == expected_summary_2

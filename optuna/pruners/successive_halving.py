@@ -7,7 +7,6 @@ from optuna.structs import FrozenTrial  # NOQA
 
 
 class SuccessiveHalvingPruner(BasePruner):
-
     """Pruner using Asynchronous Successive Halving Algorithm.
 
     `Successive Halving <https://arxiv.org/abs/1502.07943>`_ is a bandit-based algorithm to

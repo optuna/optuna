@@ -23,7 +23,10 @@ from optuna.testing.storage import StorageSupplier
 EXAMPLE_ATTRS = {
     'dataset': 'MNIST',
     'none': None,
-    'json_serializable': {'baseline_score': 0.001, 'tags': ['image', 'classification']},
+    'json_serializable': {
+        'baseline_score': 0.001,
+        'tags': ['image', 'classification']
+    },
 }
 
 EXAMPLE_DISTRIBUTIONS = {
@@ -38,9 +41,18 @@ EXAMPLE_TRIALS = [
         state=TrialState.COMPLETE,
         user_attrs={},
         system_attrs={},
-        params={'x': 0.5, 'y': 'Ginza'},
-        intermediate_values={0: 2., 1: 3.},
-        params_in_internal_repr={'x': .5, 'y': 2.},
+        params={
+            'x': 0.5,
+            'y': 'Ginza'
+        },
+        intermediate_values={
+            0: 2.,
+            1: 3.
+        },
+        params_in_internal_repr={
+            'x': .5,
+            'y': 2.
+        },
         datetime_start=None,  # dummy
         datetime_complete=None  # dummy
     ),
@@ -48,19 +60,32 @@ EXAMPLE_TRIALS = [
         trial_id=-1,  # dummy id
         value=2.,
         state=TrialState.RUNNING,
-        user_attrs={'tags': ['video', 'classification'], 'dataset': 'YouTube-8M'},
+        user_attrs={
+            'tags': ['video', 'classification'],
+            'dataset': 'YouTube-8M'
+        },
         system_attrs={'some_key': 'some_value'},
-        params={'x': 0.01, 'y': 'Otemachi'},
-        intermediate_values={0: -2., 1: -3., 2: 100.},
-        params_in_internal_repr={'x': .01, 'y': 0.},
+        params={
+            'x': 0.01,
+            'y': 'Otemachi'
+        },
+        intermediate_values={
+            0: -2.,
+            1: -3.,
+            2: 100.
+        },
+        params_in_internal_repr={
+            'x': .01,
+            'y': 0.
+        },
         datetime_start=None,  # dummy
         datetime_complete=None  # dummy
     )
 ]
 
 STORAGE_MODES = [
-    'none',    # We give `None` to storage argument, so InMemoryStorage is used.
-    'new',     # We always create a new sqlite DB file for each experiment.
+    'none',  # We give `None` to storage argument, so InMemoryStorage is used.
+    'new',  # We always create a new sqlite DB file for each experiment.
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
 
@@ -284,8 +309,8 @@ def test_set_and_get_trial_param(storage_init_func):
         storage.set_trial_param(trial_id_2, 'x', 0.5, distribution_z)
     # Test trial_2: setting CategoricalDistribution in different order.
     with pytest.raises(ValueError):
-        storage.set_trial_param(
-            trial_id_2, 'y', 2, CategoricalDistribution(choices=('Meguro', 'Shibuya', 'Ebisu')))
+        storage.set_trial_param(trial_id_2, 'y', 2,
+                                CategoricalDistribution(choices=('Meguro', 'Shibuya', 'Ebisu')))
 
     # Setup trial_3: setting new params (to different study from trial_1).
     if isinstance(storage, InMemoryStorage):
@@ -416,8 +441,8 @@ def test_get_all_study_summaries(storage_init_func):
     datetime_1 = datetime.now()
 
     # Set up trial 1.
-    _create_new_trial_with_example_trial(
-        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0])
+    _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
+                                         EXAMPLE_TRIALS[0])
 
     datetime_2 = datetime.now()
 
@@ -451,8 +476,8 @@ def test_get_trial(storage_init_func):
     for example_trial in EXAMPLE_TRIALS:
         datetime_before = datetime.now()
 
-        trial_id = _create_new_trial_with_example_trial(
-            storage, study_id, EXAMPLE_DISTRIBUTIONS, example_trial)
+        trial_id = _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
+                                                        example_trial)
 
         datetime_after = datetime.now()
 
@@ -479,12 +504,12 @@ def test_get_all_trials(storage_init_func):
 
     datetime_before = datetime.now()
 
-    _create_new_trial_with_example_trial(
-        storage, study_id_1, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0])
-    _create_new_trial_with_example_trial(
-        storage, study_id_1, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[1])
-    _create_new_trial_with_example_trial(
-        storage, study_id_2, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0])
+    _create_new_trial_with_example_trial(storage, study_id_1, EXAMPLE_DISTRIBUTIONS,
+                                         EXAMPLE_TRIALS[0])
+    _create_new_trial_with_example_trial(storage, study_id_1, EXAMPLE_DISTRIBUTIONS,
+                                         EXAMPLE_TRIALS[1])
+    _create_new_trial_with_example_trial(storage, study_id_2, EXAMPLE_DISTRIBUTIONS,
+                                         EXAMPLE_TRIALS[0])
 
     datetime_after = datetime.now()
 
@@ -513,10 +538,10 @@ def test_get_n_trials(storage_init_func):
     storage = storage_init_func()
     study_id = storage.create_new_study_id()
 
-    _create_new_trial_with_example_trial(
-        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0])
-    _create_new_trial_with_example_trial(
-        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[1])
+    _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
+                                         EXAMPLE_TRIALS[0])
+    _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
+                                         EXAMPLE_TRIALS[1])
 
     assert 2 == storage.get_n_trials(study_id)
     assert 1 == storage.get_n_trials(study_id, TrialState.COMPLETE)
