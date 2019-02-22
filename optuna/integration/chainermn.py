@@ -8,8 +8,11 @@ from typing import Type  # NOQA
 from typing import Union  # NOQA
 
 from optuna.logging import get_logger
+from optuna.pruners import BasePruner  # NOQA
+from optuna.storages import BaseStorage  # NOQA
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
+from optuna.structs import TrialPruned
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
 
@@ -21,7 +24,7 @@ except ImportError as e:
     _available = False
 
 
-class ChainerMNObjectiveFunc(object):
+class _ChainerMNObjectiveFunc(object):
     """A wrapper of an objective function to incorporate Optuna with ChainerMN.
 
     Note that this class is not supposed to be used by library users.
@@ -96,6 +99,7 @@ class ChainerMNStudy(object):
         if len(set(study_names)) != 1:
             raise ValueError('Please make sure an identical study name is shared among workers.')
 
+        study.pruner = _ChainerMNPruner(pruner=study.pruner, comm=comm)
         super(ChainerMNStudy, self).__setattr__('delegate', study)
         super(ChainerMNStudy, self).__setattr__('comm', comm)
 
@@ -114,7 +118,7 @@ class ChainerMNStudy(object):
         """
 
         if self.comm.rank == 0:
-            func_mn = ChainerMNObjectiveFunc(func, self.comm)
+            func_mn = _ChainerMNObjectiveFunc(func, self.comm)
             self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
             self.comm.mpi_comm.bcast((False, None))
         else:
@@ -123,7 +127,18 @@ class ChainerMNStudy(object):
                 if not has_next_trial:
                     break
                 trial = Trial(self.delegate, trial_id)
-                func(trial, self.comm)
+                try:
+                    func(trial, self.comm)
+
+                    # We assume that if a node raises an exception,
+                    # all other nodes will do the same.
+                    #
+                    # The responsibility to handle acceptable exceptions (i.e., `TrialPruned` and
+                    # `catch`) is in the rank-0 node, so other nodes simply ignore them.
+                except TrialPruned:
+                    pass
+                except catch:
+                    pass
 
     def __getattr__(self, attr_name):
         # type: (str) -> Any
@@ -134,6 +149,31 @@ class ChainerMNStudy(object):
         # type: (str, Any) -> None
 
         setattr(self.delegate, attr_name, value)
+
+
+class _ChainerMNPruner(BasePruner):
+    def __init__(self, pruner, comm):
+        # type: (BasePruner, CommunicatorBase) -> None
+
+        self.delegate = pruner
+        self.comm = comm
+
+    def prune(self, storage, study_id, trial_id, step):
+        # type: (BaseStorage, int, int, int) -> bool
+
+        if self.comm.rank == 0:
+            try:
+                result = self.delegate.prune(storage, study_id, trial_id, step)
+                self.comm.mpi_comm.bcast(result)
+                return result
+            except Exception as e:
+                self.comm.mpi_comm.bcast(e)
+                raise
+        else:
+            result = self.comm.mpi_comm.bcast(None)
+            if isinstance(result, Exception):
+                raise result
+            return result
 
 
 def _check_chainermn_availability():
