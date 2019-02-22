@@ -1,5 +1,7 @@
 import math
 import numpy
+from typing import Any  # NOQA
+from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 
 from optuna import distributions
@@ -74,4 +76,3 @@ class RandomSampler(BaseSampler):
 
         self.__dict__.update(state)
         self.logger = logging.get_logger(__name__)
-
