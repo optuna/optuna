@@ -441,3 +441,16 @@ class TPESampler(base.BaseSampler):
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
         z = denominator / numerator
         return .5 + .5 * scipy.special.erf(z)
+
+    def __getstate__(self):
+        # type: () -> Dict[Any, Any]
+
+        state = self.__dict__.copy()
+        del state['logger']
+        return state
+
+    def __setstate__(self, state):
+        # type: (Dict[Any, Any]) -> None
+
+        self.__dict__.update(state)
+        self.logger = logging.get_logger(__name__)
