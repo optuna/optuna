@@ -42,9 +42,9 @@ class RDBStorage(BaseStorage):
         try:
             self.engine = create_engine(url, connect_args=connect_args)
         except ImportError as e:
-            raise ImportError(
-                'Failed to import DB access module for the specified storage URL. '
-                'Please install appropriate one. (The actual import error is: ' + str(e) + '.)')
+            raise ImportError('Failed to import DB access module for the specified storage URL. '
+                              'Please install appropriate one. (The actual import error is: ' +
+                              str(e) + '.)')
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
@@ -59,8 +59,7 @@ class RDBStorage(BaseStorage):
         if study_name is None:
             study_name = self._create_unique_study_name(session)
 
-        study = models.StudyModel(study_name=study_name,
-                                  direction=structs.StudyDirection.NOT_SET)
+        study = models.StudyModel(study_name=study_name, direction=structs.StudyDirection.NOT_SET)
         session.add(study)
         if not self._commit_with_integrity_check(session):
             raise structs.DuplicatedStudyError(
@@ -95,9 +94,8 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         if study.direction != structs.StudyDirection.NOT_SET and study.direction != direction:
-            raise ValueError(
-                'Cannot overwrite study direction from {} to {}.'.format(
-                    study.direction, direction))
+            raise ValueError('Cannot overwrite study direction from {} to {}.'.format(
+                study.direction, direction))
 
         study.direction = direction
 
@@ -117,7 +115,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        self._commit(session)
+        self._commit_with_integrity_check(session)
 
     def set_study_system_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
@@ -133,7 +131,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        self._commit(session)
+        self._commit_with_integrity_check(session)
 
     def get_study_id_from_name(self, study_name):
         # type: (str) -> int
@@ -217,47 +215,54 @@ class RDBStorage(BaseStorage):
             study_trial_models = [t for t in trial_models if t.study_id == study_model.study_id]
 
             # Get best trial.
-            completed_trial_models = [t for t in study_trial_models
-                                      if t.state is structs.TrialState.COMPLETE]
+            completed_trial_models = [
+                t for t in study_trial_models if t.state is structs.TrialState.COMPLETE
+            ]
             best_trial = None
             if len(completed_trial_models) > 0:
                 # TODO(sano): Deal with maximize direction.
                 best_trial_model = min(completed_trial_models, key=lambda t: t.value)
 
-                best_param_models = [p for p in param_models
-                                     if p.trial_id == best_trial_model.trial_id]
-                best_value_models = [v for v in value_models
-                                     if v.trial_id == best_trial_model.trial_id]
-                best_trial_user_models = [u for u in trial_user_attribute_models
-                                          if u.trial_id == best_trial_model.trial_id]
-                best_trial_system_models = [s for s in trial_system_attribute_models
-                                            if s.trial_id == best_trial_model.trial_id]
+                best_param_models = [
+                    p for p in param_models if p.trial_id == best_trial_model.trial_id
+                ]
+                best_value_models = [
+                    v for v in value_models if v.trial_id == best_trial_model.trial_id
+                ]
+                best_trial_user_models = [
+                    u for u in trial_user_attribute_models
+                    if u.trial_id == best_trial_model.trial_id
+                ]
+                best_trial_system_models = [
+                    s for s in trial_system_attribute_models
+                    if s.trial_id == best_trial_model.trial_id
+                ]
 
                 # Merge model objects related to the best trial.
-                best_trial = self._merge_trials_orm(
-                    [best_trial_model], best_param_models, best_value_models,
-                    best_trial_user_models, best_trial_system_models)[0]
+                best_trial = self._merge_trials_orm([best_trial_model], best_param_models,
+                                                    best_value_models, best_trial_user_models,
+                                                    best_trial_system_models)[0]
 
             # Find datetime_start.
             datetime_start = None
             if len(study_trial_models) > 0:
                 datetime_start = min([t.datetime_start for t in study_trial_models])
 
-            attributes = models.StudySystemAttributeModel.where_study_id(study_model.study_id,
-                                                                         session)
+            attributes = models.StudySystemAttributeModel.where_study_id(
+                study_model.study_id, session)
             system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
             # Consolidate StudySummary.
-            study_sumarries.append(structs.StudySummary(
-                study_id=study_model.study_id,
-                study_name=study_model.study_name,
-                direction=self.get_study_direction(study_model.study_id),
-                best_trial=best_trial,
-                user_attrs=self.get_study_user_attrs(study_model.study_id),
-                system_attrs=system_attrs,
-                n_trials=len(study_trial_models),
-                datetime_start=datetime_start
-            ))
+            study_sumarries.append(
+                structs.StudySummary(
+                    study_id=study_model.study_id,
+                    study_name=study_model.study_name,
+                    direction=self.get_study_direction(study_model.study_id),
+                    best_trial=best_trial,
+                    user_attrs=self.get_study_user_attrs(study_model.study_id),
+                    system_attrs=system_attrs,
+                    n_trials=len(study_trial_models),
+                    datetime_start=datetime_start))
 
         return study_sumarries
 
@@ -266,10 +271,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        trial = models.TrialModel(
-            study_id=study_id,
-            state=structs.TrialState.RUNNING
-        )
+        trial = models.TrialModel(study_id=study_id, state=structs.TrialState.RUNNING)
 
         session.add(trial)
         self._commit(session)
@@ -313,9 +315,7 @@ class RDBStorage(BaseStorage):
         if trial_param is not None:
             # Raise error in case distribution is incompatible.
             distributions.check_distribution_compatibility(
-                distributions.json_to_distribution(trial_param.distribution_json),
-                distribution
-            )
+                distributions.json_to_distribution(trial_param.distribution_json), distribution)
 
             # Return False when distribution is compatible but parameter has already been set.
             return False
@@ -324,8 +324,7 @@ class RDBStorage(BaseStorage):
             trial_id=trial_id,
             param_name=param_name,
             param_value=param_value_internal,
-            distribution_json=distributions.distribution_to_json(distribution)
-        )
+            distribution_json=distributions.distribution_to_json(distribution))
 
         param.check_and_add(session)
         commit_success = self._commit_with_integrity_check(session)
@@ -364,10 +363,7 @@ class RDBStorage(BaseStorage):
             return False
 
         trial_value = models.TrialValueModel(
-            trial_id=trial_id,
-            step=step,
-            value=intermediate_value
-        )
+            trial_id=trial_id, step=step, value=intermediate_value)
 
         session.add(trial_value)
         commit_success = self._commit_with_integrity_check(session)
@@ -383,14 +379,12 @@ class RDBStorage(BaseStorage):
         attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
             attribute = models.TrialUserAttributeModel(
-                trial_id=trial_id, key=key, value_json=json.dumps(value)
-            )
+                trial_id=trial_id, key=key, value_json=json.dumps(value))
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
 
-        # TODO(Yanase): Take care of IntegrityError on multi-worker environment.
-        self._commit(session)
+        self._commit_with_integrity_check(session)
 
     def set_trial_system_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
@@ -401,13 +395,12 @@ class RDBStorage(BaseStorage):
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
             attribute = models.TrialSystemAttributeModel(
-                trial_id=trial_id, key=key, value_json=json.dumps(value)
-            )
+                trial_id=trial_id, key=key, value_json=json.dumps(value))
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
 
-        self._commit(session)
+        self._commit_with_integrity_check(session)
 
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
@@ -420,8 +413,8 @@ class RDBStorage(BaseStorage):
         user_attributes = models.TrialUserAttributeModel.where_trial(trial, session)
         system_attributes = models.TrialSystemAttributeModel.where_trial(trial, session)
 
-        return self._merge_trials_orm([trial], params, values,
-                                      user_attributes, system_attributes)[0]
+        return self._merge_trials_orm([trial], params, values, user_attributes,
+                                      system_attributes)[0]
 
     def get_all_trials(self, study_id):
         # type: (int) -> List[structs.FrozenTrial]
@@ -435,8 +428,7 @@ class RDBStorage(BaseStorage):
         user_attributes = models.TrialUserAttributeModel.where_study(study, session)
         system_attributes = models.TrialSystemAttributeModel.where_study(study, session)
 
-        return self._merge_trials_orm(trials, params, values,
-                                      user_attributes, system_attributes)
+        return self._merge_trials_orm(trials, params, values, user_attributes, system_attributes)
 
     def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[structs.TrialState]) -> int
@@ -448,7 +440,7 @@ class RDBStorage(BaseStorage):
     @staticmethod
     def _merge_trials_orm(
             trials,  # type: List[models.TrialModel]
-            trial_params,   # type: List[models.TrialParamModel]
+            trial_params,  # type: List[models.TrialParamModel]
             trial_intermediate_values,  # type: List[models.TrialValueModel]
             trial_user_attrs,  # type: List[models.TrialUserAttributeModel]
             trial_system_attrs  # type: List[models.TrialSystemAttributeModel]
@@ -499,20 +491,19 @@ class RDBStorage(BaseStorage):
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
             trial_number = system_attrs.pop('number', trial_id)
-
-            result.append(structs.FrozenTrial(
-                number=trial_number,
-                state=trial.state,
-                params=params,
-                user_attrs=user_attrs,
-                system_attrs=system_attrs,
-                value=trial.value,
-                intermediate_values=intermediate_values,
-                params_in_internal_repr=params_in_internal_repr,
-                datetime_start=trial.datetime_start,
-                datetime_complete=trial.datetime_complete,
-                trial_id=trial_id
-            ))
+            result.append(
+                structs.FrozenTrial(
+                    number=trial_number,
+                    state=trial.state,
+                    params=params,
+                    user_attrs=user_attrs,
+                    system_attrs=system_attrs,
+                    value=trial.value,
+                    intermediate_values=intermediate_values,
+                    params_in_internal_repr=params_in_internal_repr,
+                    datetime_start=trial.datetime_start,
+                    datetime_complete=trial.datetime_complete,
+                    trial_id=trial_id))
 
         return result
 
@@ -526,14 +517,12 @@ class RDBStorage(BaseStorage):
             if version_info.schema_version != models.SCHEMA_VERSION:
                 raise RuntimeError(
                     'The runtime optuna version {} is no longer compatible with the table schema '
-                    '(set up by optuna {}).'.format(
-                        version.__version__, version_info.library_version))
+                    '(set up by optuna {}).'.format(version.__version__,
+                                                    version_info.library_version))
             return
 
         version_info = models.VersionInfoModel(
-            schema_version=models.SCHEMA_VERSION,
-            library_version=version.__version__
-        )
+            schema_version=models.SCHEMA_VERSION, library_version=version.__version__)
 
         session.add(version_info)
         self._commit_with_integrity_check(session)
@@ -570,8 +559,7 @@ class RDBStorage(BaseStorage):
                 'This typically happens due to invalid data in the commit, ' \
                 'e.g. exceeding max length. ' \
                 '(The actual exception is as follows: {})'.format(repr(e))
-            six.reraise(structs.StorageInternalError,
-                        structs.StorageInternalError(message),
+            six.reraise(structs.StorageInternalError, structs.StorageInternalError(message),
                         sys.exc_info()[2])
 
     def remove_session(self):

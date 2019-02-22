@@ -8,6 +8,8 @@ Optuna is compatible with most ML libraries, and it's easy to use Optuna with th
 Please refer to `examples <https://github.com/pfnet/optuna/tree/master/examples>`_.
 
 
+.. _objective-func-additional-args:
+
 How to define objective functions that have own arguments?
 ----------------------------------------------------------
 
@@ -54,6 +56,8 @@ Below is an example that uses ``lambda``:
     # Execute an optimization by using the above objective function wrapped by `lambda`.
     study = optuna.create_study()
     study.optimize(lambda trial: objective(trial, min_x, max_x), n_trials=100)
+
+Please also refer to `sklearn_addtitional_args.py <https://github.com/pfnet/optuna/blob/master/examples/sklearn_additional_args.py>`_ example.
 
 
 Can I use Optuna without remote RDB servers?
@@ -106,7 +110,7 @@ Optuna saves hyperparameter values with its corresponding objective value to sto
 but it discards intermediate objects such as machine learning models and neural network weights.
 To save models or weights, please use features of the machine learning library you used.
 
-We recommend saving :obj:`~optuna.trial.Trial.trail_id` with a model in order to identify its corresponding trial.
+We recommend saving :obj:`~optuna.trial.Trial.trial_id` with a model in order to identify its corresponding trial.
 For example, you can save SVM models trained in the objective function as follows:
 
 .. code-block:: python
@@ -206,3 +210,32 @@ If your optimization target supports GPU (CUDA) acceleration and you want to spe
     $ optuna study optimize bar.py objective --study bar --storage sqlite:///example.db
 
 Please refer to `CUDA C Programming Guide <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_ for further details.
+
+
+How can I test my objective functions?
+--------------------------------------
+
+When you test objective functions, you may prefer fixed parameter values to sampled ones.
+In that case, you can use :class:`~optuna.trial.FixedTrial`, which suggests fixed parameter values based on a given dictionary of parameters.
+For instance, you can input arbitrary values of :math:`x` and :math:`y` to the objective function :math:`x + y` as follows:
+
+.. code-block:: python
+
+    def objective(trial):
+        x = trial.suggest_uniform('x', -1.0, 1.0)
+        y = trial.suggest_int('y', -5, 5)
+        return x + y
+
+    objective(FixedTrial({'x': 1.0, 'y': -1}))  # 0.0
+    objective(FixedTrial({'x': -1.0, 'y': -4}))  # -5.0
+
+
+Using :class:`~optuna.trial.FixedTrial`, you can write unit tests as follows:
+
+.. code-block:: python
+
+    # A test function of pytest
+    def test_objective():
+        assert 1.0 == objective(FixedTrial({'x': 1.0, 'y': 0}))
+        assert -1.0 == objective(FixedTrial({'x': 0.0, 'y': -1}))
+        assert 0.0 == objective(FixedTrial({'x': -1.0, 'y': 1}))

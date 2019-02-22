@@ -24,6 +24,8 @@ import sklearn.model_selection
 import sklearn.svm
 
 
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     iris = sklearn.datasets.load_iris()
     x, y = iris.data, iris.target
@@ -36,7 +38,7 @@ def objective(trial):
         rf_max_depth = int(trial.suggest_loguniform('rf_max_depth', 2, 32))
         classifier_obj = sklearn.ensemble.RandomForestClassifier(max_depth=rf_max_depth)
 
-    score = sklearn.model_selection.cross_val_score(classifier_obj, x, y, n_jobs=-1)
+    score = sklearn.model_selection.cross_val_score(classifier_obj, x, y, n_jobs=-1, cv=3)
     accuracy = score.mean()
     return 1.0 - accuracy
 
