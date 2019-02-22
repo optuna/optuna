@@ -101,6 +101,7 @@ def test_discrete_uniform(sampler_class, distribution):
         # Check all points are multiples of distribution.q except endpoints.
         points = points[points != distribution.low]
         points = points[points != distribution.high]
+        points -= distribution.low
         points /= distribution.q
         round_points = np.round(points)
         np.testing.assert_almost_equal(round_points, points)

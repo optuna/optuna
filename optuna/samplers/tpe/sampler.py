@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import scipy.special
 from typing import Callable  # NOQA
@@ -8,6 +9,7 @@ from typing import Union  # NOQA
 
 from optuna import distributions  # NOQA
 from optuna.distributions import BaseDistribution  # NOQA
+from optuna import logging
 from optuna.samplers import base  # NOQA
 from optuna.samplers import random  # NOQA
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator  # NOQA
@@ -62,6 +64,7 @@ class TPESampler(base.BaseSampler):
 
         self.rng = np.random.RandomState(seed)
         self.random_sampler = random.RandomSampler(seed=seed)
+        self.logger = logging.get_logger(__name__)
 
     def sample(self, storage, study_id, param_name, param_distribution):
         # type: (BaseStorage, int, str, BaseDistribution) -> float
@@ -142,11 +145,17 @@ class TPESampler(base.BaseSampler):
     def _sample_discrete_uniform(self, distribution, below, above):
         # type:(distributions.DiscreteUniformDistribution, np.ndarray, np.ndarray) -> float
 
-        low = distribution.low - 0.5 * distribution.q
-        high = distribution.high + 0.5 * distribution.q
         q = distribution.q
+        shifted_low = 0
+        shifted_high = distribution.high - distribution.low
+        if math.fmod(shifted_high, q) != 0:
+            shifted_high = (shifted_high // q) * q
+            self.logger.warning('`high` of suggest_discrete_uniform is not a multiple of `q`,'
+                                ' and it will be replaced with {}.'.format(shifted_high))
+        low = shifted_low - 0.5 * q
+        high = shifted_high + 0.5 * q
 
-        best_sample = self._sample_numerical(low, high, below, above, q=q)
+        best_sample = self._sample_numerical(low, high, below, above, q=q) + distribution.low
         return min(max(best_sample, distribution.low), distribution.high)
 
     def _sample_int(self, distribution, below, above):
