@@ -25,21 +25,19 @@ def session():
 
 
 class TestStudySystemAttributeModel(object):
-
     @staticmethod
     def test_find_by_study_and_key(session):
         # type: (Session) -> None
 
         study = StudyModel(study_id=1, study_name='test-study')
-        session.add(StudySystemAttributeModel(study_id=study.study_id, key='sample-key',
-                                              value_json='1'))
+        session.add(
+            StudySystemAttributeModel(study_id=study.study_id, key='sample-key', value_json='1'))
         session.commit()
 
         attr = StudySystemAttributeModel.find_by_study_and_key(study, 'sample-key', session)
         assert attr is not None and '1' == attr.value_json
 
-        assert StudySystemAttributeModel.find_by_study_and_key(study, 'not-found',
-                                                               session) is None
+        assert StudySystemAttributeModel.find_by_study_and_key(study, 'not-found', session) is None
 
     @staticmethod
     def test_where_study_id(session):
@@ -48,8 +46,9 @@ class TestStudySystemAttributeModel(object):
         sample_study = StudyModel(study_id=1, study_name='test-study')
         empty_study = StudyModel(study_id=2, study_name='test-study')
 
-        session.add(StudySystemAttributeModel(study_id=sample_study.study_id, key='sample-key',
-                                              value_json='1'))
+        session.add(
+            StudySystemAttributeModel(
+                study_id=sample_study.study_id, key='sample-key', value_json='1'))
 
         assert 1 == len(StudySystemAttributeModel.where_study_id(sample_study.study_id, session))
         assert 0 == len(StudySystemAttributeModel.where_study_id(empty_study.study_id, session))
@@ -58,7 +57,6 @@ class TestStudySystemAttributeModel(object):
 
 
 class TestTrialModel(object):
-
     @staticmethod
     def test_default_datetime(session):
         # type: (Session) -> None
@@ -90,9 +88,30 @@ class TestTrialModel(object):
         assert 2 == TrialModel.count(session, study=study_1)
         assert 1 == TrialModel.count(session, state=TrialState.COMPLETE)
 
+    @staticmethod
+    def test_count_past_trials(session):
+        # type: (Session) -> None
+
+        study_1 = StudyModel(study_id=1, study_name='test-study-1')
+        study_2 = StudyModel(study_id=2, study_name='test-study-2')
+
+        trial_1_1 = TrialModel(study_id=study_1.study_id, state=TrialState.COMPLETE)
+        session.add(trial_1_1)
+        session.commit()
+        assert 0 == trial_1_1.count_past_trials(session)
+
+        trial_1_2 = TrialModel(study_id=study_1.study_id, state=TrialState.RUNNING)
+        session.add(trial_1_2)
+        session.commit()
+        assert 1 == trial_1_2.count_past_trials(session)
+
+        trial_2_1 = TrialModel(study_id=study_2.study_id, state=TrialState.RUNNING)
+        session.add(trial_2_1)
+        session.commit()
+        assert 0 == trial_2_1.count_past_trials(session)
+
 
 class TestTrialUserAttributeModel(object):
-
     @staticmethod
     def test_find_by_trial_and_key(session):
         # type: (Session) -> None
@@ -100,8 +119,8 @@ class TestTrialUserAttributeModel(object):
         study = StudyModel(study_id=1, study_name='test-study')
         trial = TrialModel(study_id=study.study_id)
 
-        session.add(TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key',
-                                            value_json='1'))
+        session.add(
+            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
         session.commit()
 
         attr = TrialUserAttributeModel.find_by_trial_and_key(trial, 'sample-key', session)
@@ -118,8 +137,8 @@ class TestTrialUserAttributeModel(object):
 
         session.add(study)
         session.add(trial)
-        session.add(TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key',
-                                            value_json='1'))
+        session.add(
+            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
         session.commit()
 
         user_attributes = TrialUserAttributeModel.where_study(study, session)
@@ -134,8 +153,8 @@ class TestTrialUserAttributeModel(object):
         study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
-        session.add(TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key',
-                                            value_json='1'))
+        session.add(
+            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
         session.commit()
 
         user_attributes = TrialUserAttributeModel.where_trial(trial, session)
@@ -150,8 +169,8 @@ class TestTrialUserAttributeModel(object):
         study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
-        session.add(TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key',
-                                            value_json='1'))
+        session.add(
+            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
         session.commit()
 
         user_attributes = TrialUserAttributeModel.all(session)
@@ -161,7 +180,6 @@ class TestTrialUserAttributeModel(object):
 
 
 class TestTrialSystemAttributeModel(object):
-
     @staticmethod
     def test_find_by_trial_and_key(session):
         # type: (Session) -> None
@@ -169,8 +187,8 @@ class TestTrialSystemAttributeModel(object):
         study = StudyModel(study_id=1, study_name='test-study')
         trial = TrialModel(study_id=study.study_id)
 
-        session.add(TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key',
-                                              value_json='1'))
+        session.add(
+            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
         session.commit()
 
         attr = TrialSystemAttributeModel.find_by_trial_and_key(trial, 'sample-key', session)
@@ -187,8 +205,8 @@ class TestTrialSystemAttributeModel(object):
 
         session.add(study)
         session.add(trial)
-        session.add(TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key',
-                                              value_json='1'))
+        session.add(
+            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
         session.commit()
 
         system_attributes = TrialSystemAttributeModel.where_study(study, session)
@@ -203,8 +221,8 @@ class TestTrialSystemAttributeModel(object):
         study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
-        session.add(TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key',
-                                              value_json='1'))
+        session.add(
+            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
         session.commit()
 
         system_attributes = TrialSystemAttributeModel.where_trial(trial, session)
@@ -219,8 +237,8 @@ class TestTrialSystemAttributeModel(object):
         study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
-        session.add(TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key',
-                                              value_json='1'))
+        session.add(
+            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
         session.commit()
 
         system_attributes = TrialSystemAttributeModel.all(session)
@@ -230,7 +248,6 @@ class TestTrialSystemAttributeModel(object):
 
 
 class TestVersionInfoModel(object):
-
     @staticmethod
     def test_version_info_id_constraint(session):
         # type: (Session) -> None

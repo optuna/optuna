@@ -1,14 +1,15 @@
 """
-Optuna example that optimizes multi-layer perceptrons using ChainerMN.
+Optuna example that demonstrates a pruner for ChainerMN.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-ChainerMN and MNIST, where architecture of neural network is optimized.
+ChainerMN and MNIST, where architecture of neural network is optimized. Throughout the training of
+neural networks, a pruner observes intermediate results and stops unpromising trials.
 
 ChainerMN and it's Optuna integration are supposed to be invoked via MPI. You can run this example
 as follows:
     $ STORAGE_URL=sqlite:///example.db
     $ STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
-    $ mpirun -n 2 -- python chainermn_simple.py $STUDY_NAME $STORAGE_URL
+    $ mpirun -n 2 -- python chainermn_integration.py $STUDY_NAME $STORAGE_URL
 
 """
 
@@ -27,6 +28,7 @@ N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
+PRUNER_INTERVAL = 3
 
 
 def create_model(trial):
@@ -43,8 +45,6 @@ def create_model(trial):
     return chainer.Sequential(*layers)
 
 
-# FYI: Objective functions can take additional arguments
-# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial, comm):
     # Sample an architecture.
     model = L.Classifier(create_model(trial))
@@ -71,11 +71,23 @@ def objective(trial, comm):
     updater = chainer.training.StandardUpdater(train_iter, optimizer)
     trainer = chainer.training.Trainer(updater, (EPOCH, 'epoch'))
 
+    # Add Chainer extension for pruners.
+    trainer.extend(
+        optuna.integration.ChainerPruningExtension(trial, 'validation/main/loss',
+                                                   (PRUNER_INTERVAL, 'epoch')))
+    evaluator = chainer.training.extensions.Evaluator(test_iter, model)
+    trainer.extend(chainermn.create_multi_node_evaluator(evaluator, comm))
+    log_report_extension = chainer.training.extensions.LogReport(log_name=None)
+    trainer.extend(log_report_extension)
+
     if comm.rank == 0:
         trainer.extend(chainer.training.extensions.ProgressBar())
 
     # Run training.
-    trainer.run()
+    # Please set show_loop_exception_msg False to inhibit messages about TrialPruned exception.
+    # ChainerPruningExtension raises TrialPruned exception to stop training, and
+    # trainer shows some messages every time it receive TrialPruned.
+    trainer.run(show_loop_exception_msg=False)
 
     # Evaluate.
     evaluator = chainer.training.extensions.Evaluator(test_iter, model)
@@ -90,7 +102,7 @@ if __name__ == '__main__':
     study_name = sys.argv[1]
     storage_url = sys.argv[2]
 
-    study = optuna.Study(study_name, storage_url)
+    study = optuna.Study(study_name, storage_url, pruner=optuna.pruners.MedianPruner())
     comm = chainermn.create_communicator('naive')
     if comm.rank == 0:
         print('Study name:', study_name)
@@ -102,7 +114,14 @@ if __name__ == '__main__':
     chainermn_study.optimize(objective, n_trials=25)
 
     if comm.rank == 0:
-        print('Number of finished trials: ', len(study.trials))
+        pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
+        complete_trials = \
+            [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
+        print('Study statistics: ')
+        print('  Number of finished trials: ', len(study.trials))
+        print('  Number of pruned trials: ', len(pruned_trials))
+        print('  Number of complete trials: ', len(complete_trials))
+
         print('Best trial:')
         trial = study.best_trial
         print('  Value: ', trial.value)

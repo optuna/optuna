@@ -7,7 +7,6 @@ from optuna.storages.base import BaseStorage  # NOQA
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseSampler(object):
-
     """Base class for samplers."""
 
     @abc.abstractmethod

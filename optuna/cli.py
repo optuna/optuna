@@ -33,7 +33,6 @@ def get_storage_url(storage_url, config):
 
 
 class BaseCommand(Command):
-
     def __init__(self, *args, **kwargs):
         # type: (List[Any], Dict[str, Any]) -> None
 
@@ -42,20 +41,27 @@ class BaseCommand(Command):
 
 
 class CreateStudy(BaseCommand):
-
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
         parser = super(CreateStudy, self).get_parser(prog_name)
-        parser.add_argument('--study-name', default=None,
-                            help='A human-readable name of a study to distinguish it from others.')
-        parser.add_argument('--direction', type=str, choices=('minimize', 'maximize'),
-                            default='minimize',
-                            help='Set direction of optimization to a new study. Set \'minimize\' '
-                                 'for minimization and \'maximize\' for maximization.')
-        parser.add_argument('--skip-if-exists', default=False, action='store_true',
-                            help='If specified, the creation of the study is skipped '
-                                 'without any error when the study name is duplicated.')
+        parser.add_argument(
+            '--study-name',
+            default=None,
+            help='A human-readable name of a study to distinguish it from others.')
+        parser.add_argument(
+            '--direction',
+            type=str,
+            choices=('minimize', 'maximize'),
+            default='minimize',
+            help='Set direction of optimization to a new study. Set \'minimize\' '
+            'for minimization and \'maximize\' for maximization.')
+        parser.add_argument(
+            '--skip-if-exists',
+            default=False,
+            action='store_true',
+            help='If specified, the creation of the study is skipped '
+            'without any error when the study name is duplicated.')
         return parser
 
     def take_action(self, parsed_args):
@@ -64,14 +70,15 @@ class CreateStudy(BaseCommand):
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
         storage = optuna.storages.RDBStorage(storage_url)
-        study_name = optuna.create_study(storage, study_name=parsed_args.study_name,
-                                         direction=parsed_args.direction,
-                                         load_if_exists=parsed_args.skip_if_exists).study_name
+        study_name = optuna.create_study(
+            storage,
+            study_name=parsed_args.study_name,
+            direction=parsed_args.direction,
+            load_if_exists=parsed_args.skip_if_exists).study_name
         print(study_name)
 
 
 class StudySetUserAttribute(BaseCommand):
-
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -121,25 +128,27 @@ class Studies(Lister):
 
 
 class Dashboard(BaseCommand):
-
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
         parser = super(Dashboard, self).get_parser(prog_name)
         parser.add_argument('--study', required=True, help='Study name.')
-        parser.add_argument('--out', '-o',
-                            help='Output HTML file path. If it is not given, a HTTP server starts '
-                                 'and the dashboard is served.')
-        parser.add_argument('--allow-websocket-origin',
-                            dest='bokeh_allow_websocket_origins',
-                            action='append',
-                            default=[],
-                            help='Allow websocket access from the specified host(s).'
-                                 'Internally, it is used as the value of bokeh\'s '
-                                 '--allow-websocket-origin option. Please refer to '
-                                 'https://bokeh.pydata.org/en/latest/docs/'
-                                 'reference/command/subcommands/serve.html '
-                                 'for more details.')
+        parser.add_argument(
+            '--out',
+            '-o',
+            help='Output HTML file path. If it is not given, a HTTP server starts '
+            'and the dashboard is served.')
+        parser.add_argument(
+            '--allow-websocket-origin',
+            dest='bokeh_allow_websocket_origins',
+            action='append',
+            default=[],
+            help='Allow websocket access from the specified host(s).'
+            'Internally, it is used as the value of bokeh\'s '
+            '--allow-websocket-origin option. Please refer to '
+            'https://bokeh.pydata.org/en/latest/docs/'
+            'reference/command/subcommands/serve.html '
+            'for more details.')
         return parser
 
     def take_action(self, parsed_args):
@@ -157,23 +166,29 @@ class Dashboard(BaseCommand):
 
 
 class StudyOptimize(BaseCommand):
-
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
         parser = super(StudyOptimize, self).get_parser(prog_name)
-        parser.add_argument('--n-trials', type=int,
-                            help='The number of trials. If this argument is not given, as many '
-                                 'trials run as possible.')
-        parser.add_argument('--timeout', type=float,
-                            help='Stop study after the given number of second(s). If this argument'
-                                 ' is not given, as many trials run as possible.')
-        parser.add_argument('--n-jobs', type=int, default=1,
-                            help='The number of parallel jobs. If this argument is set to -1, the '
-                                 'number is set to CPU counts.')
+        parser.add_argument(
+            '--n-trials',
+            type=int,
+            help='The number of trials. If this argument is not given, as many '
+            'trials run as possible.')
+        parser.add_argument(
+            '--timeout',
+            type=float,
+            help='Stop study after the given number of second(s). If this argument'
+            ' is not given, as many trials run as possible.')
+        parser.add_argument(
+            '--n-jobs',
+            type=int,
+            default=1,
+            help='The number of parallel jobs. If this argument is set to -1, the '
+            'number is set to CPU counts.')
         parser.add_argument('--study', required=True, help='Study name.')
-        parser.add_argument('file',
-                            help='Python script file where the objective function resides.')
+        parser.add_argument(
+            'file', help='Python script file where the objective function resides.')
         parser.add_argument('method', help='The method name of the objective function.')
         return parser
 
@@ -198,8 +213,10 @@ class StudyOptimize(BaseCommand):
             return 1
 
         study.optimize(
-            target_method, n_trials=parsed_args.n_trials,
-            timeout=parsed_args.timeout, n_jobs=parsed_args.n_jobs)
+            target_method,
+            n_trials=parsed_args.n_trials,
+            timeout=parsed_args.timeout,
+            n_jobs=parsed_args.n_jobs)
         return 0
 
 
@@ -213,16 +230,12 @@ _COMMANDS = {
 
 
 class OptunaApp(App):
-
     def __init__(self):
         # type: () -> None
 
         command_manager = CommandManager('optuna.command')
         super(OptunaApp, self).__init__(
-            description='',
-            version=optuna.__version__,
-            command_manager=command_manager
-        )
+            description='', version=optuna.__version__, command_manager=command_manager)
         for name, cls in _COMMANDS.items():
             command_manager.add_command(name, cls)
 
@@ -230,8 +243,8 @@ class OptunaApp(App):
         # type: (str, str, Optional[Dict]) -> ArgumentParser
 
         parser = super(OptunaApp, self).build_option_parser(description, version, argparse_kwargs)
-        parser.add_argument('--config', default=None,
-                            help='Config file path. (default=$HOME/.optuna.yml)')
+        parser.add_argument(
+            '--config', default=None, help='Config file path. (default=$HOME/.optuna.yml)')
         parser.add_argument('--storage', default=None, help='DB URL. (e.g. sqlite:///example.db)')
         return parser
 
@@ -245,7 +258,8 @@ class OptunaApp(App):
         root_logger = logging.getLogger()
         stream_handlers = [
             handler for handler in root_logger.handlers
-            if isinstance(handler, logging.StreamHandler)]
+            if isinstance(handler, logging.StreamHandler)
+        ]
         assert len(stream_handlers) == 1
         stream_handler = stream_handlers[0]
         stream_handler.setFormatter(optuna.logging.create_default_formatter())

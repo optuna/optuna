@@ -12,7 +12,6 @@ except ImportError as e:
 
 
 class XGBoostPruningCallback(object):
-
     """Callback for XGBoost to prune unpromising trials.
 
     Example:

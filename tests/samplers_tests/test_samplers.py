@@ -15,9 +15,7 @@ if optuna.types.TYPE_CHECKING:
     from optuna.trial import T  # NOQA
 
 parametrize_sampler = pytest.mark.parametrize(
-    'sampler_class',
-    [optuna.samplers.RandomSampler, optuna.samplers.TPESampler]
-)
+    'sampler_class', [optuna.samplers.RandomSampler, optuna.samplers.TPESampler])
 
 
 @parametrize_sampler

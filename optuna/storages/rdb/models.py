@@ -180,6 +180,14 @@ class TrialModel(BaseModel):
 
         return trial_count.scalar()
 
+    def count_past_trials(self, session):
+        # type: (orm.Session) -> int
+
+        trial_count = session.query(func.count(TrialModel.trial_id))\
+            .filter(TrialModel.study_id == self.study_id,
+                    TrialModel.trial_id < self.trial_id)
+        return trial_count.scalar()
+
     @classmethod
     def all(cls, session):
         # type: (orm.Session) -> List[TrialModel]
@@ -219,7 +227,13 @@ class TrialUserAttributeModel(BaseModel):
     def where_trial(cls, trial, session):
         # type: (TrialModel, orm.Session) -> List[TrialUserAttributeModel]
 
-        return session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+        return cls.where_trial_id(trial.trial_id, session)
+
+    @classmethod
+    def where_trial_id(cls, trial_id, session):
+        # type: (int, orm.Session) -> List[TrialUserAttributeModel]
+
+        return session.query(cls).filter(cls.trial_id == trial_id).all()
 
     @classmethod
     def all(cls, session):
@@ -260,7 +274,13 @@ class TrialSystemAttributeModel(BaseModel):
     def where_trial(cls, trial, session):
         # type: (TrialModel, orm.Session) -> List[TrialSystemAttributeModel]
 
-        return session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+        return cls.where_trial_id(trial.trial_id, session)
+
+    @classmethod
+    def where_trial_id(cls, trial_id, session):
+        # type: (int, orm.Session) -> List[TrialSystemAttributeModel]
+
+        return session.query(cls).filter(cls.trial_id == trial_id).all()
 
     @classmethod
     def all(cls, session):

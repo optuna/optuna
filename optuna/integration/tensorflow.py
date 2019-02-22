@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import optuna
 
-
 try:
     import tensorflow as tf
     from tensorflow.train import SessionRunHook

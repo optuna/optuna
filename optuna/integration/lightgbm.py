@@ -12,7 +12,6 @@ except ImportError as e:
 
 
 class LightGBMPruningCallback(object):
-
     """Callback for LightGBM to prune unpromising trials.
 
     Example:

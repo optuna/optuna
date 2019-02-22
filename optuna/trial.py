@@ -87,7 +87,6 @@ class BaseTrial(object):
 
 
 class Trial(BaseTrial):
-
     """A trial is a process of evaluating an objective function.
 
     This object is passed to an objective function and provides interfaces to get parameter
@@ -338,8 +337,7 @@ class Trial(BaseTrial):
 
         # TODO(akiba): remove `step` argument
 
-        return self.study.pruner.prune(
-            self.storage, self.study_id, self.trial_id, step)
+        return self.study.pruner.prune(self.storage, self.study_id, self.trial_id, step)
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -390,11 +388,11 @@ class Trial(BaseTrial):
     def _suggest(self, name, distribution):
         # type: (str, distributions.BaseDistribution) -> Any
 
-        param_value_in_internal_repr = self.study.sampler.sample(
-            self.storage, self.study_id, name, distribution)
+        param_value_in_internal_repr = self.study.sampler.sample(self.storage, self.study_id, name,
+                                                                 distribution)
 
-        set_success = self.storage.set_trial_param(
-            self.trial_id, name, param_value_in_internal_repr, distribution)
+        set_success = self.storage.set_trial_param(self.trial_id, name,
+                                                   param_value_in_internal_repr, distribution)
         if not set_success:
             param_value_in_internal_repr = self.storage.get_trial_param(self.trial_id, name)
 
@@ -436,7 +434,6 @@ class Trial(BaseTrial):
 
 
 class FixedTrial(BaseTrial):
-
     """A trial class which suggests a fixed value for each parameter.
 
     This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests pre-defined

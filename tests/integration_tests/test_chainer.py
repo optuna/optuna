@@ -34,12 +34,11 @@ def test_chainer_pruning_extension_trigger():
     # type: () -> None
 
     study = optuna.create_study()
-    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
+    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception, ))
 
     extension = ChainerPruningExtension(trial, 'main/loss', (1, 'epoch'))
     assert isinstance(extension.pruner_trigger, triggers.IntervalTrigger)
-    extension = ChainerPruningExtension(trial, 'main/loss',
-                                        triggers.IntervalTrigger(1, 'epoch'))
+    extension = ChainerPruningExtension(trial, 'main/loss', triggers.IntervalTrigger(1, 'epoch'))
     assert isinstance(extension.pruner_trigger, triggers.IntervalTrigger)
     extension = ChainerPruningExtension(trial, 'main/loss',
                                         triggers.ManualScheduleTrigger(1, 'epoch'))
@@ -63,8 +62,7 @@ def test_chainer_pruning_extension():
         updater = chainer.training.StandardUpdater(train_iter, optimizer)
         trainer = chainer.training.Trainer(updater, (1, 'epoch'))
         trainer.extend(
-            optuna.integration.chainer.ChainerPruningExtension(trial, 'main/loss',
-                                                               (1, 'epoch')))
+            optuna.integration.chainer.ChainerPruningExtension(trial, 'main/loss', (1, 'epoch')))
 
         trainer.run(show_loop_exception_msg=False)
         return 1.0
@@ -83,7 +81,7 @@ def test_chainer_pruning_extension_observation_nan():
     # type: () -> None
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
+    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception, ))
     extension = ChainerPruningExtension(trial, 'main/loss', (1, 'epoch'))
 
     MockTrainer = namedtuple('_MockTrainer', ('observation', 'updater'))
@@ -100,7 +98,7 @@ def test_observation_exists():
     # type: () -> None
 
     study = optuna.create_study()
-    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception,))
+    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception, ))
     MockTrainer = namedtuple('_MockTrainer', ('observation', ))
     trainer = MockTrainer(observation={'OK': 0})
 

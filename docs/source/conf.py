@@ -22,7 +22,6 @@ import pkg_resources
 __version__ = pkg_resources.get_distribution('optuna').version
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
-
 # -- Project information -----------------------------------------------------
 
 project = 'Optuna'
@@ -33,7 +32,6 @@ author = 'Preferred Networks, Inc.'
 version = __version__
 # The full version, including alpha/beta/rc tags
 release = __version__
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -79,7 +77,6 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -109,12 +106,10 @@ html_static_path = ['_static']
 #
 # html_sidebars = {}
 
-
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Optunadoc'
-
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -140,20 +135,14 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Optuna.tex', 'Optuna Documentation',
-     'Preferred Networks, Inc.', 'manual'),
+    (master_doc, 'Optuna.tex', 'Optuna Documentation', 'Preferred Networks, Inc.', 'manual'),
 ]
-
 
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'optuna', 'Optuna Documentation',
-     [author], 1)
-]
-
+man_pages = [(master_doc, 'optuna', 'Optuna Documentation', [author], 1)]
 
 # -- Options for Texinfo output ----------------------------------------------
 
@@ -161,10 +150,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Optuna', 'Optuna Documentation',
-     author, 'Optuna', 'One line description of project.',
-     'Miscellaneous'),
+    (master_doc, 'Optuna', 'Optuna Documentation', author, 'Optuna',
+     'One line description of project.', 'Miscellaneous'),
 ]
-
 
 # -- Extension configuration -------------------------------------------------
