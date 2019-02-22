@@ -407,8 +407,9 @@ class Study(object):
         try:
             result = func(trial)
         except structs.TrialPruned as e:
-            message = 'Setting status of trial#{} as {}. {}'.format(
-                trial_number, structs.TrialState.PRUNED, str(e))
+            message = 'Setting status of trial#{} as {}. {}'.format(trial_number,
+                                                                    structs.TrialState.PRUNED,
+                                                                    str(e))
             self.logger.info(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
