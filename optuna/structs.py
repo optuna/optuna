@@ -89,8 +89,6 @@ class FrozenTrial(
             set by Optuna.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
-        params_in_internal_repr:
-            Optuna's internal representation of :attr:`params`.
     """
 
     internal_fields = ['params_in_internal_repr', 'trial_id']
