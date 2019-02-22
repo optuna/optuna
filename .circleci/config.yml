@@ -10,6 +10,7 @@ workflows:
       - tests-python36
       - tests-python35
       - tests-python27
+      - codecov
   daily-build:
     triggers:
       - schedule:
@@ -147,6 +148,31 @@ jobs:
       - image: circleci/python:2.7
     steps:
       [checkout, run: *install, run: *keras-install, run: *tests, run: *tests-mn]
+
+  codecov:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+
+      - run: *install
+
+      - run: *keras-install
+
+      - run:
+          name: install-codecov
+          command: |
+            . venv/bin/activate
+            pip install .[codecov]
+
+      - run:
+          name: codecov
+          command: |
+            . venv/bin/activate
+            pytest --cov=./ tests
+            codecov
+          environment:
+            OMP_NUM_THREADS: 1
 
   # Examples
 

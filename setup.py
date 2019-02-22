@@ -48,6 +48,7 @@ def get_extras_require():
         # TODO(higumachan): merge 'keras' to 'testing' after Tensorflow supports Python 3.7.
         'keras': ['keras', 'tensorflow'],
         'document': ['sphinx', 'sphinx_rtd_theme'],
+        'codecov': ['pytest-cov', 'codecov'],
     }
     if sys.version_info >= (3, 5):  # mypy does not support Python 2.x.
         extras_require['checking'].append('mypy')
