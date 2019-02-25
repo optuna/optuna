@@ -139,18 +139,13 @@ class InMemoryStorage(base.BaseStorage):
                     state=structs.TrialState.RUNNING,
                     params={},
                     user_attrs={},
-                    system_attrs={},
+                    system_attrs={'number': trial_id},
                     value=None,
                     intermediate_values={},
                     params_in_internal_repr={},
                     datetime_start=datetime.now(),
                     datetime_complete=None,
                     trial_id=trial_id))
-        return trial_id
-
-    def create_new_trial_number(self, trial_id):
-        # type: (int) -> int
-
         return trial_id
 
     def set_trial_state(self, trial_id, state):

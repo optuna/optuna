@@ -28,6 +28,7 @@ EXAMPLE_ATTRS = {
         'baseline_score': 0.001,
         'tags': ['image', 'classification']
     },
+    'number': 0,
 }
 
 EXAMPLE_DISTRIBUTIONS = {
@@ -35,13 +36,14 @@ EXAMPLE_DISTRIBUTIONS = {
     'y': CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
 }  # type: Dict[str, BaseDistribution]
 
+# TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
 EXAMPLE_TRIALS = [
     FrozenTrial(
         number=0,  # dummy
         value=1.,
         state=TrialState.COMPLETE,
         user_attrs={},
-        system_attrs={},
+        system_attrs={'number': 0},
         params={
             'x': 0.5,
             'y': 'Ginza'
@@ -66,7 +68,7 @@ EXAMPLE_TRIALS = [
             'tags': ['video', 'classification'],
             'dataset': 'YouTube-8M'
         },
-        system_attrs={'some_key': 'some_value'},
+        system_attrs={'some_key': 'some_value', 'number': 0},
         params={
             'x': 0.01,
             'y': 'Otemachi'
@@ -242,18 +244,9 @@ def test_create_new_trial_id(storage_init_func):
     assert trials[0].number == 0
     assert trials[0].state == TrialState.RUNNING
     assert trials[0].user_attrs == {}
-    assert trials[0].system_attrs == {}
 
-
-@parametrize_storage
-def test_create_new_trial_number(storage_init_func):
-    # type: (Callable[[], BaseStorage]) -> None
-
-    storage = storage_init_func()
-
-    study_id = storage.create_new_study_id()
-    trial_id = storage.create_new_trial_id(study_id)
-    assert storage.create_new_trial_number(trial_id) == 0
+    # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
+    assert trials[0].system_attrs == {'number': 0}
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -457,7 +450,8 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    trial_id_1 = storage.create_new_trial_id(storage.create_new_study_id())
+    study_id = storage.create_new_study_id()
+    trial_id_1 = storage.create_new_trial_id(study_id)
 
     def check_set_and_get(trial_id, key, value):
         # type: (int, str, Any) -> None
@@ -475,10 +469,11 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     check_set_and_get(trial_id_1, 'dataset', 'ImageNet')
 
     # Test another trial.
-    trial_id_2 = storage.create_new_trial_id(storage.create_new_study_id())
+    trial_id_2 = storage.create_new_trial_id(study_id)
     check_set_and_get(trial_id_2, 'baseline_score', 0.001)
     system_attrs = storage.get_trial(trial_id_2).system_attrs
-    assert system_attrs == {'baseline_score': 0.001}
+    # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
+    assert system_attrs == {'baseline_score': 0.001, 'number': 1}
 
 
 @parametrize_storage

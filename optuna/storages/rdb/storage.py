@@ -276,11 +276,11 @@ class RDBStorage(BaseStorage):
         session.add(trial)
         self._commit(session)
 
-        self.create_new_trial_number(trial.trial_id)
+        self._create_new_trial_number(trial.trial_id)
 
         return trial.trial_id
 
-    def create_new_trial_number(self, trial_id):
+    def _create_new_trial_number(self, trial_id):
         # type: (int) -> int
 
         session = self.scoped_session()
@@ -409,7 +409,7 @@ class RDBStorage(BaseStorage):
         if trial_number is None:
             # If a study is created by optuna<=0.7.0, trial number is not found.
             # Create new one.
-            return self.create_new_trial_number(trial_id)
+            return self._create_new_trial_number(trial_id)
         return trial_number
 
     def get_trial(self, trial_id):
@@ -447,8 +447,8 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
         return models.TrialModel.count(session, study, state)
 
-    @staticmethod
     def _merge_trials_orm(
+            self,
             trials,  # type: List[models.TrialModel]
             trial_params,  # type: List[models.TrialParamModel]
             trial_intermediate_values,  # type: List[models.TrialValueModel]
@@ -501,7 +501,7 @@ class RDBStorage(BaseStorage):
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
             # TODO(Yanase): Use trial.number after TrialModel.number is added.
-            trial_number = system_attrs.pop('number', trial_id)
+            trial_number = self.get_trial_number_from_id(trial_id)
             result.append(
                 structs.FrozenTrial(
                     number=trial_number,
