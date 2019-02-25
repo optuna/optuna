@@ -406,12 +406,12 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
         # Change index to access rows via trial number.
         df.set_index(('number', ''), inplace=True, drop=False)
         assert len(df) == 3
-        # non-nested: 5, params: 2, user_attrs: 1 and 8 in total.
+        # non-nested: 5, params: 2, user_attrs: 1, system_attrs: 1 and 9 in total.
         if include_internal_fields:
             # params_in_internal_repr: 2, trial_id: 1
-            assert len(df.columns) == 8 + 3
+            assert len(df.columns) == 9 + 3
         else:
-            assert len(df.columns) == 8
+            assert len(df.columns) == 9
 
         for i in range(3):
             assert df.number[i] == i
@@ -422,6 +422,7 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
             assert df.params.x[i] == 1
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
+            assert df.system_attrs._number[i] == i
             if include_internal_fields:
                 assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
                 assert ('params_in_internal_repr', 'x') in df.columns
@@ -448,8 +449,8 @@ def test_trials_dataframe_with_failure(storage_mode):
         # Change index to access rows via trial number.
         df.set_index(('number', ''), inplace=True, drop=False)
         assert len(df) == 3
-        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 1
-        assert len(df.columns) == 9
+        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 2
+        assert len(df.columns) == 10
         for i in range(3):
             assert df.number[i] == i
             assert df.state[i] == optuna.structs.TrialState.FAIL
@@ -459,6 +460,7 @@ def test_trials_dataframe_with_failure(storage_mode):
             assert df.params.x[i] == 1
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
+            assert df.system_attrs._number[i] == i
             assert ('system_attrs', 'fail_reason') in df.columns
 
 
