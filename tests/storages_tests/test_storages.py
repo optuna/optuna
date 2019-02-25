@@ -21,6 +21,7 @@ from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 from optuna.testing.storage import StorageSupplier
 
+# TODO(Yanase): Remove _number from system_attrs after adding TrialModel.number.
 EXAMPLE_ATTRS = {
     'dataset': 'MNIST',
     'none': None,
@@ -28,7 +29,7 @@ EXAMPLE_ATTRS = {
         'baseline_score': 0.001,
         'tags': ['image', 'classification']
     },
-    'number': 0,
+    '_number': 0,
 }
 
 EXAMPLE_DISTRIBUTIONS = {
@@ -36,14 +37,14 @@ EXAMPLE_DISTRIBUTIONS = {
     'y': CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
 }  # type: Dict[str, BaseDistribution]
 
-# TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
+# TODO(Yanase): Remove _number from system_attrs after adding TrialModel.number.
 EXAMPLE_TRIALS = [
     FrozenTrial(
         number=0,  # dummy
         value=1.,
         state=TrialState.COMPLETE,
         user_attrs={},
-        system_attrs={'number': 0},
+        system_attrs={'_number': 0},
         params={
             'x': 0.5,
             'y': 'Ginza'
@@ -68,7 +69,7 @@ EXAMPLE_TRIALS = [
             'tags': ['video', 'classification'],
             'dataset': 'YouTube-8M'
         },
-        system_attrs={'some_key': 'some_value', 'number': 0},
+        system_attrs={'some_key': 'some_value', '_number': 0},
         params={
             'x': 0.01,
             'y': 'Otemachi'
@@ -246,7 +247,7 @@ def test_create_new_trial_id(storage_init_func):
     assert trials[0].user_attrs == {}
 
     # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-    assert trials[0].system_attrs == {'number': 0}
+    assert trials[0].system_attrs == {'_number': 0}
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -473,7 +474,7 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     check_set_and_get(trial_id_2, 'baseline_score', 0.001)
     system_attrs = storage.get_trial(trial_id_2).system_attrs
     # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-    assert system_attrs == {'baseline_score': 0.001, 'number': 1}
+    assert system_attrs == {'baseline_score': 0.001, '_number': 1}
 
 
 @parametrize_storage

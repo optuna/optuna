@@ -287,7 +287,7 @@ class RDBStorage(BaseStorage):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
 
         trial_number = trial.count_past_trials(session)
-        self.set_trial_system_attr(trial.trial_id, 'number', trial_number)
+        self.set_trial_system_attr(trial.trial_id, '_number', trial_number)
 
         return trial_number
 
@@ -405,7 +405,7 @@ class RDBStorage(BaseStorage):
     def get_trial_number_from_id(self, trial_id):
         # type: (int) -> int
 
-        trial_number = self.get_trial_system_attrs(trial_id).get('number')
+        trial_number = self.get_trial_system_attrs(trial_id).get('_number')
         if trial_number is None:
             # If a study is created by optuna<=0.7.0, trial number is not found.
             # Create new one.
