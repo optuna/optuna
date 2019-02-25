@@ -185,6 +185,11 @@ class InMemoryStorage(base.BaseStorage):
 
             return True
 
+    def get_trial_number_from_id(self, trial_id):
+        # type: (int) -> int
+
+        return trial_id
+
     def get_trial_param(self, trial_id, param_name):
         # type: (int, str) -> float
 

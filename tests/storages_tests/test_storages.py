@@ -1,5 +1,6 @@
 from datetime import datetime
 import math
+from mock import patch
 import pytest
 from typing import Any  # NOQA
 from typing import Callable  # NOQA
@@ -253,6 +254,43 @@ def test_create_new_trial_number(storage_init_func):
     study_id = storage.create_new_study_id()
     trial_id = storage.create_new_trial_id(study_id)
     assert storage.create_new_trial_number(trial_id) == 0
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_trial_number_from_id(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        storage = optuna.storages.get_storage(storage)
+
+        # Check if trial_number starts from 0.
+        study_id = storage.create_new_study_id()
+
+        trial_id = storage.create_new_trial_id(study_id)
+        assert storage.get_trial_number_from_id(trial_id) == 0
+
+        trial_id = storage.create_new_trial_id(study_id)
+        assert storage.get_trial_number_from_id(trial_id) == 1
+
+
+# TODO(Yanase): Remove the following test case after TrialModel.number is added.
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_trial_number_from_id_with_empty_system_attrs(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        storage = optuna.storages.get_storage(storage)
+        study_id = storage.create_new_study_id()
+        with patch.object(storage, 'get_trial_system_attrs', return_value=dict()) as _mock_attrs:
+            trial_id = storage.create_new_trial_id(study_id)
+            assert storage.get_trial_number_from_id(trial_id) == 0
+
+            trial_id = storage.create_new_trial_id(study_id)
+            assert storage.get_trial_number_from_id(trial_id) == 1
+
+            if storage_mode == 'none':
+                return
+            assert _mock_attrs.call_count == 2
 
 
 @parametrize_storage

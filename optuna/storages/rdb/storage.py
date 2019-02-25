@@ -402,6 +402,16 @@ class RDBStorage(BaseStorage):
 
         self._commit_with_integrity_check(session)
 
+    def get_trial_number_from_id(self, trial_id):
+        # type: (int) -> int
+
+        trial_number = self.get_trial_system_attrs(trial_id).get('number')
+        if trial_number is None:
+            # If a study is created by optuna<=0.5.0, trial number is not found.
+            # Create new one.
+            return self.create_new_trial_number(trial_id)
+        return trial_number
+
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
 
@@ -490,6 +500,7 @@ class RDBStorage(BaseStorage):
             for system_attr in id_to_system_attrs[trial_id]:
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
+            # TODO(Yanase): Use trial.number after TrialModel.number is added.
             trial_number = system_attrs.pop('number', trial_id)
             result.append(
                 structs.FrozenTrial(
