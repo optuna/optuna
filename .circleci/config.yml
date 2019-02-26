@@ -180,9 +180,9 @@ jobs:
           command: |
             . venv/bin/activate
             STORAGE_URL=sqlite:///example.db
-            STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
             for file in `find examples -name 'chainermn_*.py'`
             do
+                STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
                 mpirun -n 2 -- python $file $STUDY_NAME $STORAGE_URL
             done
           environment:
