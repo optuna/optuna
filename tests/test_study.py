@@ -406,6 +406,7 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
         # Change index to access rows via trial number.
         df.set_index(('number', ''), inplace=True, drop=False)
         assert len(df) == 3
+        # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
         # non-nested: 5, params: 2, user_attrs: 1, system_attrs: 1 and 9 in total.
         if include_internal_fields:
             # params_in_internal_repr: 2, trial_id: 1
@@ -449,6 +450,7 @@ def test_trials_dataframe_with_failure(storage_mode):
         # Change index to access rows via trial number.
         df.set_index(('number', ''), inplace=True, drop=False)
         assert len(df) == 3
+        # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
         # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 2
         assert len(df.columns) == 10
         for i in range(3):
