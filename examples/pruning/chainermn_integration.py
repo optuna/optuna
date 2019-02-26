@@ -19,6 +19,7 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 import chainermn
+import gc
 import numpy as np
 import sys
 
@@ -46,6 +47,10 @@ def create_model(trial):
 
 
 def objective(trial, comm):
+    # The following line is required for CircleCI
+    # (see https://github.com/pfnet/optuna/pull/325 for more details).
+    gc.collect()
+
     # Sample an architecture.
     model = L.Classifier(create_model(trial))
 
