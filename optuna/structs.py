@@ -67,8 +67,7 @@ class FrozenTrial(
     Attributes:
         number:
             Unique and consecutive number of :class:`~optuna.trial.Trial` for each
-            :class:`~optuna.study.Study`. Note that number sequences of this field always start
-            at :obj:`0`.
+            :class:`~optuna.study.Study`. Note that this field uses zero-based numbering.
         state:
             :class:`TrialState` of the :class:`~optuna.trial.Trial`.
         value:
@@ -92,8 +91,8 @@ class FrozenTrial(
             supposed to be used by library users.
         trial_id:
             Optuna's internal identifier of the :class:`~optuna.trial.Trial`. Note that this field
-            is not supposed to be used by library users because origins of number sequences depend
-            on storage backends. Instead, please use :attr:`number` field.
+            is not supposed to be used by library users. Instead, please use :attr:`number` and
+            :class:`~optuna.study.Study.study_id` to identify a :class:`~optuna.trial.Trial`.
     """
 
     internal_fields = ['params_in_internal_repr', 'trial_id']
