@@ -407,7 +407,7 @@ class RDBStorage(BaseStorage):
 
         trial_number = self.get_trial_system_attrs(trial_id).get('_number')
         if trial_number is None:
-            # If a study is created by optuna<=0.7.0, trial number is not found.
+            # If a study is created by optuna<=0.8.0, trial number is not found.
             # Create new one.
             return self._create_new_trial_number(trial_id)
         return trial_number
