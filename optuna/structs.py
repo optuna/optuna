@@ -50,7 +50,7 @@ class StudyDirection(enum.Enum):
 
 class FrozenTrial(
         NamedTuple('_BaseFrozenTrial', [
-            ('trial_id', int),
+            ('number', int),
             ('state', TrialState),
             ('value', Optional[float]),
             ('datetime_start', Optional[datetime]),
@@ -60,12 +60,14 @@ class FrozenTrial(
             ('system_attrs', Dict[str, Any]),
             ('intermediate_values', Dict[int, float]),
             ('params_in_internal_repr', Dict[str, float]),
+            ('trial_id', int),
         ])):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
     Attributes:
-        trial_id:
-            Identifier of the :class:`~optuna.trial.Trial`.
+        number:
+            Unique and consecutive number of :class:`~optuna.trial.Trial` for each
+            :class:`~optuna.study.Study`. Note that this field uses zero-based numbering.
         state:
             :class:`TrialState` of the :class:`~optuna.trial.Trial`.
         value:
@@ -85,10 +87,15 @@ class FrozenTrial(
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
         params_in_internal_repr:
-            Optuna's internal representation of :attr:`params`.
+            Optuna's internal representation of :attr:`params`. Note that this field is not
+            supposed to be used by library users.
+        trial_id:
+            Optuna's internal identifier of the :class:`~optuna.trial.Trial`. Note that this field
+            is not supposed to be used by library users. Instead, please use :attr:`number` and
+            :class:`~optuna.study.Study.study_id` to identify a :class:`~optuna.trial.Trial`.
     """
 
-    internal_fields = ['params_in_internal_repr']
+    internal_fields = ['params_in_internal_repr', 'trial_id']
 
 
 class StudySummary(

@@ -1,5 +1,6 @@
 from datetime import datetime
 import math
+from mock import patch
 import pytest
 from typing import Any  # NOQA
 from typing import Callable  # NOQA
@@ -20,6 +21,7 @@ from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 from optuna.testing.storage import StorageSupplier
 
+# TODO(Yanase): Remove _number from system_attrs after adding TrialModel.number.
 EXAMPLE_ATTRS = {
     'dataset': 'MNIST',
     'none': None,
@@ -27,6 +29,7 @@ EXAMPLE_ATTRS = {
         'baseline_score': 0.001,
         'tags': ['image', 'classification']
     },
+    '_number': 0,
 }
 
 EXAMPLE_DISTRIBUTIONS = {
@@ -34,13 +37,14 @@ EXAMPLE_DISTRIBUTIONS = {
     'y': CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
 }  # type: Dict[str, BaseDistribution]
 
+# TODO(Yanase): Remove _number from system_attrs after adding TrialModel.number.
 EXAMPLE_TRIALS = [
     FrozenTrial(
-        trial_id=-1,  # dummy id
+        number=0,  # dummy
         value=1.,
         state=TrialState.COMPLETE,
         user_attrs={},
-        system_attrs={},
+        system_attrs={'_number': 0},
         params={
             'x': 0.5,
             'y': 'Ginza'
@@ -54,17 +58,18 @@ EXAMPLE_TRIALS = [
             'y': 2.
         },
         datetime_start=None,  # dummy
-        datetime_complete=None  # dummy
+        datetime_complete=None,  # dummy
+        trial_id=-1,  # dummy id
     ),
     FrozenTrial(
-        trial_id=-1,  # dummy id
+        number=0,  # dummy
         value=2.,
         state=TrialState.RUNNING,
         user_attrs={
             'tags': ['video', 'classification'],
             'dataset': 'YouTube-8M'
         },
-        system_attrs={'some_key': 'some_value'},
+        system_attrs={'some_key': 'some_value', '_number': 0},
         params={
             'x': 0.01,
             'y': 'Otemachi'
@@ -79,7 +84,8 @@ EXAMPLE_TRIALS = [
             'y': 0.
         },
         datetime_start=None,  # dummy
-        datetime_complete=None  # dummy
+        datetime_complete=None,  # dummy
+        trial_id=-1,  # dummy id
     )
 ]
 
@@ -236,9 +242,49 @@ def test_create_new_trial_id(storage_init_func):
     trials = storage.get_all_trials(study_id)
     assert len(trials) == 1
     assert trials[0].trial_id == trial_id
+    assert trials[0].number == 0
     assert trials[0].state == TrialState.RUNNING
     assert trials[0].user_attrs == {}
-    assert trials[0].system_attrs == {}
+
+    # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
+    assert trials[0].system_attrs == {'_number': 0}
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_trial_number_from_id(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        storage = optuna.storages.get_storage(storage)
+
+        # Check if trial_number starts from 0.
+        study_id = storage.create_new_study_id()
+
+        trial_id = storage.create_new_trial_id(study_id)
+        assert storage.get_trial_number_from_id(trial_id) == 0
+
+        trial_id = storage.create_new_trial_id(study_id)
+        assert storage.get_trial_number_from_id(trial_id) == 1
+
+
+# TODO(Yanase): Remove the following test case after TrialModel.number is added.
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_trial_number_from_id_with_empty_system_attrs(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        storage = optuna.storages.get_storage(storage)
+        study_id = storage.create_new_study_id()
+        with patch.object(storage, 'get_trial_system_attrs', return_value=dict()) as _mock_attrs:
+            trial_id = storage.create_new_trial_id(study_id)
+            assert storage.get_trial_number_from_id(trial_id) == 0
+
+            trial_id = storage.create_new_trial_id(study_id)
+            assert storage.get_trial_number_from_id(trial_id) == 1
+
+            if storage_mode == 'none':
+                return
+            assert _mock_attrs.call_count == 2
 
 
 @parametrize_storage
@@ -405,7 +451,8 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    trial_id_1 = storage.create_new_trial_id(storage.create_new_study_id())
+    study_id = storage.create_new_study_id()
+    trial_id_1 = storage.create_new_trial_id(study_id)
 
     def check_set_and_get(trial_id, key, value):
         # type: (int, str, Any) -> None
@@ -423,10 +470,11 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     check_set_and_get(trial_id_1, 'dataset', 'ImageNet')
 
     # Test another trial.
-    trial_id_2 = storage.create_new_trial_id(storage.create_new_study_id())
+    trial_id_2 = storage.create_new_trial_id(study_id)
     check_set_and_get(trial_id_2, 'baseline_score', 0.001)
     system_attrs = storage.get_trial(trial_id_2).system_attrs
-    assert system_attrs == {'baseline_score': 0.001}
+    # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
+    assert system_attrs == {'baseline_score': 0.001, '_number': 1}
 
 
 @parametrize_storage
@@ -648,7 +696,7 @@ def _check_example_trial_static_attributes(trial_1, trial_2):
     assert trial_1 is not None
     assert trial_2 is not None
 
-    trial_1 = trial_1._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
-    trial_2 = trial_2._replace(trial_id=-1, datetime_start=None, datetime_complete=None)
+    trial_1 = trial_1._replace(trial_id=-1, number=0, datetime_start=None, datetime_complete=None)
+    trial_2 = trial_2._replace(trial_id=-1, number=0, datetime_start=None, datetime_complete=None)
 
     assert trial_1 == trial_2

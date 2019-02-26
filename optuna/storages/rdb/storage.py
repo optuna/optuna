@@ -276,7 +276,20 @@ class RDBStorage(BaseStorage):
         session.add(trial)
         self._commit(session)
 
+        self._create_new_trial_number(trial.trial_id)
+
         return trial.trial_id
+
+    def _create_new_trial_number(self, trial_id):
+        # type: (int) -> int
+
+        session = self.scoped_session()
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+
+        trial_number = trial.count_past_trials(session)
+        self.set_trial_system_attr(trial.trial_id, '_number', trial_number)
+
+        return trial_number
 
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None
@@ -389,6 +402,16 @@ class RDBStorage(BaseStorage):
 
         self._commit_with_integrity_check(session)
 
+    def get_trial_number_from_id(self, trial_id):
+        # type: (int) -> int
+
+        trial_number = self.get_trial_system_attrs(trial_id).get('_number')
+        if trial_number is None:
+            # If a study is created by optuna<=0.8.0, trial number is not found.
+            # Create new one.
+            return self._create_new_trial_number(trial_id)
+        return trial_number
+
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
 
@@ -424,8 +447,8 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
         return models.TrialModel.count(session, study, state)
 
-    @staticmethod
     def _merge_trials_orm(
+            self,
             trials,  # type: List[models.TrialModel]
             trial_params,  # type: List[models.TrialParamModel]
             trial_intermediate_values,  # type: List[models.TrialValueModel]
@@ -477,9 +500,11 @@ class RDBStorage(BaseStorage):
             for system_attr in id_to_system_attrs[trial_id]:
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
+            # TODO(Yanase): Use trial.number after TrialModel.number is added.
+            trial_number = self.get_trial_number_from_id(trial_id)
             result.append(
                 structs.FrozenTrial(
-                    trial_id=trial_id,
+                    number=trial_number,
                     state=trial.state,
                     params=params,
                     user_attrs=user_attrs,
@@ -488,7 +513,8 @@ class RDBStorage(BaseStorage):
                     intermediate_values=intermediate_values,
                     params_in_internal_repr=params_in_internal_repr,
                     datetime_start=trial.datetime_start,
-                    datetime_complete=trial.datetime_complete))
+                    datetime_complete=trial.datetime_complete,
+                    trial_id=trial_id))
 
         return result
 

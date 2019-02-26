@@ -402,17 +402,20 @@ class Study(object):
 
         trial_id = self.storage.create_new_trial_id(self.study_id)
         trial = trial_module.Trial(self, trial_id)
+        trial_number = trial.number
 
         try:
             result = func(trial)
         except structs.TrialPruned as e:
-            message = 'Setting trial status as {}. {}'.format(structs.TrialState.PRUNED, str(e))
+            message = 'Setting status of trial#{} as {}. {}'.format(trial_number,
+                                                                    structs.TrialState.PRUNED,
+                                                                    str(e))
             self.logger.info(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
         except catch as e:
-            message = 'Setting trial status as {} because of the following error: {}'.format(
-                structs.TrialState.FAIL, repr(e))
+            message = 'Setting status of trial#{} as {} because of the following error: {}'\
+                .format(trial_number, structs.TrialState.FAIL, repr(e))
             self.logger.warning(message, exc_info=True)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
@@ -424,17 +427,17 @@ class Study(object):
                 ValueError,
                 TypeError,
         ):
-            message = 'Setting trial status as {} because the returned value from the ' \
+            message = 'Setting status of trial#{} as {} because the returned value from the ' \
                       'objective function cannot be casted to float. Returned value is: ' \
-                      '{}'.format(structs.TrialState.FAIL, repr(result))
+                      '{}'.format(trial_number, structs.TrialState.FAIL, repr(result))
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             return trial
 
         if math.isnan(result):
-            message = 'Setting trial status as {} because the objective function returned ' \
-                      '{}.'.format(structs.TrialState.FAIL, result)
+            message = 'Setting status of trial#{} as {} because the objective function ' \
+                      'returned {}.'.format(trial_number, structs.TrialState.FAIL, result)
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
@@ -442,16 +445,16 @@ class Study(object):
 
         trial.report(result)
         self.storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
-        self._log_completed_trial(result)
+        self._log_completed_trial(trial_number, result)
 
         return trial
 
-    def _log_completed_trial(self, value):
-        # type: (float) -> None
+    def _log_completed_trial(self, trial_number, value):
+        # type: (int, float) -> None
 
-        self.logger.info('Finished a trial resulted in value: {}. '
+        self.logger.info('Finished trial#{} resulted in value: {}. '
                          'Current best value is {} with parameters: {}.'.format(
-                             value, self.best_value, self.best_params))
+                             trial_number, value, self.best_value, self.best_params))
 
 
 def create_study(

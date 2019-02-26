@@ -329,8 +329,8 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_value_error, catch=(ValueError, ))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
-        expected_message = 'Setting trial status as TrialState.FAIL because of the following ' \
-                           'error: ValueError()'
+        expected_message = 'Setting status of trial#1 as TrialState.FAIL because of the ' \
+                           'following error: ValueError()'
         assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
@@ -347,9 +347,9 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_none, catch=(Exception, ))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
-        expected_message = 'Setting trial status as TrialState.FAIL because the returned value ' \
-                           'from the objective function cannot be casted to float. Returned ' \
-                           'value is: None'
+        expected_message = 'Setting status of trial#3 as TrialState.FAIL because the returned ' \
+                           'value from the objective function cannot be casted to float. ' \
+                           'Returned value is: None'
         assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
 
@@ -362,7 +362,7 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_nan, catch=(Exception, ))
         frozen_trial = study.storage.get_trial(trial.trial_id)
 
-        expected_message = 'Setting trial status as TrialState.FAIL because the objective ' \
+        expected_message = 'Setting status of trial#4 as TrialState.FAIL because the objective ' \
                            'function returned nan.'
         assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
@@ -403,15 +403,19 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
         df = study.trials_dataframe(include_internal_fields=include_internal_fields)
+        # Change index to access rows via trial number.
+        df.set_index(('number', ''), inplace=True, drop=False)
         assert len(df) == 3
-        # non-nested: 5, params: 2, user_attrs: 1 and 8 in total.
+        # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
+        # non-nested: 5, params: 2, user_attrs: 1, system_attrs: 1 and 9 in total.
         if include_internal_fields:
-            # params_in_internal_repr: 2
-            assert len(df.columns) == 8 + 2
+            # params_in_internal_repr: 2, trial_id: 1
+            assert len(df.columns) == 9 + 3
         else:
-            assert len(df.columns) == 8
+            assert len(df.columns) == 9
+
         for i in range(3):
-            assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
+            assert df.number[i] == i
             assert df.state[i] == optuna.structs.TrialState.COMPLETE
             assert df.value[i] == 3.5
             assert isinstance(df.datetime_start[i], pd.Timestamp)
@@ -419,7 +423,9 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
             assert df.params.x[i] == 1
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
+            assert df.system_attrs._number[i] == i
             if include_internal_fields:
+                assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
                 assert ('params_in_internal_repr', 'x') in df.columns
                 assert ('params_in_internal_repr', 'y') in df.columns
 
@@ -441,11 +447,14 @@ def test_trials_dataframe_with_failure(storage_mode):
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
         df = study.trials_dataframe()
+        # Change index to access rows via trial number.
+        df.set_index(('number', ''), inplace=True, drop=False)
         assert len(df) == 3
-        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 1
-        assert len(df.columns) == 9
+        # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
+        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 2
+        assert len(df.columns) == 10
         for i in range(3):
-            assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
+            assert df.number[i] == i
             assert df.state[i] == optuna.structs.TrialState.FAIL
             assert df.value[i] is None
             assert isinstance(df.datetime_start[i], pd.Timestamp)
@@ -453,6 +462,7 @@ def test_trials_dataframe_with_failure(storage_mode):
             assert df.params.x[i] == 1
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
+            assert df.system_attrs._number[i] == i
             assert ('system_attrs', 'fail_reason') in df.columns
 
 
