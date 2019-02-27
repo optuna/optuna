@@ -47,8 +47,10 @@ class RandomSampler(BaseSampler):
             shifted_high = param_distribution.high - param_distribution.low
             if math.fmod(shifted_high, q) != 0:
                 shifted_high = (shifted_high // q) * q
-                self.logger.warning('`high` of suggest_discrete_uniform is not a multiple of `q`,'
-                                    ' and it will be replaced with {}.'.format(shifted_high))
+                self.logger.warning('`high - low` is not divisible by `q`. The range of '
+                                    'Trial.suggest_discrete_uniform() is replaced by [{}, {}].'
+                                    .format(param_distribution.low,
+                                            shifted_high + param_distribution.low))
             low = shifted_low - 0.5 * q
             high = shifted_high + 0.5 * q
             s = self.rng.uniform(low, high)
