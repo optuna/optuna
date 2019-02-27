@@ -47,7 +47,7 @@ def create_model(trial):
 
 
 def objective(trial, comm):
-    # The following line is required for CircleCI
+    # The following line mitigates the memory problem in CircleCI
     # (see https://github.com/pfnet/optuna/pull/325 for more details).
     gc.collect()
 
