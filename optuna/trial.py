@@ -184,9 +184,8 @@ class Trial(BaseTrial):
         """Suggest a value for the discrete parameter.
 
         The value is sampled from the range ``[low, high]``, and the step of discretization is
-        ``q``. Note that ``high`` will be changed to the largest multiple of ``q`` that is smaller
-        than ``high`` if ``math.fmod(high, q) != 0``. For example, ``(low, high, q)=(0, 10, 3)``
-        is interpreted as ``(low, high, q)=(0, 9, 3)`` by this method.
+        ``q``. More specifically, the returned value are ``low, low + q, low + 2 * q, ... ,
+        low + k * q <=high``, where ``k`` is an integer.
 
         Example:
 
