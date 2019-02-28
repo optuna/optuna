@@ -18,9 +18,11 @@ parametrize_sampler = pytest.mark.parametrize(
 
 
 @parametrize_sampler
-@pytest.mark.parametrize('distribution', [UniformDistribution(-1., 1.),
-                                          UniformDistribution(0., 1.),
-                                          UniformDistribution(-1., 0.)])
+@pytest.mark.parametrize(
+    'distribution',
+    [UniformDistribution(-1., 1.),
+     UniformDistribution(0., 1.),
+     UniformDistribution(-1., 0.)])
 def test_uniform(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], UniformDistribution) -> None
 
@@ -32,8 +34,10 @@ def test_uniform(sampler_class, distribution):
     def check(study):
         # type: (optuna.study.Study) -> None
 
-        points = np.array([study.sampler.sample(study.storage, study.study_id, 'x', distribution)
-                           for _ in range(100)])
+        points = np.array([
+            study.sampler.sample(study.storage, study.study_id, 'x', distribution)
+            for _ in range(100)
+        ])
         assert np.all(points >= distribution.low)
         assert np.all(points < distribution.high)
 
@@ -60,8 +64,10 @@ def test_log_uniform(sampler_class, distribution):
     def check(study):
         # type: (optuna.study.Study) -> None
 
-        points = np.array([study.sampler.sample(study.storage, study.study_id, 'x', distribution)
-                           for _ in range(100)])
+        points = np.array([
+            study.sampler.sample(study.storage, study.study_id, 'x', distribution)
+            for _ in range(100)
+        ])
         assert np.all(points >= distribution.low)
         assert np.all(points < distribution.high)
 
@@ -76,8 +82,10 @@ def test_log_uniform(sampler_class, distribution):
 
 
 @parametrize_sampler
-@pytest.mark.parametrize('distribution', [DiscreteUniformDistribution(-10, 10, 0.1),
-                                          DiscreteUniformDistribution(-10.2, 10.2, 0.1)])
+@pytest.mark.parametrize(
+    'distribution',
+    [DiscreteUniformDistribution(-10, 10, 0.1),
+     DiscreteUniformDistribution(-10.2, 10.2, 0.1)])
 def test_discrete_uniform(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], DiscreteUniformDistribution) -> None
 
@@ -90,8 +98,10 @@ def test_discrete_uniform(sampler_class, distribution):
     def check(study):
         # type: (optuna.study.Study) -> None
 
-        points = np.array([study.sampler.sample(study.storage, study.study_id, 'x', distribution)
-                           for _ in range(100)])
+        points = np.array([
+            study.sampler.sample(study.storage, study.study_id, 'x', distribution)
+            for _ in range(100)
+        ])
         assert np.all(points >= distribution.low)
         assert np.all(points <= distribution.high)
 
@@ -114,9 +124,11 @@ def test_discrete_uniform(sampler_class, distribution):
 
 
 @parametrize_sampler
-@pytest.mark.parametrize('distribution', [IntUniformDistribution(-10, 10),
-                                          IntUniformDistribution(0, 10),
-                                          IntUniformDistribution(-10, 0)])
+@pytest.mark.parametrize('distribution', [
+    IntUniformDistribution(-10, 10),
+    IntUniformDistribution(0, 10),
+    IntUniformDistribution(-10, 0)
+])
 def test_int(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], IntUniformDistribution) -> None
 
@@ -128,8 +140,10 @@ def test_int(sampler_class, distribution):
     def check(study):
         # type: (optuna.study.Study) -> None
 
-        points = np.array([study.sampler.sample(study.storage, study.study_id, 'x', distribution)
-                           for _ in range(100)])
+        points = np.array([
+            study.sampler.sample(study.storage, study.study_id, 'x', distribution)
+            for _ in range(100)
+        ])
         assert np.all(points >= distribution.low)
         assert np.all(points <= distribution.high)
 
@@ -144,8 +158,7 @@ def test_int(sampler_class, distribution):
 
 
 @parametrize_sampler
-@pytest.mark.parametrize('choices', [(1, 2, 3),
-                                     ('a', 'b', 'c')])
+@pytest.mark.parametrize('choices', [(1, 2, 3), ('a', 'b', 'c')])
 def test_categorical(sampler_class, choices):
     # type: (typing.Callable[[], BaseSampler], typing.Tuple[T, ...]) -> None
 
@@ -160,8 +173,10 @@ def test_categorical(sampler_class, choices):
     def check(study):
         # type: (optuna.study.Study) -> None
 
-        points = np.array([study.sampler.sample(study.storage, study.study_id, 'x', distribution)
-                           for _ in range(100)])
+        points = np.array([
+            study.sampler.sample(study.storage, study.study_id, 'x', distribution)
+            for _ in range(100)
+        ])
         # 'x' value is corresponding to an index of distribution.choices.
         assert np.all(points >= 0)
         assert np.all(points <= len(distribution.choices) - 1)

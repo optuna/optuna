@@ -57,15 +57,48 @@ def test_suggest_discrete_uniform(storage_init_func):
 
 
 @parametrize_storage
-@pytest.mark.parametrize('range_config',
-                         [{'low': 0., 'high': 10., 'q': 3., 'mod_high': 9.},
-                          {'low': 1., 'high': 11., 'q': 3., 'mod_high': 10.},
-                          {'low': 64., 'high': 1312., 'q': 160., 'mod_high': 1184.},
-                          # high is excluded due to the round-off error of 10 // 0.1.
-                          {'low': 0., 'high': 10., 'q': 0.1, 'mod_high': 9.9},
-                          # high is excluded doe to the round-off error of 10.1 // 0.1
-                          {'low': 0., 'high': 10.1, 'q': 0.1, 'mod_high': 10.},
-                          {'low': 0., 'high': 10., 'q': math.pi, 'mod_high': 3 * math.pi}])
+@pytest.mark.parametrize(
+    'range_config',
+    [
+        {
+            'low': 0.,
+            'high': 10.,
+            'q': 3.,
+            'mod_high': 9.
+        },
+        {
+            'low': 1.,
+            'high': 11.,
+            'q': 3.,
+            'mod_high': 10.
+        },
+        {
+            'low': 64.,
+            'high': 1312.,
+            'q': 160.,
+            'mod_high': 1184.
+        },
+        # high is excluded due to the round-off error of 10 // 0.1.
+        {
+            'low': 0.,
+            'high': 10.,
+            'q': 0.1,
+            'mod_high': 9.9
+        },
+        # high is excluded doe to the round-off error of 10.1 // 0.1
+        {
+            'low': 0.,
+            'high': 10.1,
+            'q': 0.1,
+            'mod_high': 10.
+        },
+        {
+            'low': 0.,
+            'high': 10.,
+            'q': math.pi,
+            'mod_high': 3 * math.pi
+        }
+    ])
 def test_suggest_discrete_uniform_range(storage_init_func, range_config):
     # type: (typing.Callable[[], storages.BaseStorage], typing.Dict[str, float]) -> None
 
