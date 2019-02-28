@@ -1,9 +1,6 @@
-import math
 import numpy as np
 import scipy.special
-from typing import Any  # NOQA
 from typing import Callable  # NOQA
-from typing import Dict  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
@@ -11,7 +8,6 @@ from typing import Union  # NOQA
 
 from optuna import distributions  # NOQA
 from optuna.distributions import BaseDistribution  # NOQA
-from optuna import logging
 from optuna.samplers import base  # NOQA
 from optuna.samplers import random  # NOQA
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator  # NOQA
@@ -66,7 +62,6 @@ class TPESampler(base.BaseSampler):
 
         self.rng = np.random.RandomState(seed)
         self.random_sampler = random.RandomSampler(seed=seed)
-        self.logger = logging.get_logger(__name__)
 
     def sample(self, storage, study_id, param_name, param_distribution):
         # type: (BaseStorage, int, str, BaseDistribution) -> float
@@ -148,17 +143,10 @@ class TPESampler(base.BaseSampler):
         # type:(distributions.DiscreteUniformDistribution, np.ndarray, np.ndarray) -> float
 
         q = distribution.q
-        shifted_low = 0
-        shifted_high = distribution.high - distribution.low
-        if math.fmod(shifted_high, q) != 0:
-            shifted_high = (shifted_high // q) * q
-            self.logger.warning('`high - low` is not divisible by `q`. The range of '
-                                'Trial.suggest_discrete_uniform() is replaced by [{}, {}].'
-                                .format(distribution.low,
-                                        shifted_high + distribution.low))
-        low = shifted_low - 0.5 * q
-        high = shifted_high + 0.5 * q
-
+        r = distribution.high - distribution.low
+        # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
+        low = 0 - 0.5 * q
+        high = r + 0.5 * q
         best_sample = self._sample_numerical(low, high, below, above, q=q) + distribution.low
         return min(max(best_sample, distribution.low), distribution.high)
 
@@ -445,16 +433,3 @@ class TPESampler(base.BaseSampler):
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
         z = denominator / numerator
         return .5 + .5 * scipy.special.erf(z)
-
-    def __getstate__(self):
-        # type: () -> Dict[Any, Any]
-
-        state = self.__dict__.copy()
-        del state['logger']
-        return state
-
-    def __setstate__(self, state):
-        # type: (Dict[Any, Any]) -> None
-
-        self.__dict__.update(state)
-        self.logger = logging.get_logger(__name__)

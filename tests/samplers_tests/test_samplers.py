@@ -1,4 +1,3 @@
-import math
 import numpy as np
 import pytest
 import typing  # NOQA
@@ -77,10 +76,8 @@ def test_log_uniform(sampler_class, distribution):
 
 
 @parametrize_sampler
-@pytest.mark.parametrize('distribution', [DiscreteUniformDistribution(-10, 10, 1),
-                                          DiscreteUniformDistribution(-10.2, 10.2, 0.1),
-                                          DiscreteUniformDistribution(64., 1312., 160.),
-                                          DiscreteUniformDistribution(0, 10, math.pi)])
+@pytest.mark.parametrize('distribution', [DiscreteUniformDistribution(-10, 10, 0.1),
+                                          DiscreteUniformDistribution(-10.2, 10.2, 0.1)])
 def test_discrete_uniform(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], DiscreteUniformDistribution) -> None
 

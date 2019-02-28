@@ -1,11 +1,7 @@
-import math
 import numpy
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
 from typing import Optional  # NOQA
 
 from optuna import distributions
-from optuna import logging
 from optuna.samplers.base import BaseSampler
 from optuna.storages.base import BaseStorage  # NOQA
 
@@ -29,7 +25,6 @@ class RandomSampler(BaseSampler):
 
         self.seed = seed
         self.rng = numpy.random.RandomState(seed)
-        self.logger = logging.get_logger(__name__)
 
     def sample(self, storage, study_id, param_name, param_distribution):
         # type: (BaseStorage, int, str, distributions.BaseDistribution) -> float
@@ -43,16 +38,10 @@ class RandomSampler(BaseSampler):
             return numpy.exp(self.rng.uniform(log_low, log_high))
         elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
             q = param_distribution.q
-            shifted_low = 0
-            shifted_high = param_distribution.high - param_distribution.low
-            if math.fmod(shifted_high, q) != 0:
-                shifted_high = (shifted_high // q) * q
-                self.logger.warning('`high - low` is not divisible by `q`. The range of '
-                                    'Trial.suggest_discrete_uniform() is replaced by [{}, {}].'
-                                    .format(param_distribution.low,
-                                            shifted_high + param_distribution.low))
-            low = shifted_low - 0.5 * q
-            high = shifted_high + 0.5 * q
+            r = param_distribution.high - param_distribution.low
+            # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
+            low = 0 - 0.5 * q
+            high = r + 0.5 * q
             s = self.rng.uniform(low, high)
             v = numpy.round(s / q) * q + param_distribution.low
             # v may slightly exceed range due to round-off errors.
@@ -65,16 +54,3 @@ class RandomSampler(BaseSampler):
             return self.rng.randint(len(choices))
         else:
             raise NotImplementedError
-
-    def __getstate__(self):
-        # type: () -> Dict[Any, Any]
-
-        state = self.__dict__.copy()
-        del state['logger']
-        return state
-
-    def __setstate__(self, state):
-        # type: (Dict[Any, Any]) -> None
-
-        self.__dict__.update(state)
-        self.logger = logging.get_logger(__name__)
