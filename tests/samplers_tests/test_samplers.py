@@ -1,8 +1,11 @@
 import numpy as np
 import pytest
-import typing  # NOQA
 
 import optuna
+from optuna import types
+
+if types.TYPE_CHECKING:
+    import typing  # NOQA
 
 parametrize_sampler = pytest.mark.parametrize(
     'sampler_class', [optuna.samplers.RandomSampler, optuna.samplers.TPESampler])

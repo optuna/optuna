@@ -1,7 +1,6 @@
 from mock import Mock
 from mock import patch
 import pytest
-import typing  # NOQA
 
 from optuna import distributions
 from optuna import samplers
@@ -9,6 +8,10 @@ from optuna import storages
 from optuna.study import create_study
 from optuna.trial import FixedTrial
 from optuna.trial import Trial
+from optuna import types
+
+if types.TYPE_CHECKING:
+    import typing  # NOQA
 
 parametrize_storage = pytest.mark.parametrize(
     'storage_init_func',

@@ -1,11 +1,5 @@
 import gc
 import pytest
-from types import TracebackType  # NOQA
-from typing import Any  # NOQA
-from typing import Callable  # NOQA
-from typing import Dict  # NOQA
-from typing import Optional  # NOQA
-from typing import Type  # NOQA
 
 from optuna import create_study
 from optuna.integration import ChainerMNStudy
@@ -19,6 +13,15 @@ from optuna.structs import TrialState
 from optuna import Study
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial  # NOQA
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from types import TracebackType  # NOQA
+    from typing import Any  # NOQA
+    from typing import Callable  # NOQA
+    from typing import Dict  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Type  # NOQA
 
 try:
     import chainermn

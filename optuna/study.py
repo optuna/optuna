@@ -7,15 +7,7 @@ from multiprocessing import Queue  # NOQA
 import pandas as pd
 from six.moves import queue
 import time
-from typing import Any  # NOQA
-from typing import Callable  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
-from typing import Set  # NOQA
-from typing import Tuple  # NOQA
-from typing import Type  # NOQA
-from typing import Union  # NOQA
+from typing import Callable
 
 from optuna import logging
 from optuna import pruners
@@ -23,6 +15,17 @@ from optuna import samplers
 from optuna import storages
 from optuna import structs
 from optuna import trial as trial_module
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Set  # NOQA
+    from typing import Tuple  # NOQA
+    from typing import Type  # NOQA
+    from typing import Union  # NOQA
 
 ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
