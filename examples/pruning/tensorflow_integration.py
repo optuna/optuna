@@ -34,10 +34,10 @@ def create_network(trial, features):
 
     n_layers = trial.suggest_int('n_layers', 1, 3)
     for i in range(n_layers):
-        n_units = int(trial.suggest_int('n_units_l{}'.format(i), 1, 128))
+        n_units = trial.suggest_int('n_units_l{}'.format(i), 1, 128)
         prev_layer = tf.layers.dense(inputs=prev_layer, units=n_units, activation=tf.nn.relu)
 
-    logits = tf.layers.dense(inputs=prev_layer, units=10, activation=tf.nn.relu)
+    logits = tf.layers.dense(inputs=prev_layer, units=10)
     return logits
 
 
@@ -140,7 +140,7 @@ def objective(trial):
 
 def main(unused_argv):
     study = optuna.create_study()
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=25)
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
     complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
     print('Study statistics: ')
