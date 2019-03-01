@@ -41,23 +41,6 @@ def create_network(trial, features):
     return logits
 
 
-def create_optimizer(trial):
-    # We optimize the choice of optimizers as well as their parameters.
-    weight_decay = trial.suggest_loguniform('weight_decay', 1e-10, 1e-3)
-
-    optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'MomentumSGD'])
-    if optimizer_name == 'Adam':
-        adam_lr = trial.suggest_loguniform('adam_lr', 1e-5, 1e-1)
-        optimizer = tf.contrib.opt.AdamWOptimizer(learning_rate=adam_lr, weight_decay=weight_decay)
-    else:
-        momentum_sgd_lr = trial.suggest_loguniform('momentum_sgd_lr', 1e-5, 1e-1)
-        momentum = trial.suggest_loguniform('momentum', 1e-5, 1e-1)
-        optimizer = tf.contrib.opt.MomentumWOptimizer(
-            learning_rate=momentum_sgd_lr, momentum=momentum, weight_decay=weight_decay)
-
-    return optimizer
-
-
 def model_fn(trial, features, labels, mode):
     # Create network.
     logits = create_network(trial, features)
@@ -78,7 +61,7 @@ def model_fn(trial, features, labels, mode):
 
     # Configure the Training Op (for TRAIN mode).
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = create_optimizer(trial)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
