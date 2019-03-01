@@ -7,7 +7,6 @@ from multiprocessing import Queue  # NOQA
 import pandas as pd
 from six.moves import queue
 import time
-from typing import Callable
 
 from optuna import logging
 from optuna import pruners
@@ -19,6 +18,7 @@ from optuna import types
 
 if types.TYPE_CHECKING:
     from typing import Any  # NOQA
+    from typing import Callable
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
@@ -27,7 +27,7 @@ if types.TYPE_CHECKING:
     from typing import Type  # NOQA
     from typing import Union  # NOQA
 
-ObjectiveFuncType = Callable[[trial_module.Trial], float]
+    ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
 class Study(object):
