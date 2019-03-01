@@ -29,7 +29,7 @@ import tensorflow as tf
 import optuna
 
 MODEL_DIR = "/tmp/mnist_convnet_model"
-BATCH_SIZE = 100
+BATCH_SIZE = 128
 TRAIN_STEPS = 1000
 
 
