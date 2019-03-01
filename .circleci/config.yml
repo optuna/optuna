@@ -10,6 +10,7 @@ workflows:
       - tests-python36
       - tests-python35
       - tests-python27
+      - codecov
   daily-build:
     triggers:
       - schedule:
@@ -148,6 +149,31 @@ jobs:
     steps:
       [checkout, run: *install, run: *keras-install, run: *tests, run: *tests-mn]
 
+  codecov:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+
+      - run: *install
+
+      - run: *keras-install
+
+      - run:
+          name: install-codecov
+          command: |
+            . venv/bin/activate
+            pip install .[codecov]
+
+      - run:
+          name: codecov
+          command: |
+            . venv/bin/activate
+            pytest --cov=./ tests
+            codecov
+          environment:
+            OMP_NUM_THREADS: 1
+
   # Examples
 
   examples-python37:
@@ -180,9 +206,9 @@ jobs:
           command: |
             . venv/bin/activate
             STORAGE_URL=sqlite:///example.db
-            STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
             for file in `find examples -name 'chainermn_*.py'`
             do
+                STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
                 mpirun -n 2 -- python $file $STUDY_NAME $STORAGE_URL
             done
           environment:
