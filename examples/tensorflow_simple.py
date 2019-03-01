@@ -65,7 +65,6 @@ def create_optimizer(trial):
 
 
 def model_fn(trial, features, labels, mode):
-    # Create network.
     logits = create_network(trial, features)
 
     predictions = {
@@ -79,10 +78,10 @@ def model_fn(trial, features, labels, mode):
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
-    # Calculate Loss (for both TRAIN and EVAL modes).
+    # Calculate loss (for both TRAIN and EVAL modes).
     loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
 
-    # Configure the Training Op (for TRAIN mode).
+    # Configure the training op (for TRAIN mode).
     if mode == tf.estimator.ModeKeys.TRAIN:
         optimizer = create_optimizer(trial)
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
