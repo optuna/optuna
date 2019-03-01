@@ -24,11 +24,12 @@ from __future__ import print_function
 
 import numpy as np
 import shutil
+import tempfile
 import tensorflow as tf
 
 import optuna
 
-MODEL_DIR = "/tmp/mnist_convnet_model"
+MODEL_DIR = tempfile.mkdtemp()
 BATCH_SIZE = 128
 TRAIN_STEPS = 1000
 
@@ -104,11 +105,8 @@ def objective(trial):
     eval_data = eval_data / np.float32(255)
     eval_labels = eval_labels.astype(np.int32)
 
-    # Delete old model.
-    model_dir = "{}/{}".format(MODEL_DIR, trial.trial_id)
-    shutil.rmtree(model_dir, ignore_errors=True)
-
     # Create estimator.
+    model_dir = "{}/{}".format(MODEL_DIR, trial.trial_id)
     mnist_classifier = tf.estimator.Estimator(
         model_fn=lambda features, labels, mode: model_fn(trial, features, labels, mode),
         model_dir=model_dir)
@@ -141,6 +139,8 @@ def main(unused_argv):
     print('  Params: ')
     for key, value in trial.params.items():
         print('    {}: {}'.format(key, value))
+
+    shutil.rmtree(MODEL_DIR)
 
 
 if __name__ == "__main__":
