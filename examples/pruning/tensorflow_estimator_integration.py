@@ -1,5 +1,5 @@
 """
-Optuna example that demonstrates a pruner for Tensorflow.
+Optuna example that demonstrates a pruner for Tensorflow (Estimator API).
 
 In this example, we optimize the hyperparameters of a neural network for hand-written
 digit recognition in terms of validation accuracy. The network is implemented by Tensorflow and
@@ -7,7 +7,7 @@ evaluated by MNIST dataset. Throughout the training of neural networks, a pruner
 intermediate results and stops unpromising trials.
 
 You can run this example as follows:
-    $ python tensorflow_integration.py
+    $ python tensorflow_estimator_integration.py
 
 """
 
