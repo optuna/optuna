@@ -116,7 +116,7 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
         assert x == range_config['mod_high']
         assert mock_object.call_count == 1
 
-    # Check lower endpoints
+    # Check lower endpoints.
     mock = Mock()
     mock.side_effect = lambda storage, study_id, param_name, distribution: distribution.low
     with patch.object(sampler, 'sample', mock) as mock_object:

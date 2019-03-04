@@ -66,7 +66,6 @@ def test_discrete_uniform(sampler_class, distribution):
 
     # Check all points are multiples of distribution.q.
     points = points
-    points = points
     points -= distribution.low
     points /= distribution.q
     round_points = np.round(points)
