@@ -14,6 +14,7 @@ This page contains a list of example codes written with Optuna.
 * [ChainerMN](./chainermn_simple.py)
 * [LighGBM](./lightgbm_simple.py)
 * [XGBoost](./xgboost_simple.py)
+* [Tensorflow](./tensorflow_estimator.py)
 
 ### An example where an objective function uses additional arguments
 
@@ -32,6 +33,7 @@ In addition, integration modules are available for the following libraries, prov
 * [pruning with XGBoost integration module](./pruning/xgboost_integration.py)
 * [pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
 * [pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
+* [pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
 
 ### Examples of Visualization
 
