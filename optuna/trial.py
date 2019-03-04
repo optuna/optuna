@@ -187,9 +187,9 @@ class Trial(BaseTrial):
         """Suggest a value for the discrete parameter.
 
         The value is sampled from the range ``[low, high]``, and the step of discretization is
-        ``q``. More specifically, the returned value are ``low, low + q, low + 2 * q, ... ,
-        low + k * q <= high``, where ``k`` is an integer. Note that ``high`` may be excluded from
-        ranges due to round-off errors if ``q`` is not an integer.
+        ``q``. More specifically, this method returns one of the values in the sequence ``low,
+        low + q, low + 2 * q, ..., low + k * q <= high``, where `k`` denotes an integer. Note that
+        ``high`` may be excluded from ranges due to round-off errors if ``q`` is not an integer.
 
         Example:
 
