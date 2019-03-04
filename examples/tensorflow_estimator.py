@@ -69,26 +69,20 @@ def model_fn(trial, features, labels, mode):
     logits = create_network(trial, features)
 
     predictions = {
-        # Generate predictions (for PREDICT and EVAL mode).
         "classes": tf.argmax(input=logits, axis=1),
-
-        # Add `softmax_tensor` to the graph. It is used for PREDICT.
         "probabilities": tf.nn.softmax(logits, name="softmax_tensor")
     }
 
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
-    # Calculate loss (for both TRAIN and EVAL modes).
     loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
 
-    # Configure the training op (for TRAIN mode).
     if mode == tf.estimator.ModeKeys.TRAIN:
         optimizer = create_optimizer(trial)
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
-    # Add evaluation metrics (for EVAL mode).
     eval_metric_ops = {
         "accuracy": tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])
     }
@@ -96,7 +90,6 @@ def model_fn(trial, features, labels, mode):
 
 
 def objective(trial):
-    # Load dataset.
     (train_data, train_labels), (eval_data, eval_labels) = tf.keras.datasets.mnist.load_data()
 
     train_data = train_data / np.float32(255)
@@ -105,19 +98,16 @@ def objective(trial):
     eval_data = eval_data / np.float32(255)
     eval_labels = eval_labels.astype(np.int32)
 
-    # Create estimator.
     model_dir = "{}/{}".format(MODEL_DIR, trial.trial_id)
     mnist_classifier = tf.estimator.Estimator(
         model_fn=lambda features, labels, mode: model_fn(trial, features, labels, mode),
         model_dir=model_dir)
 
-    # Train the model.
     train_input_fn = tf.estimator.inputs.numpy_input_fn(
         x={"x": train_data}, y=train_labels, batch_size=BATCH_SIZE, num_epochs=None, shuffle=True)
 
     mnist_classifier.train(input_fn=train_input_fn, steps=TRAIN_STEPS)
 
-    # Evaluate the model.
     eval_input_fn = tf.estimator.inputs.numpy_input_fn(
         x={"x": eval_data}, y=eval_labels, num_epochs=1, shuffle=False)
 

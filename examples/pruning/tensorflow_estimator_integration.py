@@ -46,26 +46,20 @@ def model_fn(trial, features, labels, mode):
     logits = create_network(trial, features)
 
     predictions = {
-        # Generate predictions (for PREDICT and EVAL mode).
         "classes": tf.argmax(input=logits, axis=1),
-
-        # Add `softmax_tensor` to the graph. It is used for PREDICT.
         "probabilities": tf.nn.softmax(logits, name="softmax_tensor")
     }
 
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
-    # Calculate loss (for both TRAIN and EVAL modes).
     loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
 
-    # Configure the training op (for TRAIN mode).
     if mode == tf.estimator.ModeKeys.TRAIN:
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
-    # Add evaluation metrics (for EVAL mode).
     eval_metric_ops = {
         "accuracy": tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])
     }
@@ -73,7 +67,6 @@ def model_fn(trial, features, labels, mode):
 
 
 def objective(trial):
-    # Load dataset.
     (train_data, train_labels), (eval_data, eval_labels) = tf.keras.datasets.mnist.load_data()
 
     train_data = train_data / np.float32(255)
@@ -82,7 +75,6 @@ def objective(trial):
     eval_data = eval_data / np.float32(255)
     eval_labels = eval_labels.astype(np.int32)
 
-    # Create estimator.
     config = tf.estimator.RunConfig(
         save_summary_steps=PRUNING_INTERVAL_STEPS, save_checkpoints_steps=PRUNING_INTERVAL_STEPS)
 
@@ -92,7 +84,6 @@ def objective(trial):
         model_dir=model_dir,
         config=config)
 
-    # Setup pruning hook.
     optuna_pruning_hook = optuna.integration.TensorFlowPruningHook(
         trial=trial,
         estimator=mnist_classifier,
@@ -101,7 +92,6 @@ def objective(trial):
         run_every_steps=PRUNING_INTERVAL_STEPS,
     )
 
-    # Train and evaluate the model.
     train_input_fn = tf.estimator.inputs.numpy_input_fn(
         x={"x": train_data}, y=train_labels, batch_size=BATCH_SIZE, num_epochs=None, shuffle=True)
 
