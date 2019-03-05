@@ -14,7 +14,7 @@ This page contains a list of example codes written with Optuna.
 * [ChainerMN](./chainermn_simple.py)
 * [LighGBM](./lightgbm_simple.py)
 * [XGBoost](./xgboost_simple.py)
-* [Tensorflow](./tensorflow_estimator.py)
+* [Tensorflow](./tensorflow_estimator_simple.py)
 
 ### An example where an objective function uses additional arguments
 

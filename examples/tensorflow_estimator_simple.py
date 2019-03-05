@@ -9,13 +9,13 @@ subset of it.
 We have the following two ways to execute this example:
 
 (1) Execute this code directly.
-    $ python tensorflow_estimator.py
+    $ python tensorflow_estimator_simple.py
 
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
-    $ optuna study optimize tensorflow_estimator.py objective --n-trials=100 --study $STUDY_NAME \
-      --storage sqlite:///example.db
+    $ optuna study optimize tensorflow_estimator_simple.py objective --n-trials=100 \
+      --study $STUDY_NAME --storage sqlite:///example.db
 
 """
 
