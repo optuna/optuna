@@ -30,13 +30,13 @@ ObjectiveFuncType = Callable[[trial_module.Trial], float]
 class Study(object):
     """A study corresponds to an optimization task, i.e., a set of trials.
 
+    Note that the direct use of this constructor is not recommended.
+
     This object provides interfaces to run a new :class:`~optuna.trial.Trial`, access trials'
     history, set/get user-defined attributes of the study itself.
 
     For creating and loading studies, please refer to the documentation of
     :func:`~optuna.study.create_study` and :func:`~optuna.study.load_study` respectively.
-
-    Note that the direct use of this constructor is not recommended.
 
     Args:
         study_name:
