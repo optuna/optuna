@@ -142,12 +142,13 @@ class TPESampler(base.BaseSampler):
     def _sample_discrete_uniform(self, distribution, below, above):
         # type:(distributions.DiscreteUniformDistribution, np.ndarray, np.ndarray) -> float
 
-        low = distribution.low - 0.5 * distribution.q
-        high = distribution.high + 0.5 * distribution.q
         q = distribution.q
-
-        best_sample = self._sample_numerical(low, high, below, above, q=q)
-        return min(max(best_sample, low), high)
+        r = distribution.high - distribution.low
+        # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
+        low = 0 - 0.5 * q
+        high = r + 0.5 * q
+        best_sample = self._sample_numerical(low, high, below, above, q=q) + distribution.low
+        return min(max(best_sample, distribution.low), distribution.high)
 
     def _sample_int(self, distribution, below, above):
         # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> float
