@@ -7,12 +7,15 @@ from mock import Mock
 from mock import patch
 import numpy as np
 import pytest
-import typing  # NOQA
 
 import optuna
 from optuna.integration.chainer import ChainerPruningExtension
 from optuna.structs import TrialPruned
 from optuna.testing.integration import DeterministicPruner
+from optuna import types
+
+if types.TYPE_CHECKING:
+    import typing  # NOQA
 
 
 class FixedValueDataset(chainer.dataset.DatasetMixin):

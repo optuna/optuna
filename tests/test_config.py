@@ -3,9 +3,12 @@ import os
 import pytest
 import shutil
 import tempfile
-from typing import Optional  # NOQA
 
 import optuna
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Optional  # NOQA
 
 _dummy_home = None  # type: Optional[str]
 

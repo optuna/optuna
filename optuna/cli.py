@@ -9,14 +9,17 @@ from cliff.lister import Lister
 import imp
 import logging
 import sys
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
-from typing import Tuple  # NOQA
 
 import optuna
 from optuna.structs import CLIUsageError
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
 
 
 def get_storage_url(storage_url, config):

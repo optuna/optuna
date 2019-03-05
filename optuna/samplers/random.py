@@ -1,9 +1,12 @@
 import numpy
-from typing import Optional  # NOQA
 
 from optuna import distributions
 from optuna.samplers.base import BaseSampler
 from optuna.storages.base import BaseStorage  # NOQA
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Optional  # NOQA
 
 
 class RandomSampler(BaseSampler):

@@ -1,12 +1,5 @@
 from __future__ import absolute_import
 
-from typing import Any  # NOQA
-from typing import Callable  # NOQA
-from typing import Optional  # NOQA
-from typing import Tuple  # NOQA
-from typing import Type  # NOQA
-from typing import Union  # NOQA
-
 from optuna.logging import get_logger
 from optuna.pruners import BasePruner  # NOQA
 from optuna.storages import BaseStorage  # NOQA
@@ -15,6 +8,15 @@ from optuna.storages import RDBStorage
 from optuna.structs import TrialPruned
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Callable  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
+    from typing import Type  # NOQA
+    from typing import Union  # NOQA
 
 try:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA

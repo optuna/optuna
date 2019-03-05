@@ -1,11 +1,14 @@
 import tempfile
-from types import TracebackType  # NOQA
-from typing import Any  # NOQA
-from typing import IO  # NOQA
-from typing import Optional  # NOQA
-from typing import Type  # NOQA
 
 import optuna
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from types import TracebackType  # NOQA
+    from typing import Any  # NOQA
+    from typing import IO  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Type  # NOQA
 
 SQLITE3_TIMEOUT = 300
 

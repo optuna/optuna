@@ -2,7 +2,6 @@ from mock import patch
 import pytest
 import sys
 import tempfile
-from typing import Dict  # NOQA
 
 from optuna.distributions import BaseDistribution  # NOQA
 from optuna.distributions import CategoricalDistribution
@@ -18,7 +17,11 @@ from optuna.structs import StorageInternalError
 from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
 from optuna.structs import TrialState
+from optuna import types
 from optuna import version
+
+if types.TYPE_CHECKING:
+    from typing import Dict  # NOQA
 
 
 def test_init():

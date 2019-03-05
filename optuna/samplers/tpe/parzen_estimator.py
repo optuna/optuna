@@ -1,10 +1,14 @@
 import numpy
 from numpy import ndarray
-from typing import Callable  # NOQA
-from typing import List  # NOQA
-from typing import NamedTuple  # NOQA
-from typing import Optional  # NOQA
-from typing import Tuple  # NOQA
+from typing import Callable
+from typing import NamedTuple
+from typing import Optional
+
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import List  # NOQA
+    from typing import Tuple  # NOQA
 
 
 class ParzenEstimatorParameters(

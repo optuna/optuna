@@ -1,6 +1,9 @@
 from optuna.structs import TrialState
 from optuna.study import Study  # NOQA
-from typing import List  # NOQA
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import List  # NOQA
 
 try:
     import plotly.graph_objs as go
