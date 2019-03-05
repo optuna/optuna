@@ -8,6 +8,7 @@ import time
 from typing import Any  # NOQA
 from typing import Dict  # NOQA
 from typing import Optional  # NOQA
+import uuid
 
 import optuna
 from optuna.testing.storage import StorageSupplier
@@ -485,3 +486,26 @@ def test_create_study(storage_mode):
             with pytest.raises(optuna.structs.DuplicatedStudyError):
                 optuna.create_study(
                     study_name=study.study_name, storage=storage, load_if_exists=False)
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_load_study(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        if storage is None:
+            # `InMemoryStorage` can not be used with `load_study` function.
+            return
+
+        study_name = str(uuid.uuid4())
+
+        with pytest.raises(ValueError):
+            # Test loading an unexisting study.
+            optuna.study.load_study(study_name=study_name, storage=storage)
+
+        # Create a new study.
+        created_study = optuna.study.create_study(study_name=study_name, storage=storage)
+
+        # Test loading an existing study.
+        loaded_study = optuna.study.load_study(study_name=study_name, storage=storage)
+        assert created_study.study_id == loaded_study.study_id
