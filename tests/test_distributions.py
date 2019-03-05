@@ -1,9 +1,12 @@
 import json
 import pytest
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
 
 from optuna import distributions
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
 
 EXAMPLE_DISTRIBUTIONS = {
     'u': distributions.UniformDistribution(low=1., high=2.),

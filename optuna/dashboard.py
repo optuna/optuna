@@ -16,14 +16,17 @@ import collections
 import numpy as np
 import threading
 import time
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
 
 import optuna.logging
 import optuna.structs
 import optuna.study
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
 
 _mode = None  # type: Optional[str]
 _study = None  # type: Optional[optuna.study.Study]

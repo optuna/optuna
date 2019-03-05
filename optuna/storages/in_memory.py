@@ -1,15 +1,18 @@
 import copy
 from datetime import datetime
 import threading
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
 
 from optuna import distributions  # NOQA
 from optuna.storages import base
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna import structs
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
 
 IN_MEMORY_STORAGE_STUDY_ID = 0
 IN_MEMORY_STORAGE_STUDY_UUID = '00000000-0000-0000-0000-000000000000'

@@ -5,13 +5,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-from types import TracebackType  # NOQA
-from typing import Any  # NOQA
-from typing import IO  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
-from typing import Tuple  # NOQA
-from typing import Type  # NOQA
 
 import optuna
 from optuna.cli import Studies
@@ -19,6 +12,16 @@ from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
 from optuna.structs import CLIUsageError
 from optuna.trial import Trial  # NOQA
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from types import TracebackType  # NOQA
+    from typing import Any  # NOQA
+    from typing import IO  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
+    from typing import Type  # NOQA
 
 TEST_CONFIG_TEMPLATE = 'default_storage: sqlite:///{default_storage}\n'
 

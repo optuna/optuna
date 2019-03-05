@@ -1,11 +1,15 @@
 import abc
 import json
 import six
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
 from typing import NamedTuple
 from typing import Tuple
 from typing import Union
+
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
 
 
 @six.add_metaclass(abc.ABCMeta)

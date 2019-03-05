@@ -7,10 +7,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
 import sys
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
 import uuid
 
 from optuna import distributions
@@ -19,7 +15,14 @@ from optuna.storages.base import BaseStorage
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.rdb import models
 from optuna import structs
+from optuna import types
 from optuna import version
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
 
 
 class RDBStorage(BaseStorage):

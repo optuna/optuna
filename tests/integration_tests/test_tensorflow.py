@@ -1,7 +1,6 @@
 import numpy as np
 
 import pytest
-import typing  # NOQA
 
 try:
     import tensorflow as tf
@@ -12,6 +11,10 @@ except ImportError:
 import optuna
 from optuna.integration import TensorFlowPruningHook
 from optuna.testing.integration import DeterministicPruner
+from optuna import types
+
+if types.TYPE_CHECKING:
+    import typing  # NOQA
 
 
 def fixed_value_input_fn():
