@@ -140,12 +140,10 @@ def test_optimize_with_direction():
     assert study.direction == optuna.structs.StudyDirection.MINIMIZE
     check_study(study)
 
-    # Currently, maximization is not implemented.
-    with pytest.raises(ValueError):
-        study = optuna.create_study(direction='maximize')
-        study.optimize(func, n_trials=10)
-        assert study.direction == optuna.structs.StudyDirection.MAXIMIZE
-        check_study(study)
+    study = optuna.create_study(direction='maximize')
+    study.optimize(func, n_trials=10)
+    assert study.direction == optuna.structs.StudyDirection.MAXIMIZE
+    check_study(study)
 
     with pytest.raises(ValueError):
         optuna.create_study(direction='test')

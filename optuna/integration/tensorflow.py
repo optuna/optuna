@@ -90,9 +90,10 @@ class TensorFlowPruningHook(SessionRunHook):
             if summary_step > self.current_summary_step:
                 # TODO(sano): Remove the following if block after implementing maximize.
                 if self.is_higher_better:
-                    current_score = 1.0 - latest_eval_metrics[self.metric]
-                else:
-                    current_score = latest_eval_metrics[self.metric]
+                    assert self.trial.storage.get_study_direction(self.trial.study_id) == \
+                        optuna.structs.StudyDirection.MAXIMIZE
+
+                current_score = latest_eval_metrics[self.metric]
                 self.trial.report(current_score, step=summary_step)
                 self.current_summary_step = summary_step
             if self.trial.should_prune(self.current_summary_step):

@@ -49,9 +49,6 @@ class Study(object):
             A pruner object that decides early stopping of unpromising trials.
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
-        direction:
-            Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
-            maximization. Note that ``maximize`` is currently unsupported.
 
     """
 
@@ -61,7 +58,6 @@ class Study(object):
             storage,  # type: Union[str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
-            direction='minimize',  # type: str
     ):
         # type: (...) -> None
 
@@ -72,20 +68,6 @@ class Study(object):
 
         self.study_id = self.storage.get_study_id_from_name(study_name)
         self.logger = logging.get_logger(__name__)
-
-        if direction == 'minimize':
-            _direction = structs.StudyDirection.MINIMIZE
-        elif direction == 'maximize':
-            _direction = structs.StudyDirection.MAXIMIZE
-        else:
-            raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
-
-        # TODO(Yanase): Implement maximization.
-        if _direction == structs.StudyDirection.MAXIMIZE:
-            raise ValueError('Optimization direction of study {} is set to `MAXIMIZE`. '
-                             'Currently, Optuna supports `MINIMIZE` only.'.format(study_name))
-
-        self.storage.set_study_direction(self.study_id, _direction)
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -512,12 +494,20 @@ def create_study(
 
     study_name = storage.get_study_name_from_id(study_id)
 
+    if direction == 'minimize':
+        _direction = structs.StudyDirection.MINIMIZE
+    elif direction == 'maximize':
+        _direction = structs.StudyDirection.MAXIMIZE
+    else:
+        raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
+
+    storage.set_study_direction(study_id, _direction)
+
     return Study(
         study_name=study_name,
         storage=storage,
         sampler=sampler,
-        pruner=pruner,
-        direction=direction)
+        pruner=pruner)
 
 
 def get_all_study_summaries(storage):

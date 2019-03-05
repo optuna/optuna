@@ -13,6 +13,7 @@ from optuna.samplers import random  # NOQA
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator  # NOQA
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters  # NOQA
 from optuna.storages.base import BaseStorage  # NOQA
+from optuna.structs import StudyDirection
 
 EPS = 1e-12
 
@@ -67,6 +68,9 @@ class TPESampler(base.BaseSampler):
         # type: (BaseStorage, int, str, BaseDistribution) -> float
 
         observation_pairs = storage.get_trial_param_result_pairs(study_id, param_name)
+        if storage.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+            observation_pairs = [(p, -v) for p, v in observation_pairs]
+
         n = len(observation_pairs)
 
         if n < self.n_startup_trials:

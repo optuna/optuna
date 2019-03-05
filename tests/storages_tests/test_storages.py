@@ -164,6 +164,22 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
             storage.get_study_name_from_id(-1)
 
 
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_study_id_from_trial_id(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+
+        # Generate unique study_name from the current function name and storage_mode.
+        storage = optuna.storages.get_storage(storage)
+
+        # Check if trial_number starts from 0.
+        study_id = storage.create_new_study_id()
+
+        trial_id = storage.create_new_trial_id(study_id)
+        assert storage.get_study_id_from_trial_id(trial_id) == study_id
+
+
 @parametrize_storage
 def test_set_and_get_study_direction(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None

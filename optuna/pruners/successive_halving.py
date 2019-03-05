@@ -4,6 +4,7 @@ from typing import List  # NOQA
 from optuna.pruners.base import BasePruner
 from optuna.storages import BaseStorage  # NOQA
 from optuna.structs import FrozenTrial  # NOQA
+from optuna.structs import StudyDirection
 
 
 class SuccessiveHalvingPruner(BasePruner):
@@ -107,13 +108,14 @@ class SuccessiveHalvingPruner(BasePruner):
                 all_trials = storage.get_all_trials(study_id)
 
             storage.set_trial_system_attr(trial_id, _completed_rung_key(rung), value)
-            if not self._is_promotable(rung, value, all_trials):
+            direction = storage.get_study_direction(study_id)
+            if not self._is_promotable(rung, value, all_trials, direction):
                 return True
 
             rung += 1
 
-    def _is_promotable(self, rung, value, all_trials):
-        # type: (int, float, List[FrozenTrial]) -> bool
+    def _is_promotable(self, rung, value, all_trials, study_direction):
+        # type: (int, float, List[FrozenTrial], StudyDirection) -> bool
 
         key = _completed_rung_key(rung)
         competing_values = [t.system_attrs[key] for t in all_trials if key in t.system_attrs]
@@ -128,7 +130,9 @@ class SuccessiveHalvingPruner(BasePruner):
             # intermediate value is the smallest one among the trials that have completed the rung.
             promotable_idx = 0
 
-        # TODO(ohta): Deal with maximize direction.
+        if study_direction == StudyDirection.MAXIMIZE:
+            return value >= competing_values[promotable_idx]
+
         return value <= competing_values[promotable_idx]
 
 

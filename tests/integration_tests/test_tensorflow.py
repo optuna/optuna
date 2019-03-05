@@ -57,11 +57,11 @@ def test_tensorflow_pruning_hook():
         tf.estimator.train_and_evaluate(estimator=clf, train_spec=train_spec, eval_spec=eval_spec)
         return 1.0
 
-    study = optuna.create_study(pruner=DeterministicPruner(True))
+    study = optuna.create_study(pruner=DeterministicPruner(True), direction='maximize')
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.structs.TrialState.PRUNED
 
-    study = optuna.create_study(pruner=DeterministicPruner(False))
+    study = optuna.create_study(pruner=DeterministicPruner(False), direction='maximize')
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.0

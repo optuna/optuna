@@ -126,10 +126,9 @@ def test_create_study_command_with_direction():
         assert storage.get_study_direction(study_id) == optuna.structs.StudyDirection.MINIMIZE
 
         command = ['optuna', 'create-study', '--storage', storage_url, '--direction', 'maximize']
-
-        # Currently, 'maximize' is not implemented.
-        with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call(command)
+        study_name = str(subprocess.check_output(command).decode().strip())
+        study_id = storage.get_study_id_from_name(study_name)
+        assert storage.get_study_direction(study_id) == optuna.structs.StudyDirection.MAXIMIZE
 
         command = ['optuna', 'create-study', '--storage', storage_url, '--direction', 'test']
 
