@@ -11,13 +11,16 @@ from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
-from typing import Any  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
 
 from optuna import distributions
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
 
 SCHEMA_VERSION = 11
 

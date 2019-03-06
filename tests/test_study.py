@@ -5,13 +5,16 @@ import pickle
 import pytest
 import threading
 import time
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
-from typing import Optional  # NOQA
 import uuid
 
 import optuna
 from optuna.testing.storage import StorageSupplier
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import Optional  # NOQA
 
 STORAGE_MODES = [
     'none',  # We give `None` to storage argument, so InMemoryStorage is used.

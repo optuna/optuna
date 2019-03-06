@@ -1,9 +1,12 @@
 import numpy
-from typing import Optional  # NOQA
 
 from optuna import distributions
 from optuna.samplers.base import BaseSampler
 from optuna.storages.base import BaseStorage  # NOQA
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Optional  # NOQA
 
 
 class RandomSampler(BaseSampler):
@@ -38,10 +41,12 @@ class RandomSampler(BaseSampler):
             return numpy.exp(self.rng.uniform(log_low, log_high))
         elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
             q = param_distribution.q
-            low = param_distribution.low - 0.5 * q
-            high = param_distribution.high + 0.5 * q
+            r = param_distribution.high - param_distribution.low
+            # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
+            low = 0 - 0.5 * q
+            high = r + 0.5 * q
             s = self.rng.uniform(low, high)
-            v = numpy.round(s / q) * q
+            v = numpy.round(s / q) * q + param_distribution.low
             # v may slightly exceed range due to round-off errors.
             return min(max(v, param_distribution.low), param_distribution.high)
         elif isinstance(param_distribution, distributions.IntUniformDistribution):

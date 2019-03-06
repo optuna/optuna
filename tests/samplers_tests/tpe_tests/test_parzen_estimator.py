@@ -1,11 +1,14 @@
 import itertools
 import numpy as np
 import pytest
-from typing import Dict  # NOQA
-from typing import List  # NOQA
 
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
 from optuna.samplers.tpe.sampler import default_weights
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
 
 
 class TestParzenEstimator(object):

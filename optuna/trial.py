@@ -1,7 +1,9 @@
 import abc
+import math
 import six
 
 from optuna import distributions
+from optuna import logging
 from optuna import types
 
 if types.TYPE_CHECKING:
@@ -112,6 +114,7 @@ class Trial(BaseTrial):
 
         self.study_id = self.study.study_id
         self.storage = self.study.storage
+        self.logger = logging.get_logger(__name__)
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -184,7 +187,9 @@ class Trial(BaseTrial):
         """Suggest a value for the discrete parameter.
 
         The value is sampled from the range ``[low, high]``, and the step of discretization is
-        ``q``.
+        ``q``. More specifically, this method returns one of the values in the sequence ``low,
+        low + q, low + 2 * q, ..., low + k * q <= high``, where `k`` denotes an integer. Note that
+        ``high`` may be excluded from ranges due to round-off errors if ``q`` is not an integer.
 
         Example:
 
@@ -213,6 +218,13 @@ class Trial(BaseTrial):
         Returns:
             A suggested float value.
         """
+
+        r = high - low
+
+        if math.fmod(r, q) != 0:
+            high = (r // q) * q + low
+            self.logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
+                                'replaced by [{}, {}].'.format(name, low, high))
 
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)

@@ -1,8 +1,10 @@
 from __future__ import absolute_import
 
-from typing import Dict  # NOQA
-
 import optuna
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Dict  # NOQA
 
 try:
     from keras.callbacks import Callback

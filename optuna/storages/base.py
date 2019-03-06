@@ -1,14 +1,17 @@
 import abc
 import numpy as np
 import six
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
-from typing import Tuple  # NOQA
 
 from optuna import distributions  # NOQA
 from optuna import structs  # NOQA
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
 
 DEFAULT_STUDY_NAME_PREFIX = 'no-name-'
 

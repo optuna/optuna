@@ -1,10 +1,5 @@
 import numpy as np
 import scipy.special
-from typing import Callable  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
-from typing import Tuple  # NOQA
-from typing import Union  # NOQA
 
 from optuna import distributions  # NOQA
 from optuna.distributions import BaseDistribution  # NOQA
@@ -13,6 +8,14 @@ from optuna.samplers import random  # NOQA
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator  # NOQA
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters  # NOQA
 from optuna.storages.base import BaseStorage  # NOQA
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Callable  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
+    from typing import Union  # NOQA
 
 EPS = 1e-12
 
@@ -142,12 +145,13 @@ class TPESampler(base.BaseSampler):
     def _sample_discrete_uniform(self, distribution, below, above):
         # type:(distributions.DiscreteUniformDistribution, np.ndarray, np.ndarray) -> float
 
-        low = distribution.low - 0.5 * distribution.q
-        high = distribution.high + 0.5 * distribution.q
         q = distribution.q
-
-        best_sample = self._sample_numerical(low, high, below, above, q=q)
-        return min(max(best_sample, low), high)
+        r = distribution.high - distribution.low
+        # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
+        low = 0 - 0.5 * q
+        high = r + 0.5 * q
+        best_sample = self._sample_numerical(low, high, below, above, q=q) + distribution.low
+        return min(max(best_sample, distribution.low), distribution.high)
 
     def _sample_int(self, distribution, below, above):
         # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> float

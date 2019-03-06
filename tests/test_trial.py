@@ -1,7 +1,7 @@
+import math
 from mock import Mock
 from mock import patch
 import pytest
-import typing  # NOQA
 
 from optuna import distributions
 from optuna import samplers
@@ -9,6 +9,10 @@ from optuna import storages
 from optuna.study import create_study
 from optuna.trial import FixedTrial
 from optuna.trial import Trial
+from optuna import types
+
+if types.TYPE_CHECKING:
+    import typing  # NOQA
 
 parametrize_storage = pytest.mark.parametrize(
     'storage_init_func',
@@ -53,6 +57,79 @@ def test_suggest_discrete_uniform(storage_init_func):
         assert trial._suggest('y', distribution) == 3.  # Test suggesting a different param.
         assert trial.params == {'x': 1., 'y': 3.}
         assert mock_object.call_count == 3
+
+
+@parametrize_storage
+@pytest.mark.parametrize(
+    'range_config',
+    [
+        {
+            'low': 0.,
+            'high': 10.,
+            'q': 3.,
+            'mod_high': 9.
+        },
+        {
+            'low': 1.,
+            'high': 11.,
+            'q': 3.,
+            'mod_high': 10.
+        },
+        {
+            'low': 64.,
+            'high': 1312.,
+            'q': 160.,
+            'mod_high': 1184.
+        },
+        # high is excluded due to the round-off error of 10 // 0.1.
+        {
+            'low': 0.,
+            'high': 10.,
+            'q': 0.1,
+            'mod_high': 9.9
+        },
+        # high is excluded doe to the round-off error of 10.1 // 0.1
+        {
+            'low': 0.,
+            'high': 10.1,
+            'q': 0.1,
+            'mod_high': 10.
+        },
+        {
+            'low': 0.,
+            'high': 10.,
+            'q': math.pi,
+            'mod_high': 3 * math.pi
+        }
+    ])
+def test_suggest_discrete_uniform_range(storage_init_func, range_config):
+    # type: (typing.Callable[[], storages.BaseStorage], typing.Dict[str, float]) -> None
+
+    sampler = samplers.RandomSampler()
+
+    # Check upper endpoints.
+    mock = Mock()
+    mock.side_effect = lambda storage, study_id, param_name, distribution: distribution.high
+    with patch.object(sampler, 'sample', mock) as mock_object:
+        study = create_study(storage_init_func(), sampler=sampler)
+        trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
+
+        x = trial.suggest_discrete_uniform('x', range_config['low'], range_config['high'],
+                                           range_config['q'])
+        assert x == range_config['mod_high']
+        assert mock_object.call_count == 1
+
+    # Check lower endpoints.
+    mock = Mock()
+    mock.side_effect = lambda storage, study_id, param_name, distribution: distribution.low
+    with patch.object(sampler, 'sample', mock) as mock_object:
+        study = create_study(storage_init_func(), sampler=sampler)
+        trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
+
+        x = trial.suggest_discrete_uniform('x', range_config['low'], range_config['high'],
+                                           range_config['q'])
+        assert x == range_config['low']
+        assert mock_object.call_count == 1
 
 
 @parametrize_storage

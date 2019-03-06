@@ -2,10 +2,6 @@ from datetime import datetime
 import math
 from mock import patch
 import pytest
-from typing import Any  # NOQA
-from typing import Callable  # NOQA
-from typing import Dict  # NOQA
-from typing import Optional  # NOQA
 
 import optuna
 from optuna.distributions import BaseDistribution  # NOQA
@@ -20,6 +16,13 @@ from optuna.structs import FrozenTrial
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 from optuna.testing.storage import StorageSupplier
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Callable  # NOQA
+    from typing import Dict  # NOQA
+    from typing import Optional  # NOQA
 
 # TODO(Yanase): Remove _number from system_attrs after adding TrialModel.number.
 EXAMPLE_ATTRS = {
