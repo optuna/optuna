@@ -51,7 +51,6 @@ def test_tensorflow_pruning_hook():
             trial=trial,
             estimator=clf,
             metric="accuracy",
-            is_higher_better=True,
             run_every_steps=5,
         )
         train_spec = tf.estimator.TrainSpec(
