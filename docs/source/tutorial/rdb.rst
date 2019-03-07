@@ -42,7 +42,7 @@ To resume a study, instantiate a :class:`~optuna.study.Study` object passing the
 
 .. code-block:: python
 
-    study = optuna.Study(study_name='example-study', storage='sqlite:///example.db')
+    study = optuna.create_study(study_name='example-study', storage='sqlite:///example.db', load_if_exists=True)
     study.optimize(objective, n_trials=3)
 
 Experimental History
@@ -54,7 +54,7 @@ For example, we can get all trials of ``example-study`` as:
 .. code-block:: python
 
     import optuna
-    study = optuna.Study(study_name='example-study', storage='sqlite:///example.db')
+    study = optuna.create_study(study_name='example-study', storage='sqlite:///example.db', load_if_exists=True)
     df = study.trials_dataframe()
 
 The method :func:`~optuna.study.Study.trials_dataframe` returns a pandas dataframe like:
