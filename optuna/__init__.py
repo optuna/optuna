@@ -14,6 +14,7 @@ from optuna import visualization  # NOQA
 
 from optuna.study import create_study  # NOQA
 from optuna.study import get_all_study_summaries  # NOQA
+from optuna.study import load_study  # NOQA
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
 from optuna.version import __version__  # NOQA

@@ -33,8 +33,13 @@ if types.TYPE_CHECKING:
 class Study(object):
     """A study corresponds to an optimization task, i.e., a set of trials.
 
+    Note that the direct use of this constructor is not recommended.
+
     This object provides interfaces to run a new :class:`~optuna.trial.Trial`, access trials'
     history, set/get user-defined attributes of the study itself.
+
+    For creating and loading studies, please refer to the documentation of
+    :func:`~optuna.study.create_study` and :func:`~optuna.study.load_study` respectively.
 
     Args:
         study_name:
@@ -54,7 +59,8 @@ class Study(object):
             as the default. See also :class:`~optuna.pruners`.
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
-            maximization. Note that ``maximize`` is currently unsupported.
+            maximization. Note that this argument currently has no effect and will be removed
+            in the future.
 
     """
 
@@ -75,20 +81,6 @@ class Study(object):
 
         self.study_id = self.storage.get_study_id_from_name(study_name)
         self.logger = logging.get_logger(__name__)
-
-        if direction == 'minimize':
-            _direction = structs.StudyDirection.MINIMIZE
-        elif direction == 'maximize':
-            _direction = structs.StudyDirection.MAXIMIZE
-        else:
-            raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
-
-        # TODO(Yanase): Implement maximization.
-        if _direction == structs.StudyDirection.MAXIMIZE:
-            raise ValueError('Optimization direction of study {} is set to `MAXIMIZE`. '
-                             'Currently, Optuna supports `MINIMIZE` only.'.format(study_name))
-
-        self.storage.set_study_direction(self.study_id, _direction)
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -514,13 +506,59 @@ def create_study(
             raise
 
     study_name = storage.get_study_name_from_id(study_id)
-
-    return Study(
+    study = Study(
         study_name=study_name,
         storage=storage,
         sampler=sampler,
         pruner=pruner,
         direction=direction)
+
+    if direction == 'minimize':
+        _direction = structs.StudyDirection.MINIMIZE
+    elif direction == 'maximize':
+        _direction = structs.StudyDirection.MAXIMIZE
+    else:
+        raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
+
+    # TODO(Yanase): Implement maximization.
+    if _direction == structs.StudyDirection.MAXIMIZE:
+        raise ValueError('Optimization direction of study {} is set to `MAXIMIZE`. '
+                         'Currently, Optuna supports `MINIMIZE` only.'.format(study_name))
+
+    study.storage.set_study_direction(study_id, _direction)
+
+    return study
+
+
+def load_study(
+        study_name,  # type: str
+        storage,  # type: Union[str, storages.BaseStorage]
+        sampler=None,  # type: samplers.BaseSampler
+        pruner=None,  # type: pruners.BasePruner
+):
+    # type: (...) -> Study
+    """Load the existing :class:`~optuna.study.Study` that has the specified name.
+
+    Args:
+        study_name:
+            Study's name. Each study has a unique name as an identifier.
+        storage:
+            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
+            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
+            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
+            further details.
+        sampler:
+            A sampler object that implements background algorithm for value suggestion.
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
+            as the default. See also :class:`~optuna.samplers`.
+        pruner:
+            A pruner object that decides early stopping of unpromising trials.
+            If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
+            as the default. See also :class:`~optuna.pruners`.
+
+    """
+
+    return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
 def get_all_study_summaries(storage):
