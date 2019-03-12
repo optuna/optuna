@@ -31,6 +31,12 @@ if sys.version_info[0] == 2 or TYPE_CHECKING:
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
 else:
     class _IntegrationModule(ModuleType):
+        """Module class that implements `optuna.integration` package.
+
+        This class applies lazy import under `optuna.integration`, where submodules are imported
+        when they are actually accessed. Otherwise, `import optuna` becomes much slower because it
+        imports all submodules and their dependencies (e.g., chainer, keras, lightgbm) all at once.
+        """
 
         __path__ = [os.path.dirname(__file__)]
 
