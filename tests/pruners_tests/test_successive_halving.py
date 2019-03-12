@@ -1,14 +1,20 @@
 import pytest
 
 import optuna
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Tuple  # NOQA
 
 
-def test_successive_halving_pruner_intermediate_values():
-    # type: () -> None
+@pytest.mark.parametrize('direction_value', [('minimize', 2), ('maximize', 0.5)])
+def test_successive_halving_pruner_intermediate_values(direction_value):
+    # type: (Tuple[str, float]) -> None
 
+    direction, intermediate_value = direction_value
     pruner = optuna.pruners.SuccessiveHalvingPruner(
         min_resource=1, reduction_factor=2, min_early_stopping_rate=0)
-    study = optuna.study.create_study()
+    study = optuna.study.create_study(direction=direction)
 
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
     trial.report(1, 1)
@@ -20,7 +26,7 @@ def test_successive_halving_pruner_intermediate_values():
     # A pruner is not activated if a trial has no intermediate values.
     assert not pruner.prune(study.storage, study.study_id, trial.trial_id, step=1)
 
-    trial.report(2, 1)
+    trial.report(intermediate_value, 1)
     # A pruner is activated if a trial has an intermediate value.
     assert pruner.prune(study.storage, study.study_id, trial.trial_id, step=1)
 
