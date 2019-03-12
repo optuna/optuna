@@ -23,6 +23,7 @@ if types.TYPE_CHECKING:
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
 
 # TODO(Yanase): Remove _number from system_attrs after adding TrialModel.number.
 EXAMPLE_ATTRS = {
@@ -615,11 +616,16 @@ def test_get_n_trials(storage_init_func):
 
 
 @parametrize_storage
-def test_get_best_intermediate_result_over_steps(storage_init_func):
-    # type: (Callable[[], BaseStorage]) -> None
+@pytest.mark.parametrize('direction_expected', [(StudyDirection.MINIMIZE, 0.1),
+                                                (StudyDirection.MAXIMIZE, 0.2)])
+def test_get_best_intermediate_result_over_steps(storage_init_func, direction_expected):
+    # type: (Callable[[], BaseStorage], Tuple[StudyDirection, float]) -> None
+
+    direction, expected = direction_expected
 
     storage = storage_init_func()
     study_id = storage.create_new_study_id()
+    storage.set_study_direction(study_id, direction)
 
     # FrozenTrial.intermediate_values has no elements.
     trial_id_empty = storage.create_new_trial_id(study_id)
@@ -630,7 +636,7 @@ def test_get_best_intermediate_result_over_steps(storage_init_func):
     trial_id_float = storage.create_new_trial_id(study_id)
     storage.set_trial_intermediate_value(trial_id_float, 0, 0.1)
     storage.set_trial_intermediate_value(trial_id_float, 1, 0.2)
-    assert 0.1 == storage.get_best_intermediate_result_over_steps(trial_id_float)
+    assert expected == storage.get_best_intermediate_result_over_steps(trial_id_float)
 
     # Input value has a float value and a NaN.
     trial_id_float_nan = storage.create_new_trial_id(study_id)
@@ -639,7 +645,7 @@ def test_get_best_intermediate_result_over_steps(storage_init_func):
     assert 0.3 == storage.get_best_intermediate_result_over_steps(trial_id_float_nan)
 
     # Input value has a NaN only.
-    trial_id_nan = storage.create_new_trial_id(storage.create_new_study_id())
+    trial_id_nan = storage.create_new_trial_id(study_id)
     storage.set_trial_intermediate_value(trial_id_nan, 0, float('nan'))
     assert math.isnan(storage.get_best_intermediate_result_over_steps(trial_id_nan))
 

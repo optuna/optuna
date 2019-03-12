@@ -65,7 +65,7 @@ class TensorFlowPruningHook(SessionRunHook):
         self.timer = tf.train.SecondOrStepTimer(every_secs=None, every_steps=run_every_steps)
 
         if is_higher_better is not None:
-            raise ValueError('Please do not set any values to is_higher_better argument of'
+            raise ValueError('Please do not use is_higher_better argument of'
                              'TensorFlowPruningHook.__init__().')
 
     def begin(self):
