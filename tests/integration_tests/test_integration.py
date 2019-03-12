@@ -1,5 +1,4 @@
 import pytest
-import sys
 
 
 def test_import():
@@ -20,7 +19,7 @@ def test_import():
     from optuna.integration import XGBoostPruningCallback  # NOQA
 
     with pytest.raises(ImportError):
-        from optuna.integration import unknown_module  # NOQA
+        from optuna.integration import unknown_module  # type: ignore # NOQA
 
 
 def test_module_attributes():
@@ -42,4 +41,4 @@ def test_module_attributes():
     assert hasattr(optuna.integration, 'XGBoostPruningCallback')
 
     with pytest.raises(AttributeError):
-        optuna.integration.unknown_attribute
+        optuna.integration.unknown_attribute  # type: ignore
