@@ -73,6 +73,11 @@ def test_tensorflow_pruning_hook():
 def test_init_with_is_higher_better(is_higher_better):
     # type: (bool) -> None
 
+    # TODO(Yanase): remove this "if" section after TensorFlow supports Python 3.7.
+    if not _available:
+        pytest.skip('This test requires TensorFlow '
+                    'but this version can not install TensorFlow with pip.')
+
     clf = tf.estimator.DNNClassifier(
         hidden_units=[],
         feature_columns=[tf.feature_column.numeric_column(key="x", shape=[20])],
