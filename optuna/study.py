@@ -478,7 +478,7 @@ def create_study(
             automatically.
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
-            maximization. Note that ``maximize`` is currently unsupported.
+            maximization.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
