@@ -57,10 +57,6 @@ class Study(object):
             A pruner object that decides early stopping of unpromising trials.
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
-        direction:
-            Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
-            maximization. Note that this argument currently has no effect and will be removed
-            in the future.
 
     """
 
@@ -70,7 +66,6 @@ class Study(object):
             storage,  # type: Union[str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
-            direction='minimize',  # type: str
     ):
         # type: (...) -> None
 
@@ -510,8 +505,7 @@ def create_study(
         study_name=study_name,
         storage=storage,
         sampler=sampler,
-        pruner=pruner,
-        direction=direction)
+        pruner=pruner)
 
     if direction == 'minimize':
         _direction = structs.StudyDirection.MINIMIZE
