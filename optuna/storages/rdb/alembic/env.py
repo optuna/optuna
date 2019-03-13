@@ -1,5 +1,6 @@
 from __future__ import with_statement
 
+import logging
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -7,19 +8,23 @@ from sqlalchemy import pool
 
 from alembic import context
 
+import optuna
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-fileConfig(config.config_file_name)
+
+if len(logging.getLogger().handlers) == 0:
+    fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = optuna.storages.rdb.models.BaseModel.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -40,9 +45,7 @@ def run_migrations_offline():
 
     """
     url = config.get_main_option("sqlalchemy.url")
-    context.configure(
-        url=url, target_metadata=target_metadata, literal_binds=True
-    )
+    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
 
     with context.begin_transaction():
         context.run_migrations()
@@ -62,9 +65,7 @@ def run_migrations_online():
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
