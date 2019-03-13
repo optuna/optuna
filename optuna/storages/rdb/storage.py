@@ -1,6 +1,13 @@
+from alembic import command
+from alembic.config import Config
+from alembic.migration import MigrationContext
+from alembic.runtime.environment import EnvironmentContext
+from alembic.script import ScriptDirectory
 from collections import defaultdict
 from datetime import datetime
 import json
+import logging
+import os
 import six
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import IntegrityError
@@ -9,8 +16,8 @@ from sqlalchemy import orm
 import sys
 import uuid
 
+import optuna
 from optuna import distributions
-from optuna import logging
 from optuna.storages.base import BaseStorage
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.rdb import models
@@ -24,6 +31,8 @@ if types.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Optional  # NOQA
 
+INITIAL_ALEMBIC_REVISION_ID = 'v0.9.0.a'
+
 
 class RDBStorage(BaseStorage):
     """Storage class for RDB backend.
@@ -35,12 +44,13 @@ class RDBStorage(BaseStorage):
         connect_args: Arguments that is passed to :func:`sqlalchemy.engine.create_engine`.
     """
 
-    def __init__(self, url, connect_args=None):
-        # type: (str, Optional[Dict[str, Any]]) -> None
+    def __init__(self, url, connect_args=None, skip_compatibility_check=False):
+        # type: (str, Optional[Dict[str, Any]], bool) -> None
 
         connect_args = connect_args or {}
 
         url = self._fill_storage_url_template(url)
+        self.url = url
 
         try:
             self.engine = create_engine(url, connect_args=connect_args)
@@ -51,8 +61,13 @@ class RDBStorage(BaseStorage):
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
-        self._check_table_schema_compatibility()
-        self.logger = logging.get_logger(__name__)
+
+        self.logger = optuna.logging.get_logger(__name__)
+
+        self._init_version_info_model()
+        self._init_alembic()
+        if not skip_compatibility_check:
+            self._check_table_schema_compatibility()
 
     def create_new_study_id(self, study_name=None):
         # type: (Optional[str]) -> int
@@ -521,26 +536,6 @@ class RDBStorage(BaseStorage):
 
         return result
 
-    def _check_table_schema_compatibility(self):
-        # type: () -> None
-
-        session = self.scoped_session()
-
-        version_info = models.VersionInfoModel.find(session)
-        if version_info is not None:
-            if version_info.schema_version != models.SCHEMA_VERSION:
-                raise RuntimeError(
-                    'The runtime optuna version {} is no longer compatible with the table schema '
-                    '(set up by optuna {}).'.format(version.__version__,
-                                                    version_info.library_version))
-            return
-
-        version_info = models.VersionInfoModel(
-            schema_version=models.SCHEMA_VERSION, library_version=version.__version__)
-
-        session.add(version_info)
-        self._commit_with_integrity_check(session)
-
     @staticmethod
     def _fill_storage_url_template(template):
         # type: (str) -> str
@@ -602,3 +597,111 @@ class RDBStorage(BaseStorage):
 
         if hasattr(self, 'scoped_session'):
             self.remove_session()
+
+    def get_current_version(self):
+        # type: () -> str
+        """Return the schema version currently used by this storage."""
+
+        context = MigrationContext.configure(self.engine.connect())
+        version = context.get_current_revision()
+        assert version is not None
+
+        return version
+
+    def get_head_version(self):
+        # type: () -> str
+        """Return the latest schema version."""
+
+        config = _create_alembic_config(self.url)
+        script = self._create_alembic_script()
+        with EnvironmentContext(config, script) as context:
+            return context.get_head_revision()
+
+    def upgrade(self):
+        # type: () -> None
+        """Upgrade the storage schema to up-to-date."""
+
+        config = _create_alembic_config(self.url)
+        command.upgrade(config, 'head')
+
+    def _init_version_info_model(self):
+        # type: () -> None
+
+        session = self.scoped_session()
+
+        version_info = models.VersionInfoModel.find(session)
+        if version_info is not None:
+            return
+
+        version_info = models.VersionInfoModel(
+            schema_version=models.SCHEMA_VERSION, library_version=version.__version__)
+
+        session.add(version_info)
+        self._commit_with_integrity_check(session)
+
+    def _init_alembic(self):
+        # type: () -> None
+
+        logging.getLogger('alembic').setLevel(logging.WARN)
+
+        context = MigrationContext.configure(self.engine.connect())
+        is_initialized = context.get_current_revision() is not None
+
+        if is_initialized:
+            # The `alembic_version` table already exists and is not empty.
+            return
+
+        if self._is_alembic_supported():
+            revision = self.get_head_version()
+        else:
+            # The storage has been created before alembic is introduced.
+            revision = INITIAL_ALEMBIC_REVISION_ID
+
+        script = self._create_alembic_script()
+        context.stamp(script, revision)
+
+    def _check_table_schema_compatibility(self):
+        # type: () -> None
+
+        session = self.scoped_session()
+
+        version_info = models.VersionInfoModel.find(session)
+        if version_info is None:
+            return
+
+        current_version = self.get_current_version()
+        head_version = self.get_head_version()
+        if current_version != head_version:
+            raise RuntimeError(
+                'The runtime optuna version {} is no longer compatible with the table schema '
+                '(set up by optuna {}). Please execute '
+                '`$ optuna storage upgrade --storage $STORAGE_URL`'
+                'for upgrading the storage to up-to-date.'.format(version.__version__,
+                                                                  version_info.library_version))
+
+    def _is_alembic_supported(self):
+        # type: () -> bool
+
+        session = self.scoped_session()
+
+        version_info = models.VersionInfoModel.find(session)
+        if version_info is not None:
+            return True
+
+        return version_info.schema_version == models.SCHEMA_VERSION
+
+    def _create_alembic_script(self):
+        # type: () -> ScriptDirectory
+
+        config = _create_alembic_config(self.url)
+        script = ScriptDirectory.from_config(config)
+        return script
+
+
+def _create_alembic_config(url):
+    # type: (str) -> Config
+
+    config = Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
+    config.set_main_option('script_location', os.path.join(os.path.dirname(__file__), 'alembic'))
+    config.set_main_option('sqlalchemy.url', url)
+    return config
