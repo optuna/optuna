@@ -75,6 +75,9 @@ class LightGBMPruningCallback(object):
             if is_higher_better:
                 assert self.trial.storage.get_study_direction(self.trial.study_id) == \
                     optuna.structs.StudyDirection.MAXIMIZE
+            else:
+                assert self.trial.storage.get_study_direction(self.trial.study_id) == \
+                    optuna.structs.StudyDirection.MINIMIZE
 
             self.trial.report(current_score, step=env.iteration)
             if self.trial.should_prune(env.iteration):
