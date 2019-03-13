@@ -6,20 +6,17 @@ from typing import Any  # NOQA
 from optuna.types import TYPE_CHECKING
 
 
-__all__ = [
-    'chainer',
-    'chainermn'
-    'keras',
-    'lightgbm',
-    'tensorflow',
-    'xgboost',
-    'ChainerMNStudy'
-    'ChainerPruningExtension',
-    'KerasPruningCallback',
-    'LightGBMPruningCallback',
-    'TensorFlowPruningHook',
-    'XGBoostPruningCallback',
-]
+_import_structure = {
+    'chainer': ['ChainerPruningExtension'],
+    'chainermn': ['ChainerMNStudy'],
+    'keras': ['KerasPruningCallback'],
+    'lightgbm': ['LightGBMPruningCallback'],
+    'tensorflow': ['TensorFlowPruningHook'],
+    'xgboost': ['XGBoostPruningCallback'],
+}
+
+
+__all__ = list(_import_structure.keys()) + sum(_import_structure.values(), [])
 
 
 if sys.version_info[0] == 2 or TYPE_CHECKING:
@@ -41,23 +38,11 @@ else:
         __file__ = globals()['__file__']
         __path__ = [os.path.dirname(__file__)]
 
-        _modules = {
-            'chainer',
-            'chainermn',
-            'keras',
-            'lightgbm',
-            'tensorflow',
-            'xgboost',
-        }
-
-        _class_to_module = {
-            'ChainerMNStudy': 'chainermn',
-            'ChainerPruningExtension': 'chainer',
-            'KerasPruningCallback': 'keras',
-            'LightGBMPruningCallback': 'lightgbm',
-            'TensorFlowPruningHook': 'tensorflow',
-            'XGBoostPruningCallback': 'xgboost',
-        }
+        _modules = set(_import_structure.keys())
+        _class_to_module = {}
+        for key, values in _import_structure.items():
+            for value in values:
+                _class_to_module[value] = key
 
         def __getattr__(self, name):
             # type: (str) -> Any
