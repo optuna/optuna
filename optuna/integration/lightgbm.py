@@ -73,11 +73,19 @@ class LightGBMPruningCallback(object):
                 continue
 
             if is_higher_better:
-                assert self.trial.storage.get_study_direction(self.trial.study_id) == \
-                    optuna.structs.StudyDirection.MAXIMIZE
+                if self.trial.storage.get_study_direction(self.trial.study_id) != \
+                        optuna.structs.StudyDirection.MAXIMIZE:
+                    raise ValueError(
+                        "The intermediate values are inconsistent with the objective values in "
+                        "terms of study directions. Please specify a metric to be minimized for "
+                        "LightGBMPruningCallback.")
             else:
-                assert self.trial.storage.get_study_direction(self.trial.study_id) == \
-                    optuna.structs.StudyDirection.MINIMIZE
+                if self.trial.storage.get_study_direction(self.trial.study_id) != \
+                        optuna.structs.StudyDirection.MINIMIZE:
+                    raise ValueError(
+                        "The intermediate values are inconsistent with the objective values in "
+                        "terms of study directions. Please specify a metric to be maximized for "
+                        "LightGBMPruningCallback.")
 
             self.trial.report(current_score, step=env.iteration)
             if self.trial.should_prune(env.iteration):

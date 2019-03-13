@@ -92,6 +92,16 @@ def test_lightgbm_pruning_callback_errors(cv):
                 n_trials=1,
                 catch=())
 
+    # Check consistency of study direction.
+    study = optuna.create_study(pruner=DeterministicPruner(False))
+    with pytest.raises(ValueError):
+        study.optimize(lambda trial: objective(trial, metric='auc', cv=cv), n_trials=1, catch=())
+
+    study = optuna.create_study(pruner=DeterministicPruner(False), direction='maximize')
+    with pytest.raises(ValueError):
+        study.optimize(
+            lambda trial: objective(trial, metric='binary_error', cv=cv), n_trials=1, catch=())
+
 
 def objective(trial,
               metric='binary_error',
