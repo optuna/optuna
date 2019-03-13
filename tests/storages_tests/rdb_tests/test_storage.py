@@ -128,12 +128,14 @@ def test_get_all_study_summaries_with_multiple_studies():
     study_id_2 = storage.create_new_study_id()
     storage.set_study_direction(study_id_2, StudyDirection.MAXIMIZE)
 
-    # TODO(sano): Add more trials after implementing maximize.
     trial_id_2_1 = storage.create_new_trial_id(study_id_2)
+    trial_id_2_2 = storage.create_new_trial_id(study_id_2)
 
     storage.set_trial_value(trial_id_2_1, -100)
+    storage.set_trial_value(trial_id_2_2, -200)
 
     storage.set_trial_state(trial_id_2_1, TrialState.COMPLETE)
+    storage.set_trial_state(trial_id_2_2, TrialState.COMPLETE)
 
     # Set up an empty study.
     study_id_3 = storage.create_new_study_id()
@@ -158,7 +160,7 @@ def test_get_all_study_summaries_with_multiple_studies():
         user_attrs={},
         system_attrs={},
         best_trial=summaries[1].best_trial,  # This always passes.
-        n_trials=1,
+        n_trials=2,
         datetime_start=summaries[1].datetime_start  # This always passes.
     )
     expected_summary_3 = StudySummary(
