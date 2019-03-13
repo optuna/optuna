@@ -38,6 +38,7 @@ else:
         imports all submodules and their dependencies (e.g., chainer, keras, lightgbm) all at once.
         """
 
+        __file__ = globals()['__file__']
         __path__ = [os.path.dirname(__file__)]
 
         _modules = {
