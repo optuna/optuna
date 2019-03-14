@@ -688,7 +688,7 @@ class RDBStorage(BaseStorage):
 
         message = 'The runtime optuna version {} is no longer compatible with the table schema ' \
                   '(set up by optuna {}). '.format(version.__version__,
-                                                  version_info.library_version)
+                                                   version_info.library_version)
         known_versions = self.get_all_versions()
         if current_version in known_versions:
             message += 'Please execute `$ optuna storage upgrade --storage $STORAGE_URL`' \
