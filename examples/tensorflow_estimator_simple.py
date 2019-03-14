@@ -98,7 +98,7 @@ def objective(trial):
     eval_data = eval_data / np.float32(255)
     eval_labels = eval_labels.astype(np.int32)
 
-    model_dir = "{}/{}".format(MODEL_DIR, trial.trial_id)
+    model_dir = "{}/{}".format(MODEL_DIR, trial.number)
     mnist_classifier = tf.estimator.Estimator(
         model_fn=lambda features, labels, mode: model_fn(trial, features, labels, mode),
         model_dir=model_dir)
