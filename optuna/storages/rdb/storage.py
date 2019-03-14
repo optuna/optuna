@@ -1,7 +1,6 @@
 import alembic.command
 import alembic.config
 import alembic.migration
-import alembic.runtime.environment
 import alembic.script
 from collections import defaultdict
 from datetime import datetime
@@ -598,6 +597,13 @@ class RDBStorage(BaseStorage):
         if hasattr(self, 'scoped_session'):
             self.remove_session()
 
+    def upgrade(self):
+        # type: () -> None
+        """Upgrade the storage schema to up-to-date."""
+
+        config = _create_alembic_config(self.url)
+        alembic.command.upgrade(config, 'head')
+
     def get_current_version(self):
         # type: () -> str
         """Return the schema version currently used by this storage."""
@@ -612,17 +618,16 @@ class RDBStorage(BaseStorage):
         # type: () -> str
         """Return the latest schema version."""
 
-        config = _create_alembic_config(self.url)
+        # config = _create_alembic_config(self.url)
         script = self._create_alembic_script()
-        with alembic.runtime.emvironment.EnvironmentContext(config, script) as context:
-            return context.get_head_revision()
+        return script.get_current_head()
 
-    def upgrade(self):
-        # type: () -> None
-        """Upgrade the storage schema to up-to-date."""
+    def get_all_versions(self):
+        # type: () -> List[str]
+        """Return the schema version list."""
 
-        config = _create_alembic_config(self.url)
-        alembic.command.upgrade(config, 'head')
+        script = self._create_alembic_script()
+        return list(script.walk_revisions())
 
     def _init_version_info_model(self):
         # type: () -> None
@@ -665,19 +670,28 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
+        # NOTE: After invocation of `_init_version_info_model` method,
+        #       it is ensured that a `VersionInfoModel` entry exists.
         version_info = models.VersionInfoModel.find(session)
-        if version_info is None:
-            return
+        assert version_info is not None
 
         current_version = self.get_current_version()
         head_version = self.get_head_version()
-        if current_version != head_version:
-            raise RuntimeError(
-                'The runtime optuna version {} is no longer compatible with the table schema '
-                '(set up by optuna {}). Please execute '
-                '`$ optuna storage upgrade --storage $STORAGE_URL`'
-                'for upgrading the storage to up-to-date.'.format(version.__version__,
-                                                                  version_info.library_version))
+        if current_version == head_version:
+            return
+
+        message = 'The runtime optuna version {} is no longer compatible with the table schema ' \
+                  '(set up by optuna {}).'.format(version.__version__,
+                                                  version_info.library_version)
+        known_versions = self.get_all_versions()
+        if current_version in known_versions:
+            message += 'Please execute `$ optuna storage upgrade --storage $STORAGE_URL`' \
+                       'for upgrading the storage to up-to-date.'
+        else:
+            message += 'Please try updating optuna to the latest version by '\
+                       '`$ pip install -U optuna`.'
+
+        raise RuntimeError(message)
 
     def _is_alembic_supported(self):
         # type: () -> bool

@@ -240,14 +240,17 @@ class StorageUpgrade(BaseCommand):
         storage = RDBStorage(storage_url, skip_compatibility_check=True)
         current_version = storage.get_current_version()
         head_version = storage.get_head_version()
+        known_versions = storage.get_all_versions()
         if current_version == head_version:
-            self.logger.info("This storage is up-to-date.")
-        else:
-            self.logger.info(
-                "Upgrading the schema of this storage from the current({}) to the latest({}).".
-                format(current_version, head_version))
+            self.logger.info('This storage is up-to-date.')
+        elif current_version in known_versions:
+            self.logger.info('Upgrading the storage schema to the latest version.')
             storage.upgrade()
             self.logger.info("Completed to upgrade the storage.")
+        else:
+            self.logger.warn('Your optuna version seems outdated against the storage version. '
+                             'Please try updating optuna to the latest version by '
+                             '`$ pip install -U optuna`.')
 
 
 _COMMANDS = {
