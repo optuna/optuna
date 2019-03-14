@@ -30,7 +30,7 @@ if types.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Optional  # NOQA
 
-INITIAL_ALEMBIC_REVISION_ID = 'v0.10.0.a'
+INITIAL_ALEMBIC_REVISION_ID = 'v0.9.0.a'
 
 
 class RDBStorage(BaseStorage):
