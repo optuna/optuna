@@ -83,6 +83,11 @@ class InMemoryStorage(base.BaseStorage):
 
         return IN_MEMORY_STORAGE_STUDY_ID
 
+    def get_study_id_from_trial_id(self, trial_id):
+        # type: (int) -> int
+
+        return IN_MEMORY_STORAGE_STUDY_ID
+
     def get_study_name_from_id(self, study_id):
         # type: (int) -> str
 

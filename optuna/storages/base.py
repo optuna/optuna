@@ -61,6 +61,12 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_study_id_from_trial_id(self, trial_id):
+        # type: (int) -> int
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_study_name_from_id(self, study_id):
         # type: (int) -> str
 
@@ -175,7 +181,8 @@ class BaseStorage(object):
         if len(all_trials) == 0:
             raise ValueError('No trials are completed yet.')
 
-        # TODO(sano): Deal with maximize direction.
+        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+            return max(all_trials, key=lambda t: t.value)
         return min(all_trials, key=lambda t: t.value)
 
     def get_trial_params(self, trial_id):
@@ -212,8 +219,12 @@ class BaseStorage(object):
     def get_best_intermediate_result_over_steps(self, trial_id):
         # type: (int) -> float
 
-        return np.nanmin(
-            np.array(list(self.get_trial(trial_id).intermediate_values.values()), np.float))
+        values = np.array(list(self.get_trial(trial_id).intermediate_values.values()), np.float)
+
+        study_id = self.get_study_id_from_trial_id(trial_id)
+        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+            return np.nanmax(values)
+        return np.nanmin(values)
 
     def get_median_intermediate_result_over_trials(self, study_id, step):
         # type: (int, int) -> float

@@ -88,7 +88,6 @@ def objective(trial):
         trial=trial,
         estimator=mnist_classifier,
         metric="accuracy",
-        is_higher_better=True,
         run_every_steps=PRUNING_INTERVAL_STEPS,
     )
 
@@ -105,11 +104,11 @@ def objective(trial):
         input_fn=eval_input_fn, steps=EVAL_STEPS, start_delay_secs=0, throttle_secs=0)
 
     eval_results, _ = tf.estimator.train_and_evaluate(mnist_classifier, train_spec, eval_spec)
-    return 1 - float(eval_results['accuracy'])
+    return float(eval_results['accuracy'])
 
 
 def main(unused_argv):
-    study = optuna.create_study()
+    study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=25)
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
     complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]

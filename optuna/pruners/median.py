@@ -2,6 +2,7 @@ import math
 
 from optuna.pruners import BasePruner
 from optuna.storages import BaseStorage  # NOQA
+from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 
 
@@ -65,4 +66,6 @@ class MedianPruner(BasePruner):
         if math.isnan(median):
             return False
 
+        if storage.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+            return best_intermediate_result < median
         return best_intermediate_result > median

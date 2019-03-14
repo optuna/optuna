@@ -72,11 +72,20 @@ class LightGBMPruningCallback(object):
             if valid_name != target_valid_name or metric != self.metric:
                 continue
 
-            # TODO(ohta): Deal with maximize direction
             if is_higher_better:
-                raise ValueError(
-                    'Pruning using metrics to be maximized has not been supported yet '
-                    '(validation_name: {}, metric: {}).'.format(valid_name, metric))
+                if self.trial.storage.get_study_direction(self.trial.study_id) != \
+                        optuna.structs.StudyDirection.MAXIMIZE:
+                    raise ValueError(
+                        "The intermediate values are inconsistent with the objective values in "
+                        "terms of study directions. Please specify a metric to be minimized for "
+                        "LightGBMPruningCallback.")
+            else:
+                if self.trial.storage.get_study_direction(self.trial.study_id) != \
+                        optuna.structs.StudyDirection.MINIMIZE:
+                    raise ValueError(
+                        "The intermediate values are inconsistent with the objective values in "
+                        "terms of study directions. Please specify a metric to be maximized for "
+                        "LightGBMPruningCallback.")
 
             self.trial.report(current_score, step=env.iteration)
             if self.trial.should_prune(env.iteration):

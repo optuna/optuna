@@ -145,6 +145,15 @@ class RDBStorage(BaseStorage):
 
         return study.study_id
 
+    def get_study_id_from_trial_id(self, trial_id):
+        # type: (int) -> int
+
+        session = self.scoped_session()
+
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+
+        return trial.study_id
+
     def get_study_name_from_id(self, study_id):
         # type: (int) -> str
 
@@ -223,8 +232,10 @@ class RDBStorage(BaseStorage):
             ]
             best_trial = None
             if len(completed_trial_models) > 0:
-                # TODO(sano): Deal with maximize direction.
-                best_trial_model = min(completed_trial_models, key=lambda t: t.value)
+                if study_model.direction == structs.StudyDirection.MAXIMIZE:
+                    best_trial_model = max(completed_trial_models, key=lambda t: t.value)
+                else:
+                    best_trial_model = min(completed_trial_models, key=lambda t: t.value)
 
                 best_param_models = [
                     p for p in param_models if p.trial_id == best_trial_model.trial_id

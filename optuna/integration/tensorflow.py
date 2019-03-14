@@ -2,6 +2,9 @@ from __future__ import absolute_import
 
 import optuna
 
+if optuna.types.TYPE_CHECKING:
+    from typing import Optional  # NOQA
+
 try:
     import tensorflow as tf
     from tensorflow.train import SessionRunHook
@@ -43,24 +46,28 @@ class TensorFlowPruningHook(SessionRunHook):
             An estimator which you will use.
         metric:
             An evaluation metric for pruning, e.g., ``accuracy`` and ``loss``.
-        is_higher_better:
-           It should be :obj:`True` if you use a metric to be maximize such as ``accuracy``.
         run_every_steps:
            An interval to watch the summary file.
+        is_higher_better:
+           Please do not use this argument because this class refers to
+           :class:`~optuna.structs.StudyDirection` to check whether the current study is
+           ``minimize`` or ``maximize``.
     """
 
-    # TODO(sano): Remove is_higher_better after implementing maximize.
-    # TODO(sano): Get the information from StudyDirection.
-    def __init__(self, trial, estimator, metric, is_higher_better, run_every_steps):
-        # type: (optuna.trial.Trial, tf.estimator.Estimator, str, bool, int) -> None
+    def __init__(self, trial, estimator, metric, run_every_steps, is_higher_better=None):
+        # type: (optuna.trial.Trial, tf.estimator.Estimator, str, int, Optional[bool]) -> None
 
         self.trial = trial
         self.estimator = estimator
         self.current_summary_step = -1
         self.metric = metric
-        self.is_higher_better = is_higher_better
         self.global_step_tensor = None
         self.timer = tf.train.SecondOrStepTimer(every_secs=None, every_steps=run_every_steps)
+
+        if is_higher_better is not None:
+            raise ValueError('Please do not use is_higher_better argument of '
+                             'TensorFlowPruningHook.__init__(). is_higher_better argument '
+                             'is obsolete since Optuna 0.9.0.')
 
     def begin(self):
         # type: () -> None
@@ -88,11 +95,7 @@ class TensorFlowPruningHook(SessionRunHook):
             latest_eval_metrics = eval_metrics[summary_step]
             # If there exists a new evaluation summary.
             if summary_step > self.current_summary_step:
-                # TODO(sano): Remove the following if block after implementing maximize.
-                if self.is_higher_better:
-                    current_score = 1.0 - latest_eval_metrics[self.metric]
-                else:
-                    current_score = latest_eval_metrics[self.metric]
+                current_score = latest_eval_metrics[self.metric]
                 self.trial.report(current_score, step=summary_step)
                 self.current_summary_step = summary_step
             if self.trial.should_prune(self.current_summary_step):

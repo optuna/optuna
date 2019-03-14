@@ -61,15 +61,20 @@ def test_lightgbm_pruning_callback(cv):
     assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.
 
+    # Check "maximize" direction.
+    study = optuna.create_study(pruner=DeterministicPruner(True), direction='maximize')
+    study.optimize(lambda trial: objective(trial, metric='auc', cv=cv), n_trials=1, catch=())
+    assert study.trials[0].state == optuna.structs.TrialState.PRUNED
+
+    study = optuna.create_study(pruner=DeterministicPruner(False), direction='maximize')
+    study.optimize(lambda trial: objective(trial, metric='auc', cv=cv), n_trials=1, catch=())
+    assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
+    assert study.trials[0].value == 1.
+
 
 @pytest.mark.parametrize('cv', CV_FLAGS)
 def test_lightgbm_pruning_callback_errors(cv):
     # type: (bool) -> None
-
-    # "maximize" direction isn't supported yet.
-    study = optuna.create_study(pruner=DeterministicPruner(False))
-    with pytest.raises(ValueError):
-        study.optimize(lambda trial: objective(trial, metric='auc', cv=cv), n_trials=1, catch=())
 
     # Unknown metric
     study = optuna.create_study(pruner=DeterministicPruner(False))
@@ -86,6 +91,16 @@ def test_lightgbm_pruning_callback_errors(cv):
                     trial, valid_name='valid_1', force_default_valid_names=True),
                 n_trials=1,
                 catch=())
+
+    # Check consistency of study direction.
+    study = optuna.create_study(pruner=DeterministicPruner(False))
+    with pytest.raises(ValueError):
+        study.optimize(lambda trial: objective(trial, metric='auc', cv=cv), n_trials=1, catch=())
+
+    study = optuna.create_study(pruner=DeterministicPruner(False), direction='maximize')
+    with pytest.raises(ValueError):
+        study.optimize(
+            lambda trial: objective(trial, metric='binary_error', cv=cv), n_trials=1, catch=())
 
 
 def objective(trial,

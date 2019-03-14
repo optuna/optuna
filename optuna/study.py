@@ -473,7 +473,7 @@ def create_study(
             automatically.
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
-            maximization. Note that ``maximize`` is currently unsupported.
+            maximization.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
@@ -513,11 +513,6 @@ def create_study(
         _direction = structs.StudyDirection.MAXIMIZE
     else:
         raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
-
-    # TODO(Yanase): Implement maximization.
-    if _direction == structs.StudyDirection.MAXIMIZE:
-        raise ValueError('Optimization direction of study {} is set to `MAXIMIZE`. '
-                         'Currently, Optuna supports `MINIMIZE` only.'.format(study_name))
 
     study.storage.set_study_direction(study_id, _direction)
 
