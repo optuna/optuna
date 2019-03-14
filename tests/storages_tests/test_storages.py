@@ -72,10 +72,7 @@ EXAMPLE_TRIALS = [
             'tags': ['video', 'classification'],
             'dataset': 'YouTube-8M'
         },
-        system_attrs={
-            'some_key': 'some_value',
-            '_number': 0
-        },
+        system_attrs={'some_key': 'some_value', '_number': 0},
         params={
             'x': 0.01,
             'y': 'Otemachi'
