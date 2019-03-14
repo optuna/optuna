@@ -78,7 +78,7 @@ def objective(trial):
     config = tf.estimator.RunConfig(
         save_summary_steps=PRUNING_INTERVAL_STEPS, save_checkpoints_steps=PRUNING_INTERVAL_STEPS)
 
-    model_dir = "{}/{}".format(MODEL_DIR, trial.trial_id)
+    model_dir = "{}/{}".format(MODEL_DIR, trial.number)
     mnist_classifier = tf.estimator.Estimator(
         model_fn=lambda features, labels, mode: model_fn(trial, features, labels, mode),
         model_dir=model_dir,
