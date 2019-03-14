@@ -627,7 +627,7 @@ class RDBStorage(BaseStorage):
         """Return the schema version list."""
 
         script = self._create_alembic_script()
-        return list(script.walk_revisions())
+        return list(r.revision for r in script.walk_revisions())
 
     def _init_version_info_model(self):
         # type: () -> None
@@ -662,6 +662,12 @@ class RDBStorage(BaseStorage):
             # The storage has been created before alembic is introduced.
             revision = INITIAL_ALEMBIC_REVISION_ID
 
+        self._set_alembic_revision(revision)
+
+    def _set_alembic_revision(self, revision):
+        # type: (str) -> None
+
+        context = alembic.migration.MigrationContext.configure(self.engine.connect())
         script = self._create_alembic_script()
         context.stamp(script, revision)
 
