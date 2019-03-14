@@ -167,14 +167,14 @@ Errors raised in objective functions are shown as follows:
 
 .. code-block:: sh
 
-    [W 2018-12-07 16:38:36,889] Setting trial status as TrialState.FAIL because of \
+    [W 2018-12-07 16:38:36,889] Setting status of trial#0 as TrialState.FAIL because of \
     the following error: ValueError('A sample error in objective.')
 
 And trials which returned :obj:`NaN` are shown as follows:
 
 .. code-block:: sh
 
-    [W 2018-12-07 16:41:59,000] Setting trial status as TrialState.FAIL because the \
+    [W 2018-12-07 16:41:59,000] Setting status of trial#2 as TrialState.FAIL because the \
     objective function returned nan.
 
 You can also find the failed trials by checking the trial states as follows:
@@ -185,8 +185,8 @@ You can also find the failed trials by checking the trial states as follows:
 
 .. csv-table::
 
-    trial_id,state,value,...,params,system_attrs
-    0,TrialState.FAIL,,...,0,Setting trial status as TrialState.FAIL because of the following error: ValueError('A test error in objective.')
+    number,state,value,...,params,system_attrs
+    0,TrialState.FAIL,,...,0,Setting status of trial#0 as TrialState.FAIL because of the following error: ValueError('A test error in objective.')
     1,TrialState.COMPLETE,1269,...,1,
 
 
