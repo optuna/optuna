@@ -1,8 +1,8 @@
-from alembic import command
-from alembic.config import Config
-from alembic.migration import MigrationContext
-from alembic.runtime.environment import EnvironmentContext
-from alembic.script import ScriptDirectory
+import alembic.command
+import alembic.config
+import alembic.migration
+import alembic.runtime.environment
+import alembic.script
 from collections import defaultdict
 from datetime import datetime
 import json
@@ -602,7 +602,7 @@ class RDBStorage(BaseStorage):
         # type: () -> str
         """Return the schema version currently used by this storage."""
 
-        context = MigrationContext.configure(self.engine.connect())
+        context = alembic.migration.MigrationContext.configure(self.engine.connect())
         version = context.get_current_revision()
         assert version is not None
 
@@ -614,7 +614,7 @@ class RDBStorage(BaseStorage):
 
         config = _create_alembic_config(self.url)
         script = self._create_alembic_script()
-        with EnvironmentContext(config, script) as context:
+        with alembic.runtime.emvironment.EnvironmentContext(config, script) as context:
             return context.get_head_revision()
 
     def upgrade(self):
@@ -622,7 +622,7 @@ class RDBStorage(BaseStorage):
         """Upgrade the storage schema to up-to-date."""
 
         config = _create_alembic_config(self.url)
-        command.upgrade(config, 'head')
+        alembic.command.upgrade(config, 'head')
 
     def _init_version_info_model(self):
         # type: () -> None
@@ -644,7 +644,7 @@ class RDBStorage(BaseStorage):
 
         logging.getLogger('alembic').setLevel(logging.WARN)
 
-        context = MigrationContext.configure(self.engine.connect())
+        context = alembic.migration.MigrationContext.configure(self.engine.connect())
         is_initialized = context.get_current_revision() is not None
 
         if is_initialized:
@@ -691,17 +691,17 @@ class RDBStorage(BaseStorage):
         return version_info.schema_version == models.SCHEMA_VERSION
 
     def _create_alembic_script(self):
-        # type: () -> ScriptDirectory
+        # type: () -> alembic.script.ScriptDirectory
 
         config = _create_alembic_config(self.url)
-        script = ScriptDirectory.from_config(config)
+        script = alembic.script.ScriptDirectory.from_config(config)
         return script
 
 
 def _create_alembic_config(url):
-    # type: (str) -> Config
+    # type: (str) -> alembic.config.Config
 
-    config = Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
+    config = alembic.config.Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
     config.set_main_option('script_location', os.path.join(os.path.dirname(__file__), 'alembic'))
     config.set_main_option('sqlalchemy.url', url)
     return config
