@@ -9,10 +9,10 @@ Command-Line Interface
 
     create-study, Create a new study.
     dashboard, Launch web dashboard (beta).
+    storage upgrade, Upgrade the schema of a storage.
     studies, Show a list of studies.
     study optimize, Start optimization of a study.
     study set-user-attr, Set a user attribute to a study.
-    storage upgrade, Upgrade the schema of a storage to up-to-date.
 
 Optuna provides command-line interface as shown in the above table.
 

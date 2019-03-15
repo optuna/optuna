@@ -597,7 +597,7 @@ class RDBStorage(BaseStorage):
 
     def upgrade(self):
         # type: () -> None
-        """Upgrade the storage schema to up-to-date."""
+        """Upgrade the storage schema."""
 
         config = _create_alembic_config(self.url)
         alembic.command.upgrade(config, 'head')
@@ -695,7 +695,7 @@ class RDBStorage(BaseStorage):
         known_versions = self.get_all_versions()
         if current_version in known_versions:
             message += 'Please execute `$ optuna storage upgrade --storage $STORAGE_URL`' \
-                       'for upgrading the storage to up-to-date.'
+                       'for upgrading the storage.'
         else:
             message += 'Please try updating optuna to the latest version by '\
                        '`$ pip install -U optuna`.'
