@@ -11,7 +11,6 @@ from optuna.storages.rdb.models import SCHEMA_VERSION
 from optuna.storages.rdb.models import StudyModel
 from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
-from optuna.storages.rdb.storage import INITIAL_ALEMBIC_REVISION_ID
 from optuna.storages import RDBStorage
 from optuna.structs import DuplicatedStudyError
 from optuna.structs import StorageInternalError
@@ -36,7 +35,7 @@ def test_init():
     assert version_info.library_version == version.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
-    assert storage.get_all_versions() == [INITIAL_ALEMBIC_REVISION_ID]
+    assert storage.get_all_versions() == [storage._get_base_version()]
 
 
 def test_init_url_template():
@@ -204,7 +203,7 @@ def test_check_table_schema_compatibility():
 
     # TODO(ohta): Remove the following comment out when the second revision is introduced.
     # with pytest.raises(RuntimeError):
-    #     storage._set_alembic_revision(INITIAL_ALEMBIC_REVISION_ID)
+    #     storage._set_alembic_revision(storage._get_base_version())
     #     storage._check_table_schema_compatibility()
 
 

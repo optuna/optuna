@@ -30,8 +30,6 @@ if types.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Optional  # NOQA
 
-INITIAL_ALEMBIC_REVISION_ID = 'v0.9.0.a'
-
 
 class RDBStorage(BaseStorage):
     """Storage class for RDB backend.
@@ -618,9 +616,14 @@ class RDBStorage(BaseStorage):
         # type: () -> str
         """Return the latest schema version."""
 
-        # config = _create_alembic_config(self.url)
         script = self._create_alembic_script()
         return script.get_current_head()
+
+    def _get_base_version(self):
+        # type: () -> str
+
+        script = self._create_alembic_script()
+        return script.get_base()
 
     def get_all_versions(self):
         # type: () -> List[str]
@@ -660,7 +663,7 @@ class RDBStorage(BaseStorage):
             revision = self.get_head_version()
         else:
             # The storage has been created before alembic is introduced.
-            revision = INITIAL_ALEMBIC_REVISION_ID
+            revision = self._get_base_version()
 
         self._set_alembic_revision(revision)
 
