@@ -166,7 +166,7 @@ class TestChainerMNStudy(object):
 
             # Assert the same parameters have been suggested among all nodes.
             for trial in mn_study.trials:
-                assert trial.params == func.suggested_values[trial._trial_id]
+                assert trial.params == func.suggested_values[trial.trial_id]
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
