@@ -48,7 +48,10 @@ class _ChainerMNObjectiveFunc(object):
     def __call__(self, trial):
         # type: (Trial) -> float
 
-        self.comm.mpi_comm.bcast((True, trial.trial_id))
+        # TODO(ohta): Remove the private field access.
+        trial_id = trial._trial_id
+
+        self.comm.mpi_comm.bcast((True, trial_id))
         return self.objective(trial, self.comm)
 
 

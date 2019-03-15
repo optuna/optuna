@@ -110,7 +110,7 @@ class Trial(BaseTrial):
         # type: (Study, int) -> None
 
         self.study = study
-        self.trial_id = trial_id
+        self._trial_id = trial_id
 
         self.study_id = self.study.study_id
         self.storage = self.study.storage
@@ -326,9 +326,9 @@ class Trial(BaseTrial):
                 Step of the trial (e.g., Epoch of neural network training).
         """
 
-        self.storage.set_trial_value(self.trial_id, value)
+        self.storage.set_trial_value(self._trial_id, value)
         if step is not None:
-            self.storage.set_trial_intermediate_value(self.trial_id, step, value)
+            self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
     def should_prune(self, step):
         # type: (int) -> bool
@@ -349,7 +349,7 @@ class Trial(BaseTrial):
 
         # TODO(akiba): remove `step` argument
 
-        return self.study.pruner.prune(self.storage, self.study_id, self.trial_id, step)
+        return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -378,7 +378,7 @@ class Trial(BaseTrial):
                 A value of the attribute. The value should be JSON serializable.
         """
 
-        self.storage.set_trial_user_attr(self.trial_id, key, value)
+        self.storage.set_trial_user_attr(self._trial_id, key, value)
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
@@ -395,7 +395,7 @@ class Trial(BaseTrial):
                 A value of the attribute. The value should be JSON serializable.
         """
 
-        self.storage.set_trial_system_attr(self.trial_id, key, value)
+        self.storage.set_trial_system_attr(self._trial_id, key, value)
 
     def _suggest(self, name, distribution):
         # type: (str, distributions.BaseDistribution) -> Any
@@ -403,10 +403,10 @@ class Trial(BaseTrial):
         param_value_in_internal_repr = self.study.sampler.sample(self.storage, self.study_id, name,
                                                                  distribution)
 
-        set_success = self.storage.set_trial_param(self.trial_id, name,
+        set_success = self.storage.set_trial_param(self._trial_id, name,
                                                    param_value_in_internal_repr, distribution)
         if not set_success:
-            param_value_in_internal_repr = self.storage.get_trial_param(self.trial_id, name)
+            param_value_in_internal_repr = self.storage.get_trial_param(self._trial_id, name)
 
         param_value = distribution.to_external_repr(param_value_in_internal_repr)
         return param_value
@@ -420,7 +420,24 @@ class Trial(BaseTrial):
             A trial number.
         """
 
-        return self.storage.get_trial_number_from_id(self.trial_id)
+        return self.storage.get_trial_number_from_id(self._trial_id)
+
+    @property
+    def trial_id(self):
+        # type: () -> int
+        """Return trial ID.
+
+        Note that the use of this property is deprecated.
+        Please use :attr:`~optuna.trial.Trial.number` property instead.
+
+        Returns:
+            A trial ID.
+        """
+
+        self.logger.warning('The use of `Trial.trial_id` property is deprecated. '
+                            'Please use `Trial.number` property instead.')
+
+        return self._trial_id
 
     @property
     def params(self):
@@ -431,7 +448,7 @@ class Trial(BaseTrial):
             A dictionary containing all parameters.
         """
 
-        return self.storage.get_trial_params(self.trial_id)
+        return self.storage.get_trial_params(self._trial_id)
 
     @property
     def user_attrs(self):
@@ -442,7 +459,7 @@ class Trial(BaseTrial):
             A dictionary containing all user attributes.
         """
 
-        return self.storage.get_trial_user_attrs(self.trial_id)
+        return self.storage.get_trial_user_attrs(self._trial_id)
 
     @property
     def system_attrs(self):
@@ -453,7 +470,7 @@ class Trial(BaseTrial):
             A dictionary containing all system attributes.
         """
 
-        return self.storage.get_trial_system_attrs(self.trial_id)
+        return self.storage.get_trial_system_attrs(self._trial_id)
 
 
 class FixedTrial(BaseTrial):
