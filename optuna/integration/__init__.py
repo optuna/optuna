@@ -48,13 +48,15 @@ else:
             # type: (str) -> Any
 
             if name in self._modules:
-                return self._get_module(name)
+                value = self._get_module(name)
             elif name in self._class_to_module.keys():
                 module = self._get_module(self._class_to_module[name])
-                return getattr(module, name)
+                value = getattr(module, name)
+            else:
+                raise AttributeError('module {} has no attribute {}'.format(self.__name__, name))
 
-            raise AttributeError(
-                'module {} has no attribute {}'.format(self.__name__, name))
+            setattr(self, name, value)
+            return value
 
         def _get_module(self, module_name):
             # type: (str) -> ModuleType
