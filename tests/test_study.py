@@ -329,7 +329,7 @@ def test_run_trial(storage_mode):
             raise ValueError
 
         trial = study._run_trial(func_value_error, catch=(ValueError, ))
-        frozen_trial = study.storage.get_trial(trial.trial_id)
+        frozen_trial = study.storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#1 as TrialState.FAIL because of the ' \
                            'following error: ValueError()'
@@ -347,7 +347,7 @@ def test_run_trial(storage_mode):
             return None  # type: ignore
 
         trial = study._run_trial(func_none, catch=(Exception, ))
-        frozen_trial = study.storage.get_trial(trial.trial_id)
+        frozen_trial = study.storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#3 as TrialState.FAIL because the returned ' \
                            'value from the objective function cannot be casted to float. ' \
@@ -362,7 +362,7 @@ def test_run_trial(storage_mode):
             return float('nan')
 
         trial = study._run_trial(func_nan, catch=(Exception, ))
-        frozen_trial = study.storage.get_trial(trial.trial_id)
+        frozen_trial = study.storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#4 as TrialState.FAIL because the objective ' \
                            'function returned nan.'
