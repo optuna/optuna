@@ -23,7 +23,7 @@ if types.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
 # Don't modify this version number anymore.
-# The schema management functionality has been moved to Alembic since optuna-v0.9.0.
+# The schema management functionality has been moved to alembic.
 SCHEMA_VERSION = 12
 
 MAX_INDEXED_STRING_LENGTH = 512
