@@ -1,6 +1,7 @@
 import abc
 import math
 import six
+import warnings
 
 from optuna import distributions
 from optuna import logging
@@ -427,15 +428,19 @@ class Trial(BaseTrial):
         # type: () -> int
         """Return trial ID.
 
-        Note that the use of this property is deprecated.
-        Please use :attr:`~optuna.trial.Trial.number` property instead.
+        Note that the use of this is deprecated.
+        Please use :attr:`~optuna.trial.Trial.number` instead.
 
         Returns:
             A trial ID.
         """
 
-        self.logger.warning('The use of `Trial.trial_id` property is deprecated. '
-                            'Please use `Trial.number` property instead.')
+        warnings.warn(
+            'The use of `Trial.trial_id` is deprecated. '
+            'Please use `Trial.number` instead.', DeprecationWarning)
+
+        self.logger.warning('The use of `Trial.trial_id` is deprecated. '
+                            'Please use `Trial.number` instead.')
 
         return self._trial_id
 
