@@ -49,7 +49,10 @@ class _ChainerMNObjectiveFunc(object):
         # type: (Trial) -> float
 
         self.comm.mpi_comm.bcast((True, trial.trial_id))
-        return self.objective(trial, self.comm)
+        try:
+            return self.objective(trial, self.comm)
+        finally:
+            self.comm.mpi_comm.barrier()
 
 
 class ChainerMNStudy(object):
@@ -130,7 +133,10 @@ class ChainerMNStudy(object):
                     break
                 trial = Trial(self.delegate, trial_id)
                 try:
-                    func(trial, self.comm)
+                    try:
+                        func(trial, self.comm)
+                    finally:
+                        self.comm.mpi_comm.barrier()
 
                     # We assume that if a node raises an exception,
                     # all other nodes will do the same.

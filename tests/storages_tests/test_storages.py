@@ -654,38 +654,43 @@ def test_get_best_intermediate_result_over_steps(storage_init_func, direction_ex
 def test_get_median_intermediate_result_over_trials(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
-    storage = storage_init_func()
-    study_id = storage.create_new_study_id()
+    def setup_study(intermediate_values):
+        # type: (List[Tuple[float, float, float]]) -> (int, BaseStorage)
 
-    # Study does not have any trials.
-    with pytest.raises(ValueError):
-        storage.get_median_intermediate_result_over_trials(study_id, 0)
+        storage = storage_init_func()
+        study_id = storage.create_new_study_id()
 
-    trial_id_1 = storage.create_new_trial_id(study_id)
-    trial_id_2 = storage.create_new_trial_id(study_id)
-    trial_id_3 = storage.create_new_trial_id(study_id)
+        trial_id_1 = storage.create_new_trial_id(study_id)
+        trial_id_2 = storage.create_new_trial_id(study_id)
+        trial_id_3 = storage.create_new_trial_id(study_id)
 
-    # Set trial states complete because this method ignores incomplete trials.
-    storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
-    storage.set_trial_state(trial_id_2, TrialState.COMPLETE)
-    storage.set_trial_state(trial_id_3, TrialState.COMPLETE)
+        for step, (value1, value2, value3) in enumerate(intermediate_values):
+            # Study does not have any trials.
+            with pytest.raises(ValueError):
+                storage.get_median_intermediate_result_over_trials(study_id, step)
 
-    # Input value has no NaNs but float values.
-    storage.set_trial_intermediate_value(trial_id_1, 0, 0.1)
-    storage.set_trial_intermediate_value(trial_id_2, 0, 0.2)
-    storage.set_trial_intermediate_value(trial_id_3, 0, 0.3)
+            storage.set_trial_intermediate_value(trial_id_1, step, value1)
+            storage.set_trial_intermediate_value(trial_id_2, step, value2)
+            storage.set_trial_intermediate_value(trial_id_3, step, value3)
+
+        # Set trial states complete because this method ignores incomplete trials.
+        storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
+        storage.set_trial_state(trial_id_2, TrialState.COMPLETE)
+        storage.set_trial_state(trial_id_3, TrialState.COMPLETE)
+
+        return study_id, storage
+
+    # Input value has no NaNs but float values (step=0).
+    study_id, storage = setup_study([(0.1, 0.2, 0.3)])
     assert 0.2 == storage.get_median_intermediate_result_over_trials(study_id, 0)
 
-    # Input value has a float value and NaNs.
-    storage.set_trial_intermediate_value(trial_id_1, 1, 0.1)
-    storage.set_trial_intermediate_value(trial_id_2, 1, float('nan'))
-    storage.set_trial_intermediate_value(trial_id_3, 1, float('nan'))
+    # Input value has a float value and NaNs (step=1).
+    study_id, storage = setup_study([(0.1, 0.2, 0.3), (0.1, float('nan'), float('nan'))])
     assert 0.1 == storage.get_median_intermediate_result_over_trials(study_id, 1)
 
-    # Input value has NaNs only.
-    storage.set_trial_intermediate_value(trial_id_1, 2, float('nan'))
-    storage.set_trial_intermediate_value(trial_id_2, 2, float('nan'))
-    storage.set_trial_intermediate_value(trial_id_3, 2, float('nan'))
+    # Input value has NaNs only (step=2).
+    study_id, storage = setup_study([(0.1, 0.2, 0.3), (0.1, float('nan'), float('nan')),
+                                     (float('nan'), float('nan'), float('nan'))])
     assert math.isnan(storage.get_median_intermediate_result_over_trials(study_id, 2))
 
 
@@ -696,7 +701,6 @@ def _create_new_trial_with_example_trial(storage, study_id, distributions, examp
 
     if example_trial.value is not None:
         storage.set_trial_value(trial_id, example_trial.value)
-    storage.set_trial_state(trial_id, example_trial.state)
 
     for name, param_external in example_trial.params.items():
         param_internal = distributions[name].to_internal_repr(param_external)
@@ -711,6 +715,8 @@ def _create_new_trial_with_example_trial(storage, study_id, distributions, examp
 
     for key, value in example_trial.system_attrs.items():
         storage.set_trial_system_attr(trial_id, key, value)
+
+    storage.set_trial_state(trial_id, example_trial.state)
 
     return trial_id
 
