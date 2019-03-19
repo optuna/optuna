@@ -262,6 +262,7 @@ class TestChainerMNTrial(object):
             trial = Trial(study, trial_id)
             mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
 
+            assert mn_trial.trial_id == trial.trial_id
             assert mn_trial._trial_id == trial._trial_id
             assert mn_trial.number == trial.number
 

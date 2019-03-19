@@ -10,6 +10,7 @@ from optuna.structs import TrialPruned
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
 from optuna import types
+import warnings
 
 if types.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -239,6 +240,9 @@ class _ChainerMNTrial(Trial):
     def trial_id(self):
         # type: () -> int
 
+        warnings.warn(
+            'The use of `_ChainerMNTrial.trial_id` is deprecated. '
+            'Please use `_ChainerMNTrial.number` instead.', DeprecationWarning)
         return self.delegate.trial_id
 
     @property
