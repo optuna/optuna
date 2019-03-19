@@ -9,10 +9,12 @@ from optuna.distributions import json_to_distribution
 from optuna.distributions import UniformDistribution
 from optuna.storages.rdb.models import SCHEMA_VERSION
 from optuna.storages.rdb.models import StudyModel
+from optuna.storages.rdb.models import TrialModel
 from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
 from optuna.structs import DuplicatedStudyError
+from optuna.structs import FrozenTrial  # NOQA
 from optuna.structs import StorageInternalError
 from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
@@ -22,6 +24,7 @@ from optuna import version
 
 if types.TYPE_CHECKING:
     from typing import Dict  # NOQA
+    from typing import List  # NOQA
 
 
 def test_init():
@@ -202,10 +205,10 @@ def test_check_table_schema_compatibility():
         storage._check_table_schema_compatibility()
 
 
-def create_test_storage():
-    # type: () -> RDBStorage
+def create_test_storage(enable_storage_cache=True):
+    # type: (bool) -> RDBStorage
 
-    storage = RDBStorage('sqlite:///:memory:')
+    storage = RDBStorage('sqlite:///:memory:', enable_storage_cache=enable_storage_cache)
     return storage
 
 
@@ -234,4 +237,93 @@ def test_create_new_trial_number():
     trial_id = storage.create_new_trial_id(study_id)
     assert storage._create_new_trial_number(trial_id) == 1
 
-# TODO(ohta): Add cache test
+
+def test_update_finished_trial():
+    # type: () -> None
+
+    storage = create_test_storage()
+    study_id = storage.create_new_study_id()
+
+    # Running trials are allowed to be updated.
+    trial_id = storage.create_new_trial_id(study_id)
+    assert storage.get_trial(trial_id).state == TrialState.RUNNING
+
+    storage.set_trial_intermediate_value(trial_id, 3, 5)
+    storage.set_trial_value(trial_id, 10)
+    storage.set_trial_param(trial_id, 'x', 1.5, UniformDistribution(low=1.0, high=2.0))
+    storage.set_trial_user_attr(trial_id, 'foo', 'bar')
+    storage.set_trial_system_attr(trial_id, 'baz', 'qux')
+    storage.set_trial_state(trial_id, TrialState.COMPLETE)
+
+    # Finished trials are not allowed to be updated.
+    for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
+        trial_id = storage.create_new_trial_id(study_id)
+        storage.set_trial_state(trial_id, state)
+
+        with pytest.raises(RuntimeError):
+            storage.set_trial_intermediate_value(trial_id, 3, 5)
+        with pytest.raises(RuntimeError):
+            storage.set_trial_value(trial_id, 10)
+        with pytest.raises(RuntimeError):
+            storage.set_trial_param(trial_id, 'x', 1.5, UniformDistribution(low=1.0, high=2.0))
+        with pytest.raises(RuntimeError):
+            storage.set_trial_user_attr(trial_id, 'foo', 'bar')
+        with pytest.raises(RuntimeError):
+            storage.set_trial_system_attr(trial_id, 'baz', 'qux')
+        with pytest.raises(RuntimeError):
+            storage.set_trial_state(trial_id, TrialState.COMPLETE)
+
+
+def test_storage_cache():
+    # type: () -> None
+
+    def setup_trials(storage, study_id):
+        # type: (RDBStorage, int) -> List[FrozenTrial]
+
+        for state in [TrialState.RUNNING, TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
+            trial_id = storage.create_new_trial_id(study_id)
+            storage.set_trial_state(trial_id, state)
+
+        trials = storage.get_all_trials(study_id)
+        assert len(trials) == 4
+
+        return trials
+
+    # Storage cache is disabled.
+    storage = create_test_storage(enable_storage_cache=False)
+    study_id = storage.create_new_study_id()
+    trials = setup_trials(storage, study_id)
+
+    with patch.object(
+            TrialModel, 'find_or_raise_by_id',
+            wraps=TrialModel.find_or_raise_by_id) as mock_object:
+        for trial in trials:
+            assert storage.get_trial(trial.trial_id) == trial
+        assert mock_object.call_count == 4
+
+    with patch.object(TrialModel, 'where_study', wraps=TrialModel.where_study) as mock_object:
+        assert storage.get_all_trials(study_id) == trials
+        assert mock_object.call_count == 1
+
+    # Storage cache is enabled.
+    storage = create_test_storage(enable_storage_cache=True)
+    study_id = storage.create_new_study_id()
+    trials = setup_trials(storage, study_id)
+
+    with patch.object(
+            TrialModel, 'find_or_raise_by_id',
+            wraps=TrialModel.find_or_raise_by_id) as mock_object:
+        for trial in trials:
+            assert storage.get_trial(trial.trial_id) == trial
+        assert mock_object.call_count == 1  # Only a running trial was fetched from the storage.
+
+    # If cache is enabled, running trials are fetched from the storage individually.
+    with patch.object(TrialModel, 'where_study', wraps=TrialModel.where_study) as mock_object:
+        assert storage.get_all_trials(study_id) == trials
+        assert mock_object.call_count == 0  # `TrialModel.where_study` has not been called.
+
+    with patch.object(
+            TrialModel, 'find_or_raise_by_id',
+            wraps=TrialModel.find_or_raise_by_id) as mock_object:
+        assert storage.get_all_trials(study_id) == trials
+        assert mock_object.call_count == 1
