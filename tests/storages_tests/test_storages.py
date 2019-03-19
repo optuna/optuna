@@ -682,16 +682,18 @@ def test_get_median_intermediate_result_over_trials(storage_init_func):
         return study_id, storage
 
     # Input value has no NaNs but float values (step=0).
-    study_id, storage = setup_study([(0.1, 0.2, 0.3)])
+    intermediate_values = [(0.1, 0.2, 0.3)]
+    study_id, storage = setup_study(intermediate_values)
     assert 0.2 == storage.get_median_intermediate_result_over_trials(study_id, 0)
 
     # Input value has a float value and NaNs (step=1).
-    study_id, storage = setup_study([(0.1, 0.2, 0.3), (0.1, float('nan'), float('nan'))])
+    intermediate_values.append((0.1, float('nan'), float('nan')))
+    study_id, storage = setup_study(intermediate_values)
     assert 0.1 == storage.get_median_intermediate_result_over_trials(study_id, 1)
 
     # Input value has NaNs only (step=2).
-    study_id, storage = setup_study([(0.1, 0.2, 0.3), (0.1, float('nan'), float('nan')),
-                                     (float('nan'), float('nan'), float('nan'))])
+    intermediate_values.append((float('nan'), float('nan'), float('nan')))
+    study_id, storage = setup_study(intermediate_values)
     assert math.isnan(storage.get_median_intermediate_result_over_trials(study_id, 2))
 
 
