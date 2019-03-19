@@ -2,6 +2,7 @@ import gc
 import pytest
 
 from optuna import create_study
+from optuna import integration
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
 from optuna.pruners import BasePruner  # NOQA
@@ -246,3 +247,61 @@ class TestChainerMNStudy(object):
 
         if comm.size < 2:
             pytest.skip('This test is for multi-node only.')
+
+
+class TestChainerMNTrial(object):
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_init(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            trial_id = storage.create_new_trial_id(study.study_id)
+            trial = Trial(study, trial_id)
+            mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+
+            assert mn_trial.trial_id == trial.trial_id
+            assert mn_trial.number == trial.number
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_params(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            trial_id = storage.create_new_trial_id(study.study_id)
+            trial = Trial(study, trial_id)
+            mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+
+            x = mn_trial.suggest_categorical('x', [1])
+            assert mn_trial.params['x'] == x
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_user_attrs(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            trial_id = storage.create_new_trial_id(study.study_id)
+            trial = Trial(study, trial_id)
+            mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+
+            mn_trial.set_user_attr('data', 'MNIST')
+            assert mn_trial.user_attrs['data'] == 'MNIST'
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_system_attrs(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            trial_id = storage.create_new_trial_id(study.study_id)
+            trial = Trial(study, trial_id)
+            mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+
+            mn_trial.set_system_attr('system_message', 'test')
+            assert mn_trial.system_attrs['system_message'] == 'test'

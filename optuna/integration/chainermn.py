@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from optuna.distributions import BaseDistribution  # NOQA
 from optuna.logging import get_logger
 from optuna.pruners import BasePruner  # NOQA
 from optuna.storages import BaseStorage  # NOQA
@@ -13,10 +14,12 @@ from optuna import types
 if types.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
+    from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
     from typing import Type  # NOQA
     from typing import Union  # NOQA
+
 
 try:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
@@ -49,7 +52,7 @@ class _ChainerMNObjectiveFunc(object):
         # type: (Trial) -> float
 
         self.comm.mpi_comm.bcast((True, trial._trial_id))
-        return self.objective(trial, self.comm)
+        return self.objective(_ChainerMNTrial(trial, self.comm), self.comm)
 
 
 class ChainerMNStudy(object):
@@ -130,7 +133,7 @@ class ChainerMNStudy(object):
                     break
                 trial = Trial(self.delegate, trial_id)
                 try:
-                    func(trial, self.comm)
+                    func(_ChainerMNTrial(trial, self.comm), self.comm)
 
                     # We assume that if a node raises an exception,
                     # all other nodes will do the same.
@@ -166,6 +169,121 @@ class _ChainerMNPruner(BasePruner):
         if self.comm.rank == 0:
             try:
                 result = self.delegate.prune(storage, study_id, trial_id, step)
+                self.comm.mpi_comm.bcast(result)
+                return result
+            except Exception as e:
+                self.comm.mpi_comm.bcast(e)
+                raise
+        else:
+            result = self.comm.mpi_comm.bcast(None)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+
+class _ChainerMNTrial(Trial):
+    def __init__(self, trial, comm):
+        # type: (Trial, CommunicatorBase) -> None
+
+        self.delegate = trial
+        self.comm = comm
+        self._trial_id = trial._trial_id
+
+    def _suggest(self, name, distribution):
+        # type: (str, BaseDistribution) -> Any
+
+        if self.comm.rank == 0:
+            try:
+                result = self.delegate._suggest(name, distribution)
+                self.comm.mpi_comm.bcast(result)
+                return result
+            except Exception as e:
+                self.comm.mpi_comm.bcast(e)
+                raise
+        else:
+            result = self.comm.mpi_comm.bcast(None)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+    def report(self, value, step=None):
+        # type: (float, Optional[int]) -> None
+
+        if self.comm.rank == 0:
+            self.delegate.report(value, step)
+
+    def should_prune(self, step):
+        # type: (int) -> bool
+
+        return self.delegate.should_prune(step)
+
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        if self.comm.rank == 0:
+            self.delegate.set_user_attr(key, value)
+
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        if self.comm.rank == 0:
+            self.delegate.set_system_attr(key, value)
+
+    @property
+    def number(self):
+        # type: () -> int
+
+        return self.delegate.number
+
+    @property
+    def trial_id(self):
+        # type: () -> int
+
+        return self.delegate.trial_id
+
+    @property
+    def params(self):
+        # type: () -> Dict[str, Any]
+
+        if self.comm.rank == 0:
+            try:
+                result = self.delegate.params
+                self.comm.mpi_comm.bcast(result)
+                return result
+            except Exception as e:
+                self.comm.mpi_comm.bcast(e)
+                raise
+        else:
+            result = self.comm.mpi_comm.bcast(None)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+    @property
+    def user_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        if self.comm.rank == 0:
+            try:
+                result = self.delegate.user_attrs
+                self.comm.mpi_comm.bcast(result)
+                return result
+            except Exception as e:
+                self.comm.mpi_comm.bcast(e)
+                raise
+        else:
+            result = self.comm.mpi_comm.bcast(None)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+    @property
+    def system_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        if self.comm.rank == 0:
+            try:
+                result = self.delegate.system_attrs
                 self.comm.mpi_comm.bcast(result)
                 return result
             except Exception as e:
