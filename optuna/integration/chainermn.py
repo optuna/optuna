@@ -48,7 +48,7 @@ class _ChainerMNObjectiveFunc(object):
     def __call__(self, trial):
         # type: (Trial) -> float
 
-        self.comm.mpi_comm.bcast((True, trial.trial_id))
+        self.comm.mpi_comm.bcast((True, trial._trial_id))
         try:
             return self.objective(trial, self.comm)
         finally:
