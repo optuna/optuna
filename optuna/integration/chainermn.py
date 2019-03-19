@@ -245,45 +245,26 @@ class _ChainerMNTrial(Trial):
     def params(self):
         # type: () -> Dict[str, Any]
 
-        if self.comm.rank == 0:
-            try:
-                result = self.delegate.params
-                self.comm.mpi_comm.bcast(result)
-                return result
-            except Exception as e:
-                self.comm.mpi_comm.bcast(e)
-                raise
-        else:
-            result = self.comm.mpi_comm.bcast(None)
-            if isinstance(result, Exception):
-                raise result
-            return result
+        return self._get_attrs('params')
 
     @property
     def user_attrs(self):
         # type: () -> Dict[str, Any]
 
-        if self.comm.rank == 0:
-            try:
-                result = self.delegate.user_attrs
-                self.comm.mpi_comm.bcast(result)
-                return result
-            except Exception as e:
-                self.comm.mpi_comm.bcast(e)
-                raise
-        else:
-            result = self.comm.mpi_comm.bcast(None)
-            if isinstance(result, Exception):
-                raise result
-            return result
+        return self._get_attrs('user_attrs')
 
     @property
     def system_attrs(self):
         # type: () -> Dict[str, Any]
 
+        return self._get_attrs('system_attrs')
+
+    def _get_attrs(self, name):
+        # type: (str) -> Dict[str, Any]
+
         if self.comm.rank == 0:
             try:
-                result = self.delegate.system_attrs
+                result = getattr(self.delegate, name)
                 self.comm.mpi_comm.bcast(result)
                 return result
             except Exception as e:

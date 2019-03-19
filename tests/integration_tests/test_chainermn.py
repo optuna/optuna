@@ -321,3 +321,32 @@ class TestChainerMNTrial(object):
 
             mn_trial.set_system_attr('system_message', 'test')
             assert mn_trial.system_attrs['system_message'] == 'test'
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_get_attrs_error(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            trial_id = storage.create_new_trial_id(study.study_id)
+            trial = Trial(study, trial_id)
+            mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+            with pytest.raises(AttributeError):
+                mn_trial._get_attrs('no_such_attribute')
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_suggest_error(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            trial_id = storage.create_new_trial_id(study.study_id)
+            trial = Trial(study, trial_id)
+            mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+            from optuna.distributions import LogUniformDistribution
+            from optuna.distributions import UniformDistribution
+            mn_trial._suggest('x', UniformDistribution(0.5, 1.0))
+            with pytest.raises(ValueError):
+                mn_trial._suggest('x', LogUniformDistribution(0.5, 1.0))
