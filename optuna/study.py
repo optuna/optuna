@@ -58,7 +58,10 @@ class Study(object):
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
         enable_storage_cache:
-            TODO(ohta)
+            Flag to control whether to enable storage layer caching.
+            If this flag is set to :obj:`True` (the default), the finished trials are
+            cached on memory and never re-fetched from the storage.
+            Otherwise, the trials are fetched from the storage every time when they are needed.
 
     """
 
@@ -484,7 +487,11 @@ def create_study(
             a :class:`~optuna.structs.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
-
+        enable_storage_cache:
+            Flag to control whether to enable storage layer caching.
+            If this flag is set to :obj:`True` (the default), the finished trials are
+            cached on memory and never re-fetched from the storage.
+            Otherwise, the trials are fetched from the storage every time when they are needed.
     Returns:
         A :class:`~optuna.study.Study` object.
 
@@ -551,6 +558,11 @@ def load_study(
             A pruner object that decides early stopping of unpromising trials.
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
+        enable_storage_cache:
+            Flag to control whether to enable storage layer caching.
+            If this flag is set to :obj:`True` (the default), the finished trials are
+            cached on memory and never re-fetched from the storage.
+            Otherwise, the trials are fetched from the storage every time when they are needed.
 
     """
 
