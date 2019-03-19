@@ -12,6 +12,7 @@ from optuna.storages import RDBStorage
 from optuna.structs import TrialPruned
 from optuna.structs import TrialState
 from optuna import Study
+from optuna.testing.integration import DeterministicPruner
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial  # NOQA
 from optuna import types
@@ -261,8 +262,23 @@ class TestChainerMNTrial(object):
             trial = Trial(study, trial_id)
             mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
 
-            assert mn_trial.trial_id == trial.trial_id
+            assert mn_trial._trial_id == trial._trial_id
             assert mn_trial.number == trial.number
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    @pytest.mark.parametrize('is_pruning', [True, False])
+    def test_report_and_should_prune(storage_mode, comm, is_pruning):
+        # type: (str, CommunicatorBase, bool) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(
+                storage, comm, DeterministicPruner(is_pruning))
+            trial_id = storage.create_new_trial_id(study.study_id)
+            trial = Trial(study, trial_id)
+            mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+            mn_trial.report(1.0, 0)
+            assert mn_trial.should_prune(0) == is_pruning
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
