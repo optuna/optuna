@@ -22,6 +22,7 @@ if types.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
+    from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
 
@@ -655,7 +656,7 @@ def test_get_median_intermediate_result_over_trials(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     def setup_study(intermediate_values):
-        # type: (List[Tuple[float, float, float]]) -> (int, BaseStorage)
+        # type: (List[Tuple[float, float, float]]) -> Tuple[int, BaseStorage]
 
         storage = storage_init_func()
         study_id = storage.create_new_study_id()

@@ -36,8 +36,8 @@ class RDBStorage(BaseStorage):
         connect_args: Arguments that is passed to :func:`sqlalchemy.engine.create_engine`.
     """
 
-    def __init__(self, url, connect_args=None):
-        # type: (str, Optional[Dict[str, Any]]) -> None
+    def __init__(self, url, connect_args=None, enable_storage_cache=True):
+        # type: (str, Optional[Dict[str, Any]], bool) -> None
 
         connect_args = connect_args or {}
 
@@ -54,7 +54,9 @@ class RDBStorage(BaseStorage):
         models.BaseModel.metadata.create_all(self.engine)
         self._check_table_schema_compatibility()
         self.logger = logging.get_logger(__name__)
+
         self.finished_trials_cache = {}  # type: Dict[int, structs.FrozenTrial]
+        self.enable_storage_cache = enable_storage_cache
 
     def create_new_study_id(self, study_name=None):
         # type: (Optional[str]) -> int
@@ -456,7 +458,7 @@ class RDBStorage(BaseStorage):
         system_attributes = models.TrialSystemAttributeModel.where_trial(trial, session)
 
         frozen_trial = self._merge_trials_orm([trial], params, values, user_attributes,
-                                       system_attributes)[0]
+                                              system_attributes)[0]
 
         self._cache_trial_if_finished(frozen_trial)
 
@@ -485,6 +487,9 @@ class RDBStorage(BaseStorage):
 
     def _cache_trial_if_finished(self, trial):
         # type: (structs.FrozenTrial) -> None
+
+        if not self.enable_storage_cache:
+            return
 
         if trial.state is not structs.TrialState.RUNNING:
             self.finished_trials_cache[trial.trial_id] = copy.deepcopy(trial)

@@ -57,6 +57,8 @@ class Study(object):
             A pruner object that decides early stopping of unpromising trials.
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
+        enable_storage_cache:
+            TODO(ohta)
 
     """
 
@@ -66,11 +68,12 @@ class Study(object):
             storage,  # type: Union[str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
+            enable_storage_cache=True,  # type: bool
     ):
         # type: (...) -> None
 
         self.study_name = study_name
-        self.storage = storages.get_storage(storage)
+        self.storage = storages.get_storage(storage, enable_storage_cache)
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
@@ -454,6 +457,7 @@ def create_study(
         study_name=None,  # type: Optional[str]
         direction='minimize',  # type: str
         load_if_exists=False,  # type: bool
+        enable_storage_cache=True,  # type: bool
 ):
     # type: (...) -> Study
     """Create a new :class:`~optuna.study.Study`.
@@ -505,7 +509,9 @@ def create_study(
         study_name=study_name,
         storage=storage,
         sampler=sampler,
-        pruner=pruner)
+        pruner=pruner,
+        enable_storage_cache=enable_storage_cache,
+    )
 
     if direction == 'minimize':
         _direction = structs.StudyDirection.MINIMIZE
@@ -524,6 +530,7 @@ def load_study(
         storage,  # type: Union[str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
+        enable_storage_cache=True,  # type: bool
 ):
     # type: (...) -> Study
     """Load the existing :class:`~optuna.study.Study` that has the specified name.
@@ -547,7 +554,12 @@ def load_study(
 
     """
 
-    return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
+    return Study(
+        study_name=study_name,
+        storage=storage,
+        sampler=sampler,
+        pruner=pruner,
+        enable_storage_cache=enable_storage_cache)
 
 
 def get_all_study_summaries(storage):

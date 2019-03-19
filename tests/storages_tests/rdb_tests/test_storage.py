@@ -233,3 +233,5 @@ def test_create_new_trial_number():
 
     trial_id = storage.create_new_trial_id(study_id)
     assert storage._create_new_trial_number(trial_id) == 1
+
+# TODO(ohta): Add cache test
