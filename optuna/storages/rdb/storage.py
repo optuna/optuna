@@ -708,7 +708,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         version_info = models.VersionInfoModel.find(session)
-        if version_info is not None:
+        if version_info is None:
             return True
 
         return version_info.schema_version == models.SCHEMA_VERSION
