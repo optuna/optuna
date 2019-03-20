@@ -234,6 +234,9 @@ class StorageUpgrade(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
+        if self.app_args.storage is None and self.app_args.config is None:
+            raise CLIUsageError("Either --storage or --config option is required.")
+
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
 
