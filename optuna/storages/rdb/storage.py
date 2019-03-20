@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
 import sys
+import threading
 import uuid
 
 from optuna import distributions
@@ -55,8 +56,7 @@ class RDBStorage(BaseStorage):
         self._check_table_schema_compatibility()
         self.logger = logging.get_logger(__name__)
 
-        self.finished_trials_cache = {}  # type: Dict[int, structs.FrozenTrial]
-        self.enable_storage_cache = enable_storage_cache
+        self._finished_trials_cache = _FinishedTrialsCache(enable_storage_cache)
 
     def create_new_study_id(self, study_name=None):
         # type: (Optional[str]) -> int
@@ -445,7 +445,7 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
 
-        cached_trial = self.finished_trials_cache.get(trial_id)
+        cached_trial = self._finished_trials_cache._get_cached_trial(trial_id)
         if cached_trial is not None:
             return copy.deepcopy(cached_trial)
 
@@ -460,17 +460,17 @@ class RDBStorage(BaseStorage):
         frozen_trial = self._merge_trials_orm([trial], params, values, user_attributes,
                                               system_attributes)[0]
 
-        self._cache_trial_if_finished(frozen_trial)
+        self._finished_trials_cache._cache_trial_if_finished(frozen_trial)
 
         return frozen_trial
 
     def get_all_trials(self, study_id):
         # type: (int) -> List[structs.FrozenTrial]
 
-        if len(self.finished_trials_cache) == 0:
+        if self._finished_trials_cache._is_empty():
             trials = self._get_all_trials_without_cache(study_id)
             for trial in trials:
-                self._cache_trial_if_finished(trial)
+                self._finished_trials_cache._cache_trial_if_finished(trial)
 
             return trials
 
@@ -484,15 +484,6 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
         return models.TrialModel.get_all_trial_ids_where_study(study, session)
-
-    def _cache_trial_if_finished(self, trial):
-        # type: (structs.FrozenTrial) -> None
-
-        if not self.enable_storage_cache:
-            return
-
-        if trial.state is not structs.TrialState.RUNNING:
-            self.finished_trials_cache[trial.trial_id] = copy.deepcopy(trial)
 
     def _get_all_trials_without_cache(self, study_id):
         # type: (int) -> List[structs.FrozenTrial]
@@ -673,3 +664,40 @@ class RDBStorage(BaseStorage):
 
         if hasattr(self, 'scoped_session'):
             self.remove_session()
+
+
+class _FinishedTrialsCache(object):
+    def __init__(self, enabled):
+        # type: (bool) -> None
+
+        self._finished_trials = {}  # type: Dict[int, structs.FrozenTrial]
+        self._enabled = enabled
+        self._lock = threading.Lock()
+
+    def _is_empty(self):
+        # type: () -> bool
+
+        if not self._enabled:
+            return True
+
+        with self._lock:
+            return len(self._finished_trials) == 0
+
+    def _cache_trial_if_finished(self, trial):
+        # type: (structs.FrozenTrial) -> None
+
+        if not self._enabled:
+            return
+
+        if trial.state is not structs.TrialState.RUNNING:
+            with self._lock:
+                self._finished_trials[trial.trial_id] = copy.deepcopy(trial)
+
+    def _get_cached_trial(self, trial_id):
+        # type: (int) -> Optional[structs.FrozenTrial]
+
+        if not self._enabled:
+            return None
+
+        with self._lock:
+            return self._finished_trials.get(trial_id)
