@@ -14,3 +14,6 @@ Integration
 
 .. autoclass:: XGBoostPruningCallback
     :members:
+
+.. autoclass:: TPESearchCV
+    :members:
