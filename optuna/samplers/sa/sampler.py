@@ -1,10 +1,16 @@
 import numpy as np
 
 from optuna import distributions  # NOQA
+from optuna.distributions import BaseDistribution  # NOQA
 from optuna.samplers import base  # NOQA
 from optuna.samplers import random  # NOQA
 from optuna.samplers import TPESampler
+from optuna.storages.base import BaseStorage  # NOQA
 from optuna.structs import StudyDirection  # NOQA
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Optional  # NOQA
 
 
 DEFAULT_START_TEMPERATURE = 1000.0
