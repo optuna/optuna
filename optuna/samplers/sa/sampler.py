@@ -4,12 +4,12 @@ from optuna import distributions  # NOQA
 from optuna.samplers import base  # NOQA
 from optuna.samplers import random  # NOQA
 from optuna.samplers import TPESampler
-from collections import defaultdict # NOQA
-from optuna.structs import TrialState, StudyDirection # NOQA
+from optuna.structs import StudyDirection  # NOQA
 
 
-DEFAULT_START_TEMPERATURE = 1000
+DEFAULT_START_TEMPERATURE = 1000.0
 DEFAULT_TEMPERATURE_COEFFICIENT = 0.95
+
 
 class SASampler(TPESampler):
     def __init__(
@@ -21,10 +21,12 @@ class SASampler(TPESampler):
             n_startup_trials=10,  # type: int
             n_ei_candidates=24,  # type: int
             seed=None,  # type: Optional[int]
-            start_temperature = DEFAULT_START_TEMPERATURE,
-            temperature_reduction_coefficient = DEFAULT_TEMPERATURE_COEFFICIENT,
+            start_temperature=DEFAULT_START_TEMPERATURE,  # type: Optional[float]
+            # type: Optional[float]
+            temperature_reduction_coefficient=DEFAULT_TEMPERATURE_COEFFICIENT
     ):
-        super().__init__(consider_prior=consider_prior,
+        super(SASampler, self).__init__(
+            consider_prior=consider_prior,
             prior_weight=prior_weight,
             consider_magic_clip=consider_magic_clip,
             consider_endpoints=consider_endpoints,
@@ -34,10 +36,6 @@ class SASampler(TPESampler):
 
         self.temperature = start_temperature
         self.temperature_reduction_coefficient = temperature_reduction_coefficient
-
-        self.rng = np.random.RandomState(seed)
-        self.random_sampler = random.RandomSampler(seed=seed)
-
 
     def _regen_simulation_pairs(self, observation_pairs):
         X = []
@@ -61,7 +59,6 @@ class SASampler(TPESampler):
         Y = np.asarray(Y, dtype=float)
         return X, Y
 
-
     def sample(self, storage, study_id, param_name, param_distribution):
         # type: (BaseStorage, int, str, BaseDistribution) -> float
 
@@ -74,27 +71,25 @@ class SASampler(TPESampler):
         if n < self.n_startup_trials:
             return self.random_sampler.sample(storage, study_id, param_name, param_distribution)
 
-        Y, X = self._regen_simulation_pairs(observation_pairs)
+        X, Y = self._regen_simulation_pairs(observation_pairs)
 
         if isinstance(param_distribution, distributions.UniformDistribution):
-            return self._sample_uniform(param_distribution, Y, X)
+            return self._sample_uniform(param_distribution, X, Y)
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
             return self._sample_loguniform(param_distribution, X, Y)
-        # elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
-        #     return self._sample_discrete_uniform(param_distribution, below_param_values,
-        #                                          above_param_values)
-        # elif isinstance(param_distribution, distributions.IntUniformDistribution):
-        #     return self._sample_int(param_distribution, below_param_values, above_param_values)
-        # elif isinstance(param_distribution, distributions.CategoricalDistribution):
-        #     return self._sample_categorical(param_distribution, below_param_values,
-        #                                     above_param_values)
+        elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
+            return self._sample_discrete_uniform(param_distribution, X, Y)
+        elif isinstance(param_distribution, distributions.IntUniformDistribution):
+            return self._sample_int(param_distribution, X, Y)
+        elif isinstance(param_distribution, distributions.CategoricalDistribution):
+            return self._sample_categorical(param_distribution, X, Y)
         else:
             distribution_list = [
                 distributions.UniformDistribution.__name__,
                 distributions.LogUniformDistribution.__name__,
-                # distributions.DiscreteUniformDistribution.__name__,
-                # distributions.IntUniformDistribution.__name__,
-                # distributions.CategoricalDistribution.__name__
+                distributions.DiscreteUniformDistribution.__name__,
+                distributions.IntUniformDistribution.__name__,
+                distributions.CategoricalDistribution.__name__
             ]
             raise NotImplementedError("The distribution {} is not implemented. "
                                       "The parameter distribution should be one of the {}".format(
