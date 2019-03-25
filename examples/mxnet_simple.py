@@ -46,6 +46,7 @@ def model_fn(trial):
 
     return mlp
 
+
 def create_optimizer(trial):
     weight_decay = trial.suggest_loguniform('weight_decay', 1e-10, 1e-3)
     optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'MomentumSGD'])
@@ -58,6 +59,7 @@ def create_optimizer(trial):
         optimizer = mx.optimizer.SGD(momentum=momentum_sgd_lr, wd=weight_decay)
 
     return optimizer
+
 
 def objective(trial):
     # Model and optimizer
