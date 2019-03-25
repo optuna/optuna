@@ -1,6 +1,6 @@
 from logging import DEBUG, INFO, WARNING
 from numbers import Number
-from time import perf_counter
+from time import time
 from typing import Any, Callable, Dict, List  # NOQA
 
 import numpy as np
@@ -243,7 +243,7 @@ class Objective:
             train_indices=train
         )
 
-        start_time = perf_counter()
+        start_time = time()
 
         try:
             estimator.partial_fit(X_train, y_train, **partial_fit_params)
@@ -253,7 +253,7 @@ class Objective:
                 raise e
 
             elif isinstance(self.error_score, Number):
-                fit_time = perf_counter() - start_time
+                fit_time = time() - start_time
                 test_score = self.error_score
                 score_time = 0.0
 
@@ -264,9 +264,9 @@ class Objective:
                 raise ValueError("error_score must be 'raise' or numeric.")
 
         else:
-            fit_time = perf_counter() - start_time
+            fit_time = time() - start_time
             test_score = self.scoring(estimator, X_test, y_test)
-            score_time = perf_counter() - fit_time - start_time
+            score_time = time() - fit_time - start_time
 
             if self.return_train_score:
                 train_score = self.scoring(estimator, X_train, y_train)
@@ -689,11 +689,11 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
 
         self.best_estimator_.set_params(**self.study_.best_params)
 
-        start_time = perf_counter()
+        start_time = time()
 
         self.best_estimator_.fit(X, y, **fit_params)
 
-        self.refit_time_ = perf_counter() - start_time
+        self.refit_time_ = time() - start_time
 
         return self
 
