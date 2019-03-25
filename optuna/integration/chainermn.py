@@ -186,9 +186,9 @@ class _ChainerMNTrial(Trial):
     def __init__(self, trial, comm):
         # type: (Trial, CommunicatorBase) -> None
 
+        super(_ChainerMNTrial, self).__init__(trial.study, trial._trial_id)
         self.delegate = trial
         self.comm = comm
-        self._trial_id = trial._trial_id
 
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
