@@ -3,19 +3,26 @@ from logging import INFO
 from logging import WARNING
 from numbers import Number
 from time import time
-from typing import Any  # NOQA
-from typing import Callable  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
 
 import numpy as np
 from optuna import distributions
 from optuna import logging
+from optuna import pruners  # NOQA
 from optuna import samplers
+from optuna import storages  # NOQA
 from optuna import structs
 from optuna import study
 from optuna import trial as trial_module  # NOQA
+from optuna import types
 import pandas as pd  # NOQA
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Callable  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Union  # NOQA
 
 try:
     from sklearn.base import BaseEstimator
@@ -23,6 +30,7 @@ try:
     from sklearn.base import is_classifier
     from sklearn.base import MetaEstimatorMixin
     from sklearn.metrics import check_scoring
+    from sklearn.model_selection import BaseCrossValidator  # NOQA
     from sklearn.model_selection import check_cv
     from sklearn.model_selection import cross_validate
     from sklearn.utils import check_random_state
@@ -70,16 +78,7 @@ class Objective(object):
             Target variable.
 
         cv:
-            Cross-validation strategy. Possible inputs for cv are:
-
-            - integer to specify the number of folds in a CV splitter,
-            - a CV splitter,
-            - an iterable yielding (train, test) splits as arrays of indices.
-
-            For integer, if :obj:`estimator` is a classifier and :obj:`y` is
-            either binary or multiclass,
-            ``sklearn.model_selection.StratifiedKFold`` is used. otherwise,
-            ``sklearn.model_selection.KFold`` is used.
+            Cross-validation strategy.
 
         error_score:
             Value to assign to the score if an error occurs in fitting. If
@@ -113,17 +112,17 @@ class Objective(object):
 
     def __init__(
         self,
-        estimator,
-        param_distributions,
-        X,
-        y=None,
-        cv=5,
-        error_score=np.nan,
-        fit_params=None,
-        groups=None,
-        max_iter=1000,
-        return_train_score=False,
-        scoring=None
+        estimator,  # type: BaseEstimator
+        param_distributions,  # type: Dict[str, distributions.BaseDistribution]
+        X,  # type: np.ndarray
+        y,  # type: Optional[np.ndarray]
+        cv,  # type: BaseCrossValidator
+        error_score,  # type: Union[str, float]
+        fit_params,  # type: Dict[str, Any]
+        groups,  # type: Optional[np.ndarray]
+        max_iter,  # type: int
+        return_train_score,  # type: bool
+        scoring  # type: Callable[..., float]
     ):
         # type: (...) -> None
 
@@ -231,10 +230,10 @@ class Objective(object):
 
     def _partial_fit_and_score(
         self,
-        estimator,
-        train,
-        test,
-        partial_fit_params
+        estimator,  # type: BaseEstimator
+        train,  # type: List[int]
+        test,  # type: List[int]
+        partial_fit_params  # type: Dict[str, Any]
     ):
         # type: (...) -> List[float]
 
@@ -283,7 +282,7 @@ class Objective(object):
         return ret
 
     def _store_scores(self, trial, scores):
-        # type: (trial_module.Trial, Dict[str, float]) -> None
+        # type: (trial_module.Trial, Dict[str, np.ndarray]) -> None
 
         for name, array in scores.items():
             if name in ['test_score', 'train_score']:
@@ -613,23 +612,23 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
 
     def __init__(
         self,
-        estimator,
-        param_distributions,
-        cv=5,
-        error_score=np.nan,
-        load_if_exists=False,
-        max_iter=1000,
-        n_jobs=1,
-        n_trials=10,
-        pruner=None,
-        random_state=None,
-        refit=True,
-        return_train_score=False,
-        scoring=None,
-        storage=None,
-        study_name=None,
-        timeout=None,
-        verbose=0
+        estimator,  # type: BaseEstimator
+        param_distributions,  # type: Dict[str, distributions.BaseDistribution]
+        cv=5,  # type: Union[int, BaseCrossValidator, None]
+        error_score=np.nan,  # type: Union[str, float]
+        load_if_exists=False,  # type: bool
+        max_iter=1000,  # type: int
+        n_jobs=1,  # type: int
+        n_trials=10,  # type: int
+        pruner=None,  # type: Optional[pruners.BasePruner]
+        random_state=None,  # type: Union[int, np.random.RandomState, None]
+        refit=True,  # type: bool
+        return_train_score=False,  # type: bool
+        scoring=None,  # type: Union[str, Callable[..., float], None]
+        storage=None,  # type: Union[str, storages.BaseStorage, None]
+        study_name=None,  # type: Optional[str]
+        timeout=None,  # type: Optional[float]
+        verbose=0  # type: int
     ):
         # type: (...) -> None
 
@@ -686,7 +685,7 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
             )
 
     def _refit(self, X, y=None, **fit_params):
-        # type: (np.ndarray, np.ndarray, Any) -> 'TPESearchCV'
+        # type: (np.ndarray, Optional[np.ndarray], Any) -> 'TPESearchCV'
 
         self.best_estimator_ = clone(self.estimator)
 
@@ -710,8 +709,14 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
         else:
             logging.set_verbosity(WARNING)
 
-    def fit(self, X, y=None, groups=None, **fit_params):
-        # type: (np.ndarray, np.ndarray, np.ndarray, Any) -> 'TPESearchCV'
+    def fit(
+        self,
+        X,  # type: np.ndarray
+        y=None,  # type: Optional[np.ndarray]
+        groups=None,  # type: Optional[np.ndarray]
+        **fit_params  # type: Any
+    ):
+        # type: (...) -> 'TPESearchCV'
         """Run fit with all sets of parameters.
 
         Args:
@@ -754,13 +759,13 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
             self.param_distributions,
             X,
             y,
-            cv=cv,
-            error_score=self.error_score,
-            fit_params=fit_params,
-            groups=groups,
-            max_iter=self.max_iter,
-            return_train_score=self.return_train_score,
-            scoring=self.scorer_
+            cv,
+            self.error_score,
+            fit_params,
+            groups,
+            self.max_iter,
+            self.return_train_score,
+            self.scorer_
         )
 
         self.study_.optimize(
@@ -776,7 +781,7 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
         return self
 
     def score(self, X, y=None):
-        # type: (np.ndarray, np.ndarray) -> float
+        # type: (np.ndarray, Optional[np.ndarray]) -> float
         """Return the score on the given data.
 
         Args:
