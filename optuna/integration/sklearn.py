@@ -1,26 +1,30 @@
-from logging import DEBUG, INFO, WARNING
+from logging import DEBUG
+from logging import INFO
+from logging import WARNING
 from numbers import Number
 from time import time
-from typing import Any, Callable, Dict, List  # NOQA
+from typing import Any  # NOQA
+from typing import Callable  # NOQA
+from typing import Dict  # NOQA
+from typing import List  # NOQA
 
 import numpy as np
-import pandas as pd  # NOQA
 from optuna import distributions
 from optuna import logging
 from optuna import samplers
 from optuna import structs
 from optuna import study
 from optuna import trial as trial_module  # NOQA
+import pandas as pd  # NOQA
 
 try:
-    from sklearn.base import (
-        BaseEstimator,
-        MetaEstimatorMixin,
-        clone,
-        is_classifier
-    )
+    from sklearn.base import BaseEstimator
+    from sklearn.base import clone
+    from sklearn.base import is_classifier
+    from sklearn.base import MetaEstimatorMixin
     from sklearn.metrics import check_scoring
-    from sklearn.model_selection import check_cv, cross_validate
+    from sklearn.model_selection import check_cv
+    from sklearn.model_selection import cross_validate
     from sklearn.utils import check_random_state
     from sklearn.utils.metaestimators import _safe_split
     from sklearn.utils.validation import check_is_fitted
@@ -45,7 +49,7 @@ def _check_sklearn_availability():
         )
 
 
-class Objective:
+class Objective(object):
     """Callable that implements objective function.
 
     Args:
@@ -445,8 +449,7 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def best_index_(self):
         # type: () -> int
-        """Index which corresponds to the best candidate parameter setting.
-        """
+        """Index which corresponds to the best candidate parameter setting."""
 
         self._check_is_fitted()
 
@@ -457,8 +460,7 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def best_params_(self):
         # type: () -> Dict[str, Any]
-        """Parameters of the best trial in the :class:`~optuna.study.Study`.
-        """
+        """Parameters of the best trial in the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()
 
@@ -467,8 +469,7 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def best_score_(self):
         # type: () -> float
-        """Mean cross-validated score of the best estimator.
-        """
+        """Mean cross-validated score of the best estimator."""
 
         self._check_is_fitted()
 
@@ -477,8 +478,7 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def best_trial_(self):
         # type: () -> structs.FrozenTrial
-        """Best trial in the :class:`~optuna.study.Study`.
-        """
+        """Best trial in the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()
 
@@ -487,8 +487,7 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def best_value_(self):
         # type: () -> float
-        """Best objective value in the :class:`~optuna.study.Study`.
-        """
+        """Best objective value in the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()
 
@@ -497,8 +496,7 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def classes_(self):
         # type: () -> np.ndarray
-        """Class labels.
-        """
+        """Class labels."""
 
         self._check_is_fitted()
 
@@ -507,8 +505,7 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def n_trials_(self):
         # type: () -> int
-        """Actual number of trials.
-        """
+        """Actual number of trials."""
 
         self._check_is_fitted()
 
@@ -517,9 +514,10 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def decision_function(self):
         # type: () -> Callable[..., np.ndarray]
-        """Call ``decision_function`` on the estimator with the best found
-        parameters. This is available only if the underlying estimator
-        supports ``decision_function`` and ``refit`` is set to :obj:`True`.
+        """Call ``decision_function`` on the best estimator.
+
+        This is available only if the underlying estimator supports
+        ``decision_function`` and ``refit`` is set to :obj:`True`.
         """
 
         self._check_is_fitted()
@@ -529,9 +527,10 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def inverse_transform(self):
         # type: () -> Callable[..., np.ndarray]
-        """Call ``inverse_transform`` on the estimator with the best found
-        parameters. This is available only if the underlying estimator
-        supports ``inverse_transform`` and ``refit`` is set to :obj:`True`.
+        """Call ``inverse_transform`` on the best estimator.
+
+        This is available only if the underlying estimator supports
+        ``inverse_transform`` and ``refit`` is set to :obj:`True`.
         """
 
         self._check_is_fitted()
@@ -541,9 +540,10 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def predict(self):
         # type: () -> Callable[..., np.ndarray]
-        """Call ``predict`` on the estimator with the best found parameters.
-        This is available only if the underlying estimator supports
-        ``predict`` and ``refit`` is set to :obj:`True`.
+        """Call ``predict`` on the best estimator.
+
+        This is available only if the underlying estimator supports ``predict``
+        and ``refit`` is set to :obj:`True`.
         """
 
         self._check_is_fitted()
@@ -553,9 +553,10 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def predict_log_proba(self):
         # type: () -> Callable[..., np.ndarray]
-        """Call ``predict_log_proba`` on the estimator with the best found
-        parameters. This is available only if the underlying estimator
-        supports ``predict_log_proba`` and ``refit`` is set to :obj:`True`.
+        """Call ``predict_log_proba`` on the best estimator.
+
+        This is available only if the underlying estimator supports
+        ``predict_log_proba`` and ``refit`` is set to :obj:`True`.
         """
 
         self._check_is_fitted()
@@ -565,9 +566,10 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def predict_proba(self):
         # type: () -> Callable[..., np.ndarray]
-        """Call ``predict_proba`` on the estimator with the best found
-        parameters. This is available only if the underlying estimator
-        supports ``predict_proba`` and ``refit`` is set to :obj:`True`.
+        """Call ``predict_proba`` on the best estimator.
+
+        This is available only if the underlying estimator supports
+        ``predict_proba`` and ``refit`` is set to :obj:`True`.
         """
 
         self._check_is_fitted()
@@ -577,9 +579,10 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def score_samples(self):
         # type: () -> Callable[..., np.ndarray]
-        """Call ``score_samples`` on the estimator with the best found
-        parameters. This is available only if the underlying estimator
-        supports ``score_samples`` and ``refit`` is set to :obj:`True`.
+        """Call ``score_samples`` on the best estimator.
+
+        This is available only if the underlying estimator supports
+        ``score_samples`` and ``refit`` is set to :obj:`True`.
         """
 
         self._check_is_fitted()
@@ -589,7 +592,8 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def transform(self):
         # type: () -> Callable[..., np.ndarray]
-        """Call ``transform`` on the estimator with the best found parameters.
+        """Call ``transform`` on the best estimator.
+
         This is available only if the underlying estimator supports
         ``transform`` and ``refit`` is set to :obj:`True`.
         """
@@ -601,8 +605,7 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
     @property
     def trials_dataframe(self):
         # type: () -> Callable[..., pd.DataFrame]
-        """Call ``trials_dataframe`` on the :class:`~optuna.study.Study`.
-        """
+        """Call ``trials_dataframe`` on the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()
 
