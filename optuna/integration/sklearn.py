@@ -1,16 +1,16 @@
 from logging import DEBUG, INFO, WARNING
 from numbers import Number
 from time import perf_counter
-from typing import Any, Callable, Dict, List # NOQA
+from typing import Any, Callable, Dict, List  # NOQA
 
 import numpy as np
-import pandas as pd # NOQA
+import pandas as pd  # NOQA
 from optuna import distributions
 from optuna import logging
 from optuna import samplers
 from optuna import structs
 from optuna import study
-from optuna import trial as trial_module # NOQA
+from optuna import trial as trial_module  # NOQA
 
 try:
     from sklearn.base import (
