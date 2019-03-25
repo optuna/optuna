@@ -268,6 +268,121 @@ class TestChainerMNTrial(object):
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_suggest_uniform(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            low = 0.5
+            high = 1.0
+            for _ in range(10):
+                trial_id = storage.create_new_trial_id(study.study_id)
+                trial = Trial(study, trial_id)
+                mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+
+                x1 = mn_trial.suggest_uniform('x', low, high)
+                assert low <= x1 <= high
+
+                x2 = mn_trial.suggest_uniform('x', low, high)
+                assert x1 == x2
+
+                with pytest.raises(ValueError):
+                    mn_trial.suggest_loguniform('x', low, high)
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_suggest_loguniform(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            low = 1e-7
+            high = 1e-2
+            for _ in range(10):
+                trial_id = storage.create_new_trial_id(study.study_id)
+                trial = Trial(study, trial_id)
+                mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+
+                x1 = mn_trial.suggest_loguniform('x', low, high)
+                assert low <= x1 <= high
+
+                x2 = mn_trial.suggest_loguniform('x', low, high)
+                assert x1 == x2
+
+                with pytest.raises(ValueError):
+                    mn_trial.suggest_uniform('x', low, high)
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_suggest_discrete_uniform(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            low = 0.0
+            high = 10.0
+            q = 1.0
+            for _ in range(10):
+                trial_id = storage.create_new_trial_id(study.study_id)
+                trial = Trial(study, trial_id)
+                mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+
+                x1 = mn_trial.suggest_discrete_uniform('x', low, high, q)
+                assert low <= x1 <= high
+
+                x2 = mn_trial.suggest_discrete_uniform('x', low, high, q)
+                assert x1 == x2
+
+                with pytest.raises(ValueError):
+                    mn_trial.suggest_uniform('x', low, high)
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_suggest_int(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            low = 0
+            high = 10
+            for _ in range(10):
+                trial_id = storage.create_new_trial_id(study.study_id)
+                trial = Trial(study, trial_id)
+                mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+
+                x1 = mn_trial.suggest_int('x', low, high)
+                assert low <= x1 <= high
+
+                x2 = mn_trial.suggest_int('x', low, high)
+                assert x1 == x2
+
+                with pytest.raises(ValueError):
+                    mn_trial.suggest_uniform('x', low, high)
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    def test_suggest_categorical(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            choices = ('a', 'b', 'c')
+            for _ in range(10):
+                trial_id = storage.create_new_trial_id(study.study_id)
+                trial = Trial(study, trial_id)
+                mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+
+                x1 = mn_trial.suggest_categorical('x', choices)
+                assert x1 in choices
+
+                x2 = mn_trial.suggest_categorical('x', choices)
+                assert x1 == x2
+
+                with pytest.raises(ValueError):
+                    mn_trial.suggest_uniform('x', 0., 1.)
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
     @pytest.mark.parametrize('is_pruning', [True, False])
     def test_report_and_should_prune(storage_mode, comm, is_pruning):
         # type: (str, CommunicatorBase, bool) -> None

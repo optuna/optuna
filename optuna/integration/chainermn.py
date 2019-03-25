@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-from optuna.distributions import BaseDistribution  # NOQA
 from optuna.logging import get_logger
 from optuna.pruners import BasePruner  # NOQA
 from optuna.storages import BaseStorage  # NOQA
@@ -17,10 +16,13 @@ if types.TYPE_CHECKING:
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+    from typing import Sequence  # NOQA
     from typing import Tuple  # NOQA
     from typing import Type  # NOQA
+    from typing import TypeVar  # NOQA
     from typing import Union  # NOQA
 
+    T = TypeVar('T', float, str)
 
 try:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
@@ -190,12 +192,40 @@ class _ChainerMNTrial(Trial):
         self.delegate = trial
         self.comm = comm
 
-    def _suggest(self, name, distribution):
-        # type: (str, BaseDistribution) -> Any
+    def suggest_uniform(self, name, low, high):
+        # type: (str, float, float) -> float
 
+        return self._suggest_with_mpi(self.delegate.suggest_uniform, *(name, low, high))
+
+    def suggest_loguniform(self, name, low, high):
+        # type: (str, float, float) -> float
+
+        return self._suggest_with_mpi(self.delegate.suggest_loguniform, *(name, low, high))
+
+    def suggest_discrete_uniform(self, name, low, high, q):
+        # type: (str, float, float, float) -> float
+
+        return self._suggest_with_mpi(self.delegate.suggest_discrete_uniform,
+                                      *(name, low, high, q))
+
+    def suggest_int(self, name, low, high):
+        # type: (str, int, int) -> int
+
+        return self._suggest_with_mpi(self.delegate.suggest_int, *(name, low, high))
+
+    def suggest_categorical(self, name, choices):
+        # type: (str, Sequence[T]) -> T
+
+        return self._suggest_with_mpi(self.delegate.suggest_categorical, *(name, choices))
+
+    def _suggest_with_mpi(self, func, *args):
+        # type: (Callable, Any) -> Any
+
+        # This is a helper function which is only used to implement suggest APIs.
+        # Please do not use other purposes due to the limited capability of type checking.
         if self.comm.rank == 0:
             try:
-                result = self.delegate._suggest(name, distribution)
+                result = func(*args)
                 self.comm.mpi_comm.bcast(result)
                 return result
             except Exception as e:
