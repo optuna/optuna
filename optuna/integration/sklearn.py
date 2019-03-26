@@ -28,7 +28,6 @@ try:
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
     from sklearn.base import is_classifier
-    from sklearn.base import MetaEstimatorMixin
     from sklearn.metrics import check_scoring
     from sklearn.model_selection import BaseCrossValidator  # NOQA
     from sklearn.model_selection import check_cv
@@ -41,7 +40,6 @@ try:
 
 except ImportError as e:
     BaseEstimator = object
-    MetaEstimatorMixin = object
 
     _import_error = e
     _available = False
@@ -296,7 +294,7 @@ class Objective(object):
             trial.set_user_attr('std_{}'.format(name), np.nanstd(array))
 
 
-class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
+class TPESearchCV(BaseEstimator):
     """Hyperparameter search with cross-validation.
 
     Args:
@@ -432,6 +430,8 @@ class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
         TPESearchCV(...)
         >>> y_pred = tpe_search.predict(X)
     """
+
+    _required_parameters = ['estimator', 'param_distributions']
 
     @property
     def _estimator_type(self):
