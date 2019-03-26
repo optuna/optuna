@@ -292,8 +292,8 @@ class Objective(object):
                 for i, score in enumerate(array):
                     trial.set_user_attr('split{}_{}'.format(i, name), score)
 
-            trial.set_user_attr('mean_{}'.format(name), np.average(array))
-            trial.set_user_attr('std_{}'.format(name), np.std(array))
+            trial.set_user_attr('mean_{}'.format(name), np.nanmean(array))
+            trial.set_user_attr('std_{}'.format(name), np.nanstd(array))
 
 
 class TPESearchCV(BaseEstimator, MetaEstimatorMixin):
