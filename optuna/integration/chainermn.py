@@ -9,14 +9,20 @@ from optuna.structs import TrialPruned
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
 from optuna import types
+import warnings
 
 if types.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
+    from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+    from typing import Sequence  # NOQA
     from typing import Tuple  # NOQA
     from typing import Type  # NOQA
+    from typing import TypeVar  # NOQA
     from typing import Union  # NOQA
+
+    T = TypeVar('T', float, str)
 
 try:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
@@ -49,7 +55,7 @@ class _ChainerMNObjectiveFunc(object):
         # type: (Trial) -> float
 
         self.comm.mpi_comm.bcast((True, trial._trial_id))
-        return self.objective(trial, self.comm)
+        return self.objective(_ChainerMNTrial(trial, self.comm), self.comm)
 
 
 class ChainerMNStudy(object):
@@ -130,7 +136,7 @@ class ChainerMNStudy(object):
                     break
                 trial = Trial(self.delegate, trial_id)
                 try:
-                    func(trial, self.comm)
+                    func(_ChainerMNTrial(trial, self.comm), self.comm)
 
                     # We assume that if a node raises an exception,
                     # all other nodes will do the same.
@@ -166,6 +172,133 @@ class _ChainerMNPruner(BasePruner):
         if self.comm.rank == 0:
             try:
                 result = self.delegate.prune(storage, study_id, trial_id, step)
+                self.comm.mpi_comm.bcast(result)
+                return result
+            except Exception as e:
+                self.comm.mpi_comm.bcast(e)
+                raise
+        else:
+            result = self.comm.mpi_comm.bcast(None)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+
+class _ChainerMNTrial(Trial):
+    def __init__(self, trial, comm):
+        # type: (Trial, CommunicatorBase) -> None
+
+        super(_ChainerMNTrial, self).__init__(trial.study, trial._trial_id)
+        self.delegate = trial
+        self.comm = comm
+
+    def suggest_uniform(self, name, low, high):
+        # type: (str, float, float) -> float
+
+        return self._suggest_with_mpi(self.delegate.suggest_uniform, *(name, low, high))
+
+    def suggest_loguniform(self, name, low, high):
+        # type: (str, float, float) -> float
+
+        return self._suggest_with_mpi(self.delegate.suggest_loguniform, *(name, low, high))
+
+    def suggest_discrete_uniform(self, name, low, high, q):
+        # type: (str, float, float, float) -> float
+
+        return self._suggest_with_mpi(self.delegate.suggest_discrete_uniform,
+                                      *(name, low, high, q))
+
+    def suggest_int(self, name, low, high):
+        # type: (str, int, int) -> int
+
+        return self._suggest_with_mpi(self.delegate.suggest_int, *(name, low, high))
+
+    def suggest_categorical(self, name, choices):
+        # type: (str, Sequence[T]) -> T
+
+        return self._suggest_with_mpi(self.delegate.suggest_categorical, *(name, choices))
+
+    def _suggest_with_mpi(self, func, *args):
+        # type: (Callable, Any) -> Any
+
+        # This is a helper function which is only used to implement suggest APIs.
+        # Please do not use other purposes due to the limited capability of type checking.
+        if self.comm.rank == 0:
+            try:
+                result = func(*args)
+                self.comm.mpi_comm.bcast(result)
+                return result
+            except Exception as e:
+                self.comm.mpi_comm.bcast(e)
+                raise
+        else:
+            result = self.comm.mpi_comm.bcast(None)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+    def report(self, value, step=None):
+        # type: (float, Optional[int]) -> None
+
+        if self.comm.rank == 0:
+            self.delegate.report(value, step)
+
+    def should_prune(self, step):
+        # type: (int) -> bool
+
+        return self.delegate.should_prune(step)
+
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        if self.comm.rank == 0:
+            self.delegate.set_user_attr(key, value)
+
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        if self.comm.rank == 0:
+            self.delegate.set_system_attr(key, value)
+
+    @property
+    def number(self):
+        # type: () -> int
+
+        return self.delegate.number
+
+    @property
+    def trial_id(self):
+        # type: () -> int
+
+        warnings.warn(
+            'The use of `_ChainerMNTrial.trial_id` is deprecated. '
+            'Please use `_ChainerMNTrial.number` instead.', DeprecationWarning)
+        return self.delegate.trial_id
+
+    @property
+    def params(self):
+        # type: () -> Dict[str, Any]
+
+        return self._get_attrs('params')
+
+    @property
+    def user_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self._get_attrs('user_attrs')
+
+    @property
+    def system_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self._get_attrs('system_attrs')
+
+    def _get_attrs(self, name):
+        # type: (str) -> Dict[str, Any]
+
+        if self.comm.rank == 0:
+            try:
+                result = getattr(self.delegate, name)
                 self.comm.mpi_comm.bcast(result)
                 return result
             except Exception as e:
