@@ -40,6 +40,9 @@ try:
     _available = True
 
 except ImportError as e:
+    BaseEstimator = object
+    MetaEstimatorMixin = object
+
     _import_error = e
     _available = False
 
