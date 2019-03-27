@@ -34,6 +34,7 @@ In addition, integration modules are available for the following libraries, prov
 * [pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
 * [pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
 * [pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
+* [pruning with Keras integration module](./pruning/keras_integration.py)
 
 ### Examples of Visualization
 
