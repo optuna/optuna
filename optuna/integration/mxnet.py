@@ -1,10 +1,7 @@
 from __future__ import absolute_import
 
+import mxnet as mx  # NOQA
 import optuna
-from optuna import types
-
-if types.TYPE_CHECKING:
-    from typing import NamedTuple
 
 
 class MxnetPruningCallback(object):
@@ -35,7 +32,7 @@ class MxnetPruningCallback(object):
         self.eval_metric = eval_metric
 
     def __call__(self, param):
-        # type: (NamedTuple) -> None
+        # type: (mx.model.BatchEndParams,) -> None
 
         if param.nbatch == 1 and param.eval_metric is not None:
             metric_name, metric_value = param.eval_metric.get()
