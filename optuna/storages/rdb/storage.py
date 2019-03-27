@@ -514,8 +514,8 @@ class RDBStorage(BaseStorage):
             for system_attr in id_to_system_attrs[trial_id]:
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
-            # `0` is a temporary dummy value.
-            # It will be replaced to a proper value before returned to the caller.
+            # `0` is a dummy value.
+            # It will be replaced by a proper value before returned to the caller.
             #
             # TODO(ohta): Use trial.number after TrialModel.number is added.
             trial_number = 0
