@@ -15,8 +15,8 @@ from optuna.integration import KerasPruningCallback
 
 import keras
 from keras.datasets import mnist
-from keras.models import Sequential
 from keras.layers import Dense
+from keras.models import Sequential
 from keras import optimizers
 from keras import regularizers
 
