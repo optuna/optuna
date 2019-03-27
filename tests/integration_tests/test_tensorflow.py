@@ -1,12 +1,6 @@
 import numpy as np
-
 import pytest
-
-try:
-    import tensorflow as tf
-    _available = True
-except ImportError:
-    _available = False
+import tensorflow as tf
 
 import optuna
 from optuna.integration import TensorFlowPruningHook
@@ -31,11 +25,6 @@ def fixed_value_input_fn():
 
 def test_tensorflow_pruning_hook():
     # type: () -> None
-
-    # TODO(sfujiwara): remove this "if" section after TensorFlow supports Python 3.7.
-    if not _available:
-        pytest.skip('This test requires TensorFlow '
-                    'but this version can not install TensorFlow with pip.')
 
     def objective(trial):
         # type: (optuna.trial.Trial) -> float
@@ -72,11 +61,6 @@ def test_tensorflow_pruning_hook():
 @pytest.mark.parametrize('is_higher_better', [True, False])
 def test_init_with_is_higher_better(is_higher_better):
     # type: (bool) -> None
-
-    # TODO(Yanase): remove this "if" section after TensorFlow supports Python 3.7.
-    if not _available:
-        pytest.skip('This test requires TensorFlow '
-                    'but this version can not install TensorFlow with pip.')
 
     clf = tf.estimator.DNNClassifier(
         hidden_units=[],
