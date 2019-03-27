@@ -493,7 +493,7 @@ class RDBStorage(BaseStorage):
         for system_attr in trial_system_attrs:
             id_to_system_attrs[system_attr.trial_id].append(system_attr)
 
-        result = []
+        temp_trials = []
         for trial_id, trial in id_to_trial.items():
             params = {}
             params_in_internal_repr = {}
@@ -514,9 +514,13 @@ class RDBStorage(BaseStorage):
             for system_attr in id_to_system_attrs[trial_id]:
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
-            # TODO(Yanase): Use trial.number after TrialModel.number is added.
-            trial_number = self.get_trial_number_from_id(trial_id)
-            result.append(
+            # `0` is a temporary dummy value.
+            # It will be replaced to a proper value before returned to the caller.
+            #
+            # TODO(ohta): Use trial.number after TrialModel.number is added.
+            trial_number = 0
+
+            temp_trials.append(
                 structs.FrozenTrial(
                     number=trial_number,
                     state=trial.state,
@@ -529,6 +533,18 @@ class RDBStorage(BaseStorage):
                     datetime_start=trial.datetime_start,
                     datetime_complete=trial.datetime_complete,
                     trial_id=trial_id))
+
+        result = []
+        for temp_trial in temp_trials:
+            # [NOTE]
+            # `self.get_trial_number_from_id()` may call `session.commit()` internally.
+            # It can cause unintended changes of the states of `trials`.
+            # (see https://github.com/pfnet/optuna/pull/349#issuecomment-475086642 for details)
+            #
+            # It must be avoided to call `get_trial_number_from_id()` within
+            # the above loop, so we set proper trial numbers here instead.
+            trial_number = self.get_trial_number_from_id(temp_trial.trial_id)
+            result.append(temp_trial._replace(number=trial_number))
 
         return result
 
