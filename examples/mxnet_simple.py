@@ -21,17 +21,60 @@ We have the following two ways to execute this example:
 
 from __future__ import print_function
 
+
 import mxnet as mx
 import numpy as np
+import os
+import struct
+import tempfile
+import urllib
+import zipfile
+
 
 N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
+DIR = tempfile.mkdtemp()
+
+
+def get_mnist():
+    if (not os.path.exists(os.path.join(DIR, 'train-images-idx3-ubyte'))) or \
+       (not os.path.exists(os.path.join(DIR, 'train-labels-idx1-ubyte'))) or \
+       (not os.path.exists(os.path.join(DIR, 't10k-images-idx3-ubyte'))) or \
+       (not os.path.exists(os.path.join(DIR, 't10k-labels-idx1-ubyte'))):
+        print("Downloading MNIST data in {}.".format(DIR))
+        zippath = os.path.join(DIR, "mnist.zip")
+        urllib.request.urlretrieve("http://data.mxnet.io/mxnet/data/mnist.zip", zippath)
+
+        zf = zipfile.ZipFile(zippath, "r")
+        zf.extractall(DIR)
+        zf.close()
+        os.remove(zippath)
+
+    def read_data(label_path, image_path):
+        with open(label_path, 'rb') as f:
+            zero, data_type, dims = struct.unpack('>HBB', f.read(4))
+            shape = tuple(struct.unpack('>I', f.read(4))[0] for d in range(dims))
+            label = np.fromstring(f.read(), dtype=np.uint8).reshape(shape)
+
+        with open(image_path, 'rb') as f:
+            zero, data_type, dims = struct.unpack('>HBB', f.read(4))
+            shape = tuple(struct.unpack('>I', f.read(4))[0] for d in range(dims))
+            image = np.fromstring(f.read(), dtype=np.uint8).reshape(shape)
+        return (label, image)
+
+    (train_lbl, train_img) = read_data(
+        os.path.join(DIR, 'train-labels-idx1-ubyte'),
+        os.path.join(DIR, 'train-images-idx3-ubyte'))
+    (test_lbl, test_img) = read_data(
+        os.path.join(DIR, 't10k-labels-idx1-ubyte'),
+        os.path.join(DIR, 't10k-images-idx3-ubyte'))
+    return {'train_data': train_img, 'train_label': train_lbl,
+            'test_data': test_img, 'test_label': test_lbl}
 
 
 def model_fn(trial):
-
     n_layers = trial.suggest_int('n_layers', 1, 3)
 
     data = mx.symbol.Variable('data')
@@ -67,7 +110,7 @@ def objective(trial):
     optimizer = create_optimizer(trial)
 
     # Dataset
-    mnist = mx.test_utils.get_mnist()
+    mnist = get_mnist()
     rng = np.random.RandomState(0)
     permute_train = rng.permutation(len(mnist['train_data']))
     train = mx.io.NDArrayIter(
@@ -107,12 +150,12 @@ def objective(trial):
         batch_size=BATCHSIZE)
     accuracy = model.score(X=test)
 
-    return 1.0 - accuracy
+    return accuracy
 
 
 if __name__ == '__main__':
     import optuna
-    study = optuna.create_study()
+    study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)
 
     print('Number of finished trials: ', len(study.trials))
@@ -124,8 +167,4 @@ if __name__ == '__main__':
 
     print('  Params: ')
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
-
-    print('  User attrs:')
-    for key, value in trial.user_attrs.items():
         print('    {}: {}'.format(key, value))
