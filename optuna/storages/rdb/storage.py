@@ -537,12 +537,12 @@ class RDBStorage(BaseStorage):
         result = []
         for temp_trial in temp_trials:
             # [NOTE]
-            # `self.get_trial_number_from_id()` may call `session.commit()` internally.
-            # It can cause unintended changes of the states of `trials`.
-            # (see https://github.com/pfnet/optuna/pull/349#issuecomment-475086642 for details)
+            # We set actual trial numbers here to avoid calling `self.get_trial_number_from_id()`
+            # within the above loop.
             #
-            # It must be avoided to call `get_trial_number_from_id()` within
-            # the above loop, so we set proper trial numbers here instead.
+            # This is because `self.get_trial_number_from_id()` may call `session.commit()`
+            # internally, which causes unintended changes of the states of `trials`.
+            # (see https://github.com/pfnet/optuna/pull/349#issuecomment-475086642 for details)
             trial_number = self.get_trial_number_from_id(temp_trial.trial_id)
             result.append(temp_trial._replace(number=trial_number))
 
