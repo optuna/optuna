@@ -21,6 +21,7 @@ if types.TYPE_CHECKING:
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
+    from typing import Mapping  # NOQA
     from typing import Optional  # NOQA
     from typing import Union  # NOQA
 
@@ -114,7 +115,7 @@ class Objective(object):
     def __init__(
         self,
         estimator,  # type: BaseEstimator
-        param_distributions,  # type: Dict[str, distributions.BaseDistribution]
+        param_distributions,  # type: Mapping[str, distributions.BaseDistribution]
         X,  # type: np.ndarray
         y,  # type: Optional[np.ndarray]
         cv,  # type: BaseCrossValidator
@@ -616,7 +617,7 @@ class TPESearchCV(BaseEstimator):
     def __init__(
         self,
         estimator,  # type: BaseEstimator
-        param_distributions,  # type: Dict[str, distributions.BaseDistribution]
+        param_distributions,  # type: Mapping[str, distributions.BaseDistribution]
         cv=5,  # type: Union[int, BaseCrossValidator, None]
         error_score=np.nan,  # type: Union[str, float]
         load_if_exists=False,  # type: bool
