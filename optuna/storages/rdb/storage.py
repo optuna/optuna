@@ -709,6 +709,7 @@ class RDBStorage(BaseStorage):
 
         version_info = models.VersionInfoModel.find(session)
         if version_info is None:
+            # `None` means this storage was created just now.
             return True
 
         return version_info.schema_version == models.SCHEMA_VERSION
