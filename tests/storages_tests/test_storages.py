@@ -100,6 +100,8 @@ STORAGE_MODES = [
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
 
+CACHE_MODES = [True, False]
+
 # TODO(Yanase): Replace @parametrize_storage with StorageSupplier.
 parametrize_storage = pytest.mark.parametrize(
     'storage_init_func', [InMemoryStorage, lambda: RDBStorage('sqlite:///:memory:')])
@@ -131,14 +133,15 @@ def test_create_new_study_id(storage_init_func):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_create_new_study_id_with_name(storage_mode):
-    # type: (str) -> None
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_create_new_study_id_with_name(storage_mode, cache_mode):
+    # type: (str, bool) -> None
 
-    with StorageSupplier(storage_mode) as storage:
+    with StorageSupplier(storage_mode, cache_mode) as storage:
 
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_create_new_study_id_with_name.__name__
-        study_name = function_name + '/' + storage_mode
+        study_name = function_name + '/' + storage_mode + '/' + str(cache_mode)
         storage = optuna.storages.get_storage(storage)
         study_id = storage.create_new_study_id(study_name)
 
@@ -146,14 +149,15 @@ def test_create_new_study_id_with_name(storage_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
-    # type: (str) -> None
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode, cache_mode):
+    # type: (str, bool) -> None
 
-    with StorageSupplier(storage_mode) as storage:
+    with StorageSupplier(storage_mode, cache_mode) as storage:
 
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_get_study_id_from_name_and_get_study_name_from_id.__name__
-        study_name = function_name + '/' + storage_mode
+        study_name = function_name + '/' + storage_mode + '/' + str(cache_mode)
         storage = optuna.storages.get_storage(storage)
         study = optuna.create_study(storage=storage, study_name=study_name)
 
@@ -170,10 +174,11 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_get_study_id_from_trial_id(storage_mode):
-    # type: (str) -> None
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_get_study_id_from_trial_id(storage_mode, cache_mode):
+    # type: (str, bool) -> None
 
-    with StorageSupplier(storage_mode) as storage:
+    with StorageSupplier(storage_mode, cache_mode) as storage:
 
         # Generate unique study_name from the current function name and storage_mode.
         storage = optuna.storages.get_storage(storage)
@@ -272,10 +277,11 @@ def test_create_new_trial_id(storage_init_func):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_get_trial_number_from_id(storage_mode):
-    # type: (str) -> None
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_get_trial_number_from_id(storage_mode, cache_mode):
+    # type: (str, bool) -> None
 
-    with StorageSupplier(storage_mode) as storage:
+    with StorageSupplier(storage_mode, cache_mode) as storage:
         storage = optuna.storages.get_storage(storage)
 
         # Check if trial_number starts from 0.
@@ -290,10 +296,11 @@ def test_get_trial_number_from_id(storage_mode):
 
 # TODO(Yanase): Remove the following test case after TrialModel.number is added.
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_get_trial_number_from_id_with_empty_system_attrs(storage_mode):
-    # type: (str) -> None
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_get_trial_number_from_id_with_empty_system_attrs(storage_mode, cache_mode):
+    # type: (str, bool) -> None
 
-    with StorageSupplier(storage_mode) as storage:
+    with StorageSupplier(storage_mode, cache_mode) as storage:
         storage = optuna.storages.get_storage(storage)
         study_id = storage.create_new_study_id()
         with patch.object(storage, 'get_trial_system_attrs', return_value=dict()) as _mock_attrs:
