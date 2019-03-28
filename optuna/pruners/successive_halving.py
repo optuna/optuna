@@ -47,20 +47,20 @@ class SuccessiveHalvingPruner(BasePruner):
             referred to as ``r``).
 
             A trial is never pruned until it executes
-            ``min_resource * (reduction_factor ** min_early_stopping_rate)`` steps
-            (i.e., the completion point of the first rung). When the trial completes the first
-            rung, it will be promoted to the next rung only if the value of the trial is placed in
-            the top ``1/reduction_factor`` fraction of the all trials that already have reached
-            the point (otherwise it will be pruned there). If the trial won
-            the competition, it runs until the next completion point
-            (i.e., ``min_resource * (reduction_factor ** (min_early_stopping_rate + rung))`` steps)
+            :math:`\\mathsf{min}\\_\\mathsf{resource} \\times \\mathsf{reduction}\\_\\mathsf{factor}^{\\mathsf{min}\\_\\mathsf{early}\\_\\mathsf{stopping}\\_\\mathsf{rate}}`
+            steps (i.e., the completion point of the first rung). When the trial completes
+            the first rung, it will be promoted to the next rung only
+            if the value of the trial is placed in the top
+            :math:`{1 \\over \\mathsf{reduction}\\_\\mathsf{factor}}` fraction of
+            the all trials that already have reached the point (otherwise it will be pruned there).
+            If the trial won the competition, it runs until the next completion point (i.e.,
+            :math:`\\mathsf{min}\\_\\mathsf{resource} \\times \\mathsf{reduction}\\_\\mathsf{factor}^{(\\mathsf{min}\\_\\mathsf{early}\\_\\mathsf{stopping}\\_\\mathsf{rate} + \\mathsf{rung})}` steps)
             and repeats the same procedure.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
-            referred to as ``eta``).
-            At the completion point of each rung, about ``1/reduction_factor`` trials
-            will be promoted.
+            referred to as :math:`\\eta`).  At the completion point of each rung,
+            about :math:`{1 \\over \\mathsf{reduction}\\_\\mathsf{factor}}` trials will be promoted.
         min_early_stopping_rate:
             A parameter for specifying the minimum early-stopping rate
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is

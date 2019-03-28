@@ -121,7 +121,8 @@ class Trial(BaseTrial):
         # type: (str, float, float) -> float
         """Suggest a value for the continuous parameter.
 
-        The value is sampled from the range ``[low, high)`` in the linear domain.
+        The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high})`
+        in the linear domain.
 
         Example:
 
@@ -153,7 +154,8 @@ class Trial(BaseTrial):
         # type: (str, float, float) -> float
         """Suggest a value for the continuous parameter.
 
-        The value is sampled from the range ``[low, high)`` in the log domain.
+        The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high})`
+        in the log domain.
 
         Example:
 
@@ -187,10 +189,13 @@ class Trial(BaseTrial):
         # type: (str, float, float, float) -> float
         """Suggest a value for the discrete parameter.
 
-        The value is sampled from the range ``[low, high]``, and the step of discretization is
-        ``q``. More specifically, this method returns one of the values in the sequence ``low,
-        low + q, low + 2 * q, ..., low + k * q <= high``, where `k`` denotes an integer. Note that
-        ``high`` may be excluded from ranges due to round-off errors if ``q`` is not an integer.
+        The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high}]`,
+        and the step of discretization is :math:`q`. More specifically,
+        this method returns one of the values in the sequence
+        :math:`\\mathsf{low}, \\mathsf{low} + q, \\mathsf{low} + 2 q, \\dots,
+        \\mathsf{low} + k q \\le \\mathsf{high}`,
+        where :math:`k` denotes an integer. Note that :math:`high` may be
+        excluded from ranges due to round-off errors if ``q`` is not an integer.
 
         Example:
 
@@ -234,7 +239,7 @@ class Trial(BaseTrial):
         # type: (str, int, int) -> int
         """Suggest a value for the integer parameter.
 
-        The value is sampled from the integers in ``[low, high]``.
+        The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
 
         Example:
 
