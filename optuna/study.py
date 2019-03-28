@@ -1,5 +1,6 @@
 import collections
 import datetime
+import gc
 import math
 import multiprocessing
 import multiprocessing.pool
@@ -410,6 +411,8 @@ class Study(object):
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             return trial
+        finally:
+            gc.collect()
 
         try:
             result = float(result)
