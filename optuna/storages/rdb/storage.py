@@ -599,7 +599,7 @@ class RDBStorage(BaseStorage):
         # type: () -> None
         """Upgrade the storage schema."""
 
-        config = _create_alembic_config(self.url)
+        config = self._create_alembic_config()
         alembic.command.upgrade(config, 'head')
 
     def get_current_version(self):
@@ -716,15 +716,15 @@ class RDBStorage(BaseStorage):
     def _create_alembic_script(self):
         # type: () -> alembic.script.ScriptDirectory
 
-        config = _create_alembic_config(self.url)
+        config = self._create_alembic_config()
         script = alembic.script.ScriptDirectory.from_config(config)
         return script
 
+    def _create_alembic_config(self):
+        # type: () -> alembic.config.Config
 
-def _create_alembic_config(url):
-    # type: (str) -> alembic.config.Config
-
-    config = alembic.config.Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
-    config.set_main_option('script_location', os.path.join(os.path.dirname(__file__), 'alembic'))
-    config.set_main_option('sqlalchemy.url', url)
-    return config
+        config = alembic.config.Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
+        config.set_main_option('script_location', os.path.join(
+            os.path.dirname(__file__), 'alembic'))
+        config.set_main_option('sqlalchemy.url', self.url)
+        return config
