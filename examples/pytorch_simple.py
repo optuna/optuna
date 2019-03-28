@@ -69,7 +69,7 @@ class Net(nn.Module):
         data = data.view(-1, 28*28)
         for layer, dropout in zip(self.layers, self.dropouts):
             data = F.relu(layer(data))
-            # data = dropout(data)
+            data = dropout(data)
         return F.log_softmax(self.layers[-1](data), dim=1)
 
 
