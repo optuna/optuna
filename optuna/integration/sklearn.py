@@ -5,25 +5,7 @@ from numbers import Number
 from time import time
 
 import numpy as np
-from optuna import distributions
-from optuna import logging
-from optuna import pruners  # NOQA
-from optuna import samplers
-from optuna import storages  # NOQA
-from optuna import structs
-from optuna import study
-from optuna import trial as trial_module  # NOQA
-from optuna import types
 import pandas as pd  # NOQA
-
-if types.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Callable  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Mapping  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Union  # NOQA
 
 try:
     from sklearn.base import BaseEstimator
@@ -44,6 +26,25 @@ except ImportError as e:
 
     _import_error = e
     _available = False
+
+from optuna import distributions
+from optuna import logging
+from optuna import pruners  # NOQA
+from optuna import samplers
+from optuna import storages  # NOQA
+from optuna import structs
+from optuna import study
+from optuna import trial as trial_module  # NOQA
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Callable  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
+    from typing import Mapping  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Union  # NOQA
 
 
 def _check_sklearn_availability():
