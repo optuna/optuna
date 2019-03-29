@@ -15,5 +15,5 @@ Integration
 .. autoclass:: XGBoostPruningCallback
     :members:
 
-.. autoclass:: TPESearchCV
+.. autoclass:: OptunaSearchCV
     :members:

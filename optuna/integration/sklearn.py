@@ -15,7 +15,6 @@ try:
     from sklearn.model_selection import BaseCrossValidator  # NOQA
     from sklearn.model_selection import check_cv
     from sklearn.model_selection import cross_validate
-    from sklearn.utils import check_random_state
     from sklearn.utils.metaestimators import _safe_split
     from sklearn.utils.validation import check_is_fitted
 
@@ -302,7 +301,7 @@ class Objective(object):
             trial.set_user_attr('std_{}'.format(name), np.nanstd(array))
 
 
-class TPESearchCV(BaseEstimator):
+class OptunaSearchCV(BaseEstimator):
     """Hyperparameter search with cross-validation.
 
     Args:
@@ -357,13 +356,6 @@ class TPESearchCV(BaseEstimator):
             termination signal such as Ctrl+C or SIGTERM. This trades off
             runtime vs quality of the solution.
 
-        random_state:
-            Seed of the pseudo random number generator. If int, this is the
-            seed used by the random number generator. If
-            ``numpy.random.RandomState`` object, this is the random number
-            generator. If :obj:`None`, the global random state from
-            ``numpy.random`` is used.
-
         return_train_score:
             If :obj:`True`, training scores will be included. Computing
             training scores is used to get insights on how different
@@ -383,6 +375,11 @@ class TPESearchCV(BaseEstimator):
             hyperparameters. The refitted estimator is made available at the
             ``best_estimator_`` attribute and permits using ``predict``
             directly.
+
+        sampler:
+             Sampler that implements background algorithm for value
+             suggestion. If :obj:`None`, :class:`~optuna.samplers.TPESampler`
+             is used as the default.
 
         scoring:
             String or callable to evaluate the predictions on the test data.
@@ -433,13 +430,13 @@ class TPESearchCV(BaseEstimator):
         >>> param_distributions = {
         ...     'C': optuna.distributions.LogUniformDistribution(1e-10, 1e+10)
         ... }
-        >>> tpe_search = optuna.integration.TPESearchCV(
+        >>> tpe_search = optuna.integration.OptunaSearchCV(
         ...     clf,
         ...     param_distributions
         ... )
         >>> X, y = load_iris(return_X_y=True)
         >>> tpe_search.fit(X, y) # doctest: +ELLIPSIS
-        TPESearchCV(...)
+        OptunaSearchCV(...)
         >>> y_pred = tpe_search.predict(X)
     """
 
@@ -450,15 +447,6 @@ class TPESearchCV(BaseEstimator):
         # type: () -> str
 
         return self.estimator._estimator_type
-
-    @property
-    def _sampler(self):
-        # type: () -> samplers.TPESampler
-
-        random_state = check_random_state(self.random_state)
-        seed = random_state.randint(0, np.iinfo(np.int32).max)
-
-        return samplers.TPESampler(seed=seed)
 
     @property
     def best_index_(self):
@@ -637,9 +625,9 @@ class TPESearchCV(BaseEstimator):
         n_jobs=1,  # type: int
         n_trials=10,  # type: int
         pruner=None,  # type: Optional[pruners.BasePruner]
-        random_state=None,  # type: Union[int, np.random.RandomState, None]
         refit=True,  # type: bool
         return_train_score=False,  # type: bool
+        sampler=None,  # type: Optional[samplers.BaseSampler]
         scoring=None,  # type: Union[str, Callable[..., float], None]
         storage=None,  # type: Union[str, storages.BaseStorage, None]
         study_name=None,  # type: Optional[str]
@@ -660,9 +648,9 @@ class TPESearchCV(BaseEstimator):
         self.n_jobs = n_jobs
         self.param_distributions = param_distributions
         self.pruner = pruner
-        self.random_state = random_state
         self.refit = refit
         self.return_train_score = return_train_score
+        self.sampler = sampler
         self.scoring = scoring
         self.storage = storage
         self.study_name = study_name
@@ -705,7 +693,7 @@ class TPESearchCV(BaseEstimator):
             )
 
     def _refit(self, X, y=None, **fit_params):
-        # type: (np.ndarray, Optional[np.ndarray], Any) -> 'TPESearchCV'
+        # type: (np.ndarray, Optional[np.ndarray], Any) -> 'OptunaSearchCV'
 
         self.best_estimator_ = clone(self.estimator)
 
@@ -736,7 +724,7 @@ class TPESearchCV(BaseEstimator):
         groups=None,  # type: Optional[np.ndarray]
         **fit_params  # type: Any
     ):
-        # type: (...) -> 'TPESearchCV'
+        # type: (...) -> 'OptunaSearchCV'
         """Run fit with all sets of parameters.
 
         Args:
@@ -769,7 +757,7 @@ class TPESearchCV(BaseEstimator):
         self.study_ = study.create_study(
             load_if_exists=self.load_if_exists,
             pruner=self.pruner,
-            sampler=self._sampler,
+            sampler=self.sampler,
             storage=self.storage,
             study_name=self.study_name
         )

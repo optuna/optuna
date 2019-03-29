@@ -6,6 +6,7 @@ from sklearn.svm import LinearSVC
 
 from optuna import distributions
 from optuna import integration
+from optuna import samplers
 
 
 @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -15,13 +16,14 @@ def test_fit():
     X, y = make_blobs(n_samples=10)
     est = LinearSVC()
     param_dist = {'C': distributions.LogUniformDistribution(1e-04, 1e+03)}
-    tpe_search = integration.TPESearchCV(
+    sampler = samplers.TPESampler(seed=0)
+    tpe_search = integration.OptunaSearchCV(
         est,
         param_dist,
         cv=3,
         error_score='raise',
         max_iter=5,
-        random_state=0
+        sampler=sampler
     )
 
     with pytest.raises(NotFittedError):
@@ -38,14 +40,15 @@ def test_fit_with_pruning():
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
     param_dist = {'alpha': distributions.LogUniformDistribution(1e-04, 1e+03)}
-    tpe_search = integration.TPESearchCV(
+    sampler = samplers.TPESampler(seed=0)
+    tpe_search = integration.OptunaSearchCV(
         est,
         param_dist,
         cv=3,
         enable_pruning=True,
         error_score='raise',
         max_iter=5,
-        random_state=0
+        sampler=sampler
     )
 
     with pytest.raises(NotFittedError):
