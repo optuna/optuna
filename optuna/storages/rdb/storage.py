@@ -646,7 +646,7 @@ class _VersionManager(object):
             schema_version=models.SCHEMA_VERSION, library_version=version.__version__)
 
         session.add(version_info)
-        self._commit_with_integrity_check(session)
+        RDBStorage._commit_with_integrity_check(session)
 
     def _init_alembic(self):
         # type: () -> None
