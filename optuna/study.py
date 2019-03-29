@@ -412,6 +412,8 @@ class Study(object):
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             return trial
         finally:
+            # The following line mitigates memory problems due to container virtualization.
+            # See the case of CircleCI at https://github.com/pfnet/optuna/pull/325.
             gc.collect()
 
         try:
