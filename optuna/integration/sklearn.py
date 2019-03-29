@@ -83,6 +83,10 @@ class Objective(object):
         cv:
             Cross-validation strategy.
 
+        enable_pruning:
+            If :obj:`True`, pruning is performed in the case where the
+            underlying estimator supports ``partial_fit``.
+
         error_score:
             Value to assign to the score if an error occurs in fitting. If
             'raise', the error is raised. If numeric,
@@ -120,6 +124,7 @@ class Objective(object):
         X,  # type: np.ndarray
         y,  # type: Optional[np.ndarray]
         cv,  # type: BaseCrossValidator
+        enable_pruning,  # type: bool
         error_score,  # type: Union[str, float]
         fit_params,  # type: Dict[str, Any]
         groups,  # type: Optional[np.ndarray]
@@ -132,6 +137,7 @@ class Objective(object):
         self.X = X
         self.y = y
         self.cv = cv
+        self.enable_pruning = enable_pruning
         self.error_score = error_score
         self.estimator = estimator
         self.fit_params = fit_params
@@ -149,7 +155,7 @@ class Objective(object):
 
         estimator.set_params(**params)
 
-        if hasattr(estimator, 'partial_fit'):
+        if self.enable_pruning:
             scores = self._cross_validate_with_pruning(trial, estimator)
         else:
             scores = cross_validate(
@@ -321,6 +327,10 @@ class TPESearchCV(BaseEstimator):
             either binary or multiclass,
             ``sklearn.model_selection.StratifiedKFold`` is used. otherwise,
             ``sklearn.model_selection.KFold`` is used.
+
+        enable_pruning:
+            If :obj:`True`, pruning is performed in the case where the
+            underlying estimator supports ``partial_fit``.
 
         error_score:
             Value to assign to the score if an error occurs in fitting. If
@@ -620,6 +630,7 @@ class TPESearchCV(BaseEstimator):
         estimator,  # type: BaseEstimator
         param_distributions,  # type: Mapping[str, distributions.BaseDistribution]
         cv=5,  # type: Union[int, BaseCrossValidator, None]
+        enable_pruning=False,  # type: bool
         error_score=np.nan,  # type: Union[str, float]
         load_if_exists=False,  # type: bool
         max_iter=1000,  # type: int
@@ -640,6 +651,7 @@ class TPESearchCV(BaseEstimator):
         _check_sklearn_availability()
 
         self.cv = cv
+        self.enable_pruning = enable_pruning
         self.error_score = error_score
         self.estimator = estimator
         self.load_if_exists = load_if_exists
@@ -683,6 +695,9 @@ class TPESearchCV(BaseEstimator):
                 raise ValueError(
                     'value of {} must be a optuna distribution'.format(name)
                 )
+
+        if self.enable_pruning and not hasattr(self.estimator, 'partial_fit'):
+            raise ValueError('estimator must support partial_fit')
 
         if self.max_iter <= 0:
             raise ValueError(
@@ -765,6 +780,7 @@ class TPESearchCV(BaseEstimator):
             X,
             y,
             cv,
+            self.enable_pruning,
             self.error_score,
             fit_params,
             groups,

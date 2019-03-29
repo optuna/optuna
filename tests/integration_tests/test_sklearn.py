@@ -42,6 +42,7 @@ def test_fit_with_pruning():
         est,
         param_dist,
         cv=3,
+        enable_pruning=True,
         error_score='raise',
         max_iter=5,
         random_state=0
