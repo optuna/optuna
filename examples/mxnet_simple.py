@@ -101,7 +101,7 @@ def objective(trial):
     )
     model.fit(X=train, eval_data=val, batch_end_callback=_callback)
 
-    # Return the 1.0 - accuracy
+    # Return the  accuracy
     test = mx.io.NDArrayIter(
         data=mnist['test_data'],
         label=mnist['test_label'],
