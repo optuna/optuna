@@ -695,7 +695,7 @@ class _VersionManager(object):
                                                    version_info.library_version)
         known_versions = self._get_all_versions()
         if current_version in known_versions:
-            message += 'Please execute `$ optuna storage upgrade --storage $STORAGE_URL`' \
+            message += 'Please execute `$ optuna storage upgrade --storage $STORAGE_URL` ' \
                        'for upgrading the storage.'
         else:
             message += 'Please try updating optuna to the latest version by '\
