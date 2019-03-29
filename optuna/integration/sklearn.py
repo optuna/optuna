@@ -89,7 +89,7 @@ class Objective(object):
         error_score:
             Value to assign to the score if an error occurs in fitting. If
             'raise', the error is raised. If numeric,
-            ``sklearn.exception.FitFailedWarning`` is raised. This does not
+            ``sklearn.exceptions.FitFailedWarning`` is raised. This does not
             affect the refit step, which will always raise the error.
 
         fit_params:
@@ -100,7 +100,7 @@ class Objective(object):
             train/test set.
 
         max_iter:
-            Maximum nember of epochs. This is only used if the underlying
+            Maximum number of epochs. This is only used if the underlying
             estimator supports ``partial_fit``.
 
         return_train_score:
@@ -334,7 +334,7 @@ class OptunaSearchCV(BaseEstimator):
         error_score:
             Value to assign to the score if an error occurs in fitting. If
             'raise', the error is raised. If numeric,
-            ``sklearn.exception.FitFailedWarning`` is raised. This does not
+            ``sklearn.exceptions.FitFailedWarning`` is raised. This does not
             affect the refit step, which will always raise the error.
 
         load_if_exists:
@@ -343,7 +343,7 @@ class OptunaSearchCV(BaseEstimator):
             :obj:`storage`.
 
         max_iter:
-            Maximum nember of epochs. This is only used if the underlying
+            Maximum number of epochs. This is only used if the underlying
             estimator supports ``partial_fit``.
 
         n_jobs:
@@ -356,6 +356,17 @@ class OptunaSearchCV(BaseEstimator):
             termination signal such as Ctrl+C or SIGTERM. This trades off
             runtime vs quality of the solution.
 
+        pruner:
+            Pruner that decides early stopping of unpromising trials. If
+            :obj:`None`, :class:`~optuna.pruners.MedianPruner` is used as the
+            default.
+
+        refit:
+            If :obj:`True`, refit the estimator with the best found
+            hyperparameters. The refitted estimator is made available at the
+            ``best_estimator_`` attribute and permits using ``predict``
+            directly.
+
         return_train_score:
             If :obj:`True`, training scores will be included. Computing
             training scores is used to get insights on how different
@@ -364,17 +375,6 @@ class OptunaSearchCV(BaseEstimator):
             computationally expensive and is not strictly required to select
             the hyperparameters that yield the best generalization
             performance.
-
-        pruner:
-            Pruner that decides early stopping of unpromising trials. If
-            :obj:`None`, :class:`~optuna.sampler.MedianPruner` is used as the
-            default.
-
-        refit:
-            If :obj:`True`, refit the estimator with the best found
-            hyperparameters. The refitted estimator is made available at the
-            ``best_estimator_`` attribute and permits using ``predict``
-            directly.
 
         sampler:
              Sampler that implements background algorithm for value
