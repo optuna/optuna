@@ -15,6 +15,7 @@ This page contains a list of example codes written with Optuna.
 * [LighGBM](./lightgbm_simple.py)
 * [XGBoost](./xgboost_simple.py)
 * [Tensorflow](./tensorflow_estimator_simple.py)
+* [Tensorflow(eager)](./tensorflow_eager_simple.py)
 
 ### An example where an objective function uses additional arguments
 
