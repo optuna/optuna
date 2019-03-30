@@ -35,7 +35,6 @@ def model_fn(trial):
         num_hidden = int(trial.suggest_loguniform('n_units_l{}'.format(i), 4, 128))
         model.add(Dense(num_hidden,
                         activation='relu',
-                        input_shape=(784, ),
                         kernel_regularizer=regularizers.l2(weight_decay)))
     model.add(Dense(CLASSES,
                     activation='softmax',
