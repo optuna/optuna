@@ -1,7 +1,13 @@
 from __future__ import absolute_import
 
-import mxnet as mx  # NOQA
 import optuna
+
+try:
+    import mxnet as mx  # NOQA
+    _available = True
+except ImportError as e:
+    _import_error = e
+    _available = False
 
 
 class MxnetPruningCallback(object):
@@ -13,20 +19,24 @@ class MxnetPruningCallback(object):
 
         .. code::
 
-            model.fit(X, y, batch_end_callback=MxnetPruningCallback(trial, eval_metric='acc'))
+            model.fit(X, y, batch_end_callback=MxnetPruningCallback(trial, eval_metric='accuracy'))
 
     Args:
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
             objective function.
-        monitor:
-            An evaluation metric for pruning, e.g., ``cross-entropy`` and
-            ``accuracy``. Please refer to `keras.Callback reference
-            <https://keras.io/callbacks/#callback>`_ for further details.
+        eval_metric:
+            An evaluation metric name for pruning, e.g., ``cross-entropy`` and
+            ``accuracy``. If using default metrics like mxnet.metrics.Accuracy, use it's
+            default metric name. For custom metrics, use the metric_name provided to
+             constructor. Please refer to `mxnet.metrics reference
+            <https://mxnet.apache.org/api/python/metric/metric.html>`_ for further details.
     """
 
     def __init__(self, trial, eval_metric='accuracy'):
         # type: (optuna.trial.Trial, str) -> None
+
+        _check_mxnet_availability()
 
         self.trial = trial
         self.eval_metric = eval_metric
@@ -42,7 +52,18 @@ class MxnetPruningCallback(object):
                 current_score = metric_value
             else:
                 return
-            self.trial.report(current_score)
+            self.trial.report(current_score, step=param.epoch)
             if self.trial.should_prune(param.epoch):
                 message = "Trial was pruned at epoch {}.".format(param.epoch)
                 raise optuna.structs.TrialPruned(message)
+
+
+def _check_mxnet_availability():
+    # type: () -> None
+
+    if not _available:
+        raise ImportError(
+            'Mxnet is not available. Please install Mxnet to use this feature. '
+            'Mxnet for cudaX.Y support can be installed by executing `$ pip install mxnet-cuXY`. '
+            'For further information, please refer to the installation guide of Mxnet. '
+            '(The actual import error is as follows: ' + str(_import_error) + ')')

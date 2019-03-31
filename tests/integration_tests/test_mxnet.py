@@ -1,24 +1,13 @@
+import mxnet as mx
 import numpy as np
 
-import pytest
-
-try:
-    import mxnet as mx
-    _available = True
-except ImportError:
-    _available = False
-
 import optuna
-from optuna.integration import MxnetPruningCallback
+from optuna.integration.mxnet import MxnetPruningCallback
 from optuna.testing.integration import DeterministicPruner
 
 
 def test_mxnet_pruning_callback():
     # type: () -> None
-
-    if not _available:
-        pytest.skip('This test requires mxnet '
-                    'but this version can not install mxnet with pip.')
 
     def objective(trial):
         # type: (optuna.trial.Trial) -> float
