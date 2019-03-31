@@ -15,7 +15,7 @@ class MxnetPruningCallback(object):
 
     Example:
 
-        Add a pruning callback which observes validation losses.
+        Add a pruning callback which observes validation accuracy.
 
         .. code::
 
