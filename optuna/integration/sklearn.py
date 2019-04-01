@@ -29,7 +29,7 @@ except ImportError as e:
 from optuna import distributions
 from optuna import logging
 from optuna import pruners  # NOQA
-from optuna import samplers
+from optuna import samplers  # NOQA
 from optuna import storages  # NOQA
 from optuna import structs
 from optuna import study
