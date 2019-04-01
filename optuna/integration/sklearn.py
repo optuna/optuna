@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from logging import DEBUG
 from logging import INFO
 from logging import WARNING
