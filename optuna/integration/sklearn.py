@@ -51,11 +51,11 @@ def _check_sklearn_availability():
 
     if not _available:
         raise ImportError(
-            'scikit-learn is not available. Please install scikit-learn to use '
-            'this feature. scikit-learn can be installed by executing `$ pip '
-            'install scikit-learn>=0.20.0`. For further information, please refer to '
-            'the installation guide of scikit-learn. (The actual import error '
-            'is as follows: ' + str(_import_error) + ')'
+            'scikit-learn is not available. Please install scikit-learn to '
+            'use this feature. scikit-learn can be installed by executing '
+            '`$ pip install scikit-learn>=0.20.0`. For further information, '
+            'please refer to the installation guide of scikit-learn. (The '
+            'actual import error is as follows: ' + str(_import_error) + ')'
         )
 
 
