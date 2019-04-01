@@ -70,7 +70,7 @@ class Objective(object):
 
         param_distributions:
             Dictionary where keys are parameters and values are distributions.
-            Disributions are assumed to implement the optuna distribution
+            Distributions are assumed to implement the optuna distribution
             interface.
 
         X:
@@ -312,7 +312,7 @@ class OptunaSearchCV(BaseEstimator):
 
         param_distributions:
             Dictionary where keys are parameters and values are distributions.
-            Disributions are assumed to implement the optuna distribution
+            Disrtibutions are assumed to implement the optuna distribution
             interface.
 
         cv:
@@ -430,14 +430,14 @@ class OptunaSearchCV(BaseEstimator):
         >>> param_distributions = {
         ...     'C': optuna.distributions.LogUniformDistribution(1e-10, 1e+10)
         ... }
-        >>> tpe_search = optuna.integration.OptunaSearchCV(
+        >>> optuna_search = optuna.integration.OptunaSearchCV(
         ...     clf,
         ...     param_distributions
         ... )
         >>> X, y = load_iris(return_X_y=True)
-        >>> tpe_search.fit(X, y) # doctest: +ELLIPSIS
+        >>> optuna_search.fit(X, y) # doctest: +ELLIPSIS
         OptunaSearchCV(...)
-        >>> y_pred = tpe_search.predict(X)
+        >>> y_pred = optuna_search.predict(X)
     """
 
     _required_parameters = ['estimator', 'param_distributions']
