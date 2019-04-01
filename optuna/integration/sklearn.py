@@ -514,6 +514,24 @@ class OptunaSearchCV(BaseEstimator):
         return len(self.study_.trials)
 
     @property
+    def trials(self):
+        # type: () -> List[structs.FrozenTrial]
+        """All trials in the :class:`~optuna.study.Study`."""
+
+        self._check_is_fitted()
+
+        return self.study_.trials
+
+    @property
+    def user_attrs(self):
+        # type: () -> Dict[str, Any]
+        """User attributes in the :class:`~optuna.study.Study`."""
+
+        self._check_is_fitted()
+
+        return self.study_.user_attrs
+
+    @property
     def decision_function(self):
         # type: () -> Callable[..., np.ndarray]
         """Call ``decision_function`` on the best estimator.
@@ -590,6 +608,15 @@ class OptunaSearchCV(BaseEstimator):
         self._check_is_fitted()
 
         return self.best_estimator_.score_samples
+
+    @property
+    def set_user_attr(self):
+        # type: () -> Callable[..., None]
+        """Call ``set_user_attr`` on the :class:`~optuna.study.Study`."""
+
+        self._check_is_fitted()
+
+        return self.study_.set_user_attr
 
     @property
     def transform(self):
