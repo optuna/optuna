@@ -11,7 +11,7 @@ except ImportError as e:
 
 
 class MxnetPruningCallback(object):
-    """Mxnet callback to prune unpromising trials.
+    """MXNet callback to prune unpromising trials.
 
     Example:
 
@@ -33,7 +33,7 @@ class MxnetPruningCallback(object):
             <https://mxnet.apache.org/api/python/metric/metric.html>`_ for further details.
     """
 
-    def __init__(self, trial, eval_metric='accuracy'):
+    def __init__(self, trial, eval_metric):
         # type: (optuna.trial.Trial, str) -> None
 
         _check_mxnet_availability()
@@ -45,13 +45,15 @@ class MxnetPruningCallback(object):
         # type: (mx.model.BatchEndParams,) -> None
 
         if param.nbatch == 1 and param.eval_metric is not None:
-            metric_name, metric_value = param.eval_metric.get()
-            if type(metric_name) == list and self.eval_metric in metric_name:
-                current_score = metric_value[metric_name.index(self.eval_metric)]
-            elif metric_name == self.eval_metric:
-                current_score = metric_value
+            metric_names, metric_values = param.eval_metric.get()
+            if type(metric_names) == list and self.eval_metric in metric_names:
+                current_score = metric_values[metric_names.index(self.eval_metric)]
+            elif metric_names == self.eval_metric:
+                current_score = metric_values
             else:
-                return
+                raise ValueError('The entry associated with the metric name "{}" '
+                                 'is not found in the evaluation result list {}.'.format(
+                                     self.eval_metric, str(metric_names)))
             self.trial.report(current_score, step=param.epoch)
             if self.trial.should_prune(param.epoch):
                 message = "Trial was pruned at epoch {}.".format(param.epoch)
@@ -63,7 +65,7 @@ def _check_mxnet_availability():
 
     if not _available:
         raise ImportError(
-            'Mxnet is not available. Please install Mxnet to use this feature. '
-            'Mxnet for cudaX.Y support can be installed by executing `$ pip install mxnet-cuXY`. '
-            'For further information, please refer to the installation guide of Mxnet. '
+            'MXNet is not available. Please install MXNet to use this feature. '
+            'MXNet can be installed by executing `$ pip install mxnet`. '
+            'For further information, please refer to the installation guide of MXNet. '
             '(The actual import error is as follows: ' + str(_import_error) + ')')
