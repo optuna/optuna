@@ -10,62 +10,66 @@ You can run this example as follows:
 
 """
 
+import keras
+from keras.datasets import mnist
+from keras.layers import Dense, Dropout
+from keras.models import Sequential
+
+
 import optuna
 from optuna.integration import KerasPruningCallback
 
-import keras
-from keras.datasets import mnist
-from keras.layers import Dense
-from keras.models import Sequential
-from keras import optimizers
-from keras import regularizers
 
-
+N_TRAIN_EXAMPLES = 3000
+N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 20
 
 
-def model_fn(trial):
+def create_model(trial):
+    # We optimize the number of layers, hidden units and dropout in each layer and
+    # the learning rate of RMSProp optimizer
+
     # Model
     n_layers = trial.suggest_int('n_layers', 1, 3)
-    weight_decay = trial.suggest_uniform('weight_decay', 1e-10, 1e-3)
     model = Sequential()
     for i in range(n_layers):
         num_hidden = int(trial.suggest_loguniform('n_units_l{}'.format(i), 4, 128))
         model.add(Dense(num_hidden,
-                        activation='relu',
-                        kernel_regularizer=regularizers.l2(weight_decay)))
-    model.add(Dense(CLASSES,
-                    activation='softmax',
-                    kernel_regularizer=regularizers.l2(weight_decay)))
+                        activation='relu'))
+        dropout = trial.suggest_uniform('dropout_l{}'.format(i), 0.2, 0.5)
+        model.add(Dropout(rate=dropout))
+    model.add(Dense(CLASSES, activation='softmax'))
 
     # Optimizer
-    lr = trial.suggest_uniform('lr', 1e-5, 1e-1)
-    optimizer = trial.suggest_categorical('optimizer', ['RMSprop', 'Adam', 'SGD'])
+    lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
     model.compile(loss='categorical_crossentropy',
-                  optimizer=getattr(optimizers, optimizer)(lr=lr),
+                  optimizer=keras.optimizers.RMSprop(lr=lr),
                   metrics=['accuracy'])
 
     return model
 
 
 def objective(trial):
+    # Clear clutter form previous session graphs.
+    keras.backend.clear_session()
+
     # the data, split between train and test sets
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
-    x_train = x_train.reshape(60000, 784).astype('float32')/255
-    x_test = x_test.reshape(10000, 784).astype('float32')/255
+    x_train = x_train.reshape(60000, 784)[:N_TRAIN_EXAMPLES].astype('float32')/255
+    x_test = x_test.reshape(10000, 784)[:N_TEST_EXAMPLES].astype('float32')/255
 
     # convert class vectors to binary class matrices
-    y_train = keras.utils.to_categorical(y_train, CLASSES)
-    y_test = keras.utils.to_categorical(y_test, CLASSES)
+    y_train = keras.utils.to_categorical(y_train[:N_TRAIN_EXAMPLES], CLASSES)
+    y_test = keras.utils.to_categorical(y_test[:N_TEST_EXAMPLES], CLASSES)
 
     # build model
-    model = model_fn(trial)
+    model = create_model(trial)
 
     model.fit(x_train, y_train,
               batch_size=BATCHSIZE,
-              callbacks=[KerasPruningCallback(trial, 'acc')],
+              callbacks=[KerasPruningCallback(trial, 'val_acc')],
               epochs=EPOCHS,
               validation_data=(x_test, y_test),
               verbose=1)
