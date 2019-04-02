@@ -10,6 +10,8 @@ if types.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Tuple  # NOQA
 
+EPS = 1e-12
+
 
 class ParzenEstimatorParameters(
         NamedTuple('_ParzenEstimatorParameters', [
@@ -106,7 +108,7 @@ class ParzenEstimator(object):
         if consider_magic_clip:
             minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(sorted_mus)))
         else:
-            minsigma = 0.0
+            minsigma = EPS
         sigma = numpy.clip(sigma, minsigma, maxsigma)
         if consider_prior:
             sigma[prior_pos] = prior_sigma
