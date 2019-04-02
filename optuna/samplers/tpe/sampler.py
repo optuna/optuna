@@ -358,27 +358,14 @@ class TPESampler(base.BaseSampler):
         if size == (0, ):
             return np.asarray([], dtype=float)
         assert len(size)
+        assert probabilities.ndim == 1
 
-        if probabilities.ndim == 1:
-            n_draws = int(np.prod(size))
-            sample = self.rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
-            assert sample.shape == size + (probabilities.size, )
-            return_val = np.dot(sample, np.arange(probabilities.size))
-            return_val.shape = size
-            return return_val
-        elif probabilities.ndim == 2:
-            n_draws_, n_choices = probabilities.shape
-            n_draws, = size
-            assert n_draws_ == n_draws
-            return_val = [
-                np.where(self.rng.multinomial(pvals=[ii], n=1))[0][0] for ii in range(n_draws_)
-            ]
-            return_val = np.asarray(return_val)
-            return_val.shape = size
-            return return_val
-        else:
-            raise ValueError("The input dimension of p is {}. It should be 1 or 2.",
-                             probabilities.ndim)
+        n_draws = int(np.prod(size))
+        sample = self.rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
+        assert sample.shape == size + (probabilities.size, )
+        return_val = np.dot(sample, np.arange(probabilities.size))
+        return_val.shape = size
+        return return_val
 
     @classmethod
     def _categorical_log_pdf(
