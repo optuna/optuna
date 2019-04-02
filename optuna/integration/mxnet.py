@@ -19,7 +19,8 @@ class MxnetPruningCallback(object):
 
         .. code::
 
-            model.fit(X, y, batch_end_callback=MxnetPruningCallback(trial, eval_metric='accuracy'))
+            model.fit(train_data=X, eval_data=Y,
+                      eval_end_callback=MxnetPruningCallback(trial, eval_metric='accuracy'))
 
     Args:
         trial:
@@ -44,7 +45,7 @@ class MxnetPruningCallback(object):
     def __call__(self, param):
         # type: (mx.model.BatchEndParams,) -> None
 
-        if param.nbatch == 1 and param.eval_metric is not None:
+        if param.eval_metric is not None:
             metric_names, metric_values = param.eval_metric.get()
             if type(metric_names) == list and self.eval_metric in metric_names:
                 current_score = metric_values[metric_names.index(self.eval_metric)]
