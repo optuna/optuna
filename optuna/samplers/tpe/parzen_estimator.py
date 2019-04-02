@@ -87,9 +87,9 @@ class ParzenEstimator(object):
             sigma = numpy.zeros_like(low_sorted_mus_high)
             sigma[1:-1] = numpy.maximum(low_sorted_mus_high[1:-1] - low_sorted_mus_high[0:-2],
                                         low_sorted_mus_high[2:] - low_sorted_mus_high[1:-1])
-            if not consider_endpoints:
-                sigma[1] = sigma[2] - sigma[1]
-                sigma[-2] = sigma[-2] - sigma[-3]
+            if not consider_endpoints and low_sorted_mus_high.size > 2:
+                sigma[1] = low_sorted_mus_high[2] - low_sorted_mus_high[1]
+                sigma[-2] = low_sorted_mus_high[-2] - low_sorted_mus_high[-3]
             sigma = sigma[1:-1]
 
         # We decide the weights.
