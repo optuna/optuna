@@ -266,7 +266,7 @@ class TPESampler(base.BaseSampler):
         while samples.size < n_samples:
             active = np.argmax(self.rng.multinomial(1, weights))
             draw = self.rng.normal(loc=mus[active], scale=sigmas[active])
-            if low <= draw <= high:
+            if low <= draw < high:
                 samples = np.append(samples, draw)
 
         samples = np.reshape(samples, size)
