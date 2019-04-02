@@ -44,7 +44,7 @@ class TPESampler(base.BaseSampler):
     def __init__(
             self,
             consider_prior=True,  # type: bool
-            prior_weight=1.0,  # type: Optional[float]
+            prior_weight=1.0,  # type: float
             consider_magic_clip=True,  # type: bool
             consider_endpoints=False,  # type: bool
             n_startup_trials=10,  # type: int
