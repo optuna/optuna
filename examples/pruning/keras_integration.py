@@ -12,7 +12,8 @@ You can run this example as follows:
 
 import keras
 from keras.datasets import mnist
-from keras.layers import Dense, Dropout
+from keras.layers import Dense
+from keras.layers import Dropout
 from keras.models import Sequential
 
 
