@@ -195,7 +195,7 @@ class Trial(BaseTrial):
         :math:`\\mathsf{low}, \\mathsf{low} + q, \\mathsf{low} + 2 q, \\dots,
         \\mathsf{low} + k q \\le \\mathsf{high}`,
         where :math:`k` denotes an integer. Note that :math:`high` may be
-        excluded from ranges due to round-off errors if ``q`` is not an integer.
+        excluded from ranges due to round-off errors if :math:`q` is not an integer.
 
         Example:
 
