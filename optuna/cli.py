@@ -193,6 +193,14 @@ class StudyOptimize(BaseCommand):
         parser.add_argument(
             'file', help='Python script file where the objective function resides.')
         parser.add_argument('method', help='The method name of the objective function.')
+        parser.add_argument(
+            '--disable-storage-cache',
+            default=False,
+            action='store_true',
+            help='By default, the finished trials are cached on memory and '
+            'never re-fetched from the storage. If this flag is specified, '
+            'the trials are fetched from the storage whenever they are needed.')
+
         return parser
 
     def take_action(self, parsed_args):
@@ -200,7 +208,10 @@ class StudyOptimize(BaseCommand):
 
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
-        study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
+        study = optuna.load_study(
+            storage=storage_url,
+            study_name=parsed_args.study,
+            enable_storage_cache=not parsed_args.disable_storage_cache)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.

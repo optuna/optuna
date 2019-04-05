@@ -290,8 +290,9 @@ def objective_func(trial):
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
-def test_study_optimize_command(options):
-    # type: (List[str]) -> None
+@pytest.mark.parametrize('disable_storage_cache', [True, False])
+def test_study_optimize_command(options, disable_storage_cache):
+    # type: (List[str], bool) -> None
 
     with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
         storage = RDBStorage(storage_url)
@@ -303,6 +304,8 @@ def test_study_optimize_command(options):
         ]
         command = _add_option(command, '--storage', storage_url, 'storage' in options)
         command = _add_option(command, '--config', config_path, 'config' in options)
+        if disable_storage_cache:
+            command.append('--disable-storage-cache')
         subprocess.check_call(command)
 
         study = optuna.Study(storage=storage_url, study_name=study_name)
