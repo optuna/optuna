@@ -61,7 +61,7 @@ class Study(object):
             Flag to control whether to enable storage layer caching.
             If this flag is set to :obj:`True` (the default), the finished trials are
             cached on memory and never re-fetched from the storage.
-            Otherwise, the trials are fetched from the storage every time when they are needed.
+            Otherwise, the trials are fetched from the storage whenever they are needed.
 
     """
 
@@ -491,7 +491,7 @@ def create_study(
             Flag to control whether to enable storage layer caching.
             If this flag is set to :obj:`True` (the default), the finished trials are
             cached on memory and never re-fetched from the storage.
-            Otherwise, the trials are fetched from the storage every time when they are needed.
+            Otherwise, the trials are fetched from the storage whenever they are needed.
     Returns:
         A :class:`~optuna.study.Study` object.
 
@@ -562,7 +562,7 @@ def load_study(
             Flag to control whether to enable storage layer caching.
             If this flag is set to :obj:`True` (the default), the finished trials are
             cached on memory and never re-fetched from the storage.
-            Otherwise, the trials are fetched from the storage every time when they are needed.
+            Otherwise, the trials are fetched from the storage whenever they are needed.
 
     """
 
