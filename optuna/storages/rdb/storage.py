@@ -503,7 +503,9 @@ class RDBStorage(BaseStorage):
         # type: (models.TrialModel) -> None
 
         if trial.state is not structs.TrialState.RUNNING:
-            raise RuntimeError("Finished trial {} can not be updated.".format(trial.trial_id))
+            trial_number = self.get_trial_number_from_id(trial.trial_id)
+            raise RuntimeError(
+                "Trial#{} has already finished and can not be updated.".format(trial_number))
 
     def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[structs.TrialState]) -> int
