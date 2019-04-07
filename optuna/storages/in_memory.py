@@ -175,7 +175,6 @@ class InMemoryStorage(base.BaseStorage):
                                                                distribution)
 
             # Check param has not been set; otherwise, return False.
-            param_value_external = distribution.to_external_repr(param_value_internal)
             if param_name in self.trials[trial_id].params:
                 return False
 
@@ -184,7 +183,7 @@ class InMemoryStorage(base.BaseStorage):
 
             # Set param.
             self.trials[trial_id].params_in_internal_repr[param_name] = param_value_internal
-            self.trials[trial_id].params[param_name] = param_value_external
+            self.trials[trial_id].params[param_name] = distribution.to_external_repr(param_value_internal)
 
             return True
 
