@@ -2,8 +2,9 @@
 Optuna example that demonstrates a pruner for Keras.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-Keras and MNIST, where the architecture of the neural network is optimized. Throughout the
-training of neural networks, a pruner observes intermediate results and stops unpromising trials.
+Keras and MNIST, where the architecture of the neural network and the learning rate of optimizer
+is optimized. Throughout the training of neural networks, a pruner observes intermediate
+results and stops unpromising trials.
 
 You can run this example as follows:
     $ python keras_integration.py
@@ -30,9 +31,9 @@ EPOCHS = 20
 
 def create_model(trial):
     # We optimize the number of layers, hidden units and dropout in each layer and
-    # the learning rate of RMSProp optimizer
+    # the learning rate of RMSProp optimizer.
 
-    # Model
+    # We define our MLP.
     n_layers = trial.suggest_int('n_layers', 1, 3)
     model = Sequential()
     for i in range(n_layers):
@@ -43,7 +44,7 @@ def create_model(trial):
         model.add(Dropout(rate=dropout))
     model.add(Dense(CLASSES, activation='softmax'))
 
-    # Optimizer
+    # We compile our model with a sampled learning rate.
     lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
     model.compile(loss='categorical_crossentropy',
                   optimizer=keras.optimizers.RMSprop(lr=lr),
@@ -56,18 +57,20 @@ def objective(trial):
     # Clear clutter form previous session graphs.
     keras.backend.clear_session()
 
-    # the data, split between train and test sets
+    # The data is split between train and test sets.
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     x_train = x_train.reshape(60000, 784)[:N_TRAIN_EXAMPLES].astype('float32')/255
     x_test = x_test.reshape(10000, 784)[:N_TEST_EXAMPLES].astype('float32')/255
 
-    # convert class vectors to binary class matrices
+    # Convert class vectors to binary class matrices.
     y_train = keras.utils.to_categorical(y_train[:N_TRAIN_EXAMPLES], CLASSES)
     y_test = keras.utils.to_categorical(y_test[:N_TEST_EXAMPLES], CLASSES)
 
-    # build model
+    # Generate our trial model.
     model = create_model(trial)
 
+    # Fit the model on the training data.
+    # The KerasPruningCallback checks for pruning condition every epoch.
     model.fit(x_train, y_train,
               batch_size=BATCHSIZE,
               callbacks=[KerasPruningCallback(trial, 'val_acc')],
@@ -75,6 +78,7 @@ def objective(trial):
               validation_data=(x_test, y_test),
               verbose=1)
 
+    # Evaluate the model accuracy on the test set.
     score = model.evaluate(x_test, y_test, verbose=0)
     return score[1]
 
