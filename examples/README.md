@@ -13,7 +13,7 @@ This page contains a list of example codes written with Optuna.
 * [Chainer](./chainer_simple.py)
 * [ChainerMN](./chainermn_simple.py)
 * [LighGBM](./lightgbm_simple.py)
-* [Mxnet](./mxnet_simple.py)
+* [MXNet](./mxnet_simple.py)
 * [XGBoost](./xgboost_simple.py)
 * [Tensorflow](./tensorflow_estimator_simple.py)
 

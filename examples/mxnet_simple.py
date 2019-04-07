@@ -1,8 +1,8 @@
 """
-Optuna example that optimizes multi-layer perceptrons using MX-NET.
+Optuna example that optimizes multi-layer perceptrons using MXNet.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-MX-NET and MNIST. We optimize the neural network architecture as well as the optimizer
+MXNet and MNIST. We optimize the neural network architecture as well as the optimizer
 configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
 subset of it.
 
@@ -21,7 +21,7 @@ We have the following two ways to execute this example:
 
 from __future__ import print_function
 
-
+import logging
 import mxnet as mx
 import numpy as np
 
@@ -31,8 +31,12 @@ N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
 
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
-def model_fn(trial):
+
+def create_model(trial):
+    # We optimize the number or layers and count of their hidden units in our MLP.
     n_layers = trial.suggest_int('n_layers', 1, 3)
 
     data = mx.symbol.Variable('data')
@@ -49,6 +53,8 @@ def model_fn(trial):
 
 
 def create_optimizer(trial):
+    # We optimize over the type of optimizer to use (Adam or SGD with momentum).
+    # We also optimize over the learning rate and weight decay of the selected optimizer.
     weight_decay = trial.suggest_loguniform('weight_decay', 1e-10, 1e-3)
     optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'MomentumSGD'])
 
@@ -63,11 +69,11 @@ def create_optimizer(trial):
 
 
 def objective(trial):
-    # Model and optimizer
-    mlp = model_fn(trial)
+    # Generate trial model and trial optimizer.
+    mlp = create_model(trial)
     optimizer = create_optimizer(trial)
 
-    # Dataset
+    # Load the test and train MNIST dataset.
     mnist = mx.test_utils.get_mnist()
     rng = np.random.RandomState(0)
     permute_train = rng.permutation(len(mnist['train_data']))
@@ -82,33 +88,22 @@ def objective(trial):
         label=mnist['test_label'][permute_test][:N_TEST_EXAMPLES],
         batch_size=BATCHSIZE)
 
-    # Callback
-    def _callback(param):
-        """The checkpoint function."""
-        if param.eval_metric is not None:
-            if param.epoch == 0 and param.nbatch == 1:
-                print("%-12s %-12s" % ("epoch", "val-accuracy"))
-            name_value = param.eval_metric.get_name_value()
-            if param.nbatch == 1:
-                for name, value in name_value:
-                    print('%-12d %-12f' % (param.epoch, value))
+    # Create our MXNet trainable model and fit it on MNIST data.
+    model = mx.mod.Module(symbol=mlp)
+    model.fit(train_data=train,
+              eval_data=val,
+              optimizer=optimizer,
+              optimizer_params={'rescale_grad': 1.0 / BATCHSIZE},
+              num_epoch=EPOCH)
 
-    # Trainer
-    model = mx.model.FeedForward(
-        symbol=mlp,
-        optimizer=optimizer,
-        num_epoch=EPOCH,
-    )
-    model.fit(X=train, eval_data=val, batch_end_callback=_callback)
-
-    # Return the  accuracy
+    # Compute the accuracy on the entire test set.
     test = mx.io.NDArrayIter(
         data=mnist['test_data'],
         label=mnist['test_label'],
         batch_size=BATCHSIZE)
-    accuracy = model.score(X=test)
+    accuracy = model.score(eval_data=test, eval_metric='acc')[0]
 
-    return accuracy
+    return accuracy[1]
 
 
 if __name__ == '__main__':
