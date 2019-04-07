@@ -183,7 +183,8 @@ class InMemoryStorage(base.BaseStorage):
 
             # Set param.
             self.trials[trial_id].params_in_internal_repr[param_name] = param_value_internal
-            self.trials[trial_id].params[param_name] = distribution.to_external_repr(param_value_internal)
+            self.trials[trial_id].params[param_name] = distribution.to_external_repr(
+                param_value_internal)
 
             return True
 
