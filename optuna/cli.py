@@ -251,9 +251,9 @@ class StorageUpgrade(BaseCommand):
             storage.upgrade()
             self.logger.info("Completed to upgrade the storage.")
         else:
-            self.logger.warn('Your optuna version seems outdated against the storage version. '
-                             'Please try updating optuna to the latest version by '
-                             '`$ pip install -U optuna`.')
+            self.logger.warning('Your optuna version seems outdated against the storage version. '
+                                'Please try updating optuna to the latest version by '
+                                '`$ pip install -U optuna`.')
 
 
 _COMMANDS = {
