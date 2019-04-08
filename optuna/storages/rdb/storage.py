@@ -445,7 +445,7 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
 
-        cached_trial = self._finished_trials_cache._get_cached_trial(trial_id)
+        cached_trial = self._finished_trials_cache.get_cached_trial(trial_id)
         if cached_trial is not None:
             return copy.deepcopy(cached_trial)
 
@@ -460,17 +460,17 @@ class RDBStorage(BaseStorage):
         frozen_trial = self._merge_trials_orm([trial], params, values, user_attributes,
                                               system_attributes)[0]
 
-        self._finished_trials_cache._cache_trial_if_finished(frozen_trial)
+        self._finished_trials_cache.cache_trial_if_finished(frozen_trial)
 
         return frozen_trial
 
     def get_all_trials(self, study_id):
         # type: (int) -> List[structs.FrozenTrial]
 
-        if self._finished_trials_cache._is_empty():
+        if self._finished_trials_cache.is_empty():
             trials = self._get_all_trials_without_cache(study_id)
             for trial in trials:
-                self._finished_trials_cache._cache_trial_if_finished(trial)
+                self._finished_trials_cache.cache_trial_if_finished(trial)
 
             return trials
 
@@ -692,7 +692,7 @@ class _FinishedTrialsCache(object):
         self._enabled = enabled
         self._lock = threading.Lock()
 
-    def _is_empty(self):
+    def is_empty(self):
         # type: () -> bool
 
         if not self._enabled:
@@ -701,7 +701,7 @@ class _FinishedTrialsCache(object):
         with self._lock:
             return len(self._finished_trials) == 0
 
-    def _cache_trial_if_finished(self, trial):
+    def cache_trial_if_finished(self, trial):
         # type: (structs.FrozenTrial) -> None
 
         if not self._enabled:
@@ -711,7 +711,7 @@ class _FinishedTrialsCache(object):
             with self._lock:
                 self._finished_trials[trial.trial_id] = copy.deepcopy(trial)
 
-    def _get_cached_trial(self, trial_id):
+    def get_cached_trial(self, trial_id):
         # type: (int) -> Optional[structs.FrozenTrial]
 
         if not self._enabled:
