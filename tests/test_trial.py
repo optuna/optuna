@@ -109,7 +109,7 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
 
     # Check upper endpoints.
     mock = Mock()
-    mock.side_effect = lambda storage, study_id, param_name, distribution: distribution.high
+    mock.side_effect = lambda trial, param_name, distribution: distribution.high
     with patch.object(sampler, 'sample', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
@@ -121,7 +121,7 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
 
     # Check lower endpoints.
     mock = Mock()
-    mock.side_effect = lambda storage, study_id, param_name, distribution: distribution.low
+    mock.side_effect = lambda trial, param_name, distribution: distribution.low
     with patch.object(sampler, 'sample', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
