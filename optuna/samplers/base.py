@@ -3,6 +3,11 @@ import six
 
 from optuna.distributions import BaseDistribution  # NOQA
 from optuna.storages.base import BaseStorage  # NOQA
+from optuna.structs import FrozenTrial  # NOQA
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from optuna.study import RunningStudy  # NOQA
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -10,27 +15,33 @@ class BaseSampler(object):
     """Base class for samplers."""
 
     @abc.abstractmethod
-    def sample(self, storage, study_id, param_name, param_distribution):
-        # type: (BaseStorage, int, str, BaseDistribution) -> float
-        """Sample a parameter based on the previous trials and the given distribution.
-
-        Note that this method is not supposed to be called by library users. Instead,
-        :class:`optuna.trial.Trial` provides user interfaces to sample parameters in an objective
-        function.
-
-        Args:
-            storage:
-                Storage object.
-            study_id:
-                Identifier of the target study.
-            param_name:
-                Name of the sampled parameter.
-            param_distribution:
-                Distribution object that specifies a prior and/or scale of the sampling algorithm.
-
-        Returns:
-            A float value in the internal representation of Optuna.
-
-        """
+    def sample(self, trial, param_name, param_distribution):
+        # type: (FrozenTrial, str, BaseDistribution) -> float
 
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def before(self, trial):
+        # type: (FrozenTrial) -> None
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def after(self, trial):
+        # type: (FrozenTrial) -> None
+
+        raise NotImplementedError
+
+    @property
+    def study(self):
+        # type: () -> RunningStudy
+
+        if not hasattr(self, '_study'):
+            raise RuntimeError()
+
+        return self._study
+
+    def _set_study(self, study):
+        # type: (RunningStudy) -> None
+
+        self._study = study

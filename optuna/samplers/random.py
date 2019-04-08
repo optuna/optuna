@@ -3,6 +3,7 @@ import numpy
 from optuna import distributions
 from optuna.samplers.base import BaseSampler
 from optuna.storages.base import BaseStorage  # NOQA
+from optuna.structs import FrozenTrial  # NOQA
 from optuna import types
 
 if types.TYPE_CHECKING:
@@ -29,8 +30,8 @@ class RandomSampler(BaseSampler):
         self.seed = seed
         self.rng = numpy.random.RandomState(seed)
 
-    def sample(self, storage, study_id, param_name, param_distribution):
-        # type: (BaseStorage, int, str, distributions.BaseDistribution) -> float
+    def sample(self, trial, param_name, param_distribution):
+        # type: (FrozenTrial, str, distributions.BaseDistribution) -> float
         """Please consult the documentation for :func:`BaseSampler.sample`."""
 
         if isinstance(param_distribution, distributions.UniformDistribution):
@@ -57,3 +58,13 @@ class RandomSampler(BaseSampler):
             return self.rng.randint(len(choices))
         else:
             raise NotImplementedError
+
+    def before(self, trial):
+        # type: (FrozenTrial) -> None
+
+        pass
+
+    def after(self, trial):
+        # type: (FrozenTrial) -> None
+
+        pass

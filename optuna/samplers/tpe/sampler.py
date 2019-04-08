@@ -8,6 +8,7 @@ from optuna.samplers import random  # NOQA
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator  # NOQA
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters  # NOQA
 from optuna.storages.base import BaseStorage  # NOQA
+from optuna.structs import FrozenTrial  # NOQA
 from optuna.structs import StudyDirection
 from optuna import types
 
@@ -67,17 +68,18 @@ class TPESampler(base.BaseSampler):
         self.rng = np.random.RandomState(seed)
         self.random_sampler = random.RandomSampler(seed=seed)
 
-    def sample(self, storage, study_id, param_name, param_distribution):
-        # type: (BaseStorage, int, str, BaseDistribution) -> float
+    def sample(self, trial, param_name, param_distribution):
+        # type: (FrozenTrial, str, BaseDistribution) -> float
 
-        observation_pairs = storage.get_trial_param_result_pairs(study_id, param_name)
-        if storage.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+        observation_pairs = self.study.storage.get_trial_param_result_pairs(
+            self.study.study_id, param_name)
+        if self.study.direction == StudyDirection.MAXIMIZE:
             observation_pairs = [(p, -v) for p, v in observation_pairs]
 
         n = len(observation_pairs)
 
         if n < self.n_startup_trials:
-            return self.random_sampler.sample(storage, study_id, param_name, param_distribution)
+            return self.random_sampler.sample(trial, param_name, param_distribution)
 
         below_param_values, above_param_values = self._split_observation_pairs(
             list(range(n)), [p[0] for p in observation_pairs], list(range(n)),
@@ -107,6 +109,16 @@ class TPESampler(base.BaseSampler):
             raise NotImplementedError("The distribution {} is not implemented. "
                                       "The parameter distribution should be one of the {}".format(
                                           param_distribution, distribution_list))
+
+    def before(self, trial):
+        # type: (FrozenTrial) -> None
+
+        pass
+
+    def after(self, trial):
+        # type: (FrozenTrial) -> None
+
+        pass
 
     def _split_observation_pairs(
             self,

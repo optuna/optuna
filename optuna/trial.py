@@ -406,8 +406,8 @@ class Trial(BaseTrial):
     def _suggest(self, name, distribution):
         # type: (str, distributions.BaseDistribution) -> Any
 
-        param_value_in_internal_repr = self.study.sampler.sample(self.storage, self.study_id, name,
-                                                                 distribution)
+        trial = self.storage.get_trial(self._trial_id)
+        param_value_in_internal_repr = self.study.sampler.sample(trial, name, distribution)
 
         set_success = self.storage.set_trial_param(self._trial_id, name,
                                                    param_value_in_internal_repr, distribution)

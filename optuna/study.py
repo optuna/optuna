@@ -77,6 +77,8 @@ class Study(object):
         self.study_id = self.storage.get_study_id_from_name(study_name)
         self.logger = logging.get_logger(__name__)
 
+        self.sampler._set_study(RunningStudy(self))
+
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
 
@@ -394,6 +396,7 @@ class Study(object):
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
+        self.sampler.before(self.storage.get_trial(trial_id))
         try:
             result = func(trial)
         except structs.TrialPruned as e:
@@ -402,6 +405,7 @@ class Study(object):
                                                                     str(e))
             self.logger.info(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
+            self.sampler.after(self.storage.get_trial(trial_id))
             return trial
         except catch as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
@@ -409,6 +413,7 @@ class Study(object):
             self.logger.warning(message, exc_info=True)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.sampler.after(self.storage.get_trial(trial_id))
             return trial
 
         try:
@@ -423,6 +428,7 @@ class Study(object):
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.sampler.after(self.storage.get_trial(trial_id))
             return trial
 
         if math.isnan(result):
@@ -431,12 +437,14 @@ class Study(object):
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.sampler.after(self.storage.get_trial(trial_id))
             return trial
 
         trial.report(result)
         self.storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
         self._log_completed_trial(trial_number, result)
 
+        self.sampler.after(self.storage.get_trial(trial_id))
         return trial
 
     def _log_completed_trial(self, trial_number, value):
@@ -445,6 +453,60 @@ class Study(object):
         self.logger.info('Finished trial#{} resulted in value: {}. '
                          'Current best value is {} with parameters: {}.'.format(
                              trial_number, value, self.best_value, self.best_params))
+
+
+class RunningStudy(object):
+    def __init__(self, study):
+        # type: (Study) -> None
+
+        self.study_name = study.study_name
+        self.study_id = study.study_id
+        self.storage = study.storage
+
+    @property
+    def best_params(self):
+        # type: () -> Dict[str, Any]
+
+        return self.best_trial.params
+
+    @property
+    def best_value(self):
+        # type: () -> float
+
+        best_value = self.best_trial.value
+        if best_value is None:
+            raise ValueError('No trials are completed yet.')
+
+        return best_value
+
+    @property
+    def best_trial(self):
+        # type: () -> structs.FrozenTrial
+
+        return self.storage.get_best_trial(self.study_id)
+
+    @property
+    def direction(self):
+        # type: () -> structs.StudyDirection
+
+        return self.storage.get_study_direction(self.study_id)
+
+    @property
+    def trials(self):
+        # type: () -> List[structs.FrozenTrial]
+
+        return self.storage.get_all_trials(self.study_id)
+
+    @property
+    def system_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self.storage.get_study_system_attrs(self.study_id)
+
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self.storage.set_study_system_attr(self.study_id, key, value)
 
 
 def create_study(

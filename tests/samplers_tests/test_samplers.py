@@ -9,6 +9,8 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler  # NOQA
+from optuna.structs import FrozenTrial  # NOQA
+from optuna.study import Study  # NOQA
 
 if optuna.types.TYPE_CHECKING:
     from optuna.trial import T  # NOQA
@@ -29,7 +31,7 @@ def test_uniform(sampler_class, distribution):
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array([
-        study.sampler.sample(study.storage, study.study_id, 'x', distribution) for _ in range(100)
+        study.sampler.sample(new_trial(study), 'x', distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
@@ -42,7 +44,7 @@ def test_log_uniform(sampler_class, distribution):
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array([
-        study.sampler.sample(study.storage, study.study_id, 'x', distribution) for _ in range(100)
+        study.sampler.sample(new_trial(study), 'x', distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
@@ -59,7 +61,7 @@ def test_discrete_uniform(sampler_class, distribution):
     study = optuna.study.create_study(sampler=sampler_class())
 
     points = np.array([
-        study.sampler.sample(study.storage, study.study_id, 'x', distribution) for _ in range(100)
+        study.sampler.sample(new_trial(study), 'x', distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
@@ -83,7 +85,7 @@ def test_int(sampler_class, distribution):
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array([
-        study.sampler.sample(study.storage, study.study_id, 'x', distribution) for _ in range(100)
+        study.sampler.sample(new_trial(study), 'x', distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
@@ -98,10 +100,17 @@ def test_categorical(sampler_class, choices):
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array([
-        study.sampler.sample(study.storage, study.study_id, 'x', distribution) for _ in range(100)
+        study.sampler.sample(new_trial(study), 'x', distribution) for _ in range(100)
     ])
     # 'x' value is corresponding to an index of distribution.choices.
     assert np.all(points >= 0)
     assert np.all(points <= len(distribution.choices) - 1)
     round_points = np.round(points)
     np.testing.assert_almost_equal(round_points, points)
+
+
+def new_trial(study):
+    # type: (Study) -> FrozenTrial
+
+    trial_id = study.storage.create_new_trial_id(study.study_id)
+    return study.storage.get_trial(trial_id)
