@@ -624,7 +624,7 @@ class RDBStorage(BaseStorage):
 
 class _VersionManager(object):
     def __init__(self, url, engine, scoped_session):
-        # type: (str, Engine, orm.Session) -> None
+        # type: (str, Engine, orm.scoped_session) -> None
 
         self.url = url
         self.engine = engine
