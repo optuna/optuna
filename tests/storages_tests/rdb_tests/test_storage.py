@@ -192,14 +192,14 @@ def test_check_table_schema_compatibility():
     session = storage.scoped_session()
 
     # The schema version of a newly created storage is always up-to-date.
-    storage._version_manager._check_table_schema_compatibility()
+    storage._version_manager.check_table_schema_compatibility()
 
     # `SCHEMA_VERSION` has not been used for compatibility check since alembic was introduced.
     version_info = session.query(VersionInfoModel).one()
     version_info.schema_version = SCHEMA_VERSION - 1
     session.commit()
 
-    storage._version_manager._check_table_schema_compatibility()
+    storage._version_manager.check_table_schema_compatibility()
 
     # TODO(ohta): Remove the following comment out when the second revision is introduced.
     # with pytest.raises(RuntimeError):

@@ -63,7 +63,7 @@ class RDBStorage(BaseStorage):
 
         self._version_manager = _VersionManager(url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
-            self._version_manager._check_table_schema_compatibility()
+            self._version_manager.check_table_schema_compatibility()
 
     def create_new_study_id(self, study_name=None):
         # type: (Optional[str]) -> int
@@ -601,25 +601,25 @@ class RDBStorage(BaseStorage):
         # type: () -> None
         """Upgrade the storage schema."""
 
-        self._version_manager._upgrade()
+        self._version_manager.upgrade()
 
     def get_current_version(self):
         # type: () -> str
         """Return the schema version currently used by this storage."""
 
-        return self._version_manager._get_current_version()
+        return self._version_manager.get_current_version()
 
     def get_head_version(self):
         # type: () -> str
         """Return the latest schema version."""
 
-        return self._version_manager._get_head_version()
+        return self._version_manager.get_head_version()
 
     def get_all_versions(self):
         # type: () -> List[str]
         """Return the schema version list."""
 
-        return self._version_manager._get_all_versions()
+        return self._version_manager.get_all_versions()
 
 
 class _VersionManager(object):
@@ -661,7 +661,7 @@ class _VersionManager(object):
             return
 
         if self._is_alembic_supported():
-            revision = self._get_head_version()
+            revision = self.get_head_version()
         else:
             # The storage has been created before alembic is introduced.
             revision = self._get_base_version()
@@ -675,7 +675,7 @@ class _VersionManager(object):
         script = self._create_alembic_script()
         context.stamp(script, revision)
 
-    def _check_table_schema_compatibility(self):
+    def check_table_schema_compatibility(self):
         # type: () -> None
 
         session = self.scoped_session()
@@ -685,15 +685,15 @@ class _VersionManager(object):
         version_info = models.VersionInfoModel.find(session)
         assert version_info is not None
 
-        current_version = self._get_current_version()
-        head_version = self._get_head_version()
+        current_version = self.get_current_version()
+        head_version = self.get_head_version()
         if current_version == head_version:
             return
 
         message = 'The runtime optuna version {} is no longer compatible with the table schema ' \
                   '(set up by optuna {}). '.format(version.__version__,
                                                    version_info.library_version)
-        known_versions = self._get_all_versions()
+        known_versions = self.get_all_versions()
         if current_version in known_versions:
             message += 'Please execute `$ optuna storage upgrade --storage $STORAGE_URL` ' \
                        'for upgrading the storage.'
@@ -703,7 +703,7 @@ class _VersionManager(object):
 
         raise RuntimeError(message)
 
-    def _get_current_version(self):
+    def get_current_version(self):
         # type: () -> str
 
         context = alembic.migration.MigrationContext.configure(self.engine.connect())
@@ -712,7 +712,7 @@ class _VersionManager(object):
 
         return version
 
-    def _get_head_version(self):
+    def get_head_version(self):
         # type: () -> str
 
         script = self._create_alembic_script()
@@ -724,13 +724,13 @@ class _VersionManager(object):
         script = self._create_alembic_script()
         return script.get_base()
 
-    def _get_all_versions(self):
+    def get_all_versions(self):
         # type: () -> List[str]
 
         script = self._create_alembic_script()
         return [r.revision for r in script.walk_revisions()]
 
-    def _upgrade(self):
+    def upgrade(self):
         # type: () -> None
 
         config = self._create_alembic_config()
