@@ -34,6 +34,9 @@ def test_init():
     assert version_info.schema_version == SCHEMA_VERSION
     assert version_info.library_version == version.__version__
 
+    assert storage.get_current_version() == storage.get_head_version()
+    assert storage.get_all_versions() == ['v0.9.0.a']
+
 
 def test_init_url_template():
     # type: ()-> None
@@ -190,16 +193,20 @@ def test_check_table_schema_compatibility():
     storage = create_test_storage()
     session = storage.scoped_session()
 
-    # test not raising error for out of date schema type
-    storage._check_table_schema_compatibility()
+    # The schema version of a newly created storage is always up-to-date.
+    storage._version_manager.check_table_schema_compatibility()
 
-    # test raising error for out of date schema type
+    # `SCHEMA_VERSION` has not been used for compatibility check since alembic was introduced.
     version_info = session.query(VersionInfoModel).one()
     version_info.schema_version = SCHEMA_VERSION - 1
     session.commit()
 
-    with pytest.raises(RuntimeError):
-        storage._check_table_schema_compatibility()
+    storage._version_manager.check_table_schema_compatibility()
+
+    # TODO(ohta): Remove the following comment out when the second revision is introduced.
+    # with pytest.raises(RuntimeError):
+    #     storage._set_alembic_revision(storage._version_manager._get_base_version())
+    #     storage._check_table_schema_compatibility()
 
 
 def create_test_storage():
@@ -233,3 +240,16 @@ def test_create_new_trial_number():
 
     trial_id = storage.create_new_trial_id(study_id)
     assert storage._create_new_trial_number(trial_id) == 1
+
+
+def test_upgrade():
+    # type: () -> None
+
+    storage = create_test_storage()
+
+    # `upgrade()` has no effect because the storage version is already up-to-date.
+    old_version = storage.get_current_version()
+    storage.upgrade()
+    new_version = storage.get_current_version()
+
+    assert old_version == new_version
