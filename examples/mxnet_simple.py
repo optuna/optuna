@@ -32,7 +32,7 @@ BATCHSIZE = 128
 EPOCH = 10
 
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def create_model(trial):
