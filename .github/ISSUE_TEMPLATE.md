@@ -1,7 +1,9 @@
-If your issue is a **request for support in using Optuna**,
-please post it on [Stack Overflow](https://stackoverflow.com/questions/tagged/optuna).
-Support is also available on `#general` channel of [chainer slack](https://bit.ly/join-chainer-slack)
-and [chainer-jp slack](https://bit.ly/join-chainer-jp-slack).
+If your issue is a **request for support in using Optuna**, please post it on [Stack Overflow].
+Support is also available on `#general` channel of [chainer slack] and [chainer-jp slack].
+
+[Stack Overflow]: https://stackoverflow.com/questions/tagged/optuna
+[chainer slack]: https://bit.ly/join-chainer-slack
+[chainer-jp slack]: https://bit.ly/join-chainer-jp-slack
 
 On registering an issue, write precise explanations on how you want Optuna to be.
 
