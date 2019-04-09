@@ -456,6 +456,8 @@ class Study(object):
 
 
 class RunningStudy(object):
+    """TODO: Add documentation after the class name is fixed."""
+
     def __init__(self, study):
         # type: (Study) -> None
 
@@ -466,12 +468,22 @@ class RunningStudy(object):
     @property
     def best_params(self):
         # type: () -> Dict[str, Any]
+        """Return parameters of the best trial in the :class:`~optuna.study.RunningStudy`.
+
+        Returns:
+            A dictionary containing parameters of the best trial.
+        """
 
         return self.best_trial.params
 
     @property
     def best_value(self):
         # type: () -> float
+        """Return the best objective value in the :class:`~optuna.study.RunningStudy`.
+
+        Returns:
+            A float representing the best objective value.
+        """
 
         best_value = self.best_trial.value
         if best_value is None:
@@ -482,29 +494,56 @@ class RunningStudy(object):
     @property
     def best_trial(self):
         # type: () -> structs.FrozenTrial
+        """Return the best trial in the :class:`~optuna.study.RunningStudy`.
+
+        Returns:
+            A :class:`~optuna.structs.FrozenTrial` object of the best trial.
+        """
 
         return self.storage.get_best_trial(self.study_id)
 
     @property
     def direction(self):
         # type: () -> structs.StudyDirection
+        """Return the direction of the :class:`~optuna.study.RunningStudy`.
+
+        Returns:
+            A :class:`~optuna.structs.StudyDirection` object.
+        """
 
         return self.storage.get_study_direction(self.study_id)
 
     @property
     def trials(self):
         # type: () -> List[structs.FrozenTrial]
+        """Return all trials in the :class:`~optuna.study.RunningStudy`.
+
+        Returns:
+            A list of :class:`~optuna.structs.FrozenTrial` objects.
+        """
 
         return self.storage.get_all_trials(self.study_id)
 
     @property
     def system_attrs(self):
         # type: () -> Dict[str, Any]
+        """Return system attributes.
+
+        Returns:
+            A dictionary containing all system attributes.
+        """
 
         return self.storage.get_study_system_attrs(self.study_id)
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
+        """Set a system attribute to the :class:`~optuna.study.RunningStudy`.
+
+        Args:
+            key: A key string of the attribute.
+            value: A value of the attribute. The value should be JSON serializable.
+
+        """
 
         self.storage.set_study_system_attr(self.study_id, key, value)
 
