@@ -11,7 +11,7 @@ import uuid
 
 import optuna
 from optuna.samplers import RandomSampler
-from optuna.struts import TrialState
+from optuna.structs import TrialState
 from optuna.testing.storage import StorageSupplier
 from optuna import types
 
