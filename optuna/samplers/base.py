@@ -20,17 +20,15 @@ class BaseSampler(object):
 
         raise NotImplementedError
 
-    @abc.abstractmethod
     def before(self, trial):
         # type: (FrozenTrial) -> None
 
-        raise NotImplementedError
+        pass
 
-    @abc.abstractmethod
     def after(self, trial):
         # type: (FrozenTrial) -> None
 
-        raise NotImplementedError
+        pass
 
     @property
     def study(self):

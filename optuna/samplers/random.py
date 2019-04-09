@@ -58,13 +58,3 @@ class RandomSampler(BaseSampler):
             return self.rng.randint(len(choices))
         else:
             raise NotImplementedError
-
-    def before(self, trial):
-        # type: (FrozenTrial) -> None
-
-        pass
-
-    def after(self, trial):
-        # type: (FrozenTrial) -> None
-
-        pass

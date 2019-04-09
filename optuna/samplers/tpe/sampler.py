@@ -110,16 +110,6 @@ class TPESampler(base.BaseSampler):
                                       "The parameter distribution should be one of the {}".format(
                                           param_distribution, distribution_list))
 
-    def before(self, trial):
-        # type: (FrozenTrial) -> None
-
-        pass
-
-    def after(self, trial):
-        # type: (FrozenTrial) -> None
-
-        pass
-
     def _split_observation_pairs(
             self,
             config_idxs,  # type: List[int]
