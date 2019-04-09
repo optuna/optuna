@@ -1,5 +1,6 @@
 import collections
 import datetime
+import gc
 import math
 import multiprocessing
 import multiprocessing.pool
@@ -410,6 +411,12 @@ class Study(object):
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             return trial
+        finally:
+            # The following line mitigates memory problems that can be occurred in some
+            # environments (e.g., services that use computing containers such as CircleCI).
+            # Please refer to the following PR for further details:
+            # https://github.com/pfnet/optuna/pull/325.
+            gc.collect()
 
         try:
             result = float(result)
