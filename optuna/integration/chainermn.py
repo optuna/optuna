@@ -150,7 +150,8 @@ class ChainerMNStudy(object):
                     pass
                 finally:
                     # The following line mitigates memory problems due to container virtualization.
-                    # See the case of CircleCI at https://github.com/pfnet/optuna/pull/325.
+                    # Please refer to the following PR for further details:
+                    # https://github.com/pfnet/optuna/pull/325.
                     gc.collect()
 
     def __getattr__(self, attr_name):
