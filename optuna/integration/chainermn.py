@@ -150,7 +150,8 @@ class ChainerMNStudy(object):
                 except catch:
                     pass
                 finally:
-                    # The following line mitigates memory problems due to container virtualization.
+                    # The following line mitigates memory problems that can be occurred in some
+                    # environments (e.g., services that use computing containers such as CircleCI).
                     # Please refer to the following PR for further details:
                     # https://github.com/pfnet/optuna/pull/325.
                     gc.collect()
