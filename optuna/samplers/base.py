@@ -20,12 +20,12 @@ class BaseSampler(object):
 
         raise NotImplementedError
 
-    def before(self, trial):
+    def before_trial(self, trial):
         # type: (FrozenTrial) -> None
 
         pass
 
-    def after(self, trial):
+    def after_trial(self, trial):
         # type: (FrozenTrial) -> None
 
         pass

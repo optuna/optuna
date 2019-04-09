@@ -396,7 +396,7 @@ class Study(object):
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
-        self.sampler.before(self.storage.get_trial(trial_id))
+        self.sampler.before_trial(self.storage.get_trial(trial_id))
         try:
             result = func(trial)
         except structs.TrialPruned as e:
@@ -405,7 +405,7 @@ class Study(object):
                                                                     str(e))
             self.logger.info(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
-            self.sampler.after(self.storage.get_trial(trial_id))
+            self.sampler.after_trial(self.storage.get_trial(trial_id))
             return trial
         except catch as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
@@ -413,7 +413,7 @@ class Study(object):
             self.logger.warning(message, exc_info=True)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.sampler.after(self.storage.get_trial(trial_id))
+            self.sampler.after_trial(self.storage.get_trial(trial_id))
             return trial
 
         try:
@@ -428,7 +428,7 @@ class Study(object):
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.sampler.after(self.storage.get_trial(trial_id))
+            self.sampler.after_trial(self.storage.get_trial(trial_id))
             return trial
 
         if math.isnan(result):
@@ -437,14 +437,14 @@ class Study(object):
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.sampler.after(self.storage.get_trial(trial_id))
+            self.sampler.after_trial(self.storage.get_trial(trial_id))
             return trial
 
         trial.report(result)
         self.storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
         self._log_completed_trial(trial_number, result)
 
-        self.sampler.after(self.storage.get_trial(trial_id))
+        self.sampler.after_trial(self.storage.get_trial(trial_id))
         return trial
 
     def _log_completed_trial(self, trial_number, value):
