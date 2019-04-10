@@ -47,7 +47,6 @@ class MxnetPruningCallback(object):
 
         if param.eval_metric is not None:
             metric_names, metric_values = param.eval_metric.get()
-            print(metric_names)
             if type(metric_names) == list and self.eval_metric in metric_names:
                 current_score = metric_values[metric_names.index(self.eval_metric)]
             elif metric_names == self.eval_metric:
