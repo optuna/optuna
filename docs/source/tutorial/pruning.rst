@@ -80,6 +80,7 @@ To implement pruning mechanism in much simpler forms, Optuna provides integratio
 - Chainer: :class:`optuna.integration.ChainerPruningExtension`
 - Keras: :class:`optuna.integration.KerasPruningCallback`
 - TensorFlow :class:`optuna.integration.TensorFlowPruningHook`
+- MXNet :class:`optuna.integration.MxnetPruningCallback`
 
 For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
 (See also `example <https://github.com/pfnet/optuna/blob/master/examples/pruning/xgboost_integration.py>`_ for the entire script.)
