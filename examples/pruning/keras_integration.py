@@ -17,10 +17,8 @@ from keras.layers import Dense
 from keras.layers import Dropout
 from keras.models import Sequential
 
-
 import optuna
 from optuna.integration import KerasPruningCallback
-
 
 N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
@@ -38,8 +36,7 @@ def create_model(trial):
     model = Sequential()
     for i in range(n_layers):
         num_hidden = int(trial.suggest_loguniform('n_units_l{}'.format(i), 4, 128))
-        model.add(Dense(num_hidden,
-                        activation='relu'))
+        model.add(Dense(num_hidden, activation='relu'))
         dropout = trial.suggest_uniform('dropout_l{}'.format(i), 0.2, 0.5)
         model.add(Dropout(rate=dropout))
     model.add(Dense(CLASSES, activation='softmax'))
@@ -59,8 +56,8 @@ def objective(trial):
 
     # The data is split between train and test sets.
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
-    x_train = x_train.reshape(60000, 784)[:N_TRAIN_EXAMPLES].astype('float32')/255
-    x_test = x_test.reshape(10000, 784)[:N_TEST_EXAMPLES].astype('float32')/255
+    x_train = x_train.reshape(60000, 784)[:N_TRAIN_EXAMPLES].astype('float32') / 255
+    x_test = x_test.reshape(10000, 784)[:N_TEST_EXAMPLES].astype('float32') / 255
 
     # Convert class vectors to binary class matrices.
     y_train = keras.utils.to_categorical(y_train[:N_TRAIN_EXAMPLES], CLASSES)
@@ -71,7 +68,8 @@ def objective(trial):
 
     # Fit the model on the training data.
     # The KerasPruningCallback checks for pruning condition every epoch.
-    model.fit(x_train, y_train,
+    model.fit(x_train,
+              y_train,
               batch_size=BATCHSIZE,
               callbacks=[KerasPruningCallback(trial, 'val_acc')],
               epochs=EPOCHS,
