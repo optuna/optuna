@@ -11,6 +11,7 @@ import logging
 import sys
 
 import optuna
+from optuna.storages import RDBStorage
 from optuna.structs import CLIUsageError
 from optuna import types
 
@@ -223,12 +224,45 @@ class StudyOptimize(BaseCommand):
         return 0
 
 
+class StorageUpgrade(BaseCommand):
+    def get_parser(self, prog_name):
+        # type: (str) -> ArgumentParser
+
+        parser = super(StorageUpgrade, self).get_parser(prog_name)
+        return parser
+
+    def take_action(self, parsed_args):
+        # type: (Namespace) -> None
+
+        if self.app_args.storage is None and self.app_args.config is None:
+            raise CLIUsageError("Either --storage or --config option is required.")
+
+        config = optuna.config.load_optuna_config(self.app_args.config)
+        storage_url = get_storage_url(self.app_args.storage, config)
+
+        storage = RDBStorage(storage_url, skip_compatibility_check=True)
+        current_version = storage.get_current_version()
+        head_version = storage.get_head_version()
+        known_versions = storage.get_all_versions()
+        if current_version == head_version:
+            self.logger.info('This storage is up-to-date.')
+        elif current_version in known_versions:
+            self.logger.info('Upgrading the storage schema to the latest version.')
+            storage.upgrade()
+            self.logger.info("Completed to upgrade the storage.")
+        else:
+            self.logger.warning('Your optuna version seems outdated against the storage version. '
+                                'Please try updating optuna to the latest version by '
+                                '`$ pip install -U optuna`.')
+
+
 _COMMANDS = {
     'create-study': CreateStudy,
     'study set-user-attr': StudySetUserAttribute,
     'studies': Studies,
     'dashboard': Dashboard,
     'study optimize': StudyOptimize,
+    'storage upgrade': StorageUpgrade,
 }
 
 

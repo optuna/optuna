@@ -180,7 +180,7 @@ jobs:
           name: install
           command: |
             . venv/bin/activate
-            pip install chainer lightgbm scikit-learn tensorflow xgboost keras
+            pip install chainer keras lightgbm scikit-learn tensorflow mxnet xgboost
 
       - run: &examples
           name: examples
