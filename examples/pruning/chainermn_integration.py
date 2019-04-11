@@ -19,7 +19,6 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 import chainermn
-import gc
 import numpy as np
 import sys
 
@@ -99,10 +98,6 @@ def objective(trial, comm):
     evaluator = chainer.training.extensions.Evaluator(test_iter, model)
     evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
     report = evaluator()
-
-    # The following line mitigates the memory problem in CircleCI
-    # (see https://github.com/pfnet/optuna/pull/325 for more details).
-    gc.collect()
 
     return 1.0 - report['main/accuracy']
 
