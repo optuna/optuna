@@ -57,11 +57,6 @@ class Study(object):
             A pruner object that decides early stopping of unpromising trials.
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
-        enable_storage_cache:
-            Flag to control whether to enable storage layer caching.
-            If this flag is set to :obj:`True` (the default), the finished trials are
-            cached on memory and never re-fetched from the storage.
-            Otherwise, the trials are fetched from the storage whenever they are needed.
 
     """
 
@@ -71,12 +66,11 @@ class Study(object):
             storage,  # type: Union[str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
-            enable_storage_cache=True,  # type: bool
     ):
         # type: (...) -> None
 
         self.study_name = study_name
-        self.storage = storages.get_storage(storage, enable_storage_cache)
+        self.storage = storages.get_storage(storage)
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
@@ -460,7 +454,6 @@ def create_study(
         study_name=None,  # type: Optional[str]
         direction='minimize',  # type: str
         load_if_exists=False,  # type: bool
-        enable_storage_cache=True,  # type: bool
 ):
     # type: (...) -> Study
     """Create a new :class:`~optuna.study.Study`.
@@ -487,11 +480,7 @@ def create_study(
             a :class:`~optuna.structs.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
-        enable_storage_cache:
-            Flag to control whether to enable storage layer caching.
-            If this flag is set to :obj:`True` (the default), the finished trials are
-            cached on memory and never re-fetched from the storage.
-            Otherwise, the trials are fetched from the storage whenever they are needed.
+
     Returns:
         A :class:`~optuna.study.Study` object.
 
@@ -516,9 +505,7 @@ def create_study(
         study_name=study_name,
         storage=storage,
         sampler=sampler,
-        pruner=pruner,
-        enable_storage_cache=enable_storage_cache,
-    )
+        pruner=pruner)
 
     if direction == 'minimize':
         _direction = structs.StudyDirection.MINIMIZE
@@ -537,7 +524,6 @@ def load_study(
         storage,  # type: Union[str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
-        enable_storage_cache=True,  # type: bool
 ):
     # type: (...) -> Study
     """Load the existing :class:`~optuna.study.Study` that has the specified name.
@@ -558,20 +544,10 @@ def load_study(
             A pruner object that decides early stopping of unpromising trials.
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
-        enable_storage_cache:
-            Flag to control whether to enable storage layer caching.
-            If this flag is set to :obj:`True` (the default), the finished trials are
-            cached on memory and never re-fetched from the storage.
-            Otherwise, the trials are fetched from the storage whenever they are needed.
 
     """
 
-    return Study(
-        study_name=study_name,
-        storage=storage,
-        sampler=sampler,
-        pruner=pruner,
-        enable_storage_cache=enable_storage_cache)
+    return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
 def get_all_study_summaries(storage):

@@ -205,10 +205,10 @@ def test_check_table_schema_compatibility():
         storage._check_table_schema_compatibility()
 
 
-def create_test_storage(enable_storage_cache=True):
+def create_test_storage(enable_cache=True):
     # type: (bool) -> RDBStorage
 
-    storage = RDBStorage('sqlite:///:memory:', enable_storage_cache=enable_storage_cache)
+    storage = RDBStorage('sqlite:///:memory:', enable_cache=enable_cache)
     return storage
 
 
@@ -290,7 +290,7 @@ def test_storage_cache():
         return trials
 
     # Storage cache is disabled.
-    storage = create_test_storage(enable_storage_cache=False)
+    storage = create_test_storage(enable_cache=False)
     study_id = storage.create_new_study_id()
     trials = setup_trials(storage, study_id)
 
@@ -306,7 +306,7 @@ def test_storage_cache():
         assert mock_object.call_count == 1
 
     # Storage cache is enabled.
-    storage = create_test_storage(enable_storage_cache=True)
+    storage = create_test_storage(enable_cache=True)
     study_id = storage.create_new_study_id()
     trials = setup_trials(storage, study_id)
 

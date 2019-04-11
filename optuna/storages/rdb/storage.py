@@ -35,9 +35,15 @@ class RDBStorage(BaseStorage):
     Args:
         url: URL of the storage.
         connect_args: Arguments that is passed to :func:`sqlalchemy.engine.create_engine`.
+        enable_cache:
+            Flag to control whether to enable storage layer caching.
+            If this flag is set to :obj:`True` (the default), the finished trials are
+            cached on memory and never re-fetched from the storage.
+            Otherwise, the trials are fetched from the storage whenever they are needed.
+
     """
 
-    def __init__(self, url, connect_args=None, enable_storage_cache=True):
+    def __init__(self, url, connect_args=None, enable_cache=True):
         # type: (str, Optional[Dict[str, Any]], bool) -> None
 
         connect_args = connect_args or {}
@@ -56,7 +62,7 @@ class RDBStorage(BaseStorage):
         self._check_table_schema_compatibility()
         self.logger = logging.get_logger(__name__)
 
-        self._finished_trials_cache = _FinishedTrialsCache(enable_storage_cache)
+        self._finished_trials_cache = _FinishedTrialsCache(enable_cache)
 
     def create_new_study_id(self, study_name=None):
         # type: (Optional[str]) -> int

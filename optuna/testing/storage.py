@@ -17,12 +17,12 @@ class StorageSupplier(object):
 
     _common_tempfile = None  # type: Optional[IO[Any]]
 
-    def __init__(self, storage_specifier, enable_storage_cache):
+    def __init__(self, storage_specifier, enable_cache=True):
         # type: (str, bool) -> None
 
         self.storage_specifier = storage_specifier
         self.tempfile = None  # type: Optional[IO[Any]]
-        self.enable_storage_cache = enable_storage_cache
+        self.enable_cache = enable_cache
 
     def __enter__(self):
         # type: () -> Optional[optuna.storages.BaseStorage]
@@ -35,14 +35,16 @@ class StorageSupplier(object):
             return optuna.storages.RDBStorage(
                 url,
                 connect_args={'timeout': SQLITE3_TIMEOUT},
-                enable_storage_cache=self.enable_storage_cache)
+                enable_cache=self.enable_cache,
+            )
         elif self.storage_specifier == 'common':
             assert self._common_tempfile is not None
             url = 'sqlite:///{}'.format(self._common_tempfile.name)
             return optuna.storages.RDBStorage(
                 url,
                 connect_args={'timeout': SQLITE3_TIMEOUT},
-                enable_storage_cache=self.enable_storage_cache)
+                enable_cache=self.enable_cache,
+            )
         else:
             assert False
 
