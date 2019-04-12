@@ -474,7 +474,7 @@ def test_trials_dataframe_with_failure(storage_mode, cache_mode):
             assert df.state[i] == optuna.structs.TrialState.FAIL
             assert df.value[i] is None
             assert isinstance(df.datetime_start[i], pd.Timestamp)
-            assert df.datetime_complete[i] is None
+            assert isinstance(df.datetime_complete[i], pd.Timestamp)
             assert df.params.x[i] == 1
             assert df.params.y[i] == 2.5
             assert df.user_attrs.train_loss[i] == 3
