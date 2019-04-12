@@ -332,7 +332,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self._check_trial_is_updatable(trial)
+        self.check_trial_is_updatable(trial_id, trial.state)
 
         trial.state = state
         if state.is_finished():
@@ -346,7 +346,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self._check_trial_is_updatable(trial)
+        self.check_trial_is_updatable(trial_id, trial.state)
 
         trial_param = \
             models.TrialParamModel.find_by_trial_and_param_name(trial, param_name, session)
@@ -387,7 +387,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self._check_trial_is_updatable(trial)
+        self.check_trial_is_updatable(trial_id, trial.state)
 
         trial.value = value
 
@@ -399,7 +399,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self._check_trial_is_updatable(trial)
+        self.check_trial_is_updatable(trial_id, trial.state)
 
         trial_value = models.TrialValueModel.find_by_trial_and_step(trial, step, session)
         if trial_value is not None:
@@ -419,7 +419,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self._check_trial_is_updatable(trial)
+        self.check_trial_is_updatable(trial_id, trial.state)
 
         attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
@@ -437,7 +437,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self._check_trial_is_updatable(trial)
+        self.check_trial_is_updatable(trial_id, trial.state)
 
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
@@ -515,14 +515,6 @@ class RDBStorage(BaseStorage):
         system_attributes = models.TrialSystemAttributeModel.where_study(study, session)
 
         return self._merge_trials_orm(trials, params, values, user_attributes, system_attributes)
-
-    def _check_trial_is_updatable(self, trial):
-        # type: (models.TrialModel) -> None
-
-        if trial.state is not structs.TrialState.RUNNING:
-            trial_number = self.get_trial_number_from_id(trial.trial_id)
-            raise RuntimeError(
-                "Trial#{} has already finished and can not be updated.".format(trial_number))
 
     def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[structs.TrialState]) -> int
