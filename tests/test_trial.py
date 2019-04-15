@@ -27,7 +27,7 @@ def test_suggest_uniform(storage_init_func):
     mock.side_effect = [1., 2., 3.]
     sampler = samplers.RandomSampler()
 
-    with patch.object(sampler, 'sample', mock) as mock_object:
+    with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
         distribution = distributions.UniformDistribution(low=0., high=3.)
@@ -47,7 +47,7 @@ def test_suggest_discrete_uniform(storage_init_func):
     mock.side_effect = [1., 2., 3.]
     sampler = samplers.RandomSampler()
 
-    with patch.object(sampler, 'sample', mock) as mock_object:
+    with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
         distribution = distributions.DiscreteUniformDistribution(low=0., high=3., q=1.)
@@ -110,7 +110,7 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
     # Check upper endpoints.
     mock = Mock()
     mock.side_effect = lambda trial, param_name, distribution: distribution.high
-    with patch.object(sampler, 'sample', mock) as mock_object:
+    with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
 
@@ -122,7 +122,7 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
     # Check lower endpoints.
     mock = Mock()
     mock.side_effect = lambda trial, param_name, distribution: distribution.low
-    with patch.object(sampler, 'sample', mock) as mock_object:
+    with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
 
@@ -140,7 +140,7 @@ def test_suggest_int(storage_init_func):
     mock.side_effect = [1, 2, 3]
     sampler = samplers.RandomSampler()
 
-    with patch.object(sampler, 'sample', mock) as mock_object:
+    with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
         distribution = distributions.IntUniformDistribution(low=0, high=3)

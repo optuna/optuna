@@ -1,6 +1,4 @@
 import itertools
-from mock import Mock
-from mock import patch
 import multiprocessing
 import pandas as pd
 import pickle
@@ -10,8 +8,6 @@ import time
 import uuid
 
 import optuna
-from optuna.samplers import RandomSampler
-from optuna.struts import TrialState
 from optuna.testing.storage import StorageSupplier
 from optuna import types
 
@@ -514,57 +510,3 @@ def test_load_study(storage_mode):
         # Test loading an existing study.
         loaded_study = optuna.study.load_study(study_name=study_name, storage=storage)
         assert created_study.study_id == loaded_study.study_id
-
-
-def test_sampler_before_trial():
-    # type: () -> None
-
-    sampler = RandomSampler()
-    study = optuna.create_study(sampler=sampler)
-
-    def objective(mock, trial):
-        # type: (Mock, optuna.trial.Trial) -> float
-
-        assert mock.call_count == 1
-        return 1.0
-
-    def check_trial_state(trial):
-        # type: (optuna.structs.FrozenTrial) -> None
-
-        assert trial.state == TrialState.RUNNING
-
-    mock = Mock(return_value=None, side_effect=check_trial_state)
-    with patch.object(RandomSampler, 'before_trial', mock) as mock:
-        assert mock.call_count == 0
-        study.optimize(lambda trial: objective(mock, trial), n_trials=1)
-        assert mock.call_count == 1
-
-
-def test_sampler_after_trial():
-    # type: () -> None
-
-    sampler = RandomSampler()
-    study = optuna.create_study(sampler=sampler)
-
-    for expected_state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
-        def objective(mock, trial):
-            # type: (Mock, optuna.trial.Trial) -> float
-
-            assert mock.call_count == 0
-            if expected_state is TrialState.COMPLETE:
-                return 1.0
-            elif expected_state is TrialState.PRUNED:
-                raise optuna.structs.TrialPruned()
-            else:
-                raise RuntimeError()
-
-        def check_trial_state(trial):
-            # type: (optuna.structs.FrozenTrial) -> None
-
-            assert trial.state == expected_state
-
-        mock = Mock(return_value=None, side_effect=check_trial_state)
-        with patch.object(RandomSampler, 'after_trial', mock) as mock:
-            assert mock.call_count == 0
-            study.optimize(lambda trial: objective(mock, trial), n_trials=1)
-            assert mock.call_count == 1

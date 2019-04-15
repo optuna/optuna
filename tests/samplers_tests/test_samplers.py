@@ -31,7 +31,7 @@ def test_uniform(sampler_class, distribution):
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array([
-        study.sampler.sample(new_trial(study), 'x', distribution) for _ in range(100)
+        study.sampler.sample_independent(new_trial(study), 'x', distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
@@ -44,7 +44,7 @@ def test_log_uniform(sampler_class, distribution):
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array([
-        study.sampler.sample(new_trial(study), 'x', distribution) for _ in range(100)
+        study.sampler.sample_independent(new_trial(study), 'x', distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
@@ -61,7 +61,7 @@ def test_discrete_uniform(sampler_class, distribution):
     study = optuna.study.create_study(sampler=sampler_class())
 
     points = np.array([
-        study.sampler.sample(new_trial(study), 'x', distribution) for _ in range(100)
+        study.sampler.sample_independent(new_trial(study), 'x', distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
@@ -85,7 +85,7 @@ def test_int(sampler_class, distribution):
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array([
-        study.sampler.sample(new_trial(study), 'x', distribution) for _ in range(100)
+        study.sampler.sample_independent(new_trial(study), 'x', distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
@@ -100,7 +100,7 @@ def test_categorical(sampler_class, choices):
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array([
-        study.sampler.sample(new_trial(study), 'x', distribution) for _ in range(100)
+        study.sampler.sample_independent(new_trial(study), 'x', distribution) for _ in range(100)
     ])
     # 'x' value is corresponding to an index of distribution.choices.
     assert np.all(points >= 0)

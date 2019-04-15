@@ -30,7 +30,7 @@ class RandomSampler(BaseSampler):
         self.seed = seed
         self.rng = numpy.random.RandomState(seed)
 
-    def sample(self, trial, param_name, param_distribution):
+    def sample_independent(self, trial, param_name, param_distribution):
         # type: (FrozenTrial, str, distributions.BaseDistribution) -> float
         """Please consult the documentation for :func:`BaseSampler.sample`."""
 

@@ -68,7 +68,7 @@ class TPESampler(base.BaseSampler):
         self.rng = np.random.RandomState(seed)
         self.random_sampler = random.RandomSampler(seed=seed)
 
-    def sample(self, trial, param_name, param_distribution):
+    def sample_independent(self, trial, param_name, param_distribution):
         # type: (FrozenTrial, str, BaseDistribution) -> float
 
         observation_pairs = self.study.storage.get_trial_param_result_pairs(
@@ -79,7 +79,7 @@ class TPESampler(base.BaseSampler):
         n = len(observation_pairs)
 
         if n < self.n_startup_trials:
-            return self.random_sampler.sample(trial, param_name, param_distribution)
+            return self.random_sampler.sample_independent(trial, param_name, param_distribution)
 
         below_param_values, above_param_values = self._split_observation_pairs(
             list(range(n)), [p[0] for p in observation_pairs], list(range(n)),

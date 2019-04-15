@@ -5,6 +5,8 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
+from optuna.distributions import BaseDistribution  # NOQA
+
 
 class TrialState(enum.Enum):
     """State of a :class:`~optuna.trial.Trial`.
@@ -60,6 +62,7 @@ class FrozenTrial(
             ('system_attrs', Dict[str, Any]),
             ('intermediate_values', Dict[int, float]),
             ('params_in_internal_repr', Dict[str, float]),
+            ('distributions', Dict[str, BaseDistribution]),
             ('trial_id', int),
         ])):
     """Status and results of a :class:`~optuna.trial.Trial`.
@@ -89,6 +92,8 @@ class FrozenTrial(
         params_in_internal_repr:
             Optuna's internal representation of :attr:`params`. Note that this field is not
             supposed to be used by library users.
+        distributions:
+            TODO: Add doc
         trial_id:
             Optuna's internal identifier of the :class:`~optuna.trial.Trial`. Note that this field
             is not supposed to be used by library users. Instead, please use :attr:`number` and

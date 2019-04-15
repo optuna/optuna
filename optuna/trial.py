@@ -4,6 +4,7 @@ import six
 import warnings
 
 from optuna import distributions
+from optuna.distributions import BaseDistribution  # NOQA
 from optuna import logging
 from optuna import types
 
@@ -107,14 +108,22 @@ class Trial(BaseTrial):
 
     """
 
-    def __init__(self, study, trial_id):
-        # type: (Study, int) -> None
+    def __init__(
+            self,
+            study,  # type: Study
+            trial_id,  # type: int
+            relative_search_space=None,  # type: Optional[Dict[str, BaseDistribution]]
+            relative_params=None,  # type: Optional[Dict[str, float]]
+    ):
+        # type: (...) -> None
 
         self.study = study
         self._trial_id = trial_id
 
         self.study_id = self.study.study_id
         self.storage = self.study.storage
+        self.relative_search_space = relative_search_space or {}
+        self.relative_params = relative_params or {}
         self.logger = logging.get_logger(__name__)
 
     def suggest_uniform(self, name, low, high):
@@ -403,11 +412,33 @@ class Trial(BaseTrial):
 
         self.storage.set_trial_system_attr(self._trial_id, key, value)
 
+    def _is_relatively_sampled(self, name, distribution):
+        # type: (str, BaseDistribution) -> bool
+
+        if name not in self.relative_params:
+            return False
+
+        if name not in self.relative_search_space:
+            return False
+
+        relative_distribution = self.relative_search_space[name]
+        try:
+            distributions.check_distribution_compatibility(relative_distribution, distribution)
+        except ValueError:
+            return False
+
+        param_value = self.relative_params[name]
+        return distribution.contains(param_value)
+
     def _suggest(self, name, distribution):
         # type: (str, distributions.BaseDistribution) -> Any
 
-        trial = self.storage.get_trial(self._trial_id)
-        param_value_in_internal_repr = self.study.sampler.sample(trial, name, distribution)
+        if self._is_relatively_sampled(name, distribution):
+            param_value_in_internal_repr = self.relative_params[name]
+        else:
+            trial = self.storage.get_trial(self._trial_id)
+            param_value_in_internal_repr = self.study.sampler.sample_independent(
+                trial, name, distribution)
 
         set_success = self.storage.set_trial_param(self._trial_id, name,
                                                    param_value_in_internal_repr, distribution)

@@ -8,6 +8,7 @@ import pandas as pd
 from six.moves import queue
 import time
 
+from optuna.distributions import BaseDistribution  # NOQA
 from optuna import logging
 from optuna import pruners
 from optuna import samplers
@@ -389,14 +390,23 @@ class Study(object):
         que.close()
         que.join_thread()
 
+    def _sample_relative(self, trial_id):
+        # type: (int) -> Tuple[Dict[str, BaseDistribution], Dict[str, float]]
+
+        trial = self.storage.get_trial(trial_id)
+        search_space = self.sampler.define_relative_search_space(trial)
+        params = self.sampler.sample_relative(trial, search_space)
+
+        return search_space, params
+
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
         trial_id = self.storage.create_new_trial_id(self.study_id)
-        trial = trial_module.Trial(self, trial_id)
-        trial_number = trial.number
+        relative_search_space, relative_params = self._sample_relative(trial_id)
 
-        self.sampler.before_trial(self.storage.get_trial(trial_id))
+        trial = trial_module.Trial(self, trial_id, relative_search_space, relative_params)
+        trial_number = trial.number
         try:
             result = func(trial)
         except structs.TrialPruned as e:
@@ -405,7 +415,6 @@ class Study(object):
                                                                     str(e))
             self.logger.info(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
-            self.sampler.after_trial(self.storage.get_trial(trial_id))
             return trial
         except catch as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
@@ -413,7 +422,6 @@ class Study(object):
             self.logger.warning(message, exc_info=True)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.sampler.after_trial(self.storage.get_trial(trial_id))
             return trial
 
         try:
@@ -428,7 +436,6 @@ class Study(object):
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.sampler.after_trial(self.storage.get_trial(trial_id))
             return trial
 
         if math.isnan(result):
@@ -437,14 +444,12 @@ class Study(object):
             self.logger.warning(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.sampler.after_trial(self.storage.get_trial(trial_id))
             return trial
 
         trial.report(result)
         self.storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
         self._log_completed_trial(trial_number, result)
 
-        self.sampler.after_trial(self.storage.get_trial(trial_id))
         return trial
 
     def _log_completed_trial(self, trial_number, value):
@@ -546,6 +551,20 @@ class RunningStudy(object):
         """
 
         self.storage.set_study_system_attr(self.study_id, key, value)
+
+    @property
+    def full_search_space(self):
+        # type: () -> Dict[str, BaseDistribution]
+        """TODO: Add doc"""
+
+        dists = {}
+        trials = self.trials
+        trials.sort(key=lambda t: t.number)
+        for trial in trials:
+            for name, dist in trial.distributions.items():
+                dists[name] = dist
+
+        return dists
 
 
 def create_study(

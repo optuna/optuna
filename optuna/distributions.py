@@ -49,6 +49,13 @@ class BaseDistribution(object):
         return param_value_in_external_repr
 
     @abc.abstractmethod
+    def contains(self, param_value_in_internal_repr):
+        # type: (float) -> bool
+        """TODO: Add doc"""
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def _asdict(self):
         # type: () -> Dict
 
@@ -67,7 +74,11 @@ class UniformDistribution(
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
-    pass
+    def contains(self, param_value_in_internal_repr):
+        # type: (float) -> bool
+
+        value = param_value_in_internal_repr
+        return self.low <= value and value < self.high
 
 
 class LogUniformDistribution(
@@ -82,7 +93,11 @@ class LogUniformDistribution(
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
-    pass
+    def contains(self, param_value_in_internal_repr):
+        # type: (float) -> bool
+
+        value = param_value_in_internal_repr
+        return self.low <= value and value < self.high
 
 
 class DiscreteUniformDistribution(
@@ -99,7 +114,11 @@ class DiscreteUniformDistribution(
             A discretization step.
     """
 
-    pass
+    def contains(self, param_value_in_internal_repr):
+        # type: (float) -> bool
+
+        value = param_value_in_internal_repr
+        return self.low <= value and value <= self.high
 
 
 class IntUniformDistribution(
@@ -124,6 +143,12 @@ class IntUniformDistribution(
 
         return float(param_value_in_external_repr)
 
+    def contains(self, param_value_in_internal_repr):
+        # type: (float) -> bool
+
+        value = param_value_in_internal_repr
+        return self.low <= value and value <= self.high
+
 
 class CategoricalDistribution(
         NamedTuple('_BaseCategoricalDistribution', [('choices', Tuple[Union[float, str], ...])]),
@@ -144,6 +169,12 @@ class CategoricalDistribution(
         # type: (Union[float, str]) -> float
 
         return self.choices.index(param_value_in_external_repr)
+
+    def contains(self, param_value_in_internal_repr):
+        # type: (float) -> bool
+
+        index = param_value_in_internal_repr
+        return 0 <= index and index < len(self.choices)
 
 
 DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, DiscreteUniformDistribution,
