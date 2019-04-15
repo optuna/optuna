@@ -866,7 +866,7 @@ class _FinishedTrialsCache(object):
         if not self._enabled:
             return
 
-        if trial.state is not structs.TrialState.RUNNING:
+        if trial.state.is_finished():
             with self._lock:
                 self._finished_trials[trial.trial_id] = copy.deepcopy(trial)
 
