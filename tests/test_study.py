@@ -178,7 +178,7 @@ def test_optimize_parallel(n_trials, n_jobs, storage_mode, cache_mode):
 @pytest.mark.parametrize(
     'n_trials, n_jobs, storage_mode, cache_mode',
     itertools.product(
-        (0, 1, 2, 50),  # n_trials
+        (0, 1, 2, 50, None),  # n_trials
         (1, 2, 10, -1),  # n_jobs
         STORAGE_MODES,  # storage_mode
         CACHE_MODES,  # cache_mode
