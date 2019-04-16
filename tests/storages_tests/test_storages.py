@@ -723,7 +723,15 @@ def _check_example_trial_static_attributes(trial_1, trial_2):
     assert trial_1 is not None
     assert trial_2 is not None
 
-    trial_1 = trial_1._replace(trial_id=-1, number=0, datetime_start=None, datetime_complete=None)
-    trial_2 = trial_2._replace(trial_id=-1, number=0, datetime_start=None, datetime_complete=None)
+    trial_1 = trial_1._replace(trial_id=-1,
+                               number=0,
+                               datetime_start=None,
+                               datetime_complete=None,
+                               distributions={})
+    trial_2 = trial_2._replace(trial_id=-1,
+                               number=0,
+                               datetime_start=None,
+                               datetime_complete=None,
+                               distributions={})
 
     assert trial_1 == trial_2

@@ -100,7 +100,7 @@ class FrozenTrial(
             :class:`~optuna.study.Study.study_id` to identify a :class:`~optuna.trial.Trial`.
     """
 
-    internal_fields = ['params_in_internal_repr', 'trial_id']
+    internal_fields = ['params_in_internal_repr', 'trial_id', 'distributions']
 
 
 class StudySummary(
