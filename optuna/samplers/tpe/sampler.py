@@ -7,7 +7,6 @@ from optuna.samplers import base  # NOQA
 from optuna.samplers import random  # NOQA
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator  # NOQA
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters  # NOQA
-from optuna.storages.base import BaseStorage  # NOQA
 from optuna.structs import FrozenTrial  # NOQA
 from optuna.structs import StudyDirection
 from optuna import types

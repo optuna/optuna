@@ -2,7 +2,6 @@ import numpy
 
 from optuna import distributions
 from optuna.samplers.base import BaseSampler
-from optuna.storages.base import BaseStorage  # NOQA
 from optuna.structs import FrozenTrial  # NOQA
 from optuna import types
 

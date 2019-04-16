@@ -3,7 +3,6 @@ import six
 
 import optuna
 from optuna.distributions import BaseDistribution  # NOQA
-from optuna.storages.base import BaseStorage  # NOQA
 from optuna.structs import FrozenTrial  # NOQA
 from optuna import types
 
