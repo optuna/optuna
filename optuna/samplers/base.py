@@ -31,8 +31,8 @@ class BaseSampler(object):
         # type: (FrozenTrial, str, BaseDistribution) -> float
         """TODO: Add doc"""
 
-        random = optuna.samplers.RandomSampler()
-        return random.sample_independent(trial, param_name, param_distribution)
+        tpe = optuna.samplers.TPESampler()
+        return tpe.sample_independent(trial, param_name, param_distribution)
 
     @property
     def study(self):
