@@ -461,7 +461,16 @@ class Study(object):
 
 
 class RunningStudy(object):
-    """TODO: Add documentation after the class name is fixed."""
+    """An object to access a running :class:`~optuna.study.Study`.
+
+    Note that this object is created within Optuna library, so
+    it is not intended that library users directly use this constructor.
+
+    Args:
+        study:
+            A :class:`~optuna.study.Study` object.
+
+    """
 
     def __init__(self, study):
         # type: (Study) -> None
@@ -555,16 +564,25 @@ class RunningStudy(object):
     @property
     def full_search_space(self):
         # type: () -> Dict[str, BaseDistribution]
-        """TODO: Add doc"""
+        """Return the full search space of the :class:`~optuna.study.Study`.
 
-        dists = {}
+        "full search space" contains all parameter distributions that have been
+        suggested in the trials of this study so far.
+        If there are two parameters that have the same name but different distributions,
+        the distribution used in a newer trial will be adopted.
+
+        Returns:
+            A dictionary containing the parameter names and parameter's distributions.
+        """
+
+        distributions = {}
         trials = self.trials
         trials.sort(key=lambda t: t.number)
         for trial in trials:
-            for name, dist in trial.distributions.items():
-                dists[name] = dist
+            for name, distribution in trial.distributions.items():
+                distributions[name] = distribution
 
-        return dists
+        return distributions
 
 
 def create_study(

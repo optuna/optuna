@@ -8,6 +8,8 @@ import time
 import uuid
 
 import optuna
+from optuna import distributions
+from optuna.study import RunningStudy
 from optuna.testing.storage import StorageSupplier
 from optuna import types
 
@@ -487,8 +489,9 @@ def test_create_study(storage_mode):
         else:
             # Test `load_if_exists=False` with existing study.
             with pytest.raises(optuna.structs.DuplicatedStudyError):
-                optuna.create_study(
-                    study_name=study.study_name, storage=storage, load_if_exists=False)
+                optuna.create_study(study_name=study.study_name,
+                                    storage=storage,
+                                    load_if_exists=False)
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -512,3 +515,60 @@ def test_load_study(storage_mode):
         # Test loading an existing study.
         loaded_study = optuna.study.load_study(study_name=study_name, storage=storage)
         assert created_study.study_id == loaded_study.study_id
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_running_study(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+
+        # Run ten trials.
+        study.optimize(lambda t: t.suggest_int('x', 0, 10), n_trials=10)
+
+        # The methods of `RunningStudy` behave the same as the counterparts at `Study`.
+        running_study = RunningStudy(study)
+        assert running_study.best_params == study.best_params
+        assert running_study.best_value == study.best_value
+        assert running_study.best_trial == study.best_trial
+        assert running_study.direction == study.direction
+        assert running_study.trials == study.trials
+
+        assert running_study.system_attrs == {}
+
+        running_study.set_system_attr('foo', 'bar')
+        assert running_study.system_attrs == {'foo': 'bar'}
+        assert running_study.system_attrs == study.system_attrs
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_full_search_space(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        running_study = RunningStudy(study)
+
+        # No trial.
+        assert running_study.full_search_space == {}
+
+        # One trial.
+        study.optimize(lambda t: t.suggest_int('x', 0, 10), n_trials=1)
+        assert running_study.full_search_space == {
+            'x': distributions.IntUniformDistribution(low=0, high=10)
+        }
+
+        # Two trials.
+        study.optimize(lambda t: t.suggest_uniform('y', -3, 3), n_trials=1)
+        assert running_study.full_search_space == {
+            'x': distributions.IntUniformDistribution(low=0, high=10),
+            'y': distributions.UniformDistribution(low=-3, high=3)
+        }
+
+        # Three trials (there are conflicted distributions).
+        study.optimize(lambda t: t.suggest_uniform('y', 3, 9), n_trials=1)
+        assert running_study.full_search_space == {
+            'x': distributions.IntUniformDistribution(low=0, high=10),
+            'y': distributions.UniformDistribution(low=3, high=9)  # The latest one is selected.
+        }
