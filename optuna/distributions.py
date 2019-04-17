@@ -51,7 +51,16 @@ class BaseDistribution(object):
     @abc.abstractmethod
     def contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
-        """TODO: Add doc"""
+        """Test if a parameter value is contained in the range of this distribution.
+
+        Args:
+            param_value_in_internal_repr:
+                Optuna's internal representation of a parameter value.
+
+        Returns:
+            :obj:`True` if the parameter value is contained in the range of this distribution,
+            otherwise :obj:`False`.
+        """
 
         raise NotImplementedError
 
@@ -146,7 +155,7 @@ class IntUniformDistribution(
     def contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
-        value = param_value_in_internal_repr
+        value = int(param_value_in_internal_repr)
         return self.low <= value and value <= self.high
 
 
@@ -173,7 +182,7 @@ class CategoricalDistribution(
     def contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
-        index = param_value_in_internal_repr
+        index = int(param_value_in_internal_repr)
         return 0 <= index and index < len(self.choices)
 
 
