@@ -148,9 +148,14 @@ def test_sample_relative():
 
     predefined_search_space = {
         'a': UniformDistribution(low=0, high=5),
-        'b': CategoricalDistribution(choices=('foo', 'bar', 'baz'))
+        'b': CategoricalDistribution(choices=('foo', 'bar', 'baz')),
+        'c': IntUniformDistribution(low=20, high=50),  # Not exist in `predefined_params`.
     }
-    predefined_params = {'a': 3.2, 'b': 2}
+    predefined_params = {
+        'a': 3.2,
+        'b': 2,
+        'd': 99  # Not exist in `predefined_search_space`.
+    }
     unknown_param_value = 30
 
     sampler = FixedSampler(  # type: ignore
@@ -167,9 +172,10 @@ def test_sample_relative():
         # Other parameters are sampled by `sample_independent()` method.
         assert trial.suggest_int('c', 20, 50) == unknown_param_value
         assert trial.suggest_loguniform('d', 1, 100) == unknown_param_value
+        assert trial.suggest_uniform('e', 20, 40) == unknown_param_value
 
         return 0.0
 
     study.optimize(objective, n_trials=10, catch=())
     for trial in study.trials:
-        assert trial.params == {'a': 3.2, 'b': 'baz', 'c': 30, 'd': 30}
+        assert trial.params == {'a': 3.2, 'b': 'baz', 'c': 30, 'd': 30, 'e': 30}
