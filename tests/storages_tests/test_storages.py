@@ -61,7 +61,7 @@ EXAMPLE_TRIALS = [
             'x': .5,
             'y': 2.
         },
-        distributions={},  # TODO(ohta)
+        distributions=EXAMPLE_DISTRIBUTIONS,
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy
         trial_id=-1,  # dummy id
@@ -74,7 +74,10 @@ EXAMPLE_TRIALS = [
             'tags': ['video', 'classification'],
             'dataset': 'YouTube-8M'
         },
-        system_attrs={'some_key': 'some_value', '_number': 0},
+        system_attrs={
+            'some_key': 'some_value',
+            '_number': 0
+        },
         params={
             'x': 0.01,
             'y': 'Otemachi'
@@ -88,7 +91,7 @@ EXAMPLE_TRIALS = [
             'x': .01,
             'y': 0.
         },
-        distributions={},  # TODO(ohta)
+        distributions=EXAMPLE_DISTRIBUTIONS,
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy
         trial_id=-1,  # dummy id
@@ -723,15 +726,7 @@ def _check_example_trial_static_attributes(trial_1, trial_2):
     assert trial_1 is not None
     assert trial_2 is not None
 
-    trial_1 = trial_1._replace(trial_id=-1,
-                               number=0,
-                               datetime_start=None,
-                               datetime_complete=None,
-                               distributions={})
-    trial_2 = trial_2._replace(trial_id=-1,
-                               number=0,
-                               datetime_start=None,
-                               datetime_complete=None,
-                               distributions={})
+    trial_1 = trial_1._replace(trial_id=-1, number=0, datetime_start=None, datetime_complete=None)
+    trial_2 = trial_2._replace(trial_id=-1, number=0, datetime_start=None, datetime_complete=None)
 
     assert trial_1 == trial_2

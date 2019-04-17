@@ -430,6 +430,8 @@ def test_trials_dataframe(storage_mode, include_internal_fields):
                 assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
                 assert ('params_in_internal_repr', 'x') in df.columns
                 assert ('params_in_internal_repr', 'y') in df.columns
+                assert ('distributions', 'x') in df.columns
+                assert ('distributions', 'y') in df.columns
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)

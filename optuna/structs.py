@@ -93,7 +93,8 @@ class FrozenTrial(
             Optuna's internal representation of :attr:`params`. Note that this field is not
             supposed to be used by library users.
         distributions:
-            TODO: Add doc
+            Dictionary that contains the distributions of :attr:`params`. Note that this field is
+            not supposed to be used by library users.
         trial_id:
             Optuna's internal identifier of the :class:`~optuna.trial.Trial`. Note that this field
             is not supposed to be used by library users. Instead, please use :attr:`number` and
