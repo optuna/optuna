@@ -9,6 +9,7 @@ import uuid
 
 import optuna
 from optuna import distributions
+from optuna.structs import TrialPruned
 from optuna.study import RunningStudy
 from optuna.testing.storage import StorageSupplier
 from optuna import types
@@ -568,6 +569,20 @@ def test_full_search_space(storage_mode):
 
         # Three trials (there are conflicted distributions).
         study.optimize(lambda t: t.suggest_uniform('y', 3, 9), n_trials=1)
+        assert running_study.full_search_space == {
+            'x': distributions.IntUniformDistribution(low=0, high=10),
+            'y': distributions.UniformDistribution(low=3, high=9)  # The latest one is selected.
+        }
+
+        # Failed or pruned trials are not included in the full search space.
+        def objective(trial, exception):
+            # type: (optuna.trial.Trial, Exception) -> float
+
+            trial.suggest_uniform('z', 0, 1)
+            raise exception
+
+        study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1)
+        study.optimize(lambda t: objective(t, TrialPruned()), n_trials=1)
         assert running_study.full_search_space == {
             'x': distributions.IntUniformDistribution(low=0, high=10),
             'y': distributions.UniformDistribution(low=3, high=9)  # The latest one is selected.

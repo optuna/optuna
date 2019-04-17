@@ -567,7 +567,7 @@ class RunningStudy(object):
         """Return the full search space of the :class:`~optuna.study.Study`.
 
         "full search space" contains all parameter distributions that have been
-        suggested in the trials of this study so far.
+        suggested in the complete trials of this study so far.
         If there are two parameters that have the same name but different distributions,
         the distribution used in a newer trial will be adopted.
 
@@ -579,6 +579,9 @@ class RunningStudy(object):
         trials = self.trials
         trials.sort(key=lambda t: t.number)
         for trial in trials:
+            if trial.state != structs.TrialState.COMPLETE:
+                continue
+
             for name, distribution in trial.distributions.items():
                 distributions[name] = distribution
 
