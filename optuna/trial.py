@@ -105,15 +105,20 @@ class Trial(BaseTrial):
             A :class:`~optuna.study.Study` object.
         trial_id:
             A trial ID that is automatically generated.
-
+        predefined_search_space:
+            A search space defined by a sampler before executing the target object function.
+            The final search space of this trial is the mixture of this space and
+            the one that defined by execution of the target object function.
+        predefined_params:
+            A suggested parameters by a sampler before executing the target object function.
     """
 
     def __init__(
             self,
             study,  # type: Study
             trial_id,  # type: int
-            relative_search_space=None,  # type: Optional[Dict[str, BaseDistribution]]
-            relative_params=None,  # type: Optional[Dict[str, float]]
+            predefined_search_space=None,  # type: Optional[Dict[str, BaseDistribution]]
+            predefined_params=None,  # type: Optional[Dict[str, float]]
     ):
         # type: (...) -> None
 
@@ -122,8 +127,8 @@ class Trial(BaseTrial):
 
         self.study_id = self.study.study_id
         self.storage = self.study.storage
-        self.relative_search_space = relative_search_space or {}
-        self.relative_params = relative_params or {}
+        self.predefined_search_space = predefined_search_space or {}
+        self.predefined_params = predefined_params or {}
         self.logger = logging.get_logger(__name__)
 
     def suggest_uniform(self, name, low, high):
@@ -412,29 +417,11 @@ class Trial(BaseTrial):
 
         self.storage.set_trial_system_attr(self._trial_id, key, value)
 
-    def _is_relatively_sampled(self, name, distribution):
-        # type: (str, BaseDistribution) -> bool
-
-        if name not in self.relative_params:
-            return False
-
-        if name not in self.relative_search_space:
-            return False
-
-        relative_distribution = self.relative_search_space[name]
-        try:
-            distributions.check_distribution_compatibility(relative_distribution, distribution)
-        except ValueError:
-            return False
-
-        param_value = self.relative_params[name]
-        return distribution.contains(param_value)
-
     def _suggest(self, name, distribution):
         # type: (str, distributions.BaseDistribution) -> Any
 
-        if self._is_relatively_sampled(name, distribution):
-            param_value_in_internal_repr = self.relative_params[name]
+        if self._is_predefined_param(name, distribution):
+            param_value_in_internal_repr = self.predefined_params[name]
         else:
             trial = self.storage.get_trial(self._trial_id)
             param_value_in_internal_repr = self.study.sampler.sample_independent(
@@ -447,6 +434,24 @@ class Trial(BaseTrial):
 
         param_value = distribution.to_external_repr(param_value_in_internal_repr)
         return param_value
+
+    def _is_predefined_param(self, name, distribution):
+        # type: (str, BaseDistribution) -> bool
+
+        if name not in self.predefined_params:
+            return False
+
+        if name not in self.predefined_search_space:
+            return False
+
+        predefined_distribution = self.predefined_search_space[name]
+        try:
+            distributions.check_distribution_compatibility(predefined_distribution, distribution)
+        except ValueError:
+            return False
+
+        param_value = self.predefined_params[name]
+        return distribution.contains(param_value)
 
     @property
     def number(self):

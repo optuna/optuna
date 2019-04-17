@@ -240,3 +240,43 @@ def test_fixed_trial_should_prune():
 
     # FixedTrial never prunes trials.
     assert FixedTrial({}).should_prune(1) is False
+
+
+@parametrize_storage
+def test_predefined_parameters(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    predefined_search_space = {
+        'x': distributions.UniformDistribution(low=5, high=6),
+        'y': distributions.UniformDistribution(low=5, high=6)
+    }
+    predefined_params = {'x': 5.5, 'y': 5.5}
+
+    study = create_study(storage_init_func())
+
+    def create_trial():
+        # type: () -> Trial
+
+        return Trial(  # type: ignore
+            study, study.storage.create_new_trial_id(study.study_id), predefined_search_space,
+            predefined_params)
+
+    # Suggested from `predefined_params`.
+    trial0 = create_trial()
+    distribution0 = distributions.UniformDistribution(low=0, high=100)
+    assert trial0._suggest('x', distribution0) == 5.5
+
+    # Not suggested from `predefined_params` (due to unknown parameter name).
+    trial1 = create_trial()
+    distribution1 = distribution0
+    assert trial1._suggest('z', distribution1) != 5.5
+
+    # Not suggested from `predefined_params` (due to incompatible value range).
+    trial2 = create_trial()
+    distribution2 = distributions.UniformDistribution(low=0, high=5)
+    assert trial2._suggest('x', distribution2) != 5.5
+
+    # Not suggested from `predefined_params` (due to incompatible distribution class).
+    trial3 = create_trial()
+    distribution3 = distributions.IntUniformDistribution(low=1, high=100)
+    assert trial3._suggest('y', distribution3) != 5.5

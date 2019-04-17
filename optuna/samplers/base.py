@@ -32,6 +32,7 @@ class BaseSampler(object):
         """TODO: Add doc"""
 
         tpe = optuna.samplers.TPESampler()
+        tpe._set_study(self.study)
         return tpe.sample_independent(trial, param_name, param_distribution)
 
     @property
