@@ -199,6 +199,14 @@ class TrialModel(BaseModel):
 
         return session.query(cls).all()
 
+    @classmethod
+    def get_all_trial_ids_where_study(cls, study, session):
+        # type: (StudyModel, orm.Session) -> List[int]
+
+        trials = session.query(cls.trial_id).filter(cls.study_id == study.study_id).all()
+
+        return [t.trial_id for t in trials]
+
 
 class TrialUserAttributeModel(BaseModel):
     __tablename__ = 'trial_user_attributes'

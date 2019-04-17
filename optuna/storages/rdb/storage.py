@@ -3,6 +3,7 @@ import alembic.config
 import alembic.migration
 import alembic.script
 from collections import defaultdict
+import copy
 from datetime import datetime
 import json
 import logging
@@ -14,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
 import sys
+import threading
 import uuid
 
 import optuna
@@ -40,10 +42,16 @@ class RDBStorage(BaseStorage):
     Args:
         url: URL of the storage.
         connect_args: Arguments that is passed to :func:`sqlalchemy.engine.create_engine`.
+        enable_cache:
+            Flag to control whether to enable storage layer caching.
+            If this flag is set to :obj:`True` (the default), the finished trials are
+            cached on memory and never re-fetched from the storage.
+            Otherwise, the trials are fetched from the storage whenever they are needed.
+
     """
 
-    def __init__(self, url, connect_args=None, skip_compatibility_check=False):
-        # type: (str, Optional[Dict[str, Any]], bool) -> None
+    def __init__(self, url, connect_args=None, enable_cache=True, skip_compatibility_check=False):
+        # type: (str, Optional[Dict[str, Any]], bool, bool) -> None
 
         connect_args = connect_args or {}
 
@@ -64,6 +72,8 @@ class RDBStorage(BaseStorage):
         self._version_manager = _VersionManager(url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
+
+        self._finished_trials_cache = _FinishedTrialsCache(enable_cache)
 
     def create_new_study_id(self, study_name=None):
         # type: (Optional[str]) -> int
@@ -322,6 +332,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
         trial.state = state
         if state.is_finished():
             trial.datetime_complete = datetime.now()
@@ -334,6 +346,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
         trial_param = \
             models.TrialParamModel.find_by_trial_and_param_name(trial, param_name, session)
 
@@ -373,6 +387,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
         trial.value = value
 
         self._commit(session)
@@ -383,6 +399,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
         trial_value = models.TrialValueModel.find_by_trial_and_step(trial, step, session)
         if trial_value is not None:
             return False
@@ -401,6 +419,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
         attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
             attribute = models.TrialUserAttributeModel(
@@ -417,6 +437,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
             attribute = models.TrialSystemAttributeModel(
@@ -440,6 +462,10 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
 
+        cached_trial = self._finished_trials_cache.get_cached_trial(trial_id)
+        if cached_trial is not None:
+            return copy.deepcopy(cached_trial)
+
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -448,10 +474,35 @@ class RDBStorage(BaseStorage):
         user_attributes = models.TrialUserAttributeModel.where_trial(trial, session)
         system_attributes = models.TrialSystemAttributeModel.where_trial(trial, session)
 
-        return self._merge_trials_orm([trial], params, values, user_attributes,
-                                      system_attributes)[0]
+        frozen_trial = self._merge_trials_orm([trial], params, values, user_attributes,
+                                              system_attributes)[0]
+
+        self._finished_trials_cache.cache_trial_if_finished(frozen_trial)
+
+        return frozen_trial
 
     def get_all_trials(self, study_id):
+        # type: (int) -> List[structs.FrozenTrial]
+
+        if self._finished_trials_cache.is_empty():
+            trials = self._get_all_trials_without_cache(study_id)
+            for trial in trials:
+                self._finished_trials_cache.cache_trial_if_finished(trial)
+
+            return trials
+
+        trial_ids = self._get_all_trial_ids(study_id)
+        trials = [self.get_trial(trial_id) for trial_id in trial_ids]
+        return trials
+
+    def _get_all_trial_ids(self, study_id):
+        # type: (int) -> List[int]
+
+        session = self.scoped_session()
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        return models.TrialModel.get_all_trial_ids_where_study(study, session)
+
+    def _get_all_trials_without_cache(self, study_id):
         # type: (int) -> List[structs.FrozenTrial]
 
         session = self.scoped_session()
@@ -790,3 +841,40 @@ class _VersionManager(object):
             os.path.dirname(__file__), 'alembic'))
         config.set_main_option('sqlalchemy.url', self.url)
         return config
+
+
+class _FinishedTrialsCache(object):
+    def __init__(self, enabled):
+        # type: (bool) -> None
+
+        self._finished_trials = {}  # type: Dict[int, structs.FrozenTrial]
+        self._enabled = enabled
+        self._lock = threading.Lock()
+
+    def is_empty(self):
+        # type: () -> bool
+
+        if not self._enabled:
+            return True
+
+        with self._lock:
+            return len(self._finished_trials) == 0
+
+    def cache_trial_if_finished(self, trial):
+        # type: (structs.FrozenTrial) -> None
+
+        if not self._enabled:
+            return
+
+        if trial.state.is_finished():
+            with self._lock:
+                self._finished_trials[trial.trial_id] = copy.deepcopy(trial)
+
+    def get_cached_trial(self, trial_id):
+        # type: (int) -> Optional[structs.FrozenTrial]
+
+        if not self._enabled:
+            return None
+
+        with self._lock:
+            return self._finished_trials.get(trial_id)
