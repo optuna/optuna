@@ -192,7 +192,6 @@ class InMemoryStorage(base.BaseStorage):
                 param_value_internal)
             self.trials[trial_id].distributions[param_name] = distribution
 
-
             return True
 
     def get_trial_number_from_id(self, trial_id):
