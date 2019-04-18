@@ -78,8 +78,6 @@ class Study(object):
         self.study_id = self.storage.get_study_id_from_name(study_name)
         self.logger = logging.get_logger(__name__)
 
-        self.sampler._set_study(RunningStudy(self))
-
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
 
@@ -393,9 +391,10 @@ class Study(object):
     def _sample_relative(self, trial_id):
         # type: (int) -> Tuple[Dict[str, BaseDistribution], Dict[str, float]]
 
+        running_study = RunningStudy(self)
         trial = self.storage.get_trial(trial_id)
-        search_space = self.sampler.define_relative_search_space(trial)
-        params = self.sampler.sample_relative(trial, search_space)
+        search_space = self.sampler.define_relative_search_space(running_study, trial)
+        params = self.sampler.sample_relative(running_study, trial, search_space)
 
         return search_space, params
 

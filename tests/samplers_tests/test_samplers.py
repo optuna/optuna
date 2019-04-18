@@ -12,6 +12,7 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
 from optuna.structs import FrozenTrial  # NOQA
+from optuna.study import RunningStudy
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
 
@@ -33,8 +34,10 @@ def test_uniform(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], UniformDistribution) -> None
 
     study = optuna.study.create_study(sampler=sampler_class())
+    running_study = RunningStudy(study)
     points = np.array([
-        study.sampler.sample_independent(new_trial(study), 'x', distribution) for _ in range(100)
+        study.sampler.sample_independent(running_study, new_trial(study), 'x', distribution)
+        for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
@@ -46,8 +49,10 @@ def test_log_uniform(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], LogUniformDistribution) -> None
 
     study = optuna.study.create_study(sampler=sampler_class())
+    running_study = RunningStudy(study)
     points = np.array([
-        study.sampler.sample_independent(new_trial(study), 'x', distribution) for _ in range(100)
+        study.sampler.sample_independent(running_study, new_trial(study), 'x', distribution)
+        for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
@@ -62,9 +67,10 @@ def test_discrete_uniform(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], DiscreteUniformDistribution) -> None
 
     study = optuna.study.create_study(sampler=sampler_class())
-
+    running_study = RunningStudy(study)
     points = np.array([
-        study.sampler.sample_independent(new_trial(study), 'x', distribution) for _ in range(100)
+        study.sampler.sample_independent(running_study, new_trial(study), 'x', distribution)
+        for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
@@ -87,8 +93,10 @@ def test_int(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], IntUniformDistribution) -> None
 
     study = optuna.study.create_study(sampler=sampler_class())
+    running_study = RunningStudy(study)
     points = np.array([
-        study.sampler.sample_independent(new_trial(study), 'x', distribution) for _ in range(100)
+        study.sampler.sample_independent(running_study, new_trial(study), 'x', distribution)
+        for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
@@ -102,8 +110,10 @@ def test_categorical(sampler_class, choices):
     distribution = CategoricalDistribution(choices)
 
     study = optuna.study.create_study(sampler=sampler_class())
+    running_study = RunningStudy(study)
     points = np.array([
-        study.sampler.sample_independent(new_trial(study), 'x', distribution) for _ in range(100)
+        study.sampler.sample_independent(running_study, new_trial(study), 'x', distribution)
+        for _ in range(100)
     ])
     # 'x' value is corresponding to an index of distribution.choices.
     assert np.all(points >= 0)
@@ -127,18 +137,18 @@ class FixedSampler(BaseSampler):
         self.predefined_params = predefined_params
         self.unknown_param_value = unknown_param_value
 
-    def define_relative_search_space(self, trial):
-        # type: (FrozenTrial) -> Dict[str, BaseDistribution]
+    def define_relative_search_space(self, study, trial):
+        # type: (RunningStudy, FrozenTrial) -> Dict[str, BaseDistribution]
 
         return self.predefined_search_space
 
-    def sample_relative(self, trial, search_space):
-        # type: (FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+    def sample_relative(self, study, trial, search_space):
+        # type: (RunningStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
 
         return self.predefined_params
 
-    def sample_independent(self, trial, param_name, param_distribution):
-        # type: (FrozenTrial, str, BaseDistribution) -> float
+    def sample_independent(self, study, trial, param_name, param_distribution):
+        # type: (RunningStudy, FrozenTrial, str, BaseDistribution) -> float
 
         return self.unknown_param_value
 

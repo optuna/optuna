@@ -8,6 +8,8 @@ from optuna import types
 if types.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
+    from optuna.study import RunningStudy  # NOQA
+
 
 class RandomSampler(BaseSampler):
     """Sampler using random sampling.
@@ -29,9 +31,9 @@ class RandomSampler(BaseSampler):
         self.seed = seed
         self.rng = numpy.random.RandomState(seed)
 
-    def sample_independent(self, trial, param_name, param_distribution):
-        # type: (FrozenTrial, str, distributions.BaseDistribution) -> float
-        """Please consult the documentation for :func:`BaseSampler.sample`."""
+    def sample_independent(self, study, trial, param_name, param_distribution):
+        # type: (RunningStudy, FrozenTrial, str, distributions.BaseDistribution) -> float
+        """Please consult the documentation for :func:`BaseSampler.sample_independent`."""
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self.rng.uniform(param_distribution.low, param_distribution.high)

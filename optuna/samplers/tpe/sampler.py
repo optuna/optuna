@@ -18,6 +18,8 @@ if types.TYPE_CHECKING:
     from typing import Tuple  # NOQA
     from typing import Union  # NOQA
 
+    from optuna.study import RunningStudy  # NOQA
+
 EPS = 1e-12
 
 
@@ -67,18 +69,19 @@ class TPESampler(base.BaseSampler):
         self.rng = np.random.RandomState(seed)
         self.random_sampler = random.RandomSampler(seed=seed)
 
-    def sample_independent(self, trial, param_name, param_distribution):
-        # type: (FrozenTrial, str, BaseDistribution) -> float
+    def sample_independent(self, study, trial, param_name, param_distribution):
+        # type: (RunningStudy, FrozenTrial, str, BaseDistribution) -> float
 
-        observation_pairs = self.study.storage.get_trial_param_result_pairs(
-            self.study.study_id, param_name)
-        if self.study.direction == StudyDirection.MAXIMIZE:
+        observation_pairs = study.storage.get_trial_param_result_pairs(
+            study.study_id, param_name)
+        if study.direction == StudyDirection.MAXIMIZE:
             observation_pairs = [(p, -v) for p, v in observation_pairs]
 
         n = len(observation_pairs)
 
         if n < self.n_startup_trials:
-            return self.random_sampler.sample_independent(trial, param_name, param_distribution)
+            return self.random_sampler.sample_independent(
+                study, trial, param_name, param_distribution)
 
         below_param_values, above_param_values = self._split_observation_pairs(
             list(range(n)), [p[0] for p in observation_pairs], list(range(n)),

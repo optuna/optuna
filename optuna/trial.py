@@ -3,6 +3,7 @@ import math
 import six
 import warnings
 
+import optuna
 from optuna import distributions
 from optuna.distributions import BaseDistribution  # NOQA
 from optuna import logging
@@ -423,9 +424,10 @@ class Trial(BaseTrial):
         if self._is_predefined_param(name, distribution):
             param_value_in_internal_repr = self.predefined_params[name]
         else:
+            running_study = optuna.study.RunningStudy(self.study)
             trial = self.storage.get_trial(self._trial_id)
             param_value_in_internal_repr = self.study.sampler.sample_independent(
-                trial, name, distribution)
+                running_study, trial, name, distribution)
 
         set_success = self.storage.set_trial_param(self._trial_id, name,
                                                    param_value_in_internal_repr, distribution)
