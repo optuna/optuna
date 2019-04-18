@@ -8,7 +8,7 @@ from optuna.testing.integration import DeterministicPruner
 from optuna import types
 
 if types.TYPE_CHECKING:
-    from typing import Union  # NOQA 
+    from typing import Union  # NOQA
 
 
 def test_mxnet_pruning_callback():

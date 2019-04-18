@@ -247,3 +247,11 @@ class BaseStorage(object):
         # type: () -> None
 
         pass
+
+    def check_trial_is_updatable(self, trial_id, trial_state):
+        # type: (int, structs.TrialState) -> None
+
+        if trial_state.is_finished():
+            trial = self.get_trial(trial_id)
+            raise RuntimeError(
+                "Trial#{} has already finished and can not be updated.".format(trial.number))
