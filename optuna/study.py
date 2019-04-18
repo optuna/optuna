@@ -1,5 +1,6 @@
 import collections
 import datetime
+import gc
 import math
 import multiprocessing
 import multiprocessing.pool
@@ -419,9 +420,15 @@ class Study(object):
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
                 .format(trial_number, structs.TrialState.FAIL, repr(e))
             self.logger.warning(message, exc_info=True)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
+        finally:
+            # The following line mitigates memory problems that can be occurred in some
+            # environments (e.g., services that use computing containers such as CircleCI).
+            # Please refer to the following PR for further details:
+            # https://github.com/pfnet/optuna/pull/325.
+            gc.collect()
 
         try:
             result = float(result)
@@ -433,16 +440,16 @@ class Study(object):
                       'objective function cannot be casted to float. Returned value is: ' \
                       '{}'.format(trial_number, structs.TrialState.FAIL, repr(result))
             self.logger.warning(message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
         if math.isnan(result):
             message = 'Setting status of trial#{} as {} because the objective function ' \
                       'returned {}.'.format(trial_number, structs.TrialState.FAIL, result)
             self.logger.warning(message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
         trial.report(result)

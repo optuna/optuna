@@ -4,6 +4,7 @@ import pytest
 
 import optuna
 from optuna.integration.lightgbm import LightGBMPruningCallback
+from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 # If `True`, `lgb.cv(..)` will be used in the test, otherwise `lgb.train(..)` will be used.
@@ -29,13 +30,13 @@ def test_lightgbm_pruning_callback_call(cv):
 
     # The pruner is deactivated.
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception, ))
+    trial = create_running_trial(study, 1.0)
     pruning_callback = LightGBMPruningCallback(trial, 'binary_error', valid_name='validation')
     pruning_callback(env)
 
     # The pruner is activated.
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception, ))
+    trial = create_running_trial(study, 1.0)
     pruning_callback = LightGBMPruningCallback(trial, 'binary_error', valid_name='validation')
     with pytest.raises(optuna.structs.TrialPruned):
         pruning_callback(env)

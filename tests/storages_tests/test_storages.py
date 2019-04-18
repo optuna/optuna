@@ -22,6 +22,7 @@ if types.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
+    from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
 
@@ -104,6 +105,8 @@ STORAGE_MODES = [
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
 
+CACHE_MODES = [True, False]
+
 # TODO(Yanase): Replace @parametrize_storage with StorageSupplier.
 parametrize_storage = pytest.mark.parametrize(
     'storage_init_func', [InMemoryStorage, lambda: RDBStorage('sqlite:///:memory:')])
@@ -135,14 +138,15 @@ def test_create_new_study_id(storage_init_func):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_create_new_study_id_with_name(storage_mode):
-    # type: (str) -> None
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_create_new_study_id_with_name(storage_mode, cache_mode):
+    # type: (str, bool) -> None
 
-    with StorageSupplier(storage_mode) as storage:
+    with StorageSupplier(storage_mode, cache_mode) as storage:
 
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_create_new_study_id_with_name.__name__
-        study_name = function_name + '/' + storage_mode
+        study_name = function_name + '/' + storage_mode + '/' + str(cache_mode)
         storage = optuna.storages.get_storage(storage)
         study_id = storage.create_new_study_id(study_name)
 
@@ -150,14 +154,15 @@ def test_create_new_study_id_with_name(storage_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
-    # type: (str) -> None
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode, cache_mode):
+    # type: (str, bool) -> None
 
-    with StorageSupplier(storage_mode) as storage:
+    with StorageSupplier(storage_mode, cache_mode) as storage:
 
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_get_study_id_from_name_and_get_study_name_from_id.__name__
-        study_name = function_name + '/' + storage_mode
+        study_name = function_name + '/' + storage_mode + '/' + str(cache_mode)
         storage = optuna.storages.get_storage(storage)
         study = optuna.create_study(storage=storage, study_name=study_name)
 
@@ -174,10 +179,11 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_get_study_id_from_trial_id(storage_mode):
-    # type: (str) -> None
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_get_study_id_from_trial_id(storage_mode, cache_mode):
+    # type: (str, bool) -> None
 
-    with StorageSupplier(storage_mode) as storage:
+    with StorageSupplier(storage_mode, cache_mode) as storage:
 
         # Generate unique study_name from the current function name and storage_mode.
         storage = optuna.storages.get_storage(storage)
@@ -276,10 +282,11 @@ def test_create_new_trial_id(storage_init_func):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_get_trial_number_from_id(storage_mode):
-    # type: (str) -> None
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_get_trial_number_from_id(storage_mode, cache_mode):
+    # type: (str, bool) -> None
 
-    with StorageSupplier(storage_mode) as storage:
+    with StorageSupplier(storage_mode, cache_mode) as storage:
         storage = optuna.storages.get_storage(storage)
 
         # Check if trial_number starts from 0.
@@ -294,10 +301,11 @@ def test_get_trial_number_from_id(storage_mode):
 
 # TODO(Yanase): Remove the following test case after TrialModel.number is added.
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_get_trial_number_from_id_with_empty_system_attrs(storage_mode):
-    # type: (str) -> None
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_get_trial_number_from_id_with_empty_system_attrs(storage_mode, cache_mode):
+    # type: (str, bool) -> None
 
-    with StorageSupplier(storage_mode) as storage:
+    with StorageSupplier(storage_mode, cache_mode) as storage:
         storage = optuna.storages.get_storage(storage)
         study_id = storage.create_new_study_id()
         with patch.object(storage, 'get_trial_system_attrs', return_value=dict()) as _mock_attrs:
@@ -659,38 +667,45 @@ def test_get_best_intermediate_result_over_steps(storage_init_func, direction_ex
 def test_get_median_intermediate_result_over_trials(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
-    storage = storage_init_func()
-    study_id = storage.create_new_study_id()
+    def setup_study(intermediate_values):
+        # type: (List[Tuple[float, float, float]]) -> Tuple[int, BaseStorage]
 
-    # Study does not have any trials.
-    with pytest.raises(ValueError):
-        storage.get_median_intermediate_result_over_trials(study_id, 0)
+        storage = storage_init_func()
+        study_id = storage.create_new_study_id()
 
-    trial_id_1 = storage.create_new_trial_id(study_id)
-    trial_id_2 = storage.create_new_trial_id(study_id)
-    trial_id_3 = storage.create_new_trial_id(study_id)
+        trial_id_1 = storage.create_new_trial_id(study_id)
+        trial_id_2 = storage.create_new_trial_id(study_id)
+        trial_id_3 = storage.create_new_trial_id(study_id)
 
-    # Set trial states complete because this method ignores incomplete trials.
-    storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
-    storage.set_trial_state(trial_id_2, TrialState.COMPLETE)
-    storage.set_trial_state(trial_id_3, TrialState.COMPLETE)
+        for step, (value1, value2, value3) in enumerate(intermediate_values):
+            # Study does not have any trials.
+            with pytest.raises(ValueError):
+                storage.get_median_intermediate_result_over_trials(study_id, step)
 
-    # Input value has no NaNs but float values.
-    storage.set_trial_intermediate_value(trial_id_1, 0, 0.1)
-    storage.set_trial_intermediate_value(trial_id_2, 0, 0.2)
-    storage.set_trial_intermediate_value(trial_id_3, 0, 0.3)
+            storage.set_trial_intermediate_value(trial_id_1, step, value1)
+            storage.set_trial_intermediate_value(trial_id_2, step, value2)
+            storage.set_trial_intermediate_value(trial_id_3, step, value3)
+
+        # Set trial states complete because this method ignores incomplete trials.
+        storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
+        storage.set_trial_state(trial_id_2, TrialState.COMPLETE)
+        storage.set_trial_state(trial_id_3, TrialState.COMPLETE)
+
+        return study_id, storage
+
+    # Input value has no NaNs but float values (step=0).
+    intermediate_values = [(0.1, 0.2, 0.3)]
+    study_id, storage = setup_study(intermediate_values)
     assert 0.2 == storage.get_median_intermediate_result_over_trials(study_id, 0)
 
-    # Input value has a float value and NaNs.
-    storage.set_trial_intermediate_value(trial_id_1, 1, 0.1)
-    storage.set_trial_intermediate_value(trial_id_2, 1, float('nan'))
-    storage.set_trial_intermediate_value(trial_id_3, 1, float('nan'))
+    # Input value has a float value and NaNs (step=1).
+    intermediate_values.append((0.1, float('nan'), float('nan')))
+    study_id, storage = setup_study(intermediate_values)
     assert 0.1 == storage.get_median_intermediate_result_over_trials(study_id, 1)
 
-    # Input value has NaNs only.
-    storage.set_trial_intermediate_value(trial_id_1, 2, float('nan'))
-    storage.set_trial_intermediate_value(trial_id_2, 2, float('nan'))
-    storage.set_trial_intermediate_value(trial_id_3, 2, float('nan'))
+    # Input value has NaNs only (step=2).
+    intermediate_values.append((float('nan'), float('nan'), float('nan')))
+    study_id, storage = setup_study(intermediate_values)
     assert math.isnan(storage.get_median_intermediate_result_over_trials(study_id, 2))
 
 
@@ -701,7 +716,6 @@ def _create_new_trial_with_example_trial(storage, study_id, distributions, examp
 
     if example_trial.value is not None:
         storage.set_trial_value(trial_id, example_trial.value)
-    storage.set_trial_state(trial_id, example_trial.state)
 
     for name, param_external in example_trial.params.items():
         param_internal = distributions[name].to_internal_repr(param_external)
@@ -716,6 +730,8 @@ def _create_new_trial_with_example_trial(storage, study_id, distributions, examp
 
     for key, value in example_trial.system_attrs.items():
         storage.set_trial_system_attr(trial_id, key, value)
+
+    storage.set_trial_state(trial_id, example_trial.state)
 
     return trial_id
 
