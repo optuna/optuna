@@ -228,6 +228,9 @@ class TestChainerMNStudy(object):
             failed_trials = [t for t in mn_study.trials if t.state == TrialState.FAIL]
             assert len(failed_trials) == n_trials
 
+            # Synchronize nodes before executing the next optimization.
+            comm.mpi_comm.barrier()
+
             # Invoke optimize in which no exceptions are accepted.
             with pytest.raises(ValueError):
                 mn_study.optimize(objective, n_trials=n_trials, catch=())
