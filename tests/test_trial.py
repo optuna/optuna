@@ -66,17 +66,17 @@ def test_suggest_low_equals_high(storage_init_func):
     study = create_study(storage_init_func(), sampler=samplers.TPESampler(n_startup_trials=0))
     trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
     with patch.object(trial, '_inject', wraps=trial._inject) as mock_object:
-        assert trial.suggest_uniform('x', 1., 1.) == 1.  # Suggesting a param.
-        assert trial.suggest_uniform('x', 1., 1.) == 1.  # Suggesting the same param.
+        assert trial.suggest_uniform('a', 1., 1.) == 1.  # Suggesting a param.
+        assert trial.suggest_uniform('a', 1., 1.) == 1.  # Suggesting the same param.
         assert mock_object.call_count == 2
-        assert trial.suggest_loguniform('y', 1., 1.) == 1.  # Suggesting a param.
-        assert trial.suggest_loguniform('y', 1., 1.) == 1.  # Suggesting the same param.
+        assert trial.suggest_loguniform('b', 1., 1.) == 1.  # Suggesting a param.
+        assert trial.suggest_loguniform('b', 1., 1.) == 1.  # Suggesting the same param.
         assert mock_object.call_count == 4
-        assert trial.suggest_discrete_uniform('z', 1., 1., 1.) == 1.  # Suggesting a param.
-        assert trial.suggest_discrete_uniform('z', 1., 1., 1.) == 1.  # Suggesting the same param.
+        assert trial.suggest_discrete_uniform('c', 1., 1., 1.) == 1.  # Suggesting a param.
+        assert trial.suggest_discrete_uniform('c', 1., 1., 1.) == 1.  # Suggesting the same param.
         assert mock_object.call_count == 6
-        assert trial.suggest_int('a', 1, 1) == 1  # Suggesting a param.
-        assert trial.suggest_int('a', 1, 1) == 1  # Suggesting the same param.
+        assert trial.suggest_int('d', 1, 1) == 1  # Suggesting a param.
+        assert trial.suggest_int('d', 1, 1) == 1  # Suggesting the same param.
         assert mock_object.call_count == 8
 
 

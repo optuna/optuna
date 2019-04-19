@@ -424,18 +424,19 @@ class Trial(BaseTrial):
         param_value_in_internal_repr = self.study.sampler.sample(self.storage, self.study_id, name,
                                                                  distribution)
 
-        set_success = self.storage.set_trial_param(self._trial_id, name,
-                                                   param_value_in_internal_repr, distribution)
-        if not set_success:
-            param_value_in_internal_repr = self.storage.get_trial_param(self._trial_id, name)
-
-        param_value = distribution.to_external_repr(param_value_in_internal_repr)
-        return param_value
+        return self._save_new_param_or_load_existing(name, param_value_in_internal_repr,
+                                                     distribution)
 
     def _inject(self, name, param_value, distribution):
         # type: (str, Any, distributions.BaseDistribution) -> Any
 
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+
+        return self._save_new_param_or_load_existing(name, param_value_in_internal_repr,
+                                                     distribution)
+
+    def _save_new_param_or_load_existing(self, name, param_value_in_internal_repr, distribution):
+        # type: (str, float, distributions.BaseDistribution) -> Any
 
         set_success = self.storage.set_trial_param(self._trial_id, name,
                                                    param_value_in_internal_repr, distribution)
