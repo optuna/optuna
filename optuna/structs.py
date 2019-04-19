@@ -5,6 +5,8 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
+from optuna.distributions import BaseDistribution  # NOQA
+
 
 class TrialState(enum.Enum):
     """State of a :class:`~optuna.trial.Trial`.
@@ -56,6 +58,7 @@ class FrozenTrial(
             ('datetime_start', Optional[datetime]),
             ('datetime_complete', Optional[datetime]),
             ('params', Dict[str, Any]),
+            ('distributions', Dict[str, BaseDistribution]),
             ('user_attrs', Dict[str, Any]),
             ('system_attrs', Dict[str, Any]),
             ('intermediate_values', Dict[int, float]),
@@ -78,6 +81,8 @@ class FrozenTrial(
             Datetime where the :class:`~optuna.trial.Trial` finished.
         params:
             Dictionary that contains suggested parameters.
+        distributions:
+            Dictionary that contains the distributions of :attr:`params`.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
@@ -95,7 +100,7 @@ class FrozenTrial(
             :class:`~optuna.study.Study.study_id` to identify a :class:`~optuna.trial.Trial`.
     """
 
-    internal_fields = ['params_in_internal_repr', 'trial_id']
+    internal_fields = ['distributions', 'params_in_internal_repr', 'trial_id']
 
 
 class StudySummary(

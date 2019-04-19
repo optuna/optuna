@@ -76,3 +76,43 @@ def test_check_distribution_compatibility():
             low=-1.0, high=10.0, q=3.))
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS['iu'], EXAMPLE_DISTRIBUTIONS['iu']._replace(low=-1, high=1))
+
+
+def test_contains():
+    # type: () -> None
+
+    u = distributions.UniformDistribution(low=1., high=2.)
+    assert not u.contains(0.9)
+    assert u.contains(1)
+    assert u.contains(1.5)
+    assert not u.contains(2)
+
+    lu = distributions.LogUniformDistribution(low=0.001, high=100)
+    assert not lu.contains(0.0)
+    assert lu.contains(0.001)
+    assert lu.contains(12.3)
+    assert not lu.contains(100)
+
+    du = distributions.DiscreteUniformDistribution(low=1., high=10., q=2.)
+    assert not du.contains(0.9)
+    assert du.contains(1.0)
+    assert du.contains(3.5)
+    assert du.contains(6)
+    assert du.contains(10)
+    assert not du.contains(10.1)
+
+    iu = distributions.IntUniformDistribution(low=1, high=10)
+    assert not iu.contains(0.9)
+    assert iu.contains(1)
+    assert iu.contains(3.5)
+    assert iu.contains(6)
+    assert iu.contains(10)
+    assert iu.contains(10.1)
+    assert not iu.contains(11)
+
+    c = distributions.CategoricalDistribution(choices=('Roppongi', 'Azabu'))
+    assert not c.contains(-1)
+    assert c.contains(0)
+    assert c.contains(1)
+    assert c.contains(1.5)
+    assert not c.contains(3)

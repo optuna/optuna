@@ -4,6 +4,7 @@ import six
 import warnings
 
 from optuna import distributions
+from optuna.distributions import BaseDistribution  # NOQA
 from optuna import logging
 from optuna import types
 
@@ -73,6 +74,12 @@ class BaseTrial(object):
     @property
     def params(self):
         # type: () -> Dict[str, Any]
+
+        raise NotImplementedError
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
 
         raise NotImplementedError
 
@@ -404,7 +411,7 @@ class Trial(BaseTrial):
         self.storage.set_trial_system_attr(self._trial_id, key, value)
 
     def _suggest(self, name, distribution):
-        # type: (str, distributions.BaseDistribution) -> Any
+        # type: (str, BaseDistribution) -> Any
 
         param_value_in_internal_repr = self.study.sampler.sample(self.storage, self.study_id, name,
                                                                  distribution)
@@ -459,6 +466,17 @@ class Trial(BaseTrial):
         """
 
         return self.storage.get_trial_params(self._trial_id)
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
+        """Return distributions of parameters to be optimized.
+
+        Returns:
+            A dictionary containing all distributions.
+        """
+
+        return self.storage.get_trial(self._trial_id).distributions
 
     @property
     def user_attrs(self):
@@ -519,42 +537,65 @@ class FixedTrial(BaseTrial):
         # type: (Dict[str, Any]) -> None
 
         self._params = params
+        self._suggested_params = {}  # type: Dict[str, Any]
+        self._distributions = {}  # type: Dict[str, BaseDistribution]
         self._user_attrs = {}  # type: Dict[str, Any]
         self._system_attrs = {}  # type: Dict[str, Any]
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        return self._suggest(name)
+        return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
 
     def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        return self._suggest(name)
+        return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
 
     def suggest_discrete_uniform(self, name, low, high, q):
         # type: (str, float, float, float) -> float
 
-        return self._suggest(name)
+        r = high - low
+
+        if math.fmod(r, q) != 0:
+            high = (r // q) * q + low
+            logger = logging.get_logger(__name__)
+            logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
+                           'replaced by [{}, {}].'.format(name, low, high))
+
+        discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+        return self._suggest(name, discrete)
 
     def suggest_int(self, name, low, high):
         # type: (str, int, int) -> int
 
-        return self._suggest(name)
+        return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
 
-        return self._suggest(name)
+        choices = tuple(choices)
+        return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
 
-    def _suggest(self, name):
-        # type: (str) -> Any
+    def _suggest(self, name, distribution):
+        # type: (str, BaseDistribution) -> Any
 
         if name not in self._params:
             raise ValueError('The value of the parameter \'{}\' is not found. Please set it at '
                              'the construction of the FixedTrial object.'.format(name))
 
-        return self._params[name]
+        value = self._params[name]
+        if not distribution.contains(value):
+            raise ValueError("The value {} of the parameter '{}' is out of "
+                             "the range of the distribution {}.".format(value, name, distribution))
+
+        if name in self._distributions:
+            distributions.check_distribution_compatibility(self._distributions[name], distribution)
+
+        self._suggested_params[name] = value
+        self._distributions[name] = distribution
+
+        return value
 
     def report(self, value, step=None):
         # type: (float, Optional[int]) -> None
@@ -580,7 +621,13 @@ class FixedTrial(BaseTrial):
     def params(self):
         # type: () -> Dict[str, Any]
 
-        return self._params
+        return self._suggested_params
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
+
+        return self._distributions
 
     @property
     def user_attrs(self):
