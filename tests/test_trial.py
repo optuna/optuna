@@ -60,6 +60,27 @@ def test_suggest_discrete_uniform(storage_init_func):
 
 
 @parametrize_storage
+def test_suggest_low_equals_high(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    study = create_study(storage_init_func(), sampler=samplers.TPESampler(n_startup_trials=0))
+    trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
+    with patch.object(trial, '_inject', wraps=trial._inject) as mock_object:
+        assert trial.suggest_uniform('x', 1., 1.) == 1.  # Suggesting a param.
+        assert trial.suggest_uniform('x', 1., 1.) == 1.  # Suggesting the same param.
+        assert mock_object.call_count == 2
+        assert trial.suggest_loguniform('y', 1., 1.) == 1.  # Suggesting a param.
+        assert trial.suggest_loguniform('y', 1., 1.) == 1.  # Suggesting the same param.
+        assert mock_object.call_count == 4
+        assert trial.suggest_discrete_uniform('z', 1., 1., 1.) == 1.  # Suggesting a param.
+        assert trial.suggest_discrete_uniform('z', 1., 1., 1.) == 1.  # Suggesting the same param.
+        assert mock_object.call_count == 6
+        assert trial.suggest_int('a', 1, 1) == 1  # Suggesting a param.
+        assert trial.suggest_int('a', 1, 1) == 1  # Suggesting the same param.
+        assert mock_object.call_count == 8
+
+
+@parametrize_storage
 @pytest.mark.parametrize(
     'range_config',
     [

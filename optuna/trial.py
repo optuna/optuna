@@ -148,7 +148,11 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
+        distribution = distributions.UniformDistribution(low=low, high=high)
+        if low == high:
+            return self._inject(name, low, distribution)
+
+        return self._suggest(name, distribution)
 
     def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -183,7 +187,11 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
+        distribution = distributions.LogUniformDistribution(low=low, high=high)
+        if low == high:
+            return self._inject(name, low, distribution)
+
+        return self._suggest(name, distribution)
 
     def suggest_discrete_uniform(self, name, low, high, q):
         # type: (str, float, float, float) -> float
@@ -232,8 +240,11 @@ class Trial(BaseTrial):
             self.logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
                                 'replaced by [{}, {}].'.format(name, low, high))
 
-        discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
-        return self._suggest(name, discrete)
+        distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+        if low == high:
+            return self._inject(name, low, distribution)
+
+        return self._suggest(name, distribution)
 
     def suggest_int(self, name, low, high):
         # type: (str, int, int) -> int
@@ -266,7 +277,11 @@ class Trial(BaseTrial):
             A suggested integer value.
         """
 
-        return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
+        distribution = distributions.IntUniformDistribution(low=low, high=high)
+        if low == high:
+            return int(self._inject(name, low, distribution))
+
+        return int(self._suggest(name, distribution))
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
@@ -408,6 +423,19 @@ class Trial(BaseTrial):
 
         param_value_in_internal_repr = self.study.sampler.sample(self.storage, self.study_id, name,
                                                                  distribution)
+
+        set_success = self.storage.set_trial_param(self._trial_id, name,
+                                                   param_value_in_internal_repr, distribution)
+        if not set_success:
+            param_value_in_internal_repr = self.storage.get_trial_param(self._trial_id, name)
+
+        param_value = distribution.to_external_repr(param_value_in_internal_repr)
+        return param_value
+
+    def _inject(self, name, param_value, distribution):
+        # type: (str, Any, distributions.BaseDistribution) -> Any
+
+        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
 
         set_success = self.storage.set_trial_param(self._trial_id, name,
                                                    param_value_in_internal_repr, distribution)
