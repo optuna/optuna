@@ -66,7 +66,8 @@ class BaseSampler(object):
                 Distribution object that specifies a prior and/or scale of the sampling algorithm.
 
         Returns:
-            A float value in the internal representation of Optuna.
+            A dictionary containing the parameter names and the values that are the
+            internal representations of Optuna.
 
         """
 
