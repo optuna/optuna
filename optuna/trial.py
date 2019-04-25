@@ -122,7 +122,8 @@ class Trial(BaseTrial):
         """Suggest a value for the continuous parameter.
 
         The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high})`
-        in the linear domain.
+        in the linear domain. When :math:`\\mathsf{low} = \\mathsf{high}`, the value of
+        :math:`\\mathsf{low}` will be returned.
 
         Example:
 
@@ -159,7 +160,8 @@ class Trial(BaseTrial):
         """Suggest a value for the continuous parameter.
 
         The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high})`
-        in the log domain.
+        in the log domain. When :math:`\\mathsf{low} = \\mathsf{high}`, the value of
+        :math:`\\mathsf{low}` will be returned.
 
         Example:
 
