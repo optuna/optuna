@@ -60,10 +60,9 @@ class BaseSampler(object):
                 Target study object.
             trial:
                 Target trial object.
-            param_name:
-                Name of the sampled parameter.
-            param_distribution:
-                Distribution object that specifies a prior and/or scale of the sampling algorithm.
+            search_space:
+                The search space returned by
+                :func:`optuna.samplers.BaseSampler.define_relative_search_space`.
 
         Returns:
             A dictionary containing the parameter names and the values that are the
