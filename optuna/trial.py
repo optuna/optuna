@@ -151,7 +151,9 @@ class Trial(BaseTrial):
 
         distribution = distributions.UniformDistribution(low=low, high=high)
         if low == high:
-            return self._inject(name, low, distribution)
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
 
         return self._suggest(name, distribution)
 
@@ -191,7 +193,9 @@ class Trial(BaseTrial):
 
         distribution = distributions.LogUniformDistribution(low=low, high=high)
         if low == high:
-            return self._inject(name, low, distribution)
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
 
         return self._suggest(name, distribution)
 
@@ -244,7 +248,9 @@ class Trial(BaseTrial):
 
         distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         if low == high:
-            return self._inject(name, low, distribution)
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
 
         return self._suggest(name, distribution)
 
@@ -281,7 +287,9 @@ class Trial(BaseTrial):
 
         distribution = distributions.IntUniformDistribution(low=low, high=high)
         if low == high:
-            return int(self._inject(name, low, distribution))
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
 
         return int(self._suggest(name, distribution))
 
@@ -426,18 +434,10 @@ class Trial(BaseTrial):
         param_value_in_internal_repr = self.study.sampler.sample(self.storage, self.study_id, name,
                                                                  distribution)
 
-        return self._save_new_param_or_load_existing(name, param_value_in_internal_repr,
-                                                     distribution)
+        return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                   distribution)
 
-    def _inject(self, name, param_value, distribution):
-        # type: (str, Any, distributions.BaseDistribution) -> Any
-
-        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
-
-        return self._save_new_param_or_load_existing(name, param_value_in_internal_repr,
-                                                     distribution)
-
-    def _save_new_param_or_load_existing(self, name, param_value_in_internal_repr, distribution):
+    def _set_new_param_or_get_existing(self, name, param_value_in_internal_repr, distribution):
         # type: (str, float, distributions.BaseDistribution) -> Any
 
         set_success = self.storage.set_trial_param(self._trial_id, name,
