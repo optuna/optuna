@@ -20,7 +20,7 @@ class MXNetPruningCallback(object):
         .. code::
 
             model.fit(train_data=X, eval_data=Y,
-                      eval_end_callback=MxnetPruningCallback(trial, eval_metric='accuracy'))
+                      eval_end_callback=MXNetPruningCallback(trial, eval_metric='accuracy'))
 
     Args:
         trial:
