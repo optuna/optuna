@@ -15,6 +15,9 @@ Integration
 .. autoclass:: LightGBMPruningCallback
     :members:
 
+.. autoclass:: MxnetPruningCallback
+    :members:
+
 .. autoclass:: TensorFlowPruningHook
     :members:
 
