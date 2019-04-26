@@ -10,7 +10,7 @@ except ImportError as e:
     _available = False
 
 
-class MxnetPruningCallback(object):
+class MXNetPruningCallback(object):
     """MXNet callback to prune unpromising trials.
 
     Example:
@@ -20,7 +20,7 @@ class MxnetPruningCallback(object):
         .. code::
 
             model.fit(train_data=X, eval_data=Y,
-                      eval_end_callback=MxnetPruningCallback(trial, eval_metric='accuracy'))
+                      eval_end_callback=MXNetPruningCallback(trial, eval_metric='accuracy'))
 
     Args:
         trial:
@@ -30,7 +30,7 @@ class MxnetPruningCallback(object):
             An evaluation metric name for pruning, e.g., ``cross-entropy`` and
             ``accuracy``. If using default metrics like mxnet.metrics.Accuracy, use it's
             default metric name. For custom metrics, use the metric_name provided to
-             constructor. Please refer to `mxnet.metrics reference
+            constructor. Please refer to `mxnet.metrics reference
             <https://mxnet.apache.org/api/python/metric/metric.html>`_ for further details.
     """
 

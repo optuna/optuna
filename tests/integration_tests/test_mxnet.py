@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.integration.mxnet import MxnetPruningCallback
+from optuna.integration.mxnet import MXNetPruningCallback
 from optuna.testing.integration import DeterministicPruner
 from optuna import types
 
@@ -43,7 +43,7 @@ def test_mxnet_pruning_callback():
                   eval_metric=eval_metric,
                   optimizer=optimizer,
                   num_epoch=1,
-                  eval_end_callback=MxnetPruningCallback(trial, 'accuracy'))
+                  eval_end_callback=MXNetPruningCallback(trial, 'accuracy'))
         return 1.0
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
