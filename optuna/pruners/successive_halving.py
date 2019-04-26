@@ -131,13 +131,10 @@ class SuccessiveHalvingPruner(BasePruner):
         competing_values.append(value)
         competing_values.sort()
 
-        promotable_idx = (len(competing_values) // self.reduction_factor) - 1
-        if promotable_idx == -1:
-            # Optuna does not support to suspend/resume ongoing trials.
-            #
-            # For the first `eta - 1` trials, this implementation promotes a trial if its
-            # intermediate value is the smallest one among the trials that have completed the rung.
-            promotable_idx = 0
+        # Optuna does not support to suspend/resume ongoing trials.
+        # For the first `eta - 1` trials, this implementation promotes a trial if its
+        # intermediate value is the smallest one among the trials that have completed the rung.
+        promotable_idx = (len(competing_values) // self.reduction_factor)
 
         if study_direction == StudyDirection.MAXIMIZE:
             competing_values.reverse()
