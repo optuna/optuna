@@ -8,6 +8,7 @@ from time import time
 
 import numpy as np
 import pandas as pd  # NOQA
+from scipy.sparse import spmatrix  # NOQA
 
 try:
     from sklearn.base import BaseEstimator
@@ -46,6 +47,9 @@ if types.TYPE_CHECKING:
     from typing import Mapping  # NOQA
     from typing import Optional  # NOQA
     from typing import Union  # NOQA
+
+    OneDimArrayType = Union[List[float], np.ndarray, pd.Series]
+    TwoDimArrayType = Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
 
 
 def _check_sklearn_availability():
@@ -122,13 +126,13 @@ class Objective(object):
         self,
         estimator,  # type: BaseEstimator
         param_distributions,  # type: Mapping[str, distributions.BaseDistribution]
-        X,  # type: np.ndarray
-        y,  # type: Optional[np.ndarray]
+        X,  # type: TwoDimArrayType
+        y,  # type: Optional[Union[OneDimArrayType, TwoDimArrayType]]
         cv,  # type: BaseCrossValidator
         enable_pruning,  # type: bool
         error_score,  # type: Union[str, float]
         fit_params,  # type: Dict[str, Any]
-        groups,  # type: Optional[np.ndarray]
+        groups,  # type: Optional[OneDimArrayType]
         max_iter,  # type: int
         return_train_score,  # type: bool
         scoring  # type: Callable[..., float]
@@ -175,8 +179,12 @@ class Objective(object):
 
         return - trial.user_attrs['mean_test_score']
 
-    def _cross_validate_with_pruning(self, trial, estimator):
-        # type: (trial_module.Trial, BaseEstimator) -> Dict[str, np.ndarray]
+    def _cross_validate_with_pruning(
+        self,
+        trial,  # type: trial_module.Trial
+        estimator  # type: BaseEstimator
+    ):
+        # type: (...) -> Dict[str, OneDimArrayType]
 
         if is_classifier(estimator):
             partial_fit_params = self.fit_params.copy()
@@ -292,7 +300,7 @@ class Objective(object):
         return ret
 
     def _store_scores(self, trial, scores):
-        # type: (trial_module.Trial, Dict[str, np.ndarray]) -> None
+        # type: (trial_module.Trial, Dict[str, OneDimArrayType]) -> None
 
         for name, array in scores.items():
             if name in ['test_score', 'train_score']:
@@ -499,7 +507,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def classes_(self):
-        # type: () -> np.ndarray
+        # type: () -> OneDimArrayType
         """Class labels."""
 
         self._check_is_fitted()
@@ -535,7 +543,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def decision_function(self):
-        # type: () -> Callable[..., np.ndarray]
+        # type: () -> Callable[..., Union[OneDimArrayType, TwoDimArrayType]]
         """Call ``decision_function`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -548,7 +556,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def inverse_transform(self):
-        # type: () -> Callable[..., np.ndarray]
+        # type: () -> Callable[..., TwoDimArrayType]
         """Call ``inverse_transform`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -561,7 +569,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def predict(self):
-        # type: () -> Callable[..., np.ndarray]
+        # type: () -> Callable[..., Union[OneDimArrayType, TwoDimArrayType]]
         """Call ``predict`` on the best estimator.
 
         This is available only if the underlying estimator supports ``predict``
@@ -574,7 +582,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def predict_log_proba(self):
-        # type: () -> Callable[..., np.ndarray]
+        # type: () -> Callable[..., TwoDimArrayType]
         """Call ``predict_log_proba`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -587,7 +595,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def predict_proba(self):
-        # type: () -> Callable[..., np.ndarray]
+        # type: () -> Callable[..., TwoDimArrayType]
         """Call ``predict_proba`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -600,7 +608,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def score_samples(self):
-        # type: () -> Callable[..., np.ndarray]
+        # type: () -> Callable[..., OneDimArrayType]
         """Call ``score_samples`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -622,7 +630,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def transform(self):
-        # type: () -> Callable[..., np.ndarray]
+        # type: () -> Callable[..., TwoDimArrayType]
         """Call ``transform`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -721,8 +729,13 @@ class OptunaSearchCV(BaseEstimator):
                 'max_iter must be > 0, got {}'.format(self.max_iter)
             )
 
-    def _refit(self, X, y=None, **fit_params):
-        # type: (np.ndarray, Optional[np.ndarray], Any) -> 'OptunaSearchCV'
+    def _refit(
+        self,
+        X,  # type: TwoDimArrayType
+        y=None,  # type: Optional[Union[OneDimArrayType, TwoDimArrayType]]
+        **fit_params  # type: Dict[str, Any]
+    ):
+        # type: (...) -> 'OptunaSearchCV'
 
         self.best_estimator_ = clone(self.estimator)
 
@@ -748,10 +761,10 @@ class OptunaSearchCV(BaseEstimator):
 
     def fit(
         self,
-        X,  # type: np.ndarray
-        y=None,  # type: Optional[np.ndarray]
-        groups=None,  # type: Optional[np.ndarray]
-        **fit_params  # type: Any
+        X,  # type: TwoDimArrayType
+        y=None,  # type: Optional[Union[OneDimArrayType, TwoDimArrayType]]
+        groups=None,  # type: Optional[OneDimArrayType]
+        **fit_params  # type: Dict[str, Any]
     ):
         # type: (...) -> 'OptunaSearchCV'
         """Run fit with all sets of parameters.
@@ -818,8 +831,12 @@ class OptunaSearchCV(BaseEstimator):
 
         return self
 
-    def score(self, X, y=None):
-        # type: (np.ndarray, Optional[np.ndarray]) -> float
+    def score(
+        self,
+        X,  # type: TwoDimArrayType
+        y=None,  # type: Optional[Union[OneDimArrayType, TwoDimArrayType]]
+    ):
+        # type: (...) -> float
         """Return the score on the given data.
 
         Args:
