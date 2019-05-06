@@ -463,8 +463,6 @@ class OptunaSearchCV(BaseEstimator):
         # type: () -> int
         """Index which corresponds to the best candidate parameter setting."""
 
-        self._check_is_fitted()
-
         df = self.trials_dataframe()
 
         return df['value'].idxmin()
@@ -482,8 +480,6 @@ class OptunaSearchCV(BaseEstimator):
     def best_score_(self):
         # type: () -> float
         """Mean cross-validated score of the best estimator."""
-
-        self._check_is_fitted()
 
         return - self.best_value_
 
@@ -519,12 +515,10 @@ class OptunaSearchCV(BaseEstimator):
         # type: () -> int
         """Actual number of trials."""
 
-        self._check_is_fitted()
-
-        return len(self.study_.trials)
+        return len(self.trials_)
 
     @property
-    def trials(self):
+    def trials_(self):
         # type: () -> List[structs.FrozenTrial]
         """All trials in the :class:`~optuna.study.Study`."""
 
@@ -533,7 +527,7 @@ class OptunaSearchCV(BaseEstimator):
         return self.study_.trials
 
     @property
-    def user_attrs(self):
+    def user_attrs_(self):
         # type: () -> Dict[str, Any]
         """User attributes in the :class:`~optuna.study.Study`."""
 
