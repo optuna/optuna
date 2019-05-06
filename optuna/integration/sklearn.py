@@ -19,6 +19,7 @@ try:
     from sklearn.model_selection import check_cv
     from sklearn.model_selection import cross_validate
     from sklearn.utils.metaestimators import _safe_split
+    from sklearn.utils.validation import _num_samples
     from sklearn.utils.validation import check_is_fitted
 
     _available = True
@@ -50,6 +51,8 @@ if types.TYPE_CHECKING:
 
     OneDimArrayType = Union[List[float], np.ndarray, pd.Series]
     TwoDimArrayType = Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
+
+logger = logging.get_logger(__name__)
 
 
 def _check_sklearn_availability():
@@ -731,9 +734,18 @@ class OptunaSearchCV(BaseEstimator):
     ):
         # type: (...) -> 'OptunaSearchCV'
 
+        n_samples = _num_samples(X)
+
         self.best_estimator_ = clone(self.estimator)
 
-        self.best_estimator_.set_params(**self.study_.best_params)
+        try:
+            self.best_estimator_.set_params(**self.study_.best_params)
+        except ValueError as e:
+            logger.exception(e)
+
+        logger.info(
+            'Refitting the estimator using {} samples...'.format(n_samples)
+        )
 
         start_time = time()
 
