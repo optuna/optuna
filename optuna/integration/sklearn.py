@@ -322,7 +322,7 @@ class OptunaSearchCV(BaseEstimator):
 
         param_distributions:
             Dictionary where keys are parameters and values are distributions.
-            Disrtibutions are assumed to implement the optuna distribution
+            Distributions are assumed to implement the optuna distribution
             interface.
 
         cv:
