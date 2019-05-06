@@ -9,7 +9,16 @@ Integration
 .. autoclass:: ChainerMNStudy
     :members:
 
+.. autoclass:: KerasPruningCallback
+    :members:
+
 .. autoclass:: LightGBMPruningCallback
+    :members:
+
+.. autoclass:: MXNetPruningCallback
+    :members:
+
+.. autoclass:: TensorFlowPruningHook
     :members:
 
 .. autoclass:: XGBoostPruningCallback

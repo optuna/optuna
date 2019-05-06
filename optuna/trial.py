@@ -121,7 +121,9 @@ class Trial(BaseTrial):
         # type: (str, float, float) -> float
         """Suggest a value for the continuous parameter.
 
-        The value is sampled from the range ``[low, high)`` in the linear domain.
+        The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high})`
+        in the linear domain. When :math:`\\mathsf{low} = \\mathsf{high}`, the value of
+        :math:`\\mathsf{low}` will be returned.
 
         Example:
 
@@ -147,13 +149,21 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
+        distribution = distributions.UniformDistribution(low=low, high=high)
+        if low == high:
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
+
+        return self._suggest(name, distribution)
 
     def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
         """Suggest a value for the continuous parameter.
 
-        The value is sampled from the range ``[low, high)`` in the log domain.
+        The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high})`
+        in the log domain. When :math:`\\mathsf{low} = \\mathsf{high}`, the value of
+        :math:`\\mathsf{low}` will be returned.
 
         Example:
 
@@ -181,16 +191,25 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
+        distribution = distributions.LogUniformDistribution(low=low, high=high)
+        if low == high:
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
+
+        return self._suggest(name, distribution)
 
     def suggest_discrete_uniform(self, name, low, high, q):
         # type: (str, float, float, float) -> float
         """Suggest a value for the discrete parameter.
 
-        The value is sampled from the range ``[low, high]``, and the step of discretization is
-        ``q``. More specifically, this method returns one of the values in the sequence ``low,
-        low + q, low + 2 * q, ..., low + k * q <= high``, where `k`` denotes an integer. Note that
-        ``high`` may be excluded from ranges due to round-off errors if ``q`` is not an integer.
+        The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high}]`,
+        and the step of discretization is :math:`q`. More specifically,
+        this method returns one of the values in the sequence
+        :math:`\\mathsf{low}, \\mathsf{low} + q, \\mathsf{low} + 2 q, \\dots,
+        \\mathsf{low} + k q \\le \\mathsf{high}`,
+        where :math:`k` denotes an integer. Note that :math:`high` may be
+        excluded from ranges due to round-off errors if :math:`q` is not an integer.
 
         Example:
 
@@ -227,14 +246,19 @@ class Trial(BaseTrial):
             self.logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
                                 'replaced by [{}, {}].'.format(name, low, high))
 
-        discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
-        return self._suggest(name, discrete)
+        distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+        if low == high:
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
+
+        return self._suggest(name, distribution)
 
     def suggest_int(self, name, low, high):
         # type: (str, int, int) -> int
         """Suggest a value for the integer parameter.
 
-        The value is sampled from the integers in ``[low, high]``.
+        The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
 
         Example:
 
@@ -261,7 +285,13 @@ class Trial(BaseTrial):
             A suggested integer value.
         """
 
-        return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
+        distribution = distributions.IntUniformDistribution(low=low, high=high)
+        if low == high:
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
+
+        return int(self._suggest(name, distribution))
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
@@ -403,6 +433,12 @@ class Trial(BaseTrial):
 
         param_value_in_internal_repr = self.study.sampler.sample(self.storage, self.study_id, name,
                                                                  distribution)
+
+        return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                   distribution)
+
+    def _set_new_param_or_get_existing(self, name, param_value_in_internal_repr, distribution):
+        # type: (str, float, distributions.BaseDistribution) -> Any
 
         set_success = self.storage.set_trial_param(self._trial_id, name,
                                                    param_value_in_internal_repr, distribution)

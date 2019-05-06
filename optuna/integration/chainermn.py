@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import gc
+
 from optuna.logging import get_logger
 from optuna.pruners import BasePruner  # NOQA
 from optuna.storages import BaseStorage  # NOQA
@@ -147,6 +149,12 @@ class ChainerMNStudy(object):
                     pass
                 except catch:
                     pass
+                finally:
+                    # The following line mitigates memory problems that can be occurred in some
+                    # environments (e.g., services that use computing containers such as CircleCI).
+                    # Please refer to the following PR for further details:
+                    # https://github.com/pfnet/optuna/pull/325.
+                    gc.collect()
 
     def __getattr__(self, attr_name):
         # type: (str) -> Any

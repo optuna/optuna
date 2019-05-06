@@ -3,6 +3,7 @@ import xgboost as xgb
 
 import optuna
 from optuna.integration.xgboost import XGBoostPruningCallback
+from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -20,13 +21,13 @@ def test_xgboost_pruning_callback_call():
 
     # The pruner is deactivated.
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception, ))
+    trial = create_running_trial(study, 1.0)
     pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
     pruning_callback(env)
 
     # The pruner is activated.
     study = optuna.create_study(pruner=DeterministicPruner(True))
-    trial = study._run_trial(func=lambda _: 1.0, catch=(Exception, ))
+    trial = create_running_trial(study, 1.0)
     pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
     with pytest.raises(optuna.structs.TrialPruned):
         pruning_callback(env)
