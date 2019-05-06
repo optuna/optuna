@@ -26,8 +26,8 @@ if sys.version_info[0] == 2 or TYPE_CHECKING:
     from optuna.integration.chainermn import ChainerMNStudy  # NOQA
     from optuna.integration.keras import KerasPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
-    from optuna.integration.sklearn import OptunaSearchCV  # NOQA
     from optuna.integration.mxnet import MXNetPruningCallback  # NOQA
+    from optuna.integration.sklearn import OptunaSearchCV  # NOQA
     from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
 else:
