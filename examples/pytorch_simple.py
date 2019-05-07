@@ -90,7 +90,7 @@ def get_mnist():
                                               batch_size=BATCHSIZE,
                                               shuffle=True)
 
-    return (train_loader, test_loader)
+    return train_loader, test_loader
 
 
 def objective(trial):
