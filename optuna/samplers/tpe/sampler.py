@@ -212,8 +212,10 @@ class TPESampler(base.BaseSampler):
             q=q,
             is_log=is_log)
 
-        return TPESampler._compare(
-            samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above)[0]
+        return float(
+            TPESampler._compare(
+                samples=samples_below, log_l=log_likelihoods_below,
+                log_g=log_likelihoods_above)[0])
 
     def _sample_categorical(self, distribution, below, above):
         # type: (distributions.CategoricalDistribution, np.ndarray, np.ndarray) -> float
