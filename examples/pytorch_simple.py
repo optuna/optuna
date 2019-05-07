@@ -19,6 +19,7 @@ We have the following two ways to execute this example:
 
 """
 
+from __future__ import division
 from __future__ import print_function
 
 import os
@@ -140,7 +141,7 @@ def objective(trial):
             pred = output.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability.
             correct += pred.eq(target.view_as(pred)).sum().item()
 
-    accuracy = 100. * correct / N_TEST_EXAMPLES
+    accuracy = correct / N_TEST_EXAMPLES
     return accuracy
 
 
