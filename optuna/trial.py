@@ -232,13 +232,7 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        r = high - low
-
-        if math.fmod(r, q) != 0:
-            high = (r // q) * q + low
-            self.logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
-                                'replaced by [{}, {}].'.format(name, low, high))
-
+        high = _adjust_discrete_uniform_high(name, low, high, q)
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
@@ -555,14 +549,7 @@ class FixedTrial(BaseTrial):
     def suggest_discrete_uniform(self, name, low, high, q):
         # type: (str, float, float, float) -> float
 
-        r = high - low
-
-        if math.fmod(r, q) != 0:
-            high = (r // q) * q + low
-            logger = logging.get_logger(__name__)
-            logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
-                           'replaced by [{}, {}].'.format(name, low, high))
-
+        high = _adjust_discrete_uniform_high(name, low, high, q)
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
@@ -640,3 +627,17 @@ class FixedTrial(BaseTrial):
         # type: () -> Dict[str, Any]
 
         return self._system_attrs
+
+
+def _adjust_discrete_uniform_high(name, low, high, q):
+    # type: (str, float, float, float) -> float
+
+    r = high - low
+
+    if math.fmod(r, q) != 0:
+        high = (r // q) * q + low
+        logger = logging.get_logger(__name__)
+        logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
+                       'replaced by [{}, {}].'.format(name, low, high))
+
+    return high
