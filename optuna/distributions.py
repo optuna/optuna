@@ -87,7 +87,10 @@ class UniformDistribution(
         # type: (float) -> bool
 
         value = param_value_in_internal_repr
-        return self.low <= value and value < self.high
+        if self.low == self.high:
+            return value == self.low
+        else:
+            return self.low <= value and value < self.high
 
 
 class LogUniformDistribution(
@@ -106,7 +109,10 @@ class LogUniformDistribution(
         # type: (float) -> bool
 
         value = param_value_in_internal_repr
-        return self.low <= value and value < self.high
+        if self.low == self.high:
+            return value == self.low
+        else:
+            return self.low <= value and value < self.high
 
 
 class DiscreteUniformDistribution(

@@ -116,3 +116,27 @@ def test_contains():
     assert c.contains(1)
     assert c.contains(1.5)
     assert not c.contains(3)
+
+
+def test_empty_range_contains():
+    # type: () -> None
+
+    u = distributions.UniformDistribution(low=1.0, high=1.0)
+    assert not u.contains(0.9)
+    assert u.contains(1.0)
+    assert not u.contains(1.1)
+
+    lu = distributions.LogUniformDistribution(low=1.0, high=1.0)
+    assert not lu.contains(0.9)
+    assert lu.contains(1.0)
+    assert not lu.contains(1.1)
+
+    du = distributions.DiscreteUniformDistribution(low=1.0, high=1.0, q=2.0)
+    assert not du.contains(0.9)
+    assert du.contains(1.0)
+    assert not du.contains(1.1)
+
+    iu = distributions.IntUniformDistribution(low=1, high=1)
+    assert not iu.contains(0)
+    assert iu.contains(1)
+    assert not iu.contains(2)
