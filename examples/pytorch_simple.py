@@ -127,15 +127,8 @@ def objective(trial):
             # Updating the weights.
             optimizer.step()
 
-            # Printing statistics.
-            if batch_idx % LOG_INTERVAL == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    epoch, batch_idx * len(data), N_TRAIN_EXAMPLES,
-                    100. * batch_idx * BATCHSIZE / N_TRAIN_EXAMPLES, loss.item()))
-
     # Validation of the model.
     model.eval()
-    test_loss = 0
     correct = 0
     with torch.no_grad():
         for batch_idx, (data, target) in enumerate(test_loader):
@@ -144,16 +137,10 @@ def objective(trial):
                 break
             data, target = data.to(DEVICE), target.to(DEVICE)
             output = model(data)
-            test_loss += F.nll_loss(output, target, reduction='sum').item()  # Sum up batch losses.
             pred = output.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability.
             correct += pred.eq(target.view_as(pred)).sum().item()
 
-    test_loss /= N_TEST_EXAMPLES
     accuracy = 100. * correct / N_TEST_EXAMPLES
-
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, N_TEST_EXAMPLES, accuracy))
-
     return accuracy
 
 
