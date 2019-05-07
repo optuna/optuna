@@ -44,7 +44,7 @@ class TPESampler(base.BaseSampler):
     def __init__(
             self,
             consider_prior=True,  # type: bool
-            prior_weight=1.0,  # type: Optional[float]
+            prior_weight=1.0,  # type: float
             consider_magic_clip=True,  # type: bool
             consider_endpoints=False,  # type: bool
             n_startup_trials=10,  # type: int
@@ -212,8 +212,10 @@ class TPESampler(base.BaseSampler):
             q=q,
             is_log=is_log)
 
-        return TPESampler._compare(
-            samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above)[0]
+        return float(
+            TPESampler._compare(
+                samples=samples_below, log_l=log_likelihoods_below,
+                log_g=log_likelihoods_above)[0])
 
     def _sample_categorical(self, distribution, below, above):
         # type: (distributions.CategoricalDistribution, np.ndarray, np.ndarray) -> float
@@ -266,7 +268,7 @@ class TPESampler(base.BaseSampler):
         while samples.size < n_samples:
             active = np.argmax(self.rng.multinomial(1, weights))
             draw = self.rng.normal(loc=mus[active], scale=sigmas[active])
-            if low <= draw <= high:
+            if low <= draw < high:
                 samples = np.append(samples, draw)
 
         samples = np.reshape(samples, size)
@@ -358,27 +360,14 @@ class TPESampler(base.BaseSampler):
         if size == (0, ):
             return np.asarray([], dtype=float)
         assert len(size)
+        assert probabilities.ndim == 1
 
-        if probabilities.ndim == 1:
-            n_draws = int(np.prod(size))
-            sample = self.rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
-            assert sample.shape == size + (probabilities.size, )
-            return_val = np.dot(sample, np.arange(probabilities.size))
-            return_val.shape = size
-            return return_val
-        elif probabilities.ndim == 2:
-            n_draws_, n_choices = probabilities.shape
-            n_draws, = size
-            assert n_draws_ == n_draws
-            return_val = [
-                np.where(self.rng.multinomial(pvals=[ii], n=1))[0][0] for ii in range(n_draws_)
-            ]
-            return_val = np.asarray(return_val)
-            return_val.shape = size
-            return return_val
-        else:
-            raise ValueError("The input dimension of p is {}. It should be 1 or 2.",
-                             probabilities.ndim)
+        n_draws = int(np.prod(size))
+        sample = self.rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
+        assert sample.shape == size + (probabilities.size, )
+        return_val = np.dot(sample, np.arange(probabilities.size))
+        return_val.shape = size
+        return return_val
 
     @classmethod
     def _categorical_log_pdf(

@@ -10,6 +10,8 @@ if types.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Tuple  # NOQA
 
+EPS = 1e-12
+
 
 class ParzenEstimatorParameters(
         NamedTuple('_ParzenEstimatorParameters', [
@@ -85,9 +87,9 @@ class ParzenEstimator(object):
             sigma = numpy.zeros_like(low_sorted_mus_high)
             sigma[1:-1] = numpy.maximum(low_sorted_mus_high[1:-1] - low_sorted_mus_high[0:-2],
                                         low_sorted_mus_high[2:] - low_sorted_mus_high[1:-1])
-            if not consider_endpoints:
-                sigma[1] = sigma[2] - sigma[1]
-                sigma[-2] = sigma[-2] - sigma[-3]
+            if not consider_endpoints and low_sorted_mus_high.size > 2:
+                sigma[1] = low_sorted_mus_high[2] - low_sorted_mus_high[1]
+                sigma[-2] = low_sorted_mus_high[-2] - low_sorted_mus_high[-3]
             sigma = sigma[1:-1]
 
         # We decide the weights.
@@ -106,7 +108,7 @@ class ParzenEstimator(object):
         if consider_magic_clip:
             minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(sorted_mus)))
         else:
-            minsigma = 0.0
+            minsigma = EPS
         sigma = numpy.clip(sigma, minsigma, maxsigma)
         if consider_prior:
             sigma[prior_pos] = prior_sigma
