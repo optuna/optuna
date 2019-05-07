@@ -33,6 +33,8 @@ def test_uniform(sampler_class, distribution):
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
+    assert not isinstance(
+        study.sampler.sample(study.storage, study.study_id, 'x', distribution), np.floating)
 
 
 @parametrize_sampler
@@ -46,6 +48,8 @@ def test_log_uniform(sampler_class, distribution):
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
+    assert not isinstance(
+        study.sampler.sample(study.storage, study.study_id, 'x', distribution), np.floating)
 
 
 @parametrize_sampler
@@ -63,6 +67,8 @@ def test_discrete_uniform(sampler_class, distribution):
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
+    assert not isinstance(
+        study.sampler.sample(study.storage, study.study_id, 'x', distribution), np.floating)
 
     # Check all points are multiples of distribution.q.
     points = points
@@ -87,6 +93,8 @@ def test_int(sampler_class, distribution):
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
+    assert not isinstance(
+        study.sampler.sample(study.storage, study.study_id, 'x', distribution), np.integer)
 
 
 @parametrize_sampler
