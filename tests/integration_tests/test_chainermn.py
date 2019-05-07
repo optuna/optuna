@@ -2,6 +2,7 @@ import gc
 import pytest
 
 from optuna import create_study
+from optuna import distributions
 from optuna import integration
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
@@ -423,6 +424,23 @@ class TestChainerMNTrial(object):
 
             x = mn_trial.suggest_categorical('x', [1])
             assert mn_trial.params['x'] == x
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    @pytest.mark.parametrize('cache_mode', CACHE_MODES)
+    def test_distributions(storage_mode, cache_mode, comm):
+        # type: (str, bool, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, cache_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            trial_id = storage.create_new_trial_id(study.study_id)
+            trial = Trial(study, trial_id)
+            mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
+
+            mn_trial.suggest_categorical('x', [1])
+            assert mn_trial.distributions == {
+                'x': distributions.CategoricalDistribution(choices=(1, ))
+            }
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
