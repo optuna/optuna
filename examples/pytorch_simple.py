@@ -59,11 +59,11 @@ class Net(nn.Module):
 
         self.layers.append(nn.Linear(input_dim, CLASSES))
 
-        # assinging the layers as class variables (PyTorch requirement).
+        # Assigning the layers as class variables (PyTorch requirement).
         for idx, layer in enumerate(self.layers):
             setattr(self, 'fc{}'.format(idx), layer)
 
-        # assinging the dropouts as class variables (PyTorch requirement).
+        # Assigning the dropouts as class variables (PyTorch requirement).
         for idx, dropout in enumerate(self.dropouts):
             setattr(self, 'drop{}'.format(idx), dropout)
 
