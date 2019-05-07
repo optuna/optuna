@@ -129,7 +129,8 @@ class Trial(BaseTrial):
         """Suggest a value for the continuous parameter.
 
         The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high})`
-        in the linear domain.
+        in the linear domain. When :math:`\\mathsf{low} = \\mathsf{high}`, the value of
+        :math:`\\mathsf{low}` will be returned.
 
         Example:
 
@@ -155,14 +156,21 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
+        distribution = distributions.UniformDistribution(low=low, high=high)
+        if low == high:
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
+
+        return self._suggest(name, distribution)
 
     def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
         """Suggest a value for the continuous parameter.
 
         The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high})`
-        in the log domain.
+        in the log domain. When :math:`\\mathsf{low} = \\mathsf{high}`, the value of
+        :math:`\\mathsf{low}` will be returned.
 
         Example:
 
@@ -190,7 +198,13 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
+        distribution = distributions.LogUniformDistribution(low=low, high=high)
+        if low == high:
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
+
+        return self._suggest(name, distribution)
 
     def suggest_discrete_uniform(self, name, low, high, q):
         # type: (str, float, float, float) -> float
@@ -233,8 +247,13 @@ class Trial(BaseTrial):
         """
 
         high = _adjust_discrete_uniform_high(name, low, high, q)
-        discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
-        return self._suggest(name, discrete)
+        distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+        if low == high:
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
+
+        return self._suggest(name, distribution)
 
     def suggest_int(self, name, low, high):
         # type: (str, int, int) -> int
@@ -267,7 +286,13 @@ class Trial(BaseTrial):
             A suggested integer value.
         """
 
-        return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
+        distribution = distributions.IntUniformDistribution(low=low, high=high)
+        if low == high:
+            param_value_in_internal_repr = distribution.to_internal_repr(low)
+            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                       distribution)
+
+        return int(self._suggest(name, distribution))
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
@@ -409,6 +434,12 @@ class Trial(BaseTrial):
 
         param_value_in_internal_repr = self.study.sampler.sample(self.storage, self.study_id, name,
                                                                  distribution)
+
+        return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
+                                                   distribution)
+
+    def _set_new_param_or_get_existing(self, name, param_value_in_internal_repr, distribution):
+        # type: (str, float, distributions.BaseDistribution) -> Any
 
         set_success = self.storage.set_trial_param(self._trial_id, name,
                                                    param_value_in_internal_repr, distribution)
