@@ -603,7 +603,7 @@ class FixedTrial(BaseTrial):
                              'the construction of the FixedTrial object.'.format(name))
 
         value = self._params[name]
-        if not distribution.contains(value):
+        if not distribution._contains(value):
             raise ValueError("The value {} of the parameter '{}' is out of "
                              "the range of the distribution {}.".format(value, name, distribution))
 
