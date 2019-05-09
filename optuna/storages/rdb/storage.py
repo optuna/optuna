@@ -559,10 +559,12 @@ class RDBStorage(BaseStorage):
         for trial_id, trial in id_to_trial.items():
             params = {}
             params_in_internal_repr = {}
+            param_distributions = {}
             for param in id_to_params[trial_id]:
                 distribution = distributions.json_to_distribution(param.distribution_json)
                 params[param.param_name] = distribution.to_external_repr(param.param_value)
                 params_in_internal_repr[param.param_name] = param.param_value
+                param_distributions[param.param_name] = distribution
 
             intermediate_values = {}
             for value in id_to_values[trial_id]:
@@ -587,6 +589,7 @@ class RDBStorage(BaseStorage):
                     number=trial_number,
                     state=trial.state,
                     params=params,
+                    distributions=param_distributions,
                     user_attrs=user_attrs,
                     system_attrs=system_attrs,
                     value=trial.value,
