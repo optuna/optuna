@@ -152,7 +152,6 @@ class InMemoryStorage(base.BaseStorage):
                     value=None,
                     intermediate_values={},
                     params_in_internal_repr={},
-                    distributions={},
                     datetime_start=datetime.now(),
                     datetime_complete=None,
                     trial_id=trial_id))

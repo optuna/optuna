@@ -63,7 +63,6 @@ EXAMPLE_TRIALS = [
             'x': .5,
             'y': 2.
         },
-        distributions=EXAMPLE_DISTRIBUTIONS,
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy
         trial_id=-1,  # dummy id
@@ -94,7 +93,6 @@ EXAMPLE_TRIALS = [
             'x': .01,
             'y': 0.
         },
-        distributions=EXAMPLE_DISTRIBUTIONS,
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy
         trial_id=-1,  # dummy id

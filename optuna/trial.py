@@ -484,7 +484,7 @@ class Trial(BaseTrial):
             return False
 
         param_value = self.predefined_params[name]
-        return distribution.contains(param_value)
+        return distribution._contains(param_value)
 
     @property
     def number(self):

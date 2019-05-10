@@ -595,7 +595,6 @@ class RDBStorage(BaseStorage):
                     value=trial.value,
                     intermediate_values=intermediate_values,
                     params_in_internal_repr=params_in_internal_repr,
-                    distributions=dists,
                     datetime_start=trial.datetime_start,
                     datetime_complete=trial.datetime_complete,
                     trial_id=trial_id))
