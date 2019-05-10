@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import gc
 
+from optuna.distributions import BaseDistribution  # NOQA
 from optuna.logging import get_logger
 from optuna.pruners import BasePruner  # NOQA
 from optuna.storages import BaseStorage  # NOQA
@@ -288,6 +289,12 @@ class _ChainerMNTrial(Trial):
         # type: () -> Dict[str, Any]
 
         return self._get_attrs('params')
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
+
+        return self._get_attrs('distributions')
 
     @property
     def user_attrs(self):

@@ -40,7 +40,7 @@ class RandomSampler(BaseSampler):
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
             log_low = numpy.log(param_distribution.low)
             log_high = numpy.log(param_distribution.high)
-            return numpy.exp(self.rng.uniform(log_low, log_high))
+            return float(numpy.exp(self.rng.uniform(log_low, log_high)))
         elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
             q = param_distribution.q
             r = param_distribution.high - param_distribution.low
@@ -50,7 +50,7 @@ class RandomSampler(BaseSampler):
             s = self.rng.uniform(low, high)
             v = numpy.round(s / q) * q + param_distribution.low
             # v may slightly exceed range due to round-off errors.
-            return min(max(v, param_distribution.low), param_distribution.high)
+            return float(min(max(v, param_distribution.low), param_distribution.high))
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
             # numpy.random.randint includes low but excludes high.
             return self.rng.randint(param_distribution.low, param_distribution.high + 1)

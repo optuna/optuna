@@ -54,6 +54,7 @@ EXAMPLE_TRIALS = [
             'x': 0.5,
             'y': 'Ginza'
         },
+        distributions=EXAMPLE_DISTRIBUTIONS,
         intermediate_values={
             0: 2.,
             1: 3.
@@ -83,6 +84,7 @@ EXAMPLE_TRIALS = [
             'x': 0.01,
             'y': 'Otemachi'
         },
+        distributions=EXAMPLE_DISTRIBUTIONS,
         intermediate_values={
             0: -2.,
             1: -3.,

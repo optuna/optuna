@@ -146,6 +146,7 @@ class InMemoryStorage(base.BaseStorage):
                     number=trial_id,
                     state=structs.TrialState.RUNNING,
                     params={},
+                    distributions={},
                     user_attrs={},
                     system_attrs={'_number': trial_id},
                     value=None,

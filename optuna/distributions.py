@@ -49,7 +49,7 @@ class BaseDistribution(object):
         return param_value_in_external_repr
 
     @abc.abstractmethod
-    def contains(self, param_value_in_internal_repr):
+    def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
         """Test if a parameter value is contained in the range of this distribution.
 
@@ -83,11 +83,14 @@ class UniformDistribution(
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
-    def contains(self, param_value_in_internal_repr):
+    def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
         value = param_value_in_internal_repr
-        return self.low <= value and value < self.high
+        if self.low == self.high:
+            return value == self.low
+        else:
+            return self.low <= value and value < self.high
 
 
 class LogUniformDistribution(
@@ -102,11 +105,14 @@ class LogUniformDistribution(
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
-    def contains(self, param_value_in_internal_repr):
+    def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
         value = param_value_in_internal_repr
-        return self.low <= value and value < self.high
+        if self.low == self.high:
+            return value == self.low
+        else:
+            return self.low <= value and value < self.high
 
 
 class DiscreteUniformDistribution(
@@ -123,7 +129,7 @@ class DiscreteUniformDistribution(
             A discretization step.
     """
 
-    def contains(self, param_value_in_internal_repr):
+    def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
         value = param_value_in_internal_repr
@@ -152,7 +158,7 @@ class IntUniformDistribution(
 
         return float(param_value_in_external_repr)
 
-    def contains(self, param_value_in_internal_repr):
+    def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
         value = int(param_value_in_internal_repr)
@@ -179,7 +185,7 @@ class CategoricalDistribution(
 
         return self.choices.index(param_value_in_external_repr)
 
-    def contains(self, param_value_in_internal_repr):
+    def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
         index = int(param_value_in_internal_repr)
