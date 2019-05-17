@@ -49,10 +49,6 @@ class BaseSampler(object):
 
         This method is called once just after each trial has started.
 
-        Note that this method is not supposed to be called by library users. Instead,
-        :class:`optuna.trial.Trial` provides user interfaces to sample parameters in an objective
-        function.
-
         The default implementation of this method always returns :obj:`{}`.
 
         Args:
@@ -78,10 +74,6 @@ class BaseSampler(object):
 
         The method is only called for the parameters that have not been contained in the dictionary
         returned by :func:`optuna.samplers.BaseSampler.sample_relative` method.
-
-        Note that this method is not supposed to be called by library users. Instead,
-        :class:`optuna.trial.Trial` provides user interfaces to sample parameters in an objective
-        function.
 
         The default implementation of this method uses
         :class:`optuna.samplers.TPESampler` for the sampling.
