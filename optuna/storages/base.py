@@ -243,6 +243,24 @@ class BaseStorage(object):
                     for t in all_trials if step in t.intermediate_values
                 ], np.float)))
 
+    def get_percentile_intermediate_result_over_trials(self, study_id, step, percentile):
+        # type: (int, int, float) -> float
+
+        all_trials = [
+            t for t in self.get_all_trials(study_id) if t.state == structs.TrialState.COMPLETE
+        ]
+
+        if len(all_trials) == 0:
+            raise ValueError("No trials have been completed.")
+
+        return float(
+            np.nanpercentile(
+                np.array([
+                    t.intermediate_values[step]
+                    for t in all_trials if step in t.intermediate_values
+                ], np.float),
+                percentile))
+
     def remove_session(self):
         # type: () -> None
 
