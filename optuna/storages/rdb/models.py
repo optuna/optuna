@@ -398,6 +398,16 @@ class TrialValueModel(BaseModel):
         return trial_value
 
     @classmethod
+    def find_latest_trial_value(cls, trial, session):
+        # type: (TrialModel, orm.Session) -> Optional[TrialValueModel]
+
+        trial_value = session.query(cls). \
+            filter(cls.trial_id == trial.trial_id). \
+            order_by(cls.step).limit(1).one_or_none()
+
+        return trial_value
+
+    @classmethod
     def where_study(cls, study, session):
         # type: (StudyModel, orm.Session) -> List[TrialValueModel]
 
