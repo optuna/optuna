@@ -379,7 +379,7 @@ class Trial(BaseTrial):
             be continued.
         """
         if step is None:
-            step, _ = self.storage.get_intermediate_value_at_latest_step(self._trial_id)
+            step = self.storage.get_latest_step(self._trial_id)
 
         return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
 

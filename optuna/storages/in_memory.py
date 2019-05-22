@@ -212,14 +212,14 @@ class InMemoryStorage(base.BaseStorage):
 
             self.trials[trial_id] = self.trials[trial_id]._replace(value=value)
 
-    def get_intermediate_value_at_latest_step(self, trial_id):
-        # type: (int) -> (int, float)
+    def get_latest_step(self, trial_id):
+        # type: (int) -> int
         trial_values = self.trials[trial_id].internal_values
         if not trial_values:
             raise ValueError("No intermediate values: trial={}".format(trial_id))
 
         latest_step = sorted(trial_values, reverse=True)[0]
-        return latest_step, trial_values[latest_step]
+        return latest_step
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> bool

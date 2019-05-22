@@ -10,6 +10,7 @@ from optuna.storages.rdb.models import StudySystemAttributeModel
 from optuna.storages.rdb.models import TrialModel
 from optuna.storages.rdb.models import TrialSystemAttributeModel
 from optuna.storages.rdb.models import TrialUserAttributeModel
+from optuna.storages.rdb.models import TrialValueModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
@@ -245,6 +246,42 @@ class TestTrialSystemAttributeModel(object):
         assert 1 == len(system_attributes)
         assert 'sample-key' == system_attributes[0].key
         assert '1' == system_attributes[0].value_json
+
+
+class TestTrialValueModel:
+    @staticmethod
+    def test_find_by_trial_and_step(session):
+        # type: (Session) -> None
+
+        study = StudyModel(study_id=1, study_name='test-study')
+        trial = TrialModel(study_id=study.study_id)
+
+        session.add(
+            TrialValueModel(trial_id=trial.trial_id, trial_value_id=1, step=0, value=0.01))
+        session.commit()
+
+        trial_value = TrialValueModel.find_by_trial_and_step(trial, 0, session)
+        assert trial_value is not None
+        assert 0.01 == trial_value.value
+        assert TrialValueModel.find_by_trial_and_step(trial, 1, session) is None
+
+    @staticmethod
+    def test_find_latest_step(session):
+        # type: (Session) -> None
+
+        study = StudyModel(study_id=1, study_name='test-study')
+        trial = TrialModel(study_id=study.study_id)
+
+        session.add(
+            TrialValueModel(trial_id=trial.trial_id, trial_value_id=1, step=0, value=0.01))
+        session.add(
+            TrialValueModel(trial_id=trial.trial_id, trial_value_id=2, step=1, value=0.005))
+        session.commit()
+
+        trial_value = TrialValueModel.find_latest_step(trial, session)
+        assert trial_value is not None
+        assert 1 == trial_value.step
+        assert 0.005 == trial_value.value
 
 
 class TestVersionInfoModel(object):
