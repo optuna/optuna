@@ -402,6 +402,9 @@ class RDBStorage(BaseStorage):
         trial_value = models.TrialValueModel.find_latest_step(
             trial, session)
 
+        if trial_value is None:
+            return 0
+
         return trial_value.step
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):

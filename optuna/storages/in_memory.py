@@ -214,7 +214,7 @@ class InMemoryStorage(base.BaseStorage):
 
     def get_latest_step(self, trial_id):
         # type: (int) -> int
-        trial_values = self.trials[trial_id].internal_values
+        trial_values = self.trials[trial_id].intermediate_values
         if not trial_values:
             raise ValueError("No intermediate values: trial={}".format(trial_id))
 
