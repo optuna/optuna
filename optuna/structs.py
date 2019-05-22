@@ -20,12 +20,15 @@ class TrialState(enum.Enum):
             The :class:`~optuna.trial.Trial` has been pruned with :class:`TrialPruned`.
         FAIL:
             The :class:`~optuna.trial.Trial` has failed due to an uncaught error.
+        SUSPEND:
+            The :class:`~optuna.trial.Trial` has been suspended. It may be resume.
     """
 
     RUNNING = 0
     COMPLETE = 1
     PRUNED = 2
     FAIL = 3
+    SUSPEND = 4
 
     def is_finished(self):
         # type: () -> bool
