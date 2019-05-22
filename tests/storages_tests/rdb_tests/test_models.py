@@ -248,7 +248,7 @@ class TestTrialSystemAttributeModel(object):
         assert '1' == system_attributes[0].value_json
 
 
-class TestTrialValueModel:
+class TestTrialValueModel(object):
     @staticmethod
     def test_find_by_trial_and_step(session):
         # type: (Session) -> None
