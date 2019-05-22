@@ -362,8 +362,8 @@ class Trial(BaseTrial):
         if step is not None:
             self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
         """Judge whether the trial should be pruned.
 
         This method calls prune method of the pruner, which judges whether the trial should
@@ -372,14 +372,14 @@ class Trial(BaseTrial):
 
         Args:
             step:
-                Step of the trial (e.g., epoch of neural network training).
+                Deprecated: Step of the trial (e.g., epoch of neural network training).
 
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned. Otherwise, the trial will
             be continued.
         """
-
-        # TODO(akiba): remove `step` argument
+        if step is None:
+            step, _ = self.storage.get_intermediate_value_at_latest_step(self._trial_id)
 
         return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
 
