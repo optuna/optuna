@@ -89,13 +89,13 @@ class SkoptSampler(BaseSampler):
         dimensions = []  # type: List[Any]
         for name, distribution in search_space.items():
             if isinstance(distribution, distributions.UniformDistribution):
-                dimensions.append((distribution.low, distribution.high))
+                dimensions.append((float(distribution.low), float(distribution.high)))
                 self.param_names.append(name)
             elif isinstance(distribution, distributions.LogUniformDistribution):
-                dimensions.append((distribution.low, distribution.high, 'log-uniform'))
+                dimensions.append((float(distribution.low), float(distribution.high), 'log-uniform'))
                 self.param_names.append(name)
             elif isinstance(distribution, distributions.IntUniformDistribution):
-                dimensions.append((distribution.low, distribution.high))
+                dimensions.append((int(distribution.low), int(distribution.high)))
                 self.param_names.append(name)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 count = (distribution.high - distribution.low) // distribution.q
