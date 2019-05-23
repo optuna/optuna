@@ -1,3 +1,5 @@
+import numpy as np
+
 from optuna import distributions
 from optuna import logging
 from optuna.samplers import BaseSampler
@@ -89,10 +91,16 @@ class SkoptSampler(BaseSampler):
         dimensions = []  # type: List[Any]
         for name, distribution in search_space.items():
             if isinstance(distribution, distributions.UniformDistribution):
-                dimensions.append((float(distribution.low), float(distribution.high)))
+                # Convert to half-closed range.
+                # See: https://scikit-optimize.github.io/space/space.m.html#skopt.space.space.Real
+                high = max(distribution.low, np.nextafter(distribution.high,  float('-inf')))
+
+                dimensions.append((float(distribution.low), float(high)))
                 self.param_names.append(name)
             elif isinstance(distribution, distributions.LogUniformDistribution):
-                dimensions.append((float(distribution.low), float(distribution.high), 'log-uniform'))
+                high = max(distribution.low, np.nextafter(distribution.high,  float('-inf')))
+
+                dimensions.append((float(distribution.low), float(high), 'log-uniform'))
                 self.param_names.append(name)
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 dimensions.append((int(distribution.low), int(distribution.high)))
