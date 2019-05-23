@@ -84,8 +84,11 @@ setup(
     url='https://optuna.org/',
     packages=find_packages(),
     package_data={
-        'optuna':
-        ['storages/rdb/alembic.ini', 'storages/rdb/alembic/*', 'storages/rdb/alembic/versions/*']
+        'optuna': [
+            'storages/rdb/alembic.ini',
+            'storages/rdb/alembic/*.*',
+            'storages/rdb/alembic/versions/*.*'
+        ]
     },
     install_requires=get_install_requires(),
     tests_require=get_extras_require()['testing'],
