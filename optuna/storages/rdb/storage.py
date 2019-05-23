@@ -839,10 +839,11 @@ class _VersionManager(object):
     def _create_alembic_config(self):
         # type: () -> alembic.config.Config
 
+        alembic_dir = os.path.join(os.path.dirname(__file__), 'alembic')
+
         config = alembic.config.Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
-        config.set_main_option('script_location', os.path.join(
-            os.path.dirname(__file__), 'alembic'))
-        config.set_main_option('sqlalchemy.url', self.url)
+        config.set_main_option('script_location', escape_alembic_config_value(alembic_dir))
+        config.set_main_option('sqlalchemy.url', escape_alembic_config_value(self.url))
         return config
 
 
@@ -881,3 +882,12 @@ class _FinishedTrialsCache(object):
 
         with self._lock:
             return self._finished_trials.get(trial_id)
+
+
+def escape_alembic_config_value(value):
+    # type: (str) -> str
+
+    # We must escape '%' in a value string because the character
+    # is regarded as the trigger of variable expansion.
+    # Please see the documentation of `configparser.BasicInterpolation` for more details.
+    return value.replace('%', '%%')
