@@ -253,6 +253,10 @@ class BaseStorage(object):
         if len(all_trials) == 0:
             raise ValueError("No trials have been completed.")
 
+        direction = self.get_study_direction(study_id)
+        if direction == structs.StudyDirection.MAXIMIZE:
+            percentile = 100 - percentile
+
         return float(
             np.nanpercentile(
                 np.array([

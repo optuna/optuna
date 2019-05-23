@@ -7,8 +7,9 @@ from optuna.structs import TrialState
 
 
 class PercentilePruner(BasePruner):
-    """Like :class:`~optuna.pruners.MedianPruner`, but prunes if the best intermediate result is worse
-    than specified percentile of intermediate results of previous trials at the same step.
+    """Like :class:`~optuna.pruners.MedianPruner`, but prunes if the best
+    intermediate result is worse than top of specified percentile of intermediate
+    results of previous trials at the same step.
 
     Example:
 
@@ -29,7 +30,8 @@ class PercentilePruner(BasePruner):
         n_warmup_steps:
             Pruning is disabled until the trial reaches the given number of step.
         percentile:
-            Percentile value which must be between 0 and 100 inclusive.
+            Percentile value which must be between 0 and 100 inclusive
+            (ex: Top of 25th percentile trials are kept when given 25.0).
     """
 
     def __init__(self, n_startup_trials=5, n_warmup_steps=0, percentile=25.0):

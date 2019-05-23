@@ -736,14 +736,14 @@ def test_get_percentile_intermediate_result_over_trials(storage_init_func):
     # Input value has no NaNs but float values (step=0).
     intermediate_values = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]]
     study_id, storage = setup_study(9, intermediate_values)
-    assert 0.7 == storage.get_percentile_intermediate_result_over_trials(study_id, 0, 75)
+    assert 0.3 == storage.get_percentile_intermediate_result_over_trials(study_id, 0, 25.0)
 
     # Input value has a float value and NaNs (step=1).
     intermediate_values.append([
         0.1, 0.2, 0.3, 0.4, 0.5,
         float('nan'), float('nan'), float('nan'), float('nan')])
     study_id, storage = setup_study(9, intermediate_values)
-    assert 0.4 == storage.get_percentile_intermediate_result_over_trials(study_id, 1, 75)
+    assert 0.2 == storage.get_percentile_intermediate_result_over_trials(study_id, 1, 25.0)
 
     # Input value has NaNs only (step=2).
     intermediate_values.append([
