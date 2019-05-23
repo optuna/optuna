@@ -7,10 +7,8 @@ from optuna.structs import TrialState
 
 
 class PercentilePruner(BasePruner):
-    """Prunes the data if it's lower than given percentile.
-
-    Like MedianPruner, but prune if the best intermediate result is worse than arbitrary percentile
-    of intermediate results of previous trials at the same step.
+    """Like :class:`~optuna.pruners.MedianPruner`, but prunes if the best intermediate result is worse
+    than specified percentile of intermediate results of previous trials at the same step.
 
     Example:
 
