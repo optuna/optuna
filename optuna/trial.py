@@ -479,10 +479,7 @@ class Trial(BaseTrial):
             return False
 
         predefined_distribution = self.predefined_search_space[name]
-        try:
-            distributions.check_distribution_compatibility(predefined_distribution, distribution)
-        except ValueError:
-            return False
+        distributions.check_distribution_compatibility(predefined_distribution, distribution)
 
         param_value = self.predefined_params[name]
         return distribution._contains(param_value)

@@ -329,7 +329,8 @@ def test_predefined_parameters(storage_init_func):
     distribution2 = distributions.UniformDistribution(low=0, high=5)
     assert trial2._suggest('x', distribution2) != 5.5
 
-    # Not suggested from `predefined_params` (due to incompatible distribution class).
+    # Error (due to incompatible distribution class).
     trial3 = create_trial()
     distribution3 = distributions.IntUniformDistribution(low=1, high=100)
-    assert trial3._suggest('y', distribution3) != 5.5
+    with pytest.raises(ValueError):
+        trial3._suggest('y', distribution3)
