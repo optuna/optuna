@@ -245,11 +245,19 @@ def test_fixed_trial_suggest_int():
 def test_fixed_trial_suggest_categorical():
     # type: () -> None
 
+    # Integer categories.
     trial = FixedTrial({'x': 1})
     assert trial.suggest_categorical('x', [0, 1, 2, 3]) == 1
 
     with pytest.raises(ValueError):
         trial.suggest_categorical('y', [0, 1, 2, 3])
+
+    # String categories.
+    trial = FixedTrial({'x': 'baz'})
+    assert trial.suggest_categorical('x', ['foo', 'bar', 'baz']) == 'baz'
+
+    with pytest.raises(ValueError):
+        trial.suggest_categorical('y', ['foo', 'bar', 'baz'])
 
 
 def test_fixed_trial_user_attrs():
