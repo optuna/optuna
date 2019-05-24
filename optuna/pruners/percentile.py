@@ -1,9 +1,12 @@
 import math
 
 from optuna.pruners import BasePruner
-from optuna.storages import BaseStorage  # NOQA
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
+from optuna import types
+
+if types.TYPE_CHECKING:
+    from optuna.storages import BaseStorage  # NOQA
 
 
 class PercentilePruner(BasePruner):
