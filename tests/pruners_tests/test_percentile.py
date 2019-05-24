@@ -15,7 +15,7 @@ def test_percentile_pruner_with_one_trial():
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))
     trial.report(1, 1)
-    pruner = optuna.pruners.PercentilePruner(0, 0, 25.0)
+    pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
 
     # A pruner is not activated at a first trial.
     assert not pruner.prune(
@@ -30,7 +30,7 @@ def test_25_percentile_pruner_intermediate_values(direction_value):
     # type: (Tuple[str, List[float], float]) -> None
 
     direction, intermediate_values, latest_value = direction_value
-    pruner = optuna.pruners.PercentilePruner(0, 0, 25.0)
+    pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
     study = optuna.study.create_study(direction=direction)
 
     for v in intermediate_values:
@@ -52,7 +52,7 @@ def test_25_percentile_pruner_intermediate_values(direction_value):
 def test_25_percentile_pruner_intermediate_values_nan():
     # type: () -> None
 
-    pruner = optuna.pruners.PercentilePruner(0, 0, 25.0)
+    pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
     study = optuna.study.create_study()
 
     trial = optuna.trial.Trial(study, study.storage.create_new_trial_id(study.study_id))

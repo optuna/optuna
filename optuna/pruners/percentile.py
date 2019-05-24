@@ -7,9 +7,11 @@ from optuna.structs import TrialState
 
 
 class PercentilePruner(BasePruner):
-    """Like :class:`~optuna.pruners.MedianPruner`, but prunes if the best
-    intermediate result is worse than top of specified percentile of intermediate
-    results of previous trials at the same step.
+    """Pruner to keep the specified percentile of the trials.
+
+    Like :class:`~optuna.pruners.MedianPruner`, but prunes if the best
+    intermediate result is worse than top of specified percentile of
+    intermediate results of other trials at the same step.
 
     Example:
 
@@ -25,21 +27,21 @@ class PercentilePruner(BasePruner):
             >>> study.optimize(objective)
 
     Args:
+        percentile:
+            Percentile which must be between 0 and 100 inclusive
+            (ex: When given 25.0, top of 25th percentile trials are kept).
         n_startup_trials:
             Pruning is disabled until the given number of trials finish in the same study.
         n_warmup_steps:
             Pruning is disabled until the trial reaches the given number of step.
-        percentile:
-            Percentile value which must be between 0 and 100 inclusive
-            (ex: Top of 25th percentile trials are kept when given 25.0).
     """
 
-    def __init__(self, n_startup_trials=5, n_warmup_steps=0, percentile=25.0):
-        # type: (int, int, float) -> None
+    def __init__(self, percentile, n_startup_trials=5, n_warmup_steps=0):
+        # type: (float, int, int) -> None
 
+        self.percentile = percentile
         self.n_startup_trials = n_startup_trials
         self.n_warmup_steps = n_warmup_steps
-        self.percentile = percentile
 
     def prune(self, storage, study_id, trial_id, step):
         # type: (BaseStorage, int, int, int) -> bool
