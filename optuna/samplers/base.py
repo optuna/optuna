@@ -1,7 +1,6 @@
 import abc
 import six
 
-import optuna
 from optuna import types
 
 if types.TYPE_CHECKING:
@@ -16,6 +15,7 @@ if types.TYPE_CHECKING:
 class BaseSampler(object):
     """Base class for samplers."""
 
+    @abc.abstractmethod
     def define_relative_search_space(self, study, trial):
         # type: (RunningStudy, FrozenTrial) -> Dict[str, BaseDistribution]
         """Define the search space used in the target trial.
@@ -41,8 +41,9 @@ class BaseSampler(object):
 
         """
 
-        return study.full_search_space
+        raise NotImplementedError
 
+    @abc.abstractmethod
     def sample_relative(self, study, trial, search_space):
         # type: (RunningStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
         """Sample parameters based on the previous trials and the given search space.
@@ -66,8 +67,9 @@ class BaseSampler(object):
 
         """
 
-        return {}
+        raise NotImplementedError
 
+    @abc.abstractmethod
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (RunningStudy, FrozenTrial, str, BaseDistribution) -> float
         """Sample a parameter based on the previous trials and the given distribution.
@@ -93,5 +95,4 @@ class BaseSampler(object):
 
         """
 
-        tpe = optuna.samplers.TPESampler()
-        return tpe.sample_independent(study, trial, param_name, param_distribution)
+        raise NotImplementedError

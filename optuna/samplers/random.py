@@ -33,6 +33,16 @@ class RandomSampler(BaseSampler):
         self.seed = seed
         self.rng = numpy.random.RandomState(seed)
 
+    def define_relative_search_space(self, study, trial):
+        # type: (RunningStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+
+        return {}
+
+    def sample_relative(self, study, trial, search_space):
+        # type: (RunningStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+
+        return {}
+
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (RunningStudy, FrozenTrial, str, distributions.BaseDistribution) -> float
         """Please consult the documentation for :func:`BaseSampler.sample_independent`."""
