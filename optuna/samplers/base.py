@@ -2,13 +2,13 @@ import abc
 import six
 
 import optuna
-from optuna.distributions import BaseDistribution  # NOQA
-from optuna.structs import FrozenTrial  # NOQA
 from optuna import types
 
 if types.TYPE_CHECKING:
     from typing import Dict  # NOQA
 
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import RunningStudy  # NOQA
 
 

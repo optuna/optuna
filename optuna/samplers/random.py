@@ -2,12 +2,14 @@ import numpy
 
 from optuna import distributions
 from optuna.samplers.base import BaseSampler
-from optuna.structs import FrozenTrial  # NOQA
 from optuna import types
 
 if types.TYPE_CHECKING:
+    from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import RunningStudy  # NOQA
 
 

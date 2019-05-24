@@ -5,17 +5,18 @@ import warnings
 
 import optuna
 from optuna import distributions
-from optuna.distributions import BaseDistribution  # NOQA
 from optuna import logging
 from optuna import types
 
 if types.TYPE_CHECKING:
-    from optuna.study import Study  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import TypeVar  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.study import Study  # NOQA
 
     T = TypeVar('T', float, str)
 

@@ -4,12 +4,10 @@ import gc
 import math
 import multiprocessing
 import multiprocessing.pool
-from multiprocessing import Queue  # NOQA
 import pandas as pd
 from six.moves import queue
 import time
 
-from optuna.distributions import BaseDistribution  # NOQA
 from optuna import logging
 from optuna import pruners
 from optuna import samplers
@@ -19,6 +17,7 @@ from optuna import trial as trial_module
 from optuna import types
 
 if types.TYPE_CHECKING:
+    from multiprocessing import Queue  # NOQA
     from typing import Any  # NOQA
     from typing import Callable
     from typing import Dict  # NOQA
@@ -28,6 +27,8 @@ if types.TYPE_CHECKING:
     from typing import Tuple  # NOQA
     from typing import Type  # NOQA
     from typing import Union  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 

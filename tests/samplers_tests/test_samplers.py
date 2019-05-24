@@ -1,23 +1,24 @@
 import numpy as np
 import pytest
-import typing  # NOQA
-from typing import Dict  # NOQA
 
 import optuna
-from optuna.distributions import BaseDistribution  # NOQA
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
-from optuna.structs import FrozenTrial  # NOQA
 from optuna.study import RunningStudy
-from optuna.study import Study  # NOQA
-from optuna.trial import Trial  # NOQA
 
 if optuna.types.TYPE_CHECKING:
+    import typing  # NOQA
+    from typing import Dict  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import Study  # NOQA
     from optuna.trial import T  # NOQA
+    from optuna.trial import Trial  # NOQA
 
 parametrize_sampler = pytest.mark.parametrize(
     'sampler_class',
