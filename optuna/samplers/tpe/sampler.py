@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.special
 
+from optuna import distributions
 from optuna.samplers import base
 from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
@@ -16,7 +17,6 @@ if types.TYPE_CHECKING:
     from typing import Tuple  # NOQA
     from typing import Union  # NOQA
 
-    from optuna import distributions  # NOQA
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import RunningStudy  # NOQA
