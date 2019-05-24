@@ -135,12 +135,6 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_latest_step(self, trial_id):
-        # type: (int) -> int
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> bool
 

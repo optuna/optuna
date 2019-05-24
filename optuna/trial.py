@@ -379,7 +379,7 @@ class Trial(BaseTrial):
             be continued.
         """
         if step is None:
-            step = self.storage.get_latest_step(self._trial_id)
+            step = max(self.storage.get_trial(self._trial_id).intermediate_values.keys())
 
         return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
 
@@ -620,8 +620,8 @@ class FixedTrial(BaseTrial):
 
         pass
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
 
         return False
 

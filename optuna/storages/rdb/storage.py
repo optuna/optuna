@@ -393,20 +393,6 @@ class RDBStorage(BaseStorage):
 
         self._commit(session)
 
-    def get_latest_step(self, trial_id):
-        # type: (int) -> int
-
-        session = self.scoped_session()
-
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        trial_value = models.TrialValueModel.find_latest_step(
-            trial, session)
-
-        if trial_value is None:
-            return 0
-
-        return trial_value.step
-
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> bool
 

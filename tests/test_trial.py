@@ -1,4 +1,5 @@
 import math
+from mock import MagicMock
 from mock import Mock
 from mock import patch
 import pytest
@@ -202,6 +203,27 @@ def test_distributions(storage_init_func):
     }
 
 
+def test_trial_should_prune():
+    # type: () -> None
+
+    study_id = 1
+    trial_id = 1
+
+    study_mock = MagicMock()
+    study_mock.study_id = study_id
+    study_mock.storage.get_trial.return_value.\
+        intermediate_values.keys.return_value = [1, 2, 3, 4, 5]
+    study_mock.pruner.prune.return_value = True
+
+    trial = Trial(study_mock, trial_id)  # type: ignore
+    trial.should_prune()
+
+    study_mock.storage.get_trial.assert_called_once_with(trial_id)
+    study_mock.pruner.prune.assert_called_once_with(
+        study_mock.storage, study_id, trial_id, 5,
+    )
+
+
 def test_fixed_trial_suggest_uniform():
     # type: () -> None
 
@@ -292,4 +314,5 @@ def test_fixed_trial_should_prune():
     # type: () -> None
 
     # FixedTrial never prunes trials.
+    assert FixedTrial({}).should_prune() is False
     assert FixedTrial({}).should_prune(1) is False
