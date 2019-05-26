@@ -157,6 +157,23 @@ class InMemoryStorage(base.BaseStorage):
                     trial_id=trial_id))
         return trial_id
 
+    def resume_promotable_trial(self, study_id):
+        # type: (int) -> Optional[structs.FrozenTrial]
+
+        self._check_study_id(study_id)
+
+        with self._lock:
+            for trial in self.trials:
+                if trial.state != structs.TrialState.PROMOTABLE:
+                    continue
+
+                trial_id = trial.trial_id
+                self.trials[trial_id] = self.trials[trial_id]._replace(
+                    state=structs.TrialState.RUNNING,
+                )
+                return self.trials[trial_id]
+        return None
+
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None
 

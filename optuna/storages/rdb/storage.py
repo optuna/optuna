@@ -326,6 +326,30 @@ class RDBStorage(BaseStorage):
 
         return trial_number
 
+    def resume_promotable_trial(self, study_id):
+        # type: (int) -> Optional[structs.FrozenTrial]
+
+        session = self.scoped_session()
+
+        trial = models.TrialModel.resume_one(study_id, session)
+        if trial is None:
+            return None
+
+        # TODO(c-bata): Convert all attributes
+        return structs.FrozenTrial(
+                    number=trial.trial_id,
+                    state=trial.state,
+                    params=trial.params,
+                    distributions={},
+                    user_attrs={},
+                    system_attrs={},
+                    value=trial.value,
+                    intermediate_values={},
+                    params_in_internal_repr={},
+                    datetime_start=trial.datetime_start,
+                    datetime_complete=trial.datetime_complete,
+                    trial_id=trial.trial_id)
+
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None
 

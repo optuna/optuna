@@ -110,6 +110,25 @@ class TestTrialModel(object):
         session.commit()
         assert 0 == trial_2_1.count_past_trials(session)
 
+    @staticmethod
+    def test_resume_one(session):
+        # type: (Session) -> None
+
+        study_id = 1
+        trial_1 = TrialModel(study_id=study_id, state=TrialState.COMPLETE)
+        session.add(trial_1)
+        session.commit()
+
+        # Returns None when there is no suspended trials.
+        assert TrialModel.resume_one(study_id, session) is None
+
+        trial_2 = TrialModel(study_id=study_id, state=TrialState.PROMOTABLE)
+        session.add(trial_2)
+        session.commit()
+
+        resumed = TrialModel.resume_one(study_id, session)
+        assert resumed.state == TrialState.RUNNING
+
 
 class TestTrialUserAttributeModel(object):
     @staticmethod

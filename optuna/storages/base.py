@@ -105,6 +105,12 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def resume_promotable_trial(self, study_id):
+        # type: (int) -> Optional[structs.FrozenTrial]
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None
 

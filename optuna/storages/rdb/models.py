@@ -174,6 +174,21 @@ class TrialModel(BaseModel):
         return trials
 
     @classmethod
+    def resume_one(cls, study_id, session):
+        # type: (int, orm.Session) -> Optional[TrialModel]
+
+        trial = session.query(cls) \
+            .filter(cls.study_id == study_id) \
+            .filter(cls.state == TrialState.PROMOTABLE) \
+            .limit(1).one_or_none()
+
+        if trial is None:
+            return None
+
+        trial.state = TrialState.RUNNING
+        return trial
+
+    @classmethod
     def count(cls, session, study=None, state=None):
         # type: (orm.Session, Optional[StudyModel], Optional[TrialState]) -> int
 
