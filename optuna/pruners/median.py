@@ -69,3 +69,8 @@ class MedianPruner(BasePruner):
         if storage.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
             return best_intermediate_result < median
         return best_intermediate_result > median
+
+    def suspend(self, storage, study_id, trial_id, step):
+        # type: (BaseStorage, int, int, int) -> bool
+        """Please consult the documentation for :func:`BasePruner.suspend`."""
+        return False

@@ -32,3 +32,28 @@ class BasePruner(object):
         """
 
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def suspend(self, storage, study_id, trial_id, step):
+        # type: (BaseStorage, int, int, int) -> bool
+        """Judge whether the trial should be pruned.
+
+        Note that this method is not supposed to be called by library users. Instead,
+        :func:`opotuna.trial.Trial.should_suspend` provide user interfaces to suspend
+        trials.
+
+        Args:
+            storage:
+                Storage object.
+            study_id:
+                Identifier of the target study.
+            trial_id:
+                Identifier of the target trial.
+            step:
+                Step number.
+
+        Returns:
+            A boolean value representing whether the trial should be suspended.
+        """
+
+        raise NotImplementedError
