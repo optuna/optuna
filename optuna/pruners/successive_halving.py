@@ -4,7 +4,7 @@ from optuna.pruners.base import BasePruner
 from optuna.storages import BaseStorage  # NOQA
 from optuna.structs import FrozenTrial  # NOQA
 from optuna.structs import StudyDirection
-from optuna import types
+from optuna import types, structs
 
 if types.TYPE_CHECKING:
     from typing import List  # NOQA
@@ -97,6 +97,8 @@ class SuccessiveHalvingPruner(BasePruner):
         # type: (BaseStorage, int, int, int) -> bool
         """Please consult the documentation for :func:`BasePruner.prune`."""
 
+        # TODO(c-bata): Need to consider the better design.
+        # It might be this method just returns False.
         trial = storage.get_trial(trial_id)
         if len(trial.intermediate_values) == 0:
             return False
@@ -144,6 +146,31 @@ class SuccessiveHalvingPruner(BasePruner):
             return value >= competing_values[promotable_idx]
 
         return value <= competing_values[promotable_idx]
+
+    def suspend(self, storage, study_id, trial_id, step):
+        # type: (BaseStorage, int, int, int) -> bool
+        """Please consult the documentation for :func:`BasePruner.suspend`."""
+
+        trial = storage.get_trial(trial_id)
+        if len(trial.intermediate_values) == 0:
+            return False
+        rung = _get_current_rung(trial)
+        promotion_step = self.min_resource * \
+            (self.reduction_factor ** (self.min_early_stopping_rate + rung))
+
+        suspend = step < promotion_step
+        return suspend
+
+    def _make_previous_trials_pruned_or_promotable(self, storage, study_id, step):
+        # type: (BaseStorage, int, int) -> None
+        # TODO(c-bata): It needs to be called from somewhere.
+
+        # TODO(c-bata): Set PROMOTABLE OR PRUNED to previous suspended trials.
+        suspended_trials = [t for t in storage.get_all_trials(study_id)
+                            if t.state == structs.TrialState.SUSPEND]
+        # Set PROMOTABLE if it's promotable.
+        # Set PRUNED if it's definitely will not be promotable.
+        raise NotImplementedError
 
 
 def _get_current_rung(trial):
