@@ -171,6 +171,28 @@ class TrialPruned(OptunaError):
     pass
 
 
+class TrialSuspended(OptunaError):
+    """Exception for suspended trials.
+
+    This error tells a trainer that the current :class:`~optuna.trial.Trial` was suspended. It is
+    supposed to be raised after :func:`optuna.trial.Trial.should_suspend` as shown in the following
+    example.
+
+    Example:
+
+        .. code::
+
+            >>> def objective(trial):
+            >>>     ...
+            >>>     for step in range(n_train_iter):
+            >>>         ...
+            >>>         if trial.should_suspend():
+            >>>             raise TrialSuspended()
+    """
+
+    pass
+
+
 class CLIUsageError(OptunaError):
     """Exception for CLI.
 

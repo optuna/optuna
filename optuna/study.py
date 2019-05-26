@@ -408,6 +408,13 @@ class Study(object):
             self.logger.info(message)
             self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
+        except structs.TrialSuspended as e:
+            message = 'Setting status of trial#{} as {}. {}'.format(trial_number,
+                                                                    structs.TrialState.SUSPEND,
+                                                                    str(e))
+            self.logger.info(message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.SUSPEND)
+            return trial
         except catch as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
                 .format(trial_number, structs.TrialState.FAIL, repr(e))

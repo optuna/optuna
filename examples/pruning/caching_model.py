@@ -53,6 +53,7 @@ def objective(trial):
         if trial.should_suspend():
             serialized = pickle.dumps(clf)
             trial.save_model(step, serialized)
+            raise optuna.structs.TrialSuspended()
 
     return 1.0 - clf.score(test_x, test_y)
 
