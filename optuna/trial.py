@@ -383,6 +383,17 @@ class Trial(BaseTrial):
 
         return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
 
+    def should_suspend(self):
+        # type: () -> bool
+        """Judge whether the trial should be pruned.
+
+        This method calls suspend method of the pruner, which judges whether the trial
+        should be suspended at the given step. Please refer to the example code of
+        :func:`optuna.trial.Trial.report`.
+        """
+        step = max(self.storage.get_trial(self._trial_id).intermediate_values.keys())
+        return self.study.pruner.suspend(self.storage, self.study_id, self._trial_id, step)
+
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
         """Set user attributes to the trial.

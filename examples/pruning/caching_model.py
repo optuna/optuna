@@ -46,10 +46,11 @@ def objective(trial):
         trial.report(intermediate_value, step)
 
         # Handle pruning based on the intermediate value.
+        # TODO(c-bata): remove step argument after rebased on #398.
         if trial.should_prune(step):
             raise optuna.structs.TrialPruned()
 
-        if trial.should_suspend(step):
+        if trial.should_suspend():
             serialized = pickle.dumps(clf)
             trial.save_model(step, serialized)
 
