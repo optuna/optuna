@@ -32,7 +32,7 @@ class PercentilePruner(BasePruner):
     Args:
         percentile:
             Percentile which must be between 0 and 100 inclusive
-            (ex: When given 25.0, top of 25th percentile trials are kept).
+            (e.g., When given 25.0, top of 25th percentile trials are kept).
         n_startup_trials:
             Pruning is disabled until the given number of trials finish in the same study.
         n_warmup_steps:
