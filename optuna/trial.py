@@ -56,8 +56,8 @@ class BaseTrial(object):
 
         raise NotImplementedError
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
 
         raise NotImplementedError
 
@@ -347,7 +347,7 @@ class Trial(BaseTrial):
                 >>>         clf.partial_fit(x_train , y_train , classes)
                 >>>         intermediate_value = clf.score(x_val , y_val)
                 >>>         trial.report(intermediate_value , step=step)
-                >>>         if trial.should_prune(step):
+                >>>         if trial.should_prune():
                 >>>             raise TrialPruned()
                 >>>     ...
 
