@@ -306,7 +306,7 @@ def test_study_optimize_command(options):
         command = _add_option(command, '--config', config_path, 'config' in options)
         subprocess.check_call(command)
 
-        study = optuna.Study(storage=storage_url, study_name=study_name)
+        study = optuna.load_study(storage=storage_url, study_name=study_name)
         assert len(study.trials) == 10
         assert 'x' in study.best_params
 

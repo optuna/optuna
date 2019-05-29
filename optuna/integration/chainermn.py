@@ -76,7 +76,7 @@ class ChainerMNStudy(object):
         .. code::
 
             comm = chainermn.create_communicator('naive')
-            study = optuna.Study(study_name, storage_url)
+            study = optuna.load_study(study_name, storage_url)
             chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
             chainermn_study.optimize(objective, n_trials=25)
 
