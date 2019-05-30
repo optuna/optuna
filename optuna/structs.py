@@ -157,7 +157,7 @@ class TrialPruned(OptunaError):
             >>>     ...
             >>>     for step in range(n_train_iter):
             >>>         ...
-            >>>         if trial.should_prune(step):
+            >>>         if trial.should_prune():
             >>>             raise TrailPruned()
     """
 

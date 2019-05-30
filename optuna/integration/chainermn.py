@@ -252,8 +252,8 @@ class _ChainerMNTrial(Trial):
         if self.comm.rank == 0:
             self.delegate.report(value, step)
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
 
         return self.delegate.should_prune(step)
 
