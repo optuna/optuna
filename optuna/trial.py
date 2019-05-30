@@ -379,10 +379,11 @@ class Trial(BaseTrial):
             be continued.
         """
         if step is None:
+            step = max(self.storage.get_trial(self._trial_id).intermediate_values.keys())
+        else:
             warnings.warn(
                 'The use of `step` argument is deprecated. '
                 'You can omit to pass this parameter.', DeprecationWarning)
-            step = max(self.storage.get_trial(self._trial_id).intermediate_values.keys())
 
         return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
 
