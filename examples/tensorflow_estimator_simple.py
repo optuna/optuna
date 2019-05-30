@@ -112,7 +112,7 @@ def objective(trial):
         x={"x": eval_data}, y=eval_labels, num_epochs=1, shuffle=False)
 
     eval_results = mnist_classifier.evaluate(input_fn=eval_input_fn)
-    return eval_results['accuracy']
+    return float(eval_results['accuracy'])
 
 
 def main(unused_argv):
