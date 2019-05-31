@@ -97,7 +97,7 @@ class StudySetUserAttribute(BaseCommand):
 
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
-        study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
         self.logger.info('Attribute successfully written.')
@@ -160,7 +160,7 @@ class Dashboard(BaseCommand):
 
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
-        study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
 
         if parsed_args.out is None:
             optuna.dashboard.serve(study, parsed_args.bokeh_allow_websocket_origins)
@@ -201,7 +201,7 @@ class StudyOptimize(BaseCommand):
 
         config = optuna.config.load_optuna_config(self.app_args.config)
         storage_url = get_storage_url(self.app_args.storage, config)
-        study = optuna.Study(storage=storage_url, study_name=parsed_args.study)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.

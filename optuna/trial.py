@@ -56,8 +56,8 @@ class BaseTrial(object):
 
         raise NotImplementedError
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
 
         raise NotImplementedError
 
@@ -347,7 +347,7 @@ class Trial(BaseTrial):
                 >>>         clf.partial_fit(x_train , y_train , classes)
                 >>>         intermediate_value = clf.score(x_val , y_val)
                 >>>         trial.report(intermediate_value , step=step)
-                >>>         if trial.should_prune(step):
+                >>>         if trial.should_prune():
                 >>>             raise TrialPruned()
                 >>>     ...
 
@@ -362,8 +362,8 @@ class Trial(BaseTrial):
         if step is not None:
             self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
         """Judge whether the trial should be pruned.
 
         This method calls prune method of the pruner, which judges whether the trial should
@@ -372,14 +372,18 @@ class Trial(BaseTrial):
 
         Args:
             step:
-                Step of the trial (e.g., epoch of neural network training).
+                Deprecated: Step of the trial (e.g., epoch of neural network training).
 
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned. Otherwise, the trial will
             be continued.
         """
-
-        # TODO(akiba): remove `step` argument
+        if step is None:
+            step = max(self.storage.get_trial(self._trial_id).intermediate_values.keys())
+        else:
+            warnings.warn(
+                'The use of `step` argument is deprecated. '
+                'You can omit to pass this parameter.', DeprecationWarning)
 
         return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
 
@@ -603,7 +607,8 @@ class FixedTrial(BaseTrial):
                              'the construction of the FixedTrial object.'.format(name))
 
         value = self._params[name]
-        if not distribution._contains(value):
+        param_value_in_internal_repr = distribution.to_internal_repr(value)
+        if not distribution._contains(param_value_in_internal_repr):
             raise ValueError("The value {} of the parameter '{}' is out of "
                              "the range of the distribution {}.".format(value, name, distribution))
 
@@ -620,8 +625,8 @@ class FixedTrial(BaseTrial):
 
         pass
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
 
         return False
 
