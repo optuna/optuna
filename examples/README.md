@@ -12,7 +12,7 @@ This page contains a list of example codes written with Optuna.
 * [scikit-learn](./sklearn_simple.py)
 * [Chainer](./chainer_simple.py)
 * [ChainerMN](./chainermn_simple.py)
-* [LighGBM](./lightgbm_simple.py)
+* [LightGBM](./lightgbm_simple.py)
 * [MXNet](./mxnet_simple.py)
 * [PyTorch](./pytorch_simple.py)
 * [XGBoost](./xgboost_simple.py)
