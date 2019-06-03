@@ -12,9 +12,7 @@ if types.TYPE_CHECKING:
 class PercentilePruner(BasePruner):
     """Pruner to keep the specified percentile of the trials.
 
-    Like :class:`~optuna.pruners.MedianPruner`, but prunes if the best
-    intermediate result is worse than top of specified percentile of
-    intermediate results of other trials at the same step.
+    Prune if the best intermediate value is in the bottom percentile among trials at the same step.
 
     Example:
 
