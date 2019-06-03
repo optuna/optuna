@@ -251,6 +251,7 @@ class _ChainerMNTrial(Trial):
 
         if self.comm.rank == 0:
             self.delegate.report(value, step)
+        self.comm.mpi_comm.barrier()
 
     def should_prune(self, step=None):
         # type: (Optional[int]) -> bool
@@ -262,12 +263,14 @@ class _ChainerMNTrial(Trial):
 
         if self.comm.rank == 0:
             self.delegate.set_user_attr(key, value)
+        self.comm.mpi_comm.barrier()
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
 
         if self.comm.rank == 0:
             self.delegate.set_system_attr(key, value)
+        self.comm.mpi_comm.barrier()
 
     @property
     def number(self):
