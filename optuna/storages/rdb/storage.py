@@ -437,7 +437,13 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self.check_trial_is_updatable(trial_id, trial.state)
+        if key == '_number':
+            # If this trial was created before v0.9.0, it doesn't have `_number` attribute.
+            # We want to set the attribute regardless the trial state,
+            # so we skip the invocation of `check_trial_is_updatable()` method in this case.
+            pass
+        else:
+            self.check_trial_is_updatable(trial_id, trial.state)
 
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
