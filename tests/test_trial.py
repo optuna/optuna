@@ -334,3 +334,30 @@ def test_relative_parameters(storage_init_func):
     distribution3 = distributions.IntUniformDistribution(low=1, high=100)
     with pytest.raises(ValueError):
         trial3._suggest('y', distribution3)
+
+
+@parametrize_storage
+def test_disable_relative_sampling(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    relative_search_space = {
+        'x': distributions.UniformDistribution(low=5, high=6),
+    }
+    relative_params = {'x': 5.5}
+
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+    study = create_study(storage=storage_init_func(), sampler=sampler)
+
+    # disable_relative_sampling=False
+    mock = Mock()
+    with patch.object(sampler, 'sample_relative', mock) as mock_object:
+        trial_id = study.storage.create_new_trial_id(study.study_id)
+        Trial(study, trial_id, disable_relative_sampling=False)
+        assert mock_object.call_count == 1
+
+    # disable_relative_sampling=True
+    mock = Mock()
+    with patch.object(sampler, 'sample_relative', mock) as mock_object:
+        trial_id = study.storage.create_new_trial_id(study.study_id)
+        Trial(study, trial_id, disable_relative_sampling=True)
+        assert mock_object.call_count == 0

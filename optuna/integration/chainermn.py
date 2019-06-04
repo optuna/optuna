@@ -137,7 +137,7 @@ class ChainerMNStudy(object):
                 has_next_trial, trial_id = self.comm.mpi_comm.bcast(None)
                 if not has_next_trial:
                     break
-                trial = Trial(self.delegate, trial_id)
+                trial = Trial(self.delegate, trial_id, disable_relative_sampling=True)
                 try:
                     func(_ChainerMNTrial(trial, self.comm), self.comm)
 
@@ -197,7 +197,9 @@ class _ChainerMNTrial(Trial):
     def __init__(self, trial, comm):
         # type: (Trial, CommunicatorBase) -> None
 
-        super(_ChainerMNTrial, self).__init__(trial.study, trial._trial_id)
+        super(_ChainerMNTrial, self).__init__(trial.study,
+                                              trial._trial_id,
+                                              disable_relative_sampling=True)
         self.delegate = trial
         self.comm = comm
 
