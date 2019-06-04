@@ -556,32 +556,6 @@ class RunningStudy(object):
 
         self.storage.set_study_system_attr(self.study_id, key, value)
 
-    @property
-    def full_search_space(self):
-        # type: () -> Dict[str, BaseDistribution]
-        """Return the full search space of the :class:`~optuna.study.Study`.
-
-        "full search space" contains all parameter distributions that have been
-        suggested in the complete trials of this study so far.
-        If there are two parameters that have the same name but different distributions,
-        the distribution used in a newer trial will be adopted.
-
-        Returns:
-            A dictionary containing the parameter names and parameter's distributions.
-        """
-
-        distributions = {}
-        trials = self.trials
-        trials.sort(key=lambda t: t.number)
-        for trial in trials:
-            if trial.state != structs.TrialState.COMPLETE:
-                continue
-
-            for name, distribution in trial.distributions.items():
-                distributions[name] = distribution
-
-        return distributions
-
 
 def create_study(
         storage=None,  # type: Union[None, str, storages.BaseStorage]
