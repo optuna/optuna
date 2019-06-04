@@ -8,8 +8,6 @@ import time
 import uuid
 
 import optuna
-from optuna import distributions
-from optuna.structs import TrialPruned
 from optuna.study import RunningStudy
 from optuna.testing.storage import StorageSupplier
 from optuna import types
