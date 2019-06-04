@@ -438,9 +438,10 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         if key == '_number':
-            # If this trial was created before v0.9.0, it doesn't have `_number` attribute.
-            # We want to set the attribute regardless the trial state,
-            # so we skip the invocation of `check_trial_is_updatable()` method in this case.
+            # `_number` attribute may be set even after a trial is finished.
+            # This happens if the trial was created before v0.9.0,
+            # where a trial didn't have `_number` attribute.
+            # In this case, `check_trial_is_updatable` is skipped to avoid the `RuntimeError`.
             pass
         else:
             self.check_trial_is_updatable(trial_id, trial.state)
