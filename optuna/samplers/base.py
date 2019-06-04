@@ -23,10 +23,6 @@ class BaseSampler(object):
         The search space returned by this method will be used as an argument of
         :func:`optuna.samplers.BaseSampler.sample_relative` method.
 
-        If a parameter that is not contained in the space is requested in an objective function,
-        the value will be sampled by using :func:`optuna.samplers.BaseSampler.sample_independent`
-        method.
-
         Args:
             study:
                 Target study object.
@@ -46,6 +42,10 @@ class BaseSampler(object):
         """Sample parameters based on the previous trials and the given search space.
 
         This method is called once just after each trial has started.
+
+        If a parameter that is not contained in the returned dictionary is
+        requested in an objective function, the value will be sampled by using
+        :func:`optuna.samplers.BaseSampler.sample_independent` method.
 
         Args:
             study:
