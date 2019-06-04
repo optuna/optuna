@@ -143,22 +143,22 @@ def new_trial(study):
 
 
 class FixedSampler(BaseSampler):
-    def __init__(self, predefined_search_space, predefined_params, unknown_param_value):
+    def __init__(self, relative_search_space, relative_params, unknown_param_value):
         # type: (Dict[str, BaseDistribution], Dict[str, float], float) -> None
 
-        self.predefined_search_space = predefined_search_space
-        self.predefined_params = predefined_params
+        self.relative_search_space = relative_search_space
+        self.relative_params = relative_params
         self.unknown_param_value = unknown_param_value
 
-    def define_relative_search_space(self, study, trial):
+    def infer_relative_search_space(self, study, trial):
         # type: (RunningStudy, FrozenTrial) -> Dict[str, BaseDistribution]
 
-        return self.predefined_search_space
+        return self.relative_search_space
 
     def sample_relative(self, study, trial, search_space):
         # type: (RunningStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
 
-        return self.predefined_params
+        return self.relative_params
 
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (RunningStudy, FrozenTrial, str, BaseDistribution) -> float
@@ -169,20 +169,20 @@ class FixedSampler(BaseSampler):
 def test_sample_relative():
     # type: () -> None
 
-    predefined_search_space = {
+    relative_search_space = {
         'a': UniformDistribution(low=0, high=5),
         'b': CategoricalDistribution(choices=('foo', 'bar', 'baz')),
-        'c': IntUniformDistribution(low=20, high=50),  # Not exist in `predefined_params`.
+        'c': IntUniformDistribution(low=20, high=50),  # Not exist in `relative_params`.
     }
-    predefined_params = {
+    relative_params = {
         'a': 3.2,
         'b': 2,
-        'd': 99  # Not exist in `predefined_search_space`.
+        'd': 99  # Not exist in `relative_search_space`.
     }
     unknown_param_value = 30
 
     sampler = FixedSampler(  # type: ignore
-        predefined_search_space, predefined_params, unknown_param_value)
+        relative_search_space, relative_params, unknown_param_value)
     study = optuna.study.create_study(sampler=sampler)
 
     def objective(trial):

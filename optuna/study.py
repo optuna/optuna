@@ -395,7 +395,7 @@ class Study(object):
 
         running_study = RunningStudy(self)
         trial = self.storage.get_trial(trial_id)
-        search_space = self.sampler.define_relative_search_space(running_study, trial)
+        search_space = self.sampler.infer_relative_search_space(running_study, trial)
         params = self.sampler.sample_relative(running_study, trial, search_space)
 
         return search_space, params

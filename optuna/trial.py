@@ -113,11 +113,11 @@ class Trial(BaseTrial):
             A :class:`~optuna.study.Study` object.
         trial_id:
             A trial ID that is automatically generated.
-        predefined_search_space:
-            A search space defined by a sampler before executing the target object function.
+        relative_search_space:
+            A search space inferred by a sampler before executing the target object function.
             The final search space of this trial is the mixture of this space and
             the one that defined by execution of the target object function.
-        predefined_params:
+        relative_params:
             A suggested parameters by a sampler before executing the target object function.
     """
 
@@ -125,8 +125,8 @@ class Trial(BaseTrial):
             self,
             study,  # type: Study
             trial_id,  # type: int
-            predefined_search_space=None,  # type: Optional[Dict[str, BaseDistribution]]
-            predefined_params=None,  # type: Optional[Dict[str, float]]
+            relative_search_space=None,  # type: Optional[Dict[str, BaseDistribution]]
+            relative_params=None,  # type: Optional[Dict[str, float]]
     ):
         # type: (...) -> None
 
@@ -135,8 +135,8 @@ class Trial(BaseTrial):
 
         self.study_id = self.study.study_id
         self.storage = self.study.storage
-        self.predefined_search_space = predefined_search_space or {}
-        self.predefined_params = predefined_params or {}
+        self.relative_search_space = relative_search_space or {}
+        self.relative_params = relative_params or {}
         self.logger = logging.get_logger(__name__)
 
     def suggest_uniform(self, name, low, high):
@@ -447,8 +447,8 @@ class Trial(BaseTrial):
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
 
-        if self._is_predefined_param(name, distribution):
-            param_value_in_internal_repr = self.predefined_params[name]
+        if self._is_relative_param(name, distribution):
+            param_value_in_internal_repr = self.relative_params[name]
         else:
             running_study = optuna.study.RunningStudy(self.study)
             trial = self.storage.get_trial(self._trial_id)
@@ -469,19 +469,19 @@ class Trial(BaseTrial):
         param_value = distribution.to_external_repr(param_value_in_internal_repr)
         return param_value
 
-    def _is_predefined_param(self, name, distribution):
+    def _is_relative_param(self, name, distribution):
         # type: (str, BaseDistribution) -> bool
 
-        if name not in self.predefined_params:
+        if name not in self.relative_params:
             return False
 
-        if name not in self.predefined_search_space:
+        if name not in self.relative_search_space:
             return False
 
-        predefined_distribution = self.predefined_search_space[name]
-        distributions.check_distribution_compatibility(predefined_distribution, distribution)
+        relative_distribution = self.relative_search_space[name]
+        distributions.check_distribution_compatibility(relative_distribution, distribution)
 
-        param_value = self.predefined_params[name]
+        param_value = self.relative_params[name]
         return distribution._contains(param_value)
 
     @property

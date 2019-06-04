@@ -16,11 +16,11 @@ class BaseSampler(object):
     """Base class for samplers."""
 
     @abc.abstractmethod
-    def define_relative_search_space(self, study, trial):
+    def infer_relative_search_space(self, study, trial):
         # type: (RunningStudy, FrozenTrial) -> Dict[str, BaseDistribution]
-        """Define the search space used in the target trial.
+        """Infer the search space that will be used by the target trial.
 
-        The search space defined by this method will be used as an argument of
+        The search space returned by this method will be used as an argument of
         :func:`optuna.samplers.BaseSampler.sample_relative` method.
 
         If a parameter that is not contained in the space is requested in an objective function,
@@ -54,7 +54,7 @@ class BaseSampler(object):
                 Target trial object.
             search_space:
                 The search space returned by
-                :func:`optuna.samplers.BaseSampler.define_relative_search_space`.
+                :func:`optuna.samplers.BaseSampler.infer_relative_search_space`.
 
         Returns:
             A dictionary containing the parameter names and the values that are the

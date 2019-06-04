@@ -33,7 +33,7 @@ class RandomSampler(BaseSampler):
         self.seed = seed
         self.rng = numpy.random.RandomState(seed)
 
-    def define_relative_search_space(self, study, trial):
+    def infer_relative_search_space(self, study, trial):
         # type: (RunningStudy, FrozenTrial) -> Dict[str, BaseDistribution]
 
         return {}
