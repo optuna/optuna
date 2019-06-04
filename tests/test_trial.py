@@ -7,7 +7,7 @@ from optuna import distributions
 from optuna import samplers
 from optuna import storages
 from optuna.study import create_study
-from optuna.testing.trial import DeterministicRelativeSampler
+from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FixedTrial
 from optuna.trial import Trial
 from optuna import types
