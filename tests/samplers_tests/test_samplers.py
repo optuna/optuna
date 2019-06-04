@@ -177,7 +177,6 @@ def test_sample_relative():
     relative_params = {
         'a': 3.2,
         'b': 2,
-        'd': 99  # Not exist in `relative_search_space`.
     }
     unknown_param_value = 30
 

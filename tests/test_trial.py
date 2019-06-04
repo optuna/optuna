@@ -7,6 +7,7 @@ from optuna import distributions
 from optuna import samplers
 from optuna import storages
 from optuna.study import create_study
+from optuna.testing.trial import DeterministicRelativeSampler
 from optuna.trial import FixedTrial
 from optuna.trial import Trial
 from optuna import types
@@ -305,14 +306,13 @@ def test_relative_parameters(storage_init_func):
     }
     relative_params = {'x': 5.5, 'y': 5.5}
 
-    study = create_study(storage_init_func())
+    sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
+    study = create_study(storage=storage_init_func(), sampler=sampler)
 
     def create_trial():
         # type: () -> Trial
 
-        return Trial(  # type: ignore
-            study, study.storage.create_new_trial_id(study.study_id), relative_search_space,
-            relative_params)
+        return Trial(study, study.storage.create_new_trial_id(study.study_id))
 
     # Suggested from `relative_params`.
     trial0 = create_trial()

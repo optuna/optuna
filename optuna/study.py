@@ -390,23 +390,11 @@ class Study(object):
         que.close()
         que.join_thread()
 
-    def _sample_relative(self, trial_id):
-        # type: (int) -> Tuple[Dict[str, BaseDistribution], Dict[str, float]]
-
-        running_study = RunningStudy(self)
-        trial = self.storage.get_trial(trial_id)
-        search_space = self.sampler.infer_relative_search_space(running_study, trial)
-        params = self.sampler.sample_relative(running_study, trial, search_space)
-
-        return search_space, params
-
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
         trial_id = self.storage.create_new_trial_id(self.study_id)
-        relative_search_space, relative_params = self._sample_relative(trial_id)
-
-        trial = trial_module.Trial(self, trial_id, relative_search_space, relative_params)
+        trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
         try:
             result = func(trial)
