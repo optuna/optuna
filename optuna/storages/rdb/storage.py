@@ -442,6 +442,8 @@ class RDBStorage(BaseStorage):
             # This happens if the trial was created before v0.9.0,
             # where a trial didn't have `_number` attribute.
             # In this case, `check_trial_is_updatable` is skipped to avoid the `RuntimeError`.
+            #
+            # TODO(ohta): Remove this workaround when `number` field is added to `TrialModel`.
             pass
         else:
             self.check_trial_is_updatable(trial_id, trial.state)
