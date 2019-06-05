@@ -14,6 +14,7 @@ from optuna import Study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import StorageSupplier
+from optuna.trial import Trial
 from optuna import types
 
 if types.TYPE_CHECKING:
@@ -27,7 +28,6 @@ if types.TYPE_CHECKING:
     from optuna.pruners import BasePruner  # NOQA
     from optuna.samplers import BaseSampler  # NOQA
     from optuna.storages import BaseStorage  # NOQA
-    from optuna.trial import Trial  # NOQA
 
 try:
     import chainermn
