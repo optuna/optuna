@@ -24,7 +24,7 @@ class PercentilePruner(BasePruner):
             >>> def objective(trial):
             >>>     ...
             >>>
-            >>> study = create_study(pruner=PercentilePruner())
+            >>> study = create_study(pruner=PercentilePruner(25.0))
             >>> study.optimize(objective)
 
     Args:
