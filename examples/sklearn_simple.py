@@ -36,7 +36,8 @@ def objective(trial):
         classifier_obj = sklearn.svm.SVC(C=svc_c, gamma='auto')
     else:
         rf_max_depth = int(trial.suggest_loguniform('rf_max_depth', 2, 32))
-        classifier_obj = sklearn.ensemble.RandomForestClassifier(max_depth=rf_max_depth, n_estimators=10)
+        classifier_obj = sklearn.ensemble.RandomForestClassifier(
+            max_depth=rf_max_depth, n_estimators=10)
 
     score = sklearn.model_selection.cross_val_score(classifier_obj, x, y, n_jobs=-1, cv=3)
     accuracy = score.mean()
