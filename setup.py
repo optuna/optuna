@@ -85,7 +85,7 @@ if pfnopt_pkg is not None:
 setup(
     name='optuna',
     version=get_version(),
-    description='',
+    description='A hyperparameter optimization framework',
     long_description=get_long_description(),
     long_description_content_type='text/markdown',
     author='Takuya Akiba',
