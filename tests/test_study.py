@@ -8,7 +8,7 @@ import time
 import uuid
 
 import optuna
-from optuna.study import RunningStudy
+from optuna.study import InTrialStudy
 from optuna.testing.storage import StorageSupplier
 from optuna import types
 
@@ -544,16 +544,16 @@ def test_running_study(storage_mode):
         # Run ten trials.
         study.optimize(lambda t: t.suggest_int('x', 0, 10), n_trials=10)
 
-        # The methods of `RunningStudy` behave the same as the counterparts at `Study`.
-        running_study = RunningStudy(study)
-        assert running_study.best_params == study.best_params
-        assert running_study.best_value == study.best_value
-        assert running_study.best_trial == study.best_trial
-        assert running_study.direction == study.direction
-        assert running_study.trials == study.trials
+        # The methods of `InTrialStudy` behave the same as the counterparts at `Study`.
+        in_trial_study = InTrialStudy(study)
+        assert in_trial_study.best_params == study.best_params
+        assert in_trial_study.best_value == study.best_value
+        assert in_trial_study.best_trial == study.best_trial
+        assert in_trial_study.direction == study.direction
+        assert in_trial_study.trials == study.trials
 
-        assert running_study.system_attrs == {}
+        assert in_trial_study.system_attrs == {}
 
-        running_study.set_system_attr('foo', 'bar')
-        assert running_study.system_attrs == {'foo': 'bar'}
-        assert running_study.system_attrs == study.system_attrs
+        in_trial_study.set_system_attr('foo', 'bar')
+        assert in_trial_study.system_attrs == {'foo': 'bar'}
+        assert in_trial_study.system_attrs == study.system_attrs

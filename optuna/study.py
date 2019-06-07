@@ -164,6 +164,30 @@ class BaseStudy(object):
         """
         raise NotImplementedError
 
+    @property
+    def user_attrs(self):
+        # type: () -> Dict[str, Any]
+        """Return user attributes.
+
+        Returns:
+            A dictionary containing all user attributes.
+        """
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
+        """Set a user attribute to the :class:`~optuna.study.Study`.
+
+        Args:
+            key: A key string of the attribute.
+            value: A value of the attribute. The value should be JSON serializable.
+
+        """
+
+        raise NotImplementedError
+
 
 class Study(BaseStudy):
     """A study corresponds to an optimization task, i.e., a set of trials.
@@ -561,8 +585,11 @@ class Study(BaseStudy):
                              trial_number, value, self.best_value, self.best_params))
 
 
-class RunningStudy(BaseStudy):
-    """An object to access a running :class:`~optuna.study.Study`.
+class InTrialStudy(BaseStudy):
+    """An object to access a study instance in a trial.
+
+    Unlike :class:`~optuna.study.Study`,
+    this class cannot allow to call :func:`~optuna.study.InTrialStudy.optimize()`.
 
     Note that this object is created within Optuna library, so
     it is not intended that library users directly use this constructor.
@@ -583,7 +610,7 @@ class RunningStudy(BaseStudy):
     @property
     def best_trial(self):
         # type: () -> structs.FrozenTrial
-        """Return the best trial in the :class:`~optuna.study.RunningStudy`.
+        """Return the best trial in the :class:`~optuna.study.InTrialStudy`.
 
         Returns:
             A :class:`~optuna.structs.FrozenTrial` object of the best trial.
@@ -594,7 +621,7 @@ class RunningStudy(BaseStudy):
     @property
     def direction(self):
         # type: () -> structs.StudyDirection
-        """Return the direction of the :class:`~optuna.study.RunningStudy`.
+        """Return the direction of the :class:`~optuna.study.InTrialStudy`.
 
         Returns:
             A :class:`~optuna.structs.StudyDirection` object.
@@ -605,7 +632,7 @@ class RunningStudy(BaseStudy):
     @property
     def trials(self):
         # type: () -> List[structs.FrozenTrial]
-        """Return all trials in the :class:`~optuna.study.RunningStudy`.
+        """Return all trials in the :class:`~optuna.study.InTrialStudy`.
 
         Returns:
             A list of :class:`~optuna.structs.FrozenTrial` objects.
@@ -626,7 +653,7 @@ class RunningStudy(BaseStudy):
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
-        """Set a system attribute to the :class:`~optuna.study.RunningStudy`.
+        """Set a system attribute to the :class:`~optuna.study.InTrialStudy`.
 
         Args:
             key: A key string of the attribute.
@@ -635,6 +662,29 @@ class RunningStudy(BaseStudy):
         """
 
         self.storage.set_study_system_attr(self.study_id, key, value)
+
+    @property
+    def user_attrs(self):
+        # type: () -> Dict[str, Any]
+        """Return user attributes.
+
+        Returns:
+            A dictionary containing all user attributes.
+        """
+
+        return self.storage.get_study_user_attrs(self.study_id)
+
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
+        """Set a user attribute to the :class:`~optuna.study.InTrialStudy`.
+
+        Args:
+            key: A key string of the attribute.
+            value: A value of the attribute. The value should be JSON serializable.
+
+        """
+
+        self.storage.set_study_user_attr(self.study_id, key, value)
 
     def optimize(
             self,

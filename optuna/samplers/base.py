@@ -8,7 +8,7 @@ if types.TYPE_CHECKING:
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
-    from optuna.study import RunningStudy  # NOQA
+    from optuna.study import InTrialStudy  # NOQA
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -17,7 +17,7 @@ class BaseSampler(object):
 
     @abc.abstractmethod
     def infer_relative_search_space(self, study, trial):
-        # type: (RunningStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
         """Infer the search space that will be used by the target trial.
 
         The search space returned by this method will be used as an argument of
@@ -38,7 +38,7 @@ class BaseSampler(object):
 
     @abc.abstractmethod
     def sample_relative(self, study, trial, search_space):
-        # type: (RunningStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
         """Sample parameters based on the previous trials and the given search space.
 
         This method is called once just after each trial has started.
@@ -66,7 +66,7 @@ class BaseSampler(object):
 
     @abc.abstractmethod
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (RunningStudy, FrozenTrial, str, BaseDistribution) -> float
+        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
         """Sample a parameter based on the previous trials and the given distribution.
 
         The method is only called for the parameters that have not been contained in the dictionary

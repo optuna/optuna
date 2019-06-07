@@ -19,7 +19,7 @@ if types.TYPE_CHECKING:
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
-    from optuna.study import RunningStudy  # NOQA
+    from optuna.study import InTrialStudy  # NOQA
 
 EPS = 1e-12
 
@@ -71,17 +71,17 @@ class TPESampler(base.BaseSampler):
         self.random_sampler = random.RandomSampler(seed=seed)
 
     def infer_relative_search_space(self, study, trial):
-        # type: (RunningStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
 
         return {}
 
     def sample_relative(self, study, trial, search_space):
-        # type: (RunningStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
 
         return {}
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (RunningStudy, FrozenTrial, str, BaseDistribution) -> float
+        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
 
         observation_pairs = study.storage.get_trial_param_result_pairs(
             study.study_id, param_name)

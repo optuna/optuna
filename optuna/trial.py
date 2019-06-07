@@ -142,12 +142,11 @@ class Trial(BaseTrial):
     def _init_relative_params(self):
         # type: () -> None
 
-        running_study = optuna.study.RunningStudy(self.study)
+        study = optuna.study.InTrialStudy(self.study)
         trial = self.storage.get_trial(self._trial_id)
 
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(
-            running_study, trial)
-        self.relative_params = self.study.sampler.sample_relative(running_study, trial,
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
+        self.relative_params = self.study.sampler.sample_relative(study, trial,
                                                                   self.relative_search_space)
 
     def suggest_uniform(self, name, low, high):
@@ -461,10 +460,10 @@ class Trial(BaseTrial):
         if self._is_relative_param(name, distribution):
             param_value_in_internal_repr = self.relative_params[name]
         else:
-            running_study = optuna.study.RunningStudy(self.study)
+            study = optuna.study.InTrialStudy(self.study)
             trial = self.storage.get_trial(self._trial_id)
             param_value_in_internal_repr = self.study.sampler.sample_independent(
-                running_study, trial, name, distribution)
+                study, trial, name, distribution)
 
         return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
                                                    distribution)
