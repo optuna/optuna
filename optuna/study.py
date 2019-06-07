@@ -1,3 +1,4 @@
+import abc
 import collections
 import datetime
 import gc
@@ -5,6 +6,7 @@ import math
 import multiprocessing
 import multiprocessing.pool
 import pandas as pd
+import six
 from six.moves import queue
 import time
 
@@ -33,7 +35,137 @@ if types.TYPE_CHECKING:
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
-class Study(object):
+@six.add_metaclass(abc.ABCMeta)
+class BaseStudy(object):
+    @property
+    def best_params(self):
+        # type: () -> Dict[str, Any]
+        """Return parameters of the best trial in the :class:`~optuna.study.Study`.
+
+        Returns:
+            A dictionary containing parameters of the best trial.
+        """
+
+        return self.best_trial.params
+
+    @property
+    def best_value(self):
+        # type: () -> float
+        """Return the best objective value in the :class:`~optuna.study.Study`.
+
+        Returns:
+            A float representing the best objective value.
+        """
+
+        best_value = self.best_trial.value
+        if best_value is None:
+            raise ValueError('No trials are completed yet.')
+
+        return best_value
+
+    @property
+    @abc.abstractmethod
+    def best_trial(self):
+        # type: () -> structs.FrozenTrial
+        """Return the best trial in the :class:`~optuna.study.Study`.
+
+        Returns:
+            A :class:`~optuna.structs.FrozenTrial` object of the best trial.
+        """
+
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def direction(self):
+        # type: () -> structs.StudyDirection
+        """Return the direction of the :class:`~optuna.study.Study`.
+
+        Returns:
+            A :class:`~optuna.structs.StudyDirection` object.
+        """
+
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def trials(self):
+        # type: () -> List[structs.FrozenTrial]
+        """Return all trials in the :class:`~optuna.study.Study`.
+
+        Returns:
+            A list of :class:`~optuna.structs.FrozenTrial` objects.
+        """
+
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def system_attrs(self):
+        # type: () -> Dict[str, Any]
+        """Return system attributes.
+
+        Returns:
+            A dictionary containing all system attributes.
+        """
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def optimize(
+            self,
+            func,  # type: ObjectiveFuncType
+            n_trials=None,  # type: Optional[int]
+            timeout=None,  # type: Optional[float]
+            n_jobs=1,  # type: int
+            catch=(Exception, )  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+    ):
+        # type: (...) -> None
+        """Optimize an objective function.
+
+        Args:
+            func:
+                A callable that implements objective function.
+            n_trials:
+                The number of trials. If this argument is set to :obj:`None`, there is no
+                limitation on the number of trials. If :obj:`timeout` is also set to :obj:`None`,
+                the study continues to create trials until it receives a termination signal such
+                as Ctrl+C or SIGTERM.
+            timeout:
+                Stop study after the given number of second(s). If this argument is set to
+                :obj:`None`, the study is executed without time limitation. If :obj:`n_trials` is
+                also set to :obj:`None`, the study continues to create trials until it receives a
+                termination signal such as Ctrl+C or SIGTERM.
+            n_jobs:
+                The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
+                set to CPU counts.
+            catch:
+                A study continues to run even when a trial raises one of exceptions specified in
+                this argument. Default is (`Exception <https://docs.python.org/3/library/
+                exceptions.html#Exception>`_,), where all non-exit exceptions are handled
+                by this logic.
+
+        """
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+        """Set a system attribute to the :class:`~optuna.study.Study`.
+
+        Note that Optuna internally uses this method to save system messages. Please use
+        :func:`~optuna.study.Study.set_user_attr` to set users' attributes.
+
+        Args:
+            key: A key string of the attribute.
+            value: A value of the attribute. The value should be JSON serializable.
+
+        """
+        raise NotImplementedError
+
+
+class Study(BaseStudy):
     """A study corresponds to an optimization task, i.e., a set of trials.
 
     Note that the direct use of this constructor is not recommended.
@@ -92,32 +224,6 @@ class Study(object):
 
         self.__dict__.update(state)
         self.logger = logging.get_logger(__name__)
-
-    @property
-    def best_params(self):
-        # type: () -> Dict[str, Any]
-        """Return parameters of the best trial in the :class:`~optuna.study.Study`.
-
-        Returns:
-            A dictionary containing parameters of the best trial.
-        """
-
-        return self.best_trial.params
-
-    @property
-    def best_value(self):
-        # type: () -> float
-        """Return the best objective value in the :class:`~optuna.study.Study`.
-
-        Returns:
-            A float representing the best objective value.
-        """
-
-        best_value = self.best_trial.value
-        if best_value is None:
-            raise ValueError('No trials are completed yet.')
-
-        return best_value
 
     @property
     def best_trial(self):
@@ -455,7 +561,7 @@ class Study(object):
                              trial_number, value, self.best_value, self.best_params))
 
 
-class RunningStudy(object):
+class RunningStudy(BaseStudy):
     """An object to access a running :class:`~optuna.study.Study`.
 
     Note that this object is created within Optuna library, so
@@ -473,32 +579,6 @@ class RunningStudy(object):
         self.study_name = study.study_name
         self.study_id = study.study_id
         self.storage = study.storage
-
-    @property
-    def best_params(self):
-        # type: () -> Dict[str, Any]
-        """Return parameters of the best trial in the :class:`~optuna.study.RunningStudy`.
-
-        Returns:
-            A dictionary containing parameters of the best trial.
-        """
-
-        return self.best_trial.params
-
-    @property
-    def best_value(self):
-        # type: () -> float
-        """Return the best objective value in the :class:`~optuna.study.RunningStudy`.
-
-        Returns:
-            A float representing the best objective value.
-        """
-
-        best_value = self.best_trial.value
-        if best_value is None:
-            raise ValueError('No trials are completed yet.')
-
-        return best_value
 
     @property
     def best_trial(self):
@@ -555,6 +635,23 @@ class RunningStudy(object):
         """
 
         self.storage.set_study_system_attr(self.study_id, key, value)
+
+    def optimize(
+            self,
+            func,  # type: ObjectiveFuncType
+            n_trials=None,  # type: Optional[int]
+            timeout=None,  # type: Optional[float]
+            n_jobs=1,  # type: int
+            catch=(Exception, )  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+    ):
+        # type: (...) -> None
+        """Optimize an objective function.
+
+        Note that it is not allowed to start new optimization within a trial,
+        so this method always raise an error if called.
+        """
+
+        raise RuntimeError("`InTrialStudy` does not support `optimize` method.")
 
 
 def create_study(

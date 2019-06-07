@@ -3,6 +3,10 @@
 Study
 =====
 
+.. autoclass:: BaseStudy
+    :members:
+    :exclude-members: optimize, system_attrs, set_system_attr
+
 .. autoclass:: Study
     :members:
     :exclude-members: system_attrs, set_system_attr
