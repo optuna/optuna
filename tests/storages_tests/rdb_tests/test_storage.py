@@ -3,7 +3,6 @@ import pytest
 import sys
 import tempfile
 
-from optuna.distributions import BaseDistribution  # NOQA
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import json_to_distribution
 from optuna.distributions import UniformDistribution
@@ -14,7 +13,6 @@ from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
 from optuna.structs import DuplicatedStudyError
-from optuna.structs import FrozenTrial  # NOQA
 from optuna.structs import StorageInternalError
 from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
@@ -23,8 +21,13 @@ from optuna import types
 from optuna import version
 
 if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
+    from typing import Optional  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
 
 
 def test_init():
@@ -239,7 +242,9 @@ def test_check_table_schema_compatibility():
 def create_test_storage(enable_cache=True, engine_kwargs=None):
     # type: (bool, Optional[Dict[str, Any]]) -> RDBStorage
 
-    storage = RDBStorage('sqlite:///:memory:', enable_cache=enable_cache, engine_kwargs=engine_kwargs)
+    storage = RDBStorage('sqlite:///:memory:',
+                         enable_cache=enable_cache,
+                         engine_kwargs=engine_kwargs)
     return storage
 
 
