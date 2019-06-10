@@ -304,7 +304,11 @@ def test_relative_parameters(storage_init_func):
         'x': distributions.UniformDistribution(low=5, high=6),
         'y': distributions.UniformDistribution(low=5, high=6)
     }
-    relative_params = {'x': 5.5, 'y': 5.5}
+    relative_params = {
+        'x': 5.5,
+        'y': 5.5,
+        'z': 5.5
+    }
 
     sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
     study = create_study(storage=storage_init_func(), sampler=sampler)
@@ -322,7 +326,7 @@ def test_relative_parameters(storage_init_func):
     # Not suggested from `relative_params` (due to unknown parameter name).
     trial1 = create_trial()
     distribution1 = distribution0
-    assert trial1._suggest('z', distribution1) != 5.5
+    assert trial1._suggest('w', distribution1) != 5.5
 
     # Not suggested from `relative_params` (due to incompatible value range).
     trial2 = create_trial()
@@ -334,6 +338,12 @@ def test_relative_parameters(storage_init_func):
     distribution3 = distributions.IntUniformDistribution(low=1, high=100)
     with pytest.raises(ValueError):
         trial3._suggest('y', distribution3)
+
+    # Error ('z' is included in `relative_params` but not in `relative_search_space`).
+    trial4 = create_trial()
+    distribution4 = distributions.UniformDistribution(low=0, high=10)
+    with pytest.raises(ValueError):
+        trial4._suggest('z', distribution4)
 
 
 @parametrize_storage
