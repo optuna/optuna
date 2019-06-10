@@ -544,16 +544,32 @@ def test_in_trial_study(storage_mode):
         # Run ten trials.
         study.optimize(lambda t: t.suggest_int('x', 0, 10), n_trials=10)
 
-        # The methods of `InTrialStudy` behave the same as the counterparts at `Study`.
+        # Create an `InTrialStudy` instance.
         in_trial_study = InTrialStudy(study)
+
+        # Test best trial and trials.
         assert in_trial_study.best_params == study.best_params
         assert in_trial_study.best_value == study.best_value
         assert in_trial_study.best_trial == study.best_trial
-        assert in_trial_study.direction == study.direction
         assert in_trial_study.trials == study.trials
 
+        # Test study direction.
+        assert in_trial_study.direction == study.direction
+
+        # Test study system attributes.
         assert in_trial_study.system_attrs == {}
 
         in_trial_study.set_system_attr('foo', 'bar')
         assert in_trial_study.system_attrs == {'foo': 'bar'}
         assert in_trial_study.system_attrs == study.system_attrs
+
+        # Test study user attributes.
+        assert in_trial_study.user_attrs == {}
+
+        in_trial_study.set_user_attr('foo', 'bar')
+        assert in_trial_study.user_attrs == {'foo': 'bar'}
+        assert in_trial_study.user_attrs == study.user_attrs
+
+        # It isn't allowed to call `optimize` method via `InTrialStudy`.
+        with pytest.raises(RuntimeError):
+            in_trial_study.optimize(lambda t: t.suggest_int('x', 0, 10), n_trials=10)
