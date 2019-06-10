@@ -535,7 +535,7 @@ def test_load_study(storage_mode, cache_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_running_study(storage_mode):
+def test_in_trial_study(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
