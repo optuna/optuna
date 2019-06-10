@@ -34,7 +34,7 @@ class StorageSupplier(object):
             url = 'sqlite:///{}'.format(self.tempfile.name)
             return optuna.storages.RDBStorage(
                 url,
-                connect_args={'timeout': SQLITE3_TIMEOUT},
+                engine_kwargs={'connect_args': {'timeout': SQLITE3_TIMEOUT}},
                 enable_cache=self.enable_cache,
             )
         elif self.storage_specifier == 'common':
@@ -42,7 +42,7 @@ class StorageSupplier(object):
             url = 'sqlite:///{}'.format(self._common_tempfile.name)
             return optuna.storages.RDBStorage(
                 url,
-                connect_args={'timeout': SQLITE3_TIMEOUT},
+                engine_kwargs={'connect_args': {'timeout': SQLITE3_TIMEOUT}},
                 enable_cache=self.enable_cache,
             )
         else:
