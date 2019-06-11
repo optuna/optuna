@@ -99,71 +99,6 @@ class BaseStudy(object):
 
         raise NotImplementedError
 
-    @property
-    @abc.abstractmethod
-    def system_attrs(self):
-        # type: () -> Dict[str, Any]
-        """Return system attributes.
-
-        Returns:
-            A dictionary containing all system attributes.
-        """
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
-        """Set a system attribute to the :class:`~optuna.study.Study`.
-
-        Note that Optuna internally uses this method to save system messages. Please use
-        :func:`~optuna.study.Study.set_user_attr` to set users' attributes.
-
-        Args:
-            key: A key string of the attribute.
-            value: A value of the attribute. The value should be JSON serializable.
-
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def optimize(
-            self,
-            func,  # type: ObjectiveFuncType
-            n_trials=None,  # type: Optional[int]
-            timeout=None,  # type: Optional[float]
-            n_jobs=1,  # type: int
-            catch=(Exception, )  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-    ):
-        # type: (...) -> None
-        """Optimize an objective function.
-
-        Args:
-            func:
-                A callable that implements objective function.
-            n_trials:
-                The number of trials. If this argument is set to :obj:`None`, there is no
-                limitation on the number of trials. If :obj:`timeout` is also set to :obj:`None`,
-                the study continues to create trials until it receives a termination signal such
-                as Ctrl+C or SIGTERM.
-            timeout:
-                Stop study after the given number of second(s). If this argument is set to
-                :obj:`None`, the study is executed without time limitation. If :obj:`n_trials` is
-                also set to :obj:`None`, the study continues to create trials until it receives a
-                termination signal such as Ctrl+C or SIGTERM.
-            n_jobs:
-                The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
-                set to CPU counts.
-            catch:
-                A study continues to run even when a trial raises one of exceptions specified in
-                this argument. Default is (`Exception <https://docs.python.org/3/library/
-                exceptions.html#Exception>`_,), where all non-exit exceptions are handled
-                by this logic.
-
-        """
-
-        raise NotImplementedError
-
 
 class Study(BaseStudy):
     """A study corresponds to an optimization task, i.e., a set of trials.
@@ -615,46 +550,6 @@ class InTrialStudy(BaseStudy):
         """
 
         return self.storage.get_all_trials(self.study_id)
-
-    @property
-    def system_attrs(self):
-        # type: () -> Dict[str, Any]
-        """Return system attributes.
-
-        Returns:
-            A dictionary containing all system attributes.
-        """
-
-        return self.storage.get_study_system_attrs(self.study_id)
-
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
-        """Set a system attribute to the :class:`~optuna.study.InTrialStudy`.
-
-        Args:
-            key: A key string of the attribute.
-            value: A value of the attribute. The value should be JSON serializable.
-
-        """
-
-        self.storage.set_study_system_attr(self.study_id, key, value)
-
-    def optimize(
-            self,
-            func,  # type: ObjectiveFuncType
-            n_trials=None,  # type: Optional[int]
-            timeout=None,  # type: Optional[float]
-            n_jobs=1,  # type: int
-            catch=(Exception, )  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-    ):
-        # type: (...) -> None
-        """Optimize an objective function.
-
-        Note that it is not allowed to start new optimization within a trial,
-        so this method always raise an error if called.
-        """
-
-        raise RuntimeError("`InTrialStudy` does not support `optimize` method.")
 
 
 def create_study(
