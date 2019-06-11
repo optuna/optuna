@@ -40,7 +40,7 @@ class BaseStudy(object):
     @property
     def best_params(self):
         # type: () -> Dict[str, Any]
-        """Return parameters of the best trial in the :class:`~optuna.study.Study`.
+        """Return parameters of the best trial in the :class:`~optuna.study.BaseStudy`.
 
         Returns:
             A dictionary containing parameters of the best trial.
@@ -51,7 +51,7 @@ class BaseStudy(object):
     @property
     def best_value(self):
         # type: () -> float
-        """Return the best objective value in the :class:`~optuna.study.Study`.
+        """Return the best objective value in the :class:`~optuna.study.BaseStudy`.
 
         Returns:
             A float representing the best objective value.
@@ -67,7 +67,7 @@ class BaseStudy(object):
     @abc.abstractmethod
     def best_trial(self):
         # type: () -> structs.FrozenTrial
-        """Return the best trial in the :class:`~optuna.study.Study`.
+        """Return the best trial in the :class:`~optuna.study.BaseStudy`.
 
         Returns:
             A :class:`~optuna.structs.FrozenTrial` object of the best trial.
@@ -79,7 +79,7 @@ class BaseStudy(object):
     @abc.abstractmethod
     def direction(self):
         # type: () -> structs.StudyDirection
-        """Return the direction of the :class:`~optuna.study.Study`.
+        """Return the direction of the :class:`~optuna.study.BaseStudy`.
 
         Returns:
             A :class:`~optuna.structs.StudyDirection` object.
@@ -91,7 +91,7 @@ class BaseStudy(object):
     @abc.abstractmethod
     def trials(self):
         # type: () -> List[structs.FrozenTrial]
-        """Return all trials in the :class:`~optuna.study.Study`.
+        """Return all trials in the :class:`~optuna.study.BaseStudy`.
 
         Returns:
             A list of :class:`~optuna.structs.FrozenTrial` objects.
