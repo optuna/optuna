@@ -161,6 +161,32 @@ class Study(BaseStudy):
         self.logger = logging.get_logger(__name__)
 
     @property
+    def best_params(self):
+        # type: () -> Dict[str, Any]
+        """Return parameters of the best trial in the :class:`~optuna.study.Study`.
+
+        Returns:
+            A dictionary containing parameters of the best trial.
+        """
+
+        return self.best_trial.params
+
+    @property
+    def best_value(self):
+        # type: () -> float
+        """Return the best objective value in the :class:`~optuna.study.Study`.
+
+        Returns:
+            A float representing the best objective value.
+        """
+
+        best_value = self.best_trial.value
+        if best_value is None:
+            raise ValueError('No trials are completed yet.')
+
+        return best_value
+
+    @property
     def best_trial(self):
         # type: () -> structs.FrozenTrial
         """Return the best trial in the :class:`~optuna.study.Study`.
@@ -437,6 +463,7 @@ class Study(BaseStudy):
         trial_id = self.storage.create_new_trial_id(self.study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
+
         try:
             result = func(trial)
         except structs.TrialPruned as e:
