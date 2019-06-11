@@ -42,8 +42,8 @@ class RDBStorage(BaseStorage):
     Args:
         url: URL of the storage.
         engine_kwargs:
-           A dictionary of keyword arguments that is passed to
-           :func:`sqlalchemy.engine.create_engine`.
+            A dictionary of keyword arguments that is passed to
+            :func:`sqlalchemy.engine.create_engine`.
         enable_cache:
             Flag to control whether to enable storage layer caching.
             If this flag is set to :obj:`True` (the default), the finished trials are
