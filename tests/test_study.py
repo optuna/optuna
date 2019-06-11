@@ -567,17 +567,6 @@ def test_in_trial_study(storage_mode):
         assert in_trial_study.system_attrs == {'foo': 'bar', 'baz': 'qux'}
         assert in_trial_study.system_attrs == study.system_attrs
 
-        # Test study user attributes.
-        assert in_trial_study.user_attrs == {}
-
-        in_trial_study.set_user_attr('foo', 'bar')  # Set an attribute via `InTrialStudy`.
-        assert in_trial_study.user_attrs == {'foo': 'bar'}
-        assert in_trial_study.user_attrs == study.user_attrs
-
-        study.set_user_attr('baz', 'qux')  # Set an attribute via `Study`.
-        assert in_trial_study.user_attrs == {'foo': 'bar', 'baz': 'qux'}
-        assert in_trial_study.user_attrs == study.user_attrs
-
         # It isn't allowed to call `optimize` method via `InTrialStudy`.
         with pytest.raises(RuntimeError):
             in_trial_study.optimize(lambda t: t.suggest_int('x', 0, 10), n_trials=10)

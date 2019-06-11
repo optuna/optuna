@@ -126,30 +126,6 @@ class BaseStudy(object):
         """
         raise NotImplementedError
 
-    @property
-    def user_attrs(self):
-        # type: () -> Dict[str, Any]
-        """Return user attributes.
-
-        Returns:
-            A dictionary containing all user attributes.
-        """
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
-        """Set a user attribute to the :class:`~optuna.study.Study`.
-
-        Args:
-            key: A key string of the attribute.
-            value: A value of the attribute. The value should be JSON serializable.
-
-        """
-
-        raise NotImplementedError
-
     @abc.abstractmethod
     def optimize(
             self,
@@ -662,29 +638,6 @@ class InTrialStudy(BaseStudy):
         """
 
         self.storage.set_study_system_attr(self.study_id, key, value)
-
-    @property
-    def user_attrs(self):
-        # type: () -> Dict[str, Any]
-        """Return user attributes.
-
-        Returns:
-            A dictionary containing all user attributes.
-        """
-
-        return self.storage.get_study_user_attrs(self.study_id)
-
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
-        """Set a user attribute to the :class:`~optuna.study.InTrialStudy`.
-
-        Args:
-            key: A key string of the attribute.
-            value: A value of the attribute. The value should be JSON serializable.
-
-        """
-
-        self.storage.set_study_user_attr(self.study_id, key, value)
 
     def optimize(
             self,
