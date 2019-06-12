@@ -18,7 +18,6 @@ except ImportError as e:
     _available = False
 
 if types.TYPE_CHECKING:
-    from sklearn.base import RegressorMixin  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
