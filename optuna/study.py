@@ -1,15 +1,15 @@
+import abc
 import collections
 import datetime
 import gc
 import math
 import multiprocessing
 import multiprocessing.pool
-from multiprocessing import Queue  # NOQA
 import pandas as pd
+import six
 from six.moves import queue
 import time
 
-from optuna.distributions import BaseDistribution  # NOQA
 from optuna import logging
 from optuna import pruners
 from optuna import samplers
@@ -19,6 +19,7 @@ from optuna import trial as trial_module
 from optuna import types
 
 if types.TYPE_CHECKING:
+    from multiprocessing import Queue  # NOQA
     from typing import Any  # NOQA
     from typing import Callable
     from typing import Dict  # NOQA
@@ -29,10 +30,77 @@ if types.TYPE_CHECKING:
     from typing import Type  # NOQA
     from typing import Union  # NOQA
 
+    from optuna.distributions import BaseDistribution  # NOQA
+
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
-class Study(object):
+@six.add_metaclass(abc.ABCMeta)
+class BaseStudy(object):
+    @property
+    def best_params(self):
+        # type: () -> Dict[str, Any]
+        """Return parameters of the best trial in the :class:`~optuna.study.BaseStudy`.
+
+        Returns:
+            A dictionary containing parameters of the best trial.
+        """
+
+        return self.best_trial.params
+
+    @property
+    def best_value(self):
+        # type: () -> float
+        """Return the best objective value in the :class:`~optuna.study.BaseStudy`.
+
+        Returns:
+            A float representing the best objective value.
+        """
+
+        best_value = self.best_trial.value
+        if best_value is None:
+            raise ValueError('No trials are completed yet.')
+
+        return best_value
+
+    @property
+    @abc.abstractmethod
+    def best_trial(self):
+        # type: () -> structs.FrozenTrial
+        """Return the best trial in the :class:`~optuna.study.BaseStudy`.
+
+        Returns:
+            A :class:`~optuna.structs.FrozenTrial` object of the best trial.
+        """
+
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def direction(self):
+        # type: () -> structs.StudyDirection
+        """Return the direction of the :class:`~optuna.study.BaseStudy`.
+
+        Returns:
+            A :class:`~optuna.structs.StudyDirection` object.
+        """
+
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def trials(self):
+        # type: () -> List[structs.FrozenTrial]
+        """Return all trials in the :class:`~optuna.study.BaseStudy`.
+
+        Returns:
+            A list of :class:`~optuna.structs.FrozenTrial` objects.
+        """
+
+        raise NotImplementedError
+
+
+class Study(BaseStudy):
     """A study corresponds to an optimization task, i.e., a set of trials.
 
     Note that the direct use of this constructor is not recommended.
@@ -389,24 +457,13 @@ class Study(object):
         que.close()
         que.join_thread()
 
-    def _sample_relative(self, trial_id):
-        # type: (int) -> Tuple[Dict[str, BaseDistribution], Dict[str, float]]
-
-        running_study = RunningStudy(self)
-        trial = self.storage.get_trial(trial_id)
-        search_space = self.sampler.define_relative_search_space(running_study, trial)
-        params = self.sampler.sample_relative(running_study, trial, search_space)
-
-        return search_space, params
-
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
         trial_id = self.storage.create_new_trial_id(self.study_id)
-        relative_search_space, relative_params = self._sample_relative(trial_id)
-
-        trial = trial_module.Trial(self, trial_id, relative_search_space, relative_params)
+        trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
+
         try:
             result = func(trial)
         except structs.TrialPruned as e:
@@ -466,8 +523,11 @@ class Study(object):
                              trial_number, value, self.best_value, self.best_params))
 
 
-class RunningStudy(object):
-    """An object to access a running :class:`~optuna.study.Study`.
+class InTrialStudy(BaseStudy):
+    """An object to access a study instance in a trial.
+
+    Unlike :class:`~optuna.study.Study`,
+    this class cannot allow to call :func:`~optuna.study.InTrialStudy.optimize()`.
 
     Note that this object is created within Optuna library, so
     it is not intended that library users directly use this constructor.
@@ -486,35 +546,9 @@ class RunningStudy(object):
         self.storage = study.storage
 
     @property
-    def best_params(self):
-        # type: () -> Dict[str, Any]
-        """Return parameters of the best trial in the :class:`~optuna.study.RunningStudy`.
-
-        Returns:
-            A dictionary containing parameters of the best trial.
-        """
-
-        return self.best_trial.params
-
-    @property
-    def best_value(self):
-        # type: () -> float
-        """Return the best objective value in the :class:`~optuna.study.RunningStudy`.
-
-        Returns:
-            A float representing the best objective value.
-        """
-
-        best_value = self.best_trial.value
-        if best_value is None:
-            raise ValueError('No trials are completed yet.')
-
-        return best_value
-
-    @property
     def best_trial(self):
         # type: () -> structs.FrozenTrial
-        """Return the best trial in the :class:`~optuna.study.RunningStudy`.
+        """Return the best trial in the :class:`~optuna.study.InTrialStudy`.
 
         Returns:
             A :class:`~optuna.structs.FrozenTrial` object of the best trial.
@@ -525,7 +559,7 @@ class RunningStudy(object):
     @property
     def direction(self):
         # type: () -> structs.StudyDirection
-        """Return the direction of the :class:`~optuna.study.RunningStudy`.
+        """Return the direction of the :class:`~optuna.study.InTrialStudy`.
 
         Returns:
             A :class:`~optuna.structs.StudyDirection` object.
@@ -536,62 +570,13 @@ class RunningStudy(object):
     @property
     def trials(self):
         # type: () -> List[structs.FrozenTrial]
-        """Return all trials in the :class:`~optuna.study.RunningStudy`.
+        """Return all trials in the :class:`~optuna.study.InTrialStudy`.
 
         Returns:
             A list of :class:`~optuna.structs.FrozenTrial` objects.
         """
 
         return self.storage.get_all_trials(self.study_id)
-
-    @property
-    def system_attrs(self):
-        # type: () -> Dict[str, Any]
-        """Return system attributes.
-
-        Returns:
-            A dictionary containing all system attributes.
-        """
-
-        return self.storage.get_study_system_attrs(self.study_id)
-
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
-        """Set a system attribute to the :class:`~optuna.study.RunningStudy`.
-
-        Args:
-            key: A key string of the attribute.
-            value: A value of the attribute. The value should be JSON serializable.
-
-        """
-
-        self.storage.set_study_system_attr(self.study_id, key, value)
-
-    @property
-    def full_search_space(self):
-        # type: () -> Dict[str, BaseDistribution]
-        """Return the full search space of the :class:`~optuna.study.Study`.
-
-        "full search space" contains all parameter distributions that have been
-        suggested in the complete trials of this study so far.
-        If there are two parameters that have the same name but different distributions,
-        the distribution used in a newer trial will be adopted.
-
-        Returns:
-            A dictionary containing the parameter names and parameter's distributions.
-        """
-
-        distributions = {}
-        trials = self.trials
-        trials.sort(key=lambda t: t.number)
-        for trial in trials:
-            if trial.state != structs.TrialState.COMPLETE:
-                continue
-
-            for name, distribution in trial.distributions.items():
-                distributions[name] = distribution
-
-        return distributions
 
 
 def create_study(
