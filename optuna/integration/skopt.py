@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import numpy as np
 
 from optuna import distributions
 from optuna import logging
@@ -10,6 +9,8 @@ from optuna import types
 
 try:
     import skopt
+    from skopt.space import space
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -44,7 +45,18 @@ class SkoptSampler(BaseSampler):
     def infer_relative_search_space(self, study, trial):
         # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
 
-        return study.product_search_space
+        search_space = {}
+        for name, distribution in study.product_search_space.items():
+            if isinstance(distribution, distributions.UniformDistribution):
+                if distribution.low == distribution.high:
+                    continue
+            elif isinstance(distribution, distributions.LogUniformDistribution):
+                if distribution.low == distribution.high:
+                    continue
+
+            search_space[name] = distribution
+
+        return search_space
 
     def sample_relative(self, study, trial, search_space):
         # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
@@ -72,25 +84,24 @@ class _Optimizer(object):
         dimensions = []  # type: List[Any]
         for name, distribution in self.search_space.items():
             if isinstance(distribution, distributions.UniformDistribution):
-                # Convert to half-closed range.
-                # See: https://scikit-optimize.github.io/space/space.m.html#skopt.space.space.Real
-                high = max(distribution.low, np.nextafter(distribution.high, float('-inf')))
-
-                dimensions.append((float(distribution.low), float(high)))
+                dimension = space.Real(distribution.low, distribution.high, name=name)
             elif isinstance(distribution, distributions.LogUniformDistribution):
-                high = max(distribution.low, np.nextafter(distribution.high, float('-inf')))
-
-                dimensions.append((float(distribution.low), float(high), 'log-uniform'))
+                dimension = space.Real(distribution.low,
+                                       distribution.high,
+                                       prior='log-uniform',
+                                       name=name)
             elif isinstance(distribution, distributions.IntUniformDistribution):
-                dimensions.append((int(distribution.low), int(distribution.high)))
+                dimension = space.Integer(distribution.low, distribution.high + 1, name=name)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 count = (distribution.high - distribution.low) // distribution.q
-                dimensions.append((0, count))
+                dimension = space.Integer(0, count + 1, name=name)
             elif isinstance(distribution, distributions.CategoricalDistribution):
-                dimensions.append(list(distribution.choices))
+                dimension = space.Categorical(distribution.choices, name=name)
             else:
                 raise NotImplementedError(
                     "The distribution {} is not implemented.".format(distribution))
+
+            dimensions.append(dimension)
 
         self.optimizer = skopt.Optimizer(dimensions, **skopt_kwargs)
 
