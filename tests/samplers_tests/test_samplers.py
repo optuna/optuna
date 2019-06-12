@@ -22,7 +22,11 @@ if optuna.types.TYPE_CHECKING:
 
 parametrize_sampler = pytest.mark.parametrize(
     'sampler_class',
-    [optuna.samplers.RandomSampler, lambda: optuna.samplers.TPESampler(n_startup_trials=0)])
+    [
+        optuna.samplers.RandomSampler,
+        lambda: optuna.samplers.TPESampler(n_startup_trials=0),
+        lambda: optuna.integration.SkoptSampler(skopt_kwargs={'n_initial_points': 1})
+    ])
 
 
 @parametrize_sampler
