@@ -34,6 +34,43 @@ if types.TYPE_CHECKING:
 
 
 class SkoptSampler(BaseSampler):
+    """Sampler using Scikit-Optimize as the backend.
+
+    Example:
+
+        Optimize a simple quadratic function by using :class:`~optuna.integration.SkoptSampler`.
+
+        .. code::
+
+                def objective(trial):
+                    x = trial.suggest_uniform('x', -100, 100)
+                    y = trial.suggest_int('y', -10, 10)
+                    return x**2 + y
+
+                sampler = optuna.integration.SkoptSampler()
+                study = optuna.create_study(sampler=sampler)
+                study.optimize(objective, n_trials=100)
+
+    Args:
+        independent_sampler:
+            A :class:`~optuna.samplers.BaseSampler` instance that is used for independently
+            sampling parameters that unknown to :class:`~optuna.integration.SkoptSampler`.
+            An "unknown parameter" means a parameter that isn't contained in
+            :meth:`~optuna.study.InTrialStudy.product_search_space` of the target study.
+
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
+            as the default. See also :class:`~optuna.samplers`.
+        skopt_kwargs:
+            Keyword arguments passed to the constructor of
+            `skopt.Optimizer <https://scikit-optimize.github.io/#skopt.Optimizer>`_
+            class.
+
+            Note that the ``dimensions`` argument is automatically added by
+            :class:`~optuna.integration.SkoptSampler`, so you don't have to specify it
+            (it will be ignored even if specified).
+
+    """
+
     def __init__(self, independent_sampler=None, skopt_kwargs=None):
         # type: (Optional[BaseSampler], Optional[Dict[str, Any]]) -> None
 
