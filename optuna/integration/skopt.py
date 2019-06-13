@@ -39,9 +39,9 @@ class SkoptSampler(BaseSampler):
 
         _check_skopt_availability()
 
-        self.skopt_kwargs = skopt_kwargs or {}
-        self.independent_sampler = independent_sampler or TPESampler()
-        self.logger = logging.get_logger(__name__)
+        self._skopt_kwargs = skopt_kwargs or {}
+        self._independent_sampler = independent_sampler or TPESampler()
+        self._logger = logging.get_logger(__name__)
 
     def infer_relative_search_space(self, study, trial):
         # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
@@ -65,25 +65,25 @@ class SkoptSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        optimizer = _Optimizer(search_space, self.skopt_kwargs)
+        optimizer = _Optimizer(search_space, self._skopt_kwargs)
         optimizer.tell(study)
         return optimizer.ask()
 
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
 
-        return self.independent_sampler.sample_independent(study, trial, param_name,
-                                                           param_distribution)
+        return self._independent_sampler.sample_independent(study, trial, param_name,
+                                                            param_distribution)
 
 
 class _Optimizer(object):
     def __init__(self, search_space, skopt_kwargs=None):
         # type: (Dict[str, BaseDistribution], Optional[Dict[str, Any]]) -> None
 
-        self.search_space = OrderedDict(search_space)
+        self._search_space = OrderedDict(search_space)
 
         dimensions = []  # type: List[Any]
-        for name, distribution in self.search_space.items():
+        for name, distribution in self._search_space.items():
             if isinstance(distribution, distributions.UniformDistribution):
                 dimension = space.Real(distribution.low, distribution.high, name=name)
             elif isinstance(distribution, distributions.LogUniformDistribution):
@@ -104,7 +104,7 @@ class _Optimizer(object):
 
             dimensions.append(dimension)
 
-        self.optimizer = skopt.Optimizer(dimensions, **skopt_kwargs)
+        self._optimizer = skopt.Optimizer(dimensions, **skopt_kwargs)
 
     def tell(self, study):
         # type: (InTrialStudy) -> None
@@ -121,14 +121,14 @@ class _Optimizer(object):
                 xs.append(x)
                 ys.append(y)
 
-        self.optimizer.tell(xs, ys)
+        self._optimizer.tell(xs, ys)
 
     def ask(self):
         # type: () -> Dict[str, float]
 
         params = {}
-        param_values = self.optimizer.ask()
-        for (name, distribution), value in zip(self.search_space.items(), param_values):
+        param_values = self._optimizer.ask()
+        for (name, distribution), value in zip(self._search_space.items(), param_values):
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 value = value * distribution.q + distribution.low
 
@@ -140,7 +140,7 @@ class _Optimizer(object):
         # type: (InTrialStudy, FrozenTrial) -> Optional[Tuple[List[Any], float]]
 
         param_values = []
-        for name, distribution in self.search_space.items():
+        for name, distribution in self._search_space.items():
             if name not in trial.params:
                 return None
 
