@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from collections import OrderedDict
-
 from optuna import distributions
 from optuna import logging
 from optuna.samplers import BaseSampler
@@ -77,8 +75,10 @@ class SkoptSampler(BaseSampler):
         _check_skopt_availability()
 
         self._skopt_kwargs = skopt_kwargs or {}
+        if 'dimensions' in self._skopt_kwargs:
+            del self._skopt_kwargs['dimensions']
+
         self._independent_sampler = independent_sampler or TPESampler()
-        self._logger = logging.get_logger(__name__)
 
     def infer_relative_search_space(self, study, trial):
         # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
@@ -117,10 +117,10 @@ class _Optimizer(object):
     def __init__(self, search_space, skopt_kwargs=None):
         # type: (Dict[str, BaseDistribution], Optional[Dict[str, Any]]) -> None
 
-        self._search_space = OrderedDict(search_space)
+        self._search_space = search_space
 
         dimensions = []  # type: List[Any]
-        for name, distribution in self._search_space.items():
+        for name, distribution in sorted(self._search_space.items()):
             if isinstance(distribution, distributions.UniformDistribution):
                 dimension = space.Real(distribution.low, distribution.high, name=name)
             elif isinstance(distribution, distributions.LogUniformDistribution):
@@ -165,7 +165,7 @@ class _Optimizer(object):
 
         params = {}
         param_values = self._optimizer.ask()
-        for (name, distribution), value in zip(self._search_space.items(), param_values):
+        for (name, distribution), value in zip(sorted(self._search_space.items()), param_values):
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 value = value * distribution.q + distribution.low
 
@@ -177,7 +177,7 @@ class _Optimizer(object):
         # type: (InTrialStudy, FrozenTrial) -> Optional[Tuple[List[Any], float]]
 
         param_values = []
-        for name, distribution in self._search_space.items():
+        for name, distribution in sorted(self._search_space.items()):
             if name not in trial.params:
                 return None
 
