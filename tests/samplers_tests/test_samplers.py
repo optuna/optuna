@@ -37,14 +37,14 @@ def test_uniform(sampler_class, distribution):
     study = optuna.study.create_study(sampler=sampler_class())
     in_trial_study = InTrialStudy(study)
     points = np.array([
-        study.sampler.sample_independent(in_trial_study, new_trial(study), 'x', distribution)
-        for _ in range(100)
+        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+                                         distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
     assert not isinstance(
-        study.sampler.sample_independent(in_trial_study, new_trial(study), 'x', distribution),
-        np.floating)
+        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+                                         distribution), np.floating)
 
 
 @parametrize_sampler
@@ -55,14 +55,14 @@ def test_log_uniform(sampler_class, distribution):
     study = optuna.study.create_study(sampler=sampler_class())
     in_trial_study = InTrialStudy(study)
     points = np.array([
-        study.sampler.sample_independent(in_trial_study, new_trial(study), 'x', distribution)
-        for _ in range(100)
+        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+                                         distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
     assert not isinstance(
-        study.sampler.sample_independent(in_trial_study, new_trial(study), 'x', distribution),
-        np.floating)
+        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+                                         distribution), np.floating)
 
 
 @parametrize_sampler
@@ -76,14 +76,14 @@ def test_discrete_uniform(sampler_class, distribution):
     study = optuna.study.create_study(sampler=sampler_class())
     in_trial_study = InTrialStudy(study)
     points = np.array([
-        study.sampler.sample_independent(in_trial_study, new_trial(study), 'x', distribution)
-        for _ in range(100)
+        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+                                         distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
     assert not isinstance(
-        study.sampler.sample_independent(in_trial_study, new_trial(study), 'x', distribution),
-        np.floating)
+        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+                                         distribution), np.floating)
 
     # Check all points are multiples of distribution.q.
     points = points
@@ -105,14 +105,14 @@ def test_int(sampler_class, distribution):
     study = optuna.study.create_study(sampler=sampler_class())
     in_trial_study = InTrialStudy(study)
     points = np.array([
-        study.sampler.sample_independent(in_trial_study, new_trial(study), 'x', distribution)
-        for _ in range(100)
+        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+                                         distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
     assert not isinstance(
-        study.sampler.sample_independent(in_trial_study, new_trial(study), 'x', distribution),
-        np.integer)
+        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+                                         distribution), np.integer)
 
 
 @parametrize_sampler
@@ -125,8 +125,8 @@ def test_categorical(sampler_class, choices):
     study = optuna.study.create_study(sampler=sampler_class())
     in_trial_study = InTrialStudy(study)
     points = np.array([
-        study.sampler.sample_independent(in_trial_study, new_trial(study), 'x', distribution)
-        for _ in range(100)
+        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+                                         distribution) for _ in range(100)
     ])
     # 'x' value is corresponding to an index of distribution.choices.
     assert np.all(points >= 0)
@@ -135,7 +135,7 @@ def test_categorical(sampler_class, choices):
     np.testing.assert_almost_equal(round_points, points)
 
 
-def new_trial(study):
+def _create_new_trial(study):
     # type: (Study) -> FrozenTrial
 
     trial_id = study.storage.create_new_trial_id(study.study_id)
