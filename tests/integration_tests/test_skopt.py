@@ -54,21 +54,83 @@ def test_suggested_value():
     independent_sampler = FirstTrialOnlyRandomSampler()
     sampler = optuna.integration.SkoptSampler(independent_sampler=independent_sampler,
                                               skopt_kwargs={'n_initial_points': 5})
-    study = optuna.create_study(sampler=sampler)
-    study.optimize(_objective, n_trials=10, catch=())
 
+    # direction='minimize'
+    study = optuna.create_study(sampler=sampler, direction='minimize')
+    study.optimize(_objective, n_trials=10, catch=())
+    for trial in study.trials:
+        for param_name, param_value in trial.params_in_internal_repr.items():
+            assert trial.distributions[param_name]._contains(param_value)
+
+    # direction='maximize'
+    study = optuna.create_study(sampler=sampler, direction='maximize')
+    study.optimize(_objective, n_trials=10, catch=())
     for trial in study.trials:
         for param_name, param_value in trial.params_in_internal_repr.items():
             assert trial.distributions[param_name]._contains(param_value)
 
 
-def test_independent_sampler():
+def test_sample_independent():
     # type: () -> None
 
-    # first trial
+    sampler = optuna.integration.SkoptSampler()
+    study = optuna.create_study(sampler=sampler)
 
-    # second or later trials
-    pass
+    # First trial.
+    def objective0(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        p0 = trial.suggest_uniform('p0', 0, 10)
+        p1 = trial.suggest_loguniform('p1', 1, 10)
+        p2 = trial.suggest_int('p2', 0, 10)
+        p3 = trial.suggest_discrete_uniform('p3', 0, 9, 3)
+        p4 = trial.suggest_categorical('p4', ['10', '20', '30'])
+        return p0 + p1 + p2 + p3 + int(p4)
+
+    with patch.object(sampler, 'sample_independent') as mock_object:
+        mock_object.side_effect = [1, 2, 3, 3, 0]
+
+        study.optimize(objective0, n_trials=1)
+
+        # In first trial, all parameters were suggested via `sample_independent`.
+        assert mock_object.call_count == 5
+
+    # Second trial.
+    def objective1(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        # p0, p2 and p4 are deleted.
+        p1 = trial.suggest_loguniform('p1', 1, 10)
+        p3 = trial.suggest_discrete_uniform('p3', 0, 9, 3)
+
+        # p5 is added.
+        p5 = trial.suggest_uniform('p5', 0, 1)
+
+        return p1 + p3 + p5
+
+    with patch.object(sampler, 'sample_independent') as mock_object:
+        mock_object.side_effect = [0]
+
+        study.optimize(objective1, n_trials=1)
+
+        assert [call[1][2] for call in mock_object.mock_calls] == ['p5']
+
+    # Third trial.
+    def objective2(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        p1 = trial.suggest_loguniform('p1', 50, 100)  # The range has been changed
+        p3 = trial.suggest_discrete_uniform('p3', 0, 9, 3)
+        p5 = trial.suggest_uniform('p5', 0, 1)
+
+        return p1 + p3 + p5
+
+    with patch.object(sampler, 'sample_independent') as mock_object:
+        mock_object.side_effect = [90, 0.2]
+
+        study.optimize(objective2, n_trials=1)
+
+        assert [call[1][2] for call in mock_object.mock_calls] == ['p1', 'p5']
 
 
 def test_skopt_kwargs():
