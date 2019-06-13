@@ -1,5 +1,4 @@
 from mock import call
-from mock import Mock
 from mock import patch
 from skopt.space import space
 
@@ -29,19 +28,19 @@ def test_conversion_from_distribution_to_dimenstion():
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
 
             # Original: trial.suggest_int('p4', -100, 8)
-            space.Integer(-100, 9),
+            space.Integer(-100, 8),
 
             # Original: trial.suggest_int('p5', -20, -20)
-            space.Integer(-20, -19),
+            # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
 
             # Original: trial.suggest_discrete_uniform('p6', 10, 20, 2)
-            space.Integer(0, 6),
+            space.Integer(0, 5),
 
             # Original: trial.suggest_discrete_uniform('p7', 0.1, 1.0, 0.1)
-            space.Integer(0, 9),
+            space.Integer(0, 8),
 
             # Original: trial.suggest_discrete_uniform('p8', 2.2, 2.2, 0.5)
-            space.Integer(0, 1),
+            # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
 
             # Original: trial.suggest_categorical('p9', ['9', '3', '0', '8'])
             space.Categorical(('9', '3', '0', '8'))
@@ -59,8 +58,8 @@ def test_suggested_value():
     study.optimize(_objective, n_trials=10, catch=())
 
     for trial in study.trials:
-        for param_name, param_value in trial.params_in_internal_repr:
-            assert trial.distributions[param_name].contains(param_value)
+        for param_name, param_value in trial.params_in_internal_repr.items():
+            assert trial.distributions[param_name]._contains(param_value)
 
 
 def test_independent_sampler():
@@ -81,7 +80,7 @@ def test_skopt_kwargs():
     with patch('skopt.Optimizer') as mock_object:
         study.optimize(lambda t: t.suggest_int('x', -10, 10), n_trials=2)
 
-        dimensions = [space.Integer(-10, 11)]
+        dimensions = [space.Integer(-10, 10)]
         assert mock_object.mock_calls[0] == call(dimensions, base_estimator="GBRT")
 
 
@@ -95,7 +94,7 @@ def test_skopt_kwargs_dimenstions():
     with patch('skopt.Optimizer') as mock_object:
         study.optimize(lambda t: t.suggest_int('x', -10, 10), n_trials=2)
 
-        expected_dimensions = [space.Integer(-10, 11)]
+        expected_dimensions = [space.Integer(-10, 10)]
         assert mock_object.mock_calls[0] == call(expected_dimensions)
 
 

@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 
+import numpy as np
+
 from optuna import distributions
-from optuna import logging
 from optuna.samplers import BaseSampler
 from optuna.samplers import TPESampler
 from optuna.structs import StudyDirection
@@ -85,10 +86,17 @@ class SkoptSampler(BaseSampler):
 
         search_space = {}
         for name, distribution in study.product_search_space.items():
+            # Skip if the range of the distribution is empty.
             if isinstance(distribution, distributions.UniformDistribution):
                 if distribution.low == distribution.high:
                     continue
             elif isinstance(distribution, distributions.LogUniformDistribution):
+                if distribution.low == distribution.high:
+                    continue
+            elif isinstance(distribution, distributions.IntUniformDistribution):
+                if distribution.low == distribution.high:
+                    continue
+            elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 if distribution.low == distribution.high:
                     continue
 
@@ -122,19 +130,18 @@ class _Optimizer(object):
         dimensions = []  # type: List[Any]
         for name, distribution in sorted(self._search_space.items()):
             if isinstance(distribution, distributions.UniformDistribution):
-                dimension = space.Real(distribution.low, distribution.high, name=name)
+                high = max(distribution.low, np.nextafter(distribution.high, float('-inf')))
+                dimension = space.Real(distribution.low, high)
             elif isinstance(distribution, distributions.LogUniformDistribution):
-                dimension = space.Real(distribution.low,
-                                       distribution.high,
-                                       prior='log-uniform',
-                                       name=name)
+                high = max(distribution.low, np.nextafter(distribution.high, float('-inf')))
+                dimension = space.Real(distribution.low, high, prior='log-uniform')
             elif isinstance(distribution, distributions.IntUniformDistribution):
-                dimension = space.Integer(distribution.low, distribution.high + 1, name=name)
+                dimension = space.Integer(distribution.low, distribution.high)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 count = (distribution.high - distribution.low) // distribution.q
-                dimension = space.Integer(0, count + 1, name=name)
+                dimension = space.Integer(0, count)
             elif isinstance(distribution, distributions.CategoricalDistribution):
-                dimension = space.Categorical(distribution.choices, name=name)
+                dimension = space.Categorical(distribution.choices)
             else:
                 raise NotImplementedError(
                     "The distribution {} is not implemented.".format(distribution))
