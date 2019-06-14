@@ -661,49 +661,50 @@ def test_get_best_intermediate_result_over_steps(storage_init_func, direction_ex
 
 
 @parametrize_storage
-def test_get_median_intermediate_result_over_trials(storage_init_func):
+def test_get_percentile_intermediate_result_over_trials(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
-    def setup_study(intermediate_values):
-        # type: (List[Tuple[float, float, float]]) -> Tuple[int, BaseStorage]
+    def setup_study(trial_num, intermediate_values):
+        # type: (int, List[List[float]]) -> Tuple[int, BaseStorage]
 
         storage = storage_init_func()
         study_id = storage.create_new_study_id()
+        trial_ids = [storage.create_new_trial_id(study_id) for _ in range(trial_num)]
 
-        trial_id_1 = storage.create_new_trial_id(study_id)
-        trial_id_2 = storage.create_new_trial_id(study_id)
-        trial_id_3 = storage.create_new_trial_id(study_id)
-
-        for step, (value1, value2, value3) in enumerate(intermediate_values):
+        for step, values in enumerate(intermediate_values):
             # Study does not have any trials.
             with pytest.raises(ValueError):
-                storage.get_median_intermediate_result_over_trials(study_id, step)
+                storage.get_percentile_intermediate_result_over_trials(study_id, step, 25)
 
-            storage.set_trial_intermediate_value(trial_id_1, step, value1)
-            storage.set_trial_intermediate_value(trial_id_2, step, value2)
-            storage.set_trial_intermediate_value(trial_id_3, step, value3)
+            for i in range(trial_num):
+                trial_id = trial_ids[i]
+                value = values[i]
+                storage.set_trial_intermediate_value(trial_id, step, value)
 
         # Set trial states complete because this method ignores incomplete trials.
-        storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
-        storage.set_trial_state(trial_id_2, TrialState.COMPLETE)
-        storage.set_trial_state(trial_id_3, TrialState.COMPLETE)
+        for trial_id in trial_ids:
+            storage.set_trial_state(trial_id, TrialState.COMPLETE)
 
         return study_id, storage
 
     # Input value has no NaNs but float values (step=0).
-    intermediate_values = [(0.1, 0.2, 0.3)]
-    study_id, storage = setup_study(intermediate_values)
-    assert 0.2 == storage.get_median_intermediate_result_over_trials(study_id, 0)
+    intermediate_values = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]]
+    study_id, storage = setup_study(9, intermediate_values)
+    assert 0.3 == storage.get_percentile_intermediate_result_over_trials(study_id, 0, 25.0)
 
     # Input value has a float value and NaNs (step=1).
-    intermediate_values.append((0.1, float('nan'), float('nan')))
-    study_id, storage = setup_study(intermediate_values)
-    assert 0.1 == storage.get_median_intermediate_result_over_trials(study_id, 1)
+    intermediate_values.append([
+        0.1, 0.2, 0.3, 0.4, 0.5,
+        float('nan'), float('nan'), float('nan'), float('nan')])
+    study_id, storage = setup_study(9, intermediate_values)
+    assert 0.2 == storage.get_percentile_intermediate_result_over_trials(study_id, 1, 25.0)
 
     # Input value has NaNs only (step=2).
-    intermediate_values.append((float('nan'), float('nan'), float('nan')))
-    study_id, storage = setup_study(intermediate_values)
-    assert math.isnan(storage.get_median_intermediate_result_over_trials(study_id, 2))
+    intermediate_values.append([
+        float('nan'), float('nan'), float('nan'), float('nan'), float('nan'),
+        float('nan'), float('nan'), float('nan'), float('nan')])
+    study_id, storage = setup_study(9, intermediate_values)
+    assert math.isnan(storage.get_percentile_intermediate_result_over_trials(study_id, 2, 75))
 
 
 def _create_new_trial_with_example_trial(storage, study_id, distributions, example_trial):

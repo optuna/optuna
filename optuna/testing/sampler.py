@@ -1,7 +1,9 @@
 import optuna
+from optuna import distributions
 
 if optuna.types.TYPE_CHECKING:
     from typing import Dict  # NOQA
+    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
@@ -28,8 +30,20 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
 
-        sampler = optuna.samplers.RandomSampler()
-        return sampler.sample_independent(study, trial, param_name, param_distribution)
+        if isinstance(param_distribution, distributions.UniformDistribution):
+            param_value = param_distribution.low  # type: Union[float, str]
+        elif isinstance(param_distribution, distributions.LogUniformDistribution):
+            param_value = param_distribution.low
+        elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
+            param_value = param_distribution.low
+        elif isinstance(param_distribution, distributions.IntUniformDistribution):
+            param_value = param_distribution.low
+        elif isinstance(param_distribution, distributions.CategoricalDistribution):
+            param_value = param_distribution.choices[0]
+        else:
+            raise NotImplementedError
+
+        return param_distribution.to_internal_repr(param_value)
 
 
 class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):
