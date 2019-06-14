@@ -2,11 +2,15 @@ import numpy
 
 from optuna import distributions
 from optuna.samplers.base import BaseSampler
-from optuna.storages.base import BaseStorage  # NOQA
 from optuna import types
 
 if types.TYPE_CHECKING:
+    from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import InTrialStudy  # NOQA
 
 
 class RandomSampler(BaseSampler):
@@ -29,9 +33,19 @@ class RandomSampler(BaseSampler):
         self.seed = seed
         self.rng = numpy.random.RandomState(seed)
 
-    def sample(self, storage, study_id, param_name, param_distribution):
-        # type: (BaseStorage, int, str, distributions.BaseDistribution) -> float
-        """Please consult the documentation for :func:`BaseSampler.sample`."""
+    def infer_relative_search_space(self, study, trial):
+        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+
+        return {}
+
+    def sample_relative(self, study, trial, search_space):
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+
+        return {}
+
+    def sample_independent(self, study, trial, param_name, param_distribution):
+        # type: (InTrialStudy, FrozenTrial, str, distributions.BaseDistribution) -> float
+        """Please consult the documentation for :func:`BaseSampler.sample_independent`."""
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self.rng.uniform(param_distribution.low, param_distribution.high)

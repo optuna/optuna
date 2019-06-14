@@ -1,22 +1,25 @@
 import numpy as np
 import scipy.special
 
-from optuna import distributions  # NOQA
-from optuna.distributions import BaseDistribution  # NOQA
-from optuna.samplers import base  # NOQA
-from optuna.samplers import random  # NOQA
-from optuna.samplers.tpe.parzen_estimator import ParzenEstimator  # NOQA
-from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters  # NOQA
-from optuna.storages.base import BaseStorage  # NOQA
+from optuna import distributions
+from optuna.samplers import base
+from optuna.samplers import random
+from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
+from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters
 from optuna.structs import StudyDirection
 from optuna import types
 
 if types.TYPE_CHECKING:
     from typing import Callable  # NOQA
+    from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
     from typing import Union  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import InTrialStudy  # NOQA
 
 EPS = 1e-12
 
@@ -67,17 +70,29 @@ class TPESampler(base.BaseSampler):
         self.rng = np.random.RandomState(seed)
         self.random_sampler = random.RandomSampler(seed=seed)
 
-    def sample(self, storage, study_id, param_name, param_distribution):
-        # type: (BaseStorage, int, str, BaseDistribution) -> float
+    def infer_relative_search_space(self, study, trial):
+        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
 
-        observation_pairs = storage.get_trial_param_result_pairs(study_id, param_name)
-        if storage.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+        return {}
+
+    def sample_relative(self, study, trial, search_space):
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+
+        return {}
+
+    def sample_independent(self, study, trial, param_name, param_distribution):
+        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+
+        observation_pairs = study.storage.get_trial_param_result_pairs(
+            study.study_id, param_name)
+        if study.direction == StudyDirection.MAXIMIZE:
             observation_pairs = [(p, -v) for p, v in observation_pairs]
 
         n = len(observation_pairs)
 
         if n < self.n_startup_trials:
-            return self.random_sampler.sample(storage, study_id, param_name, param_distribution)
+            return self.random_sampler.sample_independent(
+                study, trial, param_name, param_distribution)
 
         below_param_values, above_param_values = self._split_observation_pairs(
             list(range(n)), [p[0] for p in observation_pairs], list(range(n)),

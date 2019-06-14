@@ -3,18 +3,20 @@ import math
 import six
 import warnings
 
+import optuna
 from optuna import distributions
-from optuna.distributions import BaseDistribution  # NOQA
 from optuna import logging
 from optuna import types
 
 if types.TYPE_CHECKING:
-    from optuna.study import Study  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import TypeVar  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.study import Study  # NOQA
 
     T = TypeVar('T', float, str)
 
@@ -111,11 +113,18 @@ class Trial(BaseTrial):
             A :class:`~optuna.study.Study` object.
         trial_id:
             A trial ID that is automatically generated.
+        disable_relative_sampling:
+            If this flag is set to :obj:`True`, relative sampling is disabled in this trial.
 
     """
 
-    def __init__(self, study, trial_id):
-        # type: (Study, int) -> None
+    def __init__(
+            self,
+            study,  # type: Study
+            trial_id,  # type: int
+            disable_relative_sampling=False  # type: bool
+    ):
+        # type: (...) -> None
 
         self.study = study
         self._trial_id = trial_id
@@ -123,6 +132,22 @@ class Trial(BaseTrial):
         self.study_id = self.study.study_id
         self.storage = self.study.storage
         self.logger = logging.get_logger(__name__)
+
+        if disable_relative_sampling:
+            self.relative_search_space = {}  # type: Dict[str, BaseDistribution]
+            self.relative_params = {}  # type: Dict[str, float]
+        else:
+            self._init_relative_params()
+
+    def _init_relative_params(self):
+        # type: () -> None
+
+        study = optuna.study.InTrialStudy(self.study)
+        trial = self.storage.get_trial(self._trial_id)
+
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
+        self.relative_params = self.study.sampler.sample_relative(study, trial,
+                                                                  self.relative_search_space)
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -436,8 +461,13 @@ class Trial(BaseTrial):
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
 
-        param_value_in_internal_repr = self.study.sampler.sample(self.storage, self.study_id, name,
-                                                                 distribution)
+        if self._is_relative_param(name, distribution):
+            param_value_in_internal_repr = self.relative_params[name]
+        else:
+            study = optuna.study.InTrialStudy(self.study)
+            trial = self.storage.get_trial(self._trial_id)
+            param_value_in_internal_repr = self.study.sampler.sample_independent(
+                study, trial, name, distribution)
 
         return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
                                                    distribution)
@@ -452,6 +482,22 @@ class Trial(BaseTrial):
 
         param_value = distribution.to_external_repr(param_value_in_internal_repr)
         return param_value
+
+    def _is_relative_param(self, name, distribution):
+        # type: (str, BaseDistribution) -> bool
+
+        if name not in self.relative_params:
+            return False
+
+        if name not in self.relative_search_space:
+            raise ValueError("The parameter '{}' was sampled by `sample_relative` method "
+                             "but it is not contained in the relative search space.".format(name))
+
+        relative_distribution = self.relative_search_space[name]
+        distributions.check_distribution_compatibility(relative_distribution, distribution)
+
+        param_value = self.relative_params[name]
+        return distribution._contains(param_value)
 
     @property
     def number(self):

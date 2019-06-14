@@ -1,11 +1,12 @@
+import abc
 import collections
 import datetime
 import gc
 import math
 import multiprocessing
 import multiprocessing.pool
-from multiprocessing import Queue  # NOQA
 import pandas as pd
+import six
 from six.moves import queue
 import time
 
@@ -18,6 +19,7 @@ from optuna import trial as trial_module
 from optuna import types
 
 if types.TYPE_CHECKING:
+    from multiprocessing import Queue  # NOQA
     from typing import Any  # NOQA
     from typing import Callable
     from typing import Dict  # NOQA
@@ -28,10 +30,77 @@ if types.TYPE_CHECKING:
     from typing import Type  # NOQA
     from typing import Union  # NOQA
 
+    from optuna.distributions import BaseDistribution  # NOQA
+
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
-class Study(object):
+@six.add_metaclass(abc.ABCMeta)
+class BaseStudy(object):
+    @property
+    def best_params(self):
+        # type: () -> Dict[str, Any]
+        """Return parameters of the best trial in the :class:`~optuna.study.BaseStudy`.
+
+        Returns:
+            A dictionary containing parameters of the best trial.
+        """
+
+        return self.best_trial.params
+
+    @property
+    def best_value(self):
+        # type: () -> float
+        """Return the best objective value in the :class:`~optuna.study.BaseStudy`.
+
+        Returns:
+            A float representing the best objective value.
+        """
+
+        best_value = self.best_trial.value
+        if best_value is None:
+            raise ValueError('No trials are completed yet.')
+
+        return best_value
+
+    @property
+    @abc.abstractmethod
+    def best_trial(self):
+        # type: () -> structs.FrozenTrial
+        """Return the best trial in the :class:`~optuna.study.BaseStudy`.
+
+        Returns:
+            A :class:`~optuna.structs.FrozenTrial` object of the best trial.
+        """
+
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def direction(self):
+        # type: () -> structs.StudyDirection
+        """Return the direction of the :class:`~optuna.study.BaseStudy`.
+
+        Returns:
+            A :class:`~optuna.structs.StudyDirection` object.
+        """
+
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def trials(self):
+        # type: () -> List[structs.FrozenTrial]
+        """Return all trials in the :class:`~optuna.study.BaseStudy`.
+
+        Returns:
+            A list of :class:`~optuna.structs.FrozenTrial` objects.
+        """
+
+        raise NotImplementedError
+
+
+class Study(BaseStudy):
     """A study corresponds to an optimization task, i.e., a set of trials.
 
     Note that the direct use of this constructor is not recommended.
@@ -452,6 +521,62 @@ class Study(object):
         self.logger.info('Finished trial#{} resulted in value: {}. '
                          'Current best value is {} with parameters: {}.'.format(
                              trial_number, value, self.best_value, self.best_params))
+
+
+class InTrialStudy(BaseStudy):
+    """An object to access a study instance in a trial.
+
+    Unlike :class:`~optuna.study.Study`,
+    this class cannot allow to call :func:`~optuna.study.InTrialStudy.optimize()`.
+
+    Note that this object is created within Optuna library, so
+    it is not intended that library users directly use this constructor.
+
+    Args:
+        study:
+            A :class:`~optuna.study.Study` object.
+
+    """
+
+    def __init__(self, study):
+        # type: (Study) -> None
+
+        self.study_name = study.study_name
+        self.study_id = study.study_id
+        self.storage = study.storage
+
+    @property
+    def best_trial(self):
+        # type: () -> structs.FrozenTrial
+        """Return the best trial in the :class:`~optuna.study.InTrialStudy`.
+
+        Returns:
+            A :class:`~optuna.structs.FrozenTrial` object of the best trial.
+        """
+
+        return self.storage.get_best_trial(self.study_id)
+
+    @property
+    def direction(self):
+        # type: () -> structs.StudyDirection
+        """Return the direction of the :class:`~optuna.study.InTrialStudy`.
+
+        Returns:
+            A :class:`~optuna.structs.StudyDirection` object.
+        """
+
+        return self.storage.get_study_direction(self.study_id)
+
+    @property
+    def trials(self):
+        # type: () -> List[structs.FrozenTrial]
+        """Return all trials in the :class:`~optuna.study.InTrialStudy`.
+
+        Returns:
+            A list of :class:`~optuna.structs.FrozenTrial` objects.
+        """
+
+        return self.storage.get_all_trials(self.study_id)
 
 
 def create_study(

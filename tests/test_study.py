@@ -8,6 +8,7 @@ import time
 import uuid
 
 import optuna
+from optuna.study import InTrialStudy
 from optuna.testing.storage import StorageSupplier
 from optuna import types
 
@@ -445,6 +446,8 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
                 assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
                 assert ('params_in_internal_repr', 'x') in df.columns
                 assert ('params_in_internal_repr', 'y') in df.columns
+                assert ('distributions', 'x') in df.columns
+                assert ('distributions', 'y') in df.columns
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -502,8 +505,9 @@ def test_create_study(storage_mode, cache_mode):
         else:
             # Test `load_if_exists=False` with existing study.
             with pytest.raises(optuna.structs.DuplicatedStudyError):
-                optuna.create_study(
-                    study_name=study.study_name, storage=storage, load_if_exists=False)
+                optuna.create_study(study_name=study.study_name,
+                                    storage=storage,
+                                    load_if_exists=False)
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -528,3 +532,26 @@ def test_load_study(storage_mode, cache_mode):
         # Test loading an existing study.
         loaded_study = optuna.study.load_study(study_name=study_name, storage=storage)
         assert created_study.study_id == loaded_study.study_id
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_in_trial_study(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+
+        # Run ten trials.
+        study.optimize(lambda t: t.suggest_int('x', 0, 10), n_trials=10)
+
+        # Create an `InTrialStudy` instance.
+        in_trial_study = InTrialStudy(study)
+
+        # Test best trial and trials.
+        assert in_trial_study.best_params == study.best_params
+        assert in_trial_study.best_value == study.best_value
+        assert in_trial_study.best_trial == study.best_trial
+        assert in_trial_study.trials == study.trials
+
+        # Test study direction.
+        assert in_trial_study.direction == study.direction
