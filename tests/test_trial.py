@@ -217,6 +217,8 @@ def test_trial_should_prune():
     study_mock.pruner.prune.return_value = True
 
     trial = Trial(study_mock, trial_id)  # type: ignore
+    study_mock.reset_mock()
+
     trial.should_prune()
 
     study_mock.storage.get_trial.assert_called_once_with(trial_id)
