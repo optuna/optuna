@@ -23,7 +23,7 @@ Then, write an optimization script. Let's assume that ``foo.py`` contains the fo
         return (x - 2) ** 2
 
     if __name__ == '__main__':
-        study = optuna.Study(study_name='distributed-example', storage='sqlite:///example.db')
+        study = optuna.load_study(study_name='distributed-example', storage='sqlite:///example.db')
         study.optimize(objective, n_trials=100)
 
 Finally, run the shared study from multiple processes.

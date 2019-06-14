@@ -77,7 +77,7 @@ class ChainerMNStudy(object):
         .. code::
 
             comm = chainermn.create_communicator('naive')
-            study = optuna.Study(study_name, storage_url)
+            study = optuna.load_study(study_name, storage_url)
             chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
             chainermn_study.optimize(objective, n_trials=25)
 
@@ -259,9 +259,10 @@ class _ChainerMNTrial(BaseTrial):
         if self.comm.rank == 0:
             assert self.delegate is not None
             self.delegate.report(value, step)
+        self.comm.mpi_comm.barrier()
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
 
         def func():
             # type: () -> bool
@@ -277,6 +278,7 @@ class _ChainerMNTrial(BaseTrial):
         if self.comm.rank == 0:
             assert self.delegate is not None
             self.delegate.set_user_attr(key, value)
+        self.comm.mpi_comm.barrier()
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
@@ -284,6 +286,7 @@ class _ChainerMNTrial(BaseTrial):
         if self.comm.rank == 0:
             assert self.delegate is not None
             self.delegate.set_system_attr(key, value)
+        self.comm.mpi_comm.barrier()
 
     @property
     def number(self):

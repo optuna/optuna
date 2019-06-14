@@ -98,7 +98,7 @@ class TensorFlowPruningHook(SessionRunHook):
                 current_score = latest_eval_metrics[self.metric]
                 self.trial.report(current_score, step=summary_step)
                 self.current_summary_step = summary_step
-            if self.trial.should_prune(self.current_summary_step):
+            if self.trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(self.current_summary_step)
                 raise optuna.structs.TrialPruned(message)
 

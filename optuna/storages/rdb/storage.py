@@ -41,7 +41,9 @@ class RDBStorage(BaseStorage):
 
     Args:
         url: URL of the storage.
-        connect_args: Arguments that is passed to :func:`sqlalchemy.engine.create_engine`.
+        engine_kwargs:
+            A dictionary of keyword arguments that is passed to
+            :func:`sqlalchemy.engine.create_engine`.
         enable_cache:
             Flag to control whether to enable storage layer caching.
             If this flag is set to :obj:`True` (the default), the finished trials are
@@ -50,15 +52,15 @@ class RDBStorage(BaseStorage):
 
     """
 
-    def __init__(self, url, connect_args=None, enable_cache=True, skip_compatibility_check=False):
+    def __init__(self, url, engine_kwargs=None, enable_cache=True, skip_compatibility_check=False):
         # type: (str, Optional[Dict[str, Any]], bool, bool) -> None
 
-        connect_args = connect_args or {}
+        engine_kwargs = engine_kwargs or {}
 
         url = self._fill_storage_url_template(url)
 
         try:
-            self.engine = create_engine(url, connect_args=connect_args)
+            self.engine = create_engine(url, **engine_kwargs)
         except ImportError as e:
             raise ImportError('Failed to import DB access module for the specified storage URL. '
                               'Please install appropriate one. (The actual import error is: ' +
@@ -437,7 +439,16 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self.check_trial_is_updatable(trial_id, trial.state)
+        if key == '_number':
+            # `_number` attribute may be set even after a trial is finished.
+            # This happens if the trial was created before v0.9.0,
+            # where a trial didn't have `_number` attribute.
+            # In this case, `check_trial_is_updatable` is skipped to avoid the `RuntimeError`.
+            #
+            # TODO(ohta): Remove this workaround when `number` field is added to `TrialModel`.
+            pass
+        else:
+            self.check_trial_is_updatable(trial_id, trial.state)
 
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:

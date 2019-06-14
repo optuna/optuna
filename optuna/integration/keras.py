@@ -56,7 +56,7 @@ class KerasPruningCallback(Callback):
         if current_score is None:
             return
         self.trial.report(current_score, step=epoch)
-        if self.trial.should_prune(epoch):
+        if self.trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.structs.TrialPruned(message)
 

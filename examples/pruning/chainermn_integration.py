@@ -107,7 +107,7 @@ if __name__ == '__main__':
     study_name = sys.argv[1]
     storage_url = sys.argv[2]
 
-    study = optuna.Study(study_name, storage_url, pruner=optuna.pruners.MedianPruner())
+    study = optuna.load_study(study_name, storage_url, pruner=optuna.pruners.MedianPruner())
     comm = chainermn.create_communicator('naive')
     if comm.rank == 0:
         print('Study name:', study_name)
