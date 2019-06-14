@@ -28,6 +28,7 @@ if types.TYPE_CHECKING:
     from optuna.pruners import BasePruner  # NOQA
     from optuna.samplers import BaseSampler  # NOQA
     from optuna.storages import BaseStorage  # NOQA
+    from optuna.trial import BaseTrial  # NOQA
 
 try:
     import chainermn
@@ -60,16 +61,16 @@ class Func(object):
         self.suggested_values = {}  # type: Dict[int, Dict[str, Any]]
 
     def __call__(self, trial, comm):
-        # type: (Trial, CommunicatorBase) -> float
+        # type: (BaseTrial, CommunicatorBase) -> float
 
         x = trial.suggest_uniform('x', -10, 10)
         y = trial.suggest_loguniform('y', 20, 30)
         z = trial.suggest_categorical('z', (-1.0, 1.0))
 
-        self.suggested_values[trial._trial_id] = {}
-        self.suggested_values[trial._trial_id]['x'] = x
-        self.suggested_values[trial._trial_id]['y'] = y
-        self.suggested_values[trial._trial_id]['z'] = z
+        self.suggested_values[trial.number] = {}
+        self.suggested_values[trial.number]['x'] = x
+        self.suggested_values[trial.number]['y'] = y
+        self.suggested_values[trial.number]['z'] = z
 
         return (x - 2)**2 + (y - 25)**2 + z
 
@@ -176,7 +177,7 @@ class TestChainerMNStudy(object):
 
             # Assert the same parameters have been suggested among all nodes.
             for trial in mn_study.trials:
-                assert trial.params == func.suggested_values[trial.trial_id]
+                assert trial.params == func.suggested_values[trial.number]
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -191,7 +192,7 @@ class TestChainerMNStudy(object):
             mn_study = ChainerMNStudy(study, comm)
 
             def objective(_trial, _comm):
-                # type: (Trial, bool) -> float
+                # type: (BaseTrial, bool) -> float
 
                 raise TrialPruned  # Always be pruned.
 
@@ -217,7 +218,7 @@ class TestChainerMNStudy(object):
             mn_study = ChainerMNStudy(study, comm)
 
             def objective(_trial, _comm):
-                # type: (Trial, bool) -> float
+                # type: (BaseTrial, bool) -> float
 
                 raise ValueError  # Always fails.
 
@@ -513,7 +514,7 @@ class TestChainerMNTrial(object):
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
     @pytest.mark.parametrize('cache_mode', CACHE_MODES)
-    def test_get_attrs_error(storage_mode, cache_mode, comm):
+    def test_call_with_mpi(storage_mode, cache_mode, comm):
         # type: (str, bool, CommunicatorBase) -> None
 
         with MultiNodeStorageSupplier(storage_mode, cache_mode, comm) as storage:
@@ -521,5 +522,10 @@ class TestChainerMNTrial(object):
             trial_id = storage.create_new_trial_id(study.study_id)
             trial = Trial(study, trial_id)
             mn_trial = integration.chainermn._ChainerMNTrial(trial, comm)
-            with pytest.raises(AttributeError):
-                mn_trial._get_attrs('no_such_attribute')
+            with pytest.raises(RuntimeError):
+                def func():
+                    # type: () -> None
+
+                    raise RuntimeError
+
+                mn_trial._call_with_mpi(func)

@@ -97,6 +97,12 @@ class BaseTrial(object):
 
         raise NotImplementedError
 
+    @property
+    def number(self):
+        # type: () -> int
+
+        raise NotImplementedError
+
 
 class Trial(BaseTrial):
     """A trial is a process of evaluating an objective function.
@@ -113,8 +119,6 @@ class Trial(BaseTrial):
             A :class:`~optuna.study.Study` object.
         trial_id:
             A trial ID that is automatically generated.
-        disable_relative_sampling:
-            If this flag is set to :obj:`True`, relative sampling is disabled in this trial.
 
     """
 
@@ -122,7 +126,6 @@ class Trial(BaseTrial):
             self,
             study,  # type: Study
             trial_id,  # type: int
-            disable_relative_sampling=False  # type: bool
     ):
         # type: (...) -> None
 
@@ -133,11 +136,7 @@ class Trial(BaseTrial):
         self.storage = self.study.storage
         self.logger = logging.get_logger(__name__)
 
-        if disable_relative_sampling:
-            self.relative_search_space = {}  # type: Dict[str, BaseDistribution]
-            self.relative_params = {}  # type: Dict[str, float]
-        else:
-            self._init_relative_params()
+        self._init_relative_params()
 
     def _init_relative_params(self):
         # type: () -> None
@@ -604,14 +603,15 @@ class FixedTrial(BaseTrial):
 
     """
 
-    def __init__(self, params):
-        # type: (Dict[str, Any]) -> None
+    def __init__(self, params, number=0):
+        # type: (Dict[str, Any], int) -> None
 
         self._params = params
         self._suggested_params = {}  # type: Dict[str, Any]
         self._distributions = {}  # type: Dict[str, BaseDistribution]
         self._user_attrs = {}  # type: Dict[str, Any]
         self._system_attrs = {}  # type: Dict[str, Any]
+        self._number = number
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -704,6 +704,12 @@ class FixedTrial(BaseTrial):
         # type: () -> Dict[str, Any]
 
         return self._system_attrs
+
+    @property
+    def number(self):
+        # type: () -> int
+
+        return self._number
 
 
 def _adjust_discrete_uniform_high(name, low, high, q):
