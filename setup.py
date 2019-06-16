@@ -100,6 +100,7 @@ setup(
             'storages/rdb/alembic/versions/*.*'
         ]
     },
+    data_files=[('.', ['./README.md'])],
     install_requires=get_install_requires(),
     tests_require=get_extras_require()['testing'],
     extras_require=get_extras_require(),
