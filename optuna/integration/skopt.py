@@ -53,7 +53,7 @@ class SkoptSampler(BaseSampler):
     Args:
         independent_sampler:
             A :class:`~optuna.samplers.BaseSampler` instance that is used for independently
-            sampling parameters that unknown to :class:`~optuna.integration.SkoptSampler`.
+            sampling parameters unknown to :class:`~optuna.integration.SkoptSampler`.
             An "unknown parameter" means a parameter that isn't contained in
             :meth:`~optuna.study.InTrialStudy.product_search_space` of the target study.
 
