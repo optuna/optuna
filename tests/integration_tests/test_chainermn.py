@@ -25,10 +25,10 @@ if types.TYPE_CHECKING:
     from typing import Optional  # NOQA
     from typing import Type  # NOQA
 
+    from optuan.integration.chainermn import ChainerMNTrial  # NOQA
     from optuna.pruners import BasePruner  # NOQA
     from optuna.samplers import BaseSampler  # NOQA
     from optuna.storages import BaseStorage  # NOQA
-    from optuna.trial import BaseTrial  # NOQA
 
 try:
     import chainermn
@@ -61,7 +61,7 @@ class Func(object):
         self.suggested_values = {}  # type: Dict[int, Dict[str, Any]]
 
     def __call__(self, trial, comm):
-        # type: (BaseTrial, CommunicatorBase) -> float
+        # type: (ChainerMNTrial, CommunicatorBase) -> float
 
         x = trial.suggest_uniform('x', -10, 10)
         y = trial.suggest_loguniform('y', 20, 30)
@@ -192,7 +192,7 @@ class TestChainerMNStudy(object):
             mn_study = ChainerMNStudy(study, comm)
 
             def objective(_trial, _comm):
-                # type: (BaseTrial, bool) -> float
+                # type: (ChainerMNTrial, bool) -> float
 
                 raise TrialPruned  # Always be pruned.
 
@@ -218,7 +218,7 @@ class TestChainerMNStudy(object):
             mn_study = ChainerMNStudy(study, comm)
 
             def objective(_trial, _comm):
-                # type: (BaseTrial, bool) -> float
+                # type: (ChainerMNTrial, bool) -> float
 
                 raise ValueError  # Always fails.
 
