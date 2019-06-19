@@ -229,25 +229,6 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def _suggest_with_mpi(self, func, *args):
-        # type: (Callable, Any) -> Any
-
-        # This is a helper function which is only used to implement suggest APIs.
-        # Please do not use other purposes due to the limited capability of type checking.
-        if self.comm.rank == 0:
-            try:
-                result = func(*args)
-                self.comm.mpi_comm.bcast(result)
-                return result
-            except Exception as e:
-                self.comm.mpi_comm.bcast(e)
-                raise
-        else:
-            result = self.comm.mpi_comm.bcast(None)
-            if isinstance(result, Exception):
-                raise result
-            return result
-
     def report(self, value, step=None):
         # type: (float, Optional[int]) -> None
 
