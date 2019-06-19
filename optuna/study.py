@@ -585,8 +585,8 @@ class InTrialStudy(BaseStudy):
 
         "product search space" contains the product of parameter distributions that have been
         suggested in the completed trials of the study so far.
-        If there are two parameters that have the same name but different distributions,
-        neither is included in the resulting search space (i.e., dynamic values aren't supported).
+        If there are two parameters that have the same name but different distributions, neither
+        is included in the resulting search space (i.e., dynamic value space isn't supported).
 
         Returns:
             A dictionary containing the parameter names and parameter's distributions.
