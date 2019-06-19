@@ -98,7 +98,7 @@ class UniformDistribution(
     def empty(self):
         # type: () -> bool
 
-        return self.low >= self.high
+        return self.low > self.high
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -125,7 +125,7 @@ class LogUniformDistribution(
     def empty(self):
         # type: () -> bool
 
-        return self.low >= self.high
+        return self.low > self.high
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -154,7 +154,7 @@ class DiscreteUniformDistribution(
     def empty(self):
         # type: () -> bool
 
-        return self.low >= self.high
+        return self.low > self.high
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -188,7 +188,7 @@ class IntUniformDistribution(
     def empty(self):
         # type: () -> bool
 
-        return self.low >= self.high
+        return self.low > self.high
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
