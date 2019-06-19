@@ -53,6 +53,8 @@ class BaseDistribution(object):
         # type: () -> bool
         """Test whether this distribution represents an empty range.
 
+        If a distribution is empty, samplers given the distribution should raise an error.
+
         Returns:
             :obj:`True` if this distribution represents an empty range,
             otherwise :obj:`False`.
