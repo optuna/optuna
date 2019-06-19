@@ -97,12 +97,6 @@ class BaseTrial(object):
 
         raise NotImplementedError
 
-    @property
-    def number(self):
-        # type: () -> int
-
-        raise NotImplementedError
-
 
 class Trial(BaseTrial):
     """A trial is a process of evaluating an objective function.
@@ -607,15 +601,14 @@ class FixedTrial(BaseTrial):
 
     """
 
-    def __init__(self, params, number=0):
-        # type: (Dict[str, Any], int) -> None
+    def __init__(self, params):
+        # type: (Dict[str, Any]) -> None
 
         self._params = params
         self._suggested_params = {}  # type: Dict[str, Any]
         self._distributions = {}  # type: Dict[str, BaseDistribution]
         self._user_attrs = {}  # type: Dict[str, Any]
         self._system_attrs = {}  # type: Dict[str, Any]
-        self._number = number
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -709,12 +702,6 @@ class FixedTrial(BaseTrial):
         # type: () -> Dict[str, Any]
 
         return self._system_attrs
-
-    @property
-    def number(self):
-        # type: () -> int
-
-        return self._number
 
 
 def _adjust_discrete_uniform_high(name, low, high, q):
