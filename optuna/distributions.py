@@ -51,9 +51,10 @@ class BaseDistribution(object):
     @abc.abstractmethod
     def empty(self):
         # type: () -> bool
-        """Test whether this distribution represents an empty range.
+        """Test whether the range of this distribution is empty.
 
-        If a distribution is empty, samplers given the distribution should raise an error.
+        If this distribution is empty, samplers cannot sample any value from the distribution and
+        will raise an error when sampling.
 
         Returns:
             :obj:`True` if this distribution represents an empty range,
@@ -65,14 +66,13 @@ class BaseDistribution(object):
     @abc.abstractmethod
     def single(self):
         # type: () -> bool
-        """Test whether this distribution represents a singleton.
+        """Test whether the range of this distribution contains just a single element.
 
-        A singleton means a set that has only one element.
-        If a distribution represents a singleton, samplers given the distribution
-        always suggest the only value.
+        If the range contains just a single element,
+        samplers will always sample the value associated with the element from the distribution.
 
         Returns:
-            :obj:`True` if this distribution represents a singleton,
+            :obj:`True` if the range of this distribution contains just a single element,
             otherwise :obj:`False`.
         """
 
