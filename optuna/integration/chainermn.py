@@ -168,15 +168,10 @@ class ChainerMNStudy(object):
 
 
 class ChainerMNTrial(BaseTrial):
-    def __init__(self, delegate, comm):
+    def __init__(self, trial, comm):
         # type: (Optional[Trial], CommunicatorBase) -> None
 
-        if comm.rank == 0:
-            assert delegate is not None
-        else:
-            assert delegate is None
-
-        self.delegate = delegate
+        self.delegate = trial
         self.comm = comm
 
     def suggest_uniform(self, name, low, high):
