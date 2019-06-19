@@ -50,7 +50,7 @@ class _ChainerMNObjectiveFunc(object):
     """
 
     def __init__(self, func, comm):
-        # type: (Callable[[BaseTrial, CommunicatorBase], float], CommunicatorBase) -> None
+        # type: (Callable[[ChainerMNTrial, CommunicatorBase], float], CommunicatorBase) -> None
 
         self.comm = comm
         self.objective = func
@@ -59,7 +59,7 @@ class _ChainerMNObjectiveFunc(object):
         # type: (Trial) -> float
 
         self.comm.mpi_comm.bcast((True, trial._trial_id))
-        return self.objective(_ChainerMNTrial(trial, self.comm), self.comm)
+        return self.objective(ChainerMNTrial(trial, self.comm), self.comm)
 
 
 class ChainerMNStudy(object):
@@ -116,7 +116,7 @@ class ChainerMNStudy(object):
 
     def optimize(
             self,
-            func,  # type: Callable[[BaseTrial, CommunicatorBase], float]
+            func,  # type: Callable[[ChainerMNTrial, CommunicatorBase], float]
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
@@ -138,7 +138,7 @@ class ChainerMNStudy(object):
                 if not has_next_trial:
                     break
                 try:
-                    func(_ChainerMNTrial(None, self.comm), self.comm)
+                    func(ChainerMNTrial(None, self.comm), self.comm)
 
                     # We assume that if a node raises an exception,
                     # all other nodes will do the same.
@@ -167,7 +167,7 @@ class ChainerMNStudy(object):
         setattr(self.delegate, attr_name, value)
 
 
-class _ChainerMNTrial(BaseTrial):
+class ChainerMNTrial(BaseTrial):
     def __init__(self, delegate, comm):
         # type: (Optional[Trial], CommunicatorBase) -> None
 
@@ -305,8 +305,8 @@ class _ChainerMNTrial(BaseTrial):
         # type: () -> int
 
         warnings.warn(
-            'The use of `_ChainerMNTrial.trial_id` is deprecated. '
-            'Please use `_ChainerMNTrial.number` instead.', DeprecationWarning)
+            'The use of `ChainerMNTrial.trial_id` is deprecated. '
+            'Please use `ChainerMNTrial.number` instead.', DeprecationWarning)
         return self._trial_id
 
     @property
