@@ -61,6 +61,22 @@ class BaseDistribution(object):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def single(self):
+        # type: () -> bool
+        """Test whether this distribution represents a singleton.
+
+        A singleton means a set that has only one element.
+        If a distribution represents a singleton, samplers given the distribution
+        always suggest the only value.
+
+        Returns:
+            :obj:`True` if this distribution represents a singleton,
+            otherwise :obj:`False`.
+        """
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
         """Test if a parameter value is contained in the range of this distribution.
@@ -100,6 +116,11 @@ class UniformDistribution(
 
         return self.low > self.high
 
+    def single(self):
+        # type: () -> bool
+
+        return self.low == self.high
+
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
@@ -126,6 +147,11 @@ class LogUniformDistribution(
         # type: () -> bool
 
         return self.low > self.high
+
+    def single(self):
+        # type: () -> bool
+
+        return self.low == self.high
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -155,6 +181,11 @@ class DiscreteUniformDistribution(
         # type: () -> bool
 
         return self.low > self.high
+
+    def single(self):
+        # type: () -> bool
+
+        return self.low == self.high
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -190,6 +221,11 @@ class IntUniformDistribution(
 
         return self.low > self.high
 
+    def single(self):
+        # type: () -> bool
+
+        return self.low == self.high
+
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
@@ -221,6 +257,11 @@ class CategoricalDistribution(
         # type: () -> bool
 
         return len(self.choices) == 0
+
+    def single(self):
+        # type: () -> bool
+
+        return len(self.choices) == 1
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
