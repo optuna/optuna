@@ -578,43 +578,6 @@ class InTrialStudy(BaseStudy):
 
         return self.storage.get_all_trials(self.study_id)
 
-    @property
-    def product_search_space(self):
-        # type: () -> Dict[str, BaseDistribution]
-        """Return the product search space of the :class:`~optuna.study.InTrialStudy`.
-
-
-        "product search space" contains the product set of parameter distributions that have been
-        suggested in the completed trials of the study so far.
-        If there are two parameters that have the same name but different distributions,
-        neither is included in the resulting search space
-        (i.e., the parameters with dynamic value ranges are excluded).
-
-        Returns:
-            A dictionary containing the parameter names and parameter's distributions.
-        """
-
-        search_space = None
-        for trial in self.trials:
-            if trial.state != structs.TrialState.COMPLETE:
-                continue
-
-            if search_space is None:
-                search_space = trial.distributions
-                continue
-
-            delete_list = []
-            for param_name, param_distribution in search_space.items():
-                if param_name not in trial.distributions:
-                    delete_list.append(param_name)
-                elif trial.distributions[param_name] != param_distribution:
-                    delete_list.append(param_name)
-
-            for param_name in delete_list:
-                del search_space[param_name]
-
-        return search_space or {}
-
 
 def create_study(
         storage=None,  # type: Union[None, str, storages.BaseStorage]

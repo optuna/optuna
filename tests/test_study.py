@@ -8,8 +8,6 @@ import time
 import uuid
 
 import optuna
-from optuna import distributions
-from optuna import structs
 from optuna.study import InTrialStudy
 from optuna.testing.storage import StorageSupplier
 from optuna import types
@@ -557,44 +555,3 @@ def test_in_trial_study(storage_mode):
 
         # Test study direction.
         assert in_trial_study.direction == study.direction
-
-
-def test_product_search_space():
-    # type: () -> None
-
-    study = optuna.create_study()
-    in_trial_study = InTrialStudy(study)
-
-    # No trial.
-    assert in_trial_study.product_search_space == {}
-
-    # First trial.
-    study.optimize(lambda t: t.suggest_int('x', 0, 10) + t.suggest_uniform('y', -3, 3), n_trials=1)
-    assert in_trial_study.product_search_space == {
-        'x': distributions.IntUniformDistribution(low=0, high=10),
-        'y': distributions.UniformDistribution(low=-3, high=3)
-    }
-
-    # Second trial (only 'y' parameter is suggested in this trial).
-    study.optimize(lambda t: t.suggest_uniform('y', -3, 3), n_trials=1)
-    assert in_trial_study.product_search_space == {
-        'y': distributions.UniformDistribution(low=-3, high=3)
-    }
-
-    # Failed or pruned trials are not considered in the calculation of a product search space.
-    def objective(trial, exception):
-        # type: (optuna.trial.Trial, Exception) -> float
-
-        trial.suggest_uniform('z', 0, 1)
-        raise exception
-
-    study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1)
-    study.optimize(lambda t: objective(t, structs.TrialPruned()), n_trials=1)
-    assert in_trial_study.product_search_space == {
-        'y': distributions.UniformDistribution(low=-3, high=3)
-    }
-
-    # If two trials have the same name but different distributions,
-    # those are regarded as different trials.
-    study.optimize(lambda t: t.suggest_uniform('y', -1, 1), n_trials=1)
-    assert in_trial_study.product_search_space == {}
