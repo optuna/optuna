@@ -53,8 +53,8 @@ class BaseDistribution(object):
         # type: () -> bool
         """Test whether the range of this distribution is empty.
 
-        If this distribution is empty, samplers cannot sample any value from the distribution and
-        will raise an error when sampling.
+        If this method returns :obj:`True`, it means that samplers cannot sample any value
+        from the distribution and will raise an error when sampling.
 
         Returns:
             :obj:`True` if this distribution represents an empty range,
@@ -66,13 +66,13 @@ class BaseDistribution(object):
     @abc.abstractmethod
     def single(self):
         # type: () -> bool
-        """Test whether the range of this distribution contains just a single element.
+        """Test whether the range of this distribution contains just a single value.
 
-        If the range contains just a single element,
-        samplers will always sample the value associated with the element from the distribution.
+        If this method returns :obj:`True`, it means that samplers will always sample
+        the same value from the distribution.
 
         Returns:
-            :obj:`True` if the range of this distribution contains just a single element,
+            :obj:`True` if the range of this distribution contains just a single value,
             otherwise :obj:`False`.
         """
 
