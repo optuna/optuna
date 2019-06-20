@@ -22,7 +22,6 @@ if types.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.storages import BaseStorage  # NOQA
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
 
