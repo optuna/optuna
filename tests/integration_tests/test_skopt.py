@@ -94,6 +94,17 @@ def test_nan_objective_value():
     assert int(study.best_value) == 1
 
 
+def test_parallel_optimization():
+    # type: () -> None
+
+    sampler = optuna.integration.SkoptSampler()
+    study = optuna.create_study(sampler=sampler)
+
+    study.optimize(_objective, n_trials=40, n_jobs=4, catch=())
+    for trial in study.trials:
+        assert trial.state == optuna.structs.TrialState.COMPLETE
+
+
 def test_sample_independent():
     # type: () -> None
 
