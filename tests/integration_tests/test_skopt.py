@@ -79,17 +79,17 @@ def test_nan_objective_value():
 
     # Non NaN objective values.
     for i in range(10, 1, -1):
-        objective = lambda trial: trial.suggest_uniform('x', 0.1, 0.2) + i
+        def objective(trial): return trial.suggest_uniform('x', 0.1, 0.2) + i
         study.optimize(objective, n_trials=1, catch=())
     assert int(study.best_value) == 2
 
     # NaN objective values.
-    objective = lambda trial: trial.suggest_uniform('x', 0.1, 0.2) + float('nan')
+    def objective(trial): return trial.suggest_uniform('x', 0.1, 0.2) + float('nan')
     study.optimize(objective, n_trials=1, catch=())
     assert int(study.best_value) == 2
 
     # Non NaN objective value.
-    objective = lambda trial: trial.suggest_uniform('x', 0.1, 0.2) + 1
+    def objective(trial): return trial.suggest_uniform('x', 0.1, 0.2) + 1
     study.optimize(objective, n_trials=1, catch=())
     assert int(study.best_value) == 1
 
