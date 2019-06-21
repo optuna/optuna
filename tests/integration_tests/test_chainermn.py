@@ -514,6 +514,9 @@ def _create_new_chainermn_trial(study, comm):
     if comm.rank == 0:
         trial_id = study.storage.create_new_trial_id(study.study_id)
         trial = Trial(study, trial_id)
-        return integration.chainermn.ChainerMNTrial(trial, comm)
+        mn_trial = integration.chainermn.ChainerMNTrial(trial, comm)
     else:
-        return integration.chainermn.ChainerMNTrial(None, comm)
+        mn_trial = integration.chainermn.ChainerMNTrial(None, comm)
+
+    comm.mpi_comm.barrier()
+    return mn_trial
