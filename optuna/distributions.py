@@ -54,7 +54,7 @@ class BaseDistribution(object):
         """Test whether the range of this distribution is empty.
 
         When this method returns :obj:`True`, :mod:`~optuna.samplers` cannot sample any value
-        from the distribution and will raise an error when sampling.
+        from the distribution and raise an error when sampling.
 
         Returns:
             :obj:`True` if this distribution represents an empty range,
@@ -68,7 +68,7 @@ class BaseDistribution(object):
         # type: () -> bool
         """Test whether the range of this distribution contains just a single value.
 
-        When this method returns :obj:`True`, :mod:`~optuna.samplers` will always sample
+        When this method returns :obj:`True`, :mod:`~optuna.samplers` always sample
         the same value from the distribution.
 
         Returns:
