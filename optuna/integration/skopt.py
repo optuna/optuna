@@ -23,9 +23,7 @@ if types.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
-    from typing import Set  # NOQA
     from typing import Tuple  # NOQA
-    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
