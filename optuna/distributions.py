@@ -49,21 +49,6 @@ class BaseDistribution(object):
         return param_value_in_external_repr
 
     @abc.abstractmethod
-    def empty(self):
-        # type: () -> bool
-        """Test whether the range of this distribution is empty.
-
-        When this method returns :obj:`True`, :mod:`~optuna.samplers` cannot sample any value
-        from the distribution and raise an error when sampling.
-
-        Returns:
-            :obj:`True` if this distribution represents an empty range,
-            otherwise :obj:`False`.
-        """
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def single(self):
         # type: () -> bool
         """Test whether the range of this distribution contains just a single value.
@@ -113,11 +98,6 @@ class UniformDistribution(
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
-    def empty(self):
-        # type: () -> bool
-
-        return self.low > self.high
-
     def single(self):
         # type: () -> bool
 
@@ -144,11 +124,6 @@ class LogUniformDistribution(
         high:
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
-
-    def empty(self):
-        # type: () -> bool
-
-        return self.low > self.high
 
     def single(self):
         # type: () -> bool
@@ -178,11 +153,6 @@ class DiscreteUniformDistribution(
         q:
             A discretization step.
     """
-
-    def empty(self):
-        # type: () -> bool
-
-        return self.low > self.high
 
     def single(self):
         # type: () -> bool
@@ -218,11 +188,6 @@ class IntUniformDistribution(
 
         return float(param_value_in_external_repr)
 
-    def empty(self):
-        # type: () -> bool
-
-        return self.low > self.high
-
     def single(self):
         # type: () -> bool
 
@@ -254,11 +219,6 @@ class CategoricalDistribution(
         # type: (Union[float, str]) -> float
 
         return self.choices.index(param_value_in_external_repr)
-
-    def empty(self):
-        # type: () -> bool
-
-        return len(self.choices) == 0
 
     def single(self):
         # type: () -> bool

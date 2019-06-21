@@ -143,34 +143,6 @@ def test_empty_range_contains():
     assert not iu._contains(2)
 
 
-def test_empty():
-    # type: () -> None
-
-    empty_distributions = [
-        distributions.UniformDistribution(low=0.0, high=-100.0),
-        distributions.LogUniformDistribution(low=7.3, high=7.2),
-        distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3),
-        distributions.IntUniformDistribution(low=123, high=100),
-        distributions.CategoricalDistribution(choices=())
-    ]  # type: List[distributions.BaseDistribution]
-    for distribution in empty_distributions:
-        assert distribution.empty()
-
-    nonempty_distributions = [
-        distributions.UniformDistribution(low=1.0, high=1.0),
-        distributions.UniformDistribution(low=1.0, high=1.001),
-        distributions.LogUniformDistribution(low=7.3, high=7.3),
-        distributions.LogUniformDistribution(low=7.3, high=10),
-        distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
-        distributions.DiscreteUniformDistribution(low=-30, high=-20, q=2),
-        distributions.IntUniformDistribution(low=-123, high=-123),
-        distributions.IntUniformDistribution(low=-123, high=0),
-        distributions.CategoricalDistribution(choices=('foo', ))
-    ]  # type: List[distributions.BaseDistribution]
-    for distribution in nonempty_distributions:
-        assert not distribution.empty()
-
-
 def test_single():
     # type: () -> None
 
