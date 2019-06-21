@@ -32,13 +32,7 @@ def get_install_requires():
 
     install_requires = [
         'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six',
-        'cliff', 'colorlog', 'pandas', 'alembic',
-
-        # TODO(ohta):
-        # Remove version constraints after `chainer` has supported the latest versions of
-        # `typing` and `typing-extensions` on Python2.7.
-        # (see also: https://github.com/pfnet/optuna/pull/434)
-        'typing<3.7.0', 'typing-extensions<3.7.0'
+        'cliff', 'colorlog', 'pandas', 'alembic', 'typing'
     ]
     if sys.version_info[0] == 2:
         install_requires.extend(['enum34'])
