@@ -10,3 +10,5 @@ Samplers
 .. autoclass:: TPESampler
     :members:
     :exclude-members: infer_relative_search_space, sample_relative, sample_independent
+
+.. autofunction:: product_search_space
