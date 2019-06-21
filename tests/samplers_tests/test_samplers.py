@@ -237,7 +237,7 @@ def test_product_search_space():
         'y': UniformDistribution(low=-3, high=3)
     }
 
-    # If two trials have the same name but different distributions,
+    # If two parameters have the same name but different distributions,
     # those are regarded as different trials.
     study.optimize(lambda t: t.suggest_uniform('y', -1, 1), n_trials=1)
     assert optuna.samplers.product_search_space(study) == {}
