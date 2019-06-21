@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import numpy as np
 
 from optuna import distributions
+from optuna.samplers
 from optuna.samplers import BaseSampler
 from optuna.samplers import TPESampler
 from optuna.structs import StudyDirection
@@ -82,7 +83,7 @@ class SkoptSampler(BaseSampler):
         # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
 
         search_space = {}
-        for name, distribution in study.product_search_space.items():
+        for name, distribution in samplers.product_search_space(study):
             if distribution.single():
                 if not isinstance(distribution, distributions.CategoricalDistribution):
                     # `skopt` cannot handle non-categorical distributions that contain just
