@@ -49,6 +49,21 @@ class BaseDistribution(object):
         return param_value_in_external_repr
 
     @abc.abstractmethod
+    def single(self):
+        # type: () -> bool
+        """Test whether the range of this distribution contains just a single value.
+
+        When this method returns :obj:`True`, :mod:`~optuna.samplers` always sample
+        the same value from the distribution.
+
+        Returns:
+            :obj:`True` if the range of this distribution contains just a single value,
+            otherwise :obj:`False`.
+        """
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
         """Test if a parameter value is contained in the range of this distribution.
@@ -83,6 +98,11 @@ class UniformDistribution(
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
+    def single(self):
+        # type: () -> bool
+
+        return self.low == self.high
+
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
@@ -104,6 +124,11 @@ class LogUniformDistribution(
         high:
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
+
+    def single(self):
+        # type: () -> bool
+
+        return self.low == self.high
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -128,6 +153,11 @@ class DiscreteUniformDistribution(
         q:
             A discretization step.
     """
+
+    def single(self):
+        # type: () -> bool
+
+        return self.low == self.high
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -158,6 +188,11 @@ class IntUniformDistribution(
 
         return float(param_value_in_external_repr)
 
+    def single(self):
+        # type: () -> bool
+
+        return self.low == self.high
+
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
@@ -184,6 +219,11 @@ class CategoricalDistribution(
         # type: (Union[float, str]) -> float
 
         return self.choices.index(param_value_in_external_repr)
+
+    def single(self):
+        # type: () -> bool
+
+        return len(self.choices) == 1
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
