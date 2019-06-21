@@ -119,7 +119,7 @@ class _Optimizer(object):
 
         self._search_space = search_space
 
-        dimensions = []  # type: List[Any]
+        dimensions = []
         for name, distribution in sorted(self._search_space.items()):
             if isinstance(distribution, distributions.UniformDistribution):
                 high = max(distribution.low, np.nextafter(distribution.high, float('-inf')))
