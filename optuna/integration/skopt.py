@@ -62,9 +62,8 @@ class SkoptSampler(BaseSampler):
             `skopt.Optimizer <https://scikit-optimize.github.io/#skopt.Optimizer>`_
             class.
 
-            Note that the ``dimensions`` argument is automatically added by
-            :class:`~optuna.integration.SkoptSampler`, so you don't have to specify it
-            (it will be ignored even if specified).
+            Note that ``dimensions`` argument in ``skopt_kwargs`` will be ignored
+            because it is added by :class:`~optuna.integration.SkoptSampler` automatically.
 
     """
 
