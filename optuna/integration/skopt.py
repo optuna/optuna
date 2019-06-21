@@ -86,18 +86,12 @@ class SkoptSampler(BaseSampler):
 
         search_space = {}
         for name, distribution in study.product_search_space.items():
-            # Skip if the range of the distribution is empty.
-            if isinstance(distribution, distributions.UniformDistribution):
-                if distribution.low == distribution.high:
-                    continue
-            elif isinstance(distribution, distributions.LogUniformDistribution):
-                if distribution.low == distribution.high:
-                    continue
-            elif isinstance(distribution, distributions.IntUniformDistribution):
-                if distribution.low == distribution.high:
-                    continue
-            elif isinstance(distribution, distributions.DiscreteUniformDistribution):
-                if distribution.low == distribution.high:
+            if distribution.single():
+                if not isinstance(distribution, distributions.CategoricalDistribution):
+                    # `skopt` cannot handle non-categorical distributions that contain just
+                    # a single value, so we skip this distribution.
+                    #
+                    # Note that `Trial` takes care of this distribution when suggestion.
                     continue
 
             search_space[name] = distribution
