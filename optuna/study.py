@@ -524,10 +524,11 @@ class Study(BaseStudy):
 
 
 class InTrialStudy(BaseStudy):
-    """An object to access a study instance in a trial.
+    """An object to access a study instance from inside of a trial instance safely.
 
-    Unlike :class:`~optuna.study.Study`,
-    this class cannot allow to call :func:`~optuna.study.InTrialStudy.optimize()`.
+    To prevent unexpected recursive calls of :func:`~optuna.study.Study.optimize()`, this class
+    does not allow to call :func:`~optuna.study.InTrialStudy.optimize()` unlike
+    :class:`~optuna.study.Study`.
 
     Note that this object is created within Optuna library, so
     it is not intended that library users directly use this constructor.
