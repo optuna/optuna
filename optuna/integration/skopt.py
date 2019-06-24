@@ -193,8 +193,8 @@ class _Optimizer(object):
     def _is_compatible(self, trial):
         # type: (FrozenTrial) -> bool
 
-        # Thanks to `product_search_space()` function, in serial execution,
-        # the parameters of complete trials always are compatible with the search space.
+        # Thanks to `product_search_space()` function, in sequential optimization,
+        # the parameters of complete trials are always compatible with the search space.
         #
         # However, in distributed optimization, incompatible trials may complete on a worker
         # just after a product search space is calculated on another worker.
