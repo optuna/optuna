@@ -131,8 +131,8 @@ class SkoptSampler(BaseSampler):
 
 
 class _Optimizer(object):
-    def __init__(self, search_space, skopt_kwargs=None):
-        # type: (Dict[str, BaseDistribution], Optional[Dict[str, Any]]) -> None
+    def __init__(self, search_space, skopt_kwargs):
+        # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
 
         self._search_space = search_space
 
@@ -203,6 +203,8 @@ class _Optimizer(object):
             if name not in trial.params:
                 return False
 
+            distributions.check_distribution_compatibility(distribution,
+                                                           trial.distributions[name])
             param_value = trial.params[name]
             param_internal_value = distribution.to_internal_repr(param_value)
             if not distribution._contains(param_internal_value):

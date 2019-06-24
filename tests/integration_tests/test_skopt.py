@@ -1,11 +1,18 @@
-import _pytest.logging  # NOQA
 import logging
 from mock import call
 from mock import patch
+import pytest
 from skopt.space import space
 
 import optuna
+from optuna import distributions
+from optuna.structs import FrozenTrial
 from optuna.testing.sampler import FirstTrialOnlyRandomSampler
+
+if optuna.types.TYPE_CHECKING:
+    import _pytest.logging  # NOQA
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
 
 
 def test_conversion_from_distribution_to_dimenstion():
@@ -197,6 +204,55 @@ def test_warn_independent_sampling(caplog):
     assert message not in caplog.text
 
 
+def test_is_compatible():
+    # type: () -> None
+
+    sampler = optuna.integration.SkoptSampler()
+    study = optuna.create_study(sampler=sampler)
+
+    study.optimize(lambda t: t.suggest_uniform('p0', 0, 10), n_trials=1)
+    search_space = optuna.samplers.product_search_space(study)
+    assert search_space == {'p0': distributions.UniformDistribution(low=0, high=10)}
+
+    optimizer = optuna.integration.skopt._Optimizer(search_space, {})
+
+    # Compatible.
+    trial = _create_frozen_trial({'p0': 5},
+                                 {'p0': distributions.UniformDistribution(low=0, high=10)})
+    assert optimizer._is_compatible(trial)
+
+    # Compatible.
+    trial = _create_frozen_trial({'p0': 5},
+                                 {'p0': distributions.UniformDistribution(low=0, high=100)})
+    assert optimizer._is_compatible(trial)
+
+    # Compatible.
+    trial = _create_frozen_trial({
+        'p0': 5,
+        'p1': 7
+    }, {
+        'p0': distributions.UniformDistribution(low=0, high=10),
+        'p1': distributions.UniformDistribution(low=0, high=10)
+    })
+    assert optimizer._is_compatible(trial)
+
+    # Incompatible ('p0' doesn't exist).
+    trial = _create_frozen_trial({'p1': 5},
+                                 {'p1': distributions.UniformDistribution(low=0, high=10)})
+    assert not optimizer._is_compatible(trial)
+
+    # Incompatible (the value of 'p0' is out of range).
+    trial = _create_frozen_trial({'p0': 20},
+                                 {'p0': distributions.UniformDistribution(low=0, high=100)})
+    assert not optimizer._is_compatible(trial)
+
+    # Error (different distribution class).
+    trial = _create_frozen_trial({'p0': 5},
+                                 {'p0': distributions.IntUniformDistribution(low=0, high=10)})
+    with pytest.raises(ValueError):
+        optimizer._is_compatible(trial)
+
+
 def _objective(trial):
     # type: (optuna.trial.Trial) -> float
 
@@ -212,3 +268,27 @@ def _objective(trial):
     p9 = trial.suggest_categorical('p9', ['9', '3', '0', '8'])
 
     return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + int(p9)
+
+
+def _create_frozen_trial(params, param_distributions):
+    # type: (Dict[str, Any], Dict[str, distributions.BaseDistribution]) -> FrozenTrial
+
+    params_in_internal_repr = {}
+    for param_name, param_value in params.items():
+        params_in_internal_repr[param_name] = param_distributions[param_name].to_internal_repr(
+            param_value)
+
+    return FrozenTrial(
+        number=0,
+        value=1.,
+        state=optuna.structs.TrialState.COMPLETE,
+        user_attrs={},
+        system_attrs={},
+        params=params,
+        params_in_internal_repr=params_in_internal_repr,
+        distributions=param_distributions,
+        intermediate_values={},
+        datetime_start=None,
+        datetime_complete=None,
+        trial_id=0,
+    )
