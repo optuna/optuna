@@ -23,6 +23,8 @@ import tensorflow.contrib.eager as tfe
 from tensorflow.keras.datasets import mnist
 from tensorflow.python.client import device_lib
 
+N_TRAIN_EXAMPLES = 3000
+N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 10
@@ -30,18 +32,8 @@ LOG_INTERVAL = 50
 tf.enable_eager_execution()
 
 
-def get_device():
-    # Get GPU device if available
-    local_device_protos = device_lib.list_local_devices()
-    for local_device in local_device_protos:
-        if local_device.device_type == 'GPU':
-            return local_device.name
-    # Otherwise use the first available device
-    return local_device_protos[0].name
-
-
 def model_fn(trial):
-    # Model
+    # Sample model parameters and generate it.
     n_layers = trial.suggest_int('n_layers', 1, 3)
     weight_decay = trial.suggest_uniform('weight_decay', 1e-10, 1e-3)
     model = tf.keras.Sequential()
@@ -57,19 +49,19 @@ def model_fn(trial):
 
 
 def optimizer_fn(trial):
-    # Optimizer
+    # Sample optimizer parameters and generate it.
     kwargs = {}
     optimizer_options = ['RMSPropOptimizer', 'AdamOptimizer', 'MomentumOptimizer']
     optimizer_selected = trial.suggest_categorical('optimizer', optimizer_options)
     if optimizer_selected == 'RMSPropOptimizer':
-        kwargs['learning_rate'] = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
-        kwargs['decay'] = trial.suggest_uniform('decay', 0.85, 0.99)
-        kwargs['momentum'] = trial.suggest_uniform('momentum', 1e-5, 1e-1)
+        kwargs['learning_rate'] = trial.suggest_uniform('rmsprop_learning_rate', 1e-5, 1e-1)
+        kwargs['decay'] = trial.suggest_uniform('rmsprop_decay', 0.85, 0.99)
+        kwargs['momentum'] = trial.suggest_uniform('rmsprop_momentum', 1e-5, 1e-1)
     elif optimizer_selected == 'AdamOptimizer':
-        kwargs['learning_rate'] = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
+        kwargs['learning_rate'] = trial.suggest_uniform('adam_learning_rate', 1e-5, 1e-1)
     elif optimizer_selected == 'MomentumOptimizer':
-        kwargs['learning_rate'] = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
-        kwargs['momentum'] = trial.suggest_uniform('momentum', 1e-5, 1e-1)
+        kwargs['learning_rate'] = trial.suggest_uniform('momentum_opt_learning_rate', 1e-5, 1e-1)
+        kwargs['momentum'] = trial.suggest_uniform('momentum_opt_momentum', 1e-5, 1e-1)
 
     optimizer = getattr(tf.train, optimizer_selected)(**kwargs)
     return optimizer
@@ -92,15 +84,13 @@ def learn(model, optimizer, dataset, mode='eval'):
             else:
                 grads = tape.gradient(loss_value, model.variables)
                 optimizer.apply_gradients(zip(grads, model.variables))
-                if batch % LOG_INTERVAL == 0:
-                    print('Step #%d\tLoss: %.6f' % (batch, loss_value))
 
     if mode == 'eval':
         return avg_loss, accuracy
 
 
 def get_mnist():
-    # Load the data, split between train and test sets
+    # Load the data, split between train and test sets.
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     x_train = x_train.astype('float32')/255
     x_test = x_test.astype('float32')/255
@@ -110,34 +100,31 @@ def get_mnist():
 
     # Create the dataset and its associated one-shot iterator.
     train_ds = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-    train_ds = train_ds.shuffle(60000).batch(BATCHSIZE)
+    train_ds = train_ds.shuffle(60000).batch(BATCHSIZE).take(N_TRAIN_EXAMPLES)
 
     # Create the dataset and its associated one-shot iterator.
     test_ds = tf.data.Dataset.from_tensor_slices((x_test, y_test))
-    test_ds = test_ds.shuffle(10000).batch(BATCHSIZE)
-
+    test_ds = test_ds.shuffle(10000).batch(BATCHSIZE).take(N_TEST_EXAMPLES)
     return train_ds, test_ds
 
 
 def objective(trial):
-    # Get MNIST data
+    # Get MNIST data.
     train_ds, test_ds = get_mnist()
 
-    # Build model and optimizer
+    # Build model and optimizer.
     model = model_fn(trial)
     optimizer = optimizer_fn(trial)
 
-    # Training and Validatin cycle
-    with tf.device(get_device()):
+    # Training and Validatin cycle.
+    with tf.device("/cpu:0"):
         for _ in range(EPOCHS):
-            # Train the network
+            # Train the network.
             learn(model, optimizer, train_ds, 'train')
-            # Perform the validation
+            # Perform the validation.
             avg_loss, accuracy = learn(model, optimizer, test_ds, 'eval')
-            print('Test set: Average loss: %.4f, Accuracy: %4f%%\n' %
-                  (avg_loss.result(), 100 * accuracy.result()))
 
-    # Return last validation accuracy
+    # Return last validation accuracy.
     return accuracy.result()
 
 
