@@ -6,6 +6,7 @@ from optuna import distributions
 from optuna.samplers
 from optuna.samplers import BaseSampler
 from optuna.samplers import TPESampler
+from optuna import structs
 from optuna.structs import StudyDirection
 from optuna import types
 
@@ -148,10 +149,10 @@ class _Optimizer(object):
         xs = []
         ys = []
         for trial in study.trials:
-            if not trial.state.is_finished():
+            if trial.state != structs.TrialState.COMPLETE:
                 continue
 
-            result = self._trial_to_skopt_observation(study, trial)
+            result = self._complete_trial_to_skopt_observation(study, trial)
             if result is not None:
                 x, y = result
                 xs.append(x)
@@ -172,7 +173,7 @@ class _Optimizer(object):
 
         return params
 
-    def _trial_to_skopt_observation(self, study, trial):
+    def _complete_trial_to_skopt_observation(self, study, trial):
         # type: (InTrialStudy, FrozenTrial) -> Optional[Tuple[List[Any], float]]
 
         param_values = []
@@ -191,9 +192,6 @@ class _Optimizer(object):
             param_values.append(param_value)
 
         value = trial.value
-        if value is None:
-            return None
-
         if study.direction == StudyDirection.MAXIMIZE:
             value = -value
 
