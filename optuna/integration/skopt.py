@@ -2,10 +2,10 @@ from __future__ import absolute_import
 
 import numpy as np
 
+import optuna
 from optuna import distributions
 from optuna import samplers
 from optuna.samplers import BaseSampler
-from optuna.samplers import TPESampler
 from optuna import structs
 from optuna.structs import StudyDirection
 from optuna import types
@@ -57,8 +57,14 @@ class SkoptSampler(BaseSampler):
             An "unknown parameter" means a parameter that isn't contained in
             :meth:`~optuna.study.InTrialStudy.product_search_space` of the target study.
 
-            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
+            If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
             as the default. See also :class:`~optuna.samplers`.
+        warn_independent_sampling:
+            If this is :obj:`True`, a warning message is emitted when
+            the value of a parameter is sampled by using an independent sampler.
+
+            Note that the parameters of the first trial in a study are always sampled
+            via an independent sampler, so no warning messages are emitted in this case.
         skopt_kwargs:
             Keyword arguments passed to the constructor of
             `skopt.Optimizer <https://scikit-optimize.github.io/#skopt.Optimizer>`_
@@ -69,8 +75,9 @@ class SkoptSampler(BaseSampler):
 
     """
 
-    def __init__(self, independent_sampler=None, skopt_kwargs=None):
-        # type: (Optional[BaseSampler], Optional[Dict[str, Any]]) -> None
+    def __init__(self, independent_sampler=None, warn_independent_sampling=True,
+                 skopt_kwargs=None):
+        # type: (Optional[BaseSampler], bool, Optional[Dict[str, Any]]) -> None
 
         _check_skopt_availability()
 
@@ -78,7 +85,8 @@ class SkoptSampler(BaseSampler):
         if 'dimensions' in self._skopt_kwargs:
             del self._skopt_kwargs['dimensions']
 
-        self._independent_sampler = independent_sampler or TPESampler()
+        self._independent_sampler = independent_sampler or samplers.RandomSampler()
+        self._warn_independent_sampling = warn_independent_sampling
 
     def infer_relative_search_space(self, study, trial):
         # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
@@ -109,6 +117,14 @@ class SkoptSampler(BaseSampler):
 
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+
+        if self._warn_independent_sampling:
+            complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
+            if len(complete_trials) >= 1:
+                logger = optuna.logging.get_logger(__name__)
+                logger.warning("The parameter '{}' in trial#{} is sampled by using "
+                               "an independent sampler, not `skopt.Optimizer`.".format(
+                                   param_name, trial.number))
 
         return self._independent_sampler.sample_independent(study, trial, param_name,
                                                             param_distribution)

@@ -1,3 +1,5 @@
+import _pytest.logging  # NOQA
+import logging
 from mock import call
 from mock import patch
 from skopt.space import space
@@ -158,6 +160,41 @@ def test_skopt_kwargs_dimenstions():
 
         expected_dimensions = [space.Integer(-10, 10)]
         assert mock_object.mock_calls[0] == call(expected_dimensions)
+
+
+def test_warn_independent_sampling(caplog):
+    # type: (_pytest.logging.LogCaptureFixture) -> None
+
+    # warn_independent_sampling=True
+    sampler = optuna.integration.SkoptSampler(warn_independent_sampling=True)
+    study = optuna.create_study(sampler=sampler)
+
+    with caplog.at_level(logging.WARNING, logger='optuna.integration.skopt'):
+        study.optimize(lambda t: t.suggest_uniform('p0', 0, 10), n_trials=1)
+    assert caplog.text == ''
+
+    with caplog.at_level(logging.WARNING, logger='optuna.integration.skopt'):
+        study.optimize(lambda t: t.suggest_uniform('p1', 0, 10), n_trials=1)
+
+    message = "The parameter 'p1' in trial#1 is sampled by " \
+              "using an independent sampler, not `skopt.Optimizer`."
+    assert message in caplog.text
+    caplog.clear()
+
+    # warn_independent_sampling=False
+    sampler = optuna.integration.SkoptSampler(warn_independent_sampling=False)
+    study = optuna.create_study(sampler=sampler)
+
+    with caplog.at_level(logging.WARNING, logger='optuna.integration.skopt'):
+        study.optimize(lambda t: t.suggest_uniform('p0', 0, 10), n_trials=1)
+    assert caplog.text == ''
+
+    with caplog.at_level(logging.WARNING, logger='optuna.integration.skopt'):
+        study.optimize(lambda t: t.suggest_uniform('p1', 0, 10), n_trials=1)
+
+    message = "The parameter 'p1' in trial#1 is sampled by " \
+              "using an independent sampler, not `skopt.Optimizer`."
+    assert message not in caplog.text
 
 
 def _objective(trial):
