@@ -26,7 +26,7 @@ def test_default_handler(capsys):
     # The following line is added to avoid interference with the TensorFlow's logger.
     # See also: https://github.com/pfnet/optuna/pull/432
     #
-    # TODO(ohta): Remove this line if `optuna.logging` becomes to be able to handle this problem.
+    # TODO(ohta): Remove this line if `optuna.logging` becomes able to handle this problem.
     library_root_logger.propagate = False
 
     example_logger = optuna.logging.get_logger('optuna.bar')
