@@ -152,11 +152,12 @@ class _Optimizer(object):
             if trial.state != structs.TrialState.COMPLETE:
                 continue
 
-            result = self._complete_trial_to_skopt_observation(study, trial)
-            if result is not None:
-                x, y = result
-                xs.append(x)
-                ys.append(y)
+            if not self._is_compatible(trial):
+                continue
+
+            x, y = self._complete_trial_to_skopt_observation(study, trial)
+            xs.append(x)
+            ys.append(y)
 
         self._optimizer.tell(xs, ys)
 
@@ -173,18 +174,32 @@ class _Optimizer(object):
 
         return params
 
-    def _complete_trial_to_skopt_observation(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Optional[Tuple[List[Any], float]]
+    def _is_compatible(self, trial):
+        # type: (FrozenTrial) -> bool
 
-        param_values = []
-        for name, distribution in sorted(self._search_space.items()):
+        # Thanks to `product_search_space()` function, in serial execution,
+        # the parameters of complete trials always are compatible with the search space.
+        #
+        # However, in distributed optimization, incompatible trials may complete on a worker
+        # just after a product search space is calculated on another worker.
+
+        for name, distribution in self._search_space.items():
             if name not in trial.params:
-                return None
+                return False
 
             param_value = trial.params[name]
             param_internal_value = distribution.to_internal_repr(param_value)
             if not distribution._contains(param_internal_value):
-                return None
+                return False
+
+        return True
+
+    def _complete_trial_to_skopt_observation(self, study, trial):
+        # type: (InTrialStudy, FrozenTrial) -> Tuple[List[Any], float]
+
+        param_values = []
+        for name, distribution in sorted(self._search_space.items()):
+            param_value = trial.params[name]
 
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 param_value = (param_value - distribution.low) // distribution.q
@@ -192,6 +207,8 @@ class _Optimizer(object):
             param_values.append(param_value)
 
         value = trial.value
+        assert value is not None
+
         if study.direction == StudyDirection.MAXIMIZE:
             value = -value
 
