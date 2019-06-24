@@ -70,41 +70,6 @@ def test_suggested_value():
             assert trial.distributions[param_name]._contains(param_value)
 
 
-def test_nan_objective_value():
-    # type: () -> None
-
-    independent_sampler = FirstTrialOnlyRandomSampler()
-    sampler = optuna.integration.SkoptSampler(independent_sampler=independent_sampler)
-    study = optuna.create_study(sampler=sampler)
-
-    # Non NaN objective values.
-    for i in range(10, 1, -1):
-        def objective(trial): return trial.suggest_uniform('x', 0.1, 0.2) + i
-        study.optimize(objective, n_trials=1, catch=())
-    assert int(study.best_value) == 2
-
-    # NaN objective values.
-    def objective(trial): return trial.suggest_uniform('x', 0.1, 0.2) + float('nan')
-    study.optimize(objective, n_trials=1, catch=())
-    assert int(study.best_value) == 2
-
-    # Non NaN objective value.
-    def objective(trial): return trial.suggest_uniform('x', 0.1, 0.2) + 1
-    study.optimize(objective, n_trials=1, catch=())
-    assert int(study.best_value) == 1
-
-
-def test_parallel_optimization():
-    # type: () -> None
-
-    sampler = optuna.integration.SkoptSampler()
-    study = optuna.create_study(sampler=sampler)
-
-    study.optimize(_objective, n_trials=40, n_jobs=4, catch=())
-    for trial in study.trials:
-        assert trial.state == optuna.structs.TrialState.COMPLETE
-
-
 def test_sample_independent():
     # type: () -> None
 
