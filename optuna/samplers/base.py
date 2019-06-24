@@ -13,15 +13,30 @@ if types.TYPE_CHECKING:
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseSampler(object):
-    """Base class for samplers."""
+    """Base class for samplers.
+
+    Optuna combines two types of sampling strategies, which are called *relative sampling* and
+    *independent sampling*.
+
+    *The relative sampling* determines values of multiple parameters simultaneously so that
+    sampling algorithms can use relationship between parameters (e.g., correlation).
+    Target parameters of the relative sampling are described in a relative search space, which
+    is determined by :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
+
+    *The independent sampling* determines a value of a single parameter without considering any
+    relationship between parameters. Target parameters of the independent sampling are the
+    parameters not described in the relative search space.
+    """
 
     @abc.abstractmethod
     def infer_relative_search_space(self, study, trial):
         # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
-        """Infer the search space that will be used by the target trial.
+        """Infer the search space that will be used by relative sampling in the target trial.
 
-        The search space returned by this method will be used as an argument of
-        :func:`optuna.samplers.BaseSampler.sample_relative` method.
+        This method is called right before :func:`~optuna.samplers.BaseSampler.sample_relative`
+        method, and the search space returned by this method is pass to it. The parameters not
+        contained in the search space will be sampled by using
+        :func:`~optuna.samplers.BaseSampler.sample_independent` method.
 
         Args:
             study:
@@ -32,6 +47,9 @@ class BaseSampler(object):
         Returns:
             A dictionary containing the parameter names and parameter's distributions.
 
+        .. seealso::
+            Please refer to :func:`~optuna.samplers.product_search_space` as an implementation of
+            :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
         """
 
         raise NotImplementedError
@@ -39,13 +57,11 @@ class BaseSampler(object):
     @abc.abstractmethod
     def sample_relative(self, study, trial, search_space):
         # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
-        """Sample parameters based on the previous trials and the given search space.
+        """Sample parameters in a given search space.
 
-        This method is called once just after each trial has started.
-
-        If a parameter that is not contained in the returned dictionary is
-        requested in an objective function, the value will be sampled by using
-        :func:`optuna.samplers.BaseSampler.sample_independent` method.
+        This method is called once at the beginning of each trial, i.e., right before the
+        evaluation of the objective function. This method is suitable for sampling algorithms
+        that use relationship between parameters such as Gaussian Process and CMA-ES.
 
         Args:
             study:
@@ -54,7 +70,7 @@ class BaseSampler(object):
                 Target trial object.
             search_space:
                 The search space returned by
-                :func:`optuna.samplers.BaseSampler.infer_relative_search_space`.
+                :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
 
         Returns:
             A dictionary containing the parameter names and the values that are the
@@ -67,10 +83,12 @@ class BaseSampler(object):
     @abc.abstractmethod
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
-        """Sample a parameter based on the previous trials and the given distribution.
+        """Sample a parameter for a given distribution.
 
-        The method is only called for the parameters that have not been contained in the dictionary
-        returned by :func:`optuna.samplers.BaseSampler.sample_relative` method.
+        This method is called only for the parameters not contained in the search space returned
+        by :func:`~optuna.samplers.BaseSampler.sample_relative` method. This method is suitable
+        for sampling algorithms that do not use relationship between parameters such as random
+        sampling and TPE.
 
         Args:
             study:
