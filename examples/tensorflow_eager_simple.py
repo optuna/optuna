@@ -21,7 +21,6 @@ We have the following two ways to execute this example:
 import tensorflow as tf
 import tensorflow.contrib.eager as tfe
 from tensorflow.keras.datasets import mnist
-from tensorflow.python.client import device_lib
 
 N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
