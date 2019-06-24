@@ -104,7 +104,7 @@ class ChainerPruningExtension(Extension):
         current_score = self._get_float_value(trainer.observation[self.observation_key])
         current_step = getattr(trainer.updater, self.pruner_trigger.unit)
         self.trial.report(current_score, step=current_step)
-        if self.trial.should_prune(current_step):
+        if self.trial.should_prune():
             message = "Trial was pruned at {} {}.".format(self.pruner_trigger.unit, current_step)
             raise optuna.structs.TrialPruned(message)
 

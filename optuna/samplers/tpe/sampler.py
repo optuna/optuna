@@ -1,22 +1,25 @@
 import numpy as np
 import scipy.special
 
-from optuna import distributions  # NOQA
-from optuna.distributions import BaseDistribution  # NOQA
-from optuna.samplers import base  # NOQA
-from optuna.samplers import random  # NOQA
-from optuna.samplers.tpe.parzen_estimator import ParzenEstimator  # NOQA
-from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters  # NOQA
-from optuna.storages.base import BaseStorage  # NOQA
+from optuna import distributions
+from optuna.samplers import base
+from optuna.samplers import random
+from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
+from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters
 from optuna.structs import StudyDirection
 from optuna import types
 
 if types.TYPE_CHECKING:
     from typing import Callable  # NOQA
+    from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
     from typing import Union  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import InTrialStudy  # NOQA
 
 EPS = 1e-12
 
@@ -44,7 +47,7 @@ class TPESampler(base.BaseSampler):
     def __init__(
             self,
             consider_prior=True,  # type: bool
-            prior_weight=1.0,  # type: Optional[float]
+            prior_weight=1.0,  # type: float
             consider_magic_clip=True,  # type: bool
             consider_endpoints=False,  # type: bool
             n_startup_trials=10,  # type: int
@@ -67,17 +70,29 @@ class TPESampler(base.BaseSampler):
         self.rng = np.random.RandomState(seed)
         self.random_sampler = random.RandomSampler(seed=seed)
 
-    def sample(self, storage, study_id, param_name, param_distribution):
-        # type: (BaseStorage, int, str, BaseDistribution) -> float
+    def infer_relative_search_space(self, study, trial):
+        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
 
-        observation_pairs = storage.get_trial_param_result_pairs(study_id, param_name)
-        if storage.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+        return {}
+
+    def sample_relative(self, study, trial, search_space):
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+
+        return {}
+
+    def sample_independent(self, study, trial, param_name, param_distribution):
+        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+
+        observation_pairs = study.storage.get_trial_param_result_pairs(
+            study.study_id, param_name)
+        if study.direction == StudyDirection.MAXIMIZE:
             observation_pairs = [(p, -v) for p, v in observation_pairs]
 
         n = len(observation_pairs)
 
         if n < self.n_startup_trials:
-            return self.random_sampler.sample(storage, study_id, param_name, param_distribution)
+            return self.random_sampler.sample_independent(
+                study, trial, param_name, param_distribution)
 
         below_param_values, above_param_values = self._split_observation_pairs(
             list(range(n)), [p[0] for p in observation_pairs], list(range(n)),
@@ -212,8 +227,10 @@ class TPESampler(base.BaseSampler):
             q=q,
             is_log=is_log)
 
-        return TPESampler._compare(
-            samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above)[0]
+        return float(
+            TPESampler._compare(
+                samples=samples_below, log_l=log_likelihoods_below,
+                log_g=log_likelihoods_above)[0])
 
     def _sample_categorical(self, distribution, below, above):
         # type: (distributions.CategoricalDistribution, np.ndarray, np.ndarray) -> float
@@ -266,7 +283,7 @@ class TPESampler(base.BaseSampler):
         while samples.size < n_samples:
             active = np.argmax(self.rng.multinomial(1, weights))
             draw = self.rng.normal(loc=mus[active], scale=sigmas[active])
-            if low <= draw <= high:
+            if low <= draw < high:
                 samples = np.append(samples, draw)
 
         samples = np.reshape(samples, size)
@@ -358,27 +375,14 @@ class TPESampler(base.BaseSampler):
         if size == (0, ):
             return np.asarray([], dtype=float)
         assert len(size)
+        assert probabilities.ndim == 1
 
-        if probabilities.ndim == 1:
-            n_draws = int(np.prod(size))
-            sample = self.rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
-            assert sample.shape == size + (probabilities.size, )
-            return_val = np.dot(sample, np.arange(probabilities.size))
-            return_val.shape = size
-            return return_val
-        elif probabilities.ndim == 2:
-            n_draws_, n_choices = probabilities.shape
-            n_draws, = size
-            assert n_draws_ == n_draws
-            return_val = [
-                np.where(self.rng.multinomial(pvals=[ii], n=1))[0][0] for ii in range(n_draws_)
-            ]
-            return_val = np.asarray(return_val)
-            return_val.shape = size
-            return return_val
-        else:
-            raise ValueError("The input dimension of p is {}. It should be 1 or 2.",
-                             probabilities.ndim)
+        n_draws = int(np.prod(size))
+        sample = self.rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
+        assert sample.shape == size + (probabilities.size, )
+        return_val = np.dot(sample, np.arange(probabilities.size))
+        return_val.shape = size
+        return return_val
 
     @classmethod
     def _categorical_log_pdf(

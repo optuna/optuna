@@ -70,9 +70,12 @@ def test_init_with_is_higher_better(is_higher_better):
         config=tf.estimator.RunConfig(save_summary_steps=10, save_checkpoints_steps=10),
     )
 
+    study = optuna.create_study()
+    trial_id = study.storage.create_new_trial_id(study.study_id)
+
     with pytest.raises(ValueError):
         TensorFlowPruningHook(
-            trial=optuna.trial.Trial(optuna.create_study(), 0),
+            trial=optuna.trial.Trial(study, trial_id),
             estimator=clf,
             metric="accuracy",
             run_every_steps=5,

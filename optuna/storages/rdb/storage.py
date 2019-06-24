@@ -1,16 +1,25 @@
+import alembic.command
+import alembic.config
+import alembic.migration
+import alembic.script
 from collections import defaultdict
+import copy
 from datetime import datetime
 import json
+import logging
+import os
 import six
 from sqlalchemy.engine import create_engine
+from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
 import sys
+import threading
 import uuid
 
+import optuna
 from optuna import distributions
-from optuna import logging
 from optuna.storages.base import BaseStorage
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.rdb import models
@@ -32,18 +41,26 @@ class RDBStorage(BaseStorage):
 
     Args:
         url: URL of the storage.
-        connect_args: Arguments that is passed to :func:`sqlalchemy.engine.create_engine`.
+        engine_kwargs:
+            A dictionary of keyword arguments that is passed to
+            :func:`sqlalchemy.engine.create_engine`.
+        enable_cache:
+            Flag to control whether to enable storage layer caching.
+            If this flag is set to :obj:`True` (the default), the finished trials are
+            cached on memory and never re-fetched from the storage.
+            Otherwise, the trials are fetched from the storage whenever they are needed.
+
     """
 
-    def __init__(self, url, connect_args=None):
-        # type: (str, Optional[Dict[str, Any]]) -> None
+    def __init__(self, url, engine_kwargs=None, enable_cache=True, skip_compatibility_check=False):
+        # type: (str, Optional[Dict[str, Any]], bool, bool) -> None
 
-        connect_args = connect_args or {}
+        engine_kwargs = engine_kwargs or {}
 
         url = self._fill_storage_url_template(url)
 
         try:
-            self.engine = create_engine(url, connect_args=connect_args)
+            self.engine = create_engine(url, **engine_kwargs)
         except ImportError as e:
             raise ImportError('Failed to import DB access module for the specified storage URL. '
                               'Please install appropriate one. (The actual import error is: ' +
@@ -51,8 +68,14 @@ class RDBStorage(BaseStorage):
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
-        self._check_table_schema_compatibility()
-        self.logger = logging.get_logger(__name__)
+
+        self.logger = optuna.logging.get_logger(__name__)
+
+        self._version_manager = _VersionManager(url, self.engine, self.scoped_session)
+        if not skip_compatibility_check:
+            self._version_manager.check_table_schema_compatibility()
+
+        self._finished_trials_cache = _FinishedTrialsCache(enable_cache)
 
     def create_new_study_id(self, study_name=None):
         # type: (Optional[str]) -> int
@@ -311,6 +334,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
         trial.state = state
         if state.is_finished():
             trial.datetime_complete = datetime.now()
@@ -323,6 +348,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
         trial_param = \
             models.TrialParamModel.find_by_trial_and_param_name(trial, param_name, session)
 
@@ -362,6 +389,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
         trial.value = value
 
         self._commit(session)
@@ -372,6 +401,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
         trial_value = models.TrialValueModel.find_by_trial_and_step(trial, step, session)
         if trial_value is not None:
             return False
@@ -390,6 +421,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        self.check_trial_is_updatable(trial_id, trial.state)
+
         attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
             attribute = models.TrialUserAttributeModel(
@@ -406,6 +439,17 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        if key == '_number':
+            # `_number` attribute may be set even after a trial is finished.
+            # This happens if the trial was created before v0.9.0,
+            # where a trial didn't have `_number` attribute.
+            # In this case, `check_trial_is_updatable` is skipped to avoid the `RuntimeError`.
+            #
+            # TODO(ohta): Remove this workaround when `number` field is added to `TrialModel`.
+            pass
+        else:
+            self.check_trial_is_updatable(trial_id, trial.state)
+
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
             attribute = models.TrialSystemAttributeModel(
@@ -429,6 +473,10 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
 
+        cached_trial = self._finished_trials_cache.get_cached_trial(trial_id)
+        if cached_trial is not None:
+            return copy.deepcopy(cached_trial)
+
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -437,10 +485,35 @@ class RDBStorage(BaseStorage):
         user_attributes = models.TrialUserAttributeModel.where_trial(trial, session)
         system_attributes = models.TrialSystemAttributeModel.where_trial(trial, session)
 
-        return self._merge_trials_orm([trial], params, values, user_attributes,
-                                      system_attributes)[0]
+        frozen_trial = self._merge_trials_orm([trial], params, values, user_attributes,
+                                              system_attributes)[0]
+
+        self._finished_trials_cache.cache_trial_if_finished(frozen_trial)
+
+        return frozen_trial
 
     def get_all_trials(self, study_id):
+        # type: (int) -> List[structs.FrozenTrial]
+
+        if self._finished_trials_cache.is_empty():
+            trials = self._get_all_trials_without_cache(study_id)
+            for trial in trials:
+                self._finished_trials_cache.cache_trial_if_finished(trial)
+
+            return trials
+
+        trial_ids = self._get_all_trial_ids(study_id)
+        trials = [self.get_trial(trial_id) for trial_id in trial_ids]
+        return trials
+
+    def _get_all_trial_ids(self, study_id):
+        # type: (int) -> List[int]
+
+        session = self.scoped_session()
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        return models.TrialModel.get_all_trial_ids_where_study(study, session)
+
+    def _get_all_trials_without_cache(self, study_id):
         # type: (int) -> List[structs.FrozenTrial]
 
         session = self.scoped_session()
@@ -497,10 +570,12 @@ class RDBStorage(BaseStorage):
         for trial_id, trial in id_to_trial.items():
             params = {}
             params_in_internal_repr = {}
+            param_distributions = {}
             for param in id_to_params[trial_id]:
                 distribution = distributions.json_to_distribution(param.distribution_json)
                 params[param.param_name] = distribution.to_external_repr(param.param_value)
                 params_in_internal_repr[param.param_name] = param.param_value
+                param_distributions[param.param_name] = distribution
 
             intermediate_values = {}
             for value in id_to_values[trial_id]:
@@ -525,6 +600,7 @@ class RDBStorage(BaseStorage):
                     number=trial_number,
                     state=trial.state,
                     params=params,
+                    distributions=param_distributions,
                     user_attrs=user_attrs,
                     system_attrs=system_attrs,
                     value=trial.value,
@@ -548,39 +624,21 @@ class RDBStorage(BaseStorage):
 
         return result
 
-    def _check_table_schema_compatibility(self):
-        # type: () -> None
-
-        session = self.scoped_session()
-
-        version_info = models.VersionInfoModel.find(session)
-        if version_info is not None:
-            if version_info.schema_version != models.SCHEMA_VERSION:
-                raise RuntimeError(
-                    'The runtime optuna version {} is no longer compatible with the table schema '
-                    '(set up by optuna {}).'.format(version.__version__,
-                                                    version_info.library_version))
-            return
-
-        version_info = models.VersionInfoModel(
-            schema_version=models.SCHEMA_VERSION, library_version=version.__version__)
-
-        session.add(version_info)
-        self._commit_with_integrity_check(session)
-
     @staticmethod
     def _fill_storage_url_template(template):
         # type: (str) -> str
 
         return template.format(SCHEMA_VERSION=models.SCHEMA_VERSION)
 
-    def _commit_with_integrity_check(self, session):
+    @staticmethod
+    def _commit_with_integrity_check(session):
         # type: (orm.Session) -> bool
 
         try:
             session.commit()
         except IntegrityError as e:
-            self.logger.debug(
+            logger = optuna.logging.get_logger(__name__)
+            logger.debug(
                 'Ignoring {}. This happens due to a timing issue among threads/processes/nodes. '
                 'Another one might have committed a record with the same key(s).'.format(repr(e)))
             session.rollback()
@@ -588,7 +646,8 @@ class RDBStorage(BaseStorage):
 
         return True
 
-    def _commit(self, session):
+    @staticmethod
+    def _commit(session):
         # type: (orm.Session) -> None
 
         try:
@@ -629,3 +688,217 @@ class RDBStorage(BaseStorage):
 
         if hasattr(self, 'scoped_session'):
             self.remove_session()
+
+    def upgrade(self):
+        # type: () -> None
+        """Upgrade the storage schema."""
+
+        self._version_manager.upgrade()
+
+    def get_current_version(self):
+        # type: () -> str
+        """Return the schema version currently used by this storage."""
+
+        return self._version_manager.get_current_version()
+
+    def get_head_version(self):
+        # type: () -> str
+        """Return the latest schema version."""
+
+        return self._version_manager.get_head_version()
+
+    def get_all_versions(self):
+        # type: () -> List[str]
+        """Return the schema version list."""
+
+        return self._version_manager.get_all_versions()
+
+
+class _VersionManager(object):
+    def __init__(self, url, engine, scoped_session):
+        # type: (str, Engine, orm.scoped_session) -> None
+
+        self.url = url
+        self.engine = engine
+        self.scoped_session = scoped_session
+
+        self._init_version_info_model()
+        self._init_alembic()
+
+    def _init_version_info_model(self):
+        # type: () -> None
+
+        session = self.scoped_session()
+
+        version_info = models.VersionInfoModel.find(session)
+        if version_info is not None:
+            return
+
+        version_info = models.VersionInfoModel(
+            schema_version=models.SCHEMA_VERSION, library_version=version.__version__)
+
+        session.add(version_info)
+        RDBStorage._commit_with_integrity_check(session)
+
+    def _init_alembic(self):
+        # type: () -> None
+
+        logging.getLogger('alembic').setLevel(logging.WARN)
+
+        context = alembic.migration.MigrationContext.configure(self.engine.connect())
+        is_initialized = context.get_current_revision() is not None
+
+        if is_initialized:
+            # The `alembic_version` table already exists and is not empty.
+            return
+
+        if self._is_alembic_supported():
+            revision = self.get_head_version()
+        else:
+            # The storage has been created before alembic is introduced.
+            revision = self._get_base_version()
+
+        self._set_alembic_revision(revision)
+
+    def _set_alembic_revision(self, revision):
+        # type: (str) -> None
+
+        context = alembic.migration.MigrationContext.configure(self.engine.connect())
+        script = self._create_alembic_script()
+        context.stamp(script, revision)
+
+    def check_table_schema_compatibility(self):
+        # type: () -> None
+
+        session = self.scoped_session()
+
+        # NOTE: After invocation of `_init_version_info_model` method,
+        #       it is ensured that a `VersionInfoModel` entry exists.
+        version_info = models.VersionInfoModel.find(session)
+        assert version_info is not None
+
+        current_version = self.get_current_version()
+        head_version = self.get_head_version()
+        if current_version == head_version:
+            return
+
+        message = 'The runtime optuna version {} is no longer compatible with the table schema ' \
+                  '(set up by optuna {}). '.format(version.__version__,
+                                                   version_info.library_version)
+        known_versions = self.get_all_versions()
+        if current_version in known_versions:
+            message += 'Please execute `$ optuna storage upgrade --storage $STORAGE_URL` ' \
+                       'for upgrading the storage.'
+        else:
+            message += 'Please try updating optuna to the latest version by '\
+                       '`$ pip install -U optuna`.'
+
+        raise RuntimeError(message)
+
+    def get_current_version(self):
+        # type: () -> str
+
+        context = alembic.migration.MigrationContext.configure(self.engine.connect())
+        version = context.get_current_revision()
+        assert version is not None
+
+        return version
+
+    def get_head_version(self):
+        # type: () -> str
+
+        script = self._create_alembic_script()
+        return script.get_current_head()
+
+    def _get_base_version(self):
+        # type: () -> str
+
+        script = self._create_alembic_script()
+        return script.get_base()
+
+    def get_all_versions(self):
+        # type: () -> List[str]
+
+        script = self._create_alembic_script()
+        return [r.revision for r in script.walk_revisions()]
+
+    def upgrade(self):
+        # type: () -> None
+
+        config = self._create_alembic_config()
+        alembic.command.upgrade(config, 'head')
+
+    def _is_alembic_supported(self):
+        # type: () -> bool
+
+        session = self.scoped_session()
+
+        version_info = models.VersionInfoModel.find(session)
+        if version_info is None:
+            # `None` means this storage was created just now.
+            return True
+
+        return version_info.schema_version == models.SCHEMA_VERSION
+
+    def _create_alembic_script(self):
+        # type: () -> alembic.script.ScriptDirectory
+
+        config = self._create_alembic_config()
+        script = alembic.script.ScriptDirectory.from_config(config)
+        return script
+
+    def _create_alembic_config(self):
+        # type: () -> alembic.config.Config
+
+        alembic_dir = os.path.join(os.path.dirname(__file__), 'alembic')
+
+        config = alembic.config.Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
+        config.set_main_option('script_location', escape_alembic_config_value(alembic_dir))
+        config.set_main_option('sqlalchemy.url', escape_alembic_config_value(self.url))
+        return config
+
+
+class _FinishedTrialsCache(object):
+    def __init__(self, enabled):
+        # type: (bool) -> None
+
+        self._finished_trials = {}  # type: Dict[int, structs.FrozenTrial]
+        self._enabled = enabled
+        self._lock = threading.Lock()
+
+    def is_empty(self):
+        # type: () -> bool
+
+        if not self._enabled:
+            return True
+
+        with self._lock:
+            return len(self._finished_trials) == 0
+
+    def cache_trial_if_finished(self, trial):
+        # type: (structs.FrozenTrial) -> None
+
+        if not self._enabled:
+            return
+
+        if trial.state.is_finished():
+            with self._lock:
+                self._finished_trials[trial.trial_id] = copy.deepcopy(trial)
+
+    def get_cached_trial(self, trial_id):
+        # type: (int) -> Optional[structs.FrozenTrial]
+
+        if not self._enabled:
+            return None
+
+        with self._lock:
+            return self._finished_trials.get(trial_id)
+
+
+def escape_alembic_config_value(value):
+    # type: (str) -> str
+
+    # We must escape '%' in a value string because the character
+    # is regarded as the trigger of variable expansion.
+    # Please see the documentation of `configparser.BasicInterpolation` for more details.
+    return value.replace('%', '%%')

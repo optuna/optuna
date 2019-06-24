@@ -1,5 +1,8 @@
 from __future__ import absolute_import
 
+import gc
+
+from optuna.distributions import BaseDistribution  # NOQA
 from optuna.logging import get_logger
 from optuna.pruners import BasePruner  # NOQA
 from optuna.storages import BaseStorage  # NOQA
@@ -73,7 +76,7 @@ class ChainerMNStudy(object):
         .. code::
 
             comm = chainermn.create_communicator('naive')
-            study = optuna.Study(study_name, storage_url)
+            study = optuna.load_study(study_name, storage_url)
             chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
             chainermn_study.optimize(objective, n_trials=25)
 
@@ -134,7 +137,7 @@ class ChainerMNStudy(object):
                 has_next_trial, trial_id = self.comm.mpi_comm.bcast(None)
                 if not has_next_trial:
                     break
-                trial = Trial(self.delegate, trial_id)
+                trial = Trial(self.delegate, trial_id, disable_relative_sampling=True)
                 try:
                     func(_ChainerMNTrial(trial, self.comm), self.comm)
 
@@ -147,6 +150,12 @@ class ChainerMNStudy(object):
                     pass
                 except catch:
                     pass
+                finally:
+                    # The following line mitigates memory problems that can be occurred in some
+                    # environments (e.g., services that use computing containers such as CircleCI).
+                    # Please refer to the following PR for further details:
+                    # https://github.com/pfnet/optuna/pull/325.
+                    gc.collect()
 
     def __getattr__(self, attr_name):
         # type: (str) -> Any
@@ -188,7 +197,9 @@ class _ChainerMNTrial(Trial):
     def __init__(self, trial, comm):
         # type: (Trial, CommunicatorBase) -> None
 
-        super(_ChainerMNTrial, self).__init__(trial.study, trial._trial_id)
+        super(_ChainerMNTrial, self).__init__(trial.study,
+                                              trial._trial_id,
+                                              disable_relative_sampling=True)
         self.delegate = trial
         self.comm = comm
 
@@ -242,9 +253,10 @@ class _ChainerMNTrial(Trial):
 
         if self.comm.rank == 0:
             self.delegate.report(value, step)
+        self.comm.mpi_comm.barrier()
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
 
         return self.delegate.should_prune(step)
 
@@ -253,12 +265,14 @@ class _ChainerMNTrial(Trial):
 
         if self.comm.rank == 0:
             self.delegate.set_user_attr(key, value)
+        self.comm.mpi_comm.barrier()
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
 
         if self.comm.rank == 0:
             self.delegate.set_system_attr(key, value)
+        self.comm.mpi_comm.barrier()
 
     @property
     def number(self):
@@ -280,6 +294,12 @@ class _ChainerMNTrial(Trial):
         # type: () -> Dict[str, Any]
 
         return self._get_attrs('params')
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
+
+        return self._get_attrs('distributions')
 
     @property
     def user_attrs(self):

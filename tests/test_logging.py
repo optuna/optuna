@@ -19,20 +19,29 @@ def test_default_handler(capsys):
 
     # We need to reconstruct our default handler to properly capture stderr.
     optuna.logging._reset_library_root_logger()
+    optuna.logging.set_verbosity(optuna.logging.INFO)
+
     library_root_logger = optuna.logging._get_library_root_logger()
+
+    # The following line is added to avoid interference with the TensorFlow's logger.
+    # See also: https://github.com/pfnet/optuna/pull/432
+    #
+    # TODO(ohta): Remove this line if `optuna.logging` becomes able to handle this problem.
+    library_root_logger.propagate = False
+
     example_logger = optuna.logging.get_logger('optuna.bar')
 
     # Default handler enabled
     optuna.logging.enable_default_handler()
     assert library_root_logger.handlers
-    example_logger.warning('hey')
+    example_logger.info('hey')
     _, err = capsys.readouterr()
     assert 'hey' in err
 
     # Default handler disabled
     optuna.logging.disable_default_handler()
     assert not library_root_logger.handlers
-    example_logger.warning('yoyo')
+    example_logger.info('yoyo')
     _, err = capsys.readouterr()
     assert 'yoyo' not in err
 
