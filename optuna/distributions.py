@@ -38,6 +38,8 @@ class BaseDistribution(object):
         # type: (Any) -> float
         """Convert external representation of a parameter value into internal representation.
 
+        Note that :mod:`~optuna.samplers` handle parameter values in the internal representation.
+
         Args:
             param_value_in_external_repr:
                 Optuna's external representation of a parameter value.
@@ -91,6 +93,10 @@ class UniformDistribution(
         BaseDistribution):
     """A uniform distribution in the linear domain.
 
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_uniform`, and passed to
+    :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
+    The internal representation of this object is identical to the external representation.
+
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
@@ -117,6 +123,10 @@ class LogUniformDistribution(
         NamedTuple('_BaseLogUniformDistribution', [('low', float), ('high', float)]),
         BaseDistribution):
     """A uniform distribution in the log domain.
+
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_loguniform`, and passed to
+    :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
+    The internal representation of this object is identical to the external representation.
 
     Attributes:
         low:
@@ -145,6 +155,10 @@ class DiscreteUniformDistribution(
                                                         ('q', float)]), BaseDistribution):
     """A discretized uniform distribution in the linear domain.
 
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and
+    passed to :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
+    The internal representation of this object is identical to the external representation.
+
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
@@ -170,6 +184,10 @@ class IntUniformDistribution(
         NamedTuple('_BaseIntUniformDistribution', [('low', int), ('high', int)]),
         BaseDistribution):
     """A uniform distribution on integers.
+
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
+    :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
+    Parameter values are cast to integer when they are converted to internal representation.
 
     Attributes:
         low:
@@ -204,6 +222,11 @@ class CategoricalDistribution(
         NamedTuple('_BaseCategoricalDistribution', [('choices', Tuple[Union[float, str], ...])]),
         BaseDistribution):
     """A categorical distribution.
+
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_categorical`, and passed to
+    :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
+    The index number of `choices` tuple is used as the internal representation for the
+    corresponding parameter value.
 
     Attributes:
         choices:
