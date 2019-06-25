@@ -30,8 +30,8 @@ EPOCHS = 1
 tf.enable_eager_execution()
 
 
-def model_fn(trial):
-    # Sample model parameters and generate it.
+def create_model(trial):
+    # We optimize the numbers of layers, their units and weight decay parameter.
     n_layers = trial.suggest_int('n_layers', 1, 3)
     weight_decay = trial.suggest_uniform('weight_decay', 1e-10, 1e-3)
     model = tf.keras.Sequential()
@@ -47,8 +47,8 @@ def model_fn(trial):
     return model
 
 
-def optimizer_fn(trial):
-    # Sample optimizer parameters and generate it.
+def create_optimizer(trial):
+    # We optimize the choice of optimizers as well as their parameters.
     kwargs = {}
     optimizer_options = ['RMSPropOptimizer', 'AdamOptimizer', 'MomentumOptimizer']
     optimizer_selected = trial.suggest_categorical('optimizer', optimizer_options)
@@ -86,7 +86,6 @@ def learn(model, optimizer, dataset, mode='eval'):
 
 
 def get_mnist():
-    # Load the data, split between train and test sets.
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     x_train = x_train.astype('float32') / 255
     x_test = x_test.astype('float32') / 255
@@ -94,7 +93,6 @@ def get_mnist():
     y_train = y_train.astype('int32')
     y_test = y_test.astype('int32')
 
-    # Create the dataset and its associated one-shot iterator.
     train_ds = tf.data.Dataset.from_tensor_slices((x_train, y_train))
     train_ds = train_ds.shuffle(60000).batch(BATCHSIZE).take(N_TRAIN_EXAMPLES)
 
@@ -110,10 +108,10 @@ def objective(trial):
     train_ds, test_ds = get_mnist()
 
     # Build model and optimizer.
-    model = model_fn(trial)
-    optimizer = optimizer_fn(trial)
+    model = create_model(trial)
+    optimizer = create_optimizer(trial)
 
-    # Training and Validating cycle.
+    # Training and validating cycle.
     with tf.device("/cpu:0"):
         for _ in range(EPOCHS):
             learn(model, optimizer, train_ds, 'train')
