@@ -25,7 +25,7 @@ if types.TYPE_CHECKING:
     from typing import Optional  # NOQA
     from typing import Type  # NOQA
 
-    from optuan.integration.chainermn import ChainerMNTrial  # NOQA
+    from optuna.integration.chainermn import ChainerMNTrial  # NOQA
     from optuna.pruners import BasePruner  # NOQA
     from optuna.samplers import BaseSampler  # NOQA
     from optuna.storages import BaseStorage  # NOQA
