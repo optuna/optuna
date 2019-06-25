@@ -33,7 +33,7 @@ tf.enable_eager_execution()
 def create_model(trial):
     # We optimize the numbers of layers, their units and weight decay parameter.
     n_layers = trial.suggest_int('n_layers', 1, 3)
-    weight_decay = trial.suggest_uniform('weight_decay', 1e-10, 1e-3)
+    weight_decay = trial.suggest_loguniform('weight_decay', 1e-10, 1e-3)
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.Flatten())
     for i in range(n_layers):
@@ -53,14 +53,14 @@ def create_optimizer(trial):
     optimizer_options = ['RMSPropOptimizer', 'AdamOptimizer', 'MomentumOptimizer']
     optimizer_selected = trial.suggest_categorical('optimizer', optimizer_options)
     if optimizer_selected == 'RMSPropOptimizer':
-        kwargs['learning_rate'] = trial.suggest_uniform('rmsprop_learning_rate', 1e-5, 1e-1)
+        kwargs['learning_rate'] = trial.suggest_loguniform('rmsprop_learning_rate', 1e-5, 1e-1)
         kwargs['decay'] = trial.suggest_uniform('rmsprop_decay', 0.85, 0.99)
-        kwargs['momentum'] = trial.suggest_uniform('rmsprop_momentum', 1e-5, 1e-1)
+        kwargs['momentum'] = trial.suggest_loguniform('rmsprop_momentum', 1e-5, 1e-1)
     elif optimizer_selected == 'AdamOptimizer':
-        kwargs['learning_rate'] = trial.suggest_uniform('adam_learning_rate', 1e-5, 1e-1)
+        kwargs['learning_rate'] = trial.suggest_loguniform('adam_learning_rate', 1e-5, 1e-1)
     elif optimizer_selected == 'MomentumOptimizer':
-        kwargs['learning_rate'] = trial.suggest_uniform('momentum_opt_learning_rate', 1e-5, 1e-1)
-        kwargs['momentum'] = trial.suggest_uniform('momentum_opt_momentum', 1e-5, 1e-1)
+        kwargs['learning_rate'] = trial.suggest_loguniform('momentum_opt_learning_rate', 1e-5, 1e-1)
+        kwargs['momentum'] = trial.suggest_loguniform('momentum_opt_momentum', 1e-5, 1e-1)
 
     optimizer = getattr(tf.train, optimizer_selected)(**kwargs)
     return optimizer
