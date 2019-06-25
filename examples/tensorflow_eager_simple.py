@@ -27,7 +27,6 @@ N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 10
-LOG_INTERVAL = 50
 tf.enable_eager_execution()
 
 
@@ -68,16 +67,14 @@ def optimizer_fn(trial):
 
 def learn(model, optimizer, dataset, mode='eval'):
     """Trains model on `dataset` using `optimizer`."""
-    avg_loss = tfe.metrics.Mean('loss', dtype=tf.float32)
     accuracy = tfe.metrics.Accuracy('accuracy', dtype=tf.float32)
 
-    for (batch, (images, labels)) in enumerate(dataset):
+    for batch, (images, labels) in enumerate(dataset):
         with tf.GradientTape() as tape:
             logits = model(images, training=(mode == 'train'))
             loss_value = tf.reduce_mean(
                 tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
             if mode == 'eval':
-                avg_loss(loss_value)
                 accuracy(tf.argmax(logits, axis=1, output_type=tf.int64),
                          tf.cast(labels, tf.int64))
             else:
@@ -85,7 +82,7 @@ def learn(model, optimizer, dataset, mode='eval'):
                 optimizer.apply_gradients(zip(grads, model.variables))
 
     if mode == 'eval':
-        return avg_loss, accuracy
+        return accuracy
 
 
 def get_mnist():
@@ -121,7 +118,7 @@ def objective(trial):
             # Train the network.
             learn(model, optimizer, train_ds, 'train')
             # Perform the validation.
-            avg_loss, accuracy = learn(model, optimizer, test_ds, 'eval')
+            accuracy = learn(model, optimizer, test_ds, 'eval')
 
     # Return last validation accuracy.
     return accuracy.result()
@@ -129,6 +126,8 @@ def objective(trial):
 
 if __name__ == '__main__':
     import optuna
+    optuna.logging.set_verbosity(optuna.logging.INFO)
+
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)
 
