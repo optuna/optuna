@@ -53,12 +53,16 @@ class SkoptSampler(BaseSampler):
     Args:
         independent_sampler:
             A :class:`~optuna.samplers.BaseSampler` instance that is used for independently
-            sampling parameters unknown to :class:`~optuna.integration.SkoptSampler`.
-            An "unknown parameter" means a parameter that isn't contained in
-            :meth:`~optuna.study.InTrialStudy.product_search_space` of the target study.
+            sampling parameters that aren't contained in the relative search space.
+            The search space for :class:`~optuna.integration.SkoptSampler` is determined by
+            :func:`~optuna.samplers.product_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
-            as the default. See also :class:`~optuna.samplers`.
+            as the default.
+
+            .. seealso::
+                :class:`optuna.samplers` module provides some built-in independent samplers.
+
         warn_independent_sampling:
             If this is :obj:`True`, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler.
@@ -132,7 +136,8 @@ def _warn_independent_sampling(trial, param_name):
 
     logger = optuna.logging.get_logger(__name__)
     logger.warning("The parameter '{}' in trial#{} is sampled by using "
-                   "an independent sampler, not `skopt.Optimizer`.".format(
+                   "an independent sampler, not `skopt.Optimizer` "
+                   "(optimization performance may be degraded).".format(
                        param_name, trial.number))
 
 
