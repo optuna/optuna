@@ -59,7 +59,8 @@ def create_optimizer(trial):
     elif optimizer_selected == 'AdamOptimizer':
         kwargs['learning_rate'] = trial.suggest_loguniform('adam_learning_rate', 1e-5, 1e-1)
     elif optimizer_selected == 'MomentumOptimizer':
-        kwargs['learning_rate'] = trial.suggest_loguniform('momentum_opt_learning_rate', 1e-5, 1e-1)
+        kwargs['learning_rate'] = trial.suggest_loguniform('momentum_opt_learning_rate', 1e-5,
+                                                           1e-1)
         kwargs['momentum'] = trial.suggest_loguniform('momentum_opt_momentum', 1e-5, 1e-1)
 
     optimizer = getattr(tf.train, optimizer_selected)(**kwargs)
