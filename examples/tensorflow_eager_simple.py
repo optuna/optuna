@@ -38,11 +38,12 @@ def model_fn(trial):
     model.add(tf.keras.layers.Flatten())
     for i in range(n_layers):
         num_hidden = int(trial.suggest_loguniform('n_units_l{}'.format(i), 4, 128))
-        model.add(tf.keras.layers.Dense(num_hidden,
-                                        activation='relu',
-                                        kernel_regularizer=tf.keras.regularizers.l2(weight_decay)))
-    model.add(tf.keras.layers.Dense(CLASSES,
-                                    kernel_regularizer=tf.keras.regularizers.l2(weight_decay)))
+        model.add(
+            tf.keras.layers.Dense(num_hidden,
+                                  activation='relu',
+                                  kernel_regularizer=tf.keras.regularizers.l2(weight_decay)))
+    model.add(
+        tf.keras.layers.Dense(CLASSES, kernel_regularizer=tf.keras.regularizers.l2(weight_decay)))
     return model
 
 
@@ -88,8 +89,8 @@ def learn(model, optimizer, dataset, mode='eval'):
 def get_mnist():
     # Load the data, split between train and test sets.
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
-    x_train = x_train.astype('float32')/255
-    x_test = x_test.astype('float32')/255
+    x_train = x_train.astype('float32') / 255
+    x_test = x_test.astype('float32') / 255
 
     y_train = y_train.astype('int32')
     y_test = y_test.astype('int32')
@@ -126,7 +127,6 @@ def objective(trial):
 
 if __name__ == '__main__':
     import optuna
-    optuna.logging.set_verbosity(optuna.logging.INFO)
 
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)
