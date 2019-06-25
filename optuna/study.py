@@ -524,7 +524,7 @@ class Study(BaseStudy):
 
 
 class InTrialStudy(BaseStudy):
-    """An object to access a study instance from inside of a trial instance safely.
+    """An object to access a study instance inside a trial instance safely.
 
     To prevent unexpected recursive calls of :func:`~optuna.study.Study.optimize()`, this class
     does not allow to call :func:`~optuna.study.InTrialStudy.optimize()` unlike
