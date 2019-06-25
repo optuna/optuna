@@ -167,6 +167,22 @@ class ChainerMNStudy(object):
 
 
 class ChainerMNTrial(BaseTrial):
+    """A wrapper of :class:`~optuna.trial.Trial` to incorporate Optuna with ChainerMN.
+
+    .. seealso::
+        :class:`~optuna.integration.chainermn.ChainerMNTrial` provides the same interface as
+        :class:`~optuna.trial.Trial`. Please refer to :class:`~optuna.trial.Trial` for further
+        details.
+
+    Args:
+        trial:
+            A :class:`~optuna.trial.Trial` object if the caller is rank0 worker,
+            :obj:`None` otherwise.
+        comm:
+            A `ChainerMN communicator <https://docs.chainer.org/en/stable/chainermn/reference/
+            index.html#communicators>`_.
+    """
+
     def __init__(self, trial, comm):
         # type: (Optional[Trial], CommunicatorBase) -> None
 
