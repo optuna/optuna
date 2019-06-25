@@ -57,7 +57,7 @@ class _ChainerMNObjectiveFunc(object):
     def __call__(self, trial):
         # type: (Trial) -> float
 
-        self.comm.mpi_comm.bcast((True, trial._trial_id))
+        self.comm.mpi_comm.bcast(True)
         return self.objective(ChainerMNTrial(trial, self.comm), self.comm)
 
 
@@ -133,7 +133,7 @@ class ChainerMNStudy(object):
             self.comm.mpi_comm.bcast((False, None))
         else:
             while True:
-                has_next_trial, trial_id = self.comm.mpi_comm.bcast(None)
+                has_next_trial = self.comm.mpi_comm.bcast(None)
                 if not has_next_trial:
                     break
                 try:
