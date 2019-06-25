@@ -121,13 +121,19 @@ class SkoptSampler(BaseSampler):
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
             if len(complete_trials) >= 1:
-                logger = optuna.logging.get_logger(__name__)
-                logger.warning("The parameter '{}' in trial#{} is sampled by using "
-                               "an independent sampler, not `skopt.Optimizer`.".format(
-                                   param_name, trial.number))
+                _warn_independent_sampling(trial, param_name)
 
         return self._independent_sampler.sample_independent(study, trial, param_name,
                                                             param_distribution)
+
+
+def _warn_independent_sampling(trial, param_name):
+    # type: (FrozenTrial, str) -> None
+
+    logger = optuna.logging.get_logger(__name__)
+    logger.warning("The parameter '{}' in trial#{} is sampled by using "
+                   "an independent sampler, not `skopt.Optimizer`.".format(
+                       param_name, trial.number))
 
 
 class _Optimizer(object):

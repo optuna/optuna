@@ -1,4 +1,3 @@
-import logging
 from mock import call
 from mock import patch
 import pytest
@@ -10,7 +9,6 @@ from optuna.structs import FrozenTrial
 from optuna.testing.sampler import FirstTrialOnlyRandomSampler
 
 if optuna.types.TYPE_CHECKING:
-    import _pytest.logging  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
 
@@ -169,39 +167,32 @@ def test_skopt_kwargs_dimenstions():
         assert mock_object.mock_calls[0] == call(expected_dimensions)
 
 
-def test_warn_independent_sampling(caplog):
-    # type: (_pytest.logging.LogCaptureFixture) -> None
+def test_warn_independent_sampling():
+    # type: () -> None
 
     # warn_independent_sampling=True
     sampler = optuna.integration.SkoptSampler(warn_independent_sampling=True)
     study = optuna.create_study(sampler=sampler)
 
-    with caplog.at_level(logging.WARNING, logger='optuna.integration.skopt'):
+    with patch('optuna.integration.skopt._warn_independent_sampling') as mock_object:
         study.optimize(lambda t: t.suggest_uniform('p0', 0, 10), n_trials=1)
-    assert caplog.text == ''
+        assert mock_object.call_count == 0
 
-    with caplog.at_level(logging.WARNING, logger='optuna.integration.skopt'):
+    with patch('optuna.integration.skopt._warn_independent_sampling') as mock_object:
         study.optimize(lambda t: t.suggest_uniform('p1', 0, 10), n_trials=1)
-
-    message = "The parameter 'p1' in trial#1 is sampled by " \
-              "using an independent sampler, not `skopt.Optimizer`."
-    assert message in caplog.text
-    caplog.clear()
+        assert mock_object.call_count == 1
 
     # warn_independent_sampling=False
     sampler = optuna.integration.SkoptSampler(warn_independent_sampling=False)
     study = optuna.create_study(sampler=sampler)
 
-    with caplog.at_level(logging.WARNING, logger='optuna.integration.skopt'):
+    with patch('optuna.integration.skopt._warn_independent_sampling') as mock_object:
         study.optimize(lambda t: t.suggest_uniform('p0', 0, 10), n_trials=1)
-    assert caplog.text == ''
+        assert mock_object.call_count == 0
 
-    with caplog.at_level(logging.WARNING, logger='optuna.integration.skopt'):
+    with patch('optuna.integration.skopt._warn_independent_sampling') as mock_object:
         study.optimize(lambda t: t.suggest_uniform('p1', 0, 10), n_trials=1)
-
-    message = "The parameter 'p1' in trial#1 is sampled by " \
-              "using an independent sampler, not `skopt.Optimizer`."
-    assert message not in caplog.text
+        assert mock_object.call_count == 0
 
 
 def test_is_compatible():
