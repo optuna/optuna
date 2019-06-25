@@ -6,6 +6,7 @@ from optuna.samplers import base
 from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters
+from optuna import structs
 from optuna.structs import StudyDirection
 from optuna import types
 
@@ -83,20 +84,15 @@ class TPESampler(base.BaseSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
 
-        observation_pairs = study.storage.get_trial_param_result_pairs(
-            study.study_id, param_name)
-        if study.direction == StudyDirection.MAXIMIZE:
-            observation_pairs = [(p, -v) for p, v in observation_pairs]
+        param_values = _get_sorted_param_values(study, param_name)
 
-        n = len(observation_pairs)
+        n = len(param_values)
 
         if n < self.n_startup_trials:
             return self.random_sampler.sample_independent(
                 study, trial, param_name, param_distribution)
 
-        below_param_values, above_param_values = self._split_observation_pairs(
-            list(range(n)), [p[0] for p in observation_pairs], list(range(n)),
-            [p[1] for p in observation_pairs])
+        below_param_values, above_param_values = self._split_param_values(param_values)
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._sample_uniform(param_distribution, below_param_values, above_param_values)
@@ -123,28 +119,12 @@ class TPESampler(base.BaseSampler):
                                       "The parameter distribution should be one of the {}".format(
                                           param_distribution, distribution_list))
 
-    def _split_observation_pairs(
-            self,
-            config_idxs,  # type: List[int]
-            config_vals,  # type: List[float]
-            loss_idxs,  # type: List[int]
-            loss_vals  # type: List[float]
-    ):
-        # type: (...) -> Tuple[np.ndarray, np.ndarray]
+    def _split_param_values(self, param_values):
+        # type: (List[float]) -> Tuple[np.ndarray, np.ndarray]
 
-        config_idxs, config_vals, loss_idxs, loss_vals = map(
-            np.asarray, [config_idxs, config_vals, loss_idxs, loss_vals])
-        n_below = self.gamma(len(config_vals))
-        loss_ascending = np.argsort(loss_vals)
-
-        keep_idxs = set(loss_idxs[loss_ascending[:n_below]])
-        below = [v for i, v in zip(config_idxs, config_vals) if i in keep_idxs]
-
-        keep_idxs = set(loss_idxs[loss_ascending[n_below:]])
-        above = [v for i, v in zip(config_idxs, config_vals) if i in keep_idxs]
-
-        below = np.asarray(below, dtype=float)
-        above = np.asarray(above, dtype=float)
+        n_below = self.gamma(len(param_values))
+        below = np.asarray(param_values[:n_below], dtype=float)
+        above = np.asarray(param_values[n_below:], dtype=float)
         return below, above
 
     def _sample_uniform(self, distribution, below, above):
@@ -444,3 +424,30 @@ class TPESampler(base.BaseSampler):
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
         z = denominator / numerator
         return .5 + .5 * scipy.special.erf(z)
+
+
+def _get_sorted_param_values(study, param_name):
+    # type: (InTrialStudy, str) -> List[float]
+
+    sign = 1
+    if study.direction == StudyDirection.MAXIMIZE:
+        sign = -1
+
+    pairs = []
+    for trial in study.trials:
+        if param_name not in trial.params_in_internal_repr:
+            continue
+
+        if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
+            step_and_value = (-float('inf'), sign * trial.value)
+        elif trial.state is structs.TrialState.PRUNED and len(trial.intermediate_values) > 0:
+            step, intermediate_value = max(trial.intermediate_values.items())
+            step_and_value = (-step, sign * intermediate_value)
+        else:
+            continue
+
+        param_value = trial.params_in_internal_repr[param_name]
+        pairs.append((param_value, step_and_value))
+
+    pairs.sort(key=lambda entry: entry[1])
+    return [param_value for param_value, _ in pairs]
