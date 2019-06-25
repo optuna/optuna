@@ -67,7 +67,6 @@ def optimizer_fn(trial):
 
 
 def learn(model, optimizer, dataset, mode='eval'):
-    """Trains model on `dataset` using `optimizer`."""
     accuracy = tfe.metrics.Accuracy('accuracy', dtype=tf.float32)
 
     for batch, (images, labels) in enumerate(dataset):
@@ -99,12 +98,13 @@ def get_mnist():
     train_ds = tf.data.Dataset.from_tensor_slices((x_train, y_train))
     train_ds = train_ds.shuffle(60000).batch(BATCHSIZE).take(N_TRAIN_EXAMPLES)
 
-    # Create the dataset and its associated one-shot iterator.
     test_ds = tf.data.Dataset.from_tensor_slices((x_test, y_test))
     test_ds = test_ds.shuffle(10000).batch(BATCHSIZE).take(N_TEST_EXAMPLES)
     return train_ds, test_ds
 
 
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     # Get MNIST data.
     train_ds, test_ds = get_mnist()
@@ -113,13 +113,12 @@ def objective(trial):
     model = model_fn(trial)
     optimizer = optimizer_fn(trial)
 
-    # Training and Validatin cycle.
+    # Training and Validating cycle.
     with tf.device("/cpu:0"):
         for _ in range(EPOCHS):
-            # Train the network.
             learn(model, optimizer, train_ds, 'train')
-            # Perform the validation.
-            accuracy = learn(model, optimizer, test_ds, 'eval')
+
+        accuracy = learn(model, optimizer, test_ds, 'eval')
 
     # Return last validation accuracy.
     return accuracy.result()
