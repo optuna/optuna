@@ -200,20 +200,6 @@ class BaseStorage(object):
 
         return self.get_trial(trial_id).system_attrs
 
-    # Methods for the TPE sampler
-
-    def get_trial_param_result_pairs(self, study_id, param_name):
-        # type: (int, str) -> List[Tuple[float, float]]
-
-        # Be careful: this method returns param values in internal representation
-        all_trials = self.get_all_trials(study_id)
-
-        return [(t.params_in_internal_repr[param_name], t.value) for t in all_trials
-                if (t.value is not None and param_name in t.params
-                    and t.state is structs.TrialState.COMPLETE)
-                # TODO(Akiba): We also want to use pruned results
-                ]
-
     # Methods for PercentilePruner and MedianPruner
 
     def get_best_intermediate_result_over_steps(self, trial_id):
