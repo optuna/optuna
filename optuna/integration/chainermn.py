@@ -130,7 +130,7 @@ class ChainerMNStudy(object):
         if self.comm.rank == 0:
             func_mn = _ChainerMNObjectiveFunc(func, self.comm)
             self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
-            self.comm.mpi_comm.bcast((False, None))
+            self.comm.mpi_comm.bcast(False)
         else:
             while True:
                 has_next_trial = self.comm.mpi_comm.bcast(None)
