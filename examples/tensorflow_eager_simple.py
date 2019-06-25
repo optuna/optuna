@@ -26,7 +26,7 @@ N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 CLASSES = 10
-EPOCHS = 10
+EPOCHS = 1
 tf.enable_eager_execution()
 
 
