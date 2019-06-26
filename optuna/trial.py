@@ -113,8 +113,6 @@ class Trial(BaseTrial):
             A :class:`~optuna.study.Study` object.
         trial_id:
             A trial ID that is automatically generated.
-        disable_relative_sampling:
-            If this flag is set to :obj:`True`, relative sampling is disabled in this trial.
 
     """
 
@@ -122,7 +120,6 @@ class Trial(BaseTrial):
             self,
             study,  # type: Study
             trial_id,  # type: int
-            disable_relative_sampling=False  # type: bool
     ):
         # type: (...) -> None
 
@@ -133,11 +130,7 @@ class Trial(BaseTrial):
         self.storage = self.study.storage
         self.logger = logging.get_logger(__name__)
 
-        if disable_relative_sampling:
-            self.relative_search_space = {}  # type: Dict[str, BaseDistribution]
-            self.relative_params = {}  # type: Dict[str, float]
-        else:
-            self._init_relative_params()
+        self._init_relative_params()
 
     def _init_relative_params(self):
         # type: () -> None
