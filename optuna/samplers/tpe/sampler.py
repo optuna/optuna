@@ -10,6 +10,7 @@ from optuna.structs import StudyDirection
 from optuna import types
 
 if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
@@ -76,12 +77,12 @@ class TPESampler(base.BaseSampler):
         return {}
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
         return {}
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
 
         observation_pairs = study.storage.get_trial_param_result_pairs(
             study.study_id, param_name)
@@ -107,10 +108,12 @@ class TPESampler(base.BaseSampler):
             return self._sample_discrete_uniform(param_distribution, below_param_values,
                                                  above_param_values)
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            return self._sample_int(param_distribution, below_param_values, above_param_values)
+            return int(self._sample_int(param_distribution, below_param_values,
+                                        above_param_values))
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
-            return self._sample_categorical(param_distribution, below_param_values,
-                                            above_param_values)
+            index = self._sample_categorical_index(param_distribution, below_param_values,
+                                                   above_param_values)
+            return param_distribution.choices[index]
         else:
             distribution_list = [
                 distributions.UniformDistribution.__name__,
@@ -232,8 +235,8 @@ class TPESampler(base.BaseSampler):
                 samples=samples_below, log_l=log_likelihoods_below,
                 log_g=log_likelihoods_above)[0])
 
-    def _sample_categorical(self, distribution, below, above):
-        # type: (distributions.CategoricalDistribution, np.ndarray, np.ndarray) -> float
+    def _sample_categorical_index(self, distribution, below, above):
+        # type: (distributions.CategoricalDistribution, np.ndarray, np.ndarray) -> int
 
         choices = distribution.choices
         below = list(map(int, below))

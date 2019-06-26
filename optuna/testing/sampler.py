@@ -2,6 +2,7 @@ import optuna
 from optuna import distributions
 
 if optuna.types.TYPE_CHECKING:
+    from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Union  # NOQA
 
@@ -12,7 +13,7 @@ if optuna.types.TYPE_CHECKING:
 
 class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
     def __init__(self, relative_search_space, relative_params):
-        # type: (Dict[str, BaseDistribution], Dict[str, float]) -> None
+        # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
 
         self.relative_search_space = relative_search_space
         self.relative_params = relative_params
@@ -23,12 +24,12 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
         return self.relative_search_space
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
         return self.relative_params
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             param_value = param_distribution.low  # type: Union[float, str]
@@ -43,4 +44,4 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
         else:
             raise NotImplementedError
 
-        return param_distribution.to_internal_repr(param_value)
+        return param_value

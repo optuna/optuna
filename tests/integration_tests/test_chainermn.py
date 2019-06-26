@@ -258,9 +258,8 @@ class TestChainerMNStudy(object):
             'z': distributions.CategoricalDistribution(choices=(-1.0, 1.0)),
         }
         relative_params = {'x': 1.0, 'y': 25.0, 'z': -1.0}
-        relative_params_in_internal_repr = {'x': 1.0, 'y': 25.0, 'z': 0.0}
         sampler = DeterministicRelativeSampler(relative_search_space,  # type: ignore
-                                               relative_params_in_internal_repr)
+                                               relative_params)
 
         with MultiNodeStorageSupplier(storage_mode, cache_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm, sampler=sampler)

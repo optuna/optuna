@@ -4,6 +4,7 @@ import six
 from optuna import types
 
 if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
     from typing import Dict  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
@@ -38,7 +39,7 @@ class BaseSampler(object):
 
     @abc.abstractmethod
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
         """Sample parameters based on the previous trials and the given search space.
 
         This method is called once just after each trial has started.
@@ -57,8 +58,7 @@ class BaseSampler(object):
                 :func:`optuna.samplers.BaseSampler.infer_relative_search_space`.
 
         Returns:
-            A dictionary containing the parameter names and the values that are the
-            internal representations of Optuna.
+            A dictionary containing the parameter names and the values.
 
         """
 
@@ -66,7 +66,7 @@ class BaseSampler(object):
 
     @abc.abstractmethod
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
         """Sample a parameter based on the previous trials and the given distribution.
 
         The method is only called for the parameters that have not been contained in the dictionary
@@ -83,7 +83,7 @@ class BaseSampler(object):
                 Distribution object that specifies a prior and/or scale of the sampling algorithm.
 
         Returns:
-            A float value in the internal representation of Optuna.
+            A parameter value.
 
         """
 
