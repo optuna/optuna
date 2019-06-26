@@ -3,35 +3,22 @@
 Distributions
 =============
 
-.. autoclass:: BaseDistribution
-    :members:
-    :inherited-members:
-    :exclude-members: count, index, high, low
-
 .. autoclass:: UniformDistribution
     :members:
-    :inherited-members:
-    :exclude-members: count, index, high, low
 
 .. autoclass:: LogUniformDistribution
     :members:
-    :inherited-members:
-    :exclude-members: count, index, high, low
 
 .. autoclass:: DiscreteUniformDistribution
     :members:
-    :inherited-members:
-    :exclude-members: count, index, high, low, q
 
 .. autoclass:: IntUniformDistribution
     :members:
-    :inherited-members:
-    :exclude-members: count, index, high, low
+    :exclude-members: to_external_repr, to_internal_repr
 
 .. autoclass:: CategoricalDistribution
     :members:
-    :inherited-members:
-    :exclude-members: count, index, choices
+    :exclude-members: to_external_repr, to_internal_repr
 
 .. autofunction:: distribution_to_json
 

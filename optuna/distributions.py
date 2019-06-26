@@ -38,8 +38,6 @@ class BaseDistribution(object):
         # type: (Any) -> float
         """Convert external representation of a parameter value into internal representation.
 
-        Note that :mod:`~optuna.samplers` handle parameter values in the internal representation.
-
         Args:
             param_value_in_external_repr:
                 Optuna's external representation of a parameter value.
@@ -95,7 +93,6 @@ class UniformDistribution(
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_uniform`, and passed to
     :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
-    The internal representation of this object is identical to the external representation.
 
     Attributes:
         low:
@@ -126,7 +123,6 @@ class LogUniformDistribution(
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_loguniform`, and passed to
     :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
-    The internal representation of this object is identical to the external representation.
 
     Attributes:
         low:
@@ -157,7 +153,6 @@ class DiscreteUniformDistribution(
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and
     passed to :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
-    The internal representation of this object is identical to the external representation.
 
     Attributes:
         low:
@@ -187,7 +182,6 @@ class IntUniformDistribution(
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
     :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
-    Parameter values are cast to integer when they are converted to internal representation.
 
     Attributes:
         low:
@@ -225,8 +219,6 @@ class CategoricalDistribution(
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_categorical`, and passed to
     :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
-    The index number of `choices` tuple is used as the internal representation for the
-    corresponding parameter value.
 
     Attributes:
         choices:
