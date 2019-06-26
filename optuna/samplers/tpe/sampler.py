@@ -120,11 +120,14 @@ class TPESampler(base.BaseSampler):
                                           param_distribution, distribution_list))
 
     def _split_param_values(self, param_values):
-        # type: (List[float]) -> Tuple[np.ndarray, np.ndarray]
+        # type: (List[Tuple[float, int]]) -> Tuple[np.ndarray, np.ndarray]
 
         n_below = self.gamma(len(param_values))
-        below = np.asarray(param_values[:n_below], dtype=float)
-        above = np.asarray(param_values[n_below:], dtype=float)
+
+        below = [v for v, _ in sorted(param_values[:n_below], key=lambda entry: entry[1])]
+        above = [v for v, _ in sorted(param_values[n_below:], key=lambda entry: entry[1])]
+        below = np.asarray(below, dtype=float)
+        above = np.asarray(above, dtype=float)
         return below, above
 
     def _sample_uniform(self, distribution, below, above):
@@ -427,7 +430,7 @@ class TPESampler(base.BaseSampler):
 
 
 def _get_sorted_param_values(study, param_name):
-    # type: (InTrialStudy, str) -> List[float]
+    # type: (InTrialStudy, str) -> List[Tuple[float, int]]
 
     sign = 1
     if study.direction == StudyDirection.MAXIMIZE:
@@ -447,7 +450,7 @@ def _get_sorted_param_values(study, param_name):
             continue
 
         param_value = trial.params_in_internal_repr[param_name]
-        pairs.append((param_value, step_and_value))
+        pairs.append((param_value, step_and_value, trial.number))
 
     pairs.sort(key=lambda entry: entry[1])
-    return [param_value for param_value, _ in pairs]
+    return [(param_value, number) for param_value, _, number in pairs]
