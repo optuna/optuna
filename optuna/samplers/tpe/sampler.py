@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.special
+from typing import NamedTuple
 
 from optuna import distributions
 from optuna.samplers import base
@@ -7,6 +8,7 @@ from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters
 from optuna import structs
+from optuna.structs import FrozenTrial
 from optuna.structs import StudyDirection
 from optuna import types
 
@@ -19,7 +21,6 @@ if types.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import InTrialStudy  # NOQA
 
 EPS = 1e-12
@@ -42,6 +43,16 @@ def default_weights(x):
         ramp = np.linspace(1.0 / x, 1.0, num=x - 25)
         flat = np.ones(25)
         return np.concatenate([ramp, flat], axis=0)
+
+
+class _ParamWithTrial(
+        NamedTuple('_BaseParamWithTrialNumber', [('param_name', str), ('trial', FrozenTrial)])):
+
+    @property
+    def value_in_internal_repr(self):
+        # type: () -> float
+
+        return self.trial.params_in_internal_repr[self.param_name]
 
 
 class TPESampler(base.BaseSampler):
@@ -84,15 +95,15 @@ class TPESampler(base.BaseSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
 
-        param_values = _get_sorted_param_values(study, param_name)
+        params = _get_sorted_params(study, param_name)
 
-        n = len(param_values)
+        n = len(params)
 
         if n < self.n_startup_trials:
             return self.random_sampler.sample_independent(
                 study, trial, param_name, param_distribution)
 
-        below_param_values, above_param_values = self._split_param_values(param_values)
+        below_param_values, above_param_values = self._split_params(params)
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._sample_uniform(param_distribution, below_param_values, above_param_values)
@@ -119,13 +130,15 @@ class TPESampler(base.BaseSampler):
                                       "The parameter distribution should be one of the {}".format(
                                           param_distribution, distribution_list))
 
-    def _split_param_values(self, param_values):
-        # type: (List[Tuple[float, int]]) -> Tuple[np.ndarray, np.ndarray]
+    def _split_params(self, params):
+        # type: (List[_ParamWithTrial]) -> Tuple[np.ndarray, np.ndarray]
 
-        n_below = self.gamma(len(param_values))
+        n_below = self.gamma(len(params))
 
-        below = [v for v, _ in sorted(param_values[:n_below], key=lambda entry: entry[1])]
-        above = [v for v, _ in sorted(param_values[n_below:], key=lambda entry: entry[1])]
+        below = [p.value_in_internal_repr for p in sorted(
+            params[:n_below], key=lambda p: p.trial.number)]
+        above = [p.value_in_internal_repr for p in sorted(
+            params[n_below:], key=lambda p: p.trial.number)]
         below = np.asarray(below, dtype=float)
         above = np.asarray(above, dtype=float)
         return below, above
@@ -429,8 +442,8 @@ class TPESampler(base.BaseSampler):
         return .5 + .5 * scipy.special.erf(z)
 
 
-def _get_sorted_param_values(study, param_name):
-    # type: (InTrialStudy, str) -> List[Tuple[float, int]]
+def _get_sorted_params(study, param_name):
+    # type: (InTrialStudy, str) -> List[_ParamWithTrial]
 
     sign = 1
     if study.direction == StudyDirection.MAXIMIZE:
@@ -449,8 +462,7 @@ def _get_sorted_param_values(study, param_name):
         else:
             continue
 
-        param_value = trial.params_in_internal_repr[param_name]
-        pairs.append((param_value, step_and_value, trial.number))
+        pairs.append((step_and_value, _ParamWithTrial(param_name, trial)))
 
-    pairs.sort(key=lambda entry: entry[1])
-    return [(param_value, number) for param_value, _, number in pairs]
+    pairs.sort(key=lambda x: x[0])
+    return [param for _, param in pairs]
