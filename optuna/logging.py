@@ -186,10 +186,12 @@ def enable_propagation():
 
         .. code::
 
+            >> logging.getLogger().setLevel(logging.INFO)  # Setup the root logger.
             >> logging.getLogger().addHandler(logging.FileHandler('foo.log'))
-            >> logging.getLogger().setLevel(logging.INFO)
+
             >> optuna.logging.enable_propagation()  # Propagate logs to the root logger.
             >> optuna.logging.disable_default_handler()  # Stop showing logs in stderr.
+
             >> study = optuna.create_study()
             >> logging.getLogger().info("Start optimization.")
             >> study.optimize(objective, n_trials=10)
