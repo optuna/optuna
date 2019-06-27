@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.special
-from typing import NamedTuple
 
 from optuna import distributions
 from optuna.samplers import base
@@ -8,7 +7,6 @@ from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters
 from optuna import structs
-from optuna.structs import FrozenTrial
 from optuna.structs import StudyDirection
 from optuna import types
 
@@ -21,6 +19,7 @@ if types.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import InTrialStudy  # NOQA
 
 EPS = 1e-12
@@ -43,16 +42,6 @@ def default_weights(x):
         ramp = np.linspace(1.0 / x, 1.0, num=x - 25)
         flat = np.ones(25)
         return np.concatenate([ramp, flat], axis=0)
-
-
-class _ParamWithTrial(
-        NamedTuple('_BaseParamWithTrialNumber', [('param_name', str), ('trial', FrozenTrial)])):
-
-    @property
-    def value_in_internal_repr(self):
-        # type: () -> float
-
-        return self.trial.params_in_internal_repr[self.param_name]
 
 
 class TPESampler(base.BaseSampler):
@@ -95,15 +84,17 @@ class TPESampler(base.BaseSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
 
-        params = _get_sorted_params(study, param_name)
+        observation_pairs = _get_observation_pairs(study, param_name)
 
-        n = len(params)
+        n = len(observation_pairs)
 
         if n < self.n_startup_trials:
             return self.random_sampler.sample_independent(
                 study, trial, param_name, param_distribution)
 
-        below_param_values, above_param_values = self._split_params(params)
+        below_param_values, above_param_values = self._split_observation_pairs(
+            list(range(n)), [p[0] for p in observation_pairs], list(range(n)),
+            [p[1] for p in observation_pairs])
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._sample_uniform(param_distribution, below_param_values, above_param_values)
@@ -130,15 +121,26 @@ class TPESampler(base.BaseSampler):
                                       "The parameter distribution should be one of the {}".format(
                                           param_distribution, distribution_list))
 
-    def _split_params(self, params):
-        # type: (List[_ParamWithTrial]) -> Tuple[np.ndarray, np.ndarray]
+    def _split_observation_pairs(
+            self,
+            config_idxs,  # type: List[int]
+            config_vals,  # type: List[float]
+            loss_idxs,  # type: List[int]
+            loss_vals  # type: List[float]
+    ):
+        # type: (...) -> Tuple[np.ndarray, np.ndarray]
 
-        n_below = self.gamma(len(params))
+        config_idxs, config_vals, loss_idxs, loss_vals = map(
+            np.asarray, [config_idxs, config_vals, loss_idxs, loss_vals])
+        n_below = self.gamma(len(config_vals))
+        loss_ascending = np.argsort(loss_vals)
 
-        below = [p.value_in_internal_repr for p in sorted(
-            params[:n_below], key=lambda p: p.trial.number)]
-        above = [p.value_in_internal_repr for p in sorted(
-            params[n_below:], key=lambda p: p.trial.number)]
+        keep_idxs = set(loss_idxs[loss_ascending[:n_below]])
+        below = [v for i, v in zip(config_idxs, config_vals) if i in keep_idxs]
+
+        keep_idxs = set(loss_idxs[loss_ascending[n_below:]])
+        above = [v for i, v in zip(config_idxs, config_vals) if i in keep_idxs]
+
         below = np.asarray(below, dtype=float)
         above = np.asarray(above, dtype=float)
         return below, above
@@ -442,17 +444,20 @@ class TPESampler(base.BaseSampler):
         return .5 + .5 * scipy.special.erf(z)
 
 
-def _get_sorted_params(study, param_name):
-    # type: (InTrialStudy, str) -> List[_ParamWithTrial]
+def _get_observation_pairs(study, param_name):
+    # type: (InTrialStudy, str) -> List[Tuple[float, int]]
 
     sign = 1
     if study.direction == StudyDirection.MAXIMIZE:
         sign = -1
 
-    pairs = []
+    param_values = []
+    scores = []
     for trial in study.trials:
         if param_name not in trial.params_in_internal_repr:
             continue
+
+        param_value = trial.params_in_internal_repr[param_name]
 
         if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
             step_and_value = (-float('inf'), sign * trial.value)
@@ -462,7 +467,9 @@ def _get_sorted_params(study, param_name):
         else:
             continue
 
-        pairs.append((step_and_value, _ParamWithTrial(param_name, trial)))
+        param_values.append(param_value)
+        scores.append(step_and_value)
 
-    pairs.sort(key=lambda x: x[0])
-    return [param for _, param in pairs]
+    scores = np.asarray(scores, dtype=[('step', float), ('value', float)])
+    ranks = np.argsort(scores)
+    return list(zip(param_values, ranks))
