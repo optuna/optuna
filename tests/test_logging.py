@@ -8,6 +8,9 @@ import optuna.logging
 def test_get_logger(caplog):
     # type: (_pytest.logging.LogCaptureFixture) -> None
 
+    # Log propagation is necessary for caplog to capture log outputs.
+    optuna.logging.enable_propagation()
+
     logger = optuna.logging.get_logger('optuna.foo')
     with caplog.at_level(logging.INFO, logger='optuna.foo'):
         logger.info('hello')
@@ -22,12 +25,6 @@ def test_default_handler(capsys):
     optuna.logging.set_verbosity(optuna.logging.INFO)
 
     library_root_logger = optuna.logging._get_library_root_logger()
-
-    # The following line is added to avoid interference with the TensorFlow's logger.
-    # See also: https://github.com/pfnet/optuna/pull/432
-    #
-    # TODO(ohta): Remove this line if `optuna.logging` becomes able to handle this problem.
-    library_root_logger.propagate = False
 
     example_logger = optuna.logging.get_logger('optuna.bar')
 
@@ -76,3 +73,27 @@ def test_verbosity(capsys):
     assert 'bye-warning' in err
     assert 'bye-info' not in err
     assert 'bye-debug' not in err
+
+
+def test_propagation(caplog):
+    # type: (_pytest.capture.CaptureFixture) -> None
+
+    optuna.logging._reset_library_root_logger()
+    logger = optuna.logging.get_logger('optuna.foo')
+
+    # Propagation is disabled by default.
+    with caplog.at_level(logging.INFO, logger='optuna'):
+        logger.info('no-propagation')
+    assert 'no-propagation' not in caplog.text
+
+    # Enable propagation.
+    optuna.logging.enable_propagation()
+    with caplog.at_level(logging.INFO, logger='optuna'):
+        logger.info('enable-propagate')
+    assert 'enable-propagate' in caplog.text
+
+    # Disable propagation.
+    optuna.logging.disable_propagation()
+    with caplog.at_level(logging.INFO, logger='optuna'):
+        logger.info('disable-propagation')
+    assert 'disable-propagation' not in caplog.text
