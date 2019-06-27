@@ -52,8 +52,9 @@ class SkoptSampler(BaseSampler):
 
     Args:
         independent_sampler:
-            A :class:`~optuna.samplers.BaseSampler` instance that is used for independently
-            sampling parameters that aren't contained in the relative search space.
+            A :class:`~optuna.samplers.BaseSampler` instance that is used for independent
+            sampling. The parameters not contained in the relative search space are sampled
+            by this sampler.
             The search space for :class:`~optuna.integration.SkoptSampler` is determined by
             :func:`~optuna.samplers.product_search_space()`.
 
@@ -61,7 +62,9 @@ class SkoptSampler(BaseSampler):
             as the default.
 
             .. seealso::
-                :class:`optuna.samplers` module provides some built-in independent samplers.
+                :class:`optuna.samplers` module provides built-in independent samplers
+                such as :class:`~optuna.samplers.RandomSampler` and
+                :class:`~optuna.samplers.TPESampler`.
 
         warn_independent_sampling:
             If this is :obj:`True`, a warning message is emitted when
