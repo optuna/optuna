@@ -12,7 +12,6 @@ from optuna.study import InTrialStudy
 
 if optuna.types.TYPE_CHECKING:
     import typing  # NOQA
-    from typing import Any  # NOQA
     from typing import Dict  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
