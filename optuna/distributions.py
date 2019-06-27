@@ -92,7 +92,7 @@ class UniformDistribution(
     """A uniform distribution in the linear domain.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_uniform`, and passed to
-    :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
+    :mod:`~optuna.samplers` in general.
 
     Attributes:
         low:
@@ -122,7 +122,7 @@ class LogUniformDistribution(
     """A uniform distribution in the log domain.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_loguniform`, and passed to
-    :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
+    :mod:`~optuna.samplers` in general.
 
     Attributes:
         low:
@@ -151,8 +151,8 @@ class DiscreteUniformDistribution(
                                                         ('q', float)]), BaseDistribution):
     """A discretized uniform distribution in the linear domain.
 
-    This object is instantiated by :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and
-    passed to :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and passed
+    to :mod:`~optuna.samplers` in general.
 
     Attributes:
         low:
@@ -181,7 +181,7 @@ class IntUniformDistribution(
     """A uniform distribution on integers.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
-    :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
+    :mod:`~optuna.samplers` in general.
 
     Attributes:
         low:
@@ -217,8 +217,8 @@ class CategoricalDistribution(
         BaseDistribution):
     """A categorical distribution.
 
-    This object is instantiated by :func:`~optuna.trial.Trial.suggest_categorical`, and passed to
-    :mod:`~optuna.samplers` in the process of :func:`~optuna.study.Study.optimize`.
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_categorical`, and
+    passed to :mod:`~optuna.samplers` in general.
 
     Attributes:
         choices:
