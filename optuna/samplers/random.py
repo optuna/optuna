@@ -69,6 +69,6 @@ class RandomSampler(BaseSampler):
             return self.rng.randint(param_distribution.low, param_distribution.high + 1)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             choices = param_distribution.choices
-            return choices[self.rng.randint(len(choices))]
+            return self.rng.choice(choices)
         else:
             raise NotImplementedError
