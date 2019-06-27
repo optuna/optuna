@@ -127,7 +127,7 @@ def test_categorical(sampler_class, choices):
     in_trial_study = InTrialStudy(study)
 
     def sample():
-        # type: () -> int
+        # type: () -> float
 
         trial = _create_new_trial(study)
         param_value = study.sampler.sample_independent(in_trial_study, trial, 'x', distribution)
