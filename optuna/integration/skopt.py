@@ -153,10 +153,12 @@ class _Optimizer(object):
         dimensions = []
         for name, distribution in sorted(self._search_space.items()):
             if isinstance(distribution, distributions.UniformDistribution):
-                high = max(distribution.low, np.nextafter(distribution.high, float('-inf')))
+                # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
+                high = np.nextafter(distribution.high, float('-inf'))
                 dimension = space.Real(distribution.low, high)
             elif isinstance(distribution, distributions.LogUniformDistribution):
-                high = max(distribution.low, np.nextafter(distribution.high, float('-inf')))
+                # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
+                high = np.nextafter(distribution.high, float('-inf'))
                 dimension = space.Real(distribution.low, high, prior='log-uniform')
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 dimension = space.Integer(distribution.low, distribution.high)
