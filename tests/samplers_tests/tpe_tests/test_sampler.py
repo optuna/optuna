@@ -1,7 +1,3 @@
-import itertools
-import numpy as np
-import pytest
-
 import optuna
 from optuna.samplers import tpe
 from optuna.structs import TrialPruned
