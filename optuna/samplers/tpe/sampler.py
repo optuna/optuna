@@ -126,12 +126,14 @@ class TPESampler(base.BaseSampler):
             config_idxs,  # type: List[int]
             config_vals,  # type: List[float]
             loss_idxs,  # type: List[int]
-            loss_vals  # type: List[float]
+            loss_vals  # type: List[Tuple[float, float]]
     ):
         # type: (...) -> Tuple[np.ndarray, np.ndarray]
 
-        config_idxs, config_vals, loss_idxs, loss_vals = map(
-            np.asarray, [config_idxs, config_vals, loss_idxs, loss_vals])
+        config_idxs, config_vals, loss_idxs = map(
+            np.asarray, [config_idxs, config_vals, loss_idxs])
+        loss_vals = np.asarray(loss_vals, dtype=[('step', float), ('score', float)])
+
         n_below = self.gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
 
@@ -445,31 +447,29 @@ class TPESampler(base.BaseSampler):
 
 
 def _get_observation_pairs(study, param_name):
-    # type: (InTrialStudy, str) -> List[Tuple[float, int]]
+    # type: (InTrialStudy, str) -> List[Tuple[float, Tuple[float, float]]]
 
     sign = 1
     if study.direction == StudyDirection.MAXIMIZE:
         sign = -1
 
-    param_values = []
-    scores = []
+    pairs = []
     for trial in study.trials:
         if param_name not in trial.params_in_internal_repr:
             continue
 
-        param_value = trial.params_in_internal_repr[param_name]
-
         if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
-            step_and_value = (-float('inf'), sign * trial.value)
-        elif trial.state is structs.TrialState.PRUNED and len(trial.intermediate_values) > 0:
-            step, intermediate_value = max(trial.intermediate_values.items())
-            step_and_value = (-step, sign * intermediate_value)
+            score = (-float('inf'), sign * trial.value)
+        elif trial.state is structs.TrialState.PRUNED:
+            if len(trial.intermediate_values) > 0:
+                step, intermediate_value = max(trial.intermediate_values.items())
+                score = (-step, sign * intermediate_value)
+            else:
+                score = (float('inf'), 0.0)
         else:
             continue
 
-        param_values.append(param_value)
-        scores.append(step_and_value)
+        param_value = trial.params_in_internal_repr[param_name]
+        pairs.append((param_value, score))
 
-    scores = np.asarray(scores, dtype=[('step', float), ('value', float)])
-    ranks = np.argsort(scores)
-    return list(zip(param_values, ranks))
+    return pairs
