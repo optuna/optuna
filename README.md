@@ -25,7 +25,7 @@ Optuna has modern functionalities as follows:
 
 - Parallel distributed optimization
 - Pruning of unpromising trials
-- Web dashboard
+- Lightweight, versatile, and platform agnostic architecture
 
 
 ## Basic Concepts
@@ -48,20 +48,23 @@ import ...
 def objective(trial):
 
     # Invoke suggest methods of a Trial object to generate hyperparameters.
-    classifier_name = trial.suggest_categorical('classifier', ['SVC', 'RandomForest'])
-    if classifier_name == 'SVC':
-        svc_c = trial.suggest_loguniform('svc_c', 1e-10, 1e10)
-        classifier_obj = sklearn.svm.SVC(C=svc_c)
+    regressor_name = trial.suggest_categorical('classifier', ['SVR', 'RandomForest'])
+    if regressor_name == 'SVR':
+        svr_c = trial.suggest_loguniform('svr_c', 1e-10, 1e10)
+        regressor_obj = sklearn.svm.SVR(C=svr_c)
     else:
         rf_max_depth = trial.suggest_int('rf_max_depth', 2, 32)
-        classifier_obj = sklearn.ensemble.RandomForestClassifier(max_depth=rf_max_depth)
+        regressor_obj = sklearn.ensemble.RandomForestRegressor(max_depth=rf_max_depth)
 
-    iris = sklearn.datasets.load_iris()
-    x, y = iris.data, iris.target
-    score = sklearn.model_selection.cross_val_score(classifier_obj, x, y)
-    accuracy = score.mean()
-    
-    return 1.0 - accuracy  # A objective value linked with the Trial object.
+    X, y = sklearn.datasets.load_boston(return_X_y=True)
+    X_train, X_val, y_train, y_val = sklearn.model_selection.train_test_split(X, y, random_state=0)
+
+    regressor_obj.fit(X_train, y_train)
+    y_pred = regressor_obj.predict(X_val)
+
+    error = sklearn.metrics.mean_squared_error(y_val, y_pred)
+
+    return error  # A objective value linked with the Trial object.
 
 study = optuna.create_study()  # Create a new study.
 study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
@@ -88,3 +91,9 @@ Any contributions to Optuna are welcome! When you send a pull request, please fo
 ## License
 
 MIT License (see [LICENSE](./LICENSE)).
+
+
+## Reference
+
+Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, and Masanori Koyama. 2019.
+Optuna: A Next-generation Hyperparameter Optimization Framework. In KDD (to appear).
