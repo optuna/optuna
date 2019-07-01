@@ -105,7 +105,7 @@ class SkoptSampler(BaseSampler):
                     # `skopt` cannot handle non-categorical distributions that contain just
                     # a single value, so we skip this distribution.
                     #
-                    # Note that `Trial` takes care of this distribution when suggestion.
+                    # Note that `Trial` takes care of this distribution during suggestion.
                     continue
 
             search_space[name] = distribution
