@@ -174,11 +174,11 @@ def test_warn_independent_sampling():
     sampler = optuna.integration.SkoptSampler(warn_independent_sampling=True)
     study = optuna.create_study(sampler=sampler)
 
-    with patch('optuna.integration.skopt._warn_independent_sampling') as mock_object:
+    with patch('optuna.integration.skopt.SkoptSampler._log_independent_sampling') as mock_object:
         study.optimize(lambda t: t.suggest_uniform('p0', 0, 10), n_trials=1)
         assert mock_object.call_count == 0
 
-    with patch('optuna.integration.skopt._warn_independent_sampling') as mock_object:
+    with patch('optuna.integration.skopt.SkoptSampler._log_independent_sampling') as mock_object:
         study.optimize(lambda t: t.suggest_uniform('p1', 0, 10), n_trials=1)
         assert mock_object.call_count == 1
 
@@ -186,11 +186,11 @@ def test_warn_independent_sampling():
     sampler = optuna.integration.SkoptSampler(warn_independent_sampling=False)
     study = optuna.create_study(sampler=sampler)
 
-    with patch('optuna.integration.skopt._warn_independent_sampling') as mock_object:
+    with patch('optuna.integration.skopt.SkoptSampler._log_independent_sampling') as mock_object:
         study.optimize(lambda t: t.suggest_uniform('p0', 0, 10), n_trials=1)
         assert mock_object.call_count == 0
 
-    with patch('optuna.integration.skopt._warn_independent_sampling') as mock_object:
+    with patch('optuna.integration.skopt.SkoptSampler._log_independent_sampling') as mock_object:
         study.optimize(lambda t: t.suggest_uniform('p1', 0, 10), n_trials=1)
         assert mock_object.call_count == 0
 

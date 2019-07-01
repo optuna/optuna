@@ -128,20 +128,22 @@ class SkoptSampler(BaseSampler):
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
             if len(complete_trials) >= 1:
-                _warn_independent_sampling(trial, param_name)
+                self._log_independent_sampling(trial, param_name)
 
         return self._independent_sampler.sample_independent(study, trial, param_name,
                                                             param_distribution)
 
+    def _log_independent_sampling(self, trial, param_name):
+        # type: (FrozenTrial, str) -> None
 
-def _warn_independent_sampling(trial, param_name):
-    # type: (FrozenTrial, str) -> None
-
-    logger = optuna.logging.get_logger(__name__)
-    logger.warning("The parameter '{}' in trial#{} is sampled by using "
-                   "an independent sampler, not `skopt.Optimizer` "
-                   "(optimization performance may be degraded).".format(
-                       param_name, trial.number))
+        logger = optuna.logging.get_logger(__name__)
+        logger.warning("The parameter '{}' in trial#{} is sampled independently "
+                       "by using `{}`, not `skopt.Optimizer` "
+                       "(optimization performance may be degraded). "
+                       "If this is the intended behavior, please set "
+                       "`warn_independent_sampling` option to `False` "
+                       "for suppressing this warning.".format(
+                           param_name, trial.number, self._independent_sampler.__class__.__name__))
 
 
 class _Optimizer(object):
@@ -219,8 +221,7 @@ class _Optimizer(object):
             if name not in trial.params:
                 return False
 
-            distributions.check_distribution_compatibility(distribution,
-                                                           trial.distributions[name])
+            distributions.check_distribution_compatibility(distribution, trial.distributions[name])
             param_value = trial.params[name]
             param_internal_value = distribution.to_internal_repr(param_value)
             if not distribution._contains(param_internal_value):
