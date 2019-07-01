@@ -95,7 +95,7 @@ def test_sample_independent():
         return p0 + p1 + p2 + p3 + int(p4)
 
     with patch.object(sampler, 'sample_independent') as mock_object:
-        mock_object.side_effect = [1, 2, 3, 3, 0]
+        mock_object.side_effect = [1, 2, 3, 3, '10']
 
         study.optimize(objective0, n_trials=1)
 
