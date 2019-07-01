@@ -45,3 +45,22 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
             raise NotImplementedError
 
         return param_value
+
+
+class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):
+    def sample_relative(self, study, trial, search_space):
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+
+        if len(study.trials) > 1:
+            raise RuntimeError("`FirstTrialOnlyRandomSampler` only works on the first trial.")
+
+        return super(FirstTrialOnlyRandomSampler, self).sample_relative(study, trial, search_space)
+
+    def sample_independent(self, study, trial, param_name, param_distribution):
+        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+
+        if len(study.trials) > 1:
+            raise RuntimeError("`FirstTrialOnlyRandomSampler` only works on the first trial.")
+
+        return super(FirstTrialOnlyRandomSampler,
+                     self).sample_independent(study, trial, param_name, param_distribution)

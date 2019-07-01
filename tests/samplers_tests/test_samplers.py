@@ -22,7 +22,11 @@ if optuna.types.TYPE_CHECKING:
 
 parametrize_sampler = pytest.mark.parametrize(
     'sampler_class',
-    [optuna.samplers.RandomSampler, lambda: optuna.samplers.TPESampler(n_startup_trials=0)])
+    [
+        optuna.samplers.RandomSampler,
+        lambda: optuna.samplers.TPESampler(n_startup_trials=0),
+        lambda: optuna.integration.SkoptSampler(skopt_kwargs={'n_initial_points': 1})
+    ])
 
 
 @parametrize_sampler
@@ -247,3 +251,28 @@ def test_product_search_space():
     # those are regarded as different trials.
     study.optimize(lambda t: t.suggest_uniform('y', -1, 1), n_trials=1)
     assert optuna.samplers.product_search_space(study) == {}
+
+
+@parametrize_sampler
+def test_nan_objective_value(sampler_class):
+    # type: (typing.Callable[[], BaseSampler]) -> None
+
+    study = optuna.create_study(sampler=sampler_class())
+
+    def objective(trial, base_value):
+        # type: (Trial, float) -> float
+
+        return trial.suggest_uniform('x', 0.1, 0.2) + base_value
+
+    # Non NaN objective values.
+    for i in range(10, 1, -1):
+        study.optimize(lambda t: objective(t, i), n_trials=1, catch=())
+    assert int(study.best_value) == 2
+
+    # NaN objective values.
+    study.optimize(lambda t: objective(t, float('nan')), n_trials=1, catch=())
+    assert int(study.best_value) == 2
+
+    # Non NaN objective value.
+    study.optimize(lambda t: objective(t, 1), n_trials=1, catch=())
+    assert int(study.best_value) == 1
