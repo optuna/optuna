@@ -138,11 +138,11 @@ class SkoptSampler(BaseSampler):
 
         logger = optuna.logging.get_logger(__name__)
         logger.warning("The parameter '{}' in trial#{} is sampled independently "
-                       "by using `{}`, not `skopt.Optimizer` "
+                       "by using `{}` instead of `SkoptSampler` "
                        "(optimization performance may be degraded). "
-                       "If this is the intended behavior, please set "
-                       "`warn_independent_sampling` option to `False` "
-                       "for suppressing this warning.".format(
+                       "You can suppress this warning by setting `warn_independent_sampling` "
+                       "to `False` in the constructor of `SkoptSampler`, "
+                       "if this independent sampling is intended behavior.".format(
                            param_name, trial.number, self._independent_sampler.__class__.__name__))
 
 
