@@ -3,6 +3,9 @@ from optuna.samplers import tpe
 from optuna.structs import TrialPruned
 from optuna.study import InTrialStudy
 
+if optuna.typing.TYPE_CHECKING:
+    from optuna.trial import Trial  # NOQA
+
 
 def test_get_observation_pairs():
     # type: () -> None
