@@ -451,7 +451,7 @@ def _get_observation_pairs(study, param_name):
     """Get observation pairs from the study.
 
        This function collects observation pairs from the trials of the study.
-       The trials that doesn't contain the parameter named ``param_name`` are excluded
+       The trials that don't contain the parameter named ``param_name`` are excluded
        from the result.
 
        An observation pair consists of ``(param_value, (step, value))`` where ``param_value`` is
