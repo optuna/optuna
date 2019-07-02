@@ -11,7 +11,6 @@ if types.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
 
 DEFAULT_STUDY_NAME_PREFIX = 'no-name-'
 
