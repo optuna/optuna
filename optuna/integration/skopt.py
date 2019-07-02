@@ -113,7 +113,7 @@ class SkoptSampler(BaseSampler):
         return search_space
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
         if len(search_space) == 0:
             return {}
@@ -123,7 +123,7 @@ class SkoptSampler(BaseSampler):
         return optimizer.ask()
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
 
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
@@ -196,7 +196,7 @@ class _Optimizer(object):
         self._optimizer.tell(xs, ys)
 
     def ask(self):
-        # type: () -> Dict[str, float]
+        # type: () -> Dict[str, Any]
 
         params = {}
         param_values = self._optimizer.ask()
@@ -204,7 +204,7 @@ class _Optimizer(object):
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 value = value * distribution.q + distribution.low
 
-            params[name] = distribution.to_internal_repr(value)
+            params[name] = value
 
         return params
 

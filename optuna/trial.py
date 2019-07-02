@@ -176,9 +176,7 @@ class Trial(BaseTrial):
 
         distribution = distributions.UniformDistribution(low=low, high=high)
         if low == high:
-            param_value_in_internal_repr = distribution.to_internal_repr(low)
-            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
-                                                       distribution)
+            return self._set_new_param_or_get_existing(name, low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -218,9 +216,7 @@ class Trial(BaseTrial):
 
         distribution = distributions.LogUniformDistribution(low=low, high=high)
         if low == high:
-            param_value_in_internal_repr = distribution.to_internal_repr(low)
-            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
-                                                       distribution)
+            return self._set_new_param_or_get_existing(name, low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -267,9 +263,7 @@ class Trial(BaseTrial):
         high = _adjust_discrete_uniform_high(name, low, high, q)
         distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         if low == high:
-            param_value_in_internal_repr = distribution.to_internal_repr(low)
-            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
-                                                       distribution)
+            return self._set_new_param_or_get_existing(name, low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -306,9 +300,7 @@ class Trial(BaseTrial):
 
         distribution = distributions.IntUniformDistribution(low=low, high=high)
         if low == high:
-            param_value_in_internal_repr = distribution.to_internal_repr(low)
-            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
-                                                       distribution)
+            return self._set_new_param_or_get_existing(name, low, distribution)
 
         return int(self._suggest(name, distribution))
 
@@ -455,25 +447,25 @@ class Trial(BaseTrial):
         # type: (str, BaseDistribution) -> Any
 
         if self._is_relative_param(name, distribution):
-            param_value_in_internal_repr = self.relative_params[name]
+            param_value = self.relative_params[name]
         else:
             study = optuna.study.InTrialStudy(self.study)
             trial = self.storage.get_trial(self._trial_id)
-            param_value_in_internal_repr = self.study.sampler.sample_independent(
+            param_value = self.study.sampler.sample_independent(
                 study, trial, name, distribution)
 
-        return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
-                                                   distribution)
+        return self._set_new_param_or_get_existing(name, param_value, distribution)
 
-    def _set_new_param_or_get_existing(self, name, param_value_in_internal_repr, distribution):
-        # type: (str, float, distributions.BaseDistribution) -> Any
+    def _set_new_param_or_get_existing(self, name, param_value, distribution):
+        # type: (str, Any, distributions.BaseDistribution) -> Any
 
+        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
         set_success = self.storage.set_trial_param(self._trial_id, name,
                                                    param_value_in_internal_repr, distribution)
         if not set_success:
             param_value_in_internal_repr = self.storage.get_trial_param(self._trial_id, name)
+            param_value = distribution.to_external_repr(param_value_in_internal_repr)
 
-        param_value = distribution.to_external_repr(param_value_in_internal_repr)
         return param_value
 
     def _is_relative_param(self, name, distribution):
@@ -490,7 +482,8 @@ class Trial(BaseTrial):
         distributions.check_distribution_compatibility(relative_distribution, distribution)
 
         param_value = self.relative_params[name]
-        return distribution._contains(param_value)
+        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+        return distribution._contains(param_value_in_internal_repr)
 
     @property
     def number(self):

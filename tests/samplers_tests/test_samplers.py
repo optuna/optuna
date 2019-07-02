@@ -128,10 +128,16 @@ def test_categorical(sampler_class, choices):
 
     study = optuna.study.create_study(sampler=sampler_class())
     in_trial_study = InTrialStudy(study)
-    points = np.array([
-        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
-                                         distribution) for _ in range(100)
-    ])
+
+    def sample():
+        # type: () -> float
+
+        trial = _create_new_trial(study)
+        param_value = study.sampler.sample_independent(in_trial_study, trial, 'x', distribution)
+        return distribution.to_internal_repr(param_value)
+
+    points = np.array([sample() for _ in range(100)])
+
     # 'x' value is corresponding to an index of distribution.choices.
     assert np.all(points >= 0)
     assert np.all(points <= len(distribution.choices) - 1)
@@ -180,7 +186,7 @@ def test_sample_relative():
     }
     relative_params = {
         'a': 3.2,
-        'b': 2,
+        'b': 'baz',
     }
     unknown_param_value = 30
 

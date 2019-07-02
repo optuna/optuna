@@ -5,6 +5,7 @@ from optuna.samplers.base import BaseSampler
 from optuna import types
 
 if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
@@ -39,12 +40,12 @@ class RandomSampler(BaseSampler):
         return {}
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
         return {}
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, distributions.BaseDistribution) -> float
+        # type: (InTrialStudy, FrozenTrial, str, distributions.BaseDistribution) -> Any
         """Please consult the documentation for :func:`BaseSampler.sample_independent`."""
 
         if isinstance(param_distribution, distributions.UniformDistribution):
@@ -68,6 +69,6 @@ class RandomSampler(BaseSampler):
             return self.rng.randint(param_distribution.low, param_distribution.high + 1)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             choices = param_distribution.choices
-            return self.rng.randint(len(choices))
+            return self.rng.choice(choices)
         else:
             raise NotImplementedError
