@@ -448,6 +448,20 @@ class TPESampler(base.BaseSampler):
 
 def _get_observation_pairs(study, param_name):
     # type: (InTrialStudy, str) -> List[Tuple[float, Tuple[float, float]]]
+    """Get observation pairs from the study.
+
+       This function collects observation pairs from the trials of the study.
+       The trials that doesn't contain the parameter named ``param_name`` are excluded
+       from the result.
+
+       An observation pair consists of ``(param_value, (step, value))`` where ``param_value`` is
+       the value of the parameter ``param_name``, ``step`` is the last step that the trial
+       reached and ``value`` is the reported value at the step.
+
+       The second element of an observation pair is used to rank observations in
+       ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
+       ``(step, value)``).
+    """
 
     sign = 1
     if study.direction == StudyDirection.MAXIMIZE:
