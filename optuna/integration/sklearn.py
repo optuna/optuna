@@ -54,7 +54,8 @@ if types.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
-    TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, spmatrix, pd.DataFrame]
+    TwoDimArrayLikeType = \
+        Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
 
 
 def _check_sklearn_availability():
@@ -77,8 +78,8 @@ def safe_indexing(
     # type: (...) -> Union[OneDimArrayLikeType, TwoDimArrayLikeType]
     if X is None:
         return X
-    else:
-        return sklearn_safe_indexing(X, indices)
+
+    return sklearn_safe_indexing(X, indices)
 
 
 class Objective(object):
@@ -146,7 +147,7 @@ class Objective(object):
         y,  # type: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]]
         cv,  # type: BaseCrossValidator
         enable_pruning,  # type: bool
-        error_score,  # type: Union[str, float]
+        error_score,  # type: Union[float, str]
         fit_params,  # type: Dict[str, Any]
         groups,  # type: Optional[OneDimArrayLikeType]
         max_iter,  # type: int
@@ -155,8 +156,6 @@ class Objective(object):
     ):
         # type: (...) -> None
 
-        self.X = X
-        self.y = y
         self.cv = cv
         self.enable_pruning = enable_pruning
         self.error_score = error_score
@@ -167,6 +166,8 @@ class Objective(object):
         self.param_distributions = param_distributions
         self.return_train_score = return_train_score
         self.scoring = scoring
+        self.X = X
+        self.y = y
 
     def __call__(self, trial):
         # type: (trial_module.Trial) -> float
@@ -656,18 +657,18 @@ class OptunaSearchCV(BaseEstimator):
         self,
         estimator,  # type: BaseEstimator
         param_distributions,  # type: Mapping[str, distributions.BaseDistribution]
-        cv=5,  # type: Union[int, BaseCrossValidator, None]
+        cv=5,  # type: Optional[Union[BaseCrossValidator, int]]
         enable_pruning=False,  # type: bool
-        error_score=np.nan,  # type: Union[str, float]
+        error_score=np.nan,  # type: Union[float, str]
         max_iter=1000,  # type: int
         n_jobs=1,  # type: int
         n_trials=10,  # type: int
         random_state=None,  # type: Optional[Union[int, np.random.RandomState]]
         refit=True,  # type: bool
         return_train_score=False,  # type: bool
-        scoring=None,  # type: Union[str, Callable[..., float], None]
+        scoring=None,  # type: Optional[Union[Callable[..., float], str]]
         study=None,  # type: Optional[study_module.Study]
-        subsample=1.0,  # type: Union[int, float]
+        subsample=1.0,  # type: Union[float, int]
         timeout=None,  # type: Optional[float]
         verbose=0  # type: int
     ):
@@ -758,7 +759,7 @@ class OptunaSearchCV(BaseEstimator):
         self,
         X,  # type: TwoDimArrayLikeType
         y=None,  # type: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]]
-        **fit_params  # type: Dict[str, Any]
+        **fit_params  # type: Any
     ):
         # type: (...) -> 'OptunaSearchCV'
 
@@ -794,7 +795,7 @@ class OptunaSearchCV(BaseEstimator):
         X,  # type: TwoDimArrayLikeType
         y=None,  # type: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]]
         groups=None,  # type: Optional[OneDimArrayLikeType]
-        **fit_params  # type: Dict[str, Any]
+        **fit_params  # type: Any
     ):
         # type: (...) -> 'OptunaSearchCV'
         """Run fit with all sets of parameters.
