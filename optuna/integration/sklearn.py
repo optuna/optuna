@@ -245,7 +245,7 @@ class Objective(object):
 
             trial.report(intermediate_value, step=step)
 
-            if trial.should_prune(step):
+            if trial.should_prune():
                 self._store_scores(trial, scores)
 
                 raise structs.TrialPruned(
