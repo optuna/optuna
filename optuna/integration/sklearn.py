@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from logging import DEBUG
 from logging import INFO
+from logging import Logger  # NOQA
 from logging import WARNING
 from numbers import Number
 from time import time
@@ -54,8 +55,6 @@ if types.TYPE_CHECKING:
 
     OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
     TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, spmatrix, pd.DataFrame]
-
-logger = logging.get_logger(__name__)
 
 
 def _check_sklearn_availability():
@@ -765,6 +764,20 @@ class OptunaSearchCV(BaseEstimator):
                 'max_iter must be > 0, got {}'.format(self.max_iter)
             )
 
+    def _get_logger(self):
+        # type: () -> Logger
+
+        logger = logging.get_logger(__name__)
+
+        if self.verbose > 1:
+            logger.setLevel(DEBUG)
+        elif self.verbose > 0:
+            logger.setLevel(INFO)
+        else:
+            logger.setLevel(WARNING)
+
+        return logger
+
     def _refit(
         self,
         X,  # type: TwoDimArrayLikeType
@@ -793,16 +806,6 @@ class OptunaSearchCV(BaseEstimator):
         self.refit_time_ = time() - start_time
 
         return self
-
-    def _set_verbosity(self):
-        # type: () -> None
-
-        if self.verbose > 1:
-            logging.set_verbosity(DEBUG)
-        elif self.verbose > 0:
-            logging.set_verbosity(INFO)
-        else:
-            logging.set_verbosity(WARNING)
 
     def fit(
         self,
@@ -834,11 +837,11 @@ class OptunaSearchCV(BaseEstimator):
         """
 
         self._check_params()
-        self._set_verbosity()
 
         random_state = check_random_state(self.random_state)
         max_samples = self.subsample
         n_samples = _num_samples(X)
+        logger = self._get_logger()
 
         self.sample_indices_ = np.arange(n_samples)
 
