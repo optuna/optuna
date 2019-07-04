@@ -792,6 +792,7 @@ class OptunaSearchCV(BaseEstimator):
         # type: (...) -> 'OptunaSearchCV'
 
         n_samples = _num_samples(X)
+        logger = self._get_logger()
 
         self.best_estimator_ = clone(self.estimator)
 
@@ -809,6 +810,11 @@ class OptunaSearchCV(BaseEstimator):
         self.best_estimator_.fit(X, y, **fit_params)
 
         self.refit_time_ = time() - start_time
+
+        logger.info(
+            'Finished refitting! '
+            '(elapsed time: {:.3f} sec.)'.format(self.refit_time_)
+        )
 
         return self
 
@@ -915,6 +921,8 @@ class OptunaSearchCV(BaseEstimator):
             n_trials=self.n_trials,
             timeout=self.timeout
         )
+
+        logger.info('Finished hyperparemeter search!')
 
         if self.refit:
             self._refit(X, y, **fit_params)
