@@ -193,7 +193,7 @@ class Objective(object):
 
         self._store_scores(trial, scores)
 
-        return - trial.user_attrs['mean_test_score']
+        return trial.user_attrs['mean_test_score']
 
     def _cross_validate_with_pruning(
         self,
@@ -240,7 +240,7 @@ class Objective(object):
                 scores['fit_time'][i] += out[1]
                 scores['score_time'][i] += out[2]
 
-            intermediate_value = - np.nanmean(scores['test_score'])
+            intermediate_value = np.nanmean(scores['test_score'])
 
             trial.report(intermediate_value, step=step)
 
@@ -494,7 +494,9 @@ class OptunaSearchCV(BaseEstimator):
         # type: () -> float
         """Mean cross-validated score of the best estimator."""
 
-        return - self.best_value_
+        self._check_is_fitted()
+
+        return self.study_.best_value
 
     @property
     def best_trial_(self):
@@ -504,15 +506,6 @@ class OptunaSearchCV(BaseEstimator):
         self._check_is_fitted()
 
         return self.study_.best_trial
-
-    @property
-    def best_value_(self):
-        # type: () -> float
-        """Best objective value in the :class:`~optuna.study.Study`."""
-
-        self._check_is_fitted()
-
-        return self.study_.best_value
 
     @property
     def classes_(self):
@@ -737,6 +730,9 @@ class OptunaSearchCV(BaseEstimator):
                 'max_iter must be > 0, got {}'.format(self.max_iter)
             )
 
+        if self.study is not None and self.study.direction != 'maximize':
+            raise ValueError('direction of study must be \'maximize\'.')
+
     def _get_logger(self):
         # type: () -> Logger
 
@@ -866,6 +862,7 @@ class OptunaSearchCV(BaseEstimator):
             sampler = samplers.TPESampler(seed=seed)
 
             self.study_ = study_module.create_study(
+                direction='maximize',
                 sampler=sampler
             )
 
