@@ -5,7 +5,6 @@ from sklearn.linear_model import SGDClassifier
 
 from optuna import distributions
 from optuna import integration
-from optuna import samplers
 
 
 @pytest.mark.parametrize('enable_pruning', [True, False])
@@ -16,7 +15,6 @@ def test_optuna_search(enable_pruning):
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
     param_dist = {'alpha': distributions.LogUniformDistribution(1e-04, 1e+03)}
-    sampler = samplers.TPESampler(seed=0)
     optuna_search = integration.OptunaSearchCV(
         est,
         param_dist,
@@ -24,8 +22,8 @@ def test_optuna_search(enable_pruning):
         enable_pruning=enable_pruning,
         error_score='raise',
         max_iter=5,
-        return_train_score=True,
-        sampler=sampler
+        random_state=0,
+        return_train_score=True
     )
 
     with pytest.raises(NotFittedError):

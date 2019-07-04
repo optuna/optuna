@@ -40,7 +40,7 @@ from optuna import pruners  # NOQA
 from optuna import samplers  # NOQA
 from optuna import storages  # NOQA
 from optuna import structs
-from optuna import study
+from optuna import study as study_module
 from optuna import trial as trial_module  # NOQA
 from optuna import types
 
@@ -363,11 +363,6 @@ class OptunaSearchCV(BaseEstimator):
             ``sklearn.exceptions.FitFailedWarning`` is raised. This does not
             affect the refit step, which will always raise the error.
 
-        load_if_exists:
-            If :obj:`True`, the existing study is used in the case where a
-            study named :obj:`study_name` already exists in the
-            :obj:`storage`.
-
         max_iter:
             Maximum number of epochs. This is only used if the underlying
             estimator supports ``partial_fit``.
@@ -381,11 +376,6 @@ class OptunaSearchCV(BaseEstimator):
             the study continues to create trials until it receives a
             termination signal such as Ctrl+C or SIGTERM. This trades off
             runtime vs quality of the solution.
-
-        pruner:
-            Pruner that decides early stopping of unpromising trials. If
-            :obj:`None`, :class:`~optuna.pruners.MedianPruner` is used as the
-            default.
 
         random_state:
             Seed of the pseudo random number generator. If int, this is the
@@ -409,22 +399,13 @@ class OptunaSearchCV(BaseEstimator):
             the hyperparameters that yield the best generalization
             performance.
 
-        sampler:
-             Sampler that implements background algorithm for value
-             suggestion. If :obj:`None`, :class:`~optuna.samplers.TPESampler`
-             is used as the default.
-
         scoring:
             String or callable to evaluate the predictions on the test data.
             If :obj:`None`, ``score`` on the estimator is used.
 
-        storage:
-            Database URL. If :obj:`None`, in-memory storage is used, and the
-            :class:`~optuna.study.Study` will not be persistent.
-
-        study_name:
-            name of the :class:`~optuna.study.Study`. If :obj:`None`, a unique
-            name is generated automatically.
+        study:
+            Study corresponds to the optimization task. If :obj:`None`, a new
+            study is created.
 
         subsample:
             Proportion of samples that are used during hyperparameter search.
@@ -462,7 +443,7 @@ class OptunaSearchCV(BaseEstimator):
             Scorer function.
 
         study_:
-            Study corresponds to the optimization task.
+            Actual study.
 
     Examples:
         >>> import optuna
@@ -683,18 +664,14 @@ class OptunaSearchCV(BaseEstimator):
         cv=5,  # type: Union[int, BaseCrossValidator, None]
         enable_pruning=False,  # type: bool
         error_score=np.nan,  # type: Union[str, float]
-        load_if_exists=False,  # type: bool
         max_iter=1000,  # type: int
         n_jobs=1,  # type: int
         n_trials=10,  # type: int
-        pruner=None,  # type: Optional[pruners.BasePruner]
         random_state=None,  # type: Optional[Union[int, np.random.RandomState]]
         refit=True,  # type: bool
         return_train_score=False,  # type: bool
-        sampler=None,  # type: Optional[samplers.BaseSampler]
         scoring=None,  # type: Union[str, Callable[..., float], None]
-        storage=None,  # type: Union[str, storages.BaseStorage, None]
-        study_name=None,  # type: Optional[str]
+        study=None,  # type: Optional[study_module.Study]
         subsample=1.0,  # type: Union[int, float]
         timeout=None,  # type: Optional[float]
         verbose=0  # type: int
@@ -707,19 +684,15 @@ class OptunaSearchCV(BaseEstimator):
         self.enable_pruning = enable_pruning
         self.error_score = error_score
         self.estimator = estimator
-        self.load_if_exists = load_if_exists
         self.max_iter = max_iter
         self.n_trials = n_trials
         self.n_jobs = n_jobs
         self.param_distributions = param_distributions
-        self.pruner = pruner
         self.random_state = random_state
         self.refit = refit
         self.return_train_score = return_train_score
-        self.sampler = sampler
         self.scoring = scoring
-        self.storage = storage
-        self.study_name = study_name
+        self.study = study
         self.subsample = subsample
         self.timeout = timeout
         self.verbose = verbose
@@ -887,13 +860,17 @@ class OptunaSearchCV(BaseEstimator):
 
         self.n_splits_ = cv.get_n_splits(X_res, y_res, groups=groups_res)
         self.scorer_ = check_scoring(self.estimator, scoring=self.scoring)
-        self.study_ = study.create_study(
-            load_if_exists=self.load_if_exists,
-            pruner=self.pruner,
-            sampler=self.sampler,
-            storage=self.storage,
-            study_name=self.study_name
-        )
+
+        if self.study is None:
+            seed = random_state.randint(0, np.iinfo('int32').max)
+            sampler = samplers.TPESampler(seed=seed)
+
+            self.study_ = study_module.create_study(
+                sampler=sampler
+            )
+
+        else:
+            self.study_ = self.study
 
         objective = Objective(
             self.estimator,
