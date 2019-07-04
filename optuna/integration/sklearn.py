@@ -248,7 +248,7 @@ class Objective(object):
                 self._store_scores(trial, scores)
 
                 raise structs.TrialPruned(
-                    'trial was pruned at iteration {}'.format(step)
+                    'trial was pruned at iteration {}.'.format(step)
                 )
 
         return scores
@@ -298,7 +298,9 @@ class Objective(object):
                     train_score = self.error_score
 
             else:
-                raise ValueError("error_score must be 'raise' or numeric.")
+                raise ValueError(
+                    'error_score must be \'raise\' or numeric.'
+                ) from e
 
         else:
             fit_time = time() - start_time
@@ -710,24 +712,24 @@ class OptunaSearchCV(BaseEstimator):
 
         if not hasattr(self.estimator, 'fit'):
             raise ValueError(
-                'estimator must be a scikit-learn estimator'
+                'estimator must be a scikit-learn estimator.'
             )
 
         if type(self.param_distributions) is not dict:
-            raise ValueError('param_distributions must be a dictionary')
+            raise ValueError('param_distributions must be a dictionary.')
 
         for name, distribution in self.param_distributions.items():
             if not isinstance(distribution, distributions.BaseDistribution):
                 raise ValueError(
-                    'value of {} must be a optuna distribution'.format(name)
+                    'Value of {} must be a optuna distribution.'.format(name)
                 )
 
         if self.enable_pruning and not hasattr(self.estimator, 'partial_fit'):
-            raise ValueError('estimator must support partial_fit')
+            raise ValueError('estimator must support partial_fit.')
 
         if self.max_iter <= 0:
             raise ValueError(
-                'max_iter must be > 0, got {}'.format(self.max_iter)
+                'max_iter must be > 0, got {}.'.format(self.max_iter)
             )
 
         if self.study is not None and self.study.direction != 'maximize':
