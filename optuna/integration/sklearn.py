@@ -52,8 +52,8 @@ if types.TYPE_CHECKING:
     from typing import Optional  # NOQA
     from typing import Union  # NOQA
 
-    OneDimArrayType = Union[List[float], np.ndarray, pd.Series]
-    TwoDimArrayType = Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
+    OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
+    TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, spmatrix, pd.DataFrame]
 
 logger = logging.get_logger(__name__)
 
@@ -72,10 +72,10 @@ def _check_sklearn_availability():
 
 
 def safe_indexing(
-    X,  # type: Union[OneDimArrayType, TwoDimArrayType]
-    indices  # type: OneDimArrayType
+    X,  # type: Union[OneDimArrayLikeType, TwoDimArrayLikeType]
+    indices  # type: OneDimArrayLikeType
 ):
-    # type: (...) -> Union[OneDimArrayType, TwoDimArrayType]
+    # type: (...) -> Union[OneDimArrayLikeType, TwoDimArrayLikeType]
     if X is None:
         return X
     else:
@@ -143,13 +143,13 @@ class Objective(object):
         self,
         estimator,  # type: BaseEstimator
         param_distributions,  # type: Mapping[str, distributions.BaseDistribution]
-        X,  # type: TwoDimArrayType
-        y,  # type: Optional[Union[OneDimArrayType, TwoDimArrayType]]
+        X,  # type: TwoDimArrayLikeType
+        y,  # type: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]]
         cv,  # type: BaseCrossValidator
         enable_pruning,  # type: bool
         error_score,  # type: Union[str, float]
         fit_params,  # type: Dict[str, Any]
-        groups,  # type: Optional[OneDimArrayType]
+        groups,  # type: Optional[OneDimArrayLikeType]
         max_iter,  # type: int
         return_train_score,  # type: bool
         scoring  # type: Callable[..., float]
@@ -201,7 +201,7 @@ class Objective(object):
         trial,  # type: trial_module.Trial
         estimator  # type: BaseEstimator
     ):
-        # type: (...) -> Dict[str, OneDimArrayType]
+        # type: (...) -> Dict[str, OneDimArrayLikeType]
 
         if is_classifier(estimator):
             partial_fit_params = self.fit_params.copy()
@@ -317,7 +317,7 @@ class Objective(object):
         return ret
 
     def _store_scores(self, trial, scores):
-        # type: (trial_module.Trial, Dict[str, OneDimArrayType]) -> None
+        # type: (trial_module.Trial, Dict[str, OneDimArrayLikeType]) -> None
 
         for name, array in scores.items():
             if name in ['test_score', 'train_score']:
@@ -536,7 +536,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def classes_(self):
-        # type: () -> OneDimArrayType
+        # type: () -> OneDimArrayLikeType
         """Class labels."""
 
         self._check_is_fitted()
@@ -570,7 +570,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def decision_function(self):
-        # type: () -> Callable[..., Union[OneDimArrayType, TwoDimArrayType]]
+        # type: () -> Callable[..., Union[OneDimArrayLikeType, TwoDimArrayLikeType]]
         """Call ``decision_function`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -583,7 +583,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def inverse_transform(self):
-        # type: () -> Callable[..., TwoDimArrayType]
+        # type: () -> Callable[..., TwoDimArrayLikeType]
         """Call ``inverse_transform`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -596,7 +596,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def predict(self):
-        # type: () -> Callable[..., Union[OneDimArrayType, TwoDimArrayType]]
+        # type: () -> Callable[..., Union[OneDimArrayLikeType, TwoDimArrayLikeType]]
         """Call ``predict`` on the best estimator.
 
         This is available only if the underlying estimator supports ``predict``
@@ -609,7 +609,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def predict_log_proba(self):
-        # type: () -> Callable[..., TwoDimArrayType]
+        # type: () -> Callable[..., TwoDimArrayLikeType]
         """Call ``predict_log_proba`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -622,7 +622,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def predict_proba(self):
-        # type: () -> Callable[..., TwoDimArrayType]
+        # type: () -> Callable[..., TwoDimArrayLikeType]
         """Call ``predict_proba`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -635,7 +635,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def score_samples(self):
-        # type: () -> Callable[..., OneDimArrayType]
+        # type: () -> Callable[..., OneDimArrayLikeType]
         """Call ``score_samples`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -657,7 +657,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def transform(self):
-        # type: () -> Callable[..., TwoDimArrayType]
+        # type: () -> Callable[..., TwoDimArrayLikeType]
         """Call ``transform`` on the best estimator.
 
         This is available only if the underlying estimator supports
@@ -767,8 +767,8 @@ class OptunaSearchCV(BaseEstimator):
 
     def _refit(
         self,
-        X,  # type: TwoDimArrayType
-        y=None,  # type: Optional[Union[OneDimArrayType, TwoDimArrayType]]
+        X,  # type: TwoDimArrayLikeType
+        y=None,  # type: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]]
         **fit_params  # type: Dict[str, Any]
     ):
         # type: (...) -> 'OptunaSearchCV'
@@ -806,9 +806,9 @@ class OptunaSearchCV(BaseEstimator):
 
     def fit(
         self,
-        X,  # type: TwoDimArrayType
-        y=None,  # type: Optional[Union[OneDimArrayType, TwoDimArrayType]]
-        groups=None,  # type: Optional[OneDimArrayType]
+        X,  # type: TwoDimArrayLikeType
+        y=None,  # type: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]]
+        groups=None,  # type: Optional[OneDimArrayLikeType]
         **fit_params  # type: Dict[str, Any]
     ):
         # type: (...) -> 'OptunaSearchCV'
@@ -915,8 +915,8 @@ class OptunaSearchCV(BaseEstimator):
 
     def score(
         self,
-        X,  # type: TwoDimArrayType
-        y=None,  # type: Optional[Union[OneDimArrayType, TwoDimArrayType]]
+        X,  # type: TwoDimArrayLikeType
+        y=None,  # type: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]]
     ):
         # type: (...) -> float
         """Return the score on the given data.
