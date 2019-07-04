@@ -456,6 +456,9 @@ class OptunaSearchCV(BaseEstimator):
             Time for refitting the best estimator. This is present only if
             ``refit`` is set to :obj:`True`.
 
+        sample_indices_:
+            Indices of samples that are used during hyperparameter search.
+
         scorer_:
             Scorer function.
 
@@ -725,7 +728,12 @@ class OptunaSearchCV(BaseEstimator):
     def _check_is_fitted(self):
         # type: () -> None
 
-        attributes = ['n_splits_', 'scorer_', 'study_']
+        attributes = [
+            'n_splits_',
+            'sample_indices_',
+            'scorer_',
+            'study_'
+        ]
 
         if self.refit:
             attributes += ['best_estimator_', 'refit_time_']
@@ -831,19 +839,24 @@ class OptunaSearchCV(BaseEstimator):
         random_state = check_random_state(self.random_state)
         max_samples = self.subsample
         n_samples = _num_samples(X)
-        indices = np.arange(n_samples)
+
+        self.sample_indices_ = np.arange(n_samples)
 
         if type(max_samples) is float:
             max_samples = int(max_samples * n_samples)
 
         if max_samples < n_samples:
-            indices = random_state.choice(indices, max_samples, replace=False)
+            self.sample_indices_ = random_state.choice(
+                self.sample_indices_,
+                max_samples,
+                replace=False
+            )
 
-            indices.sort()
+            self.sample_indices_.sort()
 
-        X_res = safe_indexing(X, indices)
-        y_res = safe_indexing(y, indices)
-        groups_res = safe_indexing(groups, indices)
+        X_res = safe_indexing(X, self.sample_indices_)
+        y_res = safe_indexing(y, self.sample_indices_)
+        groups_res = safe_indexing(groups, self.sample_indices_)
         fit_params_res = fit_params
 
         if fit_params_res is not None:
@@ -851,7 +864,7 @@ class OptunaSearchCV(BaseEstimator):
                 key: _index_param_value(
                     X,
                     value,
-                    indices
+                    self.sample_indices_
                 ) for key, value in fit_params.items()
             }
 
@@ -885,7 +898,7 @@ class OptunaSearchCV(BaseEstimator):
 
         logger.info(
             'Searching the best hyperparameters using {} '
-            'samples...'.format(_num_samples(indices))
+            'samples...'.format(_num_samples(self.sample_indices_))
         )
 
         self.study_.optimize(
