@@ -146,6 +146,7 @@ class InMemoryStorage(base.BaseStorage):
                     number=trial_id,
                     state=structs.TrialState.RUNNING,
                     params={},
+                    distributions={},
                     user_attrs={},
                     system_attrs={'_number': trial_id},
                     value=None,
@@ -189,6 +190,7 @@ class InMemoryStorage(base.BaseStorage):
             self.trials[trial_id].params_in_internal_repr[param_name] = param_value_internal
             self.trials[trial_id].params[param_name] = distribution.to_external_repr(
                 param_value_internal)
+            self.trials[trial_id].distributions[param_name] = distribution
 
             return True
 

@@ -7,6 +7,7 @@ from optuna import types
 if types.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
+    from typing import List  # NOQA
 
 EXAMPLE_DISTRIBUTIONS = {
     'u': distributions.UniformDistribution(low=1., high=2.),
@@ -76,3 +77,96 @@ def test_check_distribution_compatibility():
             low=-1.0, high=10.0, q=3.))
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS['iu'], EXAMPLE_DISTRIBUTIONS['iu']._replace(low=-1, high=1))
+
+
+def test_contains():
+    # type: () -> None
+
+    u = distributions.UniformDistribution(low=1., high=2.)
+    assert not u._contains(0.9)
+    assert u._contains(1)
+    assert u._contains(1.5)
+    assert not u._contains(2)
+
+    lu = distributions.LogUniformDistribution(low=0.001, high=100)
+    assert not lu._contains(0.0)
+    assert lu._contains(0.001)
+    assert lu._contains(12.3)
+    assert not lu._contains(100)
+
+    du = distributions.DiscreteUniformDistribution(low=1., high=10., q=2.)
+    assert not du._contains(0.9)
+    assert du._contains(1.0)
+    assert du._contains(3.5)
+    assert du._contains(6)
+    assert du._contains(10)
+    assert not du._contains(10.1)
+
+    iu = distributions.IntUniformDistribution(low=1, high=10)
+    assert not iu._contains(0.9)
+    assert iu._contains(1)
+    assert iu._contains(3.5)
+    assert iu._contains(6)
+    assert iu._contains(10)
+    assert iu._contains(10.1)
+    assert not iu._contains(11)
+
+    c = distributions.CategoricalDistribution(choices=('Roppongi', 'Azabu'))
+    assert not c._contains(-1)
+    assert c._contains(0)
+    assert c._contains(1)
+    assert c._contains(1.5)
+    assert not c._contains(3)
+
+
+def test_empty_range_contains():
+    # type: () -> None
+
+    u = distributions.UniformDistribution(low=1.0, high=1.0)
+    assert not u._contains(0.9)
+    assert u._contains(1.0)
+    assert not u._contains(1.1)
+
+    lu = distributions.LogUniformDistribution(low=1.0, high=1.0)
+    assert not lu._contains(0.9)
+    assert lu._contains(1.0)
+    assert not lu._contains(1.1)
+
+    du = distributions.DiscreteUniformDistribution(low=1.0, high=1.0, q=2.0)
+    assert not du._contains(0.9)
+    assert du._contains(1.0)
+    assert not du._contains(1.1)
+
+    iu = distributions.IntUniformDistribution(low=1, high=1)
+    assert not iu._contains(0)
+    assert iu._contains(1)
+    assert not iu._contains(2)
+
+
+def test_single():
+    # type: () -> None
+
+    single_distributions = [
+        distributions.UniformDistribution(low=1.0, high=1.0),
+        distributions.LogUniformDistribution(low=7.3, high=7.3),
+        distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
+        distributions.IntUniformDistribution(low=-123, high=-123),
+        distributions.CategoricalDistribution(choices=('foo', ))
+    ]  # type: List[distributions.BaseDistribution]
+    for distribution in single_distributions:
+        assert distribution.single()
+
+    nonsingle_distributions = [
+        distributions.UniformDistribution(low=0.0, high=-100.0),
+        distributions.UniformDistribution(low=1.0, high=1.001),
+        distributions.LogUniformDistribution(low=7.3, high=7.2),
+        distributions.LogUniformDistribution(low=7.3, high=10),
+        distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3),
+        distributions.DiscreteUniformDistribution(low=-30, high=-20, q=2),
+        distributions.IntUniformDistribution(low=123, high=100),
+        distributions.IntUniformDistribution(low=-123, high=0),
+        distributions.CategoricalDistribution(choices=()),
+        distributions.CategoricalDistribution(choices=('foo', 'bar'))
+    ]  # type: List[distributions.BaseDistribution]
+    for distribution in nonsingle_distributions:
+        assert not distribution.single()

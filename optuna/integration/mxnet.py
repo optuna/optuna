@@ -56,7 +56,7 @@ class MXNetPruningCallback(object):
                                  'is not found in the evaluation result list {}.'.format(
                                      self.eval_metric, str(metric_names)))
             self.trial.report(current_score, step=param.epoch)
-            if self.trial.should_prune(param.epoch):
+            if self.trial.should_prune():
                 message = "Trial was pruned at epoch {}.".format(param.epoch)
                 raise optuna.structs.TrialPruned(message)
 

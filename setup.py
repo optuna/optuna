@@ -31,8 +31,8 @@ def get_install_requires():
     # type: () -> List[str]
 
     install_requires = [
-        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'cliff', 'colorlog', 'pandas',
-        'alembic'
+        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six',
+        'cliff', 'colorlog', 'pandas', 'alembic', 'typing'
     ]
     if sys.version_info[0] == 2:
         install_requires.extend(['enum34'])
@@ -46,7 +46,7 @@ def get_extras_require():
         'checking': ['autopep8', 'hacking'],
         'testing': [
             'pytest', 'mock', 'bokeh', 'plotly', 'chainer>=5.0.0', 'xgboost', 'mpi4py', 'lightgbm',
-            'keras', 'tensorflow', 'mxnet', 'scikit-learn>=0.20.0'
+            'keras', 'mxnet', 'scikit-optimize', 'scikit-learn>=0.20.0', 'tensorflow'
         ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],
@@ -84,8 +84,11 @@ setup(
     url='https://optuna.org/',
     packages=find_packages(),
     package_data={
-        'optuna':
-        ['storages/rdb/alembic.ini', 'storages/rdb/alembic/*', 'storages/rdb/alembic/versions/*']
+        'optuna': [
+            'storages/rdb/alembic.ini',
+            'storages/rdb/alembic/*.*',
+            'storages/rdb/alembic/versions/*.*'
+        ]
     },
     install_requires=get_install_requires(),
     tests_require=get_extras_require()['testing'],

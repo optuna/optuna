@@ -214,7 +214,7 @@ class BaseStorage(object):
                 # TODO(Akiba): We also want to use pruned results
                 ]
 
-    # Methods for the median pruner
+    # Methods for PercentilePruner and MedianPruner
 
     def get_best_intermediate_result_over_steps(self, trial_id):
         # type: (int) -> float
@@ -226,8 +226,8 @@ class BaseStorage(object):
             return np.nanmax(values)
         return np.nanmin(values)
 
-    def get_median_intermediate_result_over_trials(self, study_id, step):
-        # type: (int, int) -> float
+    def get_percentile_intermediate_result_over_trials(self, study_id, step, percentile):
+        # type: (int, int, float) -> float
 
         all_trials = [
             t for t in self.get_all_trials(study_id) if t.state == structs.TrialState.COMPLETE
@@ -236,12 +236,17 @@ class BaseStorage(object):
         if len(all_trials) == 0:
             raise ValueError("No trials have been completed.")
 
+        direction = self.get_study_direction(study_id)
+        if direction == structs.StudyDirection.MAXIMIZE:
+            percentile = 100 - percentile
+
         return float(
-            np.nanmedian(
+            np.nanpercentile(
                 np.array([
                     t.intermediate_values[step]
                     for t in all_trials if step in t.intermediate_values
-                ], np.float)))
+                ], np.float),
+                percentile))
 
     def remove_session(self):
         # type: () -> None

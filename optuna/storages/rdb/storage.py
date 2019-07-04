@@ -41,7 +41,9 @@ class RDBStorage(BaseStorage):
 
     Args:
         url: URL of the storage.
-        connect_args: Arguments that is passed to :func:`sqlalchemy.engine.create_engine`.
+        engine_kwargs:
+            A dictionary of keyword arguments that is passed to
+            :func:`sqlalchemy.engine.create_engine`.
         enable_cache:
             Flag to control whether to enable storage layer caching.
             If this flag is set to :obj:`True` (the default), the finished trials are
@@ -50,15 +52,15 @@ class RDBStorage(BaseStorage):
 
     """
 
-    def __init__(self, url, connect_args=None, enable_cache=True, skip_compatibility_check=False):
+    def __init__(self, url, engine_kwargs=None, enable_cache=True, skip_compatibility_check=False):
         # type: (str, Optional[Dict[str, Any]], bool, bool) -> None
 
-        connect_args = connect_args or {}
+        engine_kwargs = engine_kwargs or {}
 
         url = self._fill_storage_url_template(url)
 
         try:
-            self.engine = create_engine(url, connect_args=connect_args)
+            self.engine = create_engine(url, **engine_kwargs)
         except ImportError as e:
             raise ImportError('Failed to import DB access module for the specified storage URL. '
                               'Please install appropriate one. (The actual import error is: ' +
@@ -437,7 +439,16 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self.check_trial_is_updatable(trial_id, trial.state)
+        if key == '_number':
+            # `_number` attribute may be set even after a trial is finished.
+            # This happens if the trial was created before v0.9.0,
+            # where a trial didn't have `_number` attribute.
+            # In this case, `check_trial_is_updatable` is skipped to avoid the `RuntimeError`.
+            #
+            # TODO(ohta): Remove this workaround when `number` field is added to `TrialModel`.
+            pass
+        else:
+            self.check_trial_is_updatable(trial_id, trial.state)
 
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
@@ -559,10 +570,12 @@ class RDBStorage(BaseStorage):
         for trial_id, trial in id_to_trial.items():
             params = {}
             params_in_internal_repr = {}
+            param_distributions = {}
             for param in id_to_params[trial_id]:
                 distribution = distributions.json_to_distribution(param.distribution_json)
                 params[param.param_name] = distribution.to_external_repr(param.param_value)
                 params_in_internal_repr[param.param_name] = param.param_value
+                param_distributions[param.param_name] = distribution
 
             intermediate_values = {}
             for value in id_to_values[trial_id]:
@@ -587,6 +600,7 @@ class RDBStorage(BaseStorage):
                     number=trial_number,
                     state=trial.state,
                     params=params,
+                    distributions=param_distributions,
                     user_attrs=user_attrs,
                     system_attrs=system_attrs,
                     value=trial.value,
@@ -836,10 +850,11 @@ class _VersionManager(object):
     def _create_alembic_config(self):
         # type: () -> alembic.config.Config
 
+        alembic_dir = os.path.join(os.path.dirname(__file__), 'alembic')
+
         config = alembic.config.Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
-        config.set_main_option('script_location', os.path.join(
-            os.path.dirname(__file__), 'alembic'))
-        config.set_main_option('sqlalchemy.url', self.url)
+        config.set_main_option('script_location', escape_alembic_config_value(alembic_dir))
+        config.set_main_option('sqlalchemy.url', escape_alembic_config_value(self.url))
         return config
 
 
@@ -878,3 +893,12 @@ class _FinishedTrialsCache(object):
 
         with self._lock:
             return self._finished_trials.get(trial_id)
+
+
+def escape_alembic_config_value(value):
+    # type: (str) -> str
+
+    # We must escape '%' in a value string because the character
+    # is regarded as the trigger of variable expansion.
+    # Please see the documentation of `configparser.BasicInterpolation` for more details.
+    return value.replace('%', '%%')

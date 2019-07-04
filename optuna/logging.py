@@ -56,17 +56,11 @@ def _configure_library_root_logger():
         _default_handler = logging.StreamHandler()
         _default_handler.setFormatter(create_default_formatter())
 
-        python_root_logger = logging.getLogger()
-        if python_root_logger.handlers:
-            # Users have already configured python root logger. This library's log outputs will be
-            # propagated to the root logger, and thus they will be collected properly. We don't
-            # further configure loggers by ourselves to prevent double logging, etc.
-            return
-
         # Apply our default configuration to the library root logger.
         library_root_logger = _get_library_root_logger()
         library_root_logger.addHandler(_default_handler)
         library_root_logger.setLevel(logging.INFO)
+        library_root_logger.propagate = False
 
 
 def _reset_library_root_logger():
@@ -166,3 +160,44 @@ def enable_default_handler():
 
     assert _default_handler is not None
     _get_library_root_logger().addHandler(_default_handler)
+
+
+def disable_propagation():
+    # type: () -> None
+    """Disable propagation of the library log outputs.
+
+    Note that log propagation is disabled by default.
+    """
+
+    _configure_library_root_logger()
+    _get_library_root_logger().propagate = False
+
+
+def enable_propagation():
+    # type: () -> None
+    """Enable propagation of the library log outputs.
+
+    Please disable the Optuna's default handler to prevent double logging if the root logger has
+    been configured.
+
+    Example:
+
+        Propagate all log output to the root logger in order to save them to the file.
+
+        .. code::
+
+            >> logging.getLogger().setLevel(logging.INFO)  # Setup the root logger.
+            >> logging.getLogger().addHandler(logging.FileHandler('foo.log'))
+
+            >> optuna.logging.enable_propagation()  # Propagate logs to the root logger.
+            >> optuna.logging.disable_default_handler()  # Stop showing logs in stderr.
+
+            >> study = optuna.create_study()
+            >> logging.getLogger().info("Start optimization.")
+            >> study.optimize(objective, n_trials=10)
+            >> open('foo.log').readlines()
+            ["Start optimization.", "Finished trial#0 resulted in value: ...
+    """
+
+    _configure_library_root_logger()
+    _get_library_root_logger().propagate = True

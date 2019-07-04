@@ -3,17 +3,20 @@ import math
 import six
 import warnings
 
+import optuna
 from optuna import distributions
 from optuna import logging
 from optuna import types
 
 if types.TYPE_CHECKING:
-    from optuna.study import Study  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import TypeVar  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.study import Study  # NOQA
 
     T = TypeVar('T', float, str)
 
@@ -55,8 +58,8 @@ class BaseTrial(object):
 
         raise NotImplementedError
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
 
         raise NotImplementedError
 
@@ -73,6 +76,12 @@ class BaseTrial(object):
     @property
     def params(self):
         # type: () -> Dict[str, Any]
+
+        raise NotImplementedError
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
 
         raise NotImplementedError
 
@@ -107,8 +116,12 @@ class Trial(BaseTrial):
 
     """
 
-    def __init__(self, study, trial_id):
-        # type: (Study, int) -> None
+    def __init__(
+            self,
+            study,  # type: Study
+            trial_id,  # type: int
+    ):
+        # type: (...) -> None
 
         self.study = study
         self._trial_id = trial_id
@@ -116,6 +129,18 @@ class Trial(BaseTrial):
         self.study_id = self.study.study_id
         self.storage = self.study.storage
         self.logger = logging.get_logger(__name__)
+
+        self._init_relative_params()
+
+    def _init_relative_params(self):
+        # type: () -> None
+
+        study = optuna.study.InTrialStudy(self.study)
+        trial = self.storage.get_trial(self._trial_id)
+
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
+        self.relative_params = self.study.sampler.sample_relative(study, trial,
+                                                                  self.relative_search_space)
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -151,9 +176,7 @@ class Trial(BaseTrial):
 
         distribution = distributions.UniformDistribution(low=low, high=high)
         if low == high:
-            param_value_in_internal_repr = distribution.to_internal_repr(low)
-            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
-                                                       distribution)
+            return self._set_new_param_or_get_existing(name, low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -193,9 +216,7 @@ class Trial(BaseTrial):
 
         distribution = distributions.LogUniformDistribution(low=low, high=high)
         if low == high:
-            param_value_in_internal_repr = distribution.to_internal_repr(low)
-            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
-                                                       distribution)
+            return self._set_new_param_or_get_existing(name, low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -239,18 +260,10 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        r = high - low
-
-        if math.fmod(r, q) != 0:
-            high = (r // q) * q + low
-            self.logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
-                                'replaced by [{}, {}].'.format(name, low, high))
-
+        high = _adjust_discrete_uniform_high(name, low, high, q)
         distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         if low == high:
-            param_value_in_internal_repr = distribution.to_internal_repr(low)
-            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
-                                                       distribution)
+            return self._set_new_param_or_get_existing(name, low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -287,9 +300,7 @@ class Trial(BaseTrial):
 
         distribution = distributions.IntUniformDistribution(low=low, high=high)
         if low == high:
-            param_value_in_internal_repr = distribution.to_internal_repr(low)
-            return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
-                                                       distribution)
+            return self._set_new_param_or_get_existing(name, low, distribution)
 
         return int(self._suggest(name, distribution))
 
@@ -346,7 +357,7 @@ class Trial(BaseTrial):
                 >>>         clf.partial_fit(x_train , y_train , classes)
                 >>>         intermediate_value = clf.score(x_val , y_val)
                 >>>         trial.report(intermediate_value , step=step)
-                >>>         if trial.should_prune(step):
+                >>>         if trial.should_prune():
                 >>>             raise TrialPruned()
                 >>>     ...
 
@@ -361,8 +372,8 @@ class Trial(BaseTrial):
         if step is not None:
             self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
         """Judge whether the trial should be pruned.
 
         This method calls prune method of the pruner, which judges whether the trial should
@@ -371,14 +382,18 @@ class Trial(BaseTrial):
 
         Args:
             step:
-                Step of the trial (e.g., epoch of neural network training).
+                Deprecated: Step of the trial (e.g., epoch of neural network training).
 
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned. Otherwise, the trial will
             be continued.
         """
-
-        # TODO(akiba): remove `step` argument
+        if step is None:
+            step = max(self.storage.get_trial(self._trial_id).intermediate_values.keys())
+        else:
+            warnings.warn(
+                'The use of `step` argument is deprecated. '
+                'You can omit to pass this parameter.', DeprecationWarning)
 
         return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
 
@@ -429,24 +444,46 @@ class Trial(BaseTrial):
         self.storage.set_trial_system_attr(self._trial_id, key, value)
 
     def _suggest(self, name, distribution):
-        # type: (str, distributions.BaseDistribution) -> Any
+        # type: (str, BaseDistribution) -> Any
 
-        param_value_in_internal_repr = self.study.sampler.sample(self.storage, self.study_id, name,
-                                                                 distribution)
+        if self._is_relative_param(name, distribution):
+            param_value = self.relative_params[name]
+        else:
+            study = optuna.study.InTrialStudy(self.study)
+            trial = self.storage.get_trial(self._trial_id)
+            param_value = self.study.sampler.sample_independent(
+                study, trial, name, distribution)
 
-        return self._set_new_param_or_get_existing(name, param_value_in_internal_repr,
-                                                   distribution)
+        return self._set_new_param_or_get_existing(name, param_value, distribution)
 
-    def _set_new_param_or_get_existing(self, name, param_value_in_internal_repr, distribution):
-        # type: (str, float, distributions.BaseDistribution) -> Any
+    def _set_new_param_or_get_existing(self, name, param_value, distribution):
+        # type: (str, Any, distributions.BaseDistribution) -> Any
 
+        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
         set_success = self.storage.set_trial_param(self._trial_id, name,
                                                    param_value_in_internal_repr, distribution)
         if not set_success:
             param_value_in_internal_repr = self.storage.get_trial_param(self._trial_id, name)
+            param_value = distribution.to_external_repr(param_value_in_internal_repr)
 
-        param_value = distribution.to_external_repr(param_value_in_internal_repr)
         return param_value
+
+    def _is_relative_param(self, name, distribution):
+        # type: (str, BaseDistribution) -> bool
+
+        if name not in self.relative_params:
+            return False
+
+        if name not in self.relative_search_space:
+            raise ValueError("The parameter '{}' was sampled by `sample_relative` method "
+                             "but it is not contained in the relative search space.".format(name))
+
+        relative_distribution = self.relative_search_space[name]
+        distributions.check_distribution_compatibility(relative_distribution, distribution)
+
+        param_value = self.relative_params[name]
+        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+        return distribution._contains(param_value_in_internal_repr)
 
     @property
     def number(self):
@@ -490,6 +527,17 @@ class Trial(BaseTrial):
         """
 
         return self.storage.get_trial_params(self._trial_id)
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
+        """Return distributions of parameters to be optimized.
+
+        Returns:
+            A dictionary containing all distributions.
+        """
+
+        return self.storage.get_trial(self._trial_id).distributions
 
     @property
     def user_attrs(self):
@@ -550,50 +598,67 @@ class FixedTrial(BaseTrial):
         # type: (Dict[str, Any]) -> None
 
         self._params = params
+        self._suggested_params = {}  # type: Dict[str, Any]
+        self._distributions = {}  # type: Dict[str, BaseDistribution]
         self._user_attrs = {}  # type: Dict[str, Any]
         self._system_attrs = {}  # type: Dict[str, Any]
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        return self._suggest(name)
+        return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
 
     def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        return self._suggest(name)
+        return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
 
     def suggest_discrete_uniform(self, name, low, high, q):
         # type: (str, float, float, float) -> float
 
-        return self._suggest(name)
+        high = _adjust_discrete_uniform_high(name, low, high, q)
+        discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+        return self._suggest(name, discrete)
 
     def suggest_int(self, name, low, high):
         # type: (str, int, int) -> int
 
-        return self._suggest(name)
+        return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[T]) -> T
 
-        return self._suggest(name)
+        choices = tuple(choices)
+        return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
 
-    def _suggest(self, name):
-        # type: (str) -> Any
+    def _suggest(self, name, distribution):
+        # type: (str, BaseDistribution) -> Any
 
         if name not in self._params:
             raise ValueError('The value of the parameter \'{}\' is not found. Please set it at '
                              'the construction of the FixedTrial object.'.format(name))
 
-        return self._params[name]
+        value = self._params[name]
+        param_value_in_internal_repr = distribution.to_internal_repr(value)
+        if not distribution._contains(param_value_in_internal_repr):
+            raise ValueError("The value {} of the parameter '{}' is out of "
+                             "the range of the distribution {}.".format(value, name, distribution))
+
+        if name in self._distributions:
+            distributions.check_distribution_compatibility(self._distributions[name], distribution)
+
+        self._suggested_params[name] = value
+        self._distributions[name] = distribution
+
+        return value
 
     def report(self, value, step=None):
         # type: (float, Optional[int]) -> None
 
         pass
 
-    def should_prune(self, step):
-        # type: (int) -> bool
+    def should_prune(self, step=None):
+        # type: (Optional[int]) -> bool
 
         return False
 
@@ -611,7 +676,13 @@ class FixedTrial(BaseTrial):
     def params(self):
         # type: () -> Dict[str, Any]
 
-        return self._params
+        return self._suggested_params
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
+
+        return self._distributions
 
     @property
     def user_attrs(self):
@@ -624,3 +695,17 @@ class FixedTrial(BaseTrial):
         # type: () -> Dict[str, Any]
 
         return self._system_attrs
+
+
+def _adjust_discrete_uniform_high(name, low, high, q):
+    # type: (str, float, float, float) -> float
+
+    r = high - low
+
+    if math.fmod(r, q) != 0:
+        high = (r // q) * q + low
+        logger = logging.get_logger(__name__)
+        logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
+                       'replaced by [{}, {}].'.format(name, low, high))
+
+    return high

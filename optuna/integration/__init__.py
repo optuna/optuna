@@ -13,6 +13,7 @@ _import_structure = {
     'lightgbm': ['LightGBMPruningCallback'],
     'sklearn': ['OptunaSearchCV'],
     'mxnet': ['MXNetPruningCallback'],
+    'skopt': ['SkoptSampler'],
     'tensorflow': ['TensorFlowPruningHook'],
     'xgboost': ['XGBoostPruningCallback'],
 }
@@ -28,6 +29,7 @@ if sys.version_info[0] == 2 or TYPE_CHECKING:
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
     from optuna.integration.mxnet import MXNetPruningCallback  # NOQA
     from optuna.integration.sklearn import OptunaSearchCV  # NOQA
+    from optuna.integration.skopt import SkoptSampler  # NOQA
     from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
 else:
