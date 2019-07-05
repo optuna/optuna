@@ -29,6 +29,11 @@ def default_gamma(x):
     # type: (int) -> int
 
     return min(int(np.ceil(0.8 * np.sqrt(x))), 25)
+
+
+def hyperopt_default_gamma(x):
+    # type: (int) -> int
+
     return min(int(np.ceil(0.25 * np.sqrt(x))), 25)
 
 
@@ -448,3 +453,42 @@ class TPESampler(base.BaseSampler):
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
         z = denominator / numerator
         return .5 + .5 * scipy.special.erf(z)
+
+    @staticmethod
+    def hyperopt_parameters():
+        # type: () -> Dict[str, Any]
+        """Return the the default parameters of hyperopt.
+
+        Example:
+
+            Create a :class:`~optuna.samplers.TPESampler` instance with the default
+            parameters of `hyperopt <https://github.com/hyperopt/hyperopt>`_.
+
+            .. code::
+
+                    import optuna
+                    from optuna.samplers import TPESampler
+
+                    def objective(trial):
+                        x = trial.suggest_uniform('x', -10, 10)
+                        return x**2
+
+                    sampler = TPESampler(**TPESampler.hyperopt_parameters())
+                    study = optuna.create_study(sampler=sampler)
+                    study.optimize(objective, n_trials=100)
+
+        Returns:
+            A dictionary containing the default parameters of hyperopt.
+
+        """
+
+        return {
+            'consider_prior': True,
+            'prior_weight': 1.0,
+            'consider_magic_clip': True,
+            'consider_endpoints': False,
+            'n_startup_trials': 20,
+            'n_ei_candidates': 24,
+            'gamma': hyperopt_default_gamma,
+            'weights': default_weights,
+        }
