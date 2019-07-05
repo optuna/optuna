@@ -28,6 +28,7 @@ EPS = 1e-12
 def default_gamma(x):
     # type: (int) -> int
 
+    return min(int(np.ceil(0.8 * np.sqrt(x))), 25)
     return min(int(np.ceil(0.25 * np.sqrt(x))), 25)
 
 
