@@ -301,7 +301,7 @@ class Objective(object):
             else:
                 raise ValueError(
                     'error_score must be \'raise\' or numeric.'
-                ) from e
+                )
 
         else:
             fit_time = time() - start_time
