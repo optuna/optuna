@@ -39,6 +39,10 @@ In addition, integration modules are available for the following libraries, prov
 * [pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
 * [pruning with Keras integration module](./pruning/keras_integration.py)
 
+### Examples of Custom Sampler
+
+* [sampler based on Simulated Annealing](./sampler/simulated_annealing_sampler.py)
+
 ### Examples of Visualization
 
 * [plotting learning curves](./visualization/plot_intermediate_values.ipynb)
