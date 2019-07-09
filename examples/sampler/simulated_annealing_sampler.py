@@ -1,3 +1,16 @@
+"""
+Optuna example that implements a custom relative sampler based on Simulated Annealing algorithm.
+
+Note that this implementation isn't intended to be used for production purposes and
+has the following limitations:
+- The sampler only supports `UniformDistribution` (i.e., `Trial.suggest_uniform` method).
+- The implementation prioritizes simplicity over optimization efficiency.
+
+You can run this example as follows:
+    $ python simulated_annealing_sampler.py
+
+"""
+
 import numpy as np
 
 import optuna
@@ -75,13 +88,10 @@ class SimulatedAnnealingSampler(BaseSampler):
             return np.exp(-abs(best_value - prev_value) / self._temperature)
 
     def _last_complete_trial(self, study):
-        # type: (InTrialStudy) -> Optional[FrozenTrial]
+        # type: (InTrialStudy) -> FrozenTrial
 
         complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
-        if len(complete_trials) == 0:
-            return None
-        else:
-            return complete_trials[-1]
+        return complete_trials[-1]
 
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
