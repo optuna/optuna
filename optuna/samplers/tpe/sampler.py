@@ -454,9 +454,12 @@ def _get_observation_pairs(study, param_name):
        The trials that don't contain the parameter named ``param_name`` are excluded
        from the result.
 
-       An observation pair consists of ``(param_value, (-step, value))`` where ``param_value`` is
-       the value of the parameter ``param_name``, ``step`` is the last step that the trial
-       reached and ``value`` is the reported value at the step.
+       An observation pair fundamentally consists of a parameter value and an objective value.
+       However, due to the pruning mechanism of Optuna, final objective values are not always
+       available. Therefore, this function uses intermediate values in addition to the final
+       ones, and reports the value with its step count as ``(-step, value)``.
+       Consequently, the structure of the observation pair is as follows:
+       ``(param_value, (-step, value))``.
 
        The second element of an observation pair is used to rank observations in
        ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
