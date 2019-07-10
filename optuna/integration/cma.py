@@ -54,10 +54,25 @@ class CmaEsSampler(BaseSampler):
 
     Args:
 
+        x0:
+            A dictionary of an initial parameter values for CMA-ES. By default, the mean of ``low``
+            and ``high`` for each distribution is used. If the distribution is categorical, the
+            item in the middle of ``choices`` is selected.
+            Please refer to `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.e
+            volution_strategy.CMAEvolutionStrategy.html>`_ for further details of ``x0``.
+
         sigma0:
-            Initial standard deviation of CMA-ES. Please refer to `cma.CMAEvotionStrategy <http://c
-            ma.gforge.inria.fr/apidocs-pycma/cma.evolution_strategy.CMAEvolutionStrategy.html>`_
-            for further details.
+            Initial standard deviation of CMA-ES. By default, ``sigma0`` is set to
+            ``min_range / 6``, where ``min_range`` denotes the minimum range of the distributions
+            in the search space. If distribution is categorical, ``min_range`` is
+            ``len(choices) - 1``.
+            Please refer to `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.e
+            volution_strategy.CMAEvolutionStrategy.html>`_ for further details of ``sigma0``.
+
+        cma_stds:
+            A dictionary of multipliers of sigma0 for each parameters. The default value is 1.0.
+            Please refer to `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.e
+            volution_strategy.CMAEvolutionStrategy.html>`_ for further details of ``sigma0``.
 
         seed:
             A random seed for CMA-ES.
@@ -89,23 +104,28 @@ class CmaEsSampler(BaseSampler):
             `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.evolution_strateg
             y.CMAEvolutionStrategy.html>`_ class.
 
-            Note that ``BoundaryHandler``, ``bounds`` and ``seed`` arguments in ``cma_opts`` will
-            be ignored because it is added by :class:`~optuna.integration.CmaEsSampler`
-            automatically.
+            Note that ``BoundaryHandler``, ``bounds``, ``CMA_stds`` and ``seed`` arguments in
+            ``cma_opts`` will be ignored because it is added by
+            :class:`~optuna.integration.CmaEsSampler` automatically.
     """
 
-    def __init__(self,
-                 sigma0,  # type: float
-                 seed=None,  # type: int
-                 cma_opts=None,  # type: Optional[Dict[str, Any]]
-                 independent_sampler=None,  # type: Optional[BaseSampler]
-                 warn_independent_sampling=True,  # type: bool
-                 ):
+    def __init__(
+            self,
+            x0=None,  # type: Optional[Dict[str, Any]]
+            sigma0=None,  # type: Optional[float]
+            cma_stds=None,  # type: Optional[Dict[str, float]]
+            seed=None,  # type: int
+            cma_opts=None,  # type: Optional[Dict[str, Any]]
+            independent_sampler=None,  # type: Optional[BaseSampler]
+            warn_independent_sampling=True,  # type: bool
+    ):
         # type: (...) -> None
 
         _check_cma_availability()
 
+        self._x0 = x0
         self._sigma0 = sigma0
+        self._cma_stds = cma_stds
         if seed is None:
             seed = random.randint(1, 2**32)
         self._cma_opts = cma_opts or {}
@@ -113,7 +133,6 @@ class CmaEsSampler(BaseSampler):
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._warn_independent_sampling = warn_independent_sampling
         self._logger = optuna.logging.get_logger(__name__)
-        self._initial_params = None  # type: Optional[Dict[str, Any]]
 
     def infer_relative_search_space(self, study, trial):
         # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
@@ -149,20 +168,70 @@ class CmaEsSampler(BaseSampler):
             return {}
 
         if len(search_space) == 1:
-            self._logger.info(
-                "`CmaEsSampler` does not support optimization of 1-D search space. "
-                "Use `{}` instead of it.".format(self._independent_sampler.__class__.__name__)
-            )
+            self._logger.info("`CmaEsSampler` does not support optimization of 1-D search space. "
+                              "Use `{}` instead of it.".format(
+                                  self._independent_sampler.__class__.__name__))
             self._warn_independent_sampling = False
             return {}
 
-        if self._initial_params is None:
-            self._initial_params = study.best_params
+        if self._x0 is None:
+            self._x0 = self._initialize_x0(search_space)
 
-        optimizer = _Optimizer(search_space, self._initial_params, self._sigma0, self._cma_opts)
+        if self._sigma0 is None:
+            self._sigma0 = self._initialize_sigma0(search_space)
+
+        optimizer = _Optimizer(search_space, self._x0, self._sigma0, self._cma_stds,
+                               self._cma_opts)
         trials = study.trials
         n_told = optimizer.tell(trials, study.direction)
         return optimizer.ask(trials, n_told)
+
+    @staticmethod
+    def _initialize_x0(search_space):
+        # type: (Dict[str, BaseDistribution]) -> Dict[str, Any]
+
+        x0 = {}
+        for name, distribution in search_space.items():
+            if isinstance(distribution, UniformDistribution):
+                x0[name] = numpy.mean([distribution.high, distribution.low])
+            elif isinstance(distribution, DiscreteUniformDistribution):
+                x0[name] = numpy.mean([distribution.high, distribution.low])
+            elif isinstance(distribution, IntUniformDistribution):
+                x0[name] = int(numpy.mean([distribution.high, distribution.low]))
+            elif isinstance(distribution, LogUniformDistribution):
+                log_high = math.log(distribution.high)
+                log_low = math.log(distribution.low)
+                x0[name] = math.exp(numpy.mean([log_high, log_low]))
+            elif isinstance(distribution, CategoricalDistribution):
+                index = (len(distribution.choices) - 1) // 2
+                x0[name] = distribution.choices[index]
+            else:
+                raise ValueError('Incompatible distribution is given for {}: {}.'.format(
+                    name, distribution))
+        return x0
+
+    @staticmethod
+    def _initialize_sigma0(search_space):
+        # type: (Dict[str, BaseDistribution]) -> float
+
+        sigma0s = []
+        for name, distribution in search_space.items():
+            if isinstance(distribution, UniformDistribution):
+                sigma0s.append((distribution.high - distribution.low) / 6)
+            elif isinstance(distribution, DiscreteUniformDistribution):
+                sigma0s.append((distribution.high - distribution.low) / 6)
+            elif isinstance(distribution, IntUniformDistribution):
+                sigma0s.append((distribution.high - distribution.low) / 6)
+            elif isinstance(distribution, LogUniformDistribution):
+                log_high = math.log(distribution.high)
+                log_low = math.log(distribution.low)
+                sigma0s.append((log_high - log_low) / 6)
+            elif isinstance(distribution, CategoricalDistribution):
+                sigma0s.append((len(distribution.choices) - 1) / 6)
+            else:
+                raise ValueError('Incompatible distribution is given for {}: {}.'.format(
+                    name, distribution))
+        return min(sigma0s)
 
     def _log_independent_sampling(self, trial, param_name):
         # type: (FrozenTrial, str) -> None
@@ -178,8 +247,15 @@ class CmaEsSampler(BaseSampler):
 
 
 class _Optimizer(object):
-    def __init__(self, search_space, initial_params, sigma0, cma_opts):
-        # type: (Dict[str, BaseDistribution], Dict[str, Any], float, Dict[str, Any]) -> None
+    def __init__(
+            self,
+            search_space,  # type: Dict[str, BaseDistribution]
+            x0,  # type: Dict[str, Any]
+            sigma0,  # type: float
+            cma_stds,  # type: Optional[Dict[str, float]]
+            cma_opts  # type: Dict[str, Any]
+    ):
+        # type: (...) -> None
 
         self._search_space = search_space
         self._param_names = list(sorted(self._search_space.keys()))
@@ -209,14 +285,16 @@ class _Optimizer(object):
         # Set initial params.
         initial_cma_params = []
         for param_name in self._param_names:
-            initial_cma_params.append(self._to_cma_params(self._search_space,
-                                                          param_name,
-                                                          initial_params[param_name]))
-
+            initial_cma_params.append(
+                self._to_cma_params(self._search_space, param_name, x0[param_name]))
         cma_option = {
             'BoundaryHandler': cma.BoundTransform,
             'bounds': [lows, highs],
         }
+
+        if cma_stds:
+            cma_option['CMA_stds'] = [cma_stds.get(name, 1.) for name in self._param_names]
+
         cma_opts.update(cma_option)
 
         self._es = cma.CMAEvolutionStrategy(initial_cma_params, sigma0, cma_opts)
@@ -238,8 +316,10 @@ class _Optimizer(object):
             xs = []
             ys = []
             for t in complete_trials[i * popsize:(i + 1) * popsize]:
-                x = [self._to_cma_params(self._search_space, name, t.params[name])
-                     for name in self._param_names]
+                x = [
+                    self._to_cma_params(self._search_space, name, t.params[name])
+                    for name in self._param_names
+                ]
                 xs.append(x)
                 ys.append(t.value)
             if study_direction == StudyDirection.MAXIMIZE:
@@ -277,7 +357,8 @@ class _Optimizer(object):
             cnt += 1
         return cnt
 
-    def _to_cma_params(self, search_space, param_name, optuna_param_value):
+    @staticmethod
+    def _to_cma_params(search_space, param_name, optuna_param_value):
         # type: (Dict[str, BaseDistribution], str, Any) -> float
 
         dist = search_space[param_name]
@@ -289,7 +370,8 @@ class _Optimizer(object):
             return dist.choices.index(optuna_param_value)
         return optuna_param_value
 
-    def _to_optuna_params(self, search_space, param_name, cma_param_value):
+    @staticmethod
+    def _to_optuna_params(search_space, param_name, cma_param_value):
         # type: (Dict[str, BaseDistribution], str, float) -> Any
 
         dist = search_space[param_name]

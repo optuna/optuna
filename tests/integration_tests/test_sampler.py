@@ -12,14 +12,14 @@ if optuna.types.TYPE_CHECKING:
 
 parametrize_sampler = pytest.mark.parametrize('sampler_class', [
     optuna.integration.SkoptSampler,
-    lambda: optuna.integration.CmaEsSampler(0.1),
+    optuna.integration.CmaEsSampler,
 ])
 
 
 @pytest.mark.parametrize('sampler_class', [
     lambda: SkoptSampler(
         independent_sampler=FirstTrialOnlyRandomSampler(), skopt_kwargs={'n_initial_points': 5}),
-    lambda: CmaEsSampler(0.1, independent_sampler=FirstTrialOnlyRandomSampler()),
+    lambda: CmaEsSampler(independent_sampler=FirstTrialOnlyRandomSampler()),
 ])
 def test_suggested_value(sampler_class):
     # type: (Callable[[], BaseSampler]) -> None
@@ -106,7 +106,7 @@ def test_sample_independent(sampler_class):
 
 @pytest.mark.parametrize('sampler_class', [
     lambda x: SkoptSampler(warn_independent_sampling=x),
-    lambda x: CmaEsSampler(0.1, warn_independent_sampling=x),
+    lambda x: CmaEsSampler(warn_independent_sampling=x),
 ])
 def test_warn_independent_sampling(sampler_class):
     # type: (Callable[[bool], BaseSampler]) -> None

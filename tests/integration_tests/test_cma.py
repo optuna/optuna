@@ -29,7 +29,9 @@ class TestCmaEsSampler(object):
         # type: () -> None
 
         sampler = optuna.integration.CmaEsSampler(
-            0.1,
+            x0={'x': 0, 'y': 0},
+            sigma0=0.1,
+            cma_stds={'x': 1, 'y': 1},
             seed=1,
             cma_opts={'popsize': 5},
             independent_sampler=DeterministicRelativeSampler({}, {}))
@@ -43,9 +45,12 @@ class TestCmaEsSampler(object):
                 'x': IntUniformDistribution(low=-1, high=1),
                 'y': IntUniformDistribution(low=-1, high=1)
             }, {
-                'x': -1,
-                'y': -1
+                'x': 0,
+                'y': 0
             }, 0.1, {
+                'x': 1,
+                'y': 1
+            }, {
                 'popsize': 5,
                 'seed': 1
             })
@@ -54,7 +59,7 @@ class TestCmaEsSampler(object):
     def test_init_default_values():
         # type: () -> None
 
-        sampler = optuna.integration.CmaEsSampler(0.1)
+        sampler = optuna.integration.CmaEsSampler()
         seed = sampler._cma_opts.get('seed')
         assert isinstance(seed, int)
         assert 0 < seed
@@ -65,7 +70,7 @@ class TestCmaEsSampler(object):
     def test_infer_relative_search_space_single():
         # type: () -> None
 
-        sampler = optuna.integration.CmaEsSampler(0.1)
+        sampler = optuna.integration.CmaEsSampler()
         study = optuna.create_study(sampler=sampler)
 
         # The distribution has only one candidate.
@@ -78,7 +83,7 @@ class TestCmaEsSampler(object):
         # type: () -> None
 
         independent_sampler = DeterministicRelativeSampler({}, {})
-        sampler = optuna.integration.CmaEsSampler(0.1, independent_sampler=independent_sampler)
+        sampler = optuna.integration.CmaEsSampler(independent_sampler=independent_sampler)
         study = optuna.create_study(sampler=sampler)
 
         # If search space is one dimensional, the independent sampler is always used.
@@ -106,7 +111,7 @@ class TestOptimizer(object):
 
     @staticmethod
     @pytest.fixture
-    def initial_params():
+    def x0():
         # type: () -> Dict[str, Any]
 
         return {
@@ -118,11 +123,11 @@ class TestOptimizer(object):
         }
 
     @staticmethod
-    def test_init(search_space, initial_params):
+    def test_init(search_space, x0):
         # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
 
         with patch('cma.CMAEvolutionStrategy') as mock_obj:
-            optuna.integration.cma._Optimizer(search_space, initial_params, 0.2, {
+            optuna.integration.cma._Optimizer(search_space, x0, 0.2, None, {
                 'popsize': 4,
                 'seed': 1
             })
@@ -140,62 +145,62 @@ class TestOptimizer(object):
 
     @staticmethod
     @pytest.mark.parametrize('direction', [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
-    def test_tell(search_space, initial_params, direction):
+    def test_tell(search_space, x0, direction):
         # type: (Dict[str, BaseDistribution], Dict[str, Any], StudyDirection) -> None
 
-        optimizer = optuna.integration.cma._Optimizer(search_space, initial_params, 0.2, {
+        optimizer = optuna.integration.cma._Optimizer(search_space, x0, 0.2, None, {
             'popsize': 3,
             'seed': 1
         })
 
-        trials = [_create_frozen_trial(initial_params, search_space)]
+        trials = [_create_frozen_trial(x0, search_space)]
         assert 0 == optimizer.tell(trials, direction)
 
-        trials = [_create_frozen_trial(initial_params, search_space) for _ in range(3)]
+        trials = [_create_frozen_trial(x0, search_space) for _ in range(3)]
         assert 3 == optimizer.tell(trials, direction)
 
     @staticmethod
     @pytest.mark.parametrize('state', [TrialState.FAIL, TrialState.RUNNING, TrialState.PRUNED])
-    def test_tell_filter_by_state(search_space, initial_params, state):
+    def test_tell_filter_by_state(search_space, x0, state):
         # type: (Dict[str, BaseDistribution], Dict[str, Any], TrialState) -> None
 
-        optimizer = optuna.integration.cma._Optimizer(search_space, initial_params, 0.2, {
+        optimizer = optuna.integration.cma._Optimizer(search_space, x0, 0.2, None, {
             'popsize': 2,
             'seed': 1
         })
 
-        trials = [_create_frozen_trial(initial_params, search_space)]
+        trials = [_create_frozen_trial(x0, search_space)]
         trials.append(trials[0]._replace(state=state))
         assert 0 == optimizer.tell(trials, StudyDirection.MINIMIZE)
 
     @staticmethod
-    def test_tell_filter_by_distribution(search_space, initial_params):
+    def test_tell_filter_by_distribution(search_space, x0):
         # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
 
-        optimizer = optuna.integration.cma._Optimizer(search_space, initial_params, 0.2, {
+        optimizer = optuna.integration.cma._Optimizer(search_space, x0, 0.2, None, {
             'popsize': 2,
             'seed': 1
         })
 
-        trials = [_create_frozen_trial(initial_params, search_space)]
+        trials = [_create_frozen_trial(x0, search_space)]
         distributions = trials[0].distributions.copy()
         distributions['additional'] = UniformDistribution(0, 100)
         trials.append(trials[0]._replace(distributions=distributions))
         assert 0 == optimizer.tell(trials, StudyDirection.MINIMIZE)
 
     @staticmethod
-    def test_ask(search_space, initial_params):
+    def test_ask(search_space, x0):
         # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
 
-        trials = [_create_frozen_trial(initial_params, search_space) for _ in range(3)]
+        trials = [_create_frozen_trial(x0, search_space) for _ in range(3)]
 
         # Create 0-th individual.
-        optimizer = _Optimizer(search_space, initial_params, 0.2, {'popsize': 3, 'seed': 1})
+        optimizer = _Optimizer(search_space, x0, 0.2, None, {'popsize': 3, 'seed': 1})
         told = optimizer.tell(trials, StudyDirection.MINIMIZE)
         params0 = optimizer.ask(trials, told)
 
         # Ignore incompatible trial and create 0-th individual again.
-        optimizer = _Optimizer(search_space, initial_params, 0.2, {'popsize': 3, 'seed': 1})
+        optimizer = _Optimizer(search_space, x0, 0.2, None, {'popsize': 3, 'seed': 1})
         told = optimizer.tell(trials, StudyDirection.MINIMIZE)
         distributions = trials[0].distributions.copy()
         distributions['additional'] = UniformDistribution(0, 100)
@@ -205,14 +210,14 @@ class TestOptimizer(object):
         assert params0 == params1
 
         # Create first individual.
-        optimizer = _Optimizer(search_space, initial_params, 0.2, {'popsize': 3, 'seed': 1})
+        optimizer = _Optimizer(search_space, x0, 0.2, None, {'popsize': 3, 'seed': 1})
         trials.append(trials[0])
         told = optimizer.tell(trials, StudyDirection.MINIMIZE)
         params2 = optimizer.ask(trials, told)
 
         assert params0 != params2
 
-        optimizer = _Optimizer(search_space, initial_params, 0.2, {'popsize': 3, 'seed': 1})
+        optimizer = _Optimizer(search_space, x0, 0.2, None, {'popsize': 3, 'seed': 1})
         told = optimizer.tell(trials, StudyDirection.MINIMIZE)
         # Other worker adds three trials.
         for _ in range(3):
