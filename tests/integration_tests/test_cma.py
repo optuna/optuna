@@ -14,6 +14,7 @@ from optuna.integration.cma import _Optimizer
 from optuna.structs import FrozenTrial
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
+from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 
 if optuna.types.TYPE_CHECKING:
@@ -52,7 +53,8 @@ class TestCmaEsSampler(object):
                 'y': 1
             }, {
                 'popsize': 5,
-                'seed': 1
+                'seed': 1,
+                'verbose': -2
             })
 
     @staticmethod
@@ -94,6 +96,20 @@ class TestCmaEsSampler(object):
             study.optimize(lambda t: t.suggest_int('x', -1, 1), n_trials=2)
             assert mock_object.call_count == 2
 
+    @staticmethod
+    def test_initialize_x0_with_unsupported_distribution():
+        # type: () -> None
+
+        with pytest.raises(NotImplementedError):
+            optuna.integration.CmaEsSampler._initialize_x0({'x': UnsupportedDistribution()})
+
+    @staticmethod
+    def test_initialize_sigma0_with_unsupported_distribution():
+        # type: () -> None
+
+        with pytest.raises(NotImplementedError):
+            optuna.integration.CmaEsSampler._initialize_sigma0({'x': UnsupportedDistribution()})
+
 
 class TestOptimizer(object):
     @staticmethod
@@ -133,15 +149,20 @@ class TestOptimizer(object):
             })
             assert mock_obj.mock_calls[0] == call(
                 [0, 0, -1, math.log(0.001), -2], 0.2, {
-                    'BoundaryHandler':
-                    cma.BoundTransform,
+                    'BoundaryHandler': cma.BoundTransform,
                     'bounds': [[-0.5, -1.0, -1.5, math.log(0.001), -2],
                                [1.5, 11.0, 1.5, math.log(0.1), 2]],
-                    'popsize':
-                    4,
-                    'seed':
-                    1
+                    'popsize': 4,
+                    'seed': 1
                 })
+
+    @staticmethod
+    def test_init_with_unsupported_distribution():
+        # type: () -> None
+
+        with pytest.raises(NotImplementedError):
+            optuna.integration.cma._Optimizer({'x': UnsupportedDistribution()},
+                                              {'x': 0}, 0.2, None, {})
 
     @staticmethod
     @pytest.mark.parametrize('direction', [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
@@ -226,24 +247,6 @@ class TestOptimizer(object):
 
         assert params0 != params3
         assert params2 != params3
-
-    @staticmethod
-    def test_n_target_trials():
-        # type: () -> None
-
-        pass
-
-    @staticmethod
-    def test_to_cma_params():
-        # type: () -> None
-
-        pass
-
-    @staticmethod
-    def test_to_optuna_params():
-        # type: () -> None
-
-        pass
 
 
 def _create_frozen_trial(params, param_distributions):

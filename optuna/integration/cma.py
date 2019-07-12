@@ -207,8 +207,8 @@ class CmaEsSampler(BaseSampler):
                 index = (len(distribution.choices) - 1) // 2
                 x0[name] = distribution.choices[index]
             else:
-                raise ValueError('Incompatible distribution is given for {}: {}.'.format(
-                    name, distribution))
+                raise NotImplementedError('The distribution {} is not implemented.'.format(
+                    distribution))
         return x0
 
     @staticmethod
@@ -230,8 +230,8 @@ class CmaEsSampler(BaseSampler):
             elif isinstance(distribution, CategoricalDistribution):
                 sigma0s.append((len(distribution.choices) - 1) / 6)
             else:
-                raise ValueError('Incompatible distribution is given for {}: {}.'.format(
-                    name, distribution))
+                raise NotImplementedError('The distribution {} is not implemented.'.format(
+                    distribution))
         return min(sigma0s)
 
     def _log_independent_sampling(self, trial, param_name):
@@ -281,7 +281,7 @@ class _Optimizer(object):
                 lows.append(dist.low - 0.5)
                 highs.append(dist.high + 0.5)
             else:
-                raise ValueError('Incompatible distribution is given: {}.'.format(dist))
+                raise NotImplementedError('The distribution {} is not implemented.'.format(dist))
 
         # Set initial params.
         initial_cma_params = []
