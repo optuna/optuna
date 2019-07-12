@@ -130,6 +130,7 @@ class CmaEsSampler(BaseSampler):
             seed = random.randint(1, 2**32)
         self._cma_opts = cma_opts or {}
         self._cma_opts['seed'] = seed
+        self._cma_opts.setdefault('verbose', -2)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._warn_independent_sampling = warn_independent_sampling
         self._logger = optuna.logging.get_logger(__name__)
