@@ -32,6 +32,10 @@ First of all, you need to define a class that inherits :class:`~optuna.samplers.
 
 .. code-block:: python
 
+    import numpy as np
+    import optuna
+
+
     class SimulatedAnnealingSampler(optuna.samplers.BaseSampler):
         def __init__(self, temperature=100, seed=None):
             # type: (int, Optional[int]) -> None
@@ -112,3 +116,23 @@ We omit the detail of the methods. If you are interested in each method, please 
     study = optuna.create_study(sampler=SimulatedAnnealingSampler())
     study.optimize(objective, n_trials=100)
 
+
+Sampler Details
+---------------
+
+This section describes the details of sampler.
+
+All samplers inherit :class:`~optuna.samplers.BaseSampler`.
+This base class provides the following abstract methods:
+
+- :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`
+- :meth:`~optuna.samplers.BaseSampler.sample_relative`
+- :meth:`~optuna.samplers.BaseSampler.sample_independent`
+
+As the method names implies, Optuna supports two type of samplings; one is **relative sampling** that can consider the correlation of the parameters in a trial and another is **independent sampling** that samples each parameter independently.
+
+At the beggining of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called for determining the search space passed to :meth:`~optuna.samplers.BaseSampler.sample_relative`. Then, :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked for sampling relative parameters for the trial. During the execution of the objective function, :meth:`~optuna.samplers.BaseSampler.sample_independent` is invoked when `suggest` APIs are called for parameters that doesn't belong to the search space.
+
+The following picture shows the detailed relationship of those methods.
+
+.. image:: ../../image/sampler-sequence.png
