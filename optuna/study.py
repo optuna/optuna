@@ -365,7 +365,8 @@ class Study(BaseStudy):
                     column_agg[field].add((field, non_nested_field))
             records.append(record)
 
-        columns = sum((sorted(column_agg[k]) for k in structs.FrozenTrial._fields), [])
+        columns = sum((sorted(column_agg[k]) for k in structs.FrozenTrial._fields),
+                      [])  # type: List[Tuple['str', 'str']]
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
