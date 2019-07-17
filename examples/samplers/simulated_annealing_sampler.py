@@ -1,5 +1,6 @@
 """
 Optuna example that implements a custom relative sampler based on Simulated Annealing algorithm.
+Please refer to https://en.wikipedia.org/wiki/Simulated_annealing for Simulated Annealing itself.
 
 Note that this implementation isn't intended to be used for production purposes and
 has the following limitations:
@@ -38,7 +39,7 @@ class SimulatedAnnealingSampler(BaseSampler):
         self._rng = np.random.RandomState(seed)
         self._independent_sampler = optuna.samplers.RandomSampler(seed=seed)
         self._temperature = temperature
-        self._current_params = {}  # type: Dict[str, Any]
+        self._current_trial = None  # type: Optional[FrozenTrial]
 
     def infer_relative_search_space(self, study, trial):
         # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
@@ -52,8 +53,8 @@ class SimulatedAnnealingSampler(BaseSampler):
             return {}
 
         prev_trial = self._last_complete_trial(study)
-        if self._rng.uniform(0, 1) <= self._probability(study, prev_trial.value, study.best_value):
-            self._current_params = prev_trial.params
+        if self._rng.uniform(0, 1) <= self._transition_probability(study, prev_trial):
+            self._current_trial = prev_trial
 
         params = self._sample_neighbor_params(search_space)
         self._temperature *= COOLDOWN_FACTOR
@@ -66,7 +67,7 @@ class SimulatedAnnealingSampler(BaseSampler):
         params = {}
         for param_name, param_distribution in search_space.items():
             if isinstance(param_distribution, distributions.UniformDistribution):
-                current_value = self._current_params[param_name]
+                current_value = self._current_trial.params[param_name]
                 width = (param_distribution.high - param_distribution.low) * NEIGHBOR_RANGE_FACTOR
                 neighbor_low = max(current_value - width, param_distribution.low)
                 neighbor_high = min(current_value + width, param_distribution.high)
@@ -77,15 +78,21 @@ class SimulatedAnnealingSampler(BaseSampler):
 
         return params
 
-    def _probability(self, study, prev_value, best_value):
-        # type: (InTrialStudy, float, float) -> float
+    def _transition_probability(self, study, prev_trial):
+        # type: (InTrialStudy, FrozenTrial) -> float
 
-        if study.direction == structs.StudyDirection.MINIMIZE and prev_value <= best_value:
+        if self._current_trial is None:
             return 1.0
-        elif study.direction == structs.StudyDirection.MAXIMIZE and prev_value >= best_value:
+
+        prev_value = prev_trial.value
+        current_value = self._current_trial.value
+
+        if study.direction == structs.StudyDirection.MINIMIZE and prev_value <= current_value:
+            return 1.0
+        elif study.direction == structs.StudyDirection.MAXIMIZE and prev_value >= current_value:
             return 1.0
         else:
-            return np.exp(-abs(best_value - prev_value) / self._temperature)
+            return np.exp(-abs(current_value - prev_value) / self._temperature)
 
     def _last_complete_trial(self, study):
         # type: (InTrialStudy) -> FrozenTrial
