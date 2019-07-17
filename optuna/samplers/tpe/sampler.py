@@ -459,6 +459,9 @@ class TPESampler(base.BaseSampler):
         # type: () -> Dict[str, Any]
         """Return the the default parameters of hyperopt (v0.1.2).
 
+        :class:`~optuna.samplers.TPESampler` can be instantiated with the parameters returned
+        by this method.
+
         Example:
 
             Create a :class:`~optuna.samplers.TPESampler` instance with the default
