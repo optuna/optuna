@@ -457,12 +457,12 @@ class TPESampler(base.BaseSampler):
     @staticmethod
     def hyperopt_parameters():
         # type: () -> Dict[str, Any]
-        """Return the the default parameters of hyperopt.
+        """Return the the default parameters of hyperopt (v0.1.2).
 
         Example:
 
             Create a :class:`~optuna.samplers.TPESampler` instance with the default
-            parameters of `hyperopt <https://github.com/hyperopt/hyperopt>`_.
+            parameters of `hyperopt (v0.1.2) <https://github.com/hyperopt/hyperopt/tree/0.1.2>`_.
 
             .. code::
 
