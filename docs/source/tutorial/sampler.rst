@@ -17,11 +17,11 @@ For instance, Optuna provides :class:`~optuna.integration.SkoptSampler` that wra
 `skopt <https://scikit-optimize.github.io/>`_ library.
 
 
-An Example: Implementing a sampler based on Simulated Annealing algorithm
-----------------------------------------------------------------------
+An Example: Implementing SimulatedAnnealingSampler
+--------------------------------------------------
 
 As an example, let's implement a sampler that based on
-`Simulate Annealing (SA) <https://en.wikipedia.org/wiki/Simulated_annealing>`_ algorithm.
+`Simulate Annealing <https://en.wikipedia.org/wiki/Simulated_annealing>`_ algorithm.
 
 .. note::
    For simplicity, the following implementation doesn't consider edge cases.
@@ -117,10 +117,8 @@ We omit the detail of the methods. If you are interested in each method, please 
     study.optimize(objective, n_trials=100)
 
 
-Sampler Details
----------------
-
-This section describes the details of sampler.
+Details of :class:`~optuna.samplers.BaseSampler`
+------------------------------------------------
 
 All samplers inherit :class:`~optuna.samplers.BaseSampler`.
 This base class provides the following abstract methods:
@@ -133,6 +131,47 @@ As the method names implies, Optuna supports two type of samplings; one is **rel
 
 At the beggining of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called for determining the search space passed to :meth:`~optuna.samplers.BaseSampler.sample_relative`. Then, :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked for sampling relative parameters for the trial. During the execution of the objective function, :meth:`~optuna.samplers.BaseSampler.sample_independent` is invoked when `suggest` APIs are called for parameters that doesn't belong to the search space.
 
-The following picture shows the detailed relationship of those methods.
+The following picture depicts the lifetime of a trial and the relationship of the above methods.
 
 .. image:: ../../image/sampler-sequence.png
+
+
+How to infer the relative search space
+--------------------------------------
+
+Optuna features ``define-by-run`` style API, so parameter search space may change from trial to trial.
+
+There is a convenient built-in function :func:`~optuna.samplers.product_search_space`.
+By using this function, you can get the search space that only contains parameters belong to all the previous trials in a study.
+
+One limitation of :func:`~optuna.samplers.product_search_space` is it doesn't work well with objective functions that use highly conditional search space.
+
+For example, the following objective function doesn't contains conditional expression, so all the parameters are included in the result of :func:`~optuna.samplers.product_search_space`:
+
+.. code-block:: python
+
+    def objective(trial):
+        x = trial.suggest_uniform('x', -10, 10)
+        y = trial.suggest_uniform('y', -10, 10)
+        z = trial.suggest_uniform('z', -10, 10)
+        return x + y + z
+
+    study = optuna.create_study(objective, n_trials=100)
+    assert set(optuna.samplers.product_search_space(study).keys()) == {'x', 'y', 'z'}
+
+However, if an objective function, like below, that contains conditional expressions is used, parameters that suggested in the conditional expressions are omitted from the result of :func:`~optuna.samplers.product_search_space`. So those parameters (``y`` and ``z`` in the following code) will be sampled by using :meth:`~optuna.samplers.BaseSampler.sample_independent` instead of :meth:`~optuna.samplers.BaseSampler.sample_relative`.
+
+.. code-block:: python
+
+    def objective(trial):
+        x = trial.suggest_uniform('x', -10, 10)
+        category = trial.suggest_categorical('category', ['y', 'z'])
+        if category == 'y':
+            y = trial.suggest_uniform('y', -10, 10)
+            return x + y
+        else:
+            z = trial.suggest_uniform('z', -10, 10)
+            return x + z
+
+    study = optuna.create_study(objective, n_trials=100)
+    assert set(optuna.samplers.product_search_space(study).keys()) == {'x', 'category'}
