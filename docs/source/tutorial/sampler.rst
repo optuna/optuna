@@ -9,8 +9,8 @@ A sampler has the responsibility to determine the parameter values to be evaluat
 When a `suggest` API (e.g., :func:`~optuna.trial.Trial.suggest_uniform`) is called inside an objective function, the corresponding distribution object (e.g., :class:`~optuna.distributions.UniformDistribution`) is created internally. A sampler samples a value from the distribution. The sampled value is returned to the caller of the `suggest` API and evaluated in the objective function.
 
 Optuna provides built-in samplers (e.g., :class:`~optuna.samplers.TPESampler`, :class:`~optuna.samplers.RandomSampler`) that work well for a wide range of cases.
-However, if you are interested in optimizing hyperparameters in a specific domain, there is a possibility to be able to improve optimization performance by using a sampling algorithm specialized to the domain.
-In such cases, the custom sampler feature is useful.
+However, if you are only interested in optimizing hyperparameters in a specific domain, optimization performance may be improved if you use a sampling algorithm specialized to the domain.
+Thanks to custom sampler feature, you can use such specialized algorithms within the Optuna framework.
 
 In addition, this feature allows you to use algorithms implemented by other libraries.
 For instance, Optuna provides :class:`~optuna.integration.SkoptSampler` that wraps
@@ -20,15 +20,17 @@ For instance, Optuna provides :class:`~optuna.integration.SkoptSampler` that wra
 An example: Implementing SimulatedAnnealingSampler
 --------------------------------------------------
 
-As an example, let's implement a sampler that based on
-`Simulate Annealing <https://en.wikipedia.org/wiki/Simulated_annealing>`_ algorithm.
+In this section, let's implement a sampler based on
+`Simulate Annealing (SA) <https://en.wikipedia.org/wiki/Simulated_annealing>`_ algorithm.
 
 .. note::
-   For simplicity, the following implementation doesn't consider edge cases.
+   For simplicity, the following implementation doesn't support some features (e.g., maximization).
    If you are interested, more completed version is found in
-   `examples/sampler/simulated_annealing.py <https://github.com/pfnet/optuna/tree/master/examples/sampler/simulated_annealing.py>`_.
+   `simulated_annealing.py <https://github.com/pfnet/optuna/tree/master/examples/sampler/simulated_annealing.py>`_
+   example.
 
-First of all, you need to define a class that inherits :class:`~optuna.samplers.BaseSampler`.
+First, you need to define a class that inherits :class:`~optuna.samplers.BaseSampler`.
+In the constructor of ``SimulatedAnnealingSampler``, the temperature and state of SA are initialized.
 
 .. code-block:: python
 
@@ -42,11 +44,12 @@ First of all, you need to define a class that inherits :class:`~optuna.samplers.
 
             self._rng = np.random.RandomState(seed)
             self._temperature = temperature  # Current temperature.
-            self._current_params = {}  # Current state (parameter names and its values).
+            self._current_params = {}  # Current state (parameter names and values).
 
 
-Then, define :meth:`~optuna.samplers.BaseSampler.sample_relative` method. This is the core of the sampler.
-TODO: brief description of the method (when called, about the arguments).
+Then, let's define :meth:`~optuna.samplers.BaseSampler.sample_relative` method.
+:meth:`~optuna.samplers.BaseSampler.sample_relative` is called at the beginning of a trial for sampling parameters from the given search space (i.e., distributions).
+The following code is the core part of this sampler.
 
 .. code-block:: python
 
@@ -65,7 +68,7 @@ TODO: brief description of the method (when called, about the arguments).
                 probability = 1.0
             else:
                 probability = np.exp((best_trial.value - prev_trial.value) / self._temperature)
-            self._temperature *= 0.9
+            self._temperature *= 0.9  # Decrease temperature.
 
             # Transit the current state if the previous result is accepted.
             if self._rng.uniform(0, 1) < probability:
@@ -86,8 +89,8 @@ TODO: brief description of the method (when called, about the arguments).
             return params
 
 
-Finally, you need to implement other methods defined by :class:`~optuna.samplers.BaseSampler` class.
-We omit the detail of the methods. If you are interested in each method, please read the next section.
+Finally, it's needed to implement other abstract methods of :class:`~optuna.samplers.BaseSampler` as the following code.
+About the details of those methods, please read the next section.
 
 .. code-block:: python
 
@@ -105,7 +108,8 @@ We omit the detail of the methods. If you are interested in each method, please 
             return independent_sampler.sample_independent(study, trial, param_name, param_distribution)
 
 
-``SimulatedAnnealingSampler`` can be used in the same way as built-in samplers:
+``SimulatedAnnealingSampler`` is complete.
+The custom sampler can be used in the same way as built-in samplers (see below).
 
 .. code-block:: python
 
@@ -113,23 +117,24 @@ We omit the detail of the methods. If you are interested in each method, please 
         x = trial.suggest_uniform('x', -10, 10)
         return x ** 2
 
-    study = optuna.create_study(sampler=SimulatedAnnealingSampler())
+    sampler = SimulatedAnnealingSampler()
+    study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=100)
 
 
 Details of :class:`~optuna.samplers.BaseSampler`
 ------------------------------------------------
 
-All samplers inherit :class:`~optuna.samplers.BaseSampler`.
-This base class provides the following abstract methods:
+All samplers have to inherit :class:`~optuna.samplers.BaseSampler`.
+This base class defines the following abstract methods:
 
 - :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`
 - :meth:`~optuna.samplers.BaseSampler.sample_relative`
 - :meth:`~optuna.samplers.BaseSampler.sample_independent`
 
-As the method names implies, Optuna supports two type of samplings; one is **relative sampling** that can consider the correlation of the parameters in a trial and another is **independent sampling** that samples each parameter independently.
+As the method names implies, Optuna supports two type of samplings; one is **relative sampling** that can consider the correlation of the parameters in a trial, and another is **independent sampling** that samples each parameter independently.
 
-At the beggining of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called for determining the search space passed to :meth:`~optuna.samplers.BaseSampler.sample_relative`. Then, :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked for sampling relative parameters for the trial. During the execution of the objective function, :meth:`~optuna.samplers.BaseSampler.sample_independent` is invoked when `suggest` APIs are called for parameters that doesn't belong to the search space.
+At the beggining of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called for determining the relative search space passed to :meth:`~optuna.samplers.BaseSampler.sample_relative`. Then, :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked for sampling relative parameters for the trial. During the execution of the objective function, :meth:`~optuna.samplers.BaseSampler.sample_independent` is used for sampling parameters that don't belong to the relative search space.
 
 The following picture depicts the lifetime of a trial and the relationship of the above methods.
 
