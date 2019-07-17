@@ -3,21 +3,21 @@
 Custom Sampler
 ==============
 
-This feature enables you to define your own samplers.
+This feature enables you to define your samplers.
 
-A sampler inherits :class:`~optuna.samplers.BaseSampler` and has the responsibility to determine the parameter values to be evaluated in a trial.
-When a `suggest` API (e.g., :func:`~optuna.trial.Trial.suggest_uniform`) is called inside an objective function, the corresponding distribution object (e.g., :class:`~optuna.distributions.UniformDistribution`) is created internally. A sampler samples a value from the distribution. The sampled value is returned to the caller of the `suggest` API.
+A sampler has the responsibility to determine the parameter values to be evaluated in a trial.
+When a `suggest` API (e.g., :func:`~optuna.trial.Trial.suggest_uniform`) is called inside an objective function, the corresponding distribution object (e.g., :class:`~optuna.distributions.UniformDistribution`) is created internally. A sampler samples a value from the distribution. The sampled value is returned to the caller of the `suggest` API and evaluated in the objective function.
 
 Optuna provides built-in samplers (e.g., :class:`~optuna.samplers.TPESampler`, :class:`~optuna.samplers.RandomSampler`) that work well for a wide range of cases.
-However, if you are interested in optimizing hyperparameters in a specific domain, it may be possible to improve optimization performance by using a sampling algorithm specialized to the domain.
-The custom sampler feature helps you in this case.
+However, if you are interested in optimizing hyperparameters in a specific domain, there is a possibility to be able to improve optimization performance by using a sampling algorithm specialized to the domain.
+In such cases, the custom sampler feature is useful.
 
-In addition, this feature allows you to use algorithms defined by other libraries.
+In addition, this feature allows you to use algorithms implemented by other libraries.
 For instance, Optuna provides :class:`~optuna.integration.SkoptSampler` that wraps
 `skopt <https://scikit-optimize.github.io/>`_ library.
 
 
-An Example: Implementing SimulatedAnnealingSampler
+An example: Implementing SimulatedAnnealingSampler
 --------------------------------------------------
 
 As an example, let's implement a sampler that based on
@@ -136,10 +136,11 @@ The following picture depicts the lifetime of a trial and the relationship of th
 .. image:: ../../image/sampler-sequence.png
 
 
-How to infer the relative search space
---------------------------------------
+How to infer relative search space
+----------------------------------
 
 Optuna features ``define-by-run`` style API, so parameter search space may change from trial to trial.
+It is the responsibility of :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` to ... for ... .
 
 There is a convenient built-in function :func:`~optuna.samplers.product_search_space`.
 By using this function, you can get the search space that only contains parameters belong to all the previous trials in a study.
@@ -175,3 +176,5 @@ However, if an objective function, like below, that contains conditional express
 
     study = optuna.create_study(objective, n_trials=100)
     assert set(optuna.samplers.product_search_space(study).keys()) == {'x', 'category'}
+
+TODO: nanikakaku
