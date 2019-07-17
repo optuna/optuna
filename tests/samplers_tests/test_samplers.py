@@ -120,7 +120,7 @@ def test_int(sampler_class, distribution):
 
 
 @parametrize_sampler
-@pytest.mark.parametrize('choices', [(1, 2, 3), ('a', 'b', 'c')])
+@pytest.mark.parametrize('choices', [(1, 2, 3), ('a', 'b', 'c'), (1, 'a')])
 def test_categorical(sampler_class, choices):
     # type: (typing.Callable[[], BaseSampler], typing.Tuple[T, ...]) -> None
 
