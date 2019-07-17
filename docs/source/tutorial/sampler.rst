@@ -136,7 +136,7 @@ As the method names implies, Optuna supports two type of samplings; one is **rel
 
 At the beggining of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called for determining the relative search space passed to :meth:`~optuna.samplers.BaseSampler.sample_relative`. Then, :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked for sampling relative parameters for the trial. During the execution of the objective function, :meth:`~optuna.samplers.BaseSampler.sample_independent` is used for sampling parameters that don't belong to the relative search space.
 
-The following picture depicts the lifetime of a trial and the relationship of the above methods.
+The following picture depicts the lifetime of a trial and the relationship of the above abstract methods.
 
 .. image:: ../../image/sampler-sequence.png
 
@@ -144,15 +144,23 @@ The following picture depicts the lifetime of a trial and the relationship of th
 How to infer relative search space
 ----------------------------------
 
-Optuna features ``define-by-run`` style API, so parameter search space may change from trial to trial.
-It is the responsibility of :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` to ... for ... .
+Optuna features ``define-by-run`` style API, so the parameter search space can change from trial to trial even if those trials belong to the same study.
+:meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` has to determine the relative search space for each trial in consideration of the dynamic property of the search space.
 
 There is a convenient built-in function :func:`~optuna.samplers.product_search_space`.
 By using this function, you can get the search space that only contains parameters belong to all the previous trials in a study.
 
-One limitation of :func:`~optuna.samplers.product_search_space` is it doesn't work well with objective functions that use highly conditional search space.
+The following code is a typical implementation of :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`:
 
-For example, the following objective function doesn't contains conditional expression, so all the parameters are included in the result of :func:`~optuna.samplers.product_search_space`:
+.. code-block:: python
+
+        def infer_relative_search_space(self, study, trial):
+            return optuna.samplers.product_search_space(study)
+
+
+Note that if ``study`` is optimizing an objective function that calls ``suggest`` APIs within conditional blocks, the conditional parameters will be excluded from the result of :func:`~optuna.samplers.product_search_space`.
+
+For example, the following objective function doesn't contain any conditional parameters, so all of the parameters (i.e., ``x``, ``y`` and ``z``) are included in the result of :func:`~optuna.samplers.product_search_space`:
 
 .. code-block:: python
 
@@ -165,14 +173,13 @@ For example, the following objective function doesn't contains conditional expre
     study = optuna.create_study(objective, n_trials=100)
     assert set(optuna.samplers.product_search_space(study).keys()) == {'x', 'y', 'z'}
 
-However, if an objective function, like below, that contains conditional expressions is used, parameters that suggested in the conditional expressions are omitted from the result of :func:`~optuna.samplers.product_search_space`. So those parameters (``y`` and ``z`` in the following code) will be sampled by using :meth:`~optuna.samplers.BaseSampler.sample_independent` instead of :meth:`~optuna.samplers.BaseSampler.sample_relative`.
+However, if the objective function is modified as follows, only ``x`` will be included in the result of :func:`~optuna.samplers.product_search_space`.
 
 .. code-block:: python
 
     def objective(trial):
         x = trial.suggest_uniform('x', -10, 10)
-        category = trial.suggest_categorical('category', ['y', 'z'])
-        if category == 'y':
+        if x > 0:
             y = trial.suggest_uniform('y', -10, 10)
             return x + y
         else:
@@ -180,6 +187,6 @@ However, if an objective function, like below, that contains conditional express
             return x + z
 
     study = optuna.create_study(objective, n_trials=100)
-    assert set(optuna.samplers.product_search_space(study).keys()) == {'x', 'category'}
+    assert set(optuna.samplers.product_search_space(study).keys()) == {'x'}
 
-TODO: nanikakaku
+In this case, ``y`` and ``z`` will be sampled by using :meth:`~optuna.samplers.BaseSampler.sample_independent` instead of :meth:`~optuna.samplers.BaseSampler.sample_relative`.
