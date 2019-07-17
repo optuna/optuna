@@ -41,7 +41,7 @@ In addition, integration modules are available for the following libraries, prov
 
 ### Examples of Custom Sampler
 
-* [sampler based on Simulated Annealing](./samplers/simulated_annealing_sampler.py)
+* [SimulatedAnnealingSampler](./samplers/simulated_annealing_sampler.py)
 
 ### Examples of Visualization
 
