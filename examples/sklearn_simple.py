@@ -41,11 +41,11 @@ def objective(trial):
 
     score = sklearn.model_selection.cross_val_score(classifier_obj, x, y, n_jobs=-1, cv=3)
     accuracy = score.mean()
-    return 1.0 - accuracy
+    return accuracy
 
 
 if __name__ == '__main__':
     import optuna
-    study = optuna.create_study()
+    study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)
     print(study.best_trial)
