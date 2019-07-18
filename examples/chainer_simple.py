@@ -102,14 +102,13 @@ def objective(trial):
     for key, value in log_last.items():
         trial.set_user_attr(key, value)
 
-    # Return the validation error
-    val_err = 1.0 - log_report_extension.log[-1]['validation/main/accuracy']
-    return val_err
+    # Return the validation accuracy
+    return log_report_extension.log[-1]['validation/main/accuracy']
 
 
 if __name__ == '__main__':
     import optuna
-    study = optuna.create_study()
+    study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)
 
     print('Number of finished trials: ', len(study.trials))
