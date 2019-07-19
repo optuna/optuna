@@ -135,26 +135,17 @@ class InMemoryStorage(base.BaseStorage):
                 datetime_start=datetime_start)
         ]
 
-    def create_new_trial_id(self, study_id):
-        # type: (int) -> int
+    def create_new_trial_id(self, study_id, base_trial=None):
+        # type: (int, Optional[structs.FrozenTrial]) -> int
 
         self._check_study_id(study_id)
+        trial = base_trial or structs.FronzenTrial._create_dummy_running_trial()
+        trial.system_attrs = copy.deepcopy(trial.system_attrs)
+
         with self._lock:
             trial_id = len(self.trials)
-            self.trials.append(
-                structs.FrozenTrial(
-                    number=trial_id,
-                    state=structs.TrialState.RUNNING,
-                    params={},
-                    distributions={},
-                    user_attrs={},
-                    system_attrs={'_number': trial_id},
-                    value=None,
-                    intermediate_values={},
-                    params_in_internal_repr={},
-                    datetime_start=datetime.now(),
-                    datetime_complete=None,
-                    trial_id=trial_id))
+            trial.system_attrs['number'] = trial_id
+            self.trials.append(trial.__replace(number=trial_id, trial_id=trial_id))
         return trial_id
 
     def set_trial_state(self, trial_id, state):

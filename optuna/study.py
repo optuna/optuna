@@ -241,6 +241,13 @@ class Study(BaseStudy):
 
         return self.storage.get_study_system_attrs(self.study_id)
 
+    # TODO: Take kwargs instead of FrozenTrial
+    def inject_trial(self, trial):
+        # type: (structs.FrozenTrial) -> None
+        """TODO: doc"""
+
+        self.storage.create_new_trial_id(self.study_id, base_trial=trial)
+
     def optimize(
             self,
             func,  # type: ObjectiveFuncType
