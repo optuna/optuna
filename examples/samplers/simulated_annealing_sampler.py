@@ -52,7 +52,7 @@ class SimulatedAnnealingSampler(BaseSampler):
         if search_space == {}:
             return {}
 
-        prev_trial = self._last_complete_trial(study)
+        prev_trial = self._get_last_complete_trial(study)
         if self._rng.uniform(0, 1) <= self._transition_probability(study, prev_trial):
             self._current_trial = prev_trial
 
@@ -94,7 +94,8 @@ class SimulatedAnnealingSampler(BaseSampler):
         else:
             return np.exp(-abs(current_value - prev_value) / self._temperature)
 
-    def _last_complete_trial(self, study):
+    @staticmethod
+    def _get_last_complete_trial(study):
         # type: (InTrialStudy) -> FrozenTrial
 
         complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
