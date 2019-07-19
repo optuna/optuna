@@ -4,11 +4,12 @@ import pytest
 import optuna
 from optuna.integration import CmaEsSampler
 from optuna.integration import SkoptSampler
-from optuna.samplers import BaseSampler  # NOQA
 from optuna.testing.sampler import FirstTrialOnlyRandomSampler
 
 if optuna.types.TYPE_CHECKING:
     from typing import Callable  # NOQA
+
+    from optuna.samplers import BaseSampler  # NOQA
 
 parametrize_sampler = pytest.mark.parametrize('sampler_class', [
     optuna.integration.SkoptSampler,
