@@ -13,7 +13,7 @@ We have the following two ways to execute this example:
 
 
 (2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
+    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
     $ optuna study optimize tensorflow_estimator_simple.py objective --n-trials=100 \
       --study $STUDY_NAME --storage sqlite:///example.db
 
@@ -112,11 +112,11 @@ def objective(trial):
         x={"x": eval_data}, y=eval_labels, num_epochs=1, shuffle=False)
 
     eval_results = mnist_classifier.evaluate(input_fn=eval_input_fn)
-    return 1 - float(eval_results['accuracy'])
+    return float(eval_results['accuracy'])
 
 
 def main(unused_argv):
-    study = optuna.create_study()
+    study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=25)
 
     print('Number of finished trials: ', len(study.trials))

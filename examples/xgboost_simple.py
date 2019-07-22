@@ -13,7 +13,7 @@ We have following two ways to execute this example:
 
 
 (2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
+    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
     $ optuna study optimize xgboost_simple.py objective --n-trials=100 --study $STUDY_NAME \
       --storage sqlite:///example.db
 
@@ -61,10 +61,10 @@ def objective(trial):
     preds = bst.predict(dtest)
     pred_labels = np.rint(preds)
     accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
-    return 1.0 - accuracy
+    return accuracy
 
 
 if __name__ == '__main__':
-    study = optuna.create_study()
+    study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)
     print(study.best_trial)
