@@ -50,19 +50,31 @@ class SimulatedAnnealingSampler(BaseSampler):
         # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
         if search_space == {}:
+            # The relative search space is empty (it means this is the first trial of a study).
             return {}
 
+        # The rest of this method is an implementation of Simulated Annealing (SA) algorithm.
         prev_trial = self._get_last_complete_trial(study)
+
+        # Update the current state of SA if the transition is accepted.
         if self._rng.uniform(0, 1) <= self._transition_probability(study, prev_trial):
             self._current_trial = prev_trial
 
+        # Pick a new neighbor (i.e., parameters).
         params = self._sample_neighbor_params(search_space)
+
+        # Decrease the temperature.
         self._temperature *= COOLDOWN_FACTOR
 
         return params
 
     def _sample_neighbor_params(self, search_space):
         # type: (Dict[str, BaseDistribution]) -> Dict[str, Any]
+
+        # Generate a sufficiently near neighbor (i.e., parameters).
+        #
+        # In this example, we treat the 10% region of the entire search space centered on
+        # the current point as the search space for sampling a sufficiently near neighbor.
 
         params = {}
         for param_name, param_distribution in search_space.items():
@@ -87,12 +99,15 @@ class SimulatedAnnealingSampler(BaseSampler):
         prev_value = prev_trial.value
         current_value = self._current_trial.value
 
+        # `prev_trial` is always accepted if it has a better value than the current trial.
         if study.direction == structs.StudyDirection.MINIMIZE and prev_value <= current_value:
             return 1.0
         elif study.direction == structs.StudyDirection.MAXIMIZE and prev_value >= current_value:
             return 1.0
-        else:
-            return np.exp(-abs(current_value - prev_value) / self._temperature)
+
+        # Calculate the probability of accepting `prev_trial` that has a worse value than
+        # the current trial.
+        return np.exp(-abs(current_value - prev_value) / self._temperature)
 
     @staticmethod
     def _get_last_complete_trial(study):
@@ -104,6 +119,8 @@ class SimulatedAnnealingSampler(BaseSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
 
+        # In this example, this method is invoked only in the first trial of a study.
+        # The parameters of the trial are sampled by using `RandomSampler` as below.
         return self._independent_sampler.sample_independent(study, trial, param_name,
                                                             param_distribution)
 
