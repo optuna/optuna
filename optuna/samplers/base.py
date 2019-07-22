@@ -28,7 +28,7 @@ class BaseSampler(object):
     relationship between parameters. Target parameters of the independent sampling are the
     parameters not described in the relative search space.
 
-    More  specifically, at the beginning of a trial,
+    More specifically, at the beginning of a trial,
     :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called for determining
     the relative search space for the trial. Then,
     :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked for sampling parameters
@@ -36,8 +36,8 @@ class BaseSampler(object):
     :meth:`~optuna.samplers.BaseSampler.sample_independent` is used for sampling
     parameters that don't belong to the relative search space.
 
-    The following figure depicts the lifetime of a trial and the relationship between
-    the above three methods.
+    The following figure depicts the lifetime of a trial and how the above three methods are
+    called in the trial.
 
     .. image:: ../../image/sampling-sequence.png
 
