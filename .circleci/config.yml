@@ -76,7 +76,7 @@ jobs:
       - run:
           name: install
           command: |
-            python -m venv venv || virtualenv venv
+            python -m venv venv || virtualenv venv --python=python3
             . venv/bin/activate
             pip install .[document]
 
