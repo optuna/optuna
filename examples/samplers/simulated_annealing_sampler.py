@@ -1,6 +1,7 @@
 """
-Optuna example that implements a custom relative sampler based on Simulated Annealing algorithm.
-Please refer to https://en.wikipedia.org/wiki/Simulated_annealing for Simulated Annealing itself.
+Optuna example that implements an user defined relative sampler based on Simulated Annealing
+algorithm. Please refer to https://en.wikipedia.org/wiki/Simulated_annealing for Simulated
+Annealing itself.
 
 Note that this implementation isn't intended to be used for production purposes and
 has the following limitations:
