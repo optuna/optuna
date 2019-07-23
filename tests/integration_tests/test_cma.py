@@ -69,7 +69,7 @@ class TestCmaEsSampler(object):
         assert isinstance(sampler._independent_sampler, optuna.samplers.RandomSampler)
 
     @staticmethod
-    def test_infer_relative_search_space_single():
+    def test_infer_relative_search_space_1d():
         # type: () -> None
 
         sampler = optuna.integration.CmaEsSampler()
