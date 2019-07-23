@@ -48,7 +48,7 @@ class CmaEsSampler(BaseSampler):
                     y = trial.suggest_int('y', -1, 1)
                     return x**2 + y
 
-                sampler = optuna.integration.CmaEsSampler(sigma0=0.3)
+                sampler = optuna.integration.CmaEsSampler()
                 study = optuna.create_study(sampler=sampler)
                 study.optimize(objective, n_trials=100)
 
@@ -72,7 +72,7 @@ class CmaEsSampler(BaseSampler):
         cma_stds:
             A dictionary of multipliers of sigma0 for each parameters. The default value is 1.0.
             Please refer to `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.e
-            volution_strategy.CMAEvolutionStrategy.html>`_ for further details of ``sigma0``.
+            volution_strategy.CMAEvolutionStrategy.html>`_ for further details of ``cma_stds``.
 
         seed:
             A random seed for CMA-ES.
@@ -114,7 +114,7 @@ class CmaEsSampler(BaseSampler):
             x0=None,  # type: Optional[Dict[str, Any]]
             sigma0=None,  # type: Optional[float]
             cma_stds=None,  # type: Optional[Dict[str, float]]
-            seed=None,  # type: int
+            seed=None,  # type: Optional[int]
             cma_opts=None,  # type: Optional[Dict[str, Any]]
             independent_sampler=None,  # type: Optional[BaseSampler]
             warn_independent_sampling=True,  # type: bool
