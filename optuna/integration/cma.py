@@ -348,7 +348,7 @@ class _Optimizer(object):
 
         # individual_index may exceed the population size due to the parallel execution of multiple
         # trials. In such cases, `cma.cma.CMAEvolutionStrategy.ask` is called multiple times in an
-        # iteration, and that may deteriorate the optimization performance of CMA-ES.
+        # iteration, and that may degrade the optimization performance of CMA-ES.
         # In addition, please note that some trials may suggest the same parameters when multiple
         # samplers invoke this method simultaneously.
         while individual_index >= popsize:
