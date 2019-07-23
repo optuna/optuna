@@ -317,15 +317,7 @@ class _Optimizer(object):
     def tell(self, trials, study_direction):
         # type: (List[FrozenTrial], StudyDirection) -> int
 
-        complete_trials = []
-        for trial in trials:
-            if trial.distributions != self._search_space:
-                continue
-            if trial.state != TrialState.COMPLETE:
-                continue
-            if not self._is_compatible(trial):
-                continue
-            complete_trials.append(trial)
+        complete_trials = self._collect_target_trials(trials)
 
         popsize = self._es.popsize
         generation = len(complete_trials) // popsize
@@ -348,7 +340,7 @@ class _Optimizer(object):
     def ask(self, trials, n_told):
         # type: (List[FrozenTrial], int) -> Dict[str, Any]
 
-        individual_index = self._n_target_trials(trials) - n_told
+        individual_index = len(self._collect_target_trials(trials)) - n_told
         popsize = self._es.popsize
 
         # individual_index may exceed the population size when users execute multiple trials in
@@ -385,15 +377,18 @@ class _Optimizer(object):
 
         return True
 
-    def _n_target_trials(self, trials):
-        # type: (List[FrozenTrial]) -> int
+    def _collect_target_trials(self, trials):
+        # type: (List[FrozenTrial]) -> List[FrozenTrial]
 
-        cnt = 0
+        target_trials = []
         for trial in trials:
-            if trial.distributions != self._search_space:
+            if trial.state != TrialState.COMPLETE:
                 continue
-            cnt += 1
-        return cnt
+            if not self._is_compatible(trial):
+                continue
+            target_trials.append(trial)
+
+        return target_trials
 
     @staticmethod
     def _to_cma_params(search_space, param_name, optuna_param_value):
