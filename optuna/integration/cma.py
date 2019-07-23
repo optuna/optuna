@@ -170,7 +170,7 @@ class CmaEsSampler(BaseSampler):
 
         if len(search_space) == 1:
             self._logger.info("`CmaEsSampler` does not support optimization of 1-D search space. "
-                              "Use `{}` instead of it.".format(
+                              "`{}` is used instead of `CmaEsSampler`.".format(
                                   self._independent_sampler.__class__.__name__))
             self._warn_independent_sampling = False
             return {}
