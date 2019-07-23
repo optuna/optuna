@@ -1,5 +1,5 @@
 """
-Optuna example that implements an user defined relative sampler based on Simulated Annealing
+Optuna example that implements a user-defined relative sampler based on Simulated Annealing
 algorithm. Please refer to https://en.wikipedia.org/wiki/Simulated_annealing for Simulated
 Annealing itself.
 
@@ -74,8 +74,8 @@ class SimulatedAnnealingSampler(BaseSampler):
 
         # Generate a sufficiently near neighbor (i.e., parameters).
         #
-        # In this example, we treat the 10% region of the entire search space centered on
-        # the current point as the search space for sampling a sufficiently near neighbor.
+        # In this example, we define a sufficiently near neighbor as 10% region of the entire
+        # search space centered on the current point.
 
         params = {}
         for param_name, param_distribution in search_space.items():
@@ -121,7 +121,7 @@ class SimulatedAnnealingSampler(BaseSampler):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
 
         # In this example, this method is invoked only in the first trial of a study.
-        # The parameters of the trial are sampled by using `RandomSampler` as below.
+        # The parameters of the trial are sampled by using `RandomSampler` as follows.
         return self._independent_sampler.sample_independent(study, trial, param_name,
                                                             param_distribution)
 
