@@ -77,6 +77,19 @@ class CmaEsSampler(BaseSampler):
         seed:
             A random seed for CMA-ES.
 
+        cma_opts:
+            Options passed to the constructor of
+            `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.evolution_strateg
+            y.CMAEvolutionStrategy.html>`_ class.
+
+            Note that ``BoundaryHandler``, ``bounds``, ``CMA_stds`` and ``seed`` arguments in
+            ``cma_opts`` will be ignored because it is added by
+            :class:`~optuna.integration.CmaEsSampler` automatically.
+
+        n_startup_trials:
+            The independent sampling is used instead of the CMA-ES algorithm until the given number
+            of trials finish in the same study.
+
         independent_sampler:
             A :class:`~optuna.samplers.BaseSampler` instance that is used for independent
             sampling. The parameters not contained in the relative search space are sampled
@@ -98,15 +111,6 @@ class CmaEsSampler(BaseSampler):
 
             Note that the parameters of the first trial in a study are always sampled
             via an independent sampler, so no warning messages are emitted in this case.
-
-        cma_opts:
-            Options passed to the constructor of
-            `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.evolution_strateg
-            y.CMAEvolutionStrategy.html>`_ class.
-
-            Note that ``BoundaryHandler``, ``bounds``, ``CMA_stds`` and ``seed`` arguments in
-            ``cma_opts`` will be ignored because it is added by
-            :class:`~optuna.integration.CmaEsSampler` automatically.
     """
 
     def __init__(
@@ -116,6 +120,7 @@ class CmaEsSampler(BaseSampler):
             cma_stds=None,  # type: Optional[Dict[str, float]]
             seed=None,  # type: Optional[int]
             cma_opts=None,  # type: Optional[Dict[str, Any]]
+            n_startup_trials=1,  # type: int
             independent_sampler=None,  # type: Optional[BaseSampler]
             warn_independent_sampling=True,  # type: bool
     ):
@@ -131,6 +136,7 @@ class CmaEsSampler(BaseSampler):
         self._cma_opts = cma_opts or {}
         self._cma_opts['seed'] = seed
         self._cma_opts.setdefault('verbose', -2)
+        self._n_startup_trials = n_startup_trials
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._warn_independent_sampling = warn_independent_sampling
         self._logger = optuna.logging.get_logger(__name__)
@@ -156,7 +162,7 @@ class CmaEsSampler(BaseSampler):
 
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
-            if len(complete_trials) >= 1:
+            if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
         return self._independent_sampler.sample_independent(study, trial, param_name,
@@ -173,6 +179,10 @@ class CmaEsSampler(BaseSampler):
                               "`{}` is used instead of `CmaEsSampler`.".format(
                                   self._independent_sampler.__class__.__name__))
             self._warn_independent_sampling = False
+            return {}
+
+        complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+        if len(complete_trials) < self._n_startup_trials:
             return {}
 
         if self._x0 is None:
