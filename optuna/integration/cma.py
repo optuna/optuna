@@ -5,6 +5,7 @@ import numpy
 import random
 
 import optuna
+from optuna import distributions
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
@@ -189,9 +190,11 @@ class CmaEsSampler(BaseSampler):
             self._x0 = self._initialize_x0(search_space)
 
         if self._sigma0 is None:
-            self._sigma0 = self._initialize_sigma0(search_space)
+            sigma0 = self._initialize_sigma0(search_space)
+        else:
+            sigma0 = self._sigma0
 
-        optimizer = _Optimizer(search_space, self._x0, self._sigma0, self._cma_stds,
+        optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds,
                                self._cma_opts)
         trials = study.trials
         n_told = optimizer.tell(trials, study.direction)
@@ -277,6 +280,7 @@ class _Optimizer(object):
             dist = self._search_space[param_name]
             if isinstance(dist, CategoricalDistribution):
                 # Handle categorical values by ordinal representation.
+                # TODO(Yanase): Support one-hot representation.
                 lows.append(-0.5)
                 highs.append(len(dist.choices) - 0.5)
             elif isinstance(dist, UniformDistribution) or \
@@ -319,6 +323,8 @@ class _Optimizer(object):
                 continue
             if trial.state != TrialState.COMPLETE:
                 continue
+            if not self._is_compatible(trial):
+                continue
             complete_trials.append(trial)
 
         popsize = self._es.popsize
@@ -357,6 +363,27 @@ class _Optimizer(object):
         for param_name, value in zip(self._param_names, cma_params):
             ret_val[param_name] = self._to_optuna_params(self._search_space, param_name, value)
         return ret_val
+
+    def _is_compatible(self, trial):
+        # type: (FrozenTrial) -> bool
+
+        # Thanks to `product_search_space()` function, in sequential optimization,
+        # the parameters of complete trials are always compatible with the search space.
+        #
+        # However, in distributed optimization, incompatible trials may complete on a worker
+        # just after a product search space is calculated on another worker.
+
+        for name, distribution in self._search_space.items():
+            if name not in trial.params:
+                return False
+
+            distributions.check_distribution_compatibility(distribution, trial.distributions[name])
+            param_value = trial.params[name]
+            param_internal_value = distribution.to_internal_repr(param_value)
+            if not distribution._contains(param_internal_value):
+                return False
+
+        return True
 
     def _n_target_trials(self, trials):
         # type: (List[FrozenTrial]) -> int

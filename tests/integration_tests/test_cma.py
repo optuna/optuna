@@ -272,6 +272,44 @@ class TestOptimizer(object):
         assert params0 != params3
         assert params2 != params3
 
+    @staticmethod
+    def test_is_compatible(search_space, x0):
+        # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
+
+        optimizer = optuna.integration.cma._Optimizer(search_space, x0, 0.1, None, {})
+
+        # Compatible.
+        trial = _create_frozen_trial(x0, search_space)
+        assert optimizer._is_compatible(trial)
+
+        # Compatible.
+        trial = _create_frozen_trial(x0, dict(search_space, u=UniformDistribution(-10, 10)))
+        assert optimizer._is_compatible(trial)
+
+        # Compatible.
+        trial = _create_frozen_trial(dict(x0, unknown=7),
+                                     dict(search_space, unknown=UniformDistribution(0, 10)))
+        assert optimizer._is_compatible(trial)
+
+        # Incompatible ('u' doesn't exist).
+        param = dict(x0)
+        del param['u']
+        dist = dict(search_space)
+        del dist['u']
+        trial = _create_frozen_trial(param, dist)
+        assert not optimizer._is_compatible(trial)
+
+        # Incompatible (the value of 'u' is out of range).
+        trial = _create_frozen_trial(dict(x0, u=20),
+                                     dict(search_space, u=UniformDistribution(-100, 100)))
+        assert not optimizer._is_compatible(trial)
+
+        # Error (different distribution class).
+        trial = _create_frozen_trial(x0,
+                                     dict(search_space, u=IntUniformDistribution(-2, 2)))
+        with pytest.raises(ValueError):
+            optimizer._is_compatible(trial)
+
 
 def _create_frozen_trial(params, param_distributions):
     # type: (Dict[str, Any], Dict[str, BaseDistribution]) -> FrozenTrial
