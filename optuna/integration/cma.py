@@ -333,6 +333,9 @@ class _Optimizer(object):
                 ys.append(t.value)
             if study_direction == StudyDirection.MAXIMIZE:
                 ys = [-1 * y if y is not None else y for y in ys]
+
+            # Calling `ask` is required to avoid RuntimeError which claims that `tell` should only
+            # be called once per iteration.
             self._es.ask()
             self._es.tell(xs, ys)
         return generation * popsize
@@ -343,9 +346,11 @@ class _Optimizer(object):
         individual_index = len(self._collect_target_trials(trials)) - n_told
         popsize = self._es.popsize
 
-        # individual_index may exceed the population size when users execute multiple trials in
-        # parallel. Note that trial may suggest the same parameters when multiple samplers invoke
-        # this method simultaneously.
+        # individual_index may exceed the population size due to the parallel execution of multiple
+        # trials. In such cases, `cma.cma.CMAEvolutionStrategy.ask` is called multiple times in an
+        # iteration, and that may deteriorate the optimization performance of CMA-ES.
+        # In addition, please note that some trials may suggest the same parameters when multiple
+        # samplers invoke this method simultaneously.
         while individual_index >= popsize:
             individual_index -= popsize
             self._es.ask()
