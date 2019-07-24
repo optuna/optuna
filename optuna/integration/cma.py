@@ -41,6 +41,9 @@ MIN_SIGMA0 = 1e-10  # Minimum value of sigma0 to avoid ZeroDivisionError in cma.
 class CmaEsSampler(BaseSampler):
     """A Sampler using cma library as the backend.
 
+    Note that parallel execution of trials may degrade the optimization performance of CMA-ES,
+    especially if the number of trials running in parallel exceeds the population size.
+
     Example:
 
         Optimize a simple quadratic function by using :class:`~optuna.integration.CmaEsSampler`.
