@@ -29,6 +29,7 @@ if types.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
+    from typing import Set  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.samplers.base import InTrialStudy  # NOQA
@@ -197,8 +198,8 @@ class CmaEsSampler(BaseSampler):
         optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds,
                                self._cma_opts)
         trials = study.trials
-        n_told = optimizer.tell(trials, study.direction)
-        return optimizer.ask(trials, n_told)
+        last_told_trial_number = optimizer.tell(trials, study.direction)
+        return optimizer.ask(trials, last_told_trial_number)
 
     @staticmethod
     def _initialize_x0(search_space):
@@ -317,10 +318,11 @@ class _Optimizer(object):
     def tell(self, trials, study_direction):
         # type: (List[FrozenTrial], StudyDirection) -> int
 
-        complete_trials = self._collect_target_trials(trials)
+        complete_trials = self._collect_target_trials(trials, target_states={TrialState.COMPLETE})
 
         popsize = self._es.popsize
         generation = len(complete_trials) // popsize
+        last_told_trial_number = -1
         for i in range(generation):
             xs = []
             ys = []
@@ -331,6 +333,7 @@ class _Optimizer(object):
                 ]
                 xs.append(x)
                 ys.append(t.value)
+                last_told_trial_number = t.number
             if study_direction == StudyDirection.MAXIMIZE:
                 ys = [-1 * y if y is not None else y for y in ys]
 
@@ -338,12 +341,12 @@ class _Optimizer(object):
             # be called once per iteration.
             self._es.ask()
             self._es.tell(xs, ys)
-        return generation * popsize
+        return last_told_trial_number
 
-    def ask(self, trials, n_told):
+    def ask(self, trials, last_told_trial_number):
         # type: (List[FrozenTrial], int) -> Dict[str, Any]
 
-        individual_index = len(self._collect_target_trials(trials)) - n_told
+        individual_index = len(self._collect_target_trials(trials, last_told_trial_number))
         popsize = self._es.popsize
 
         # individual_index may exceed the population size due to the parallel execution of multiple
@@ -382,16 +385,13 @@ class _Optimizer(object):
 
         return True
 
-    def _collect_target_trials(self, trials):
-        # type: (List[FrozenTrial]) -> List[FrozenTrial]
+    def _collect_target_trials(self, trials, last_told=-1, target_states=None):
+        # type: (List[FrozenTrial], int, Optional[Set[TrialState]]) -> List[FrozenTrial]
 
-        target_trials = []
-        for trial in trials:
-            if trial.state != TrialState.COMPLETE:
-                continue
-            if not self._is_compatible(trial):
-                continue
-            target_trials.append(trial)
+        target_trials = [t for t in trials if t.number > last_told]
+        target_trials = [t for t in target_trials if self._is_compatible(t)]
+        if target_states is not None:
+            target_trials = [t for t in target_trials if t.state in target_states]
 
         return target_trials
 

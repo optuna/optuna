@@ -199,10 +199,10 @@ class TestOptimizer(object):
         })
 
         trials = [_create_frozen_trial(x0, search_space)]
-        assert 0 == optimizer.tell(trials, direction)
+        assert -1 == optimizer.tell(trials, direction)
 
-        trials = [_create_frozen_trial(x0, search_space) for _ in range(3)]
-        assert 3 == optimizer.tell(trials, direction)
+        trials = [_create_frozen_trial(x0, search_space, number=i) for i in range(3)]
+        assert 2 == optimizer.tell(trials, direction)
 
     @staticmethod
     @pytest.mark.parametrize('state', [TrialState.FAIL, TrialState.RUNNING, TrialState.PRUNED])
@@ -215,8 +215,8 @@ class TestOptimizer(object):
         })
 
         trials = [_create_frozen_trial(x0, search_space)]
-        trials.append(trials[0]._replace(state=state))
-        assert 0 == optimizer.tell(trials, StudyDirection.MINIMIZE)
+        trials.append(_create_frozen_trial(x0, search_space, state, len(trials)))
+        assert -1 == optimizer.tell(trials, StudyDirection.MINIMIZE)
 
     @staticmethod
     def test_tell_filter_by_distribution(search_space, x0):
@@ -230,44 +230,45 @@ class TestOptimizer(object):
         trials = [_create_frozen_trial(x0, search_space)]
         distributions = trials[0].distributions.copy()
         distributions['additional'] = UniformDistribution(0, 100)
-        trials.append(trials[0]._replace(distributions=distributions))
-        assert 0 == optimizer.tell(trials, StudyDirection.MINIMIZE)
+        trials.append(_create_frozen_trial(x0, distributions, number=1))
+        assert 1 == optimizer.tell(trials, StudyDirection.MINIMIZE)
 
     @staticmethod
     def test_ask(search_space, x0):
         # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
 
-        trials = [_create_frozen_trial(x0, search_space) for _ in range(3)]
+        trials = [_create_frozen_trial(x0, search_space, number=i) for i in range(3)]
 
         # Create 0-th individual.
         optimizer = _Optimizer(search_space, x0, 0.2, None, {'popsize': 3, 'seed': 1})
-        told = optimizer.tell(trials, StudyDirection.MINIMIZE)
-        params0 = optimizer.ask(trials, told)
+        last_told = optimizer.tell(trials, StudyDirection.MINIMIZE)
+        params0 = optimizer.ask(trials, last_told)
 
-        # Ignore incompatible trial and create 0-th individual again.
+        # Ignore parameters with incompatible distributions and create new individual.
         optimizer = _Optimizer(search_space, x0, 0.2, None, {'popsize': 3, 'seed': 1})
-        told = optimizer.tell(trials, StudyDirection.MINIMIZE)
+        last_told = optimizer.tell(trials, StudyDirection.MINIMIZE)
         distributions = trials[0].distributions.copy()
         distributions['additional'] = UniformDistribution(0, 100)
-        trials.append(trials[0]._replace(distributions=distributions))
-        params1 = optimizer.ask(trials, told)
+        trials.append(_create_frozen_trial(x0, distributions, number=len(trials)))
+        params1 = optimizer.ask(trials, last_told)
 
-        assert params0 == params1
+        assert params0 != params1
+        assert 'additional' not in params1
 
         # Create first individual.
         optimizer = _Optimizer(search_space, x0, 0.2, None, {'popsize': 3, 'seed': 1})
-        trials.append(trials[0])
-        told = optimizer.tell(trials, StudyDirection.MINIMIZE)
-        params2 = optimizer.ask(trials, told)
+        trials.append(_create_frozen_trial(x0, search_space, number=len(trials)))
+        last_told = optimizer.tell(trials, StudyDirection.MINIMIZE)
+        params2 = optimizer.ask(trials, last_told)
 
         assert params0 != params2
 
         optimizer = _Optimizer(search_space, x0, 0.2, None, {'popsize': 3, 'seed': 1})
-        told = optimizer.tell(trials, StudyDirection.MINIMIZE)
+        last_told = optimizer.tell(trials, StudyDirection.MINIMIZE)
         # Other worker adds three trials.
         for _ in range(3):
-            trials.append(trials[0])
-        params3 = optimizer.ask(trials, told)
+            trials.append(_create_frozen_trial(x0, search_space, number=len(trials)))
+        params3 = optimizer.ask(trials, last_told)
 
         assert params0 != params3
         assert params2 != params3
@@ -311,8 +312,8 @@ class TestOptimizer(object):
             optimizer._is_compatible(trial)
 
 
-def _create_frozen_trial(params, param_distributions):
-    # type: (Dict[str, Any], Dict[str, BaseDistribution]) -> FrozenTrial
+def _create_frozen_trial(params, param_distributions, state=TrialState.COMPLETE, number=0):
+    # type: (Dict[str, Any], Dict[str, BaseDistribution], TrialState, int) -> FrozenTrial
 
     params_in_internal_repr = {}
     for param_name, param_value in params.items():
@@ -320,9 +321,9 @@ def _create_frozen_trial(params, param_distributions):
             param_value)
 
     return FrozenTrial(
-        number=0,
+        number=number,
         value=1.,
-        state=optuna.structs.TrialState.COMPLETE,
+        state=state,
         user_attrs={},
         system_attrs={},
         params=params,
@@ -331,5 +332,5 @@ def _create_frozen_trial(params, param_distributions):
         intermediate_values={},
         datetime_start=None,
         datetime_complete=None,
-        trial_id=0,
+        trial_id=number,
     )
