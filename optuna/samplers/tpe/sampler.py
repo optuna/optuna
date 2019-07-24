@@ -6,6 +6,7 @@ from optuna.samplers import base
 from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters
+from optuna import structs
 from optuna.structs import StudyDirection
 from optuna import types
 
@@ -26,6 +27,12 @@ EPS = 1e-12
 
 
 def default_gamma(x):
+    # type: (int) -> int
+
+    return min(int(np.ceil(0.1 * x)), 25)
+
+
+def hyperopt_default_gamma(x):
     # type: (int) -> int
 
     return min(int(np.ceil(0.25 * np.sqrt(x))), 25)
@@ -84,10 +91,7 @@ class TPESampler(base.BaseSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
 
-        observation_pairs = study.storage.get_trial_param_result_pairs(
-            study.study_id, param_name)
-        if study.direction == StudyDirection.MAXIMIZE:
-            observation_pairs = [(p, -v) for p, v in observation_pairs]
+        observation_pairs = _get_observation_pairs(study, param_name)
 
         n = len(observation_pairs)
 
@@ -131,12 +135,14 @@ class TPESampler(base.BaseSampler):
             config_idxs,  # type: List[int]
             config_vals,  # type: List[float]
             loss_idxs,  # type: List[int]
-            loss_vals  # type: List[float]
+            loss_vals  # type: List[Tuple[float, float]]
     ):
         # type: (...) -> Tuple[np.ndarray, np.ndarray]
 
-        config_idxs, config_vals, loss_idxs, loss_vals = map(
-            np.asarray, [config_idxs, config_vals, loss_idxs, loss_vals])
+        config_idxs, config_vals, loss_idxs = map(
+            np.asarray, [config_idxs, config_vals, loss_idxs])
+        loss_vals = np.asarray(loss_vals, dtype=[('step', float), ('score', float)])
+
         n_below = self.gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
 
@@ -447,3 +453,91 @@ class TPESampler(base.BaseSampler):
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
         z = denominator / numerator
         return .5 + .5 * scipy.special.erf(z)
+
+    @staticmethod
+    def hyperopt_parameters():
+        # type: () -> Dict[str, Any]
+        """Return the the default parameters of hyperopt (v0.1.2).
+
+        :class:`~optuna.samplers.TPESampler` can be instantiated with the parameters returned
+        by this method.
+
+        Example:
+
+            Create a :class:`~optuna.samplers.TPESampler` instance with the default
+            parameters of `hyperopt <https://github.com/hyperopt/hyperopt/tree/0.1.2>`_.
+
+            .. code::
+
+                    import optuna
+                    from optuna.samplers import TPESampler
+
+                    def objective(trial):
+                        x = trial.suggest_uniform('x', -10, 10)
+                        return x**2
+
+                    sampler = TPESampler(**TPESampler.hyperopt_parameters())
+                    study = optuna.create_study(sampler=sampler)
+                    study.optimize(objective, n_trials=100)
+
+        Returns:
+            A dictionary containing the default parameters of hyperopt.
+
+        """
+
+        return {
+            'consider_prior': True,
+            'prior_weight': 1.0,
+            'consider_magic_clip': True,
+            'consider_endpoints': False,
+            'n_startup_trials': 20,
+            'n_ei_candidates': 24,
+            'gamma': hyperopt_default_gamma,
+            'weights': default_weights,
+        }
+
+
+def _get_observation_pairs(study, param_name):
+    # type: (InTrialStudy, str) -> List[Tuple[float, Tuple[float, float]]]
+    """Get observation pairs from the study.
+
+       This function collects observation pairs from the complete or pruned trials of the study.
+       The trials that don't contain the parameter named ``param_name`` are excluded
+       from the result.
+
+       An observation pair fundamentally consists of a parameter value and an objective value.
+       However, due to the pruning mechanism of Optuna, final objective values are not always
+       available. Therefore, this function uses intermediate values in addition to the final
+       ones, and reports the value with its step count as ``(-step, value)``.
+       Consequently, the structure of the observation pair is as follows:
+       ``(param_value, (-step, value))``.
+
+       The second element of an observation pair is used to rank observations in
+       ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
+       ``(-step, value)``).
+    """
+
+    sign = 1
+    if study.direction == StudyDirection.MAXIMIZE:
+        sign = -1
+
+    pairs = []
+    for trial in study.trials:
+        if param_name not in trial.params_in_internal_repr:
+            continue
+
+        if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
+            score = (-float('inf'), sign * trial.value)
+        elif trial.state is structs.TrialState.PRUNED:
+            if len(trial.intermediate_values) > 0:
+                step, intermediate_value = max(trial.intermediate_values.items())
+                score = (-step, sign * intermediate_value)
+            else:
+                score = (float('inf'), 0.0)
+        else:
+            continue
+
+        param_value = trial.params_in_internal_repr[param_name]
+        pairs.append((param_value, score))
+
+    return pairs
