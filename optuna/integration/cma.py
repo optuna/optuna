@@ -35,6 +35,8 @@ if types.TYPE_CHECKING:
     from optuna.samplers.base import InTrialStudy  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
 
+MIN_SIGMA0 = 1e-10  # Minimum value of sigma0 to avoid ZeroDivisionError in cma.CMAEvotionStrategy.
+
 
 class CmaEsSampler(BaseSampler):
     """A Sampler using cma library as the backend.
@@ -194,6 +196,7 @@ class CmaEsSampler(BaseSampler):
             sigma0 = self._initialize_sigma0(search_space)
         else:
             sigma0 = self._sigma0
+        sigma0 = max(sigma0, MIN_SIGMA0)
 
         optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds,
                                self._cma_opts)
