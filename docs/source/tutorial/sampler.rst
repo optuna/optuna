@@ -1,7 +1,7 @@
 .. _sampler:
 
-Custom Sampler
-==============
+User-Defined Sampler
+=====================
 
 This feature enables you to define your samplers.
 
@@ -115,7 +115,8 @@ The custom sampler can be used in the same way as built-in samplers (see below).
 
     def objective(trial):
         x = trial.suggest_uniform('x', -10, 10)
-        return x ** 2
+        y = trial.suggest_uniform('x', -5, 5)
+        return x**2 + y
 
     sampler = SimulatedAnnealingSampler()
     study = optuna.create_study(sampler=sampler)
