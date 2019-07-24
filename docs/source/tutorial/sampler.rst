@@ -31,20 +31,17 @@ As an example, the following code defines a sampler named ``SimulatedAnnealingSa
 
 .. code-block:: python
 
+    import numpy as np
     import optuna
-    import random
 
 
     class SimulatedAnnealingSampler(optuna.samplers.BaseSampler):
         def __init__(self, temperature=100):
-            # type: (int) -> None
-
+            self._rng = np.random.RandomState()
             self._temperature = temperature  # Current temperature.
             self._current_trial = None  # Current state.
 
         def sample_relative(self, study, trial, search_space):
-            # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
-
             if search_space == {}:
                 return {}
 
@@ -61,7 +58,7 @@ As an example, the following code defines a sampler named ``SimulatedAnnealingSa
             self._temperature *= 0.9  # Decrease temperature.
 
             # Transit the current state if the previous result is accepted.
-            if random.random() < probability:
+            if self._rng.uniform(0, 1) < probability:
                 self._current_trial = prev_trial
 
             # Sample parameters from the neighborhood of the current point.
@@ -77,7 +74,7 @@ As an example, the following code defines a sampler named ``SimulatedAnnealingSa
                 width = (param_distribution.high - param_distribution.low) * 0.1
                 neighbor_low = max(current_value - width, param_distribution.low)
                 neighbor_high = min(current_value + width, param_distribution.high)
-                params[param_name] = random.uniform(neighbor_low, neighbor_high)
+                params[param_name] = self._rng.uniform(neighbor_low, neighbor_high)
 
             return params
 
@@ -85,13 +82,9 @@ As an example, the following code defines a sampler named ``SimulatedAnnealingSa
         # The rest is boilerplate code and unrelated to SA algorithm.
         #
         def infer_relative_search_space(self, study, trial):
-            # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
-
             return optuna.samplers.product_search_space(study)
 
         def sample_independent(self, study, trial, param_name, param_distribution):
-            # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
-
             independent_sampler = optuna.samplers.RandomSampler()
             return independent_sampler.sample_independent(study, trial, param_name, param_distribution)
 
