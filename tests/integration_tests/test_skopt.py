@@ -264,11 +264,6 @@ def _objective(trial):
 def _create_frozen_trial(params, param_distributions):
     # type: (Dict[str, Any], Dict[str, distributions.BaseDistribution]) -> FrozenTrial
 
-    params_in_internal_repr = {}
-    for param_name, param_value in params.items():
-        params_in_internal_repr[param_name] = param_distributions[param_name].to_internal_repr(
-            param_value)
-
     return FrozenTrial(
         number=0,
         value=1.,
@@ -276,7 +271,6 @@ def _create_frozen_trial(params, param_distributions):
         user_attrs={},
         system_attrs={},
         params=params,
-        params_in_internal_repr=params_in_internal_repr,
         distributions=param_distributions,
         intermediate_values={},
         datetime_start=None,

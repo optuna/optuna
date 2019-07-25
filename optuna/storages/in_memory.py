@@ -151,7 +151,6 @@ class InMemoryStorage(base.BaseStorage):
                     system_attrs={'_number': trial_id},
                     value=None,
                     intermediate_values={},
-                    params_in_internal_repr={},
                     datetime_start=datetime.now(),
                     datetime_complete=None,
                     trial_id=trial_id))
