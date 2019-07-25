@@ -72,13 +72,13 @@ A study object has useful properties to analyze the optimization outcome.
     Out[6]: 5.390694980884334e-05
 
     In [7]: study.best_trial
-    Out[7]: FrozenTrial(number=26, state=<TrialState.COMPLETE: 1>, params={'x': 1.9926578647650126}, user_attrs={}, system_attrs={'_number': 26}, value=5.390694980884334e-05, intermediate_values={}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 87060), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 91010), params_in_internal_repr={'x': 1.9926578647650126}, trial_id=26)
+    Out[7]: FrozenTrial(number=26, state=<TrialState.COMPLETE: 1>, params={'x': 1.9926578647650126}, user_attrs={}, system_attrs={'_number': 26}, value=5.390694980884334e-05, intermediate_values={}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 87060), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 91010), trial_id=26)
 
     In [8]: study.trials  # all trials
     Out[8]:
-    [FrozenTrial(number=0, state=<TrialState.COMPLETE: 1>, params={'x': -4.219801301030433}, user_attrs={}, system_attrs={'_number': 0}, value=38.685928224299865, intermediate_values={}, datetime_start=datetime.datetime(2018, 5, 9, 10, 22, 59, 983824), datetime_complete=datetime.datetime(2018, 5, 9, 10, 22, 59, 984053), params_in_internal_repr={'x': -4.219801301030433}, trial_id=0),
+    [FrozenTrial(number=0, state=<TrialState.COMPLETE: 1>, params={'x': -4.219801301030433}, user_attrs={}, system_attrs={'_number': 0}, value=38.685928224299865, intermediate_values={}, datetime_start=datetime.datetime(2018, 5, 9, 10, 22, 59, 983824), datetime_complete=datetime.datetime(2018, 5, 9, 10, 22, 59, 984053), trial_id=0),
      ...
-     user_attrs={}, system_attrs={'_number': 99}, value=8.2881000286123179, intermediate_values={}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 886434), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 891347), params_in_internal_repr={'x': 4.8789060472013182}, trial_id=99)]
+     user_attrs={}, system_attrs={'_number': 99}, value=8.2881000286123179, intermediate_values={}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 886434), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 891347), trial_id=99)]
 
     In [9]: len(study.trials)
     Out[9]: 100
