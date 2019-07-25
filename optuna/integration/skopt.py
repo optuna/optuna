@@ -56,7 +56,7 @@ class SkoptSampler(BaseSampler):
             sampling. The parameters not contained in the relative search space are sampled
             by this sampler.
             The search space for :class:`~optuna.integration.SkoptSampler` is determined by
-            :func:`~optuna.samplers.product_search_space()`.
+            :func:`~optuna.samplers.intersection_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
             as the default.
@@ -99,7 +99,7 @@ class SkoptSampler(BaseSampler):
         # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
 
         search_space = {}
-        for name, distribution in samplers.product_search_space(study).items():
+        for name, distribution in samplers.intersection_search_space(study).items():
             if distribution.single():
                 if not isinstance(distribution, distributions.CategoricalDistribution):
                     # `skopt` cannot handle non-categorical distributions that contain just
@@ -211,7 +211,7 @@ class _Optimizer(object):
     def _is_compatible(self, trial):
         # type: (FrozenTrial) -> bool
 
-        # Thanks to `product_search_space()` function, in sequential optimization,
+        # Thanks to `intersection_search_space()` function, in sequential optimization,
         # the parameters of complete trials are always compatible with the search space.
         #
         # However, in distributed optimization, incompatible trials may complete on a worker
