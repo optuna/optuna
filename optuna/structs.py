@@ -99,11 +99,12 @@ class FrozenTrial(
     internal_fields = ['distributions', 'trial_id']
 
     @property
-    def params_in_internal_repr(self):
+    def _params_in_internal_repr(self):
         # type: () -> Dict[str, float]
         """Return Optuna's internal representation of :attr:`params`.
 
-        Note that this field is not supposed to be used by library users.
+        Returns:
+            A dictionary containing internal representation of :attr:`params`.
         """
 
         params_in_internal_repr = {}
