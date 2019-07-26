@@ -322,6 +322,7 @@ class RDBStorage(BaseStorage):
 
         session.add(trial)
         self._commit(session)
+
         self._create_new_trial_number(trial.trial_id)
 
         if base_trial is not None:
@@ -344,10 +345,10 @@ class RDBStorage(BaseStorage):
 
                 self.set_trial_system_attr(trial.trial_id, key, value)
 
-            for step, intermediate_value in base_trial.intermediate_value.items():
+            for step, intermediate_value in base_trial.intermediate_values.items():
                 self.set_trial_intermediate_value(trial.trial_id, step, intermediate_value)
 
-            self.set_trial_state(trial.trial_id, baset_trial.state)
+            self.set_trial_state(trial.trial_id, base_trial.state)
 
         return trial.trial_id
 
@@ -371,7 +372,7 @@ class RDBStorage(BaseStorage):
         self.check_trial_is_updatable(trial_id, trial.state)
 
         trial.state = state
-        if state.is_finished():
+        if state.is_finished() and trial.datetime_complete is None:
             trial.datetime_complete = datetime.now()
 
         self._commit(session)
@@ -402,7 +403,6 @@ class RDBStorage(BaseStorage):
             distribution_json=distributions.distribution_to_json(distribution))
 
         param.check_and_add(session)
-
         commit_success = self._commit_with_integrity_check(session)
 
         return commit_success
@@ -442,13 +442,12 @@ class RDBStorage(BaseStorage):
         if trial_value is not None:
             return False
 
-        trial_value = models.TrialValueModel(trial_id=trial_id,
-                                             step=step,
-                                             value=intermediate_value)
+        trial_value = models.TrialValueModel(
+            trial_id=trial_id, step=step, value=intermediate_value)
 
         session.add(trial_value)
-
         commit_success = self._commit_with_integrity_check(session)
+
         return commit_success
 
     def set_trial_user_attr(self, trial_id, key, value):
@@ -461,9 +460,8 @@ class RDBStorage(BaseStorage):
 
         attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
-            attribute = models.TrialUserAttributeModel(trial_id=trial_id,
-                                                       key=key,
-                                                       value_json=json.dumps(value))
+            attribute = models.TrialUserAttributeModel(
+                trial_id=trial_id, key=key, value_json=json.dumps(value))
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
@@ -489,9 +487,8 @@ class RDBStorage(BaseStorage):
 
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
-            attribute = models.TrialSystemAttributeModel(trial_id=trial_id,
-                                                         key=key,
-                                                         value_json=json.dumps(value))
+            attribute = models.TrialSystemAttributeModel(
+                trial_id=trial_id, key=key, value_json=json.dumps(value))
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
@@ -551,7 +548,7 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
         return models.TrialModel.get_all_trial_ids_where_study(study, session)
 
-   def _get_all_trials_without_cache(self, study_id):
+    def _get_all_trials_without_cache(self, study_id):
         # type: (int) -> List[structs.FrozenTrial]
 
         session = self.scoped_session()
