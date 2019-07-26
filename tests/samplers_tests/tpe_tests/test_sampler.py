@@ -1,10 +1,20 @@
 import optuna
+
 from optuna.samplers import tpe
+from optuna.samplers import TPESampler
 from optuna.structs import TrialPruned
 from optuna.study import InTrialStudy
 
 if optuna.types.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
+
+
+def test_hyperopt_parameters():
+    # type: () -> None
+
+    sampler = TPESampler(**TPESampler.hyperopt_parameters())
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(lambda t: t.suggest_uniform('x', 10, 20), n_trials=50)
 
 
 def test_get_observation_pairs():
