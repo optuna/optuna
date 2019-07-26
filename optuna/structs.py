@@ -102,6 +102,32 @@ class FrozenTrial(
 
     internal_fields = ['distributions', 'params_in_internal_repr', 'trial_id']
 
+    def _validate(self):
+        # type: () -> None
+
+        if self.state.is_finished():
+            if self.datetime_complete is None:
+                raise ValueError('`datetime_complete` must be set for a finished trial.')
+        else:
+            if self.datetime_complete is not None:
+                raise ValueError('`datetime_complete` must not be set for a finished trial.')
+
+        if self.state == TrialState.COMPLETE and self.value is None:
+            raise ValueError('`value` must be set for a complete trial.')
+
+        if set(self.params.keys()) != set(self.distributions.keys()):
+            raise ValueError('Inconsistent parameters {} and distributions {}.'.format(
+                set(self.params.keys()), set(self.distributions.keys())))
+
+        for param_name, param_value in self.params.items():
+            distribution = self.distributions[param_name]
+
+            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            if not distribution._contains(param_value_in_internal_repr):
+                raise ValueError(
+                    "The value {} of parameter '{}' isn't contained in the distribution {}.".
+                    format(param_value, param_name, distribution))
+
 
 class StudySummary(
         NamedTuple('StudySummary', [('study_id', int), ('study_name', str),
