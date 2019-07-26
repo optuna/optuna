@@ -5,7 +5,7 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
-from optuna.distributions import BaseDistribution  # NOQA
+from optuna.distributions import BaseDistribution
 
 
 class TrialState(enum.Enum):
@@ -105,6 +105,9 @@ class FrozenTrial(
     def _validate(self):
         # type: () -> None
 
+        if self.datetime_start is None:
+            raise ValueError('`datetime_start` must be set.')
+
         if self.state.is_finished():
             if self.datetime_complete is None:
                 raise ValueError('`datetime_complete` must be set for a finished trial.')
@@ -127,6 +130,9 @@ class FrozenTrial(
                 raise ValueError(
                     "The value {} of parameter '{}' isn't contained in the distribution {}.".
                     format(param_value, param_name, distribution))
+
+        # NOTE: we doesn't validate `params_in_internal_repr` field
+        # because it will removed by #462.
 
 
 class StudySummary(

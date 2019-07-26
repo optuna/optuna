@@ -2,8 +2,7 @@ import abc
 import numpy as np
 import six
 
-from optuna import distributions  # NOQA
-from optuna import structs  # NOQA
+from optuna import structs
 from optuna import types
 
 if types.TYPE_CHECKING:
@@ -11,6 +10,8 @@ if types.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
+
+    from optuna import distributions  # NOQA
 
 DEFAULT_STUDY_NAME_PREFIX = 'no-name-'
 
