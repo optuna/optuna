@@ -41,9 +41,6 @@ MIN_SIGMA0 = 1e-10  # Minimum value of sigma0 to avoid ZeroDivisionError in cma.
 class CmaEsSampler(BaseSampler):
     """A Sampler using cma library as the backend.
 
-    Note that parallel execution of trials may degrade the optimization performance of CMA-ES,
-    especially if the number of trials running in parallel exceeds the population size.
-
     Example:
 
         Optimize a simple quadratic function by using :class:`~optuna.integration.CmaEsSampler`.
@@ -59,12 +56,14 @@ class CmaEsSampler(BaseSampler):
                 study = optuna.create_study(sampler=sampler)
                 study.optimize(objective, n_trials=100)
 
+    Note that parallel execution of trials may affect the optimization performance of CMA-ES,
+    especially if the number of trials running in parallel exceeds the population size.
+
     Args:
 
         x0:
             A dictionary of an initial parameter values for CMA-ES. By default, the mean of ``low``
-            and ``high`` for each distribution is used. If the distribution is categorical, the
-            item in the middle of ``choices`` is selected.
+            and ``high`` for each distribution is used.
             Please refer to `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.e
             volution_strategy.CMAEvolutionStrategy.html>`_ for further details of ``x0``.
 
@@ -154,10 +153,8 @@ class CmaEsSampler(BaseSampler):
         search_space = {}
         for name, distribution in optuna.samplers.product_search_space(study).items():
             if distribution.single():
-                # `cma` cannot handle distributions that contain just a single value,
-                # so we skip this distribution.
-                #
-                # Note that `Trial` takes care of this distribution during suggestion.
+                # `cma` cannot handle distributions that contain just a single value, so that
+                # the parameter values for such distributions are sampled by `sample_independent`.
                 continue
 
             search_space[name] = distribution
@@ -357,7 +354,7 @@ class _Optimizer(object):
 
         # individual_index may exceed the population size due to the parallel execution of multiple
         # trials. In such cases, `cma.cma.CMAEvolutionStrategy.ask` is called multiple times in an
-        # iteration, and that may degrade the optimization performance of CMA-ES.
+        # iteration, and that may affect the optimization performance of CMA-ES.
         # In addition, please note that some trials may suggest the same parameters when multiple
         # samplers invoke this method simultaneously.
         while individual_index >= popsize:
