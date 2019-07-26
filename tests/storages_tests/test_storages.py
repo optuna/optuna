@@ -278,6 +278,51 @@ def test_create_new_trial_id(storage_init_func):
     assert trials[0].system_attrs == {'_number': 0}
 
 
+@parametrize_storage
+def test_create_new_trial_id_with_base_trial(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+
+    now = datetime.now()
+    base_trial = FrozenTrial(
+        state=TrialState.COMPLETE,
+        value=10000,
+        datetime_start=now,
+        datetime_complete=now,
+        params={'x': 0.5},
+        distributions={'x': UniformDistribution(0, 1)},
+        user_attrs={'foo': 'bar'},
+        system_attrs={'baz': 123},
+        intermediate_values={1: 10, 2: 100, 3: 1000},
+
+        number=-1,  # dummy value (unused)
+        trial_id=-1,  # dummy, value (unused)
+        params_in_internal_repr={}  # dummy value (unused)
+    )
+
+    study_id = storage.create_new_study_id()
+    trial_id = storage.create_new_trial_id(study_id, base_trial=base_trial)
+
+    trials = storage.get_all_trials(study_id)
+    assert len(trials) == 1
+    assert trials[0].trial_id == trial_id
+    assert trials[0].number == 0
+    assert trials[0].state == base_trial.state
+    assert trials[0].state == base_trial.state
+    assert trials[0].value == base_trial.value
+    assert trials[0].datetime_start == base_trial.datetime_start
+    assert trials[0].datetime_complete == base_trial.datetime_complete
+    assert trials[0].params == base_trial.params
+    assert trials[0].distributions == base_trial.distributions
+    assert trials[0].user_attrs == base_trial.user_attrs
+    assert trials[0].intermediate_values == base_trial.intermediate_values
+
+    # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
+    base_trial.system_attrs['_number'] = 0
+    assert trials[0].system_attrs == base_trial.system_attrs
+
+
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('cache_mode', CACHE_MODES)
 def test_get_trial_number_from_id(storage_mode, cache_mode):
