@@ -154,7 +154,8 @@ class CmaEsSampler(BaseSampler):
         for name, distribution in optuna.samplers.product_search_space(study).items():
             if distribution.single():
                 # `cma` cannot handle distributions that contain just a single value, so that
-                # the parameter values for such distributions are sampled by `sample_independent`.
+                # we skip them. Note that the parameter values for such distributions are sampled
+                # in `Trial`.
                 continue
 
             search_space[name] = distribution
