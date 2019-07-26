@@ -241,13 +241,6 @@ class Study(BaseStudy):
 
         return self.storage.get_study_system_attrs(self.study_id)
 
-    # TODO: Take kwargs instead of FrozenTrial
-    def inject_trial(self, trial):
-        # type: (structs.FrozenTrial) -> None
-        """TODO: doc"""
-
-        self.storage.create_new_trial_id(self.study_id, base_trial=trial)
-
     def optimize(
             self,
             func,  # type: ObjectiveFuncType
@@ -376,6 +369,104 @@ class Study(BaseStudy):
                       [])  # type: List[Tuple['str', 'str']]
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+
+    def inject_trial(
+            self,
+            value=None,  # type: Optional[float]
+            params=None,  # type: Optional[Dict[str, Any]]
+            distributions=None,  # type: Optional[Dict[str, BaseDistribution]]
+            user_attrs=None,  # type: Optional[Dict[str, Any]]
+            system_attrs=None,  # type: Optional[Dict[str, Any]]
+            intermediate_values=None,  # type: Optional[Dict[int, float]]
+            state=structs.TrialState.COMPLETE,  # type: structs.TrialState
+            datetime_start=None,  # type: Optional[datetime.datetime]
+            datetime_complete=None  # type: Optional[datetime.datetime]
+    ):
+        # type: (...) -> None
+        """Inject a trial into the :class:`~optuna.study.Study`.
+
+        Example:
+
+            Inject a complete trial that has the value ``0.8``.
+
+            .. code::
+
+                    study = optuna.create_study()
+                    assert len(study.trials) == 0
+
+                    study.inject_trial(value=0.8)
+                    assert len(study.trials) == 1
+                    assert study.best_value == 0.8
+
+        Args:
+            value:
+                The value of the trial.
+            params:
+                The parameters of the trial.
+                If this argument is set to :obj:`None`,
+                an empty dictionary is used instead.
+            distributions:
+                The distributions of the parameters of the trial.
+                If this argument is set to :obj:`None`,
+                an empty dictionary is used instead.
+            user_attrs:
+                The user attributes of the trial.
+                If this argument is set to :obj:`None`,
+                an empty dictionary is used instead.
+            system_attrs:
+                The system attributes of the trial.
+                If this argument is set to :obj:`None`,
+                an empty dictionary is used instead.
+            intermediate_values:
+                The intermediate values of the trial.
+                If this argument is set to :obj:`None`,
+                an empty list is used instead.
+            state:
+                The state of the trial.
+            datetime_start:
+                The start time of the trial.
+                If this argument is set to :obj:`None`,
+                the current time is used instead.
+            datetime_complete:
+                The start time of the trial.
+                If this argument is set to :obj:`None` and the trial is a finished trial,
+                the current time is used instead.
+
+        """
+
+        params = params or {}
+        distributions = distributions or {}
+        user_attrs = user_attrs or {}
+        system_attrs = system_attrs or {}
+        intermediate_values = intermediate_values or {}
+        datetime_start = datetime_start or datetime.datetime.now()
+
+        if state.is_finished():
+            datetime_complete = datetime_complete or datetime.datetime.now()
+
+        params_in_internal_repr = {}
+        for param_name, param_value in params.items():
+            distribution = distributions[param_name]
+            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            params_in_internal_repr[param_name] = param_value_in_internal_repr
+
+        trial = structs.FrozenTrial(
+            number=-1,  # dummy value
+            trial_id=-1,  # dummy value
+            state=state,
+            value=value,
+            datetime_start=datetime_start,
+            datetime_complete=datetime_complete,
+            params=params,
+            distributions=distributions,
+            user_attrs=user_attrs,
+            system_attrs=system_attrs,
+            intermediate_values=intermediate_values,
+            params_in_internal_repr=params_in_internal_repr)
+
+        trial._validate()
+
+        self.storage.create_new_trial_id(self.study_id, base_trial=trial)
 
     def _optimize_sequential(
             self,
