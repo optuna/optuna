@@ -311,7 +311,12 @@ class RDBStorage(BaseStorage):
         if base_trial is None:
             trial = models.TrialModel(study_id=study_id, state=structs.TrialState.RUNNING)
         else:
+            # Because only `RUNNING` state allows updating the fields of a trial,
+            # we temporarily set the state of the new trial to `RUNNING`.
+            # After all fields of the trial have been updated correctly,
+            # the state is set to `base_trial.state`.
             temp_state = structs.TrialState.RUNNING
+
             trial = models.TrialModel(
                 study_id=study_id,
                 state=temp_state,
