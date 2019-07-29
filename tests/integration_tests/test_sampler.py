@@ -30,14 +30,14 @@ def test_suggested_value(sampler_class):
     study = optuna.create_study(sampler=sampler, direction='minimize')
     study.optimize(_objective, n_trials=10, catch=())
     for trial in study.trials:
-        for param_name, param_value in trial.params_in_internal_repr.items():
+        for param_name, param_value in trial._params_in_internal_repr.items():
             assert trial.distributions[param_name]._contains(param_value)
 
     # direction='maximize'
     study = optuna.create_study(sampler=sampler, direction='maximize')
     study.optimize(_objective, n_trials=10, catch=())
     for trial in study.trials:
-        for param_name, param_value in trial.params_in_internal_repr.items():
+        for param_name, param_value in trial._params_in_internal_repr.items():
             assert trial.distributions[param_name]._contains(param_value)
 
 
