@@ -373,18 +373,21 @@ class RDBStorage(BaseStorage):
         return trial_number
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, structs.TrialState) -> None
+        # type: (int, structs.TrialState) -> bool
 
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
+        if state == structs.TrialState.RUNNING and trial.state != structs.TrialState.WAITING:
+            return False
+
         trial.state = state
         if state.is_finished():
             trial.datetime_complete = datetime.now()
 
-        self._commit(session)
+        return self._commit_with_integrity_check(session)
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
         # type: (int, str, float, distributions.BaseDistribution) -> bool
