@@ -1,5 +1,6 @@
 import abc
 import collections
+import copy
 import datetime
 import gc
 import math
@@ -370,6 +371,15 @@ class Study(BaseStudy):
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
+    def enqueue_trial(self, params=None, user_attrs=None, system_attrs=None):
+        # type: (Optional[Dict[str, Any]], Optional[Dict[str, Any]], Optional[Dict[str, Any]]) -> None
+
+        params = params or {}
+        user_attrs = user_attrs or {}
+        system_attrs = copy.deepcopy(system_attrs or {})
+        system_attrs['_manual_params'] = params
+        self.inject_trial(state=structs.TrialState.WAITING, user_attrs=user_attrs, system_attrs=system_attrs)
+
     def inject_trial(
             self,
             value=None,  # type: Optional[float]
@@ -556,10 +566,28 @@ class Study(BaseStudy):
         que.close()
         que.join_thread()
 
+    def _pop_waiting_trial_id(self):
+        # type: () -> Optional[int]
+
+        for trial in self.trials:
+            if trial.state != structs.TrialState.WAITING:
+                continue
+
+            if not self.storage.set_trial_state(trial.trial_id, structs.TrialState.RUNNING):
+                continue
+
+            self.logger.debug("Trial#{} is popped from the trial queue.".format(trial.number))
+            return trial.trial_id
+
+        return None
+
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
-        trial_id = self.storage.create_new_trial_id(self.study_id)
+        trial_id = self._pop_waiting_trial_id()
+        if trial_id is None:
+            trial_id = self.storage.create_new_trial_id(self.study_id)
+
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 

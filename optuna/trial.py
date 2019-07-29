@@ -446,7 +446,9 @@ class Trial(BaseTrial):
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
 
-        if self._is_relative_param(name, distribution):
+        if self._is_manual_param(name, distribution):
+            param_value = self.system_attrs['_manual_params'][name]
+        elif self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
             study = optuna.study.InTrialStudy(self.study)
@@ -467,6 +469,21 @@ class Trial(BaseTrial):
             param_value = distribution.to_external_repr(param_value_in_internal_repr)
 
         return param_value
+
+    def _is_manual_param(self, name, distribution):
+        # type: (str, BaseDistribution) -> bool
+
+        if '_manual_params' not in self.system_attrs:
+            return False
+
+        if name not in self.system_attrs['_manual_params']:
+            return False
+
+        param_value = self.system_attrs['_manual_params'][name]
+        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+
+        # TODO(ohta): Warn if the following line returns `False`.
+        return distribution._contains(param_value_in_internal_repr)
 
     def _is_relative_param(self, name, distribution):
         # type: (str, BaseDistribution) -> bool
