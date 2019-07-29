@@ -158,7 +158,7 @@ class Trial(BaseTrial):
 
                 >>> def objective(trial):
                 >>>     ...
-                >>>     dropout_rate = trial.suggest_unifrom('dropout_rate', 0, 1.0)
+                >>>     dropout_rate = trial.suggest_uniform('dropout_rate', 0, 1.0)
                 >>>     ...
 
         Args:
@@ -197,7 +197,7 @@ class Trial(BaseTrial):
 
                 >>> def objective(trial):
                 >>>     ...
-                >>>     c = trial.suggest_logunifrom('c', 1e-5, 1e2)
+                >>>     c = trial.suggest_loguniform('c', 1e-5, 1e2)
                 >>>     clf = sklearn.svm.SVC(C=c)
                 >>>     ...
 
