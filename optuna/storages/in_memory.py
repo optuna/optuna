@@ -169,15 +169,21 @@ class InMemoryStorage(base.BaseStorage):
             datetime_complete=None)
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, structs.TrialState) -> None
+        # type: (int, structs.TrialState) -> bool
 
         with self._lock:
             self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
+
+            old_state = self.trials[trial_id].state
+            if state == structs.TrialState.RUNNING and old_state != structs.TrialState.WAITING:
+                return False
 
             self.trials[trial_id] = self.trials[trial_id]._replace(state=state)
             if state.is_finished():
                 self.trials[trial_id] = \
                     self.trials[trial_id]._replace(datetime_complete=datetime.now())
+
+        return True
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
         # type: (int, str, float, distributions.BaseDistribution) -> bool

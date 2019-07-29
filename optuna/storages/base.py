@@ -105,7 +105,7 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def set_trial_state(self, trial_id, state):
-        # type: (int, structs.TrialState) -> None
+        # type: (int, structs.TrialState) -> bool
 
         raise NotImplementedError
 
