@@ -486,7 +486,7 @@ class TPESampler(base.BaseSampler):
 
 
 def _get_observation_pairs(study, param_name):
-    # type: (InTrialStudy, str) -> Tuple[[float], Tuple[float, float]]
+    # type: (InTrialStudy, str) -> Tuple[List[float], List[Tuple[float, float]]]
     """Get observation pairs from the study.
 
        This function collects observation pairs from the complete or pruned trials of the study.
