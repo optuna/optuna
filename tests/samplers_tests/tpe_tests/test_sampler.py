@@ -58,7 +58,7 @@ def test_get_observation_pairs():
 
     in_trial_study = InTrialStudy(study)
 
-    assert tpe.sampler._get_observation_pairs(in_trial_study, 'x') ==  (
+    assert tpe.sampler._get_observation_pairs(in_trial_study, 'x') == (
         [5.0, 5.0, 5.0],
         [
             (-float('inf'), -5.0),   # COMPLETE
