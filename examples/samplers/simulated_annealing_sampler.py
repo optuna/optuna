@@ -20,15 +20,14 @@ from optuna import distributions
 from optuna.samplers import BaseSampler
 from optuna import structs
 
-COOLDOWN_FACTOR = 0.9
-NEIGHBOR_RANGE_FACTOR = 0.1
-
 
 class SimulatedAnnealingSampler(BaseSampler):
-    def __init__(self, temperature=100, seed=None):
+    def __init__(self, temperature=100, cooldown_factor=0.9, neighbor_range_factor=0.1, seed=None):
         self._rng = np.random.RandomState(seed)
         self._independent_sampler = optuna.samplers.RandomSampler(seed=seed)
         self._temperature = temperature
+        self.cooldown_factor = cooldown_factor
+        self.neighbor_range_factor = neighbor_range_factor
         self._current_trial = None  # type: Optional[FrozenTrial]
 
     def infer_relative_search_space(self, study, trial):
@@ -50,21 +49,22 @@ class SimulatedAnnealingSampler(BaseSampler):
         params = self._sample_neighbor_params(search_space)
 
         # Decrease the temperature.
-        self._temperature *= COOLDOWN_FACTOR
+        self._temperature *= self.cooldown_factor
 
         return params
 
     def _sample_neighbor_params(self, search_space):
         # Generate a sufficiently near neighbor (i.e., parameters).
         #
-        # In this example, we define a sufficiently near neighbor as 10% region of the entire
+        # In this example, we define a sufficiently near neighbor as
+        # `self.neighbor_range_factor * 100` percent region of the entire
         # search space centered on the current point.
 
         params = {}
         for param_name, param_distribution in search_space.items():
             if isinstance(param_distribution, distributions.UniformDistribution):
                 current_value = self._current_trial.params[param_name]
-                width = (param_distribution.high - param_distribution.low) * NEIGHBOR_RANGE_FACTOR
+                width = (param_distribution.high - param_distribution.low) * self.neighbor_range_factor
                 neighbor_low = max(current_value - width, param_distribution.low)
                 neighbor_high = min(current_value + width, param_distribution.high)
                 params[param_name] = self._rng.uniform(neighbor_low, neighbor_high)
