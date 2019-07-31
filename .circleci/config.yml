@@ -22,10 +22,10 @@ workflows:
     jobs:
       - checks
       - document
-      - tests-python37
-      - tests-python36
-      - tests-python35
-      - tests-python27
+      - tests-python37-full
+      - tests-python36-full
+      - tests-python35-full
+      - tests-python27-full
       - examples-python37
       - examples-python36
       - examples-python35
@@ -142,6 +142,49 @@ jobs:
       - image: circleci/python:2.7
     steps:
       [checkout, run: *install, run: *tests, run: *tests-mn]
+
+  tests-python37-full:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+
+      - run: *install
+      - run: &tests-full
+          name: tests-full
+          command: |
+            . venv/bin/activate
+            pytest tests
+          environment:
+            OMP_NUM_THREADS: 1
+            INCLUDE_SLOW_TESTS: 1
+
+      - run: &tests-mn-full
+          name: tests-mn-full
+          command: |
+            . venv/bin/activate
+            mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+          environment:
+            OMP_NUM_THREADS: 1
+            INCLUDE_SLOW_TESTS: 1
+
+  tests-python36-full:
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      [checkout, run: *install, run: *tests-full, run: *tests-mn-full]
+
+  tests-python35-full:
+    docker:
+      - image: circleci/python:3.5
+    steps:
+      [checkout, run: *install, run: *tests-full, run: *tests-mn-full]
+
+  tests-python27-full:
+    docker:
+      - image: circleci/python:2.7
+    steps:
+      [checkout, run: *install, run: *tests-full, run: *tests-mn-full]
 
   codecov:
     docker:

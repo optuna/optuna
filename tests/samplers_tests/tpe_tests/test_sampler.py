@@ -1,10 +1,20 @@
 import optuna
+
 from optuna.samplers import tpe
+from optuna.samplers import TPESampler
 from optuna.structs import TrialPruned
 from optuna.study import InTrialStudy
 
 if optuna.types.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
+
+
+def test_hyperopt_parameters():
+    # type: () -> None
+
+    sampler = TPESampler(**TPESampler.hyperopt_parameters())
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(lambda t: t.suggest_uniform('x', 10, 20), n_trials=50)
 
 
 def test_get_observation_pairs():
@@ -32,12 +42,14 @@ def test_get_observation_pairs():
 
     in_trial_study = InTrialStudy(study)
 
-    assert tpe.sampler._get_observation_pairs(in_trial_study, 'x') == [
-        (5.0, (-float('inf'), 5.0)),  # COMPLETE
-        (5.0, (-7, 2)),  # PRUNED (with intermediate values)
-        (5.0, (float('inf'), 0.0))  # PRUNED (without intermediate values)
-    ]
-    assert tpe.sampler._get_observation_pairs(in_trial_study, 'y') == []
+    assert tpe.sampler._get_observation_pairs(in_trial_study, 'x') == (
+        [5.0, 5.0, 5.0],
+        [
+            (-float('inf'), 5.0),   # COMPLETE
+            (-7, 2),  # PRUNED (with intermediate values)
+            (float('inf'), 0.0)  # PRUNED (without intermediate values)
+        ])
+    assert tpe.sampler._get_observation_pairs(in_trial_study, 'y') == ([], [])
 
     # direction=maximize.
     study = optuna.create_study(direction='maximize')
@@ -46,9 +58,11 @@ def test_get_observation_pairs():
 
     in_trial_study = InTrialStudy(study)
 
-    assert tpe.sampler._get_observation_pairs(in_trial_study, 'x') == [
-        (5.0, (-float('inf'), -5.0)),  # COMPLETE
-        (5.0, (-7, -2)),  # PRUNED (with intermediate values)
-        (5.0, (float('inf'), 0.0))  # PRUNED (without intermediate values)
-    ]
-    assert tpe.sampler._get_observation_pairs(in_trial_study, 'y') == []
+    assert tpe.sampler._get_observation_pairs(in_trial_study, 'x') == (
+        [5.0, 5.0, 5.0],
+        [
+            (-float('inf'), -5.0),   # COMPLETE
+            (-7, -2),  # PRUNED (with intermediate values)
+            (float('inf'), 0.0)  # PRUNED (without intermediate values)
+        ])
+    assert tpe.sampler._get_observation_pairs(in_trial_study, 'y') == ([], [])
