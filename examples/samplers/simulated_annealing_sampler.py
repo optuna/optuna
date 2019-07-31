@@ -28,7 +28,7 @@ class SimulatedAnnealingSampler(BaseSampler):
         self._temperature = temperature
         self.cooldown_factor = cooldown_factor
         self.neighbor_range_factor = neighbor_range_factor
-        self._current_trial = None  # type: Optional[FrozenTrial]
+        self._current_trial = None
 
     def infer_relative_search_space(self, study, trial):
         return optuna.samplers.product_search_space(study)
