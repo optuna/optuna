@@ -64,7 +64,8 @@ class SimulatedAnnealingSampler(BaseSampler):
         for param_name, param_distribution in search_space.items():
             if isinstance(param_distribution, distributions.UniformDistribution):
                 current_value = self._current_trial.params[param_name]
-                width = (param_distribution.high - param_distribution.low) * self.neighbor_range_factor
+                width = (param_distribution.high -
+                         param_distribution.low) * self.neighbor_range_factor
                 neighbor_low = max(current_value - width, param_distribution.low)
                 neighbor_high = min(current_value + width, param_distribution.high)
                 params[param_name] = self._rng.uniform(neighbor_low, neighbor_high)
