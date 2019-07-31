@@ -82,7 +82,7 @@ As an example, the following code defines a sampler named ``SimulatedAnnealingSa
         # The rest is boilerplate code and unrelated to SA algorithm.
         #
         def infer_relative_search_space(self, study, trial):
-            return optuna.samplers.product_search_space(study)
+            return optuna.samplers.intersection_search_space(study)
 
         def sample_independent(self, study, trial, param_name, param_distribution):
             independent_sampler = optuna.samplers.RandomSampler()
