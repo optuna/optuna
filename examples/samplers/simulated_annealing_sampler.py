@@ -20,36 +20,21 @@ from optuna import distributions
 from optuna.samplers import BaseSampler
 from optuna import structs
 
-if optuna.types.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
-
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
-    from optuna.study import InTrialStudy  # NOQA
-
 COOLDOWN_FACTOR = 0.9
 NEIGHBOR_RANGE_FACTOR = 0.1
 
 
 class SimulatedAnnealingSampler(BaseSampler):
     def __init__(self, temperature=100, seed=None):
-        # type: (int, Optional[int]) -> None
-
         self._rng = np.random.RandomState(seed)
         self._independent_sampler = optuna.samplers.RandomSampler(seed=seed)
         self._temperature = temperature
         self._current_trial = None  # type: Optional[FrozenTrial]
 
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
-
         return optuna.samplers.product_search_space(study)
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
-
         if search_space == {}:
             # The relative search space is empty (it means this is the first trial of a study).
             return {}
@@ -70,8 +55,6 @@ class SimulatedAnnealingSampler(BaseSampler):
         return params
 
     def _sample_neighbor_params(self, search_space):
-        # type: (Dict[str, BaseDistribution]) -> Dict[str, Any]
-
         # Generate a sufficiently near neighbor (i.e., parameters).
         #
         # In this example, we define a sufficiently near neighbor as 10% region of the entire
@@ -92,8 +75,6 @@ class SimulatedAnnealingSampler(BaseSampler):
         return params
 
     def _transition_probability(self, study, prev_trial):
-        # type: (InTrialStudy, FrozenTrial) -> float
-
         if self._current_trial is None:
             return 1.0
 
@@ -112,14 +93,10 @@ class SimulatedAnnealingSampler(BaseSampler):
 
     @staticmethod
     def _get_last_complete_trial(study):
-        # type: (InTrialStudy) -> FrozenTrial
-
         complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
         return complete_trials[-1]
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
-
         # In this example, this method is invoked only in the first trial of a study.
         # The parameters of the trial are sampled by using `RandomSampler` as follows.
         return self._independent_sampler.sample_independent(study, trial, param_name,
