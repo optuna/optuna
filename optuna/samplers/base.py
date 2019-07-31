@@ -49,8 +49,8 @@ class BaseSampler(object):
             A dictionary containing the parameter names and parameter's distributions.
 
         .. seealso::
-            Please refer to :func:`~optuna.samplers.product_search_space` as an implementation of
-            :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
+            Please refer to :func:`~optuna.samplers.intersection_search_space` as an
+            implementation of :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
         """
 
         raise NotImplementedError
