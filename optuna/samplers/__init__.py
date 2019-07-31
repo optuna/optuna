@@ -54,7 +54,6 @@ def product_search_space(study):
     """Return the product search space of the :class:`~optuna.study.BaseStudy`.
 
     .. deprecated:: 0.14.0
-        This function is a deprecated alias of :func:`~optuna.samplers.intersection_search_space`.
         Please use :func:`~optuna.samplers.intersection_search_space` instead.
     """
 
