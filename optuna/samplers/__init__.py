@@ -53,18 +53,9 @@ def product_search_space(study):
     # type: (BaseStudy) -> Dict[str, BaseDistribution]
     """Return the product search space of the :class:`~optuna.study.BaseStudy`.
 
-    **[NOTICE]**
-    This function is deprecated.
-    Please use :func:`~optuna.samplers.intersection_search_space` instead.
-
-    Product search space contains the product set of parameter distributions that have been
-    suggested in the completed trials of the study so far.
-    If there are multiple parameters that have the same name but different distributions,
-    neither is included in the resulting search space
-    (i.e., the parameters with dynamic value ranges are excluded).
-
-    Returns:
-        A dictionary containing the parameter names and parameter's distributions.
+    .. deprecated:: 0.14.0
+        This function is a deprecated alias of :func:`~optuna.samplers.intersection_search_space`.
+        Please use :func:`~optuna.samplers.intersection_search_space` instead.
     """
 
     warnings.warn(
