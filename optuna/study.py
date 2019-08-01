@@ -352,8 +352,13 @@ class Study(BaseStudy):
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
-    def enqueue_trial(self, params=None, user_attrs=None, system_attrs=None):
-        # type: (Optional[Dict[str, Any]], Optional[Dict[str, Any]], Optional[Dict[str, Any]]) -> None
+    def enqueue_trial(
+            self,
+            params=None,  # type: Optional[Dict[str, Any]]
+            user_attrs=None,  # type: Optional[Dict[str, Any]]
+            system_attrs=None  # type: Optional[Dict[str, Any]]
+    ):
+        # type: (...) -> None
 
         params = params or {}
         user_attrs = user_attrs or {}
