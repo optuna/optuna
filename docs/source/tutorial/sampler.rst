@@ -1,7 +1,7 @@
 .. _sampler:
 
 User-Defined Sampler
-=====================
+====================
 
 Optuna allows users to create user-defined samplers.
 
@@ -9,7 +9,7 @@ A sampler has the responsibility to determine the parameter values to be evaluat
 When a `suggest` API (e.g., :func:`~optuna.trial.Trial.suggest_uniform`) is called inside an objective function, the corresponding distribution object (e.g., :class:`~optuna.distributions.UniformDistribution`) is created internally. A sampler samples a value from the distribution. The sampled value is returned to the caller of the `suggest` API and evaluated in the objective function.
 
 Optuna provides built-in samplers (e.g., :class:`~optuna.samplers.TPESampler`, :class:`~optuna.samplers.RandomSampler`) that work well for a wide range of cases.
-However, if you are only interested in optimizing hyperparameters in a specific domain, optimization performance may be improved if you use a sampling algorithm specialized to the domain.
+However, optimization performance may be improved if you use a sampling algorithm specialized for your problem.
 Thanks to user-defined sampler feature, you can use such specialized algorithms within Optuna framework.
 
 In addition, this feature allows you to use algorithms implemented by other libraries.
@@ -28,7 +28,7 @@ and implement the three abstract methods of the base class (
 :meth:`~optuna.samplers.BaseSampler.sample_relative` and
 :meth:`~optuna.samplers.BaseSampler.sample_independent`).
 
-As an example, the following code defines a sampler named ``SimulatedAnnealingSampler`` that based on
+As an example, the following code defines a sampler named ``SimulatedAnnealingSampler`` that is based on
 `Simulate Annealing (SA) <https://en.wikipedia.org/wiki/Simulated_annealing>`_ algorithm:
 
 .. code-block:: python
