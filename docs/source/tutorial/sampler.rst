@@ -13,12 +13,14 @@ However, if you are only interested in optimizing hyperparameters in a specific 
 Thanks to user-defined sampler feature, you can use such specialized algorithms within Optuna framework.
 
 In addition, this feature allows you to use algorithms implemented by other libraries.
-For instance, Optuna provides :class:`~optuna.integration.SkoptSampler` that wraps
-`skopt <https://scikit-optimize.github.io/>`_ library.
+For instance, Optuna provides :class:`~optuna.integration.SkoptSampler` and
+:class:`~optuna.integration.CmaEsSampler` that wrap
+`skopt <https://scikit-optimize.github.io/>`_ and `cma <http://cma.gforge.inria.fr/apidocs-pycma/cma.html>`_
+libraries, respectively.
 
 
-An Example: SimulatedAnnealingSampler
--------------------------------------
+An Example: Implementing SimulatedAnnealingSampler
+--------------------------------------------------
 
 For creating a new sampler, you need to define a class that inherits :class:`~optuna.samplers.BaseSampler`,
 and implement the three abstract methods of the base class (
@@ -92,7 +94,8 @@ As an example, the following code defines a sampler named ``SimulatedAnnealingSa
 .. note::
    In favor of code simplicity, the above implementation doesn't support some features (e.g., maximization).
    If you are interested, more complete version is found in
-   `simulated_annealing.py <https://github.com/pfnet/optuna/tree/master/examples/samplers/simulated_annealing.py>`_
+   `simulated_annealing.py
+   <https://github.com/pfnet/optuna/blob/master/examples/samplers/simulated_annealing_sampler.py>`_
    example.
 
 
