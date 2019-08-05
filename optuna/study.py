@@ -7,6 +7,7 @@ import multiprocessing.pool
 import pandas as pd
 from six.moves import queue
 import time
+import warnings
 
 from optuna import logging
 from optuna import pruners
@@ -98,6 +99,32 @@ class BaseStudy(object):
         """
 
         return self._storage.get_all_trials(self.study_id)
+
+    @property
+    def storage(self):
+        # type: () -> storages.BaseStorage
+        """Return the storage object used by the study.
+
+        .. deprecated:: 0.15.0
+            The direct use of storage is deprecated.
+            Please access to storage via study's public APIs
+            (e.g., :meth:`~optuna.study.Study.set_user_attr`).
+
+        Returns:
+            A storage object.
+        """
+
+        warnings.warn("The direct use of storage is deprecated. "
+                      "Please access to storage via study's public APIs "
+                      "(e.g., `Study.set_user_attr`)",
+                      DeprecationWarning)
+
+        logger = logging.get_logger(__name__)
+        logger.warning("The direct use of storage is deprecated. "
+                       "Please access to storage via study's public APIs "
+                       "(e.g., `Study.set_user_attr`)")
+
+        return self._storage
 
 
 class Study(BaseStudy):
