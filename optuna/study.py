@@ -43,7 +43,7 @@ class BaseStudy(object):
     @property
     def best_params(self):
         # type: () -> Dict[str, Any]
-        """Return parameters of the best trial in the :class:`~optuna.study.BaseStudy`.
+        """Return parameters of the best trial in the study.
 
         Returns:
             A dictionary containing parameters of the best trial.
@@ -54,7 +54,7 @@ class BaseStudy(object):
     @property
     def best_value(self):
         # type: () -> float
-        """Return the best objective value in the :class:`~optuna.study.BaseStudy`.
+        """Return the best objective value in the study.
 
         Returns:
             A float representing the best objective value.
@@ -69,7 +69,7 @@ class BaseStudy(object):
     @property
     def best_trial(self):
         # type: () -> structs.FrozenTrial
-        """Return the best trial in the :class:`~optuna.study.BaseStudy`.
+        """Return the best trial in the study.
 
         Returns:
             A :class:`~optuna.structs.FrozenTrial` object of the best trial.
@@ -80,7 +80,7 @@ class BaseStudy(object):
     @property
     def direction(self):
         # type: () -> structs.StudyDirection
-        """Return the direction of the :class:`~optuna.study.BaseStudy`.
+        """Return the direction of the study.
 
         Returns:
             A :class:`~optuna.structs.StudyDirection` object.
@@ -91,7 +91,7 @@ class BaseStudy(object):
     @property
     def trials(self):
         # type: () -> List[structs.FrozenTrial]
-        """Return all trials in the :class:`~optuna.study.BaseStudy`.
+        """Return all trials in the study.
 
         Returns:
             A list of :class:`~optuna.structs.FrozenTrial` objects.
@@ -226,7 +226,7 @@ class Study(BaseStudy):
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
-        """Set a user attribute to the :class:`~optuna.study.Study`.
+        """Set a user attribute to the study.
 
         Args:
             key: A key string of the attribute.
@@ -238,7 +238,7 @@ class Study(BaseStudy):
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
-        """Set a system attribute to the :class:`~optuna.study.Study`.
+        """Set a system attribute to the study.
 
         Note that Optuna internally uses this method to save system messages. Please use
         :func:`~optuna.study.Study.set_user_attr` to set users' attributes.
