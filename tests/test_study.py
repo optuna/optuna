@@ -563,10 +563,3 @@ def test_in_trial_study(storage_mode):
 
         # Test study direction.
         assert in_trial_study.direction == study.direction
-
-
-def test_storage_property():
-    # type: () -> None
-
-    study = optuna.create_study()
-    assert study.storage == study._storage
