@@ -101,6 +101,17 @@ class UniformDistribution(
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
+    def __new__(cls, low, high):
+        # type: (float, float) -> UniformDistribution
+
+        if low > high:
+            raise ValueError(
+                "Empty `UniformDistribution` isn't allowed (low={}, high={}). "
+                "The `low` value must be smaller than or equal to the `high` value.".format(
+                    low, high))
+
+        return super(UniformDistribution, cls).__new__(cls, low, high)
+
     def single(self):
         # type: () -> bool
 
@@ -130,6 +141,17 @@ class LogUniformDistribution(
         high:
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
+
+    def __new__(cls, low, high):
+        # type: (float, float) -> LogUniformDistribution
+
+        if low > high:
+            raise ValueError(
+                "Empty `LogUniformDistribution` isn't allowed (low={}, high={}). "
+                "The `low` value must be smaller than or equal to the `high` value.".format(
+                    low, high))
+
+        return super(LogUniformDistribution, cls).__new__(cls, low, high)
 
     def single(self):
         # type: () -> bool
@@ -163,6 +185,17 @@ class DiscreteUniformDistribution(
             A discretization step.
     """
 
+    def __new__(cls, low, high, q):
+        # type: (float, float, float) -> DiscreteUniformDistribution
+
+        if low > high:
+            raise ValueError(
+                "Empty `DiscreteUniformDistribution` isn't allowed (low={}, high={}, q={}). "
+                "The `low` value must be smaller than or equal to the `high` value.".format(
+                    low, high, q))
+
+        return super(DiscreteUniformDistribution, cls).__new__(cls, low, high, q)
+
     def single(self):
         # type: () -> bool
 
@@ -189,6 +222,17 @@ class IntUniformDistribution(
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
     """
+
+    def __new__(cls, low, high):
+        # type: (int, int) -> IntUniformDistribution
+
+        if low > high:
+            raise ValueError(
+                "Empty `IntUniformDistribution` isn't allowed (low={}, high={}). "
+                "The `low` value must be smaller than or equal to the `high` value.".format(
+                    low, high))
+
+        return super(IntUniformDistribution, cls).__new__(cls, low, high)
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
@@ -224,6 +268,16 @@ class CategoricalDistribution(
         choices:
             Candidates of parameter values.
     """
+
+    def __new__(cls, choices):
+        # type: (Tuple[Union[float, str], ...]) -> CategoricalDistribution
+
+        if len(choices) == 0:
+            raise ValueError(
+                "Empty `CategoricalDistribution` isn't allowed. "
+                "The `choices` must contains one or more elements.")
+
+        return super(CategoricalDistribution, cls).__new__(cls, choices)
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> Union[float, str]
