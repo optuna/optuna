@@ -38,7 +38,7 @@ class BaseStudy(object):
         # type: (int, storages.BaseStorage) -> None
 
         self.study_id = study_id
-        self._storage = storage
+        self.storage = storage
 
     @property
     def best_params(self):
@@ -75,7 +75,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.FrozenTrial` object of the best trial.
         """
 
-        return self._storage.get_best_trial(self.study_id)
+        return self.storage.get_best_trial(self.study_id)
 
     @property
     def direction(self):
@@ -86,7 +86,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.StudyDirection` object.
         """
 
-        return self._storage.get_study_direction(self.study_id)
+        return self.storage.get_study_direction(self.study_id)
 
     @property
     def trials(self):
@@ -97,7 +97,7 @@ class BaseStudy(object):
             A list of :class:`~optuna.structs.FrozenTrial` objects.
         """
 
-        return self._storage.get_all_trials(self.study_id)
+        return self.storage.get_all_trials(self.study_id)
 
 
 class Study(BaseStudy):
@@ -171,7 +171,7 @@ class Study(BaseStudy):
             A dictionary containing all user attributes.
         """
 
-        return self._storage.get_study_user_attrs(self.study_id)
+        return self.storage.get_study_user_attrs(self.study_id)
 
     @property
     def system_attrs(self):
@@ -182,7 +182,7 @@ class Study(BaseStudy):
             A dictionary containing all system attributes.
         """
 
-        return self._storage.get_study_system_attrs(self.study_id)
+        return self.storage.get_study_system_attrs(self.study_id)
 
     def optimize(
             self,
@@ -234,7 +234,7 @@ class Study(BaseStudy):
 
         """
 
-        self._storage.set_study_user_attr(self.study_id, key, value)
+        self.storage.set_study_user_attr(self.study_id, key, value)
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
@@ -249,7 +249,7 @@ class Study(BaseStudy):
 
         """
 
-        self._storage.set_study_system_attr(self.study_id, key, value)
+        self.storage.set_study_system_attr(self.study_id, key, value)
 
     def trials_dataframe(self, include_internal_fields=False):
         # type: (bool) -> pd.DataFrame
@@ -368,7 +368,7 @@ class Study(BaseStudy):
 
             while que.get():
                 self._run_trial(func, catch)
-            self._storage.remove_session()
+            self.storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
         for _ in range(n_jobs):
@@ -404,7 +404,7 @@ class Study(BaseStudy):
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
-        trial_id = self._storage.create_new_trial_id(self.study_id)
+        trial_id = self.storage.create_new_trial_id(self.study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
@@ -415,14 +415,14 @@ class Study(BaseStudy):
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
             self.logger.info(message)
-            self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
+            self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
         except catch as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
                 .format(trial_number, structs.TrialState.FAIL, repr(e))
             self.logger.warning(message, exc_info=True)
-            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
         finally:
             # The following line mitigates memory problems that can be occurred in some
@@ -441,20 +441,20 @@ class Study(BaseStudy):
                       'objective function cannot be casted to float. Returned value is: ' \
                       '{}'.format(trial_number, structs.TrialState.FAIL, repr(result))
             self.logger.warning(message)
-            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
         if math.isnan(result):
             message = 'Setting status of trial#{} as {} because the objective function ' \
                       'returned {}.'.format(trial_number, structs.TrialState.FAIL, result)
             self.logger.warning(message)
-            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
         trial.report(result)
-        self._storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
+        self.storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
         self._log_completed_trial(trial_number, result)
 
         return trial
@@ -486,7 +486,7 @@ class InTrialStudy(BaseStudy):
     def __init__(self, study):
         # type: (Study) -> None
 
-        super(InTrialStudy, self).__init__(study.study_id, study._storage)
+        super(InTrialStudy, self).__init__(study.study_id, study.storage)
 
         self.study_name = study.study_name
 
@@ -558,7 +558,7 @@ def create_study(
     else:
         raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
 
-    study._storage.set_study_direction(study_id, _direction)
+    study.storage.set_study_direction(study_id, _direction)
 
     return study
 

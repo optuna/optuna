@@ -38,7 +38,7 @@ def test_get_observation_pairs():
     # direction=minimize.
     study = optuna.create_study(direction='minimize')
     study.optimize(objective, n_trials=4)
-    study._storage.create_new_trial_id(study.study_id)  # Create a running trial.
+    study.storage.create_new_trial_id(study.study_id)  # Create a running trial.
 
     in_trial_study = InTrialStudy(study)
 
@@ -54,7 +54,7 @@ def test_get_observation_pairs():
     # direction=maximize.
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=4)
-    study._storage.create_new_trial_id(study.study_id)  # Create a running trial.
+    study.storage.create_new_trial_id(study.study_id)  # Create a running trial.
 
     in_trial_study = InTrialStudy(study)
 
