@@ -10,6 +10,7 @@ if types.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
 
+
 def test_sampler():
     # type: () -> None
 
