@@ -55,14 +55,15 @@ class TPESampler(base.BaseSampler):
     """Sampler using TPE (Tree-structured Parzen Estimator) algorithm.
 
     This sampler can be used for *independent sampling*, so it's called an 'independent sampler'.
-    Please see the documentation of :class:`~optuna.samplers.BaseSampler` for the term 'independent sampling'.
+    Please see the documentation of :class:`~optuna.samplers.BaseSampler`
+    for the term 'independent sampling'.
 
     For information about TPE algorithm, please refer to the following papers:
 
     - `Algorithms for Hyper-Parameter Optimization
       <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
-    - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of Dimensions for Vision Architectures
-      <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+    - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
+      Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
 
     Example:
 
