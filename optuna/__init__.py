@@ -12,8 +12,8 @@ from optuna import trial  # NOQA
 from optuna import version  # NOQA
 from optuna import visualization  # NOQA
 
-from optuna.facade import create_study_from_dict # NOQA
-from optuna.facade import optuna_decorator # NOQA
+from optuna.facade import create_study_from_dict  # NOQA
+from optuna.facade import optuna_decorator  # NOQA
 from optuna.study import create_study  # NOQA
 from optuna.study import get_all_study_summaries  # NOQA
 from optuna.study import load_study  # NOQA

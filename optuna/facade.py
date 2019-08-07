@@ -1,25 +1,25 @@
 from functools import wraps
 from six import iteritems
 
-from optuna.integration import SkoptSampler # NOQA
-from optuna.pruners import MedianPruner # NOQA
-from optuna.pruners import SuccessiveHalvingPruner # NOQA
-from optuna.samplers import RandomSampler # NOQA
-from optuna.samplers import TPESampler # NOQA
-from optuna.study import create_study # NOQA
+from optuna.integration import SkoptSampler  # NOQA
+from optuna.pruners import MedianPruner  # NOQA
+from optuna.pruners import SuccessiveHalvingPruner  # NOQA
+from optuna.samplers import RandomSampler  # NOQA
+from optuna.samplers import TPESampler  # NOQA
+from optuna.study import create_study  # NOQA
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
 from optuna import types
 
 if types.TYPE_CHECKING:
-    from typing import Callable # NOQA
+    from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import Union  # NOQA
 
 
 def _get_suggested_values_recursively(
-        parameters, # type: Dict
-        trial=None, # type: Trial
+        parameters,  # type: Dict
+        trial=None,  # type: Trial
 ):
     # type: (...) -> (Dict, Dict, str)
 
@@ -58,8 +58,8 @@ def _get_suggested_values_recursively(
 
 
 def _get_suggested_values(
-        parameters, # type: Dict
-        trial=None, # type: Trial
+        parameters,  # type: Dict
+        trial=None,  # type: Trial
 ):
     # type: (...) -> (Dict, Dict, str)
     parameters = {'_ROOT_': parameters}
@@ -68,9 +68,9 @@ def _get_suggested_values(
 
 
 def optuna_decorator(
-        config=0, # type: Union[int, str, None]
-        return_study=True, # type: bool
-        study_name=0, # type: Union[int, str]
+        config=0,  # type: Union[int, str, None]
+        return_study=True,  # type: bool
+        study_name=0,  # type: Union[int, str]
 ):
     # type: (...) ->  Callable[[Callable], Callable]
     """
@@ -193,7 +193,7 @@ def optuna_decorator(
                     optuna_create_study['sampler'] = \
                         RandomSampler(**sampler) if 'Random' in sampler_type else \
                         SkoptSampler(**sampler) if 'Skopt' in sampler_type else \
-                        TPESampler(**sampler) # if 'TPE' in sampler_type else \
+                        TPESampler(**sampler)  # if 'TPE' in sampler_type else \
 
                 pruner = optuna_create_study.get('pruner')
                 if pruner:
@@ -201,7 +201,7 @@ def optuna_decorator(
                     optuna_create_study['pruner'] = \
                         SuccessiveHalvingPruner(**pruner) \
                             if 'SuccessiveHalving' in pruner_type else \
-                        MedianPruner(**pruner) # if 'Median' in pruner_type else \
+                        MedianPruner(**pruner)  # if 'Median' in pruner_type else \
 
                 optuna_create_study['study_name'] = \
                     optuna_create_study.get('study_name') or \
@@ -244,8 +244,8 @@ def optuna_decorator(
 
 
 def _find_key_recursively(
-        dictionary, # type: Dict
-        keyword, # type: str
+        dictionary,  # type: Dict
+        keyword,  # type: str
 ):
     # type: (...) -> bool
     if keyword in dictionary:
@@ -257,7 +257,7 @@ def _find_key_recursively(
 
 
 def create_study_from_dict(
-        params={}, # type: Dict
+        params={},  # type: Dict
 ):
     # type: (...) -> Study
     """
@@ -311,6 +311,6 @@ def create_study_from_dict(
 
     @optuna_decorator()
     def _create_study_from_dict(params):
-        pass # NOQA
+        pass  # NOQA
 
     return _create_study_from_dict(params)
