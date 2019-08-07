@@ -46,7 +46,7 @@ def test_sampler():
 def test_string_config():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_string_config:
       optuna_create_study:
         direction: minimize
@@ -78,7 +78,7 @@ def test_string_config():
 def test_return_study_false():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_return_study_false:
       optuna_create_study:
         direction: minimize
@@ -110,7 +110,7 @@ def test_return_study_false():
 def test_specify_study_name():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo:
       optuna_create_study:
         direction: minimize
