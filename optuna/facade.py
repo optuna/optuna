@@ -16,6 +16,7 @@ if types.TYPE_CHECKING:
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
     from typing import Union  # NOQA
 
 
@@ -179,7 +180,7 @@ def optuna_decorator(
                 *args,  # type: Any
                 **kwargs,  # type: Any
         ):
-            # type: (...) -> Union[Study, float]
+            # type: (...) -> Union[Study, float, None]
             params = \
                 args[config] if isinstance(config, int) else \
                 kwargs[config] if isinstance(config, str) else \
