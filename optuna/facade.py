@@ -75,7 +75,7 @@ def optuna_decorator(
     # type: (...) ->  Callable[[Callable], Callable]
     """
     Decorator to tune hyperparameters using Optuna configured by a dictionary.
-    
+
     Use `optuna_create_study` key to specify arguments for
     :func:`~optuna.study.create_study` method.
     If `optuna_create_study` key is missing,
@@ -200,7 +200,7 @@ def optuna_decorator(
                     pruner_type = pruner.pop('type', None)
                     optuna_create_study['pruner'] = \
                         SuccessiveHalvingPruner(**pruner) \
-                            if 'SuccessiveHalving' in pruner_type else \
+                        if 'SuccessiveHalving' in pruner_type else \
                         MedianPruner(**pruner)  # if 'Median' in pruner_type else \
 
                 optuna_create_study['study_name'] = \
