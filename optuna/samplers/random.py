@@ -17,6 +17,9 @@ if types.TYPE_CHECKING:
 class RandomSampler(BaseSampler):
     """Sampler using random sampling.
 
+    This sampler can be used for *independent sampling*, so it's called an 'independent sampler'.
+    Please see the documentation of :class:`~optuna.samplers.BaseSampler` for the term 'independent sampling'.
+
     Example:
 
         .. code::
