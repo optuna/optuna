@@ -1,4 +1,5 @@
 import gc
+import os
 import pytest
 
 from optuna import create_study
@@ -39,7 +40,11 @@ except ImportError:
 
 STORAGE_MODES = ['new', 'common']
 PRUNER_INIT_FUNCS = [lambda: pruners.MedianPruner(), lambda: pruners.SuccessiveHalvingPruner()]
-CACHE_MODES = [True, False]
+
+if os.getenv('INCLUDE_SLOW_TESTS') is None:
+    CACHE_MODES = [True]
+else:
+    CACHE_MODES = [True, False]
 
 
 def setup_module():
