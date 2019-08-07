@@ -73,8 +73,7 @@ def optuna_decorator(
         study_name=0,  # type: Union[int, str]
 ):
     # type: (...) ->  Callable[[Callable], Callable]
-    """
-    Decorator to tune hyperparameters using Optuna configured by a dictionary.
+    """Decorator to tune hyperparameters using Optuna configured by a dictionary.
 
     Use `optuna_create_study` key to specify arguments for
     :func:`~optuna.study.create_study` method.
@@ -170,6 +169,7 @@ def optuna_decorator(
     Returns:
         A decorator
     """
+
     def _optuna_decorator(func):
         # type: (Callable[..., float]) ->  Callable[..., float]
         @wraps(func)
@@ -260,8 +260,7 @@ def create_study_from_dict(
         params={},  # type: Dict
 ):
     # type: (...) -> Study
-    """
-    Create a :class:`~optuna.study.Study` object from a dictionary.
+    """Create a :class:`~optuna.study.Study` object from a dictionary.
 
     Example:
 
@@ -301,7 +300,6 @@ def create_study_from_dict(
 
     Returns:
         A :class:`~optuna.study.Study` object.
-
     """
 
     params = \

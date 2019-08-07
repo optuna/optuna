@@ -101,7 +101,7 @@ def test_specify_study_name():
       optuna_create_study:
         direction: minimize
       optuna_study_optimize:
-        n_trials: 5      
+        n_trials: 5
     study_bar:
       optuna_create_study:
         direction: minimize
@@ -252,8 +252,7 @@ def test_various_suggests():
     x_uniform:
       optuna_suggest: uniform
       low: -10
-      high: 10      
-
+      high: 10
     '''
 
     params_dict = yaml.safe_load(yaml_string)
