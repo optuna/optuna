@@ -68,8 +68,16 @@ class TPESampler(base.BaseSampler):
 
         .. code::
 
-            >>> study = optuna.create_study(sampler=TPESampler())
-            >>> study.optimize(objective, direction='minimize')
+            import optuna
+            from optuna.samplers import TPESampler
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -10, 10)
+                return x**2
+
+            study = optuna.create_study(sampler=TPESampler())
+            study.optimize(objective, n_trials=100)
+
     """
 
     def __init__(
