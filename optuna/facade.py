@@ -115,7 +115,7 @@ def optuna_decorator(
             from optuna import optuna_decorator
             import yaml
 
-            yaml_string = u'''
+            yaml_string = '''
             study_foo:
               optuna_create_study:
                 direction: minimize
@@ -280,7 +280,7 @@ def create_study_from_dict(
             from optuna import create_study_from_dict
             import yaml
 
-            yaml_string = u'''
+            yaml_string = '''
             direction: minimize
             sampler:
               type: TPESampler

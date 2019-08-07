@@ -14,7 +14,7 @@ if types.TYPE_CHECKING:
 def test_sampler():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_sampler:
       optuna_create_study:
         direction: minimize
@@ -147,7 +147,7 @@ def test_specify_study_name():
 def test_simple():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_simple:
       optuna_create_study:
         direction: minimize
@@ -174,7 +174,7 @@ def test_simple():
 def test_empty_sampler():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_empty_sampler:
       optuna_create_study:
         direction: minimize
@@ -203,7 +203,7 @@ def test_empty_sampler():
 def test_nested():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_nested:
       optuna_create_study:
         direction: minimize
@@ -241,7 +241,7 @@ def test_nested():
 def test_various_suggests():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_various_suggests:
       optuna_create_study:
         direction: minimize
@@ -298,7 +298,7 @@ def test_various_suggests():
 def test_skopt_sampler():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_skopt_sampler:
       optuna_create_study:
         direction: minimize
@@ -329,7 +329,7 @@ def test_skopt_sampler():
 def test_random_sampler():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_random_sampler:
       optuna_create_study:
         direction: minimize
@@ -360,7 +360,7 @@ def test_random_sampler():
 def test_pruner():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_pruner:
       optuna_create_study:
         direction: minimize
@@ -401,7 +401,7 @@ def test_pruner():
 def test_successive_halving_pruner():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_successive_halving_pruner:
       optuna_create_study:
         direction: minimize
@@ -443,7 +443,7 @@ def test_successive_halving_pruner():
 def test_no_optuna():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     x: 2.222
     '''
 
@@ -461,7 +461,7 @@ def test_no_optuna():
 def test_create_study_from_dict():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_create_study_from_dict:
       optuna_create_study:
         direction: minimize
@@ -489,7 +489,7 @@ def test_create_study_from_dict():
 def test_create_study_from_dict_simple():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     direction: minimize
     sampler:
       type: TPESampler
@@ -515,7 +515,7 @@ def test_create_study_from_dict_simple():
 def test_create_study_from_dict_explicit_study_name():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_name: study_foo_test_create_study_from_dict_explicit_study_name
     direction: minimize
     sampler:
@@ -542,7 +542,7 @@ def test_create_study_from_dict_explicit_study_name():
 def test_create_study_from_dict_with_key_only():
     # type: () -> None
 
-    yaml_string = u'''
+    yaml_string = '''
     study_foo_test_create_study_from_dict_with_key_only:
       optuna_create_study:
     '''
