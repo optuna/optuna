@@ -11,7 +11,7 @@ _import_structure = {
     'chainermn': ['ChainerMNStudy'],
     'cma': ['CmaEsSampler'],
     'keras': ['KerasPruningCallback'],
-    'lightgbm': ['LightGBMPruningCallback'],
+    'lightgbm': ['LightGBMPruningCallback', 'LGBMAutoTune'],
     'mxnet': ['MXNetPruningCallback'],
     'skopt': ['SkoptSampler'],
     'tensorflow': ['TensorFlowPruningHook'],
@@ -28,6 +28,7 @@ if sys.version_info[0] == 2 or TYPE_CHECKING:
     from optuna.integration.cma import CmaEsSampler  # NOQA
     from optuna.integration.keras import KerasPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
+    from optuna.integration.lightgbm import LGBMAutoTune  # NOQA
     from optuna.integration.mxnet import MXNetPruningCallback  # NOQA
     from optuna.integration.skopt import SkoptSampler  # NOQA
     from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA

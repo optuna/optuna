@@ -1,14 +1,30 @@
 from __future__ import absolute_import
+import sys
 
 import optuna
 
+
 try:
-    import lightgbm as lgb  # NOQA
+    import lightgbm as lgb
     _available = True
 except ImportError as e:
     _import_error = e
     # LightGBMPruningCallback is disabled because LightGBM is not available.
     _available = False
+
+
+# Attach lightgbm API
+if _available:
+    # API from lightgbm
+    for api_name in lgb.__dict__['__all__']:
+        if api_name in ['train', 'LGBMModel', 'LGBMClassifier', 'LGBMRegressor']:
+            continue
+        setattr(sys.modules[__name__], api_name, lgb.__dict__[api_name])
+
+    # API from optuna integration
+    import optuna.integration.lightgbm_autotune as autotune
+    for api_name in ['train', 'LGBMModel', 'LGBMClassifier', 'LGBMRegressor', 'LGBMAutoTune']:
+        setattr(sys.modules[__name__], api_name, autotune.__dict__[api_name])
 
 
 class LightGBMPruningCallback(object):
