@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import scipy.special
 
@@ -520,7 +521,10 @@ def _get_observation_pairs(study, param_name):
         elif trial.state is structs.TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
-                score = (-step, sign * intermediate_value)
+                if math.isnan(intermediate_value):
+                    score = (-step, float('inf'))
+                else:
+                    score = (-step, sign * intermediate_value)
             else:
                 score = (float('inf'), 0.0)
         else:
