@@ -178,7 +178,7 @@ def optuna_decorator(
         @wraps(func)
         def wrapper(
                 *args,  # type: Any
-                **kwargs,  # type: Any
+                **kwargs  # type: Any
         ):
             # type: (...) -> Union[Study, float, None]
             params = \
