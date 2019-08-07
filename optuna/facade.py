@@ -12,16 +12,18 @@ from optuna.trial import Trial  # NOQA
 from optuna import types
 
 if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
+    from typing import Optional  # NOQA
     from typing import Union  # NOQA
 
 
 def _get_suggested_values_recursively(
-        parameters,  # type: Dict
-        trial=None,  # type: Trial
+        parameters,  # type: Dict[str, Any]
+        trial=None,  # type: Optional[Trial]
 ):
-    # type: (...) -> (Dict, Dict, str)
+    # type: (...) -> Tuple[Dict[str, Any], Dict[str, Any], Optional[str]]
 
     assert isinstance(trial, (Trial, type(None),))
     assert isinstance(parameters, dict)
@@ -58,10 +60,10 @@ def _get_suggested_values_recursively(
 
 
 def _get_suggested_values(
-        parameters,  # type: Dict
-        trial=None,  # type: Trial
+        parameters,  # type: Dict[str, Any]
+        trial=None,  # type: Optional[Trial]
 ):
-    # type: (...) -> (Dict, Dict, str)
+    # type: (...) -> Tuple[Dict[str, Any], Dict[str, Any], Optional[str]]
     parameters = {'_ROOT_': parameters}
     params, studies, suggest = _get_suggested_values_recursively(parameters, trial)
     return params['_ROOT_'], studies, suggest
@@ -173,7 +175,11 @@ def optuna_decorator(
     def _optuna_decorator(func):
         # type: (Callable[..., float]) ->  Callable[..., float]
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(
+                *args, # type: Any
+                **kwargs, # type: Any
+        ):
+            # type: (...) -> Union[Study, float]
             params = \
                 args[config] if isinstance(config, int) else \
                 kwargs[config] if isinstance(config, str) else \
@@ -212,8 +218,10 @@ def optuna_decorator(
                     optuna_study_optimize = study_params.get('optuna_study_optimize') or dict()
                     args_list = list(args)
 
-                    def objective(trial):
-
+                    def objective(
+                            trial,  # type: Trial
+                    ):
+                        # type: (...) -> float
                         params_suggested, _, _ = _get_suggested_values(params, trial)
                         params_suggested['optuna_trial'] = trial
                         params_suggested['optuna_study'] = study
@@ -308,7 +316,10 @@ def create_study_from_dict(
         params
 
     @optuna_decorator()
-    def _create_study_from_dict(params):
+    def _create_study_from_dict(
+            params,  # type: Dict[str, Any]
+    ):
+        # type: (...) -> None
         pass  # NOQA
 
     return _create_study_from_dict(params)

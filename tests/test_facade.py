@@ -3,9 +3,15 @@ import yaml
 
 from optuna.facade import create_study_from_dict
 from optuna.facade import optuna_decorator
+from optuna.trial import Trial  # NOQA
+from optuna import types
 
+if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
 
 def test_sampler():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_sampler:
@@ -28,6 +34,7 @@ def test_sampler():
 
     @optuna_decorator()
     def objective(args):
+        # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
         return (args['x'] - 2) ** 2
 
@@ -36,6 +43,7 @@ def test_sampler():
 
 
 def test_string_config():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_string_config:
@@ -58,6 +66,7 @@ def test_string_config():
 
     @optuna_decorator('args')
     def objective(args):
+        # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
         return (args['x'] - 2) ** 2
 
@@ -66,6 +75,7 @@ def test_string_config():
 
 
 def test_return_study_false():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_return_study_false:
@@ -88,6 +98,7 @@ def test_return_study_false():
 
     @optuna_decorator(return_study=False)
     def objective(args):
+        # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
         return (args['x'] - 2) ** 2
 
@@ -96,6 +107,8 @@ def test_return_study_false():
 
 
 def test_specify_study_name():
+    # type: () -> None
+
     yaml_string = u'''
     study_foo:
       optuna_create_study:
@@ -122,6 +135,7 @@ def test_specify_study_name():
 
     @optuna_decorator(study_name='study_bar')
     def objective(args):
+        # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
         return (args['x'] - 2) ** 2
 
@@ -130,6 +144,7 @@ def test_specify_study_name():
 
 
 def test_simple():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_simple:
@@ -147,6 +162,7 @@ def test_simple():
 
     @optuna_decorator()
     def objective(args):
+        # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
         return (args['x'] - 2) ** 2
 
@@ -155,6 +171,7 @@ def test_simple():
 
 
 def test_empty_sampler():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_empty_sampler:
@@ -174,6 +191,7 @@ def test_empty_sampler():
 
     @optuna_decorator()
     def objective(args):
+        # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
         return (args['x'] - 2) ** 2
 
@@ -182,6 +200,7 @@ def test_empty_sampler():
 
 
 def test_nested():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_nested:
@@ -210,6 +229,7 @@ def test_nested():
 
     @optuna_decorator()
     def objective(args):
+        # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
         return args['level_1']['x1'] + args['level_1']['level_2']['x2']
 
@@ -218,6 +238,7 @@ def test_nested():
 
 
 def test_various_suggests():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_various_suggests:
@@ -259,6 +280,7 @@ def test_various_suggests():
 
     @optuna_decorator()
     def objective(args):
+        # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
         metric = \
             args['x_categorical'] + \
@@ -273,6 +295,7 @@ def test_various_suggests():
 
 
 def test_skopt_sampler():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_skopt_sampler:
@@ -294,6 +317,7 @@ def test_skopt_sampler():
 
     @optuna_decorator()
     def objective(args):
+        # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
         return (args['x'] - 2) ** 2
 
@@ -302,6 +326,7 @@ def test_skopt_sampler():
 
 
 def test_random_sampler():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_random_sampler:
@@ -323,6 +348,7 @@ def test_random_sampler():
 
     @optuna_decorator()
     def objective(args):
+        # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
         return (args['x'] - 2) ** 2
 
@@ -331,6 +357,7 @@ def test_random_sampler():
 
 
 def test_pruner():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_pruner:
@@ -355,6 +382,8 @@ def test_pruner():
 
     @optuna_decorator()
     def objective(args):
+        # type: (Dict[str, Any]) -> float
+
         for i in range(10):
             metric = (args['x'] - 2) ** 2 - i
             trial = args.get('optuna_trial')
@@ -369,6 +398,7 @@ def test_pruner():
 
 
 def test_successive_halving_pruner():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_successive_halving_pruner:
@@ -394,6 +424,8 @@ def test_successive_halving_pruner():
 
     @optuna_decorator()
     def objective(args):
+        # type: (Dict[str, Any]) -> float
+
         for i in range(10):
             metric = (args['x'] - 2) ** 2 - i
             trial = args.get('optuna_trial')
@@ -408,6 +440,7 @@ def test_successive_halving_pruner():
 
 
 def test_no_optuna():
+    # type: () -> None
 
     yaml_string = u'''
     x: 2.222
@@ -417,6 +450,7 @@ def test_no_optuna():
 
     @optuna_decorator()
     def objective(args):
+        # type: (Dict[str, Any]) -> float
         return (args['x'] - 2)
 
     metric = objective(params_dict)
@@ -424,6 +458,7 @@ def test_no_optuna():
 
 
 def test_create_study_from_dict():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_create_study_from_dict:
@@ -442,6 +477,8 @@ def test_create_study_from_dict():
     assert isinstance(study, optuna.study.Study)
 
     def objective(trial):
+        # type: (Trial) -> float
+
         x = trial.suggest_uniform('x', -10, 10)
         return (x - 2) ** 2
 
@@ -449,6 +486,7 @@ def test_create_study_from_dict():
 
 
 def test_create_study_from_dict_simple():
+    # type: () -> None
 
     yaml_string = u'''
     direction: minimize
@@ -465,6 +503,8 @@ def test_create_study_from_dict_simple():
     assert isinstance(study, optuna.study.Study)
 
     def objective(trial):
+        # type: (Trial) -> float
+
         x = trial.suggest_uniform('x', -10, 10)
         return (x - 2) ** 2
 
@@ -472,6 +512,7 @@ def test_create_study_from_dict_simple():
 
 
 def test_create_study_from_dict_explicit_study_name():
+    # type: () -> None
 
     yaml_string = u'''
     study_name: study_foo_test_create_study_from_dict_explicit_study_name
@@ -489,6 +530,8 @@ def test_create_study_from_dict_explicit_study_name():
     assert isinstance(study, optuna.study.Study)
 
     def objective(trial):
+        # type: (Trial) -> float
+
         x = trial.suggest_uniform('x', -10, 10)
         return (x - 2) ** 2
 
@@ -496,6 +539,7 @@ def test_create_study_from_dict_explicit_study_name():
 
 
 def test_create_study_from_dict_with_key_only():
+    # type: () -> None
 
     yaml_string = u'''
     study_foo_test_create_study_from_dict_with_key_only:
@@ -508,6 +552,8 @@ def test_create_study_from_dict_with_key_only():
     assert isinstance(study, optuna.study.Study)
 
     def objective(trial):
+        # type: (Trial) -> float
+
         x = trial.suggest_uniform('x', -10, 10)
         return (x - 2) ** 2
 
@@ -515,11 +561,14 @@ def test_create_study_from_dict_with_key_only():
 
 
 def test_create_study_from_dict_default():
+    # type: () -> None
 
     study = create_study_from_dict()
     assert isinstance(study, optuna.study.Study)
 
     def objective(trial):
+        # type: (Trial) -> float
+
         x = trial.suggest_uniform('x', -10, 10)
         return (x - 2) ** 2
 
