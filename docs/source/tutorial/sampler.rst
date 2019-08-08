@@ -30,7 +30,7 @@ The base class has three abstract methods;
 
 As the method names imply, Optuna supports two types of samplings; one is **relative sampling** that can consider the correlation of the parameters in a trial, and another is **independent sampling** that samples each parameter independently.
 
-At the beginning of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called for determining the relative search space passed to :meth:`~optuna.samplers.BaseSampler.sample_relative`. Then, :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked for sampling relative parameters for the trial. During the execution of the objective function, :meth:`~optuna.samplers.BaseSampler.sample_independent` is used for sampling parameters that don't belong to the relative search space.
+At the beginning of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called for determining the relative search space for the trial. Then, :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked for sampling relative parameters from the search space. During the execution of the objective function, :meth:`~optuna.samplers.BaseSampler.sample_independent` is used for sampling parameters that don't belong to the relative search space.
 
 .. note::
     Please refer to the documentation of :class:`~optuna.samplers.BaseSampler` for further details.
