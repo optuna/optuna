@@ -1,8 +1,9 @@
 """
-Optuna example that optimizes a classifier configuration for cancer dataset using Catboost.
+Optuna example that optimizes a classifier configuration for cancer dataset using
+Catboost.
 
-In this example, we optimize the validation accuracy of cancer detection using Catboost.
-We optimize both the choice of booster model and their hyperparameters.
+In this example, we optimize the validation accuracy of cancer detection using
+Catboost. We optimize both the choice of booster model and their hyperparameters.
 
 We have following two ways to execute this example:
 
@@ -31,15 +32,19 @@ def objective(trial):
     train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.3)
 
     param = {
-        'objective'         : trial.suggest_categorical('objective', ['Logloss', 'CrossEntropy']),
-        'iterations'        : trial.suggest_int('num_leaves', 500, 2000),
+        'objective' : trial.suggest_categorical('objective', ['Logloss',
+                                                              'CrossEntropy']),
+        'iterations' : trial.suggest_int('num_leaves', 500, 2000),
         'colsample_bylevel' : trial.suggest_uniform('colsample_bylevel', 0.01, 0.1),
-        'depth'             : trial.suggest_int('depth', 1, 16),
-        'boosting_type'   : trial.suggest_categorical('boosting_type', ['Ordered', 'Plain']),
-        'learning_rate'     : trial.suggest_loguniform('learning_rate', 1e-6, 1.0)
+        'depth' : trial.suggest_int('depth', 1, 16),
+        'boosting_type' : trial.suggest_categorical('boosting_type', ['Ordered',
+                                                                      'Plain']),
+        'learning_rate' : trial.suggest_loguniform('learning_rate', 1e-6, 1.0)
         # On GPU machines only
-        # 'max_leaves'        : trial.suggest_int('num_leaves', 1, 1000),
-        # 'grow_policy'       : trial.suggest_categorical('grow_policy', ['SymmetricTree', 'Depthwise', 'Lossguide']),
+        # 'max_leaves' : trial.suggest_int('num_leaves', 1, 1000),
+        # 'grow_policy' : trial.suggest_categorical('grow_policy', ['SymmetricTree',
+        #                                                           'Depthwise',
+        #                                                           'Lossguide']),
     }
 
     gbm = cb.CatBoostClassifier(**param)
@@ -56,8 +61,7 @@ def objective(trial):
 
 if __name__ == '__main__':
     study = optuna.create_study(direction='maximize')
-    # study.optimize(objective, n_trials=100)
-    study.optimize(objective, n_trials=5)
+    study.optimize(objective, n_trials=100)
 
     print('Number of finished trials: {}'.format(len(study.trials)))
 
