@@ -247,7 +247,9 @@ class Study(BaseStudy):
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
-            catch=(Exception, )  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            trial_callbacks=None
+            # type: Optional[List[Callable[[InTrialStudy, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -273,11 +275,12 @@ class Study(BaseStudy):
                 this argument. Default is (`Exception <https://docs.python.org/3/library/
                 exceptions.html#Exception>`_,), where all non-exit exceptions are handled
                 by this logic.
-
+            trial_callbacks:
+                TODO: doc
         """
 
         if n_jobs == 1:
-            self._optimize_sequential(func, n_trials, timeout, catch)
+            self._optimize_sequential(func, n_trials, timeout, catch, trial_callbacks)
         else:
             self._optimize_parallel(func, n_trials, timeout, n_jobs, catch)
 
@@ -375,7 +378,9 @@ class Study(BaseStudy):
             func,  # type: ObjectiveFuncType
             n_trials,  # type: Optional[int]
             timeout,  # type: Optional[float]
-            catch  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            trial_callbacks
+            # type: Optional[List[Callable[[InTrialStudy, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
 
@@ -392,7 +397,12 @@ class Study(BaseStudy):
                 if elapsed_seconds >= timeout:
                     break
 
-            self._run_trial(func, catch)
+            trial = self._run_trial(func, catch)
+            if trial_callbacks is not None:
+                in_trial_study = InTrialStudy(self)
+                frozen_trial = self.storage.get_trial(trial._trial_id)
+                for callback in trial_callbacks:
+                    callback(in_trial_study, frozen_trial)
 
     def _optimize_parallel(
             self,
