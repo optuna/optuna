@@ -39,8 +39,8 @@ def get_install_requires():
     # type: () -> List[str]
 
     install_requires = [
-        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six', 'typing', 'cliff', 'colorlog', 'pandas',
-        'alembic'
+        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six',
+        'cliff', 'colorlog', 'pandas', 'alembic', 'typing'
     ]
     if sys.version_info[0] == 2:
         install_requires.extend(['enum34'])
@@ -54,7 +54,7 @@ def get_extras_require():
         'checking': ['autopep8', 'hacking'],
         'testing': [
             'pytest', 'mock', 'bokeh', 'plotly', 'chainer>=5.0.0', 'xgboost', 'mpi4py', 'lightgbm',
-            'keras', 'tensorflow', 'mxnet'
+            'keras', 'mxnet', 'scikit-optimize', 'tensorflow', 'cma'
         ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],

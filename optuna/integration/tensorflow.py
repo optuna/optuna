@@ -8,6 +8,7 @@ if optuna.types.TYPE_CHECKING:
 try:
     import tensorflow as tf
     from tensorflow.train import SessionRunHook
+    from tensorflow_estimator.python.estimator.early_stopping import read_eval_metrics
     _available = True
 except ImportError as e:
     _import_error = e
@@ -87,7 +88,7 @@ class TensorFlowPruningHook(SessionRunHook):
         # Get eval metrics every n steps.
         if self.timer.should_trigger_for_step(global_step):
             self.timer.update_last_triggered_step(global_step)
-            eval_metrics = tf.contrib.estimator.read_eval_metrics(self.estimator.eval_dir())
+            eval_metrics = read_eval_metrics(self.estimator.eval_dir())
         else:
             eval_metrics = None
         if eval_metrics:

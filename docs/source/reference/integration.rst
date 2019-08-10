@@ -9,6 +9,10 @@ Integration
 .. autoclass:: ChainerMNStudy
     :members:
 
+.. autoclass:: CmaEsSampler
+    :members:
+    :exclude-members: infer_relative_search_space, sample_relative, sample_independent
+
 .. autoclass:: KerasPruningCallback
     :members:
 
@@ -17,6 +21,10 @@ Integration
 
 .. autoclass:: MXNetPruningCallback
     :members:
+
+.. autoclass:: SkoptSampler
+    :members:
+    :exclude-members: infer_relative_search_space, sample_relative, sample_independent
 
 .. autoclass:: TensorFlowPruningHook
     :members:

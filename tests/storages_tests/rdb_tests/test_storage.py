@@ -3,7 +3,6 @@ import pytest
 import sys
 import tempfile
 
-from optuna.distributions import BaseDistribution  # NOQA
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import json_to_distribution
 from optuna.distributions import UniformDistribution
@@ -14,7 +13,6 @@ from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
 from optuna.structs import DuplicatedStudyError
-from optuna.structs import FrozenTrial  # NOQA
 from optuna.structs import StorageInternalError
 from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
@@ -23,8 +21,13 @@ from optuna import types
 from optuna import version
 
 if types.TYPE_CHECKING:
+    from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
+    from typing import Optional  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
 
 
 def test_init():
@@ -73,6 +76,15 @@ def test_init_db_module_import_error():
     with patch.dict(sys.modules, {'psycopg2': None}):
         with pytest.raises(ImportError, match=expected_msg):
             RDBStorage('postgresql://user:password@host/database')
+
+
+def test_engine_kwargs():
+    # type: () -> None
+
+    create_test_storage(engine_kwargs={'pool_size': 5})
+
+    with pytest.raises(TypeError):
+        create_test_storage(engine_kwargs={'wrong_key': 'wrong_value'})
 
 
 def test_create_new_study_id_multiple_studies():
@@ -227,10 +239,12 @@ def test_check_table_schema_compatibility():
     #     storage._check_table_schema_compatibility()
 
 
-def create_test_storage(enable_cache=True):
-    # type: (bool) -> RDBStorage
+def create_test_storage(enable_cache=True, engine_kwargs=None):
+    # type: (bool, Optional[Dict[str, Any]]) -> RDBStorage
 
-    storage = RDBStorage('sqlite:///:memory:', enable_cache=enable_cache)
+    storage = RDBStorage('sqlite:///:memory:',
+                         enable_cache=enable_cache,
+                         engine_kwargs=engine_kwargs)
     return storage
 
 

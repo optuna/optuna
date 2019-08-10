@@ -7,6 +7,7 @@ from optuna import types
 if types.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
+    from typing import List  # NOQA
 
 EXAMPLE_DISTRIBUTIONS = {
     'u': distributions.UniformDistribution(low=1., high=2.),
@@ -140,3 +141,32 @@ def test_empty_range_contains():
     assert not iu._contains(0)
     assert iu._contains(1)
     assert not iu._contains(2)
+
+
+def test_single():
+    # type: () -> None
+
+    single_distributions = [
+        distributions.UniformDistribution(low=1.0, high=1.0),
+        distributions.LogUniformDistribution(low=7.3, high=7.3),
+        distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
+        distributions.IntUniformDistribution(low=-123, high=-123),
+        distributions.CategoricalDistribution(choices=('foo', ))
+    ]  # type: List[distributions.BaseDistribution]
+    for distribution in single_distributions:
+        assert distribution.single()
+
+    nonsingle_distributions = [
+        distributions.UniformDistribution(low=0.0, high=-100.0),
+        distributions.UniformDistribution(low=1.0, high=1.001),
+        distributions.LogUniformDistribution(low=7.3, high=7.2),
+        distributions.LogUniformDistribution(low=7.3, high=10),
+        distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3),
+        distributions.DiscreteUniformDistribution(low=-30, high=-20, q=2),
+        distributions.IntUniformDistribution(low=123, high=100),
+        distributions.IntUniformDistribution(low=-123, high=0),
+        distributions.CategoricalDistribution(choices=()),
+        distributions.CategoricalDistribution(choices=('foo', 'bar'))
+    ]  # type: List[distributions.BaseDistribution]
+    for distribution in nonsingle_distributions:
+        assert not distribution.single()

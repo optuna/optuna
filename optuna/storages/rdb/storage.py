@@ -41,7 +41,9 @@ class RDBStorage(BaseStorage):
 
     Args:
         url: URL of the storage.
-        connect_args: Arguments that is passed to :func:`sqlalchemy.engine.create_engine`.
+        engine_kwargs:
+            A dictionary of keyword arguments that is passed to
+            :func:`sqlalchemy.engine.create_engine`.
         enable_cache:
             Flag to control whether to enable storage layer caching.
             If this flag is set to :obj:`True` (the default), the finished trials are
@@ -50,15 +52,15 @@ class RDBStorage(BaseStorage):
 
     """
 
-    def __init__(self, url, connect_args=None, enable_cache=True, skip_compatibility_check=False):
+    def __init__(self, url, engine_kwargs=None, enable_cache=True, skip_compatibility_check=False):
         # type: (str, Optional[Dict[str, Any]], bool, bool) -> None
 
-        connect_args = connect_args or {}
+        engine_kwargs = engine_kwargs or {}
 
         url = self._fill_storage_url_template(url)
 
         try:
-            self.engine = create_engine(url, connect_args=connect_args)
+            self.engine = create_engine(url, **engine_kwargs)
         except ImportError as e:
             raise ImportError('Failed to import DB access module for the specified storage URL. '
                               'Please install appropriate one. (The actual import error is: ' +
