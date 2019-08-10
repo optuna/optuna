@@ -34,7 +34,7 @@ def get_long_description():
         readme_filepath = os.path.join(os.path.dirname(__file__), 'README.md')
         with open(readme_filepath) as f:
             return f.read()
-    except FileNotFoundError:
+    except IOError:
         return ""
 
 
