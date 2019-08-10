@@ -283,12 +283,13 @@ def test_various_suggests():
     def objective(args):
         # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
-        metric = \
-            args['x_categorical'] + \
-            args['x_discrete_uniform'] + \
-            args['x_int'] + \
-            args['x_loguniform'] + \
-            args['x_uniform']
+        metric = (
+            args['x_categorical']
+            + args['x_discrete_uniform']
+            + args['x_int']
+            + args['x_loguniform']
+            + args['x_uniform']
+        )
         return metric
 
     study = objective(params_dict)
@@ -452,7 +453,7 @@ def test_no_optuna():
     @optuna_decorator()
     def objective(args):
         # type: (Dict[str, Any]) -> float
-        return (args['x'] - 2)
+        return args['x'] - 2
 
     metric = objective(params_dict)
     assert abs(metric - 0.222) < 2.3e-06

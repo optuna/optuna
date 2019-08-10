@@ -1,15 +1,15 @@
 from functools import wraps
-from six import iteritems
 
+from optuna import types
 from optuna.integration import SkoptSampler  # NOQA
 from optuna.pruners import MedianPruner  # NOQA
 from optuna.pruners import SuccessiveHalvingPruner  # NOQA
 from optuna.samplers import RandomSampler  # NOQA
 from optuna.samplers import TPESampler  # NOQA
-from optuna.study import create_study  # NOQA
 from optuna.study import Study  # NOQA
+from optuna.study import create_study  # NOQA
 from optuna.trial import Trial  # NOQA
-from optuna import types
+from six import iteritems
 
 if types.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -21,12 +21,12 @@ if types.TYPE_CHECKING:
 
 
 def _get_suggested_values_recursively(
-        parameters,  # type: Dict[str, Any]
-        trial=None,  # type: Optional[Trial]
+    parameters,  # type: Dict[str, Any]
+    trial=None,  # type: Optional[Trial]
 ):
     # type: (...) -> Tuple[Dict[str, Any], Dict[str, Any], Optional[str]]
 
-    assert isinstance(trial, (Trial, type(None),))
+    assert isinstance(trial, (Trial, type(None)))
     assert isinstance(parameters, dict)
 
     params_out = dict()
@@ -43,13 +43,19 @@ def _get_suggested_values_recursively(
 
             suggest = v.pop('optuna_suggest', None)
             if suggest and trial:
-                v = \
-                    trial.suggest_categorical(k, **v) if "categorical" in suggest else \
-                    trial.suggest_discrete_uniform(k, **v) if "discrete_uniform" in suggest else \
-                    trial.suggest_int(k, **v) if "int" in suggest else \
-                    trial.suggest_loguniform(k, **v) if "loguniform" in suggest else \
-                    trial.suggest_uniform(k, **v) if "uniform" in suggest else \
-                    v
+                v = (
+                    trial.suggest_categorical(k, **v)
+                    if "categorical" in suggest
+                    else trial.suggest_discrete_uniform(k, **v)
+                    if "discrete_uniform" in suggest
+                    else trial.suggest_int(k, **v)
+                    if "int" in suggest
+                    else trial.suggest_loguniform(k, **v)
+                    if "loguniform" in suggest
+                    else trial.suggest_uniform(k, **v)
+                    if "uniform" in suggest
+                    else v
+                )
 
             if not (create_study or suggest):
                 v, studies, suggest = _get_suggested_values_recursively(v, trial)
@@ -61,8 +67,8 @@ def _get_suggested_values_recursively(
 
 
 def _get_suggested_values(
-        parameters,  # type: Dict[str, Any]
-        trial=None,  # type: Optional[Trial]
+    parameters,  # type: Dict[str, Any]
+    trial=None,  # type: Optional[Trial]
 ):
     # type: (...) -> Tuple[Dict[str, Any], Dict[str, Any], Optional[str]]
     parameters = {'_ROOT_': parameters}
@@ -71,9 +77,9 @@ def _get_suggested_values(
 
 
 def optuna_decorator(
-        config=0,  # type: Union[int, str, None]
-        return_study=True,  # type: bool
-        study_name=0,  # type: Union[int, str]
+    config=0,  # type: Union[int, str, None]
+    return_study=True,  # type: bool
+    study_name=0,  # type: Union[int, str]
 ):
     # type: (...) ->  Callable[[Callable], Callable]
     """Decorator to tune hyperparameters using Optuna configured by a dictionary.
@@ -177,42 +183,64 @@ def optuna_decorator(
         # type: (Callable[..., float]) ->  Callable[..., float]
         @wraps(func)
         def wrapper(
-                *args,  # type: Any
-                **kwargs  # type: Any
+            *args,  # type: Any
+            **kwargs  # type: Any
         ):
             # type: (...) -> Union[Study, float, None]
-            params = \
-                args[config] if isinstance(config, int) else \
-                kwargs[config] if isinstance(config, str) else \
-                dict()
+            params = (
+                args[config]
+                if isinstance(config, int)
+                else kwargs[config]
+                if isinstance(config, str)
+                else dict()
+            )
             _, studies_params, _ = _get_suggested_values(params)
             if studies_params:
-                study_name_str = \
-                    study_name if isinstance(study_name, str) else \
-                    list(studies_params.keys())[study_name] if isinstance(study_name, int) else \
-                    list(studies_params.keys())[0]
+                study_name_str = (
+                    study_name
+                    if isinstance(study_name, str)
+                    else list(studies_params.keys())[study_name]
+                    if isinstance(study_name, int)
+                    else list(studies_params.keys())[0]
+                )
                 study_params = studies_params[study_name_str]
                 optuna_create_study = study_params.get('optuna_create_study') or dict()
 
                 sampler = optuna_create_study.get('sampler')
                 if sampler:
                     sampler_type = sampler.pop('type', None)
-                    optuna_create_study['sampler'] = \
-                        RandomSampler(**sampler) if 'Random' in sampler_type else \
-                        SkoptSampler(**sampler) if 'Skopt' in sampler_type else \
-                        TPESampler(**sampler)  # if 'TPE' in sampler_type else \
+                    sampler_obj = (
+                        RandomSampler(**sampler)
+                        if 'Random' in sampler_type
+                        else SkoptSampler(**sampler)
+                        if 'Skopt' in sampler_type
+                        else TPESampler(**sampler)
+                        if 'TPE' in sampler_type
+                        else None
+                    )
+                    if sampler_obj:
+                        optuna_create_study['sampler'] = sampler_obj
+                    else:
+                        raise ValueError('Sampler is not valid.')
 
                 pruner = optuna_create_study.get('pruner')
                 if pruner:
                     pruner_type = pruner.pop('type', None)
-                    optuna_create_study['pruner'] = \
-                        SuccessiveHalvingPruner(**pruner) \
-                        if 'SuccessiveHalving' in pruner_type else \
-                        MedianPruner(**pruner)  # if 'Median' in pruner_type else \
+                    pruner_obj = (
+                        SuccessiveHalvingPruner(**pruner)
+                        if 'SuccessiveHalving' in pruner_type
+                        else MedianPruner(**pruner)
+                        if 'Median' in pruner_type
+                        else None
+                    )
+                    if pruner_obj:
+                        optuna_create_study['pruner'] = pruner_obj
+                    else:
+                        raise ValueError('Pruner is not valid.')
 
-                optuna_create_study['study_name'] = \
-                    optuna_create_study.get('study_name') or \
-                    (study_name_str if study_name_str != '_ROOT_' else None)
+                optuna_create_study['study_name'] = optuna_create_study.get('study_name') or (
+                    study_name_str if study_name_str != '_ROOT_' else None
+                )
                 study = create_study(**optuna_create_study)
 
                 if 'optuna_study_optimize' in study_params:
@@ -220,7 +248,7 @@ def optuna_decorator(
                     args_list = list(args)
 
                     def objective(
-                            trial,  # type: Trial
+                        trial,  # type: Trial
                     ):
                         # type: (...) -> float
                         params_suggested, _, _ = _get_suggested_values(params, trial)
@@ -239,22 +267,26 @@ def optuna_decorator(
 
                     study.optimize(objective, **optuna_study_optimize)
 
-                output = \
-                    study if return_study else \
-                    study.best_value if optuna_study_optimize is not None else \
-                    None
+                output = (
+                    study
+                    if return_study
+                    else study.best_value
+                    if optuna_study_optimize is not None
+                    else None
+                )
                 return output
 
             metric = func(*args, **kwargs)
             return metric
 
         return wrapper
+
     return _optuna_decorator
 
 
 def _find_key_recursively(
-        dictionary,  # type: Dict
-        keyword,  # type: str
+    dictionary,  # type: Dict
+    keyword,  # type: str
 ):
     # type: (...) -> bool
     if keyword in dictionary:
@@ -266,7 +298,7 @@ def _find_key_recursively(
 
 
 def create_study_from_dict(
-        params={},  # type: Dict
+    params={},  # type: Dict
 ):
     # type: (...) -> Study
     """Create a :class:`~optuna.study.Study` object from a dictionary.
@@ -311,14 +343,15 @@ def create_study_from_dict(
         A :class:`~optuna.study.Study` object.
     """
 
-    params = \
-        dict(optuna_create_study=params) \
-        if not _find_key_recursively(params, 'optuna_create_study') else \
-        params
+    params = (
+        dict(optuna_create_study=params)
+        if not _find_key_recursively(params, 'optuna_create_study')
+        else params
+    )
 
     @optuna_decorator()
     def _create_study_from_dict(
-            params,  # type: Dict[str, Any]
+        params,  # type: Dict[str, Any]
     ):
         # type: (...) -> None
         pass  # NOQA
