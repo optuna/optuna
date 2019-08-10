@@ -201,16 +201,6 @@ class BaseStorage(object):
 
     # Methods for PercentilePruner and MedianPruner
 
-    def get_best_intermediate_result_over_steps(self, trial_id):
-        # type: (int) -> float
-
-        values = np.array(list(self.get_trial(trial_id).intermediate_values.values()), np.float)
-
-        study_id = self.get_study_id_from_trial_id(trial_id)
-        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
-            return np.nanmax(values)
-        return np.nanmin(values)
-
     def get_percentile_intermediate_result_over_trials(self, study_id, step, percentile):
         # type: (int, int, float) -> float
 

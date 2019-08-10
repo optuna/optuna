@@ -1,12 +1,22 @@
 import math
+import numpy as np
 
 from optuna.pruners import BasePruner
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
-from optuna import types
+from optuna import types, structs
 
 if types.TYPE_CHECKING:
     from optuna.storages import BaseStorage  # NOQA
+
+
+def get_best_intermediate_result_over_steps(trial, direction):
+    # type: (structs.FrozenTrial, structs.StudyDirection) -> float
+
+    values = np.array(list(trial.intermediate_values.values()), np.float)
+    if direction == structs.StudyDirection.MAXIMIZE:
+        return np.nanmax(values)
+    return np.nanmin(values)
 
 
 class PercentilePruner(BasePruner):
@@ -59,10 +69,12 @@ class PercentilePruner(BasePruner):
         if step <= self.n_warmup_steps:
             return False
 
-        if len(storage.get_trial(trial_id).intermediate_values) == 0:
+        trial = storage.get_trial(trial_id)
+        if len(trial.intermediate_values) == 0:
             return False
 
-        best_intermediate_result = storage.get_best_intermediate_result_over_steps(trial_id)
+        direction = storage.get_study_direction(study_id)
+        best_intermediate_result = get_best_intermediate_result_over_steps(trial, direction)
         if math.isnan(best_intermediate_result):
             return True
 
@@ -70,6 +82,6 @@ class PercentilePruner(BasePruner):
         if math.isnan(p):
             return False
 
-        if storage.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+        if direction == StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p
