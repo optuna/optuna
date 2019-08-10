@@ -4,7 +4,8 @@ import numpy as np
 from optuna.pruners import BasePruner
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
-from optuna import types, structs
+from optuna import structs
+from optuna import types
 
 if types.TYPE_CHECKING:
     from optuna.storages import BaseStorage  # NOQA

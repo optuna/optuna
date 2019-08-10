@@ -1,11 +1,11 @@
 import math
-
 import pytest
 
 import optuna
-from optuna.structs import TrialState, StudyDirection
-from optuna import types
 from optuna.pruners.percentile import get_best_intermediate_result_over_steps
+from optuna.structs import StudyDirection
+from optuna.structs import TrialState
+from optuna import types
 
 if types.TYPE_CHECKING:
     from typing import List  # NOQA
