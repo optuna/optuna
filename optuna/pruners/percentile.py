@@ -2,8 +2,6 @@ import math
 import numpy as np
 
 from optuna.pruners import BasePruner
-from optuna.structs import StudyDirection
-from optuna.structs import TrialState
 from optuna import structs
 from optuna import types
 
@@ -59,7 +57,7 @@ class PercentilePruner(BasePruner):
         # type: (BaseStorage, int, int, int) -> bool
         """Please consult the documentation for :func:`BasePruner.prune`."""
 
-        n_trials = storage.get_n_trials(study_id, TrialState.COMPLETE)
+        n_trials = storage.get_n_trials(study_id, structs.TrialState.COMPLETE)
 
         if n_trials == 0:
             return False
@@ -83,6 +81,6 @@ class PercentilePruner(BasePruner):
         if math.isnan(p):
             return False
 
-        if direction == StudyDirection.MAXIMIZE:
+        if direction == structs.StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p
