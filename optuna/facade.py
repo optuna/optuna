@@ -1,15 +1,15 @@
 from functools import wraps
+from six import iteritems
 
-from optuna import types
 from optuna.integration import SkoptSampler  # NOQA
 from optuna.pruners import MedianPruner  # NOQA
 from optuna.pruners import SuccessiveHalvingPruner  # NOQA
 from optuna.samplers import RandomSampler  # NOQA
 from optuna.samplers import TPESampler  # NOQA
-from optuna.study import Study  # NOQA
 from optuna.study import create_study  # NOQA
+from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
-from six import iteritems
+from optuna import types
 
 if types.TYPE_CHECKING:
     from typing import Any  # NOQA
