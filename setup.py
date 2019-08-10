@@ -30,9 +30,12 @@ def get_version():
 
 def get_long_description():
     # type: () -> str
-    readme_filepath = os.path.join(os.path.dirname(__file__), 'README.md')
-    with open(readme_filepath) as f:
-        return f.read()
+    try:
+        readme_filepath = os.path.join(os.path.dirname(__file__), 'README.md')
+        with open(readme_filepath) as f:
+            return f.read()
+    except FileNotFoundError:
+        return ""
 
 
 def get_install_requires():
@@ -100,7 +103,6 @@ setup(
             'storages/rdb/alembic/versions/*.*'
         ]
     },
-    data_files=[('.', ['./README.md'])],
     install_requires=get_install_requires(),
     tests_require=get_extras_require()['testing'],
     extras_require=get_extras_require(),
