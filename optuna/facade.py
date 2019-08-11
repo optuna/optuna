@@ -218,10 +218,9 @@ def optuna_decorator(
                         if 'TPE' in sampler_type
                         else None
                     )
-                    if sampler_obj:
-                        optuna_create_study['sampler'] = sampler_obj
-                    else:
+                    if sampler_obj is None:
                         raise ValueError('Sampler is not valid.')
+                    optuna_create_study['sampler'] = sampler_obj
 
                 pruner = optuna_create_study.get('pruner')
                 if pruner:
@@ -233,10 +232,9 @@ def optuna_decorator(
                         if 'Median' in pruner_type
                         else None
                     )
-                    if pruner_obj:
-                        optuna_create_study['pruner'] = pruner_obj
-                    else:
+                    if pruner_obj is None:
                         raise ValueError('Pruner is not valid.')
+                    optuna_create_study['pruner'] = pruner_obj
 
                 optuna_create_study['study_name'] = optuna_create_study.get('study_name') or (
                     study_name_str if study_name_str != '_ROOT_' else None
