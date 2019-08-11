@@ -76,7 +76,7 @@ def _get_suggested_values(
     return params['_ROOT_'], studies, suggest
 
 
-def optuna_decorator(
+def study_optimize(
     config=0,  # type: Union[int, str, None]
     return_study=True,  # type: bool
     study_name=0,  # type: Union[int, str]
@@ -347,7 +347,7 @@ def create_study_from_dict(
         else params
     )
 
-    @optuna_decorator()
+    @study_optimize()
     def _create_study_from_dict(
         params,  # type: Dict[str, Any]
     ):

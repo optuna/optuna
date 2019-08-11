@@ -2,7 +2,7 @@ import optuna
 import yaml
 
 from optuna.facade import create_study_from_dict
-from optuna.facade import optuna_decorator
+from optuna.facade import study_optimize
 from optuna.trial import Trial  # NOQA
 from optuna import types
 
@@ -33,7 +33,7 @@ def test_sampler():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator()
+    @study_optimize()
     def objective(args):
         # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
@@ -65,7 +65,7 @@ def test_string_config():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator('args')
+    @study_optimize('args')
     def objective(args):
         # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
@@ -97,7 +97,7 @@ def test_return_study_false():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator(return_study=False)
+    @study_optimize(return_study=False)
     def objective(args):
         # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
@@ -134,7 +134,7 @@ def test_specify_study_name():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator(study_name='study_bar')
+    @study_optimize(study_name='study_bar')
     def objective(args):
         # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
@@ -161,7 +161,7 @@ def test_simple():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator()
+    @study_optimize()
     def objective(args):
         # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
@@ -190,7 +190,7 @@ def test_empty_sampler():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator()
+    @study_optimize()
     def objective(args):
         # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
@@ -228,7 +228,7 @@ def test_nested():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator()
+    @study_optimize()
     def objective(args):
         # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
@@ -279,7 +279,7 @@ def test_various_suggests():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator()
+    @study_optimize()
     def objective(args):
         # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
@@ -317,7 +317,7 @@ def test_skopt_sampler():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator()
+    @study_optimize()
     def objective(args):
         # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
@@ -348,7 +348,7 @@ def test_random_sampler():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator()
+    @study_optimize()
     def objective(args):
         # type: (Dict[str, Any]) -> float
         # Optionally, pruning can be set up using args['optuna_trial']
@@ -382,7 +382,7 @@ def test_pruner():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator()
+    @study_optimize()
     def objective(args):
         # type: (Dict[str, Any]) -> float
 
@@ -424,7 +424,7 @@ def test_successive_halving_pruner():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator()
+    @study_optimize()
     def objective(args):
         # type: (Dict[str, Any]) -> float
 
@@ -450,7 +450,7 @@ def test_no_optuna():
 
     params_dict = yaml.safe_load(yaml_string)
 
-    @optuna_decorator()
+    @study_optimize()
     def objective(args):
         # type: (Dict[str, Any]) -> float
         return args['x'] - 2
