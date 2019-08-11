@@ -140,7 +140,7 @@ def study_optimize(
 
             params_dict = yaml.safe_load(yaml_string)
 
-            @optuna_decorator()
+            @study_optimize()
             def objective(args):
                 # Optionally, pruning can be set up using args['optuna_trial']
                 return (args['x'] - 2) ** 2
