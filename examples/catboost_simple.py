@@ -32,26 +32,17 @@ def objective(trial):
     train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.3)
 
     param = {
-        'objective' : trial.suggest_categorical('objective', ['Logloss',
-                                                              'CrossEntropy']),
-        'iterations' : trial.suggest_int('num_leaves', 500, 2000),
-        'colsample_bylevel' : trial.suggest_uniform('colsample_bylevel', 0.01, 0.1),
-        'depth' : trial.suggest_int('depth', 1, 16),
-        'boosting_type' : trial.suggest_categorical('boosting_type', ['Ordered',
-                                                                      'Plain']),
-        'learning_rate' : trial.suggest_loguniform('learning_rate', 1e-6, 1.0)
-        # On GPU machines only
-        # 'max_leaves' : trial.suggest_int('num_leaves', 1, 1000),
-        # 'grow_policy' : trial.suggest_categorical('grow_policy', ['SymmetricTree',
-        #                                                           'Depthwise',
-        #                                                           'Lossguide']),
+        'objective': trial.suggest_categorical('objective', ['Logloss', 'CrossEntropy']),
+        'iterations': trial.suggest_int('num_leaves', 500, 2000),
+        'colsample_bylevel': trial.suggest_uniform('colsample_bylevel', 0.01, 0.1),
+        'depth': trial.suggest_int('depth', 1, 16),
+        'boosting_type': trial.suggest_categorical('boosting_type', ['Ordered', 'Plain']),
+        'learning_rate': trial.suggest_loguniform('learning_rate', 1e-6, 1.0)
     }
 
     gbm = cb.CatBoostClassifier(**param)
 
-    gbm.fit(train_x, train_y,
-            eval_set=[(test_x, test_y)],
-            verbose=0, early_stopping_rounds=100)
+    gbm.fit(train_x, train_y, eval_set=[(test_x, test_y)], verbose=0, early_stopping_rounds=100)
 
     preds = gbm.predict(test_x)
     pred_labels = np.rint(preds)
