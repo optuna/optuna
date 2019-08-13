@@ -30,6 +30,7 @@ def get_version():
 
 def get_long_description():
     # type: () -> str
+
     readme_filepath = os.path.join(os.path.dirname(__file__), 'README.md')
     with open(readme_filepath) as f:
         return f.read()
