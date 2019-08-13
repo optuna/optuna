@@ -2,7 +2,7 @@ import math
 import pytest
 
 import optuna
-from optuna.pruners.percentile import get_best_intermediate_result_over_steps
+from optuna.pruners import percentile
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 from optuna import types
@@ -10,6 +10,8 @@ from optuna import types
 if types.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Tuple  # NOQA
+
+    from optuna.study import Study  # NOQA
 
 
 def test_percentile_pruner_with_one_trial():
@@ -96,7 +98,7 @@ def test_get_best_intermediate_result_over_steps(direction_expected):
     trial_empty = study.storage.get_trial(trial_id_empty)
 
     with pytest.raises(ValueError):
-        get_best_intermediate_result_over_steps(trial_empty, direction)
+        percentile._get_best_intermediate_result_over_steps(trial_empty, direction)
 
     # Input value has no NaNs but float values.
     trial_id_float = study.storage.create_new_trial_id(study.study_id)
@@ -104,7 +106,8 @@ def test_get_best_intermediate_result_over_steps(direction_expected):
     trial_float.report(0.1, step=0)
     trial_float.report(0.2, step=1)
     frozen_trial_float = study.storage.get_trial(trial_id_float)
-    assert expected == get_best_intermediate_result_over_steps(frozen_trial_float, direction)
+    assert expected == percentile._get_best_intermediate_result_over_steps(
+        frozen_trial_float, direction)
 
     # Input value has a float value and a NaN.
     trial_id_float_nan = study.storage.create_new_trial_id(study.study_id)
@@ -112,11 +115,70 @@ def test_get_best_intermediate_result_over_steps(direction_expected):
     trial_float_nan.report(0.3, step=0)
     trial_float_nan.report(float('nan'), step=1)
     frozen_trial_float_nan = study.storage.get_trial(trial_id_float_nan)
-    assert 0.3 == get_best_intermediate_result_over_steps(frozen_trial_float_nan, direction)
+    assert 0.3 == percentile._get_best_intermediate_result_over_steps(
+        frozen_trial_float_nan, direction)
 
     # Input value has a NaN only.
     trial_id_nan = study.storage.create_new_trial_id(study.study_id)
     trial_nan = optuna.trial.Trial(study, trial_id_nan)
     trial_nan.report(float('nan'), step=0)
     frozen_trial_nan = study.storage.get_trial(trial_id_nan)
-    assert math.isnan(get_best_intermediate_result_over_steps(frozen_trial_nan, direction))
+    assert math.isnan(percentile._get_best_intermediate_result_over_steps(
+        frozen_trial_nan, direction))
+
+
+def test_get_percentile_intermediate_result_over_trials():
+    # type: () -> None
+
+    def setup_study(trial_num, _intermediate_values):
+        # type: (int, List[List[float]]) -> Study
+
+        _study = optuna.study.create_study(direction="minimize")
+        trial_ids = [_study.storage.create_new_trial_id(_study.study_id) for _ in range(trial_num)]
+
+        for step, values in enumerate(_intermediate_values):
+            # Study does not have any trials.
+            with pytest.raises(ValueError):
+                _all_trials = _study.storage.get_all_trials(_study.study_id)
+                _direction = _study.storage.get_study_direction(_study.study_id)
+                percentile._get_percentile_intermediate_result_over_trials(
+                    _all_trials, _direction, step, 25)
+
+            for i in range(trial_num):
+                trial_id = trial_ids[i]
+                value = values[i]
+                _study.storage.set_trial_intermediate_value(trial_id, step, value)
+
+        # Set trial states complete because this method ignores incomplete trials.
+        for trial_id in trial_ids:
+            _study.storage.set_trial_state(trial_id, TrialState.COMPLETE)
+
+        return _study
+
+    # Input value has no NaNs but float values (step=0).
+    intermediate_values = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]]
+    study = setup_study(9, intermediate_values)
+    all_trials = study.storage.get_all_trials(study.study_id)
+    direction = study.storage.get_study_direction(study.study_id)
+    assert 0.3 == percentile._get_percentile_intermediate_result_over_trials(
+        all_trials, direction, 0, 25.0)
+
+    # Input value has a float value and NaNs (step=1).
+    intermediate_values.append([
+        0.1, 0.2, 0.3, 0.4, 0.5,
+        float('nan'), float('nan'), float('nan'), float('nan')])
+    study = setup_study(9, intermediate_values)
+    all_trials = study.storage.get_all_trials(study.study_id)
+    direction = study.storage.get_study_direction(study.study_id)
+    assert 0.2 == percentile._get_percentile_intermediate_result_over_trials(
+        all_trials, direction, 1, 25.0)
+
+    # Input value has NaNs only (step=2).
+    intermediate_values.append([
+        float('nan'), float('nan'), float('nan'), float('nan'), float('nan'),
+        float('nan'), float('nan'), float('nan'), float('nan')])
+    study = setup_study(9, intermediate_values)
+    all_trials = study.storage.get_all_trials(study.study_id)
+    direction = study.storage.get_study_direction(study.study_id)
+    assert math.isnan(percentile._get_percentile_intermediate_result_over_trials(
+        all_trials, direction, 2, 75))
