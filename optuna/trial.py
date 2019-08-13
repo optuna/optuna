@@ -120,11 +120,13 @@ class Trial(BaseTrial):
             self,
             study,  # type: Study
             trial_id,  # type: int
+            number,    # type: int
     ):
         # type: (...) -> None
 
         self.study = study
         self._trial_id = trial_id
+        self.number = number
 
         self.study_id = self.study.study_id
         self.storage = self.study.storage
