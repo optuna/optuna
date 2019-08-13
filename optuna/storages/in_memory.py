@@ -200,7 +200,8 @@ class InMemoryStorage(base.BaseStorage):
     def get_trial_param(self, trial_id, param_name):
         # type: (int, str) -> float
 
-        return self.trials[trial_id]._params_in_internal_repr[param_name]
+        distribution = self.trials[trial_id].distributions[param_name]
+        return distribution.to_internal_repr(self.trials[trial_id].params[param_name])
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None

@@ -98,22 +98,6 @@ class FrozenTrial(
 
     internal_fields = ['distributions', 'trial_id']
 
-    @property
-    def _params_in_internal_repr(self):
-        # type: () -> Dict[str, float]
-        """Return Optuna's internal representation of :attr:`params`.
-
-        Returns:
-            A dictionary containing internal representation of :attr:`params`.
-        """
-
-        params_in_internal_repr = {}
-        for name, value in self.params.items():
-            distribution = self.distributions[name]
-            params_in_internal_repr[name] = distribution.to_internal_repr(value)
-
-        return params_in_internal_repr
-
 
 class StudySummary(
         NamedTuple('StudySummary', [('study_id', int), ('study_name', str),

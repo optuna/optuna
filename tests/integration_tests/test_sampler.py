@@ -30,15 +30,19 @@ def test_suggested_value(sampler_class):
     study = optuna.create_study(sampler=sampler, direction='minimize')
     study.optimize(_objective, n_trials=10, catch=())
     for trial in study.trials:
-        for param_name, param_value in trial._params_in_internal_repr.items():
-            assert trial.distributions[param_name]._contains(param_value)
+        for param_name, param_value in trial.params.items():
+            distribution = trial.distributions[param_name]
+            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            assert distribution._contains(param_value_in_internal_repr)
 
     # direction='maximize'
     study = optuna.create_study(sampler=sampler, direction='maximize')
     study.optimize(_objective, n_trials=10, catch=())
     for trial in study.trials:
-        for param_name, param_value in trial._params_in_internal_repr.items():
-            assert trial.distributions[param_name]._contains(param_value)
+        for param_name, param_value in trial.params.items():
+            distribution = trial.distributions[param_name]
+            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            assert distribution._contains(param_value_in_internal_repr)
 
 
 @parametrize_sampler
