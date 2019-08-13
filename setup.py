@@ -30,12 +30,9 @@ def get_version():
 
 def get_long_description():
     # type: () -> str
-    try:
-        readme_filepath = os.path.join(os.path.dirname(__file__), 'README.md')
-        with open(readme_filepath) as f:
-            return f.read()
-    except IOError:
-        return ""
+    readme_filepath = os.path.join(os.path.dirname(__file__), 'README.md')
+    with open(readme_filepath) as f:
+        return f.read()
 
 
 def get_install_requires():
