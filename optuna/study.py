@@ -28,8 +28,6 @@ if types.TYPE_CHECKING:
     from typing import Type  # NOQA
     from typing import Union  # NOQA
 
-    from optuna.distributions import BaseDistribution  # NOQA
-
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
