@@ -30,10 +30,10 @@ class BaseSampler(object):
 
     More specifically, parameters are sampled by the following procedure.
     At the beginning of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`
-    is called for determining the relative search space for the trial. Then,
-    :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked for sampling parameters
+    is called to determine the relative search space for the trial. Then,
+    :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked to sample parameters
     from the relative search space. During the execution of the objective function,
-    :meth:`~optuna.samplers.BaseSampler.sample_independent` is used for sampling
+    :meth:`~optuna.samplers.BaseSampler.sample_independent` is used to sample
     parameters that don't belong to the relative search space.
 
     The following figure depicts the lifetime of a trial and how the above three methods are
