@@ -19,7 +19,6 @@ We have following two ways to execute this example:
 """
 
 import catboost as cb
-print(cb.__version__)
 import numpy as np
 import sklearn.datasets
 import sklearn.metrics
@@ -37,15 +36,16 @@ def objective(trial):
         'colsample_bylevel': trial.suggest_uniform('colsample_bylevel', 0.01, 0.1),
         'depth': trial.suggest_int('depth', 1, 16),
         'boosting_type': trial.suggest_categorical('boosting_type', ['Ordered', 'Plain']),
-        'bootstrap_type': trial.suggest_categorical('bootstrap_type', ['Bayesian', 'Bernoulli', 'MVS'])
+        'bootstrap_type': trial.suggest_categorical('bootstrap_type',
+                                                    ['Bayesian', 'Bernoulli', 'MVS'])
     }
 
     if param['bootstrap_type'] == 'Bayesian':
         param['bagging_temperature'] = trial.suggest_uniform('bagging_temperature', 0, 10)
     elif param['bootstrap_type'] == 'Bernoulli':
-       param['subsample'] = trial.suggest_uniform('subsample', 0, 1)
+        param['subsample'] = trial.suggest_uniform('subsample', 0, 1)
     elif param['bootstrap_type'] == 'MVS':
-       param['mvs_head_fraction'] = trial.suggest_uniform('mvs_head_fraction', 0, 1)
+        param['mvs_head_fraction'] = trial.suggest_uniform('mvs_head_fraction', 0, 1)
 
     gbm = cb.CatBoostClassifier(**param)
 
