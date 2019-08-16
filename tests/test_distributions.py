@@ -157,16 +157,31 @@ def test_single():
         assert distribution.single()
 
     nonsingle_distributions = [
-        distributions.UniformDistribution(low=0.0, high=-100.0),
         distributions.UniformDistribution(low=1.0, high=1.001),
-        distributions.LogUniformDistribution(low=7.3, high=7.2),
         distributions.LogUniformDistribution(low=7.3, high=10),
-        distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3),
         distributions.DiscreteUniformDistribution(low=-30, high=-20, q=2),
-        distributions.IntUniformDistribution(low=123, high=100),
         distributions.IntUniformDistribution(low=-123, high=0),
-        distributions.CategoricalDistribution(choices=()),
         distributions.CategoricalDistribution(choices=('foo', 'bar'))
     ]  # type: List[distributions.BaseDistribution]
     for distribution in nonsingle_distributions:
         assert not distribution.single()
+
+
+def test_empty_distribution():
+    # type: () -> None
+
+    # Empty distributions cannot be instantiated.
+    with pytest.raises(ValueError):
+        distributions.UniformDistribution(low=0.0, high=-100.0)
+
+    with pytest.raises(ValueError):
+        distributions.LogUniformDistribution(low=7.3, high=7.2),
+
+    with pytest.raises(ValueError):
+        distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3),
+
+    with pytest.raises(ValueError):
+        distributions.IntUniformDistribution(low=123, high=100),
+
+    with pytest.raises(ValueError):
+        distributions.CategoricalDistribution(choices=()),
