@@ -180,6 +180,14 @@ class TrialModel(BaseModel):
         return trials
 
     @classmethod
+    def where_study_id(cls, study_id, session):
+        # type: (int, orm.Session) -> List[TrialModel]
+
+        trials = session.query(cls).filter(cls.study_id == study_id).all()
+
+        return trials
+
+    @classmethod
     def count(cls, session, study=None, state=None):
         # type: (orm.Session, Optional[StudyModel], Optional[TrialState]) -> int
 
