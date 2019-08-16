@@ -105,10 +105,8 @@ class UniformDistribution(
         # type: (float, float) -> UniformDistribution
 
         if low > high:
-            raise ValueError(
-                "Empty `UniformDistribution` isn't allowed (low={}, high={}). "
-                "The `low` value must be smaller than or equal to the `high` value.".format(
-                    low, high))
+            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
+                             "(low={}, high={}).".format(low, high))
 
         return super(UniformDistribution, cls).__new__(cls, low, high)
 
@@ -146,10 +144,8 @@ class LogUniformDistribution(
         # type: (float, float) -> LogUniformDistribution
 
         if low > high:
-            raise ValueError(
-                "Empty `LogUniformDistribution` isn't allowed (low={}, high={}). "
-                "The `low` value must be smaller than or equal to the `high` value.".format(
-                    low, high))
+            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
+                             "(low={}, high={}).".format(low, high))
 
         return super(LogUniformDistribution, cls).__new__(cls, low, high)
 
@@ -189,10 +185,8 @@ class DiscreteUniformDistribution(
         # type: (float, float, float) -> DiscreteUniformDistribution
 
         if low > high:
-            raise ValueError(
-                "Empty `DiscreteUniformDistribution` isn't allowed (low={}, high={}, q={}). "
-                "The `low` value must be smaller than or equal to the `high` value.".format(
-                    low, high, q))
+            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
+                             "(low={}, high={}, q={}).".format(low, high, q))
 
         return super(DiscreteUniformDistribution, cls).__new__(cls, low, high, q)
 
@@ -227,10 +221,8 @@ class IntUniformDistribution(
         # type: (int, int) -> IntUniformDistribution
 
         if low > high:
-            raise ValueError(
-                "Empty `IntUniformDistribution` isn't allowed (low={}, high={}). "
-                "The `low` value must be smaller than or equal to the `high` value.".format(
-                    low, high))
+            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
+                             "(low={}, high={}).".format(low, high))
 
         return super(IntUniformDistribution, cls).__new__(cls, low, high)
 
@@ -273,9 +265,7 @@ class CategoricalDistribution(
         # type: (Tuple[Union[float, str], ...]) -> CategoricalDistribution
 
         if len(choices) == 0:
-            raise ValueError(
-                "Empty `CategoricalDistribution` isn't allowed. "
-                "The `choices` must contains one or more elements.")
+            raise ValueError("The `choices` must contains one or more elements.")
 
         return super(CategoricalDistribution, cls).__new__(cls, choices)
 
