@@ -11,6 +11,7 @@ from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
+from sqlalchemy.orm import backref
 
 from optuna import distributions
 from optuna.structs import StudyDirection
@@ -92,7 +93,9 @@ class StudyUserAttributeModel(BaseModel):
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
-    study = orm.relationship(StudyModel)
+    study = orm.relationship(
+        StudyModel,
+        backref=backref("user_attributes", cascade="all, delete"))
 
     @classmethod
     def find_by_study_and_key(cls, study, key, session):
@@ -118,7 +121,9 @@ class StudySystemAttributeModel(BaseModel):
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
-    study = orm.relationship(StudyModel)
+    study = orm.relationship(
+        StudyModel,
+        backref=backref("system_attributes", cascade="all, delete"))
 
     @classmethod
     def find_by_study_and_key(cls, study, key, session):
@@ -145,7 +150,9 @@ class TrialModel(BaseModel):
     datetime_start = Column(DateTime, default=datetime.now)
     datetime_complete = Column(DateTime)
 
-    study = orm.relationship(StudyModel)
+    study = orm.relationship(
+        StudyModel,
+        backref=backref("trials", cascade="all, delete"))
 
     @classmethod
     def find_by_id(cls, trial_id, session):
@@ -216,7 +223,9 @@ class TrialUserAttributeModel(BaseModel):
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
-    trial = orm.relationship(TrialModel)
+    trial = orm.relationship(
+        TrialModel,
+        backref=backref("user_attributes", cascade="all, delete"))
 
     @classmethod
     def find_by_trial_and_key(cls, trial, key, session):
@@ -263,7 +272,9 @@ class TrialSystemAttributeModel(BaseModel):
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
-    trial = orm.relationship(TrialModel)
+    trial = orm.relationship(
+        TrialModel,
+        backref=backref("system_attributes", cascade="all, delete"))
 
     @classmethod
     def find_by_trial_and_key(cls, trial, key, session):
@@ -311,7 +322,9 @@ class TrialParamModel(BaseModel):
     param_value = Column(Float)
     distribution_json = Column(String(MAX_STRING_LENGTH))
 
-    trial = orm.relationship(TrialModel)
+    trial = orm.relationship(
+        TrialModel,
+        backref=backref("params", cascade="all, delete"))
 
     def check_and_add(self, session):
         # type: (orm.Session) -> None
@@ -385,7 +398,9 @@ class TrialValueModel(BaseModel):
     step = Column(Integer)
     value = Column(Float)
 
-    trial = orm.relationship(TrialModel)
+    trial = orm.relationship(
+        TrialModel,
+        backref=backref("values", cascade="all, delete"))
 
     @classmethod
     def find_by_trial_and_step(cls, trial, step, session):
