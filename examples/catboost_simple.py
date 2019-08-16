@@ -33,12 +33,15 @@ def objective(trial):
 
     param = {
         'objective': trial.suggest_categorical('objective', ['Logloss', 'CrossEntropy']),
-        'iterations': trial.suggest_int('num_leaves', 500, 2000),
         'colsample_bylevel': trial.suggest_uniform('colsample_bylevel', 0.01, 0.1),
         'depth': trial.suggest_int('depth', 1, 16),
-        'boosting_type': trial.suggest_categorical('boosting_type', ['Ordered', 'Plain']),
-        'learning_rate': trial.suggest_loguniform('learning_rate', 1e-6, 1.0)
+        'boosting_type': trial.suggest_categorical('boosting_type', ['Ordered', 'Plain'])
     }
+
+    if param['boosting_type'] == 'Ordered':
+        param['learning_rate'] = trial.suggest_loguniform('learning_rate', 1e-4, 0.1)
+    if param['boosting_type'] == 'Plain':
+        param['learning_rate'] = trial.suggest_loguniform('learning_rate', 1e-6, 1e-2)
 
     gbm = cb.CatBoostClassifier(**param)
 
@@ -52,7 +55,7 @@ def objective(trial):
 
 if __name__ == '__main__':
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=100, timeout=600)
 
     print('Number of finished trials: {}'.format(len(study.trials)))
 
