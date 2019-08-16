@@ -131,9 +131,6 @@ class FrozenTrial(
                     "The value {} of parameter '{}' isn't contained in the distribution {}.".
                     format(param_value, param_name, distribution))
 
-        # NOTE: we doesn't validate `params_in_internal_repr` field
-        # because it will removed by #462.
-
 
 class StudySummary(
         NamedTuple('StudySummary', [('study_id', int), ('study_name', str),
