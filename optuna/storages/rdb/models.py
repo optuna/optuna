@@ -11,7 +11,6 @@ from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
-from sqlalchemy.orm import backref
 
 from optuna import distributions
 from optuna.structs import StudyDirection
@@ -95,7 +94,7 @@ class StudyUserAttributeModel(BaseModel):
 
     study = orm.relationship(
         StudyModel,
-        backref=backref("user_attributes", cascade="all, delete"))
+        backref=orm.backref("user_attributes", cascade="all, delete"))
 
     @classmethod
     def find_by_study_and_key(cls, study, key, session):
@@ -123,7 +122,7 @@ class StudySystemAttributeModel(BaseModel):
 
     study = orm.relationship(
         StudyModel,
-        backref=backref("system_attributes", cascade="all, delete"))
+        backref=orm.backref("system_attributes", cascade="all, delete"))
 
     @classmethod
     def find_by_study_and_key(cls, study, key, session):
@@ -152,7 +151,7 @@ class TrialModel(BaseModel):
 
     study = orm.relationship(
         StudyModel,
-        backref=backref("trials", cascade="all, delete"))
+        backref=orm.backref("trials", cascade="all, delete"))
 
     @classmethod
     def find_by_id(cls, trial_id, session):
@@ -225,7 +224,7 @@ class TrialUserAttributeModel(BaseModel):
 
     trial = orm.relationship(
         TrialModel,
-        backref=backref("user_attributes", cascade="all, delete"))
+        backref=orm.backref("user_attributes", cascade="all, delete"))
 
     @classmethod
     def find_by_trial_and_key(cls, trial, key, session):
@@ -274,7 +273,7 @@ class TrialSystemAttributeModel(BaseModel):
 
     trial = orm.relationship(
         TrialModel,
-        backref=backref("system_attributes", cascade="all, delete"))
+        backref=orm.backref("system_attributes", cascade="all, delete"))
 
     @classmethod
     def find_by_trial_and_key(cls, trial, key, session):
@@ -324,7 +323,7 @@ class TrialParamModel(BaseModel):
 
     trial = orm.relationship(
         TrialModel,
-        backref=backref("params", cascade="all, delete"))
+        backref=orm.backref("params", cascade="all, delete"))
 
     def check_and_add(self, session):
         # type: (orm.Session) -> None
@@ -400,7 +399,7 @@ class TrialValueModel(BaseModel):
 
     trial = orm.relationship(
         TrialModel,
-        backref=backref("values", cascade="all, delete"))
+        backref=orm.backref("values", cascade="all, delete"))
 
     @classmethod
     def find_by_trial_and_step(cls, trial, step, session):

@@ -148,7 +148,7 @@ def test_create_new_study_id_with_name(storage_mode, cache_mode):
 
 
 @parametrize_storage
-def test_create_new_study_id(storage_init_func):
+def test_delete_study(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
