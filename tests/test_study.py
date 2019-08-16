@@ -433,8 +433,8 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
         # non-nested: 5, params: 2, user_attrs: 1, system_attrs: 1 and 9 in total.
         if include_internal_fields:
-            # distributions:2, params_in_internal_repr: 2, trial_id: 1
-            assert len(df.columns) == 9 + 5
+            # distributions:2, trial_id: 1
+            assert len(df.columns) == 7 + 5
         else:
             assert len(df.columns) == 9
 
@@ -452,8 +452,6 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
                 assert ('distributions', 'x') in df.columns
                 assert ('distributions', 'y') in df.columns
                 assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
-                assert ('params_in_internal_repr', 'x') in df.columns
-                assert ('params_in_internal_repr', 'y') in df.columns
                 assert ('distributions', 'x') in df.columns
                 assert ('distributions', 'y') in df.columns
 

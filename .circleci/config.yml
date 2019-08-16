@@ -103,6 +103,7 @@ jobs:
             sudo apt-get -y install openmpi-bin libopenmpi-dev
             python -m venv venv || virtualenv venv
             . venv/bin/activate
+            pip install -U setuptools
             python setup.py sdist
             pip install $(ls dist/*.tar.gz)[testing]
 
