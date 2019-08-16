@@ -134,7 +134,8 @@ def test_get_percentile_intermediate_result_over_trials():
         # type: (int, List[List[float]]) -> Study
 
         _study = optuna.study.create_study(direction="minimize")
-        trial_ids = [_study._storage.create_new_trial_id(_study.study_id) for _ in range(trial_num)]
+        trial_ids = [_study._storage.create_new_trial_id(
+            _study.study_id) for _ in range(trial_num)]
 
         for step, values in enumerate(_intermediate_values):
             # Study does not have any trials.
