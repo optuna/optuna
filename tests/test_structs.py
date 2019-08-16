@@ -11,7 +11,6 @@ if optuna.types.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
-    from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
