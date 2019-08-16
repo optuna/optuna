@@ -56,10 +56,6 @@ EXAMPLE_TRIALS = [
             0: 2.,
             1: 3.
         },
-        params_in_internal_repr={
-            'x': .5,
-            'y': 2.
-        },
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy
         trial_id=-1,  # dummy id
@@ -82,10 +78,6 @@ EXAMPLE_TRIALS = [
             0: -2.,
             1: -3.,
             2: 100.
-        },
-        params_in_internal_repr={
-            'x': .01,
-            'y': 0.
         },
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy

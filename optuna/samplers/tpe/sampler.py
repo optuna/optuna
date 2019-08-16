@@ -512,7 +512,7 @@ def _get_observation_pairs(study, param_name):
     values = []
     scores = []
     for trial in study.trials:
-        if param_name not in trial.params_in_internal_repr:
+        if param_name not in trial.params:
             continue
 
         if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
@@ -526,7 +526,8 @@ def _get_observation_pairs(study, param_name):
         else:
             continue
 
-        param_value = trial.params_in_internal_repr[param_name]
+        distribution = trial.distributions[param_name]
+        param_value = distribution.to_internal_repr(trial.params[param_name])
         values.append(param_value)
         scores.append(score)
 
