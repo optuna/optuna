@@ -54,9 +54,8 @@ def default_weights(x):
 class TPESampler(base.BaseSampler):
     """Sampler using TPE (Tree-structured Parzen Estimator) algorithm.
 
-    This sampler can be used for *independent sampling*, so it's called an 'independent sampler'.
-    Please see the documentation of :class:`~optuna.samplers.BaseSampler`
-    for the term 'independent sampling'.
+    This sampler is based on *independent sampling*.
+    See also :class:`~optuna.samplers.BaseSampler` for more details of 'independent sampling'.
 
     For information about TPE algorithm, please refer to the following papers:
 
