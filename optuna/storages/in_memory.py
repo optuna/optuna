@@ -54,6 +54,20 @@ class InMemoryStorage(base.BaseStorage):
 
         return IN_MEMORY_STORAGE_STUDY_ID  # TODO(akiba)
 
+    def delete_study(self, study_id):
+        # type: (int) -> None
+
+        self._check_study_id(study_id)
+
+        with self._lock:
+            self.trials = []
+            self.param_distribution = {}
+            self.direction = structs.StudyDirection.NOT_SET
+            self.study_user_attrs = {}
+            self.study_system_attrs = {}
+            self.study_name = DEFAULT_STUDY_NAME_PREFIX + IN_MEMORY_STORAGE_STUDY_UUID
+        return
+
     def set_study_direction(self, study_id, direction):
         # type: (int, structs.StudyDirection) -> None
 
