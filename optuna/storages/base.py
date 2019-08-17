@@ -34,12 +34,6 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def delete_study(self, study_id):
-        # type: (int) -> None
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 

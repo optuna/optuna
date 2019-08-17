@@ -63,7 +63,7 @@ class TestStudySystemAttributeModel(object):
         study = StudyModel(study_id=study_id, study_name='test-study',
                            direction=StudyDirection.MINIMIZE)
         study.system_attributes.append(StudySystemAttributeModel(
-                study_id=study_id, key='sample-key1', value_json='1'))
+            study_id=study_id, key='sample-key1', value_json='1'))
         study.system_attributes.append(StudySystemAttributeModel(
             study_id=study_id, key='sample-key2', value_json='2'))
         session.add(study)
