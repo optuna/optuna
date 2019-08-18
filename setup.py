@@ -54,7 +54,7 @@ def get_extras_require():
     extras_require = {
         'checking': ['autopep8', 'hacking'],
         'testing': [
-            'pytest', 'mock', 'bokeh', 'plotly', 'chainer>=5.0.0', 'xgboost', 'mpi4py', 'lightgbm',
+            'pytest', 'mock', 'bokeh', 'plotly', 'chainer>=5.0.0', 'dask-ml', 'xgboost', 'mpi4py', 'lightgbm',
             'keras', 'mxnet', 'scikit-optimize', 'tensorflow', 'cma'
         ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
