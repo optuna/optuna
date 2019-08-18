@@ -48,10 +48,21 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    # This is used to initialize the workers that will be used by Dask-ML
-    cluster = LocalCluster(n_workers=4, threads_per_worker=2, local_directory='/tmp')
-    client = Client(cluster)
     import optuna
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=100)
-    print(study.best_trial)
+
+    # This is used to initialize the workers that will be used by Dask-ML
+    cluster = LocalCluster(n_workers=4, threads_per_worker=2, local_directory='/tmp')
+    with Client(cluster) as client:
+        study.optimize(objective, n_trials=100)
+
+        print('Number of finished trials: ', len(study.trials))
+
+        print('Best trial:')
+        trial = study.best_trial
+
+        print('  Value: ', trial.value)
+
+        print('  Params: ')
+        for key, value in trial.params.items():
+            print('    {}: {}'.format(key, value))
