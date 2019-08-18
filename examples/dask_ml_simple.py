@@ -20,10 +20,11 @@ We have the following two ways to execute this example:
 """
 
 import dask.array as da
-from distributed import Client, LocalCluster
-from sklearn.datasets import load_iris
-from dask_ml.model_selection import train_test_split
 from dask_ml.linear_model import LogisticRegression
+from dask_ml.model_selection import train_test_split
+from distributed import Client
+from distributed import LocalCluster
+from sklearn.datasets import load_iris
 
 
 # FYI: Objective functions can take additional arguments
