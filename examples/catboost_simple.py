@@ -20,15 +20,15 @@ We have following two ways to execute this example:
 
 import catboost as cb
 import numpy as np
-import sklearn.datasets
-import sklearn.metrics
+from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 import optuna
 
 
 def objective(trial):
-    data, target = sklearn.datasets.load_breast_cancer(return_X_y=True)
+    data, target = load_breast_cancer(return_X_y=True)
     train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.3)
 
     param = {
@@ -51,7 +51,7 @@ def objective(trial):
 
     preds = gbm.predict(test_x)
     pred_labels = np.rint(preds)
-    accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
+    accuracy = accuracy_score(test_y, pred_labels)
     return accuracy
 
 
