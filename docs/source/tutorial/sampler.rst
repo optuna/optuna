@@ -30,7 +30,7 @@ The base class has three abstract methods;
 
 As the method names imply, Optuna supports two types of samplings; one is **relative sampling** that can consider the correlation of the parameters in a trial, and another is **independent sampling** that samples each parameter independently.
 
-At the beginning of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called for determining the relative search space for the trial. Then, :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked for sampling relative parameters from the search space. During the execution of the objective function, :meth:`~optuna.samplers.BaseSampler.sample_independent` is used for sampling parameters that don't belong to the relative search space.
+At the beginning of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called to determine the relative search space for the trial. Then, :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked to sample relative parameters from the search space. During the execution of the objective function, :meth:`~optuna.samplers.BaseSampler.sample_independent` is used to sample parameters that don't belong to the relative search space.
 
 .. note::
     Please refer to the documentation of :class:`~optuna.samplers.BaseSampler` for further details.
@@ -128,7 +128,7 @@ In this optimization, the values of ``x`` and ``y`` parameters are sampled by us
 
 .. note::
     Strictly speaking, in the first trial,
-    ``SimulatedAnnealingSampler.sample_independent`` method is used for sampling parameter values.
+    ``SimulatedAnnealingSampler.sample_independent`` method is used to sample parameter values.
     Because :func:`~optuna.samplers.intersection_search_space` used in
     ``SimulatedAnnealingSampler.infer_relative_search_space`` cannot infer the search space
     if there are no complete trials.
