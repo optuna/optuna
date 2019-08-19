@@ -52,7 +52,7 @@ if __name__ == '__main__':
     study = optuna.create_study(direction='maximize')
 
     # This is used to initialize the workers that will be used by Dask-ML
-    cluster = LocalCluster(n_workers=4, threads_per_worker=2, local_directory='/tmp')
+    cluster = LocalCluster(n_workers=4, threads_per_worker=2)
     with Client(cluster) as client:
         study.optimize(objective, n_trials=100)
 
