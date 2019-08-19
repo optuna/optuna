@@ -27,7 +27,6 @@ def test_frozen_trial_validate():
                               datetime_start=datetime.now(),
                               datetime_complete=datetime.now(),
                               params={'x': 10},
-                              params_in_internal_repr={},
                               distributions={'x': UniformDistribution(5, 12)},
                               user_attrs={},
                               system_attrs={},

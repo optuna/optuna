@@ -1,5 +1,4 @@
 from datetime import datetime
-import math
 from mock import patch
 import pytest
 
@@ -22,9 +21,7 @@ if types.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
-    from typing import List  # NOQA
     from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
 
 # TODO(Yanase): Remove _number from system_attrs after adding TrialModel.number.
 EXAMPLE_ATTRS = {
@@ -59,10 +56,6 @@ EXAMPLE_TRIALS = [
             0: 2.,
             1: 3.
         },
-        params_in_internal_repr={
-            'x': .5,
-            'y': 2.
-        },
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy
         trial_id=-1,  # dummy id
@@ -85,10 +78,6 @@ EXAMPLE_TRIALS = [
             0: -2.,
             1: -3.,
             2: 100.
-        },
-        params_in_internal_repr={
-            'x': .01,
-            'y': 0.
         },
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy
@@ -298,7 +287,6 @@ def test_create_new_trial_id_with_base_trial(storage_init_func):
 
         number=-1,  # dummy value (unused)
         trial_id=-1,  # dummy, value (unused)
-        params_in_internal_repr={}  # dummy value (unused)
     )
 
     study_id = storage.create_new_study_id()
@@ -668,88 +656,6 @@ def test_get_n_trials(storage_init_func):
 
     assert 2 == storage.get_n_trials(study_id)
     assert 1 == storage.get_n_trials(study_id, TrialState.COMPLETE)
-
-
-@parametrize_storage
-@pytest.mark.parametrize('direction_expected', [(StudyDirection.MINIMIZE, 0.1),
-                                                (StudyDirection.MAXIMIZE, 0.2)])
-def test_get_best_intermediate_result_over_steps(storage_init_func, direction_expected):
-    # type: (Callable[[], BaseStorage], Tuple[StudyDirection, float]) -> None
-
-    direction, expected = direction_expected
-
-    storage = storage_init_func()
-    study_id = storage.create_new_study_id()
-    storage.set_study_direction(study_id, direction)
-
-    # FrozenTrial.intermediate_values has no elements.
-    trial_id_empty = storage.create_new_trial_id(study_id)
-    with pytest.raises(ValueError):
-        storage.get_best_intermediate_result_over_steps(trial_id_empty)
-
-    # Input value has no NaNs but float values.
-    trial_id_float = storage.create_new_trial_id(study_id)
-    storage.set_trial_intermediate_value(trial_id_float, 0, 0.1)
-    storage.set_trial_intermediate_value(trial_id_float, 1, 0.2)
-    assert expected == storage.get_best_intermediate_result_over_steps(trial_id_float)
-
-    # Input value has a float value and a NaN.
-    trial_id_float_nan = storage.create_new_trial_id(study_id)
-    storage.set_trial_intermediate_value(trial_id_float_nan, 0, 0.3)
-    storage.set_trial_intermediate_value(trial_id_float_nan, 1, float('nan'))
-    assert 0.3 == storage.get_best_intermediate_result_over_steps(trial_id_float_nan)
-
-    # Input value has a NaN only.
-    trial_id_nan = storage.create_new_trial_id(study_id)
-    storage.set_trial_intermediate_value(trial_id_nan, 0, float('nan'))
-    assert math.isnan(storage.get_best_intermediate_result_over_steps(trial_id_nan))
-
-
-@parametrize_storage
-def test_get_percentile_intermediate_result_over_trials(storage_init_func):
-    # type: (Callable[[], BaseStorage]) -> None
-
-    def setup_study(trial_num, intermediate_values):
-        # type: (int, List[List[float]]) -> Tuple[int, BaseStorage]
-
-        storage = storage_init_func()
-        study_id = storage.create_new_study_id()
-        trial_ids = [storage.create_new_trial_id(study_id) for _ in range(trial_num)]
-
-        for step, values in enumerate(intermediate_values):
-            # Study does not have any trials.
-            with pytest.raises(ValueError):
-                storage.get_percentile_intermediate_result_over_trials(study_id, step, 25)
-
-            for i in range(trial_num):
-                trial_id = trial_ids[i]
-                value = values[i]
-                storage.set_trial_intermediate_value(trial_id, step, value)
-
-        # Set trial states complete because this method ignores incomplete trials.
-        for trial_id in trial_ids:
-            storage.set_trial_state(trial_id, TrialState.COMPLETE)
-
-        return study_id, storage
-
-    # Input value has no NaNs but float values (step=0).
-    intermediate_values = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]]
-    study_id, storage = setup_study(9, intermediate_values)
-    assert 0.3 == storage.get_percentile_intermediate_result_over_trials(study_id, 0, 25.0)
-
-    # Input value has a float value and NaNs (step=1).
-    intermediate_values.append([
-        0.1, 0.2, 0.3, 0.4, 0.5,
-        float('nan'), float('nan'), float('nan'), float('nan')])
-    study_id, storage = setup_study(9, intermediate_values)
-    assert 0.2 == storage.get_percentile_intermediate_result_over_trials(study_id, 1, 25.0)
-
-    # Input value has NaNs only (step=2).
-    intermediate_values.append([
-        float('nan'), float('nan'), float('nan'), float('nan'), float('nan'),
-        float('nan'), float('nan'), float('nan'), float('nan')])
-    study_id, storage = setup_study(9, intermediate_values)
-    assert math.isnan(storage.get_percentile_intermediate_result_over_trials(study_id, 2, 75))
 
 
 def _create_new_trial_with_example_trial(storage, study_id, distributions, example_trial):

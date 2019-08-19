@@ -165,7 +165,6 @@ class InMemoryStorage(base.BaseStorage):
             system_attrs={},
             value=None,
             intermediate_values={},
-            params_in_internal_repr={},
             datetime_start=datetime.now(),
             datetime_complete=None)
 
@@ -199,7 +198,6 @@ class InMemoryStorage(base.BaseStorage):
             self.param_distribution[param_name] = distribution
 
             # Set param.
-            self.trials[trial_id].params_in_internal_repr[param_name] = param_value_internal
             self.trials[trial_id].params[param_name] = distribution.to_external_repr(
                 param_value_internal)
             self.trials[trial_id].distributions[param_name] = distribution
@@ -214,7 +212,8 @@ class InMemoryStorage(base.BaseStorage):
     def get_trial_param(self, trial_id, param_name):
         # type: (int, str) -> float
 
-        return self.trials[trial_id].params_in_internal_repr[param_name]
+        distribution = self.trials[trial_id].distributions[param_name]
+        return distribution.to_internal_repr(self.trials[trial_id].params[param_name])
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None

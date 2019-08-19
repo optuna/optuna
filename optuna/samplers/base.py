@@ -27,6 +27,22 @@ class BaseSampler(object):
     *The independent sampling* determines a value of a single parameter without considering any
     relationship between parameters. Target parameters of the independent sampling are the
     parameters not described in the relative search space.
+
+    More specifically, parameters are sampled by the following procedure.
+    At the beginning of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`
+    is called to determine the relative search space for the trial. Then,
+    :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked to sample parameters
+    from the relative search space. During the execution of the objective function,
+    :meth:`~optuna.samplers.BaseSampler.sample_independent` is used to sample
+    parameters that don't belong to the relative search space.
+
+    The following figure depicts the lifetime of a trial and how the above three methods are
+    called in the trial.
+
+    .. image:: ../../image/sampling-sequence.png
+
+    |
+
     """
 
     @abc.abstractmethod
@@ -49,8 +65,8 @@ class BaseSampler(object):
             A dictionary containing the parameter names and parameter's distributions.
 
         .. seealso::
-            Please refer to :func:`~optuna.samplers.product_search_space` as an implementation of
-            :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
+            Please refer to :func:`~optuna.samplers.intersection_search_space` as an
+            implementation of :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
         """
 
         raise NotImplementedError

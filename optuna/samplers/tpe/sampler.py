@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import scipy.special
 
@@ -91,17 +92,15 @@ class TPESampler(base.BaseSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
 
-        observation_pairs = _get_observation_pairs(study, param_name)
+        values, scores = _get_observation_pairs(study, param_name)
 
-        n = len(observation_pairs)
+        n = len(values)
 
         if n < self.n_startup_trials:
             return self.random_sampler.sample_independent(
                 study, trial, param_name, param_distribution)
 
-        below_param_values, above_param_values = self._split_observation_pairs(
-            list(range(n)), [p[0] for p in observation_pairs], list(range(n)),
-            [p[1] for p in observation_pairs])
+        below_param_values, above_param_values = self._split_observation_pairs(values, scores)
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._sample_uniform(param_distribution, below_param_values, above_param_values)
@@ -132,28 +131,18 @@ class TPESampler(base.BaseSampler):
 
     def _split_observation_pairs(
             self,
-            config_idxs,  # type: List[int]
             config_vals,  # type: List[float]
-            loss_idxs,  # type: List[int]
             loss_vals  # type: List[Tuple[float, float]]
     ):
         # type: (...) -> Tuple[np.ndarray, np.ndarray]
 
-        config_idxs, config_vals, loss_idxs = map(
-            np.asarray, [config_idxs, config_vals, loss_idxs])
+        config_vals = np.asarray(config_vals)
         loss_vals = np.asarray(loss_vals, dtype=[('step', float), ('score', float)])
 
         n_below = self.gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
-
-        keep_idxs = set(loss_idxs[loss_ascending[:n_below]])
-        below = [v for i, v in zip(config_idxs, config_vals) if i in keep_idxs]
-
-        keep_idxs = set(loss_idxs[loss_ascending[n_below:]])
-        above = [v for i, v in zip(config_idxs, config_vals) if i in keep_idxs]
-
-        below = np.asarray(below, dtype=float)
-        above = np.asarray(above, dtype=float)
+        below = config_vals[np.sort(loss_ascending[:n_below])]
+        above = config_vals[np.sort(loss_ascending[n_below:])]
         return below, above
 
     def _sample_uniform(self, distribution, below, above):
@@ -498,7 +487,7 @@ class TPESampler(base.BaseSampler):
 
 
 def _get_observation_pairs(study, param_name):
-    # type: (InTrialStudy, str) -> List[Tuple[float, Tuple[float, float]]]
+    # type: (InTrialStudy, str) -> Tuple[List[float], List[Tuple[float, float]]]
     """Get observation pairs from the study.
 
        This function collects observation pairs from the complete or pruned trials of the study.
@@ -521,9 +510,10 @@ def _get_observation_pairs(study, param_name):
     if study.direction == StudyDirection.MAXIMIZE:
         sign = -1
 
-    pairs = []
+    values = []
+    scores = []
     for trial in study.trials:
-        if param_name not in trial.params_in_internal_repr:
+        if param_name not in trial.params:
             continue
 
         if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
@@ -531,13 +521,18 @@ def _get_observation_pairs(study, param_name):
         elif trial.state is structs.TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
-                score = (-step, sign * intermediate_value)
+                if math.isnan(intermediate_value):
+                    score = (-step, float('inf'))
+                else:
+                    score = (-step, sign * intermediate_value)
             else:
                 score = (float('inf'), 0.0)
         else:
             continue
 
-        param_value = trial.params_in_internal_repr[param_name]
-        pairs.append((param_value, score))
+        distribution = trial.distributions[param_name]
+        param_value = distribution.to_internal_repr(trial.params[param_name])
+        values.append(param_value)
+        scores.append(score)
 
-    return pairs
+    return values, scores
