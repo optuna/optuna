@@ -44,8 +44,6 @@ def objective(trial):
         param['bagging_temperature'] = trial.suggest_uniform('bagging_temperature', 0, 10)
     elif param['bootstrap_type'] == 'Bernoulli':
         param['subsample'] = trial.suggest_uniform('subsample', 0, 1)
-    elif param['bootstrap_type'] == 'MVS':
-        param['mvs_head_fraction'] = trial.suggest_uniform('mvs_head_fraction', 0, 1)
 
     gbm = cb.CatBoostClassifier(**param)
 
