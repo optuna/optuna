@@ -3,7 +3,7 @@ Optuna example that optimizes a neural network classifier configuration for the
 MNIST dataset using Keras.
 
 In this example, we optimize the validation accuracy of MNIST classification using
-Keras. We optimize the filter and kernel size, kernel stride layer activation.
+Keras. We optimize the filter and kernel size, kernel stride and layer activation.
 
 We have following two ways to execute this example:
 
