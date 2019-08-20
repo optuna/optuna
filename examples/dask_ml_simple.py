@@ -40,7 +40,8 @@ def objective(trial):
     if solver == 'admm' or solver == 'proximal_grad':
         penalty = trial.suggest_categorical('penalty', ['l1', 'l2', 'elastic_net'])
     else:
-        # 'penalty' parameter isn't relevant for this solver, so we always specify 'l2' as the dummy value.
+        # 'penalty' parameter isn't relevant for this solver,
+        # so we always specify 'l2' as the dummy value.
         penalty = 'l2'
 
     max_iter = 100
