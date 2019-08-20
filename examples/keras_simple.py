@@ -24,7 +24,9 @@ from sklearn.metrics import accuracy_score
 
 from keras.datasets import mnist
 from keras.models import Sequential
-from keras.layers import Flatten, Dense, Conv2D
+from keras.layers import Flatten
+from keras.layers import Dense
+from keras.layers import Conv2D
 from keras.optimizers import Adam
 
 import optuna
