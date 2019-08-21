@@ -32,8 +32,8 @@ if types.TYPE_CHECKING:
     from typing import Set  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.samplers.base import InTrialStudy  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import Study  # NOQA
 
 # Minimum value of sigma0 to avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
 MIN_SIGMA0 = 1e-10
@@ -149,7 +149,7 @@ class CmaEsSampler(BaseSampler):
         self._logger = optuna.logging.get_logger(__name__)
 
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         search_space = {}
         for name, distribution in optuna.samplers.product_search_space(study).items():
@@ -164,7 +164,7 @@ class CmaEsSampler(BaseSampler):
         return search_space
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+        # type: (Study, FrozenTrial, str, BaseDistribution) -> float
 
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
@@ -175,7 +175,7 @@ class CmaEsSampler(BaseSampler):
                                                             param_distribution)
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
 
         if len(search_space) == 0:
             return {}

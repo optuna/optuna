@@ -3,7 +3,6 @@ import math
 import six
 import warnings
 
-import optuna
 from optuna import distributions
 from optuna import logging
 from optuna import types
@@ -135,11 +134,11 @@ class Trial(BaseTrial):
     def _init_relative_params(self):
         # type: () -> None
 
-        study = optuna.study.InTrialStudy(self.study)
         trial = self.storage.get_trial(self._trial_id)
 
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
-        self.relative_params = self.study.sampler.sample_relative(study, trial,
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(
+            self.study, trial)
+        self.relative_params = self.study.sampler.sample_relative(self.study, trial,
                                                                   self.relative_search_space)
 
     def suggest_uniform(self, name, low, high):
@@ -449,10 +448,9 @@ class Trial(BaseTrial):
         if self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
-            study = optuna.study.InTrialStudy(self.study)
             trial = self.storage.get_trial(self._trial_id)
             param_value = self.study.sampler.sample_independent(
-                study, trial, name, distribution)
+                self.study, trial, name, distribution)
 
         return self._set_new_param_or_get_existing(name, param_value, distribution)
 
