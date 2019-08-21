@@ -3,7 +3,7 @@ Optuna example that optimizes a classifier configuration for the Iris dataset us
 
 In this example, we optimize a logistic regression classifier configuration for the Iris dataset.
 The classifier is from dask-ml while the dataset is from sklearn.
-We optimize the choice of solver (admm, gradient descent, or newton),
+We optimize the choice of solver (admm, gradient descent, or proximal_grad),
 the regularization (penalty) when relevant and its strength (C).
 
 We have the following two ways to execute this example:
