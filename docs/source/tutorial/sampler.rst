@@ -3,44 +3,40 @@
 User-Defined Sampler
 ====================
 
-Optuna allows users to create user-defined samplers.
+Thanks to user-defined samplers, you can:
+
+- experiment your own sampling algorithms,
+- implement task-specific algorithms to refine the optimization performance, or
+- wrap other optimization libraries to integrate them into Optuna pipelines (e.g., :class:`~optuna.integration.SkoptSampler`).
+
+This section describes the internal behavior of sampler classes and shows an example of implementing a user-defined sampler.
+
+
+Overview of Sampler
+-------------------
 
 A sampler has the responsibility to determine the parameter values to be evaluated in a trial.
-When a `suggest` API (e.g., :func:`~optuna.trial.Trial.suggest_uniform`) is called inside an objective function, the corresponding distribution object (e.g., :class:`~optuna.distributions.UniformDistribution`) is created internally. A sampler samples a value from the distribution. The sampled value is returned to the caller of the `suggest` API and evaluated in the objective function.
+When a `suggest` API (e.g., :func:`~optuna.trial.Trial.suggest_uniform`) is called inside an objective function, the corresponding distribution object (e.g., :class:`~optuna.distributions.UniformDistribution`) is created internally. A sampler samples a parameter value from the distribution. The sampled value is returned to the caller of the `suggest` API and evaluated in the objective function.
 
-Optuna provides built-in samplers (e.g., :class:`~optuna.samplers.TPESampler`, :class:`~optuna.samplers.RandomSampler`) that work well for a wide range of cases.
-However, optimization performance may be improved if you use a sampling algorithm specialized for your problem.
-Thanks to user-defined sampler feature, you can use such specialized algorithms within Optuna framework.
-
-In addition, this feature allows you to use algorithms implemented by other libraries.
-For instance, Optuna provides :class:`~optuna.integration.SkoptSampler` and
-:class:`~optuna.integration.CmaEsSampler` that wrap
-`skopt <https://scikit-optimize.github.io/>`_ and `cma <http://cma.gforge.inria.fr/apidocs-pycma/cma.html>`_
-libraries, respectively.
-
-
-Overview of :class:`~optuna.samplers.BaseSampler`
--------------------------------------------------
-
-For creating a new sampler, you need to define a class that inherits :class:`~optuna.samplers.BaseSampler`.
+To create a new sampler, you need to define a class that inherits :class:`~optuna.samplers.BaseSampler`.
 The base class has three abstract methods;
 :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`,
 :meth:`~optuna.samplers.BaseSampler.sample_relative`, and
 :meth:`~optuna.samplers.BaseSampler.sample_independent`.
 
-As the method names imply, Optuna supports two types of samplings; one is **relative sampling** that can consider the correlation of the parameters in a trial, and another is **independent sampling** that samples each parameter independently.
+As the method names imply, Optuna supports two types of samplings: one is **relative sampling** that can consider the correlation of the parameters in a trial, and the other is **independent sampling** that samples each parameter independently.
 
-At the beginning of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called to determine the relative search space for the trial. Then, :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked to sample relative parameters from the search space. During the execution of the objective function, :meth:`~optuna.samplers.BaseSampler.sample_independent` is used to sample parameters that don't belong to the relative search space.
+At the beginning of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space` is called to provide the relative search space for the trial. Then, :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked to sample relative parameters from the search space. During the execution of the objective function, :meth:`~optuna.samplers.BaseSampler.sample_independent` is used to sample parameters that don't belong to the relative search space.
 
 .. note::
-    Please refer to the documentation of :class:`~optuna.samplers.BaseSampler` for further details.
+    Please refer to the document of :class:`~optuna.samplers.BaseSampler` for further details.
 
 
 An Example: Implementing SimulatedAnnealingSampler
 --------------------------------------------------
 
-As an example, the following code defines a sampler named ``SimulatedAnnealingSampler`` that is based on
-`Simulated Annealing (SA) <https://en.wikipedia.org/wiki/Simulated_annealing>`_ algorithm:
+For example, the following code defines a sampler based on
+`Simulated Annealing (SA) <https://en.wikipedia.org/wiki/Simulated_annealing>`_:
 
 .. code-block:: python
 
