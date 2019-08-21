@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import scipy.special
 
@@ -512,7 +513,7 @@ def _get_observation_pairs(study, param_name):
     values = []
     scores = []
     for trial in study.trials:
-        if param_name not in trial.params_in_internal_repr:
+        if param_name not in trial.params:
             continue
 
         if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
@@ -520,13 +521,17 @@ def _get_observation_pairs(study, param_name):
         elif trial.state is structs.TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
-                score = (-step, sign * intermediate_value)
+                if math.isnan(intermediate_value):
+                    score = (-step, float('inf'))
+                else:
+                    score = (-step, sign * intermediate_value)
             else:
                 score = (float('inf'), 0.0)
         else:
             continue
 
-        param_value = trial.params_in_internal_repr[param_name]
+        distribution = trial.distributions[param_name]
+        param_value = distribution.to_internal_repr(trial.params[param_name])
         values.append(param_value)
         scores.append(score)
 

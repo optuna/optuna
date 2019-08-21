@@ -51,7 +51,7 @@ def create_model(trial):
 
 
 def objective(trial):
-    # Clear clutter form previous session graphs.
+    # Clear clutter from previous session graphs.
     keras.backend.clear_session()
 
     # The data is split between train and test sets.

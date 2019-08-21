@@ -62,7 +62,6 @@ class FrozenTrial(
             ('user_attrs', Dict[str, Any]),
             ('system_attrs', Dict[str, Any]),
             ('intermediate_values', Dict[int, float]),
-            ('params_in_internal_repr', Dict[str, float]),
             ('trial_id', int),
         ])):
     """Status and results of a :class:`~optuna.trial.Trial`.
@@ -91,16 +90,13 @@ class FrozenTrial(
             set by Optuna.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
-        params_in_internal_repr:
-            Optuna's internal representation of :attr:`params`. Note that this field is not
-            supposed to be used by library users.
         trial_id:
             Optuna's internal identifier of the :class:`~optuna.trial.Trial`. Note that this field
             is not supposed to be used by library users. Instead, please use :attr:`number` and
             :class:`~optuna.study.Study.study_id` to identify a :class:`~optuna.trial.Trial`.
     """
 
-    internal_fields = ['distributions', 'params_in_internal_repr', 'trial_id']
+    internal_fields = ['distributions', 'trial_id']
 
 
 class StudySummary(

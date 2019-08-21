@@ -569,12 +569,10 @@ class RDBStorage(BaseStorage):
         temp_trials = []
         for trial_id, trial in id_to_trial.items():
             params = {}
-            params_in_internal_repr = {}
             param_distributions = {}
             for param in id_to_params[trial_id]:
                 distribution = distributions.json_to_distribution(param.distribution_json)
                 params[param.param_name] = distribution.to_external_repr(param.param_value)
-                params_in_internal_repr[param.param_name] = param.param_value
                 param_distributions[param.param_name] = distribution
 
             intermediate_values = {}
@@ -605,7 +603,6 @@ class RDBStorage(BaseStorage):
                     system_attrs=system_attrs,
                     value=trial.value,
                     intermediate_values=intermediate_values,
-                    params_in_internal_repr=params_in_internal_repr,
                     datetime_start=trial.datetime_start,
                     datetime_complete=trial.datetime_complete,
                     trial_id=trial_id))
