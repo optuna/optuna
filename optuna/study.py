@@ -155,6 +155,7 @@ class Study(BaseStudy):
 
         state = self.__dict__.copy()
         del state['logger']
+        del state['_optimize_lock']
         return state
 
     def __setstate__(self, state):
@@ -162,6 +163,7 @@ class Study(BaseStudy):
 
         self.__dict__.update(state)
         self.logger = logging.get_logger(__name__)
+        self._optimize_lock = threading.Lock()
 
     @property
     def user_attrs(self):
