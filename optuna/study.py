@@ -222,7 +222,7 @@ class Study(BaseStudy):
 
         """
 
-        if not self._optimize_lock.acquire(blocking=False):
+        if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocations of `Study.optimize` method aren't allowed.")
 
         try:
