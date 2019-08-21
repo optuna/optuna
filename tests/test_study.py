@@ -537,3 +537,18 @@ def test_load_study(storage_mode, cache_mode):
         # Test loading an existing study.
         loaded_study = optuna.study.load_study(study_name=study_name, storage=storage)
         assert created_study.study_id == loaded_study.study_id
+
+
+def test_nested_optimization():
+    # type: () -> None
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        with pytest.raises(RuntimeError):
+            trial.study.optimize(lambda _: 0.0, n_trials=1)
+
+        return 1.0
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=10, catch=())
