@@ -83,7 +83,7 @@ def test_init_with_is_higher_better(is_higher_better):
     )
 
     study = optuna.create_study()
-    trial_id = study.storage.create_new_trial_id(study.study_id)
+    trial_id = study._storage.create_new_trial_id(study.study_id)
 
     with pytest.raises(ValueError):
         TensorFlowPruningHook(
