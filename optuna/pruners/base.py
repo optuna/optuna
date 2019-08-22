@@ -1,7 +1,7 @@
 import abc
 import six
 
-from optuna.types import TYPE_CHECKING
+from optuna.type_checking import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from optuna.structs import FrozenTrial  # NOQA
