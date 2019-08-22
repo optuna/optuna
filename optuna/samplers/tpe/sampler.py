@@ -144,8 +144,7 @@ class TPESampler(base.BaseSampler):
             return self._sample_discrete_uniform(param_distribution, below_param_values,
                                                  above_param_values)
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            return int(self._sample_int(param_distribution, below_param_values,
-                                        above_param_values))
+            return self._sample_int(param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             index = self._sample_categorical_index(param_distribution, below_param_values,
                                                    above_param_values)
@@ -204,7 +203,7 @@ class TPESampler(base.BaseSampler):
         return min(max(best_sample, distribution.low), distribution.high)
 
     def _sample_int(self, distribution, below, above):
-        # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> float
+        # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> int
 
         q = 1.0
         low = distribution.low - 0.5 * q
