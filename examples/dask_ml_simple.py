@@ -22,8 +22,6 @@ We have the following two ways to execute this example:
 import dask.array as da
 from dask_ml.linear_model import LogisticRegression
 from dask_ml.model_selection import train_test_split
-from distributed import Client
-from distributed import LocalCluster
 from sklearn.datasets import load_iris
 
 
@@ -36,7 +34,7 @@ def objective(trial):
 
     solver = trial.suggest_categorical('solver', ['admm', 'gradient_descent', 'proximal_grad'])
     C = trial.suggest_uniform('C', 0.0, 1.0)
-    max_iter = trial.suggest_uniform(50, 200)
+    max_iter = trial.suggest_int("max_iter", 50, 200)
 
     if solver == 'admm' or solver == 'proximal_grad':
         penalty = trial.suggest_categorical('penalty', ['l1', 'l2', 'elastic_net'])
@@ -57,19 +55,15 @@ def objective(trial):
 if __name__ == '__main__':
     import optuna
     study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=100)
 
-    # This is used to initialize the workers that will be used by Dask-ML.
-    cluster = LocalCluster(n_workers=2)
-    with Client(cluster) as client:
-        study.optimize(objective, n_trials=100)
+    print('Number of finished trials: ', len(study.trials))
 
-        print('Number of finished trials: ', len(study.trials))
+    print('Best trial:')
+    trial = study.best_trial
 
-        print('Best trial:')
-        trial = study.best_trial
+    print('  Value: ', trial.value)
 
-        print('  Value: ', trial.value)
-
-        print('  Params: ')
-        for key, value in trial.params.items():
-            print('    {}: {}'.format(key, value))
+    print('  Params: ')
+    for key, value in trial.params.items():
+        print('    {}: {}'.format(key, value))
