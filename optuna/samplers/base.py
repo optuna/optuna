@@ -1,9 +1,9 @@
 import abc
 import six
 
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
 
@@ -16,7 +16,7 @@ if types.TYPE_CHECKING:
 class BaseSampler(object):
     """Base class for samplers.
 
-    Optuna combines two types of sampling strategies, which are called *relative sampling* and
+    Optuna combines two type_checking of sampling strategies, which are called *relative sampling* and
     *independent sampling*.
 
     *The relative sampling* determines values of multiple parameters simultaneously so that

@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import optuna
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
 try:

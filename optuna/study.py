@@ -14,9 +14,9 @@ from optuna import samplers
 from optuna import storages
 from optuna import structs
 from optuna import trial as trial_module
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from multiprocessing import Queue  # NOQA
     from typing import Any  # NOQA
     from typing import Callable

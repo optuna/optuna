@@ -8,7 +8,7 @@ from optuna import samplers
 from optuna.samplers import BaseSampler
 from optuna import structs
 from optuna.structs import StudyDirection
-from optuna import types
+from optuna import type_checking
 
 try:
     import skopt
@@ -20,7 +20,7 @@ except ImportError as e:
     # SkoptSampler is disabled because Scikit-Optimize is not available.
     _available = False
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
