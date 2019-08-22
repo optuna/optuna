@@ -53,6 +53,39 @@ def default_weights(x):
 
 
 class TPESampler(base.BaseSampler):
+    """Sampler using TPE (Tree-structured Parzen Estimator) algorithm.
+
+    This sampler is based on *independent sampling*.
+    See also :class:`~optuna.samplers.BaseSampler` for more details of 'independent sampling'.
+
+    On each trial, for each parameter, TPE fits one Gaussian Mixture Model (GMM) ``l(x)`` to
+    the set of parameter values associated with the best objective values, and another GMM
+    ``g(x)`` to the remaining parameter values. It chooses the parameter value ``x`` that
+    maximizes the ratio ``l(x)/g(x)``.
+
+    For further information about TPE algorithm, please refer to the following papers:
+
+    - `Algorithms for Hyper-Parameter Optimization
+      <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
+    - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
+      Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+
+    Example:
+
+        .. code::
+
+            import optuna
+            from optuna.samplers import TPESampler
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -10, 10)
+                return x**2
+
+            study = optuna.create_study(sampler=TPESampler())
+            study.optimize(objective, n_trials=100)
+
+    """
+
     def __init__(
             self,
             consider_prior=True,  # type: bool
