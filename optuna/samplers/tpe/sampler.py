@@ -18,7 +18,6 @@ if types.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
-    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
@@ -389,7 +388,7 @@ class TPESampler(base.BaseSampler):
         return return_val
 
     def _sample_from_categorical_dist(self, probabilities, size=()):
-        # type: (Union[np.ndarray, np.ndarray], Tuple) -> Union[np.ndarray, np.ndarray]
+        # type: (np.ndarray, Tuple) -> np.ndarray
 
         if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
             probabilities = probabilities[0]
