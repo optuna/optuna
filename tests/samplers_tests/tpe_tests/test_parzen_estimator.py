@@ -4,9 +4,9 @@ import pytest
 
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
 from optuna.samplers.tpe.sampler import default_weights
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import List  # NOQA
 

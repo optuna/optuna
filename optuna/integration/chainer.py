@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 import optuna
-from optuna import types
+from optuna import type_checking
 
 try:
     import chainer
@@ -15,7 +15,7 @@ except ImportError as e:
     # This alias is required to avoid ImportError at ChainerPruningExtension definition.
     Extension = object
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Tuple
     from typing import Union
 

@@ -7,10 +7,10 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.structs import TrialPruned
 from optuna.trial import BaseTrial
-from optuna import types
+from optuna import type_checking
 import warnings
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA

@@ -5,7 +5,7 @@ from optuna.samplers import TPESampler
 from optuna.structs import TrialPruned
 from optuna.study import InTrialStudy
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
