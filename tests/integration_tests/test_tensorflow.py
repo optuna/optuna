@@ -8,9 +8,9 @@ import tensorflow as tf
 import optuna
 from optuna.integration import TensorFlowPruningHook
 from optuna.testing.integration import DeterministicPruner
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     import typing  # NOQA
 
 

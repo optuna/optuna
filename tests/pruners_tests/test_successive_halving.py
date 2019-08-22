@@ -1,9 +1,9 @@
 import pytest
 
 import optuna
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
 
 

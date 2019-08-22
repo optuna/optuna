@@ -3,7 +3,7 @@ import sys
 from types import ModuleType
 from typing import Any  # NOQA
 
-from optuna.types import TYPE_CHECKING
+from optuna.type_checking import TYPE_CHECKING
 
 
 _import_structure = {

@@ -1,8 +1,8 @@
 from optuna.structs import TrialState
 from optuna.study import Study  # NOQA
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
 try:
