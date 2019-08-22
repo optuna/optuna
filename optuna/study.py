@@ -105,7 +105,7 @@ class BaseStudy(object):
 
         .. deprecated:: 0.15.0
             The direct use of storage is deprecated.
-            Please access to storage via study's public APIs
+            Please access to storage via study's public methods
             (e.g., :meth:`~optuna.study.Study.set_user_attr`).
 
         Returns:
@@ -113,13 +113,13 @@ class BaseStudy(object):
         """
 
         warnings.warn("The direct use of storage is deprecated. "
-                      "Please access to storage via study's public APIs "
+                      "Please access to storage via study's public methods "
                       "(e.g., `Study.set_user_attr`)",
                       DeprecationWarning)
 
         logger = logging.get_logger(__name__)
         logger.warning("The direct use of storage is deprecated. "
-                       "Please access to storage via study's public APIs "
+                       "Please access to storage via study's public methods "
                        "(e.g., `Study.set_user_attr`)")
 
         return self._storage
