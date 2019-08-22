@@ -98,6 +98,16 @@ class BaseStudy(object):
 
         return self._storage.get_all_trials(self.study_id)
 
+    def get_n_trials(self, state=None):
+        # type: (Optional[structs.TrialState]) -> int
+        """Return the number of trials in the study.
+
+        Returns:
+            An integer object.
+        """
+
+        return self._storage.get_n_trials(self.study_id, state=state)
+
     @property
     def storage(self):
         # type: () -> storages.BaseStorage
@@ -123,22 +133,6 @@ class BaseStudy(object):
                        "(e.g., `Study.set_user_attr`)")
 
         return self._storage
-
-    def get_n_trials(self, state=None):
-        # type: (Optional[structs.TrialState]) -> int
-        """Return the number of trials in the study.
-
-        Returns:
-            An integer object.
-        """
-
-        return self._storage.get_n_trials(self.study_id, state=state)
-
-    def set_trial_system_attr(self, trial_id, key, value):
-        # type: (int, str, Any) -> None
-        """Set a system attribute of the trial id."""
-
-        self._storage.set_trial_system_attr(trial_id, key, value)
 
 
 class Study(BaseStudy):
@@ -291,6 +285,18 @@ class Study(BaseStudy):
         """
 
         self._storage.set_study_system_attr(self.study_id, key, value)
+
+    def set_trial_user_attr(self, trial_id, key, value):
+        # type: (int, str, Any) -> None
+        """Set a user attribute of the trial."""
+
+        self._storage.set_trial_user_attr(trial_id, key, value)
+
+    def set_trial_system_attr(self, trial_id, key, value):
+        # type: (int, str, Any) -> None
+        """Set a system attribute of the trial."""
+
+        self._storage.set_trial_system_attr(trial_id, key, value)
 
     def trials_dataframe(self, include_internal_fields=False):
         # type: (bool) -> pd.DataFrame
