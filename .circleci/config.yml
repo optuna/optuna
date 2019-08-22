@@ -224,7 +224,7 @@ jobs:
           name: install
           command: |
             . venv/bin/activate
-            pip install chainer keras lightgbm scikit-learn tensorflow mxnet xgboost torch torchvision
+            pip install chainer keras catboost lightgbm scikit-learn tensorflow mxnet xgboost torch torchvision
 
       - run: &examples
           name: examples
