@@ -15,9 +15,9 @@ from optuna.structs import FrozenTrial
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 from optuna.testing.storage import StorageSupplier
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA

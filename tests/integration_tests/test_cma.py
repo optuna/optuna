@@ -17,7 +17,7 @@ from optuna.structs import TrialState
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
 

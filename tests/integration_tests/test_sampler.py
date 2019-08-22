@@ -6,7 +6,7 @@ from optuna.integration import CmaEsSampler
 from optuna.integration import SkoptSampler
 from optuna.testing.sampler import FirstTrialOnlyRandomSampler
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     from typing import Callable  # NOQA
 
     from optuna.samplers import BaseSampler  # NOQA

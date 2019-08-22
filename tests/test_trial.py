@@ -11,9 +11,9 @@ from optuna.study import create_study
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FixedTrial
 from optuna.trial import Trial
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     import typing  # NOQA
 
 parametrize_storage = pytest.mark.parametrize(

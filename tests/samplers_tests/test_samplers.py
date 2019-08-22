@@ -10,7 +10,7 @@ from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import InTrialStudy
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     import typing  # NOQA
     from typing import Dict  # NOQA
 

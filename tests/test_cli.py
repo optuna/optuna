@@ -13,10 +13,10 @@ from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
 from optuna.structs import CLIUsageError
 from optuna.trial import Trial  # NOQA
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
-    from types import TracebackType  # NOQA
+if type_checking.TYPE_CHECKING:
+    from type_checking import TracebackType  # NOQA
     from typing import Any  # NOQA
     from typing import IO  # NOQA
     from typing import List  # NOQA
