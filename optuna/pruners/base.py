@@ -4,8 +4,8 @@ import six
 from optuna.types import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from optuna import Study  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import Study  # NOQA
 
 
 @six.add_metaclass(abc.ABCMeta)

@@ -395,7 +395,8 @@ class Trial(BaseTrial):
                 'The use of `step` argument is deprecated. '
                 'You can omit to pass this parameter.', DeprecationWarning)
 
-        return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
+        trial = self.study._storage.get_trial(self._trial_id)
+        return self.study.pruner.prune(self.study, trial, step)
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None

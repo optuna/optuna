@@ -7,8 +7,8 @@ from optuna import types
 if types.TYPE_CHECKING:
     from typing import List  # NOQA
 
-    from optuna import Study  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import Study  # NOQA
 
 
 class SuccessiveHalvingPruner(BasePruner):
@@ -95,7 +95,7 @@ class SuccessiveHalvingPruner(BasePruner):
         self.min_early_stopping_rate = min_early_stopping_rate
 
     def prune(self, study, trial, step):
-        # type: (Study,FrozenTrial, int) -> bool
+        # type: (Study, FrozenTrial, int) -> bool
         """Please consult the documentation for :func:`BasePruner.prune`."""
 
         if len(trial.intermediate_values) == 0:

@@ -28,7 +28,7 @@ def test_successive_halving_pruner_intermediate_values(direction_value):
 
     trial.report(intermediate_value, 1)
     # A pruner is activated if a trial has an intermediate value.
-    assert not pruner.prune(study=study, trial=study._storage.get_trial(trial.trial_id), step=1)
+    assert pruner.prune(study=study, trial=study._storage.get_trial(trial.trial_id), step=1)
 
 
 def test_successive_halving_pruner_rung_check():
@@ -105,7 +105,7 @@ def test_successive_halving_pruner_with_nan():
     # A pruner is activated if the step is a rung completion point and
     # the intermediate value is NaN.
     trial.report(float('nan'), step=2)
-    assert not pruner.prune(study=study, trial=study._storage.get_trial(trial.trial_id), step=2)
+    assert pruner.prune(study=study, trial=study._storage.get_trial(trial.trial_id), step=2)
 
 
 def test_successive_halving_pruner_min_resource_parameter():

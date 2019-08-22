@@ -8,7 +8,7 @@ from optuna import types
 if types.TYPE_CHECKING:
     from typing import List  # NOQA
 
-    from optuna import Study  # NOQA
+    from optuna.study import Study  # NOQA
 
 
 def _get_best_intermediate_result_over_steps(trial, direction):
