@@ -4,9 +4,9 @@ from typing import Callable
 from typing import NamedTuple
 from typing import Optional
 
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Tuple  # NOQA
 

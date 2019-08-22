@@ -14,7 +14,7 @@ from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
-from optuna import types
+from optuna import type_checking
 
 try:
     import cma
@@ -24,7 +24,7 @@ except ImportError as e:
     # CmaEsSampler is disabled because cma is not available.
     _available = False
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA

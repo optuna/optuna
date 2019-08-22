@@ -11,9 +11,9 @@ from optuna.study import create_study
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FixedTrial
 from optuna.trial import Trial
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     import typing  # NOQA
 
 parametrize_storage = pytest.mark.parametrize(
@@ -31,7 +31,7 @@ def test_suggest_uniform(storage_init_func):
 
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
+        trial = Trial(study, study._storage.create_new_trial_id(study.study_id))
         distribution = distributions.UniformDistribution(low=0., high=3.)
 
         assert trial._suggest('x', distribution) == 1.  # Test suggesting a param.
@@ -51,7 +51,7 @@ def test_suggest_discrete_uniform(storage_init_func):
 
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
+        trial = Trial(study, study._storage.create_new_trial_id(study.study_id))
         distribution = distributions.DiscreteUniformDistribution(low=0., high=3., q=1.)
 
         assert trial._suggest('x', distribution) == 1.  # Test suggesting a param.
@@ -66,7 +66,7 @@ def test_suggest_low_equals_high(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
 
     study = create_study(storage_init_func(), sampler=samplers.TPESampler(n_startup_trials=0))
-    trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
+    trial = Trial(study, study._storage.create_new_trial_id(study.study_id))
 
     # Parameter values are determined without suggestion when low == high.
     with patch.object(trial, '_suggest', wraps=trial._suggest) as mock_object:
@@ -137,7 +137,7 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
     mock.side_effect = lambda study, trial, param_name, distribution: distribution.high
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
+        trial = Trial(study, study._storage.create_new_trial_id(study.study_id))
 
         x = trial.suggest_discrete_uniform('x', range_config['low'], range_config['high'],
                                            range_config['q'])
@@ -149,7 +149,7 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
     mock.side_effect = lambda study, trial, param_name, distribution: distribution.low
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
+        trial = Trial(study, study._storage.create_new_trial_id(study.study_id))
 
         x = trial.suggest_discrete_uniform('x', range_config['low'], range_config['high'],
                                            range_config['q'])
@@ -167,7 +167,7 @@ def test_suggest_int(storage_init_func):
 
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study.storage.create_new_trial_id(study.study_id))
+        trial = Trial(study, study._storage.create_new_trial_id(study.study_id))
         distribution = distributions.IntUniformDistribution(low=0, high=3)
 
         assert trial._suggest('x', distribution) == 1  # Test suggesting a param.
@@ -212,7 +212,7 @@ def test_trial_should_prune():
 
     study_mock = MagicMock()
     study_mock.study_id = study_id
-    study_mock.storage.get_trial.return_value.\
+    study_mock._storage.get_trial.return_value.\
         intermediate_values.keys.return_value = [1, 2, 3, 4, 5]
     study_mock.pruner.prune.return_value = True
 
@@ -221,9 +221,9 @@ def test_trial_should_prune():
 
     trial.should_prune()
 
-    study_mock.storage.get_trial.assert_called_once_with(trial_id)
+    study_mock._storage.get_trial.assert_called_once_with(trial_id)
     study_mock.pruner.prune.assert_called_once_with(
-        study_mock.storage, study_id, trial_id, 5,
+        study_mock._storage, study_id, trial_id, 5,
     )
 
 
@@ -349,7 +349,7 @@ def test_relative_parameters(storage_init_func):
     def create_trial():
         # type: () -> Trial
 
-        return Trial(study, study.storage.create_new_trial_id(study.study_id))
+        return Trial(study, study._storage.create_new_trial_id(study.study_id))
 
     # Suggested from `relative_params`.
     trial0 = create_trial()

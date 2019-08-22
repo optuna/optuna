@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 
 import optuna
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
 
 try:
