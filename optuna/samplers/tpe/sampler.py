@@ -274,7 +274,7 @@ class TPESampler(base.BaseSampler):
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
         weighted_below = counts_below + self.prior_weight
         weighted_below /= weighted_below.sum()
-        samples_below = self._sample_from_categorical_dist(weighted_below, size=size)
+        samples_below = self._sample_from_categorical_dist(weighted_below, size)
         log_likelihoods_below = TPESampler._categorical_log_pdf(samples_below, weighted_below)
 
         weights_above = self.weights(len(above))
@@ -387,19 +387,12 @@ class TPESampler(base.BaseSampler):
         return_val.shape = _samples.shape
         return return_val
 
-    def _sample_from_categorical_dist(self, probabilities, size=()):
-        # type: (np.ndarray, Tuple) -> np.ndarray
+    def _sample_from_categorical_dist(self, probabilities, size):
+        # type: (np.ndarray, Tuple[int]) -> np.ndarray
 
         if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
             probabilities = probabilities[0]
         probabilities = np.asarray(probabilities)
-
-        if size == ():
-            size = (1, )
-        elif isinstance(size, (int, np.number)):
-            size = (size, )
-        else:
-            size = tuple(size)
 
         if size == (0, ):
             return np.asarray([], dtype=float)
