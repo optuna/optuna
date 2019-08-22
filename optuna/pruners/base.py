@@ -1,7 +1,11 @@
 import abc
 import six
 
-from optuna.storages import BaseStorage  # NOQA
+from optuna.types import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from optuna import Study  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -9,8 +13,8 @@ class BasePruner(object):
     """Base class for pruners."""
 
     @abc.abstractmethod
-    def prune(self, storage, study_id, trial_id, step):
-        # type: (BaseStorage, int, int, int) -> bool
+    def prune(self, study, trial, step):
+        # type: (Study, FrozenTrial, int) -> bool
         """Judge whether the trial should be pruned at the given step.
 
         Note that this method is not supposed to be called by library users. Instead,
@@ -18,12 +22,10 @@ class BasePruner(object):
         user interfaces to implement pruning mechanism in an objective function.
 
         Args:
-            storage:
-                Storage object.
-            study_id:
-                Identifier of the target study.
-            trial_id:
-                Identifier of the target trial.
+            study:
+                Study object of the target study.
+            trial:
+                FrozenTrial object of the target trial.
             step:
                 Step number.
 

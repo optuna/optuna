@@ -124,6 +124,22 @@ class BaseStudy(object):
 
         return self._storage
 
+    def get_n_trials(self, state=None):
+        # type: (Optional[structs.TrialState]) -> int
+        """Return the number of trials in the study.
+
+        Returns:
+            An integer object.
+        """
+
+        return self._storage.get_n_trials(self.study_id, state=state)
+
+    def set_trial_system_attr(self, trial_id, key, value):
+        # type: (int, str, Any) -> None
+        """Set a system attribute of the trial id."""
+
+        self._storage.set_trial_system_attr(trial_id, key, value)
+
 
 class Study(BaseStudy):
     """A study corresponds to an optimization task, i.e., a set of trials.
