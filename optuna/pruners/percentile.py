@@ -79,7 +79,9 @@ class PercentilePruner(BasePruner):
         # type: (Study, structs.FrozenTrial, int) -> bool
         """Please consult the documentation for :func:`BasePruner.prune`."""
 
-        n_trials = study.get_n_trials(state=structs.TrialState.COMPLETE)
+        all_trials = study.trials
+        n_trials = len([t for t in all_trials
+                        if t.state == structs.TrialState.COMPLETE])
 
         if n_trials == 0:
             return False
@@ -98,7 +100,6 @@ class PercentilePruner(BasePruner):
         if math.isnan(best_intermediate_result):
             return True
 
-        all_trials = study.trials
         p = _get_percentile_intermediate_result_over_trials(
             all_trials, direction, step, self.percentile)
         if math.isnan(p):

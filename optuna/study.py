@@ -98,16 +98,6 @@ class BaseStudy(object):
 
         return self._storage.get_all_trials(self.study_id)
 
-    def get_n_trials(self, state=None):
-        # type: (Optional[structs.TrialState]) -> int
-        """Return the number of trials in the study.
-
-        Returns:
-            An integer object.
-        """
-
-        return self._storage.get_n_trials(self.study_id, state=state)
-
     @property
     def storage(self):
         # type: () -> storages.BaseStorage
