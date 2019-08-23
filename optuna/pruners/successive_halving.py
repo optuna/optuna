@@ -94,13 +94,14 @@ class SuccessiveHalvingPruner(BasePruner):
         self.reduction_factor = reduction_factor
         self.min_early_stopping_rate = min_early_stopping_rate
 
-    def prune(self, study, trial, step):
-        # type: (Study, FrozenTrial, int) -> bool
+    def prune(self, study, trial):
+        # type: (Study, FrozenTrial) -> bool
         """Please consult the documentation for :func:`BasePruner.prune`."""
 
         if len(trial.intermediate_values) == 0:
             return False
 
+        step = trial.last_step
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
         all_trials = None

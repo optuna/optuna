@@ -13,8 +13,8 @@ class BasePruner(object):
     """Base class for pruners."""
 
     @abc.abstractmethod
-    def prune(self, study, trial, step):
-        # type: (Study, FrozenTrial, int) -> bool
+    def prune(self, study, trial):
+        # type: (Study, FrozenTrial) -> bool
         """Judge whether the trial should be pruned at the given step.
 
         Note that this method is not supposed to be called by library users. Instead,
@@ -26,8 +26,6 @@ class BasePruner(object):
                 Study object of the target study.
             trial:
                 FrozenTrial object of the target trial.
-            step:
-                Step number.
 
         Returns:
             A boolean value representing whether the trial should be pruned.

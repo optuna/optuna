@@ -7,8 +7,8 @@ class DeterministicPruner(optuna.pruners.BasePruner):
 
         self.is_pruning = is_pruning
 
-    def prune(self, study, trial, step):
-        # type: (optuna.study.Study, optuna.structs.FrozenTrial, int) -> bool
+    def prune(self, study, trial):
+        # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> bool
 
         return self.is_pruning
 

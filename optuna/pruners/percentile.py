@@ -75,8 +75,8 @@ class PercentilePruner(BasePruner):
         self.n_startup_trials = n_startup_trials
         self.n_warmup_steps = n_warmup_steps
 
-    def prune(self, study, trial, step):
-        # type: (Study, structs.FrozenTrial, int) -> bool
+    def prune(self, study, trial):
+        # type: (Study, structs.FrozenTrial) -> bool
         """Please consult the documentation for :func:`BasePruner.prune`."""
 
         all_trials = study.trials
@@ -87,6 +87,10 @@ class PercentilePruner(BasePruner):
             return False
 
         if n_trials < self.n_startup_trials:
+            return False
+
+        step = trial.last_step
+        if step is None:
             return False
 
         if step <= self.n_warmup_steps:
