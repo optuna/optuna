@@ -102,6 +102,9 @@ class SuccessiveHalvingPruner(BasePruner):
             return False
 
         step = trial.last_step
+        if step is None:
+            return False
+
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
         all_trials = None
