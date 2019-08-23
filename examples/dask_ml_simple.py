@@ -34,7 +34,6 @@ def objective(trial):
 
     solver = trial.suggest_categorical('solver', ['admm', 'gradient_descent', 'proximal_grad'])
     C = trial.suggest_uniform('C', 0.0, 1.0)
-    max_iter = trial.suggest_int("max_iter", 50, 200)
 
     if solver == 'admm' or solver == 'proximal_grad':
         penalty = trial.suggest_categorical('penalty', ['l1', 'l2', 'elastic_net'])
@@ -43,7 +42,7 @@ def objective(trial):
         # so we always specify 'l2' as the dummy value.
         penalty = 'l2'
 
-    classifier = LogisticRegression(max_iter=max_iter, solver=solver, C=C, penalty=penalty)
+    classifier = LogisticRegression(max_iter=200, solver=solver, C=C, penalty=penalty)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     classifier.fit(X_train, y_train)
