@@ -98,9 +98,6 @@ class SuccessiveHalvingPruner(BasePruner):
         # type: (Study, FrozenTrial) -> bool
         """Please consult the documentation for :func:`BasePruner.prune`."""
 
-        if len(trial.intermediate_values) == 0:
-            return False
-
         step = trial.last_step
         if step is None:
             return False
