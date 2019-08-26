@@ -34,10 +34,11 @@ def objective(trial):
     param = {
         'objective': trial.suggest_categorical('objective', ['Logloss', 'CrossEntropy']),
         'colsample_bylevel': trial.suggest_uniform('colsample_bylevel', 0.01, 0.1),
-        'depth': trial.suggest_int('depth', 1, 16),
+        'depth': trial.suggest_int('depth', 1, 12),
         'boosting_type': trial.suggest_categorical('boosting_type', ['Ordered', 'Plain']),
         'bootstrap_type': trial.suggest_categorical('bootstrap_type',
-                                                    ['Bayesian', 'Bernoulli', 'MVS'])
+                                                    ['Bayesian', 'Bernoulli', 'MVS']),
+        'used_ram_limit': '3gb'
     }
 
     if param['bootstrap_type'] == 'Bayesian':
