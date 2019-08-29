@@ -20,8 +20,6 @@ We have following two ways to execute this example:
 
 import numpy as np
 
-from sklearn.metrics import accuracy_score
-
 from keras.backend import clear_session
 from keras.utils import to_categorical
 from keras.datasets import mnist
@@ -77,10 +75,9 @@ def objective(trial):
               epochs=EPOCHS,
               verbose=False)
 
-    preds = model.predict(x_test)
-    pred_labels = np.argmax(preds, axis=1)
-    accuracy = accuracy_score(y_test, pred_labels)
-    return accuracy
+    # Evaluate the model accuracy on the test set.
+    score = model.evaluate(x_test, y_test, verbose=0)
+    return score[1]
 
 
 if __name__ == '__main__':
