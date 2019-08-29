@@ -18,10 +18,7 @@ We have following two ways to execute this example:
 
 """
 
-import numpy as np
-
 from keras.backend import clear_session
-from keras.utils import to_categorical
 from keras.datasets import mnist
 from keras.layers import Conv2D
 from keras.layers import Dense
