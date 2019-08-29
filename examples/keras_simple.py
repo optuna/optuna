@@ -22,6 +22,8 @@ import numpy as np
 
 from sklearn.metrics import accuracy_score
 
+from keras.backend import clear_session
+from keras.utils import to_categorical
 from keras.datasets import mnist
 from keras.layers import Conv2D
 from keras.layers import Dense
@@ -32,15 +34,23 @@ from keras.optimizers import Adam
 import optuna
 
 
+N_TRAIN_EXAMPLES = 3000
+N_TEST_EXAMPLES = 1000
+BATCHSIZE = 128
+CLASSES = 10
+EPOCHS = 2
+
+
 def objective(trial):
-    # Clear clutter from previous session graphs.
-    keras.backend.clear_session()
+    # Clear clutter from previous Keras session graphs.
+    clear_session()
 
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     img_x, img_y = x_train.shape[1], x_train.shape[2]
-    x_train = x_train.reshape(-1, img_x, img_y, 1)
-    x_test = x_test.reshape(-1, img_x, img_y, 1)
-    num_classes = 10
+    x_train = x_train.reshape(-1, img_x, img_y, 1)[:N_TRAIN_EXAMPLES].astype('float32') / 255
+    x_test = x_test.reshape(-1, img_x, img_y, 1)[:N_TEST_EXAMPLES].astype('float32') / 255
+    y_train = y_train[:N_TRAIN_EXAMPLES]
+    y_test = y_train[:N_TEST_EXAMPLES]
     input_shape = (img_x, img_y, 1)
 
     model = Sequential()
@@ -51,15 +61,15 @@ def objective(trial):
                activation=trial.suggest_categorical('activation', ['relu', 'linear']),
                input_shape=input_shape))
     model.add(Flatten())
-    model.add(Dense(num_classes, activation='softmax'))
+    model.add(Dense(CLASSES, activation='softmax'))
     model.compile(optimizer=Adam(), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     model.fit(x_train,
               y_train,
               validation_data=(x_test, y_test),
               shuffle=True,
-              batch_size=512,
-              epochs=2,
+              batch_size=BATCHSIZE,
+              epochs=EPOCHS,
               verbose=False)
 
     preds = model.predict(x_test)
