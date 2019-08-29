@@ -29,7 +29,7 @@ from keras.layers import Conv2D
 from keras.layers import Dense
 from keras.layers import Flatten
 from keras.models import Sequential
-from keras.optimizers import Adam
+from keras.optimizers import RMSprop
 
 import optuna
 
@@ -62,7 +62,12 @@ def objective(trial):
                input_shape=input_shape))
     model.add(Flatten())
     model.add(Dense(CLASSES, activation='softmax'))
-    model.compile(optimizer=Adam(), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+    # We compile our model with a sampled learning rate.
+    lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
+    model.compile(loss='sparse_categorical_crossentropy',
+                  optimizer=RMSprop(lr=lr),
+                  metrics=['accuracy'])
 
     model.fit(x_train,
               y_train,
