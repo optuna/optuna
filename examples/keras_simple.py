@@ -33,6 +33,9 @@ import optuna
 
 
 def objective(trial):
+    # Clear clutter from previous session graphs.
+    keras.backend.clear_session()
+
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     img_x, img_y = x_train.shape[1], x_train.shape[2]
     x_train = x_train.reshape(-1, img_x, img_y, 1)
