@@ -45,7 +45,7 @@ def objective(trial):
     x_train = x_train.reshape(-1, img_x, img_y, 1)[:N_TRAIN_EXAMPLES].astype('float32') / 255
     x_test = x_test.reshape(-1, img_x, img_y, 1)[:N_TEST_EXAMPLES].astype('float32') / 255
     y_train = y_train[:N_TRAIN_EXAMPLES]
-    y_test = y_train[:N_TEST_EXAMPLES]
+    y_test = y_test[:N_TEST_EXAMPLES]
     input_shape = (img_x, img_y, 1)
 
     model = Sequential()
