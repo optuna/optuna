@@ -276,18 +276,6 @@ class Study(BaseStudy):
 
         self._storage.set_study_system_attr(self.study_id, key, value)
 
-    def set_trial_user_attr(self, trial_id, key, value):
-        # type: (int, str, Any) -> None
-        """Set a user attribute of the trial."""
-
-        self._storage.set_trial_user_attr(trial_id, key, value)
-
-    def set_trial_system_attr(self, trial_id, key, value):
-        # type: (int, str, Any) -> None
-        """Set a system attribute of the trial."""
-
-        self._storage.set_trial_system_attr(trial_id, key, value)
-
     def trials_dataframe(self, include_internal_fields=False):
         # type: (bool) -> pd.DataFrame
         """Export trials as a pandas DataFrame_.
