@@ -532,8 +532,9 @@ def create_study(
             Database URL. If this argument is set to None, in-memory storage is used, and the
             :class:`~optuna.study.Study` will not be persistent.
         sampler:
-            A sampler object that implements background algorithm for value suggestion. See also
-            :class:`~optuna.samplers`.
+            A sampler object that implements background algorithm for value suggestion.
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
+            as the default. See also :class:`~optuna.samplers`.
         pruner:
             A pruner object that decides early stopping of unpromising trials. See also
             :class:`~optuna.pruners`.
