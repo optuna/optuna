@@ -165,6 +165,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_name(study_name, session)
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
 
         return study.study_id
 
@@ -174,6 +176,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
 
         return trial.study_id
 
@@ -183,6 +187,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
 
         return study.study_name
 
@@ -192,6 +198,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
 
         return study.direction
 
@@ -201,6 +209,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         attributes = models.StudyUserAttributeModel.where_study_id(study_id, session)
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
@@ -210,6 +220,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         attributes = models.StudySystemAttributeModel.where_study_id(study_id, session)
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
@@ -219,6 +231,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         attributes = models.TrialUserAttributeModel.where_trial_id(trial_id, session)
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
@@ -228,6 +242,8 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         attributes = models.TrialSystemAttributeModel.where_trial_id(trial_id, session)
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
 
         return {attr.key: json.loads(attr.value_json) for attr in attributes}
 
@@ -301,6 +317,9 @@ class RDBStorage(BaseStorage):
                     n_trials=len(study_trial_models),
                     datetime_start=datetime_start))
 
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
+
         return study_sumarries
 
     def create_new_trial_id(self, study_id):
@@ -324,6 +343,10 @@ class RDBStorage(BaseStorage):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
 
         trial_number = trial.count_past_trials(session)
+
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
+
         self.set_trial_system_attr(trial.trial_id, '_number', trial_number)
 
         return trial_number
@@ -380,6 +403,8 @@ class RDBStorage(BaseStorage):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         trial_param = models.TrialParamModel.find_or_raise_by_trial_and_param_name(
             trial, param_name, session)
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
 
         return trial_param.param_value
 
@@ -490,6 +515,9 @@ class RDBStorage(BaseStorage):
 
         self._finished_trials_cache.cache_trial_if_finished(frozen_trial)
 
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
+
         return frozen_trial
 
     def get_all_trials(self, study_id):
@@ -511,7 +539,12 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        return models.TrialModel.get_all_trial_ids_where_study(study, session)
+        trial_ids = models.TrialModel.get_all_trial_ids_where_study(study, session)
+
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
+
+        return trial_ids
 
     def _get_all_trials_without_cache(self, study_id):
         # type: (int) -> List[structs.FrozenTrial]
@@ -525,14 +558,23 @@ class RDBStorage(BaseStorage):
         user_attributes = models.TrialUserAttributeModel.where_study(study, session)
         system_attributes = models.TrialSystemAttributeModel.where_study(study, session)
 
-        return self._merge_trials_orm(trials, params, values, user_attributes, system_attributes)
+        all_trials = self._merge_trials_orm(
+            trials, params, values, user_attributes, system_attributes)
+
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
+        return all_trials
 
     def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[structs.TrialState]) -> int
 
         session = self.scoped_session()
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        return models.TrialModel.count(session, study, state)
+        n_trials = models.TrialModel.count(session, study, state)
+
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        self._commit(session)
+        return n_trials
 
     def _merge_trials_orm(
             self,
@@ -772,6 +814,9 @@ class _VersionManager(object):
         # NOTE: After invocation of `_init_version_info_model` method,
         #       it is ensured that a `VersionInfoModel` entry exists.
         version_info = models.VersionInfoModel.find(session)
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        RDBStorage._commit(session)
+
         assert version_info is not None
 
         current_version = self.get_current_version()
@@ -831,6 +876,9 @@ class _VersionManager(object):
         session = self.scoped_session()
 
         version_info = models.VersionInfoModel.find(session)
+        # Terminate transaction explicitly to avoid connection timeout during query.
+        RDBStorage._commit(session)
+
         if version_info is None:
             # `None` means this storage was created just now.
             return True
