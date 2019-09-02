@@ -209,10 +209,11 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         attributes = models.StudyUserAttributeModel.where_study_id(study_id, session)
+        user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during query.
         self._commit(session)
 
-        return {attr.key: json.loads(attr.value_json) for attr in attributes}
+        return user_attrs
 
     def get_study_system_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
@@ -220,10 +221,11 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         attributes = models.StudySystemAttributeModel.where_study_id(study_id, session)
+        system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during query.
         self._commit(session)
 
-        return {attr.key: json.loads(attr.value_json) for attr in attributes}
+        return system_attrs
 
     def get_trial_user_attrs(self, trial_id):
         # type: (int) -> Dict[str, Any]
@@ -231,10 +233,11 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         attributes = models.TrialUserAttributeModel.where_trial_id(trial_id, session)
+        user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during query.
         self._commit(session)
 
-        return {attr.key: json.loads(attr.value_json) for attr in attributes}
+        return user_attrs
 
     def get_trial_system_attrs(self, trial_id):
         # type: (int) -> Dict[str, Any]
@@ -242,10 +245,11 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         attributes = models.TrialSystemAttributeModel.where_trial_id(trial_id, session)
+        system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during query.
         self._commit(session)
 
-        return {attr.key: json.loads(attr.value_json) for attr in attributes}
+        return system_attrs
 
     # TODO(sano): Optimize this method to reduce the number of queries.
     def get_all_study_summaries(self):
@@ -381,6 +385,8 @@ class RDBStorage(BaseStorage):
             distributions.check_distribution_compatibility(
                 distributions.json_to_distribution(trial_param.distribution_json), distribution)
 
+            # Terminate transaction explicitly to avoid connection timeout during query.
+            self._commit(session)
             # Return False when distribution is compatible but parameter has already been set.
             return False
 
@@ -771,6 +777,8 @@ class _VersionManager(object):
 
         version_info = models.VersionInfoModel.find(session)
         if version_info is not None:
+            # Terminate transaction explicitly to avoid connection timeout during query.
+            RDBStorage._commit(session)
             return
 
         version_info = models.VersionInfoModel(
