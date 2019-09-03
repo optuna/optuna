@@ -1,5 +1,5 @@
 import abc
-import math
+import decimal
 import six
 import warnings
 
@@ -702,7 +702,7 @@ def _adjust_discrete_uniform_high(name, low, high, q):
 
     r = high - low
 
-    if math.fmod(r, q) != 0:
+    if (decimal.Decimal(str(r)) % decimal.Decimal(str(q))) != 0:
         high = (r // q) * q + low
         logger = logging.get_logger(__name__)
         logger.warning('The range of parameter `{}` is not divisible by `q`, and is '

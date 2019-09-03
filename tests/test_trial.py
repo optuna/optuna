@@ -111,14 +111,14 @@ def test_suggest_low_equals_high(storage_init_func):
             'low': 0.,
             'high': 10.,
             'q': 0.1,
-            'mod_high': 9.9
+            'mod_high': 10.0
         },
         # high is excluded doe to the round-off error of 10.1 // 0.1
         {
             'low': 0.,
             'high': 10.1,
             'q': 0.1,
-            'mod_high': 10.
+            'mod_high': 10.1
         },
         {
             'low': 0.,
