@@ -18,7 +18,7 @@ def test_handling_alias_parameter_with_default_value():
 
     assert 'eta' not in params
     assert 'learning_rate' in params
-    assert params['learning_rate'] == 0.3
+    assert params['learning_rate'] == 0.1
 
 
 def test_handling_alias_parameter():
