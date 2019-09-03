@@ -7,7 +7,7 @@ ALIAS_GROUP_LIST = [
     {
         'param_name': 'learning_rate',
         'alias_names': ['shrinkage_rate', 'eta'],
-        'default_value': 0.3,  # Start from large `learning_rate` value
+        'default_value': 0.1,  # Start from large `learning_rate` value
     },
     {
         'param_name': 'min_data_in_leaf',
