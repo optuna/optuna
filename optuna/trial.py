@@ -391,7 +391,8 @@ class Trial(BaseTrial):
         if step is not None:
             warnings.warn(
                 'The use of `step` argument is deprecated. '
-                'You can omit to pass this parameter.', DeprecationWarning)
+                'The last reported step is used instead of '
+                'the step given by the argument.', DeprecationWarning)
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
