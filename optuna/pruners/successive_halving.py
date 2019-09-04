@@ -4,9 +4,9 @@ from optuna.pruners.base import BasePruner
 from optuna.storages import BaseStorage  # NOQA
 from optuna.structs import FrozenTrial  # NOQA
 from optuna.structs import StudyDirection
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
 

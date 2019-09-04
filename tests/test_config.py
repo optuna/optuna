@@ -5,9 +5,9 @@ import shutil
 import tempfile
 
 import optuna
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
 _dummy_home = None  # type: Optional[str]

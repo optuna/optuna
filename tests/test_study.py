@@ -11,9 +11,9 @@ import uuid
 import optuna
 from optuna.study import InTrialStudy
 from optuna.testing.storage import StorageSupplier
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
@@ -308,7 +308,7 @@ def test_get_all_study_summaries(storage_mode, cache_mode):
         study = optuna.create_study(storage=storage)
         study.optimize(Func(), n_trials=5)
 
-        summaries = optuna.get_all_study_summaries(study.storage)
+        summaries = optuna.get_all_study_summaries(study._storage)
         summary = [s for s in summaries if s.study_id == study.study_id][0]
 
         assert summary.study_name == study.study_name
@@ -323,7 +323,7 @@ def test_get_all_study_summaries_with_no_trials(storage_mode, cache_mode):
     with StorageSupplier(storage_mode, cache_mode) as storage:
         study = optuna.create_study(storage=storage)
 
-        summaries = optuna.get_all_study_summaries(study.storage)
+        summaries = optuna.get_all_study_summaries(study._storage)
         summary = [s for s in summaries if s.study_id == study.study_id][0]
 
         assert summary.study_name == study.study_name
@@ -350,7 +350,7 @@ def test_run_trial(storage_mode, cache_mode):
             raise ValueError
 
         trial = study._run_trial(func_value_error, catch=(ValueError, ))
-        frozen_trial = study.storage.get_trial(trial._trial_id)
+        frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#1 as TrialState.FAIL because of the ' \
                            'following error: ValueError()'
@@ -368,7 +368,7 @@ def test_run_trial(storage_mode, cache_mode):
             return None  # type: ignore
 
         trial = study._run_trial(func_none, catch=(Exception, ))
-        frozen_trial = study.storage.get_trial(trial._trial_id)
+        frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#3 as TrialState.FAIL because the returned ' \
                            'value from the objective function cannot be casted to float. ' \
@@ -383,7 +383,7 @@ def test_run_trial(storage_mode, cache_mode):
             return float('nan')
 
         trial = study._run_trial(func_nan, catch=(Exception, ))
-        frozen_trial = study.storage.get_trial(trial._trial_id)
+        frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#4 as TrialState.FAIL because the objective ' \
                            'function returned nan.'
@@ -433,8 +433,8 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
         # non-nested: 5, params: 2, user_attrs: 1, system_attrs: 1 and 9 in total.
         if include_internal_fields:
-            # distributions:2, params_in_internal_repr: 2, trial_id: 1
-            assert len(df.columns) == 9 + 5
+            # distributions:2, trial_id: 1
+            assert len(df.columns) == 7 + 5
         else:
             assert len(df.columns) == 9
 
@@ -452,8 +452,6 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
                 assert ('distributions', 'x') in df.columns
                 assert ('distributions', 'y') in df.columns
                 assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
-                assert ('params_in_internal_repr', 'x') in df.columns
-                assert ('params_in_internal_repr', 'y') in df.columns
                 assert ('distributions', 'x') in df.columns
                 assert ('distributions', 'y') in df.columns
 
@@ -507,7 +505,7 @@ def test_create_study(storage_mode, cache_mode):
         # Test `load_if_exists=True` with existing study.
         optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=True)
 
-        if isinstance(study.storage, optuna.storages.InMemoryStorage):
+        if isinstance(study._storage, optuna.storages.InMemoryStorage):
             # `InMemoryStorage` does not share study's namespace (i.e., no name conflicts occur).
             optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=False)
         else:
@@ -563,3 +561,10 @@ def test_in_trial_study(storage_mode):
 
         # Test study direction.
         assert in_trial_study.direction == study.direction
+
+
+def test_storage_property():
+    # type: () -> None
+
+    study = optuna.create_study()
+    assert study.storage == study._storage

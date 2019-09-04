@@ -17,7 +17,7 @@ from optuna.structs import TrialState
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
 
@@ -315,11 +315,6 @@ class TestOptimizer(object):
 def _create_frozen_trial(params, param_distributions, state=TrialState.COMPLETE, number=0):
     # type: (Dict[str, Any], Dict[str, BaseDistribution], TrialState, int) -> FrozenTrial
 
-    params_in_internal_repr = {}
-    for param_name, param_value in params.items():
-        params_in_internal_repr[param_name] = param_distributions[param_name].to_internal_repr(
-            param_value)
-
     return FrozenTrial(
         number=number,
         value=1.,
@@ -327,7 +322,6 @@ def _create_frozen_trial(params, param_distributions, state=TrialState.COMPLETE,
         user_attrs={},
         system_attrs={},
         params=params,
-        params_in_internal_repr=params_in_internal_repr,
         distributions=param_distributions,
         intermediate_values={},
         datetime_start=None,

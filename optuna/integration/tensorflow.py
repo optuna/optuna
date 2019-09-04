@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import optuna
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
 try:
@@ -97,6 +97,8 @@ class TensorFlowPruningHook(SessionRunHook):
             # If there exists a new evaluation summary.
             if summary_step > self.current_summary_step:
                 current_score = latest_eval_metrics[self.metric]
+                if current_score is None:
+                    current_score = float('nan')
                 self.trial.report(current_score, step=summary_step)
                 self.current_summary_step = summary_step
             if self.trial.should_prune():

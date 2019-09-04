@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import scipy.special
 
@@ -8,16 +9,15 @@ from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters
 from optuna import structs
 from optuna.structs import StudyDirection
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
-    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
@@ -52,6 +52,39 @@ def default_weights(x):
 
 
 class TPESampler(base.BaseSampler):
+    """Sampler using TPE (Tree-structured Parzen Estimator) algorithm.
+
+    This sampler is based on *independent sampling*.
+    See also :class:`~optuna.samplers.BaseSampler` for more details of 'independent sampling'.
+
+    On each trial, for each parameter, TPE fits one Gaussian Mixture Model (GMM) ``l(x)`` to
+    the set of parameter values associated with the best objective values, and another GMM
+    ``g(x)`` to the remaining parameter values. It chooses the parameter value ``x`` that
+    maximizes the ratio ``l(x)/g(x)``.
+
+    For further information about TPE algorithm, please refer to the following papers:
+
+    - `Algorithms for Hyper-Parameter Optimization
+      <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
+    - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
+      Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+
+    Example:
+
+        .. code::
+
+            import optuna
+            from optuna.samplers import TPESampler
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -10, 10)
+                return x**2
+
+            study = optuna.create_study(sampler=TPESampler())
+            study.optimize(objective, n_trials=100)
+
+    """
+
     def __init__(
             self,
             consider_prior=True,  # type: bool
@@ -110,8 +143,7 @@ class TPESampler(base.BaseSampler):
             return self._sample_discrete_uniform(param_distribution, below_param_values,
                                                  above_param_values)
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            return int(self._sample_int(param_distribution, below_param_values,
-                                        above_param_values))
+            return self._sample_int(param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             index = self._sample_categorical_index(param_distribution, below_param_values,
                                                    above_param_values)
@@ -170,7 +202,7 @@ class TPESampler(base.BaseSampler):
         return min(max(best_sample, distribution.low), distribution.high)
 
     def _sample_int(self, distribution, below, above):
-        # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> float
+        # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> int
 
         q = 1.0
         low = distribution.low - 0.5 * q
@@ -242,7 +274,7 @@ class TPESampler(base.BaseSampler):
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
         weighted_below = counts_below + self.prior_weight
         weighted_below /= weighted_below.sum()
-        samples_below = self._sample_from_categorical_dist(weighted_below, size=size)
+        samples_below = self._sample_from_categorical_dist(weighted_below, size)
         log_likelihoods_below = TPESampler._categorical_log_pdf(samples_below, weighted_below)
 
         weights_above = self.weights(len(above))
@@ -355,19 +387,12 @@ class TPESampler(base.BaseSampler):
         return_val.shape = _samples.shape
         return return_val
 
-    def _sample_from_categorical_dist(self, probabilities, size=()):
-        # type: (Union[np.ndarray, np.ndarray], Tuple) -> Union[np.ndarray, np.ndarray]
+    def _sample_from_categorical_dist(self, probabilities, size):
+        # type: (np.ndarray, Tuple[int]) -> np.ndarray
 
         if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
             probabilities = probabilities[0]
         probabilities = np.asarray(probabilities)
-
-        if size == ():
-            size = (1, )
-        elif isinstance(size, (int, np.number)):
-            size = (size, )
-        else:
-            size = tuple(size)
 
         if size == (0, ):
             return np.asarray([], dtype=float)
@@ -512,7 +537,7 @@ def _get_observation_pairs(study, param_name):
     values = []
     scores = []
     for trial in study.trials:
-        if param_name not in trial.params_in_internal_repr:
+        if param_name not in trial.params:
             continue
 
         if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
@@ -520,13 +545,17 @@ def _get_observation_pairs(study, param_name):
         elif trial.state is structs.TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
-                score = (-step, sign * intermediate_value)
+                if math.isnan(intermediate_value):
+                    score = (-step, float('inf'))
+                else:
+                    score = (-step, sign * intermediate_value)
             else:
                 score = (float('inf'), 0.0)
         else:
             continue
 
-        param_value = trial.params_in_internal_repr[param_name]
+        distribution = trial.distributions[param_name]
+        param_value = distribution.to_internal_repr(trial.params[param_name])
         values.append(param_value)
         scores.append(score)
 
