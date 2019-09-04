@@ -250,7 +250,7 @@ class Study(BaseStudy):
         """
 
         if not self._optimize_lock.acquire(False):
-            raise RuntimeError("Nested invocation of `Study.optimize` method aren't allowed.")
+            raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
         try:
             if n_jobs == 1:
