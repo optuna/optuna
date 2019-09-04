@@ -217,7 +217,7 @@ class Study(BaseStudy):
             n_jobs=1,  # type: int
             catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks=None
-            # type: Optional[List[Callable[[InTrialStudy, structs.FrozenTrial], None]]]
+            # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -244,7 +244,7 @@ class Study(BaseStudy):
                 exceptions.html#Exception>`_,), where all non-exit exceptions are handled
                 by this logic.
             callbacks:
-                TODO: doc
+                List of callback functions that are applied at the end of each trial.
         """
 
         if n_jobs == 1:
@@ -347,7 +347,7 @@ class Study(BaseStudy):
             n_trials,  # type: Optional[int]
             timeout,  # type: Optional[float]
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks  # type: Optional[List[Callable[[InTrialStudy, structs.FrozenTrial], None]]]
+            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
 
@@ -373,7 +373,7 @@ class Study(BaseStudy):
             timeout,  # type: Optional[float]
             n_jobs,  # type: int
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks  # type: Optional[List[Callable[[InTrialStudy, structs.FrozenTrial], None]]]
+            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
 
@@ -435,17 +435,15 @@ class Study(BaseStudy):
             self,
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks  # type: Optional[List[Callable[[InTrialStudy, structs.FrozenTrial], None]]]
-
+            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
 
         trial = self._run_trial(func, catch)
         if callbacks is not None:
-            in_trial_study = InTrialStudy(self)
             frozen_trial = self.storage.get_trial(trial._trial_id)
             for callback in callbacks:
-                callback(in_trial_study, frozen_trial)
+                callback(self, frozen_trial)
 
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
