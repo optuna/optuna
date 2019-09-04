@@ -221,8 +221,7 @@ class Study(BaseStudy):
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
             catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks=None
-            # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            callbacks=None  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
