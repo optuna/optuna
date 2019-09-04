@@ -568,3 +568,42 @@ def test_storage_property():
 
     study = optuna.create_study()
     assert study.storage == study._storage
+
+
+def test_callbacks():
+    # type: () -> None
+
+    study = optuna.create_study()
+
+    # Empty callback list.
+    study.optimize(lambda t: t.suggest_int('x', 1, 1), n_trials=1, callbacks=[])
+
+    # A callback.
+    values = []
+    callbacks = [lambda study, trial: values.append(trial.value)]
+    study.optimize(lambda t: t.suggest_int('x', 1, 1), n_trials=1, callbacks=callbacks)
+    assert values == [1]
+
+    # Two callbacks.
+    values = []
+    params = []
+    callbacks = [
+        lambda study, trial: values.append(trial.value),
+        lambda study, trial: params.append(trial.params)
+    ]
+    study.optimize(lambda t: t.suggest_int('x', 1, 1), n_trials=1, callbacks=callbacks)
+    assert values == [1]
+    assert params == [{'x': 1}]
+
+    # If an exception raised during a trial is caught by the study, callbacks are called.
+    states = []
+    callbacks = [lambda study, trial: states.append(trial.state)]
+    study.optimize(lambda t: 1/0, n_trials=1, callbacks=callbacks)
+    assert states == [optuna.structs.TrialState.FAIL]
+
+    # If an exception raised during a trial isn't caught by the study, callbacks aren't called.
+    states = []
+    callbacks = [lambda study, trial: states.append(trial.state)]
+    with pytest.raises(ZeroDivisionError):
+        study.optimize(lambda t: 1/0, n_trials=1, callbacks=callbacks, catch=())
+    assert states == []
