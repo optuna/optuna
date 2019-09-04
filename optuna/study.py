@@ -248,7 +248,7 @@ class Study(BaseStudy):
                 exceptions.html#Exception>`_,), where all non-exit exceptions are handled
                 by this logic.
             callbacks:
-                List of callback functions that are applied at the end of each trial.
+                List of callback functions that are invoked at the end of each trial.
         """
 
         if not self._optimize_lock.acquire(False):

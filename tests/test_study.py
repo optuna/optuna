@@ -592,7 +592,8 @@ def test_callbacks(n_jobs):
     assert values == [1 for _ in range(10)]
     assert params == [{'x': 1} for _ in range(10)]
 
-    # If an exception raised during a trial is caught by the study, callbacks are called.
+    # If a trial is failed with an exception and the exception is caught by the study,
+    # callbacks are invoked.
     states = []
     callbacks = [lambda study, trial: states.append(trial.state)]
     study.optimize(lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
@@ -605,7 +606,8 @@ def test_callbacks(n_jobs):
     # TODO(ohta): Fix `Study.optimize`
 
     if n_jobs == 1:
-        # If an exception raised during a trial isn't caught by the study, callbacks aren't called.
+        # If a trial is failed with an exception and the exception isn't caught by the study,
+        # callbacks aren't invoked.
         states = []
         callbacks = [lambda study, trial: states.append(trial.state)]
         with pytest.raises(ZeroDivisionError):
