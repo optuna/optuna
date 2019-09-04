@@ -39,7 +39,7 @@ class StudyDirection(enum.Enum):
     Attributes:
         NOT_SET:
             Direction has not been set.
-        MNIMIZE:
+        MINIMIZE:
             :class:`~optuna.study.Study` minimizes the objective function.
         MAXIMIZE:
             :class:`~optuna.study.Study` maximizes the objective function.
