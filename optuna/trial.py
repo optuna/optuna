@@ -387,14 +387,14 @@ class Trial(BaseTrial):
             A boolean value. If :obj:`True`, the trial should be pruned. Otherwise, the trial will
             be continued.
         """
-        if step is None:
-            step = max(self.storage.get_trial(self._trial_id).intermediate_values.keys())
-        else:
+        if step is not None:
             warnings.warn(
                 'The use of `step` argument is deprecated. '
-                'You can omit to pass this parameter.', DeprecationWarning)
+                'The last reported step is used instead of '
+                'the step given by the argument.', DeprecationWarning)
 
-        return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
+        trial = self.study._storage.get_trial(self._trial_id)
+        return self.study.pruner.prune(self.study, trial)
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None

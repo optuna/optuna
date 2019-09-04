@@ -1,5 +1,4 @@
 import math
-from mock import MagicMock
 from mock import Mock
 from mock import patch
 import pytest
@@ -8,6 +7,7 @@ from optuna import distributions
 from optuna import samplers
 from optuna import storages
 from optuna.study import create_study
+from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FixedTrial
 from optuna.trial import Trial
@@ -207,24 +207,11 @@ def test_distributions(storage_init_func):
 def test_trial_should_prune():
     # type: () -> None
 
-    study_id = 1
-    trial_id = 1
-
-    study_mock = MagicMock()
-    study_mock.study_id = study_id
-    study_mock._storage.get_trial.return_value.\
-        intermediate_values.keys.return_value = [1, 2, 3, 4, 5]
-    study_mock.pruner.prune.return_value = True
-
-    trial = Trial(study_mock, trial_id)  # type: ignore
-    study_mock.reset_mock()
-
-    trial.should_prune()
-
-    study_mock._storage.get_trial.assert_called_once_with(trial_id)
-    study_mock.pruner.prune.assert_called_once_with(
-        study_mock._storage, study_id, trial_id, 5,
-    )
+    pruner = DeterministicPruner(True)
+    study = create_study(pruner=pruner)
+    trial = Trial(study, study._storage.create_new_trial_id(study.study_id))
+    trial.report(1, 1)
+    assert trial.should_prune()
 
 
 def test_fixed_trial_suggest_uniform():

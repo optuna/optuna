@@ -98,6 +98,15 @@ class FrozenTrial(
 
     internal_fields = ['distributions', 'trial_id']
 
+    @property
+    def last_step(self):
+        # type: () -> Optional[int]
+
+        if len(self.intermediate_values) == 0:
+            return None
+        else:
+            return max(self.intermediate_values.keys())
+
 
 class StudySummary(
         NamedTuple('StudySummary', [('study_id', int), ('study_name', str),
