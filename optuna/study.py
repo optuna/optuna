@@ -441,7 +441,7 @@ class Study(BaseStudy):
 
         trial = self._run_trial(func, catch)
         if callbacks is not None:
-            frozen_trial = self.storage.get_trial(trial._trial_id)
+            frozen_trial = self._storage.get_trial(trial._trial_id)
             for callback in callbacks:
                 callback(self, frozen_trial)
 
