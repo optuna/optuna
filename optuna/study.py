@@ -6,6 +6,7 @@ import multiprocessing
 import multiprocessing.pool
 import pandas as pd
 from six.moves import queue
+import threading
 import time
 import warnings
 
@@ -174,11 +175,14 @@ class Study(BaseStudy):
 
         self.logger = logging.get_logger(__name__)
 
+        self._optimize_lock = threading.Lock()
+
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
         del state['logger']
+        del state['_optimize_lock']
         return state
 
     def __setstate__(self, state):
@@ -186,6 +190,7 @@ class Study(BaseStudy):
 
         self.__dict__.update(state)
         self.logger = logging.get_logger(__name__)
+        self._optimize_lock = threading.Lock()
 
     @property
     def user_attrs(self):
@@ -244,10 +249,16 @@ class Study(BaseStudy):
 
         """
 
-        if n_jobs == 1:
-            self._optimize_sequential(func, n_trials, timeout, catch)
-        else:
-            self._optimize_parallel(func, n_trials, timeout, n_jobs, catch)
+        if not self._optimize_lock.acquire(False):
+            raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
+
+        try:
+            if n_jobs == 1:
+                self._optimize_sequential(func, n_trials, timeout, catch)
+            else:
+                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch)
+        finally:
+            self._optimize_lock.release()
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -490,30 +501,6 @@ class Study(BaseStudy):
         self.logger.info('Finished trial#{} resulted in value: {}. '
                          'Current best value is {} with parameters: {}.'.format(
                              trial_number, value, self.best_value, self.best_params))
-
-
-class InTrialStudy(BaseStudy):
-    """An object to access a study instance inside a trial instance safely.
-
-    To prevent unexpected recursive calls of :func:`~optuna.study.Study.optimize()`, this class
-    does not allow to call :func:`~optuna.study.InTrialStudy.optimize()` unlike
-    :class:`~optuna.study.Study`.
-
-    Note that this object is created within Optuna library, so
-    it is not intended that library users directly use this constructor.
-
-    Args:
-        study:
-            A :class:`~optuna.study.Study` object.
-
-    """
-
-    def __init__(self, study):
-        # type: (Study) -> None
-
-        super(InTrialStudy, self).__init__(study.study_id, study._storage)
-
-        self.study_name = study.study_name
 
 
 def create_study(

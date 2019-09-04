@@ -21,7 +21,7 @@ if type_checking.TYPE_CHECKING:
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
-    from optuna.study import InTrialStudy  # NOQA
+    from optuna.study import Study  # NOQA
 
 EPS = 1e-12
 
@@ -112,17 +112,17 @@ class TPESampler(base.BaseSampler):
         self.random_sampler = random.RandomSampler(seed=seed)
 
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         return {}
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
         return {}
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
+        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
 
         values, scores = _get_observation_pairs(study, param_name)
 
@@ -511,7 +511,7 @@ class TPESampler(base.BaseSampler):
 
 
 def _get_observation_pairs(study, param_name):
-    # type: (InTrialStudy, str) -> Tuple[List[float], List[Tuple[float, float]]]
+    # type: (Study, str) -> Tuple[List[float], List[Tuple[float, float]]]
     """Get observation pairs from the study.
 
        This function collects observation pairs from the complete or pruned trials of the study.
