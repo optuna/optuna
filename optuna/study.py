@@ -398,7 +398,7 @@ class Study(BaseStudy):
 
             while que.get():
                 self._run_trial_and_callbacks(func, catch, callbacks)
-            self.storage.remove_session()
+            self._storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
         for _ in range(n_jobs):
