@@ -570,19 +570,25 @@ def test_storage_property():
     assert study.storage == study._storage
 
 
-def test_callbacks():
-    # type: () -> None
+@pytest.mark.parametrize('n_jobs', [1, 4])
+def test_callbacks(n_jobs):
+    # type: (int) -> None
 
     study = optuna.create_study()
 
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        return trial.suggest_int('x', 1, 1)
+
     # Empty callback list.
-    study.optimize(lambda t: t.suggest_int('x', 1, 1), n_trials=1, callbacks=[])
+    study.optimize(objective, callbacks=[], n_trials=10, n_jobs=n_jobs)
 
     # A callback.
     values = []
     callbacks = [lambda study, trial: values.append(trial.value)]
-    study.optimize(lambda t: t.suggest_int('x', 1, 1), n_trials=1, callbacks=callbacks)
-    assert values == [1]
+    study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
+    assert values == [1 for _ in range(10)]
 
     # Two callbacks.
     values = []
@@ -591,19 +597,27 @@ def test_callbacks():
         lambda study, trial: values.append(trial.value),
         lambda study, trial: params.append(trial.params)
     ]
-    study.optimize(lambda t: t.suggest_int('x', 1, 1), n_trials=1, callbacks=callbacks)
-    assert values == [1]
-    assert params == [{'x': 1}]
+    study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
+    assert values == [1 for _ in range(10)]
+    assert params == [{'x': 1} for _ in range(10)]
 
     # If an exception raised during a trial is caught by the study, callbacks are called.
     states = []
     callbacks = [lambda study, trial: states.append(trial.state)]
-    study.optimize(lambda t: 1/0, n_trials=1, callbacks=callbacks)
-    assert states == [optuna.structs.TrialState.FAIL]
+    study.optimize(lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
+    assert states == [optuna.structs.TrialState.FAIL for _ in range(10)]
 
-    # If an exception raised during a trial isn't caught by the study, callbacks aren't called.
-    states = []
-    callbacks = [lambda study, trial: states.append(trial.state)]
-    with pytest.raises(ZeroDivisionError):
-        study.optimize(lambda t: 1/0, n_trials=1, callbacks=callbacks, catch=())
-    assert states == []
+    # NOTE: Because `Study.optimize` blocks forever if `n_jobs` is more than `1` and
+    #       an uncaught exception is raised during an optimization,
+    #       we test the following scenario only when `n_jobs==1`.
+    #
+    # TODO(ohta): Fix `Study.optimize`
+
+    if n_jobs == 1:
+        # If an exception raised during a trial isn't caught by the study, callbacks aren't called.
+        states = []
+        callbacks = [lambda study, trial: states.append(trial.state)]
+        with pytest.raises(ZeroDivisionError):
+            study.optimize(lambda t: 1/0, callbacks=callbacks,
+                           n_trials=10, n_jobs=n_jobs, catch=())
+        assert states == []
