@@ -5,9 +5,9 @@ import warnings
 
 from optuna import distributions
 from optuna import logging
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
@@ -126,7 +126,7 @@ class Trial(BaseTrial):
         self._trial_id = trial_id
 
         self.study_id = self.study.study_id
-        self.storage = self.study.storage
+        self.storage = self.study._storage
         self.logger = logging.get_logger(__name__)
 
         self._init_relative_params()

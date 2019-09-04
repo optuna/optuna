@@ -9,7 +9,7 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     import typing  # NOQA
     from typing import Dict  # NOQA
 
@@ -143,8 +143,8 @@ def test_categorical(sampler_class, choices):
 def _create_new_trial(study):
     # type: (Study) -> FrozenTrial
 
-    trial_id = study.storage.create_new_trial_id(study.study_id)
-    return study.storage.get_trial(trial_id)
+    trial_id = study._storage.create_new_trial_id(study.study_id)
+    return study._storage.get_trial(trial_id)
 
 
 class FixedSampler(BaseSampler):

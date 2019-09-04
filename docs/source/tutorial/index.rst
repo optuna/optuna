@@ -13,3 +13,4 @@ Tutorial
    cli
    attributes
    pruning
+   sampler

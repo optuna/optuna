@@ -6,7 +6,7 @@ from optuna.samplers.base import BaseSampler  # NOQA
 from optuna.samplers.random import RandomSampler  # NOQA
 from optuna.samplers.tpe import TPESampler  # NOQA
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA

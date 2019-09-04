@@ -2,9 +2,9 @@ import numpy
 
 from optuna import distributions
 from optuna.samplers.base import BaseSampler
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
@@ -16,6 +16,9 @@ if types.TYPE_CHECKING:
 
 class RandomSampler(BaseSampler):
     """Sampler using random sampling.
+
+    This sampler is based on *independent sampling*.
+    See also :class:`~optuna.samplers.BaseSampler` for more details of 'independent sampling'.
 
     Example:
 
