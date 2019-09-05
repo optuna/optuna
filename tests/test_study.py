@@ -555,7 +555,7 @@ def test_nested_optimization():
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test__append_trial(storage_mode):
+def test_append_trial(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
