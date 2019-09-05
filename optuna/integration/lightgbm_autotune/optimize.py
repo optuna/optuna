@@ -76,6 +76,16 @@ class BaseTuner:
         # type: () -> lgb.Booster
         metric = self.lgbm_params.get('metric', 'binary_logloss')
 
+        # todo (smly): Make this better.
+        if type(metric) is str:
+            pass
+        elif type(metric) is list:
+            metric = metric[-1]
+        elif type(metric) is set:
+            metric = metric[-1]
+        else:
+            raise NotImplementedError
+
         valid_sets = self.lgbm_kwargs.get('valid_sets')
         if self.lgbm_kwargs.get('valid_names', None) is not None:
             if type(self.lgbm_kwargs['valid_names']) is str:
