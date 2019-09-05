@@ -440,7 +440,7 @@ class Study(BaseStudy):
 
         trial._validate()
 
-        self.storage.create_new_trial_id(self.study_id, base_trial=trial)
+        self.storage.create_new_trial_id(self.study_id, template_trial=trial)
 
     def _optimize_sequential(
             self,

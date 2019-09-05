@@ -326,57 +326,57 @@ class RDBStorage(BaseStorage):
 
         return study_sumarries
 
-    def create_new_trial_id(self, study_id, base_trial=None):
+    def create_new_trial_id(self, study_id, template_trial=None):
         # type: (int, Optional[structs.FronzenTrial]) -> int
 
         session = self.scoped_session()
 
-        if base_trial is None:
+        if template_trial is None:
             trial = models.TrialModel(study_id=study_id, state=structs.TrialState.RUNNING)
         else:
             # Because only `RUNNING` trials can be updated,
             # we temporarily set the state of the new trial to `RUNNING`.
             # After all fields of the trial have been updated,
-            # the state is set to `base_trial.state`.
+            # the state is set to `template_trial.state`.
             temp_state = structs.TrialState.RUNNING
 
             trial = models.TrialModel(
                 study_id=study_id,
                 state=temp_state,
-                value=base_trial.value,
-                datetime_start=base_trial.datetime_start,
-                datetime_complete=base_trial.datetime_complete,
+                value=template_trial.value,
+                datetime_start=template_trial.datetime_start,
+                datetime_complete=template_trial.datetime_complete,
             )
 
         session.add(trial)
         session.flush()
 
-        if base_trial is not None:
-            for param_name, param_value in base_trial.params.items():
-                if param_name not in base_trial.distributions:
+        if template_trial is not None:
+            for param_name, param_value in template_trial.params.items():
+                if param_name not in template_trial.distributions:
                     session.rollback()
                     raise ValueError(
                         "No distribution found for parameter '{}'.".format(param_name))
 
-                distribution = base_trial.distributions[param_name]
+                distribution = template_trial.distributions[param_name]
                 param_value_in_internal_repr = distribution.to_internal_repr(param_value)
                 self._set_trial_param_without_commit(session, trial.trial_id, param_name,
                                                      param_value_in_internal_repr, distribution)
 
-            for key, value in base_trial.user_attrs.items():
+            for key, value in template_trial.user_attrs.items():
                 self._set_trial_user_attr_without_commit(session, trial.trial_id, key, value)
 
-            for key, value in base_trial.system_attrs.items():
+            for key, value in template_trial.system_attrs.items():
                 if key == '_number':
                     continue
 
                 self._set_trial_system_attr_without_commit(session, trial.trial_id, key, value)
 
-            for step, intermediate_value in base_trial.intermediate_values.items():
+            for step, intermediate_value in template_trial.intermediate_values.items():
                 self._set_trial_intermediate_value_without_commit(session, trial.trial_id, step,
                                                                   intermediate_value)
 
-            trial.state = base_trial.state
+            trial.state = template_trial.state
 
         self._commit(session)
 

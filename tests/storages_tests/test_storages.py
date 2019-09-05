@@ -268,13 +268,13 @@ def test_create_new_trial_id(storage_init_func):
 
 
 @parametrize_storage
-def test_create_new_trial_id_with_base_trial(storage_init_func):
+def test_create_new_trial_id_with_template_trial(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
 
     now = datetime.now()
-    base_trial = FrozenTrial(
+    template_trial = FrozenTrial(
         state=TrialState.COMPLETE,
         value=10000,
         datetime_start=now,
@@ -290,25 +290,25 @@ def test_create_new_trial_id_with_base_trial(storage_init_func):
     )
 
     study_id = storage.create_new_study_id()
-    trial_id = storage.create_new_trial_id(study_id, base_trial=base_trial)
+    trial_id = storage.create_new_trial_id(study_id, template_trial=template_trial)
 
     trials = storage.get_all_trials(study_id)
     assert len(trials) == 1
     assert trials[0].trial_id == trial_id
     assert trials[0].number == 0
-    assert trials[0].state == base_trial.state
-    assert trials[0].state == base_trial.state
-    assert trials[0].value == base_trial.value
-    assert trials[0].datetime_start == base_trial.datetime_start
-    assert trials[0].datetime_complete == base_trial.datetime_complete
-    assert trials[0].params == base_trial.params
-    assert trials[0].distributions == base_trial.distributions
-    assert trials[0].user_attrs == base_trial.user_attrs
-    assert trials[0].intermediate_values == base_trial.intermediate_values
+    assert trials[0].state == template_trial.state
+    assert trials[0].state == template_trial.state
+    assert trials[0].value == template_trial.value
+    assert trials[0].datetime_start == template_trial.datetime_start
+    assert trials[0].datetime_complete == template_trial.datetime_complete
+    assert trials[0].params == template_trial.params
+    assert trials[0].distributions == template_trial.distributions
+    assert trials[0].user_attrs == template_trial.user_attrs
+    assert trials[0].intermediate_values == template_trial.intermediate_values
 
     # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-    base_trial.system_attrs['_number'] = 0
-    assert trials[0].system_attrs == base_trial.system_attrs
+    template_trial.system_attrs['_number'] = 0
+    assert trials[0].system_attrs == template_trial.system_attrs
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)

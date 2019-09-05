@@ -135,15 +135,15 @@ class InMemoryStorage(base.BaseStorage):
                 datetime_start=datetime_start)
         ]
 
-    def create_new_trial_id(self, study_id, base_trial=None):
+    def create_new_trial_id(self, study_id, template_trial=None):
         # type: (int, Optional[structs.FrozenTrial]) -> int
 
         self._check_study_id(study_id)
 
-        if base_trial is None:
+        if template_trial is None:
             trial = self._create_initial_running_trial()
         else:
-            trial = copy.deepcopy(base_trial)
+            trial = copy.deepcopy(template_trial)
 
         with self._lock:
             trial_id = len(self.trials)
