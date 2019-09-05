@@ -555,14 +555,14 @@ def test_nested_optimization():
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_inject_trial(storage_mode):
+def test__append_trial(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         assert len(study.trials) == 0
 
-        study.inject_trial(value=0.8)
+        study._append_trial(value=0.8)
         assert len(study.trials) == 1
         assert study.best_value == 0.8
 

@@ -351,7 +351,7 @@ class Study(BaseStudy):
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
-    def inject_trial(
+    def _append_trial(
             self,
             value=None,  # type: Optional[float]
             params=None,  # type: Optional[Dict[str, Any]]
@@ -364,56 +364,6 @@ class Study(BaseStudy):
             datetime_complete=None  # type: Optional[datetime.datetime]
     ):
         # type: (...) -> None
-        """Inject a trial into the :class:`~optuna.study.Study`.
-
-        Example:
-
-            Inject a complete trial that has the value ``0.8``.
-
-            .. code::
-
-                    study = optuna.create_study()
-                    assert len(study.trials) == 0
-
-                    study.inject_trial(value=0.8)
-                    assert len(study.trials) == 1
-                    assert study.best_value == 0.8
-
-        Args:
-            value:
-                The value of the trial.
-            params:
-                The parameters of the trial.
-                If this argument is set to :obj:`None`,
-                an empty dictionary is used instead.
-            distributions:
-                The distributions of the parameters of the trial.
-                If this argument is set to :obj:`None`,
-                an empty dictionary is used instead.
-            user_attrs:
-                The user attributes of the trial.
-                If this argument is set to :obj:`None`,
-                an empty dictionary is used instead.
-            system_attrs:
-                The system attributes of the trial.
-                If this argument is set to :obj:`None`,
-                an empty dictionary is used instead.
-            intermediate_values:
-                The intermediate values of the trial.
-                If this argument is set to :obj:`None`,
-                an empty list is used instead.
-            state:
-                The state of the trial.
-            datetime_start:
-                The start time of the trial.
-                If this argument is set to :obj:`None`,
-                the current time is used instead.
-            datetime_complete:
-                The start time of the trial.
-                If this argument is set to :obj:`None` and the trial is a finished trial,
-                the current time is used instead.
-
-        """
 
         params = params or {}
         distributions = distributions or {}
