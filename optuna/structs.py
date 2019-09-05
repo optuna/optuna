@@ -102,17 +102,18 @@ class FrozenTrial(
         # type: () -> None
 
         if self.datetime_start is None:
-            raise ValueError('`datetime_start` must be set.')
+            raise ValueError('`datetime_start` is supposed to be set.')
 
         if self.state.is_finished():
             if self.datetime_complete is None:
-                raise ValueError('`datetime_complete` must be set for a finished trial.')
+                raise ValueError('`datetime_complete` is supposed to be set for a finished trial.')
         else:
             if self.datetime_complete is not None:
-                raise ValueError('`datetime_complete` must not be set for a finished trial.')
+                raise ValueError(
+                    '`datetime_complete` is supposed to not be set for a finished trial.')
 
         if self.state == TrialState.COMPLETE and self.value is None:
-            raise ValueError('`value` must be set for a complete trial.')
+            raise ValueError('`value` is supposed to be set for a complete trial.')
 
         if set(self.params.keys()) != set(self.distributions.keys()):
             raise ValueError('Inconsistent parameters {} and distributions {}.'.format(
