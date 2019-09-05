@@ -60,5 +60,7 @@ def handling_alias_parameters(lgbm_params):
             if alias_name in lgbm_params:
                 lgbm_params[param_name] = lgbm_params[alias_name]
                 del lgbm_params[alias_name]
-        if default_value is not None:
+
+        # user-supplied argument is used. if it doesn't exist, default value is used.
+        if (default_value is not None) and (param_name not in lgbm_params):
             lgbm_params.update({param_name: default_value})
