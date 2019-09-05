@@ -98,7 +98,7 @@ class BaseStorage(object):
     # Basic trial manipulation
 
     @abc.abstractmethod
-    def create_new_trial_id(self, study_id):
+    def create_new_trial(self, study_id):
         # type: (int) -> int
 
         raise NotImplementedError

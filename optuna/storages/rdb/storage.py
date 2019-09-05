@@ -326,7 +326,7 @@ class RDBStorage(BaseStorage):
 
         return study_sumarries
 
-    def create_new_trial_id(self, study_id):
+    def create_new_trial(self, study_id):
         # type: (int) -> int
 
         session = self.scoped_session()

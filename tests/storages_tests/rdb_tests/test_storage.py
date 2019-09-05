@@ -125,7 +125,7 @@ def test_set_trial_param_to_check_distribution_json():
     session = storage.scoped_session()
     study_id = storage.create_new_study_id()
 
-    trial_id = storage.create_new_trial_id(study_id)
+    trial_id = storage.create_new_trial(study_id)
     storage.set_trial_param(trial_id, 'x', 1.5, example_distributions['x'])
     storage.set_trial_param(trial_id, 'y', 2, example_distributions['y'])
 
@@ -148,8 +148,8 @@ def test_get_all_study_summaries_with_multiple_studies():
     study_id_1 = storage.create_new_study_id()
     storage.set_study_direction(study_id_1, StudyDirection.MINIMIZE)
 
-    trial_id_1_1 = storage.create_new_trial_id(study_id_1)
-    trial_id_1_2 = storage.create_new_trial_id(study_id_1)
+    trial_id_1_1 = storage.create_new_trial(study_id_1)
+    trial_id_1_2 = storage.create_new_trial(study_id_1)
 
     storage.set_trial_value(trial_id_1_1, 100)
     storage.set_trial_value(trial_id_1_2, 0)
@@ -161,8 +161,8 @@ def test_get_all_study_summaries_with_multiple_studies():
     study_id_2 = storage.create_new_study_id()
     storage.set_study_direction(study_id_2, StudyDirection.MAXIMIZE)
 
-    trial_id_2_1 = storage.create_new_trial_id(study_id_2)
-    trial_id_2_2 = storage.create_new_trial_id(study_id_2)
+    trial_id_2_1 = storage.create_new_trial(study_id_2)
+    trial_id_2_2 = storage.create_new_trial(study_id_2)
 
     storage.set_trial_value(trial_id_2_1, -100)
     storage.set_trial_value(trial_id_2_2, -200)
@@ -267,10 +267,10 @@ def test_create_new_trial_number():
     storage = create_test_storage()
     study_id = storage.create_new_study_id()
 
-    trial_id = storage.create_new_trial_id(study_id)
+    trial_id = storage.create_new_trial(study_id)
     assert storage._create_new_trial_number(trial_id) == 0
 
-    trial_id = storage.create_new_trial_id(study_id)
+    trial_id = storage.create_new_trial(study_id)
     assert storage._create_new_trial_number(trial_id) == 1
 
 
@@ -281,7 +281,7 @@ def test_update_finished_trial():
     study_id = storage.create_new_study_id()
 
     # Running trials are allowed to be updated.
-    trial_id = storage.create_new_trial_id(study_id)
+    trial_id = storage.create_new_trial(study_id)
     assert storage.get_trial(trial_id).state == TrialState.RUNNING
 
     storage.set_trial_intermediate_value(trial_id, 3, 5)
@@ -293,7 +293,7 @@ def test_update_finished_trial():
 
     # Finished trials are not allowed to be updated.
     for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
-        trial_id = storage.create_new_trial_id(study_id)
+        trial_id = storage.create_new_trial(study_id)
         storage.set_trial_state(trial_id, state)
 
         with pytest.raises(RuntimeError):
@@ -330,7 +330,7 @@ def test_storage_cache():
         # type: (RDBStorage, int) -> List[FrozenTrial]
 
         for state in [TrialState.RUNNING, TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
-            trial_id = storage.create_new_trial_id(study_id)
+            trial_id = storage.create_new_trial(study_id)
             storage.set_trial_state(trial_id, state)
 
         trials = storage.get_all_trials(study_id)

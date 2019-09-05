@@ -135,7 +135,7 @@ class InMemoryStorage(base.BaseStorage):
                 datetime_start=datetime_start)
         ]
 
-    def create_new_trial_id(self, study_id):
+    def create_new_trial(self, study_id):
         # type: (int) -> int
 
         self._check_study_id(study_id)

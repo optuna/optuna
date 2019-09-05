@@ -440,7 +440,7 @@ class Study(BaseStudy):
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
-        trial_id = self._storage.create_new_trial_id(self.study_id)
+        trial_id = self._storage.create_new_trial(self.study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
