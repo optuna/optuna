@@ -353,11 +353,6 @@ class RDBStorage(BaseStorage):
 
         if template_trial is not None:
             for param_name, param_value in template_trial.params.items():
-                if param_name not in template_trial.distributions:
-                    session.rollback()
-                    raise ValueError(
-                        "No distribution found for parameter '{}'.".format(param_name))
-
                 distribution = template_trial.distributions[param_name]
                 param_value_in_internal_repr = distribution.to_internal_repr(param_value)
                 self._set_trial_param_without_commit(session, trial.trial_id, param_name,
