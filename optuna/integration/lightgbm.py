@@ -3,9 +3,8 @@ import sys
 
 import optuna
 
-
 try:
-    import lightgbm as lgb
+    import lightgbm as lgb  # NOQA
     _available = True
 except ImportError as e:
     _import_error = e
