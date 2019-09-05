@@ -111,11 +111,11 @@ def teardown_module():
 
 
 @parametrize_storage
-def test_create_new_study_id(storage_init_func):
+def test_create_new_study(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
 
     summaries = storage.get_all_study_summaries()
     assert len(summaries) == 1
@@ -134,7 +134,7 @@ def test_create_new_study_id_with_name(storage_mode, cache_mode):
         function_name = test_create_new_study_id_with_name.__name__
         study_name = function_name + '/' + storage_mode + '/' + str(cache_mode)
         storage = optuna.storages.get_storage(storage)
-        study_id = storage.create_new_study_id(study_name)
+        study_id = storage.create_new_study(study_name)
 
         assert study_name == storage.get_study_name_from_id(study_id)
 
@@ -175,7 +175,7 @@ def test_get_study_id_from_trial_id(storage_mode, cache_mode):
         storage = optuna.storages.get_storage(storage)
 
         # Check if trial_number starts from 0.
-        study_id = storage.create_new_study_id()
+        study_id = storage.create_new_study()
 
         trial_id = storage.create_new_trial(study_id)
         assert storage.get_study_id_from_trial_id(trial_id) == study_id
@@ -186,7 +186,7 @@ def test_set_and_get_study_direction(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
 
     def check_set_and_get(direction):
         # type: (StudyDirection) -> None
@@ -209,7 +209,7 @@ def test_set_and_get_study_user_attrs(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
 
     def check_set_and_get(key, value):
         # type: (str, Any) -> None
@@ -231,7 +231,7 @@ def test_set_and_get_study_system_attrs(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
 
     def check_set_and_get(key, value):
         # type: (str, Any) -> None
@@ -253,7 +253,7 @@ def test_create_new_trial(storage_init_func):
 
     storage = storage_init_func()
 
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
     trial_id = storage.create_new_trial(study_id)
 
     trials = storage.get_all_trials(study_id)
@@ -276,7 +276,7 @@ def test_get_trial_number_from_id(storage_mode, cache_mode):
         storage = optuna.storages.get_storage(storage)
 
         # Check if trial_number starts from 0.
-        study_id = storage.create_new_study_id()
+        study_id = storage.create_new_study()
 
         trial_id = storage.create_new_trial(study_id)
         assert storage.get_trial_number_from_id(trial_id) == 0
@@ -293,7 +293,7 @@ def test_get_trial_number_from_id_with_empty_system_attrs(storage_mode, cache_mo
 
     with StorageSupplier(storage_mode, cache_mode) as storage:
         storage = optuna.storages.get_storage(storage)
-        study_id = storage.create_new_study_id()
+        study_id = storage.create_new_study()
         with patch.object(storage, 'get_trial_system_attrs', return_value=dict()) as _mock_attrs:
             trial_id = storage.create_new_trial(study_id)
             assert storage.get_trial_number_from_id(trial_id) == 0
@@ -312,8 +312,8 @@ def test_set_trial_state(storage_init_func):
 
     storage = storage_init_func()
 
-    trial_id_1 = storage.create_new_trial(storage.create_new_study_id())
-    trial_id_2 = storage.create_new_trial(storage.create_new_study_id())
+    trial_id_1 = storage.create_new_trial(storage.create_new_study())
+    trial_id_2 = storage.create_new_trial(storage.create_new_study())
 
     storage.set_trial_state(trial_id_1, TrialState.RUNNING)
     assert storage.get_trial(trial_id_1).state == TrialState.RUNNING
@@ -336,10 +336,10 @@ def test_set_and_get_trial_param(storage_init_func):
     storage = storage_init_func()
 
     # Setup test across multiple studies and trials.
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
     trial_id_1 = storage.create_new_trial(study_id)
     trial_id_2 = storage.create_new_trial(study_id)
-    trial_id_3 = storage.create_new_trial(storage.create_new_study_id())
+    trial_id_3 = storage.create_new_trial(storage.create_new_study())
 
     # Setup Distributions.
     distribution_x = UniformDistribution(low=1.0, high=2.0)
@@ -396,10 +396,10 @@ def test_set_trial_value(storage_init_func):
     storage = storage_init_func()
 
     # Setup test across multiple studies and trials.
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
     trial_id_1 = storage.create_new_trial(study_id)
     trial_id_2 = storage.create_new_trial(study_id)
-    trial_id_3 = storage.create_new_trial(storage.create_new_study_id())
+    trial_id_3 = storage.create_new_trial(storage.create_new_study())
 
     # Test setting new value.
     storage.set_trial_value(trial_id_1, 0.5)
@@ -417,10 +417,10 @@ def test_set_trial_intermediate_value(storage_init_func):
     storage = storage_init_func()
 
     # Setup test across multiple studies and trials.
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
     trial_id_1 = storage.create_new_trial(study_id)
     trial_id_2 = storage.create_new_trial(study_id)
-    trial_id_3 = storage.create_new_trial(storage.create_new_study_id())
+    trial_id_3 = storage.create_new_trial(storage.create_new_study())
 
     # Test setting new values.
     assert storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
@@ -442,7 +442,7 @@ def test_set_trial_user_attr(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    trial_id_1 = storage.create_new_trial(storage.create_new_study_id())
+    trial_id_1 = storage.create_new_trial(storage.create_new_study())
 
     def check_set_and_get(trial_id, key, value):
         # type: (int, str, Any) -> None
@@ -459,7 +459,7 @@ def test_set_trial_user_attr(storage_init_func):
     check_set_and_get(trial_id_1, 'dataset', 'ImageNet')
 
     # Test another trial.
-    trial_id_2 = storage.create_new_trial(storage.create_new_study_id())
+    trial_id_2 = storage.create_new_trial(storage.create_new_study())
     check_set_and_get(trial_id_2, 'baseline_score', 0.001)
     assert len(storage.get_trial(trial_id_2).user_attrs) == 1
     assert storage.get_trial(trial_id_2).user_attrs['baseline_score'] == 0.001
@@ -470,7 +470,7 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
     trial_id_1 = storage.create_new_trial(study_id)
 
     def check_set_and_get(trial_id, key, value):
@@ -501,7 +501,7 @@ def test_get_all_study_summaries(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
 
     storage.set_study_direction(study_id, StudyDirection.MINIMIZE)
 
@@ -538,7 +538,7 @@ def test_get_trial(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
 
     for example_trial in EXAMPLE_TRIALS:
         datetime_before = datetime.now()
@@ -566,8 +566,8 @@ def test_get_all_trials(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    study_id_1 = storage.create_new_study_id()
-    study_id_2 = storage.create_new_study_id()
+    study_id_1 = storage.create_new_study()
+    study_id_2 = storage.create_new_study()
 
     datetime_before = datetime.now()
 
@@ -603,7 +603,7 @@ def test_get_n_trials(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
 
     _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
                                          EXAMPLE_TRIALS[0])

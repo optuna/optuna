@@ -28,7 +28,7 @@ class BaseStorage(object):
     # Basic study manipulation
 
     @abc.abstractmethod
-    def create_new_study_id(self, study_name=None):
+    def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
 
         raise NotImplementedError

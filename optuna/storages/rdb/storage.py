@@ -77,7 +77,7 @@ class RDBStorage(BaseStorage):
 
         self._finished_trials_cache = _FinishedTrialsCache(enable_cache)
 
-    def create_new_study_id(self, study_name=None):
+    def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
 
         session = self.scoped_session()

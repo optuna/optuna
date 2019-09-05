@@ -46,7 +46,7 @@ class InMemoryStorage(base.BaseStorage):
         self.__dict__.update(state)
         self._lock = threading.RLock()
 
-    def create_new_study_id(self, study_name=None):
+    def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
 
         if study_name is not None:

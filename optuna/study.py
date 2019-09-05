@@ -545,7 +545,7 @@ def create_study(
 
     storage = storages.get_storage(storage)
     try:
-        study_id = storage.create_new_study_id(study_name)
+        study_id = storage.create_new_study(study_name)
     except structs.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
