@@ -141,7 +141,7 @@ class InMemoryStorage(base.BaseStorage):
         self._check_study_id(study_id)
 
         if template_trial is None:
-            trial = self._create_initial_running_trial()
+            trial = self._create_running_trial()
         else:
             trial = copy.deepcopy(template_trial)
 
@@ -152,7 +152,7 @@ class InMemoryStorage(base.BaseStorage):
         return trial_id
 
     @staticmethod
-    def _create_initial_running_trial():
+    def _create_running_trial():
         # type: () -> structs.FrozenTrial
 
         return structs.FrozenTrial(
