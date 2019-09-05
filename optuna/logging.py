@@ -12,9 +12,9 @@ from logging import WARN  # NOQA
 from logging import WARNING  # NOQA
 import threading
 
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
 _lock = threading.Lock()

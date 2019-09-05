@@ -17,7 +17,7 @@ from optuna.structs import TrialState
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
 
@@ -77,8 +77,7 @@ class TestCmaEsSampler(object):
 
         # The distribution has only one candidate.
         study.optimize(lambda t: t.suggest_int('x', 1, 1), n_trials=1)
-        in_trial_study = optuna.study.InTrialStudy(study)
-        assert sampler.infer_relative_search_space(in_trial_study, study.best_trial) == {}
+        assert sampler.infer_relative_search_space(study, study.best_trial) == {}
 
     @staticmethod
     def test_sample_relative_1d():

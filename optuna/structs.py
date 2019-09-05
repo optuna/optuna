@@ -39,7 +39,7 @@ class StudyDirection(enum.Enum):
     Attributes:
         NOT_SET:
             Direction has not been set.
-        MNIMIZE:
+        MINIMIZE:
             :class:`~optuna.study.Study` minimizes the objective function.
         MAXIMIZE:
             :class:`~optuna.study.Study` maximizes the objective function.
@@ -126,6 +126,15 @@ class FrozenTrial(
                 raise ValueError(
                     "The value {} of parameter '{}' isn't contained in the distribution {}.".
                     format(param_value, param_name, distribution))
+
+    @property
+    def last_step(self):
+        # type: () -> Optional[int]
+
+        if len(self.intermediate_values) == 0:
+            return None
+        else:
+            return max(self.intermediate_values.keys())
 
 
 class StudySummary(

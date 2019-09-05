@@ -6,7 +6,9 @@ import multiprocessing
 import multiprocessing.pool
 import pandas as pd
 from six.moves import queue
+import threading
 import time
+import warnings
 
 from optuna import logging
 from optuna import pruners
@@ -14,9 +16,9 @@ from optuna import samplers
 from optuna import storages
 from optuna import structs
 from optuna import trial as trial_module
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from multiprocessing import Queue  # NOQA
     from typing import Any  # NOQA
     from typing import Callable
@@ -38,7 +40,7 @@ class BaseStudy(object):
         # type: (int, storages.BaseStorage) -> None
 
         self.study_id = study_id
-        self.storage = storage
+        self._storage = storage
 
     @property
     def best_params(self):
@@ -75,7 +77,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.FrozenTrial` object of the best trial.
         """
 
-        return self.storage.get_best_trial(self.study_id)
+        return self._storage.get_best_trial(self.study_id)
 
     @property
     def direction(self):
@@ -86,7 +88,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.StudyDirection` object.
         """
 
-        return self.storage.get_study_direction(self.study_id)
+        return self._storage.get_study_direction(self.study_id)
 
     @property
     def trials(self):
@@ -97,7 +99,33 @@ class BaseStudy(object):
             A list of :class:`~optuna.structs.FrozenTrial` objects.
         """
 
-        return self.storage.get_all_trials(self.study_id)
+        return self._storage.get_all_trials(self.study_id)
+
+    @property
+    def storage(self):
+        # type: () -> storages.BaseStorage
+        """Return the storage object used by the study.
+
+        .. deprecated:: 0.15.0
+            The direct use of storage is deprecated.
+            Please access to storage via study's public methods
+            (e.g., :meth:`~optuna.study.Study.set_user_attr`).
+
+        Returns:
+            A storage object.
+        """
+
+        warnings.warn("The direct use of storage is deprecated. "
+                      "Please access to storage via study's public methods "
+                      "(e.g., `Study.set_user_attr`)",
+                      DeprecationWarning)
+
+        logger = logging.get_logger(__name__)
+        logger.warning("The direct use of storage is deprecated. "
+                       "Please access to storage via study's public methods "
+                       "(e.g., `Study.set_user_attr`)")
+
+        return self._storage
 
 
 class Study(BaseStudy):
@@ -149,11 +177,14 @@ class Study(BaseStudy):
 
         self.logger = logging.get_logger(__name__)
 
+        self._optimize_lock = threading.Lock()
+
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
         del state['logger']
+        del state['_optimize_lock']
         return state
 
     def __setstate__(self, state):
@@ -161,6 +192,7 @@ class Study(BaseStudy):
 
         self.__dict__.update(state)
         self.logger = logging.get_logger(__name__)
+        self._optimize_lock = threading.Lock()
 
     @property
     def user_attrs(self):
@@ -171,7 +203,7 @@ class Study(BaseStudy):
             A dictionary containing all user attributes.
         """
 
-        return self.storage.get_study_user_attrs(self.study_id)
+        return self._storage.get_study_user_attrs(self.study_id)
 
     @property
     def system_attrs(self):
@@ -182,7 +214,7 @@ class Study(BaseStudy):
             A dictionary containing all system attributes.
         """
 
-        return self.storage.get_study_system_attrs(self.study_id)
+        return self._storage.get_study_system_attrs(self.study_id)
 
     def optimize(
             self,
@@ -219,10 +251,16 @@ class Study(BaseStudy):
 
         """
 
-        if n_jobs == 1:
-            self._optimize_sequential(func, n_trials, timeout, catch)
-        else:
-            self._optimize_parallel(func, n_trials, timeout, n_jobs, catch)
+        if not self._optimize_lock.acquire(False):
+            raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
+
+        try:
+            if n_jobs == 1:
+                self._optimize_sequential(func, n_trials, timeout, catch)
+            else:
+                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch)
+        finally:
+            self._optimize_lock.release()
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -234,7 +272,7 @@ class Study(BaseStudy):
 
         """
 
-        self.storage.set_study_user_attr(self.study_id, key, value)
+        self._storage.set_study_user_attr(self.study_id, key, value)
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
@@ -249,7 +287,7 @@ class Study(BaseStudy):
 
         """
 
-        self.storage.set_study_system_attr(self.study_id, key, value)
+        self._storage.set_study_system_attr(self.study_id, key, value)
 
     def trials_dataframe(self, include_internal_fields=False):
         # type: (bool) -> pd.DataFrame
@@ -459,7 +497,7 @@ class Study(BaseStudy):
 
             while que.get():
                 self._run_trial(func, catch)
-            self.storage.remove_session()
+            self._storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
         for _ in range(n_jobs):
@@ -495,7 +533,7 @@ class Study(BaseStudy):
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
-        trial_id = self.storage.create_new_trial_id(self.study_id)
+        trial_id = self._storage.create_new_trial_id(self.study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
@@ -506,14 +544,14 @@ class Study(BaseStudy):
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
             self.logger.info(message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
+            self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
         except catch as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
                 .format(trial_number, structs.TrialState.FAIL, repr(e))
             self.logger.warning(message, exc_info=True)
-            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
         finally:
             # The following line mitigates memory problems that can be occurred in some
@@ -532,20 +570,20 @@ class Study(BaseStudy):
                       'objective function cannot be casted to float. Returned value is: ' \
                       '{}'.format(trial_number, structs.TrialState.FAIL, repr(result))
             self.logger.warning(message)
-            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
         if math.isnan(result):
             message = 'Setting status of trial#{} as {} because the objective function ' \
                       'returned {}.'.format(trial_number, structs.TrialState.FAIL, result)
             self.logger.warning(message)
-            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
         trial.report(result)
-        self.storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
+        self._storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
         self._log_completed_trial(trial_number, result)
 
         return trial
@@ -556,30 +594,6 @@ class Study(BaseStudy):
         self.logger.info('Finished trial#{} resulted in value: {}. '
                          'Current best value is {} with parameters: {}.'.format(
                              trial_number, value, self.best_value, self.best_params))
-
-
-class InTrialStudy(BaseStudy):
-    """An object to access a study instance inside a trial instance safely.
-
-    To prevent unexpected recursive calls of :func:`~optuna.study.Study.optimize()`, this class
-    does not allow to call :func:`~optuna.study.InTrialStudy.optimize()` unlike
-    :class:`~optuna.study.Study`.
-
-    Note that this object is created within Optuna library, so
-    it is not intended that library users directly use this constructor.
-
-    Args:
-        study:
-            A :class:`~optuna.study.Study` object.
-
-    """
-
-    def __init__(self, study):
-        # type: (Study) -> None
-
-        super(InTrialStudy, self).__init__(study.study_id, study.storage)
-
-        self.study_name = study.study_name
 
 
 def create_study(
@@ -598,8 +612,9 @@ def create_study(
             Database URL. If this argument is set to None, in-memory storage is used, and the
             :class:`~optuna.study.Study` will not be persistent.
         sampler:
-            A sampler object that implements background algorithm for value suggestion. See also
-            :class:`~optuna.samplers`.
+            A sampler object that implements background algorithm for value suggestion.
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
+            as the default. See also :class:`~optuna.samplers`.
         pruner:
             A pruner object that decides early stopping of unpromising trials. See also
             :class:`~optuna.pruners`.
@@ -649,7 +664,7 @@ def create_study(
     else:
         raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
 
-    study.storage.set_study_direction(study_id, _direction)
+    study._storage.set_study_direction(study_id, _direction)
 
     return study
 

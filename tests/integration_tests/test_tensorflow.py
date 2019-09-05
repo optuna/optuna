@@ -8,9 +8,9 @@ import tensorflow as tf
 import optuna
 from optuna.integration import TensorFlowPruningHook
 from optuna.testing.integration import DeterministicPruner
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     import typing  # NOQA
 
 
@@ -83,7 +83,7 @@ def test_init_with_is_higher_better(is_higher_better):
     )
 
     study = optuna.create_study()
-    trial_id = study.storage.create_new_trial_id(study.study_id)
+    trial_id = study._storage.create_new_trial_id(study.study_id)
 
     with pytest.raises(ValueError):
         TensorFlowPruningHook(

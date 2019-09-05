@@ -2,20 +2,23 @@ import numpy
 
 from optuna import distributions
 from optuna.samplers.base import BaseSampler
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
-    from optuna.study import InTrialStudy  # NOQA
+    from optuna.study import Study  # NOQA
 
 
 class RandomSampler(BaseSampler):
     """Sampler using random sampling.
+
+    This sampler is based on *independent sampling*.
+    See also :class:`~optuna.samplers.BaseSampler` for more details of 'independent sampling'.
 
     Example:
 
@@ -35,17 +38,17 @@ class RandomSampler(BaseSampler):
         self.rng = numpy.random.RandomState(seed)
 
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         return {}
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
         return {}
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, distributions.BaseDistribution) -> Any
+        # type: (Study, FrozenTrial, str, distributions.BaseDistribution) -> Any
         """Please consult the documentation for :func:`BaseSampler.sample_independent`."""
 
         if isinstance(param_distribution, distributions.UniformDistribution):

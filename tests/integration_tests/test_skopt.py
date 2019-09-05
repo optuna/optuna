@@ -7,7 +7,7 @@ import optuna
 from optuna import distributions
 from optuna.structs import FrozenTrial
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
 

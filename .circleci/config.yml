@@ -224,13 +224,13 @@ jobs:
           name: install
           command: |
             . venv/bin/activate
-            pip install chainer keras lightgbm scikit-learn tensorflow mxnet xgboost torch torchvision
+            pip install chainer keras catboost lightgbm scikit-learn tensorflow mxnet xgboost torch torchvision dask-ml dask[dataframe]
 
       - run: &examples
           name: examples
           command: |
             . venv/bin/activate
-            for file in `find examples -name '*.py' -not -name 'chainermn_*.py'`
+            for file in `find examples -name '*.py' -not -name 'chainermn_*.py' -not -name 'dask_ml*.py'`
             do
                python $file
             done
@@ -250,17 +250,26 @@ jobs:
           environment:
             OMP_NUM_THREADS: 1
 
+      - run: &examples-dask-ml
+          name: examples-dask-ml
+          command: |
+            . venv/bin/activate
+            for file in `find examples -name 'dask_ml*.py'`
+            do
+               python $file
+            done
+
   examples-python36:
     docker:
       - image: circleci/python:3.6
     steps:
-      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
+      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn, run: *examples-dask-ml]
 
   examples-python35:
     docker:
       - image: circleci/python:3.5
     steps:
-      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
+      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn, run: *examples-dask-ml]
 
   examples-python27:
     docker:
