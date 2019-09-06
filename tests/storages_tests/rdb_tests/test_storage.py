@@ -87,7 +87,7 @@ def test_engine_kwargs():
         create_test_storage(engine_kwargs={'wrong_key': 'wrong_value'})
 
 
-def test_create_new_study_id_multiple_studies():
+def test_create_new_study_multiple_studies():
     # type: () -> None
 
     storage = create_test_storage()
@@ -103,7 +103,7 @@ def test_create_new_study_id_multiple_studies():
     assert result[1].study_id == study_id_2
 
 
-def test_create_new_study_id_duplicated_name():
+def test_create_new_study_duplicated_name():
     # type: () -> None
 
     storage = create_test_storage()

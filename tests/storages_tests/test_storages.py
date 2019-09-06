@@ -125,13 +125,13 @@ def test_create_new_study(storage_init_func):
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_create_new_study_id_with_name(storage_mode, cache_mode):
+def test_create_new_study_with_name(storage_mode, cache_mode):
     # type: (str, bool) -> None
 
     with StorageSupplier(storage_mode, cache_mode) as storage:
 
         # Generate unique study_name from the current function name and storage_mode.
-        function_name = test_create_new_study_id_with_name.__name__
+        function_name = test_create_new_study_with_name.__name__
         study_name = function_name + '/' + storage_mode + '/' + str(cache_mode)
         storage = optuna.storages.get_storage(storage)
         study_id = storage.create_new_study(study_name)
@@ -380,7 +380,7 @@ def test_set_and_get_trial_param(storage_init_func):
     # Setup trial_3: setting new params (to different study from trial_1).
     if isinstance(storage, InMemoryStorage):
         with pytest.raises(ValueError):
-            # InMemoryStorage shares the same study if create_new_study_id is additionally invoked.
+            # InMemoryStorage shares the same study if create_new_study is additionally invoked.
             # Thus, the following line should fail due to distribution incompatibility.
             storage.set_trial_param(trial_id_3, 'y', 1, distribution_y_2)
     else:
