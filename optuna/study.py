@@ -440,7 +440,7 @@ class Study(BaseStudy):
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
-        trial_id = self._storage.create_new_trial_id(self.study_id)
+        trial_id = self._storage.create_new_trial(self.study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
@@ -545,7 +545,7 @@ def create_study(
 
     storage = storages.get_storage(storage)
     try:
-        study_id = storage.create_new_study_id(study_name)
+        study_id = storage.create_new_study(study_name)
     except structs.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
