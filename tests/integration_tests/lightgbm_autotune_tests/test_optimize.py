@@ -3,21 +3,19 @@ reminder:
 
 * add `_`-prefix for all private functions.
 """
-import sys
 import contextlib
+import sys
 
-import pytest
 import mock
 import numpy as np
+import pytest
 
 import optuna
 import optuna.integration.lightgbm as lgb
-from optuna.integration.lightgbm_autotune.optimize import (
-    _TimeKeeper,
-    _timer,
-    BaseTuner,
-    OptunaObjective,
-)
+from optuna.integration.lightgbm_autotune.optimize import _TimeKeeper
+from optuna.integration.lightgbm_autotune.optimize import _timer
+from optuna.integration.lightgbm_autotune.optimize import BaseTuner
+from optuna.integration.lightgbm_autotune.optimize import OptunaObjective
 
 
 if sys.version_info.major == 3:
@@ -56,7 +54,7 @@ def turnoff_train():
     unexpected_value = 0.5
     dummy_num_iterations = 1234
 
-    class DummyBooster:
+    class DummyBooster(object):
         def __init__(self):
             self.best_score = {
                 'valid_0': {'binary_logloss': unexpected_value},
@@ -71,7 +69,7 @@ def turnoff_train():
         yield
 
 
-class TestOptunaObjective:
+class TestOptunaObjective(object):
 
     def test_init_(self):
         target_param_names = ['learning_rate']  # Invalid parameter name
@@ -104,7 +102,7 @@ class TestOptunaObjective:
         assert study.best_value == 0.5
 
 
-class TestLGBMModel:
+class TestLGBMModel(object):
 
     def _generate_dataset(self):
         X_trn = np.random.uniform(10, size=20).reshape((4, 5))
@@ -189,7 +187,7 @@ class TestLGBMModel:
             assert len(record) == 0
 
 
-class Test_TimeKeeper:
+class Test_TimeKeeper(object):
     def test__timer_elapsed_secs(self):
         with mock.patch('time.time', return_value=1):
             tk = _TimeKeeper()
@@ -204,11 +202,11 @@ def test__timer_context():
                 assert t.elapsed_secs() == 9
 
 
-class TestBaseTuner:
+class TestBaseTuner(object):
     def test_get_booster_best_score(self):
         expected_value = 1.0
 
-        class DummyBooster:
+        class DummyBooster(object):
             def __init__(self):
                 self.best_score = {
                     'valid_0': {'binary_logloss': expected_value}
@@ -233,7 +231,7 @@ class TestBaseTuner:
     def test_get_booster_best_score__using_valid_names_as_str(self):
         expected_value = 1.0
 
-        class DummyBooster:
+        class DummyBooster(object):
             def __init__(self):
                 self.best_score = {
                     'dev': {'binary_logloss': expected_value}
@@ -253,7 +251,7 @@ class TestBaseTuner:
         unexpected_value = 0.5
         expected_value = 1.0
 
-        class DummyBooster:
+        class DummyBooster(object):
             def __init__(self):
                 self.best_score = {
                     'train': {'binary_logloss': unexpected_value},
@@ -285,7 +283,7 @@ class TestBaseTuner:
             assert tuner.compare_validation_metrics(0.1, 0.5)
 
 
-class TestLGBMAutoTune:
+class TestLGBMAutoTune(object):
 
     def _helper_get_minimum_runner(self, params={}, train_set=None, kwargs_options={}):
         # Required keyword arguments
