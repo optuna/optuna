@@ -1,6 +1,6 @@
 from optuna import type_checking
-from optuna.integration.lightgbm_autotune.optimize import LGBMAutoTune
 from optuna.integration.lightgbm_autotune.sklearn import LGBMClassifier, LGBMModel, LGBMRegressor  # NOQA
+from optuna.integration.lightgbm_autotune.optimize import LGBMAutoTune
 
 
 if type_checking.TYPE_CHECKING:

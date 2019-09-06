@@ -49,8 +49,7 @@ ALIAS_GROUP_LIST = [
 
 
 def handling_alias_parameters(lgbm_params):
-    """Handling alias parameters
-    """
+    """Handling alias parameters"""
     for alias_group in ALIAS_GROUP_LIST:
         param_name = alias_group['param_name']
         default_value = alias_group['default_value']

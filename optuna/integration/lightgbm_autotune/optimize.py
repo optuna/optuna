@@ -1,15 +1,15 @@
 import contextlib
-import time
-import math
 import copy
+import math
+import time
 
 import lightgbm as lgb
 import numpy as np
 import tqdm
 
 import optuna
-from optuna import type_checking
 from optuna.integration.lightgbm_autotune.alias import handling_alias_parameters
+from optuna import type_checking
 
 
 if type_checking.TYPE_CHECKING:
@@ -48,7 +48,7 @@ class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
         return {self.param_name: distribution}
 
 
-class _TimeKeeper:
+class _TimeKeeper(object):
     def __init__(self):
         self.time = time.time()
 
@@ -62,7 +62,7 @@ def _timer():
     yield timekeeper
 
 
-class BaseTuner:
+class BaseTuner(object):
     def __init__(
             self,
             lgbm_params=None,
@@ -120,8 +120,7 @@ class BaseTuner:
 
 
 class OptunaObjective(BaseTuner):
-    """Objective for hyperparameter-tuning with Optuna.
-    """
+    """Objective for hyperparameter-tuning with Optuna."""
 
     def __init__(
             self,
@@ -212,8 +211,7 @@ class OptunaObjective(BaseTuner):
 
 
 class LGBMAutoTune(BaseTuner):
-    """Hyperparameter-tuning with Optuna for LightGBM.
-    """
+    """Hyperparameter-tuning with Optuna for LightGBM."""
 
     def __init__(
             self,
@@ -371,8 +369,7 @@ class LGBMAutoTune(BaseTuner):
 
     def sampling_train_set(self):
         # type: () -> None
-        """ Make subset of `self.train_set` Dataset object
-        """
+        """Make subset of `self.train_set` Dataset object"""
         if self.auto_options['sample_size'] is None:
             return
 
