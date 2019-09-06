@@ -2,8 +2,8 @@ import warnings
 
 import lightgbm as lgb
 
-from optuna import type_checking
 from optuna.integration.lightgbm_autotune.optimize import LGBMAutoTune
+from optuna import type_checking
 
 
 if type_checking.TYPE_CHECKING:
@@ -22,7 +22,6 @@ class LGBMModel(lgb.LGBMModel):
 
             param = {'objective': 'binary', 'metric': 'binary_error'}
             lgb.train(param, dtrain, valid_sets[d_val])
-
     """
 
     def fit(self, *args, **kwargs):  # NOQA
