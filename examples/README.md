@@ -20,6 +20,7 @@ This page contains a list of example codes written with Optuna.
 * [XGBoost](./xgboost_simple.py)
 * [Tensorflow](./tensorflow_estimator_simple.py)
 * [Tensorflow(eager)](./tensorflow_eager_simple.py)
+* [Keras](./keras_simple.py)
 
 ### An example where an objective function uses additional arguments
 
