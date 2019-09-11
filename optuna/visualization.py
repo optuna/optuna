@@ -1,6 +1,9 @@
+from optuna import type_checking
+from optuna.logging import get_logger
 from optuna.structs import TrialState
 from optuna.study import Study  # NOQA
-from optuna import type_checking
+
+logger = get_logger(__name__)
 
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
@@ -8,7 +11,6 @@ if type_checking.TYPE_CHECKING:
 try:
     import plotly.graph_objs as go
     from plotly.offline import init_notebook_mode
-    from IPython.display import display, HTML
     _available = True
 except ImportError as e:
     _import_error = e
@@ -59,28 +61,29 @@ def _get_intermediate_plot(study):
         showlegend=False
     )
 
-    try:
-        df = study.trials_dataframe()
-        df = df.rename(columns={'number': 'trial_id'})
-    except Exception:  # empty study
-        return go.Figure(data=[], layout=layout)
+    trials = study.trials
 
-    if 'intermediate_values' not in df:
+    if len(trials) == 0:
+        logger.warning('Study instance does not contain trials.')
+        return go.Figure(data=[], layout=layout)
+    if hasattr(trials[0], 'intermediate_values') is False:
+        logger.warning(
+            'You need to set up the pruning feature to utilize plot_intermediate_values()')
         return go.Figure(data=[], layout=layout)
 
     target_state = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
-    dst_df = df[df['state'].isin(target_state)]
-    dst_df = dst_df[dst_df['intermediate_values'].isnull().all(axis=1) == False]
+    trials = [trial for trial in trials if trial.state in target_state]
     traces = []
-    for __, row in dst_df.iterrows():
+    for trial in trials:
         trace = go.Scatter(
-            x=row['intermediate_values'].index,
-            y=row['intermediate_values'],
+            x=tuple(trial.intermediate_values.keys()),
+            y=tuple(trial.intermediate_values.values()),
             mode='lines+markers',
             marker={
                 'maxdisplayed': 10
             },
-            name='Trial{}'.format(row['trial_id'][0]))
+            name='Trial{}'.format(trial.number)
+        )
         traces.append(trace)
 
     figure = go.Figure(data=traces, layout=layout)
