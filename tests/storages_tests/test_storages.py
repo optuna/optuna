@@ -282,7 +282,10 @@ def test_create_new_trial_id_with_template_trial(storage_init_func):
         params={'x': 0.5},
         distributions={'x': UniformDistribution(0, 1)},
         user_attrs={'foo': 'bar'},
-        system_attrs={'baz': 123},
+        system_attrs={
+            'baz': 123,
+            '_number': 55  # This entry is ignored.
+        },
         intermediate_values={1: 10, 2: 100, 3: 1000},
 
         number=-1,  # dummy value (unused)
