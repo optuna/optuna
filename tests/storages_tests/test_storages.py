@@ -297,7 +297,6 @@ def test_create_new_trial_id_with_template_trial(storage_init_func):
     assert trials[0].trial_id == trial_id
     assert trials[0].number == 0
     assert trials[0].state == template_trial.state
-    assert trials[0].state == template_trial.state
     assert trials[0].value == template_trial.value
     assert trials[0].datetime_start == template_trial.datetime_start
     assert trials[0].datetime_complete == template_trial.datetime_complete
