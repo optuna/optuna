@@ -376,8 +376,8 @@ class Study(BaseStudy):
             datetime_complete = datetime_complete or datetime.datetime.now()
 
         trial = structs.FrozenTrial(
-            number=-1,  # dummy value
-            trial_id=-1,  # dummy value
+            number=-1,  # dummy value.
+            trial_id=-1,  # dummy value.
             state=state,
             value=value,
             datetime_start=datetime_start,

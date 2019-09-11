@@ -156,8 +156,8 @@ class InMemoryStorage(base.BaseStorage):
         # type: () -> structs.FrozenTrial
 
         return structs.FrozenTrial(
-            trial_id=-1,  # dummy value
-            number=-1,  # dummy value
+            trial_id=-1,  # dummy value.
+            number=-1,  # dummy value.
             state=structs.TrialState.RUNNING,
             params={},
             distributions={},

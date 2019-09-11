@@ -288,8 +288,8 @@ def test_create_new_trial_id_with_template_trial(storage_init_func):
         },
         intermediate_values={1: 10, 2: 100, 3: 1000},
 
-        number=-1,  # dummy value (unused)
-        trial_id=-1,  # dummy, value (unused)
+        number=-1,  # dummy value (unused).
+        trial_id=-1,  # dummy value (unused).
     )
 
     study_id = storage.create_new_study_id()
