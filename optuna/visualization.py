@@ -117,7 +117,8 @@ def plot_optimization_history(study):
 
     Args:
         study:
-            A :class:`~optuna.study.Study` object whose trials are plotted for their objective values.
+            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
+            values.
     """
 
     _check_plotly_availability()
