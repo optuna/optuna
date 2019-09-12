@@ -1,7 +1,9 @@
-from optuna import type_checking
+from plotly.graph_objs._figure import Figure  # NOQA
+
 from optuna.logging import get_logger
 from optuna.structs import TrialState
 from optuna.study import Study  # NOQA
+from optuna import type_checking
 
 logger = get_logger(__name__)
 
@@ -52,7 +54,7 @@ def plot_intermediate_values(study):
 
 
 def _get_intermediate_plot(study):
-    # type: (Study) -> List[go.Scatter]
+    # type: (Study) -> Figure
 
     layout = go.Layout(
         title='Intermediate Values Plot',
