@@ -1,5 +1,3 @@
-from plotly.graph_objs._figure import Figure  # NOQA
-
 from optuna.logging import get_logger
 from optuna.structs import TrialState
 from optuna.study import Study  # NOQA
@@ -12,6 +10,7 @@ if type_checking.TYPE_CHECKING:
 
 try:
     import plotly.graph_objs as go
+    from plotly.graph_objs._figure import Figure  # NOQA
     from plotly.offline import init_notebook_mode
     _available = True
 except ImportError as e:
