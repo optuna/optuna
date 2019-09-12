@@ -349,6 +349,12 @@ class RDBStorage(BaseStorage):
             )
 
         session.add(trial)
+
+        # Flush the session cache to reflect the above addition operation to
+        # the current RDB transaction.
+        #
+        # Without flushing, the following operations (e.g, `_set_trial_param_without_commit`)
+        # will fail because the target trial doesn't exist in the storage yet.
         session.flush()
 
         if template_trial is not None:
