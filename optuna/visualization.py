@@ -8,8 +8,6 @@ logger = get_logger(__name__)
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
-logger = get_logger(__name__)
-
 try:
     import plotly.graph_objs as go
     from plotly.graph_objs._figure import Figure  # NOQA
