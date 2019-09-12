@@ -8,6 +8,8 @@ logger = get_logger(__name__)
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
+logger = get_logger(__name__)
+
 try:
     import plotly.graph_objs as go
     from plotly.graph_objs._figure import Figure  # NOQA
@@ -86,6 +88,71 @@ def _get_intermediate_plot(study):
             name='Trial{}'.format(trial.number)
         )
         traces.append(trace)
+
+    figure = go.Figure(data=traces, layout=layout)
+
+    return figure
+
+
+def plot_optimization_history(study):
+    # type: (Study) -> None
+    """Inside Jupyter notebook, plot optimization history of all trials in a study.
+
+    Example:
+
+        The following code snippet shows how to plot optimization history inside Jupyter Notebook.
+
+        .. code::
+
+            import optuna
+
+            def objective(trial):
+                # Intermediate values are supposed to be reported inside the objective function.
+                ...
+
+            study = optuna.create_study()
+            study.optimize(n_trials=100)
+
+            optuna.visualization.plot_optimization_history(study)
+
+    Args:
+        study:
+            A :class:`~optuna.study.Study` object whose trials are plotted for their objective values.
+    """
+
+    _check_plotly_availability()
+    init_notebook_mode(connected=True)
+    figure = _get_optimization_history_plot(study)
+    figure.show()
+
+
+def _get_optimization_history_plot(study):
+    # type: (Study) -> Figure
+
+    layout = go.Layout(
+        title='Optimization History Plot',
+        xaxis={'title': 'Trial'},
+        yaxis={'title': 'Objective Value'},
+    )
+
+    trials = study.trials
+
+    best_values = [float('inf')]
+    for trial in trials:
+        if isinstance(trial.value, int):
+            trial_value = float(trial.value)
+        elif isinstance(trial.value, float):
+            trial_value = trial.value
+        else:
+            logger.warning('Your study has a non-numeric value.')
+            return go.Figure(data=[], layout=layout)
+        best_values.append(min(best_values[-1], trial_value))
+    best_values.pop(0)
+    traces = [
+        go.Scatter(x=[t.number for t in trials], y=[t.value for t in trials],
+                   mode='markers', name='Objective Value'),
+        go.Scatter(x=[t.number for t in trials], y=best_values, name='Best Value')
+    ]
 
     figure = go.Figure(data=traces, layout=layout)
 
