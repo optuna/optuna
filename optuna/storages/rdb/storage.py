@@ -326,14 +326,59 @@ class RDBStorage(BaseStorage):
 
         return study_sumarries
 
-    def create_new_trial(self, study_id):
-        # type: (int) -> int
+    def create_new_trial(self, study_id, template_trial=None):
+        # type: (int, Optional[structs.FronzenTrial]) -> int
 
         session = self.scoped_session()
 
-        trial = models.TrialModel(study_id=study_id, state=structs.TrialState.RUNNING)
+        if template_trial is None:
+            trial = models.TrialModel(study_id=study_id, state=structs.TrialState.RUNNING)
+        else:
+            # Because only `RUNNING` trials can be updated,
+            # we temporarily set the state of the new trial to `RUNNING`.
+            # After all fields of the trial have been updated,
+            # the state is set to `template_trial.state`.
+            temp_state = structs.TrialState.RUNNING
+
+            trial = models.TrialModel(
+                study_id=study_id,
+                state=temp_state,
+                value=template_trial.value,
+                datetime_start=template_trial.datetime_start,
+                datetime_complete=template_trial.datetime_complete,
+            )
 
         session.add(trial)
+
+        # Flush the session cache to reflect the above addition operation to
+        # the current RDB transaction.
+        #
+        # Without flushing, the following operations (e.g, `_set_trial_param_without_commit`)
+        # will fail because the target trial doesn't exist in the storage yet.
+        session.flush()
+
+        if template_trial is not None:
+            for param_name, param_value in template_trial.params.items():
+                distribution = template_trial.distributions[param_name]
+                param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+                self._set_trial_param_without_commit(session, trial.trial_id, param_name,
+                                                     param_value_in_internal_repr, distribution)
+
+            for key, value in template_trial.user_attrs.items():
+                self._set_trial_user_attr_without_commit(session, trial.trial_id, key, value)
+
+            for key, value in template_trial.system_attrs.items():
+                if key == '_number':
+                    continue
+
+                self._set_trial_system_attr_without_commit(session, trial.trial_id, key, value)
+
+            for step, intermediate_value in template_trial.intermediate_values.items():
+                self._set_trial_intermediate_value_without_commit(session, trial.trial_id, step,
+                                                                  intermediate_value)
+
+            trial.state = template_trial.state
+
         self._commit(session)
 
         self._create_new_trial_number(trial.trial_id)
@@ -374,6 +419,18 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
+        if not self._set_trial_param_without_commit(session, trial_id, param_name,
+                                                    param_value_internal, distribution):
+            return False
+
+        commit_success = self._commit_with_integrity_check(session)
+
+        return commit_success
+
+    def _set_trial_param_without_commit(self, session, trial_id, param_name, param_value_internal,
+                                        distribution):
+        # type: (orm.Session, int, str, float, distributions.BaseDistribution) -> bool
+
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -397,9 +454,8 @@ class RDBStorage(BaseStorage):
             distribution_json=distributions.distribution_to_json(distribution))
 
         param.check_and_add(session)
-        commit_success = self._commit_with_integrity_check(session)
 
-        return commit_success
+        return True
 
     def get_trial_param(self, trial_id, param_name):
         # type: (int, str) -> float
@@ -431,6 +487,18 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
+        if not self._set_trial_intermediate_value_without_commit(session, trial_id, step,
+                                                                 intermediate_value):
+            return False
+
+        commit_success = self._commit_with_integrity_check(session)
+
+        return commit_success
+
+    def _set_trial_intermediate_value_without_commit(self, session, trial_id, step,
+                                                     intermediate_value):
+        # type: (orm.Session, int, int, float) -> bool
+
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -438,36 +506,49 @@ class RDBStorage(BaseStorage):
         if trial_value is not None:
             return False
 
-        trial_value = models.TrialValueModel(
-            trial_id=trial_id, step=step, value=intermediate_value)
+        trial_value = models.TrialValueModel(trial_id=trial_id,
+                                             step=step,
+                                             value=intermediate_value)
 
         session.add(trial_value)
-        commit_success = self._commit_with_integrity_check(session)
 
-        return commit_success
+        return True
 
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
 
         session = self.scoped_session()
 
+        self._set_trial_user_attr_without_commit(session, trial_id, key, value)
+
+        self._commit_with_integrity_check(session)
+
+    def _set_trial_user_attr_without_commit(self, session, trial_id, key, value):
+        # type: (orm.Session, int, str, Any) -> None
+
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
         attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
-            attribute = models.TrialUserAttributeModel(
-                trial_id=trial_id, key=key, value_json=json.dumps(value))
+            attribute = models.TrialUserAttributeModel(trial_id=trial_id,
+                                                       key=key,
+                                                       value_json=json.dumps(value))
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
-
-        self._commit_with_integrity_check(session)
 
     def set_trial_system_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
 
         session = self.scoped_session()
+
+        self._set_trial_system_attr_without_commit(session, trial_id, key, value)
+
+        self._commit_with_integrity_check(session)
+
+    def _set_trial_system_attr_without_commit(self, session, trial_id, key, value):
+        # type: (orm.Session, int, str, Any) -> None
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         if key == '_number':
@@ -483,13 +564,12 @@ class RDBStorage(BaseStorage):
 
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
-            attribute = models.TrialSystemAttributeModel(
-                trial_id=trial_id, key=key, value_json=json.dumps(value))
+            attribute = models.TrialSystemAttributeModel(trial_id=trial_id,
+                                                         key=key,
+                                                         value_json=json.dumps(value))
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
-
-        self._commit_with_integrity_check(session)
 
     def get_trial_number_from_id(self, trial_id):
         # type: (int) -> int

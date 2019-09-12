@@ -30,6 +30,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Type  # NOQA
     from typing import Union  # NOQA
 
+    from optuna.distributions import BaseDistribution  # NOQA
+
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
@@ -348,6 +350,47 @@ class Study(BaseStudy):
                       [])  # type: List[Tuple['str', 'str']]
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+
+    def _append_trial(
+            self,
+            value=None,  # type: Optional[float]
+            params=None,  # type: Optional[Dict[str, Any]]
+            distributions=None,  # type: Optional[Dict[str, BaseDistribution]]
+            user_attrs=None,  # type: Optional[Dict[str, Any]]
+            system_attrs=None,  # type: Optional[Dict[str, Any]]
+            intermediate_values=None,  # type: Optional[Dict[int, float]]
+            state=structs.TrialState.COMPLETE,  # type: structs.TrialState
+            datetime_start=None,  # type: Optional[datetime.datetime]
+            datetime_complete=None  # type: Optional[datetime.datetime]
+    ):
+        # type: (...) -> None
+
+        params = params or {}
+        distributions = distributions or {}
+        user_attrs = user_attrs or {}
+        system_attrs = system_attrs or {}
+        intermediate_values = intermediate_values or {}
+        datetime_start = datetime_start or datetime.datetime.now()
+
+        if state.is_finished():
+            datetime_complete = datetime_complete or datetime.datetime.now()
+
+        trial = structs.FrozenTrial(
+            number=-1,  # dummy value.
+            trial_id=-1,  # dummy value.
+            state=state,
+            value=value,
+            datetime_start=datetime_start,
+            datetime_complete=datetime_complete,
+            params=params,
+            distributions=distributions,
+            user_attrs=user_attrs,
+            system_attrs=system_attrs,
+            intermediate_values=intermediate_values)
+
+        trial._validate()
+
+        self.storage.create_new_trial(self.study_id, template_trial=trial)
 
     def _optimize_sequential(
             self,
