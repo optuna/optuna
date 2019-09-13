@@ -21,6 +21,9 @@ except ImportError as e:
     _available = False
 
 
+TARGET_STATUS = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
+
+
 def plot_intermediate_values(study):
     # type: (Study) -> None
     """Plot intermediate values of all trials in a study.
@@ -207,16 +210,17 @@ def _get_parallel_coordinate_plot(study, params=[]):
         title='Parallel Coordinate Plot',
     )
 
-    trials = study.trials
+    trials = [t for t in study.trials if t.state in TARGET_STATUS]
 
-    param_names = set()
-    for t in trials:
-        for p_name in t.params.keys():
-            param_names.add(p_name)
+    if len(study.trials) == 0:
+        logger.warning('Your study does not have any completed trials.')
+        return go.Figure(data=[], layout=layout)
+
+    param_names = {p_name for t in trials for p_name in t.params.keys()}
     if len(params) != 0:
         for p_name in params:
             if p_name not in param_names:
-                logger.warning("")
+                logger.warning('Parameter {} does not exist in your study.'.format(p_name))
                 return go.Figure(data=[], layout=layout)
         param_names = set(params)
     sorted_param_names = sorted(list(param_names))
