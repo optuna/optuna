@@ -167,14 +167,15 @@ def _get_optimization_history_plot(study):
 
 def plot_parallel_coordinate(study, params=[]):
     # type: (Study, List[str]) -> None
-    """Inside Jupyter notebook, plot optimization history of all trials in a study.
+    """Inside Jupyter notebook, plot the high-dimentional parameter relationships in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
         plotted.
 
     Example:
 
-        The following code snippet shows how to plot optimization history inside Jupyter Notebook.
+        The following code snippet shows how to plot the high-dimentional parameter relationships
+        inside Jupyter Notebook.
 
         .. code::
 
