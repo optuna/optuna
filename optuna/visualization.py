@@ -110,4 +110,3 @@ def _check_plotly_availability():
             'Please install plotly version 4.0.0 or higher. '
             'Plotly can be installed by executing `$ pip install -U plotly>=4.0.0`. '
             'For further information, please refer to the installation guide of plotly. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
