@@ -455,7 +455,7 @@ class Trial(BaseTrial):
         return self._set_new_param_or_get_existing(name, param_value, distribution)
 
     def _set_new_param_or_get_existing(self, name, param_value, distribution):
-        # type: (str, Any, distributions.BaseDistribution) -> Any
+        # type: (str, Any, BaseDistribution) -> Any
 
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
         set_success = self.storage.set_trial_param(self._trial_id, name,
