@@ -1,16 +1,16 @@
 from optuna.study import create_study
 from optuna.trial import Trial  # NOQA
-from optuna.visualization import _get_intermediate_values_data
+from optuna.visualization import _get_intermediate_plot
 
 
-def test_get_intermediate_values_data():
+def test_get_intermediate_plot():
     # type: () -> None
 
     study = create_study()
 
     # Test with no trial.
-    data = _get_intermediate_values_data(study)
-    assert len(data) == 0
+    figure = _get_intermediate_plot(study)
+    assert len(figure.data) == 0
 
     def objective(trial, report_intermediate_values):
         # type: (Trial, bool) -> float
@@ -22,14 +22,14 @@ def test_get_intermediate_values_data():
 
     # Test with a trial with intermediate values.
     study.optimize(lambda t: objective(t, True), n_trials=1)
-    data = _get_intermediate_values_data(study)
-    assert len(data) == 1
-    assert data[0].x == (0, 1)
-    assert data[0].y == (1.0, 2.0)
+    figure = _get_intermediate_plot(study)
+    assert len(figure.data) == 1
+    assert tuple(figure.data[0].x) == (0, 1)
+    assert tuple(figure.data[0].y) == (1.0, 2.0)
 
     # Test with trials, one of which contains no intermediate value.
     study.optimize(lambda t: objective(t, False), n_trials=1)
-    assert len(data) == 1
+    assert len(figure.data) == 1
 
     # Ignore failed trials.
     def fail_objective(_):
@@ -38,4 +38,4 @@ def test_get_intermediate_values_data():
         raise ValueError
 
     study.optimize(fail_objective, n_trials=1)
-    assert len(data) == 1
+    assert len(figure.data) == 1
