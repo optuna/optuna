@@ -263,6 +263,7 @@ def _get_parallel_coordinate_plot(study, params=[]):
                     title='Objective Value'
                 ),
                 showscale=True,
+                reversescale=True if study.direction == StudyDirection.MINIMIZE else False
             )
         )
     ]
