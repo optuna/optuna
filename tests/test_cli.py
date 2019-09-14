@@ -163,12 +163,8 @@ def test_delete_study_command(options):
 def test_delete_study_command_without_storage_url():
     # type: () -> None
 
-    dummy_home = tempfile.mkdtemp()
-    env = os.environ
-    env['HOME'] = dummy_home
-    with pytest.raises(subprocess.CalledProcessError) as err:
-        subprocess.check_output(['optuna', 'delete-study'], env=env)
-    shutil.rmtree(dummy_home)
+    with pytest.raises(subprocess.CalledProcessError):
+        subprocess.check_output(['optuna', 'delete-study', '--study-name', 'dummy_study'])
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
