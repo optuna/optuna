@@ -381,28 +381,28 @@ def test_storage_cache():
 def test_python_version():
     # type: () -> None
 
-    import mock
-    # Create mock data.
-    error_data = [{ "major": 3, "minor": 4, "micro": i } for i in range(0, 4)]
-    version_data = []
-    version_data.append({"major": 2, "minor": 4, "micro": 4})
-    version_data.append({"major": 3, "minor": 3, "micro": 4})
-    version_data.append({"major": 3, "minor": 7, "micro": 4})
-    version_data.append({"major": 3, "minor": 4, "micro": 4})
+    error_versions = [{ "major": 3, "minor": 4, "micro": i } for i in range(0, 4)]
+    valid_versions = [
+        {"major": 2, "minor": 7, "micro": 3},
+        {"major": 3, "minor": 3, "micro": 7},
+        {"major": 3, "minor": 4, "micro": 4},
+        {"major": 3, "minor": 4, "micro": 10},
+        {"major": 3, "minor": 7, "micro": 4},
+    ]
 
-    with mock.patch.object(sys, 'version_info') as v_info:
-        # If 3.4.0 < Python < 3.4.4 is runtime error.
-        for ver in error_data:
-            v_info.major = ver["major"]
-            v_info.minor = ver["minor"]
-            v_info.micro = ver["micro"]
+    with patch.object(sys, 'version_info') as v_info:
+        # If Python version is 3.4.0 to 3.4.3, RDBStrages raises RuntimeError.
+        for version in error_versions:
+            v_info.major = version["major"]
+            v_info.minor = version["minor"]
+            v_info.micro = version["micro"]
 
             with pytest.raises(RuntimeError):
                 create_test_storage()
-        
-        # If Python < 3.4.0 or 3.4.4 <= Python is not error.
-        for ver in version_data:
-            v_info.major = ver["major"]
-            v_info.minor = ver["minor"]
-            v_info.micro = ver["micro"]
+
+        # Otherwise, RDBStrages does not raise RuntimeError.
+        for version in valid_versions:
+            v_info.major = version["major"]
+            v_info.minor = version["minor"]
+            v_info.micro = version["micro"]
             create_test_storage()

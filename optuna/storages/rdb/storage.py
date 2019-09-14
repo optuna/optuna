@@ -58,7 +58,7 @@ class RDBStorage(BaseStorage):
         if sys.version_info.major == 3 and sys.version_info.minor == 4:
             if 0 <= sys.version_info.micro and sys.version_info.micro < 4:
                 raise RuntimeError(
-                    'RDBStorage does not support 3.4.0 <= Python and Python < 3.4.4.')
+                    'RDBStorage does not support Python 3.4.0 to 3.4.3.')
 
         engine_kwargs = engine_kwargs or {}
 
