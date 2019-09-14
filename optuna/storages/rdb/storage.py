@@ -81,11 +81,16 @@ class RDBStorage(BaseStorage):
 
     @staticmethod
     def _check_python_version():
-        if sys.version_info.major == 3 and sys.version_info.minor == 4:
-            if 0 <= sys.version_info.micro and sys.version_info.micro < 4:
-                raise RuntimeError(
-                    'RDBStorage does not support Python 3.4.0 to 3.4.3.')
+        # type: () -> None
 
+        if sys.version_info.major != 3:
+            return
+
+        if sys.version_info.minor != 4:
+            return
+
+        if 0 <= sys.version_info.micro and sys.version_info.micro < 4:
+            raise RuntimeError('RDBStorage does not support Python 3.4.0 to 3.4.3.')
 
     def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
