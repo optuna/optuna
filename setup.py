@@ -59,7 +59,7 @@ def get_extras_require():
             'tensorflow', 'xgboost',
         ],
         'example': [
-            'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn', 
+            'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
             'tensorflow', 'mxnet', 'xgboost', 'torch', 'torchvision',
             'dask-ml', 'dask[dataframe]'
         ],
