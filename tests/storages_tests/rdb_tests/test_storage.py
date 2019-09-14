@@ -378,10 +378,10 @@ def test_storage_cache():
         assert mock_object.call_count == 1
 
 
-def test_python_version():
+def test_check_python_version():
     # type: () -> None
 
-    error_versions = [{ "major": 3, "minor": 4, "micro": i } for i in range(0, 4)]
+    error_versions = [{"major": 3, "minor": 4, "micro": i} for i in range(0, 4)]
     valid_versions = [
         {"major": 2, "minor": 7, "micro": 3},
         {"major": 3, "minor": 3, "micro": 7},
@@ -398,11 +398,11 @@ def test_python_version():
             v_info.micro = version["micro"]
 
             with pytest.raises(RuntimeError):
-                create_test_storage()
+                RDBStorage._check_python_version()
 
         # Otherwise, RDBStrages does not raise RuntimeError.
         for version in valid_versions:
             v_info.major = version["major"]
             v_info.minor = version["minor"]
             v_info.micro = version["micro"]
-            create_test_storage()
+            RDBStorage._check_python_version()
