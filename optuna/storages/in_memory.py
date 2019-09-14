@@ -66,7 +66,6 @@ class InMemoryStorage(base.BaseStorage):
             self.study_user_attrs = {}
             self.study_system_attrs = {}
             self.study_name = DEFAULT_STUDY_NAME_PREFIX + IN_MEMORY_STORAGE_STUDY_UUID
-        return
 
     def set_study_direction(self, study_id, direction):
         # type: (int, structs.StudyDirection) -> None
