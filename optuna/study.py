@@ -516,7 +516,7 @@ class Study(BaseStudy):
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
-            trial_id = self.storage.create_new_trial_id(self.study_id)
+            trial_id = self.storage.create_new_trial(self.study_id)
 
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number

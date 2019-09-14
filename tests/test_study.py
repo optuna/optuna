@@ -567,6 +567,19 @@ def test_append_trial(storage_mode):
         assert study.best_value == 0.8
 
 
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_enqueue_trial(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.enqueue_trial(params={'x': -1, 'y': 1})
+        assert study._pop_waiting_trial_id() is not None
+        assert study._pop_waiting_trial_id() is None
+
+
 def test_storage_property():
     # type: () -> None
 
