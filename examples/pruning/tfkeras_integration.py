@@ -50,18 +50,18 @@ def eval_dataset():
 def create_model(trial):
     # type: (optuna.trial) -> tf.keras.Model
 
-    # Hyper parameters to be tuned by Optuna
+    # Hyper parameters to be tuned by Optuna.
     lr = trial.suggest_loguniform('lr', 1e-4, 1e-1)
     momentum = trial.suggest_uniform('momentum', 0.0, 1.0)
     units = trial.suggest_categorical('units', [32, 64, 128, 256, 512])
 
-    # Compose neural network with one hidden layer
+    # Compose neural network with one hidden layer.
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.Flatten())
     model.add(tf.keras.layers.Dense(units=units, activation=tf.nn.relu))
     model.add(tf.keras.layers.Dense(CLASSES, activation=tf.nn.softmax))
 
-    # Compile model
+    # Compile model.
     model.compile(
         optimizer=tf.keras.optimizers.SGD(lr=lr, momentum=momentum, nesterov=True),
         loss='sparse_categorical_crossentropy',
@@ -100,7 +100,7 @@ def objective(trial):
         callbacks=callbacks,
     )
 
-    # TODO: Investigate why the logger below is called twice
+    # TODO: Investigate why the logger below is called twice.
     # tf.logging.info(history.history[monitor][-1])
 
     return history.history[monitor][-1]
