@@ -1,8 +1,8 @@
 from datetime import datetime
 
+from mock import patch
 import pytest
 
-from mock import patch
 import optuna
 from optuna.distributions import BaseDistribution  # NOQA
 from optuna.distributions import CategoricalDistribution

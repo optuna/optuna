@@ -13,12 +13,12 @@ You can run this example as follows:
 
 from __future__ import print_function
 
-import numpy as np
-import pkg_resources
-
 import chainer
 import chainer.functions as F
 import chainer.links as L
+import numpy as np
+import pkg_resources
+
 import optuna
 
 if pkg_resources.parse_version(chainer.__version__) < pkg_resources.parse_version('4.0.0'):

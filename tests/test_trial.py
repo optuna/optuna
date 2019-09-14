@@ -1,9 +1,9 @@
 import math
 
-import pytest
-
 from mock import Mock
 from mock import patch
+import pytest
+
 from optuna import distributions
 from optuna import samplers
 from optuna import storages

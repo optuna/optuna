@@ -2,9 +2,9 @@ import os
 import shutil
 import tempfile
 
+from mock import patch
 import pytest
 
-from mock import patch
 import optuna
 from optuna import type_checking
 

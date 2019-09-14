@@ -1,6 +1,6 @@
+from mock import patch
 import pytest
 
-from mock import patch
 import optuna
 from optuna.integration import CmaEsSampler
 from optuna.integration import SkoptSampler

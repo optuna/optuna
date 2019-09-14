@@ -25,6 +25,7 @@ from keras.layers import Dense
 from keras.layers import Flatten
 from keras.models import Sequential
 from keras.optimizers import RMSprop
+
 import optuna
 
 N_TRAIN_EXAMPLES = 3000

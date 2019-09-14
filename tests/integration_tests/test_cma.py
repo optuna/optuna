@@ -1,10 +1,10 @@
 import math
 
-import pytest
-
 import cma
 from mock import call
 from mock import patch
+import pytest
+
 import optuna
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution

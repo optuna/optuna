@@ -1,14 +1,14 @@
 from collections import namedtuple
 import math
 
-import numpy as np
-import pytest
-
 import chainer
 import chainer.links as L
 from chainer.training import triggers
 from mock import Mock
 from mock import patch
+import numpy as np
+import pytest
+
 import optuna
 from optuna.integration.chainer import ChainerPruningExtension
 from optuna.structs import TrialPruned

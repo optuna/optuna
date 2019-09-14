@@ -1,7 +1,7 @@
+import mxnet as mx
 import numpy as np
 import pytest
 
-import mxnet as mx
 import optuna
 from optuna.integration.mxnet import MXNetPruningCallback
 from optuna.testing.integration import DeterministicPruner

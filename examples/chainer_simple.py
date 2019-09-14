@@ -21,12 +21,12 @@ We have the following two ways to execute this example:
 
 from __future__ import print_function
 
-import numpy as np
-import pkg_resources
-
 import chainer
 import chainer.functions as F
 import chainer.links as L
+import numpy as np
+import pkg_resources
+
 
 if pkg_resources.parse_version(chainer.__version__) < pkg_resources.parse_version('4.0.0'):
     raise RuntimeError('Chainer>=4.0.0 is required for this example.')

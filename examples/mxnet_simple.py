@@ -20,12 +20,10 @@ We have the following two ways to execute this example:
 """
 
 from __future__ import print_function
-
 import logging
 
-import numpy as np
-
 import mxnet as mx
+import numpy as np
 
 N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000

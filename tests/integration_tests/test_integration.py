@@ -6,18 +6,17 @@ def test_import():
 
     from optuna.integration import chainer  # NOQA
     from optuna.integration import chainermn  # NOQA
-    from optuna.integration import keras  # NOQA
-    from optuna.integration import lightgbm  # NOQA
-    from optuna.integration import mxnet  # NOQA
-    from optuna.integration import tensorflow  # NOQA
-    from optuna.integration import xgboost  # NOQA
-
     from optuna.integration import ChainerMNStudy  # NOQA
     from optuna.integration import ChainerPruningExtension  # NOQA
+    from optuna.integration import keras  # NOQA
     from optuna.integration import KerasPruningCallback  # NOQA
+    from optuna.integration import lightgbm  # NOQA
     from optuna.integration import LightGBMPruningCallback  # NOQA
+    from optuna.integration import mxnet  # NOQA
     from optuna.integration import MXNetPruningCallback  # NOQA
+    from optuna.integration import tensorflow  # NOQA
     from optuna.integration import TensorFlowPruningHook  # NOQA
+    from optuna.integration import xgboost  # NOQA
     from optuna.integration import XGBoostPruningCallback  # NOQA
 
     with pytest.raises(ImportError):

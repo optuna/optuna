@@ -11,6 +11,7 @@ from logging import WARNING  # NOQA
 import threading
 
 import colorlog
+
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

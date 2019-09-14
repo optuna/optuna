@@ -9,12 +9,13 @@ You can run this example as follows:
     $ python lightgbm_integration.py
 
 """
+
+import lightgbm as lgb
 import numpy as np
 import sklearn.datasets
 import sklearn.metrics
 from sklearn.model_selection import train_test_split
 
-import lightgbm as lgb
 import optuna
 
 

@@ -1,9 +1,9 @@
 import sys
 import tempfile
 
+from mock import patch
 import pytest
 
-from mock import patch
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import json_to_distribution
 from optuna.distributions import UniformDistribution

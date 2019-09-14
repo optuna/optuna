@@ -1,7 +1,7 @@
-import pytest
-
 from mock import call
 from mock import patch
+import pytest
+
 import optuna
 from optuna import distributions
 from optuna.structs import FrozenTrial

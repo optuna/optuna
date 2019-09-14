@@ -1,8 +1,8 @@
 from functools import partial
 
+import lightgbm as lgb
 import pytest
 
-import lightgbm as lgb
 import optuna
 from optuna.integration.lightgbm import LightGBMPruningCallback
 from optuna.testing.integration import create_running_trial
