@@ -94,7 +94,7 @@ class StudyUserAttributeModel(BaseModel):
 
     study = orm.relationship(
         StudyModel,
-        backref=orm.backref("user_attributes", cascade="all, delete"))
+        backref=orm.backref("user_attributes", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_study_and_key(cls, study, key, session):
@@ -122,7 +122,7 @@ class StudySystemAttributeModel(BaseModel):
 
     study = orm.relationship(
         StudyModel,
-        backref=orm.backref("system_attributes", cascade="all, delete"))
+        backref=orm.backref("system_attributes", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_study_and_key(cls, study, key, session):
@@ -151,7 +151,7 @@ class TrialModel(BaseModel):
 
     study = orm.relationship(
         StudyModel,
-        backref=orm.backref("trials", cascade="all, delete"))
+        backref=orm.backref("trials", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_id(cls, trial_id, session):
@@ -232,7 +232,7 @@ class TrialUserAttributeModel(BaseModel):
 
     trial = orm.relationship(
         TrialModel,
-        backref=orm.backref("user_attributes", cascade="all, delete"))
+        backref=orm.backref("user_attributes", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_trial_and_key(cls, trial, key, session):
@@ -281,7 +281,7 @@ class TrialSystemAttributeModel(BaseModel):
 
     trial = orm.relationship(
         TrialModel,
-        backref=orm.backref("system_attributes", cascade="all, delete"))
+        backref=orm.backref("system_attributes", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_trial_and_key(cls, trial, key, session):
@@ -331,7 +331,7 @@ class TrialParamModel(BaseModel):
 
     trial = orm.relationship(
         TrialModel,
-        backref=orm.backref("params", cascade="all, delete"))
+        backref=orm.backref("params", cascade="all, delete-orphan"))
 
     def check_and_add(self, session):
         # type: (orm.Session) -> None
@@ -407,7 +407,7 @@ class TrialValueModel(BaseModel):
 
     trial = orm.relationship(
         TrialModel,
-        backref=orm.backref("values", cascade="all, delete"))
+        backref=orm.backref("values", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_trial_and_step(cls, trial, step, session):
