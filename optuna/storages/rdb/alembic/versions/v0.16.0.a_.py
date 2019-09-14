@@ -22,7 +22,8 @@ def upgrade():
         batch_op.alter_column('state',
                               type_=sa.Enum('RUNNING', 'COMPLETE', 'PRUNED',
                                             'FAIL', 'WAITING', name='trialstate'),
-                              existing_type=sa.Enum('RUNNING', 'COMPLETE', 'PRUNED', 'FAIL', name='trialstate'))
+                              existing_type=sa.Enum('RUNNING', 'COMPLETE', 'PRUNED',
+                                                    'FAIL', name='trialstate'))
     # ### end Alembic commands ###
 
 
@@ -32,5 +33,6 @@ def downgrade():
         batch_op.alter_column('state',
                               type_=sa.Enum('RUNNING', 'COMPLETE', 'PRUNED',
                                             'FAIL', name='trialstate'),
-                              existing_type=sa.Enum('RUNNING', 'COMPLETE', 'PRUNED', 'FAIL', 'WAITING', name='trialstate'))
+                              existing_type=sa.Enum('RUNNING', 'COMPLETE', 'PRUNED',
+                                                    'FAIL', 'WAITING', name='trialstate'))
     # ### end Alembic commands ###

@@ -590,6 +590,7 @@ def test_enqueue_trial_properly_sets_param_values(storage_mode):
 
         study.enqueue_trial(params={'x': -1, 'y': 1})
         trial_id = study._pop_waiting_trial_id()
+        assert trial_id is not None
         trial = optuna.Trial(study, trial_id)
         assert trial.suggest_int('x', low=-10, high=10) == -1
         assert trial.suggest_int('y', low=-10, high=10) == 1
