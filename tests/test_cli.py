@@ -142,6 +142,36 @@ def test_create_study_command_with_direction():
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
+def test_delete_study_command(options):
+    # type: (List[str]) -> None
+
+    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
+        storage = RDBStorage(storage_url)
+        study_name = "delete-study-test"
+
+        # Create study.
+        command = ['optuna', 'create-study', '--storage', storage_url, '--study-name', study_name]
+        subprocess.check_call(command)
+        assert study_name in {s.study_name: s for s in storage.get_all_study_summaries()}
+
+        # Delete study.
+        command = ['optuna', 'delete-study', '--storage', storage_url, '--study-name', study_name]
+        subprocess.check_call(command)
+        assert study_name not in {s.study_name: s for s in storage.get_all_study_summaries()}
+
+
+def test_delete_study_command_without_storage_url():
+    # type: () -> None
+
+    dummy_home = tempfile.mkdtemp()
+    env = os.environ
+    env['HOME'] = dummy_home
+    with pytest.raises(subprocess.CalledProcessError) as err:
+        subprocess.check_output(['optuna', 'delete-study'], env=env)
+    shutil.rmtree(dummy_home)
+
+
+@pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
 def test_study_set_user_attr_command(options):
     # type: (List[str]) -> None
 
