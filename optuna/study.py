@@ -7,11 +7,11 @@ import multiprocessing.pool
 
 try:
     import pandas as pd  # NOQA
-    _available = True
+    _pandas_available = True
 except ImportError as e:
-    _import_error = e
+    _pandas_import_error = e
     # trials_dataframe is disabled because pandas is not available.
-    _available = False
+    _pandas_available = False
 
 from six.moves import queue
 import threading
@@ -679,9 +679,9 @@ def get_all_study_summaries(storage):
 def _check_pandas_availability():
     # type: () -> None
 
-    if not _available:
+    if not _pandas_available:
         raise ImportError(
             'pandas is not available. Please install pandas to use this feature. '
             'pandas can be installed by executing `$ pip install pandas`. '
             'For further information, please refer to the installation guide of pandas. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            '(The actual import error is as follows: ' + str(_pandas_import_error) + ')')
