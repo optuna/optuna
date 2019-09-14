@@ -41,7 +41,7 @@ def test_init():
     assert version_info.library_version == version.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
-    assert storage.get_all_versions() == ['v0.9.0.a']
+    assert storage.get_all_versions() == ['v0.16.0.a', 'v0.9.0.a']
 
 
 def test_init_url_template():
