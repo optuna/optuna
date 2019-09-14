@@ -14,6 +14,7 @@ from optuna.trial import Trial
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    from datetime import datetime  # NOQA
     import typing  # NOQA
 
 parametrize_storage = pytest.mark.parametrize(
@@ -370,7 +371,7 @@ def test_relative_parameters(storage_init_func):
 def test_datetime_start(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
 
-    trial_datetime_start = [None]
+    trial_datetime_start = [None]  # type: typing.List[typing.Optional[datetime]]
 
     def objective(trial):
         # type: (Trial) -> float
