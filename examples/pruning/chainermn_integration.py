@@ -78,13 +78,8 @@ def objective(trial, comm):
 
     # Add Chainer extension for pruners.
     trainer.extend(
-        optuna.integration.ChainerPruningExtension(trial, 'validation/main/loss',
+        optuna.integration.ChainerPruningExtension(trial, 'main/accuracy',
                                                    (PRUNER_INTERVAL, 'epoch')))
-    trainer.extend(
-        chainer.training.extensions.PrintReport([
-            'epoch', 'main/loss', 'validation/main/loss', 'main/accuracy',
-            'validation/main/accuracy'
-        ]))
     evaluator = chainer.training.extensions.Evaluator(test_iter, model)
     trainer.extend(chainermn.create_multi_node_evaluator(evaluator, comm))
     log_report_extension = chainer.training.extensions.LogReport(log_name=None)
@@ -112,7 +107,11 @@ if __name__ == '__main__':
     study_name = sys.argv[1]
     storage_url = sys.argv[2]
 
-    study = optuna.load_study(study_name, storage_url, pruner=optuna.pruners.MedianPruner(), direction='maximize')
+    study = optuna.load_study(
+        study_name,
+        storage_url,
+        pruner=optuna.pruners.MedianPruner(),
+        direction='maximize')
     comm = chainermn.create_communicator('naive')
     if comm.rank == 0:
         print('Study name:', study_name)
