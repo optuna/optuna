@@ -58,6 +58,11 @@ def get_extras_require():
             'mpi4py', 'mxnet', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
             'tensorflow', 'xgboost',
         ],
+        'example': [
+            'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn', 
+            'tensorflow', 'mxnet', 'xgboost', 'torch', 'torchvision',
+            'dask-ml', 'dask[dataframe]'
+        ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],
     }
@@ -104,5 +109,6 @@ setup(
     },
     install_requires=get_install_requires(),
     tests_require=get_extras_require()['testing'],
+    examples_require=get_extras_require()['example'],
     extras_require=get_extras_require(),
     entry_points={'console_scripts': ['optuna = optuna.cli:main']})
