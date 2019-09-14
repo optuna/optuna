@@ -8,6 +8,7 @@ from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    from datetime import datetime  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
@@ -558,6 +559,16 @@ class Trial(BaseTrial):
         """
 
         return self.storage.get_trial_system_attrs(self._trial_id)
+
+    @property
+    def datetime_start(self):
+        # type: () -> Optional[datetime]
+        """Return start datetime.
+
+        Returns:
+            Datetime where the :class:`~optuna.trial.Trial` started.
+        """
+        return self.storage.get_trial(self._trial_id).datetime_start
 
 
 class FixedTrial(BaseTrial):
