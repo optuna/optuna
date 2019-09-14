@@ -19,6 +19,8 @@ except ImportError as e:
 
 class TFKerasPruningCallback(Callback):
     """tf.keras callback to prune unpromising trials.
+    This callback is intend to be compatible for TensorFlow v1 and v2,
+    but only tested with TensorFlow v1.
 
     Example:
 

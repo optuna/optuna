@@ -76,7 +76,10 @@ def objective(trial):
     # type: (optuna.Trial) -> float
 
     # Metrics to be monitored by Optuna.
-    monitor = 'val_acc'
+    if tf.__version__ >= '2':
+        monitor = 'val_accuracy'
+    else:
+        monitor = 'val_acc'
 
     # Create tf.keras model instance.
     model = create_model(trial)
@@ -87,7 +90,7 @@ def objective(trial):
 
     # Create callbacks for early stopping and pruning.
     callbacks = [
-        tf.keras.callbacks.EarlyStopping(monitor=monitor, patience=3),
+        tf.keras.callbacks.EarlyStopping(patience=3),
         TFKerasPruningCallback(trial, monitor)
     ]
 
@@ -102,7 +105,8 @@ def objective(trial):
     )
 
     # TODO(@sfujiwara): Investigate why the logger here is called twice.
-    # tf.logging.info(history.history[monitor][-1])
+    # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.DEBUG)
+    # tf.compat.v1.logging.info('hello optuna')
 
     return history.history[monitor][-1]
 
@@ -130,13 +134,10 @@ def show_result(study):
 
 def main():
 
-    tf.logging.set_verbosity(tf.logging.DEBUG)
-
     study = optuna.create_study(
         direction='maximize',
         pruner=optuna.pruners.MedianPruner(n_startup_trials=2)
     )
-    tf.logging.info('study is created')
 
     study.optimize(objective, n_trials=10)
 
