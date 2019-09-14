@@ -563,7 +563,7 @@ class Trial(BaseTrial):
     @property
     def datetime_start(self):
         # type: () -> Optional[datetime]
-        """Return datetime of the trial started.
+        """Return start datetime.
 
         Returns:
             Datetime where the :class:`~optuna.trial.Trial` started.
