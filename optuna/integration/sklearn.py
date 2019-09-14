@@ -735,7 +735,8 @@ class OptunaSearchCV(BaseEstimator):
                 'max_iter must be > 0, got {}.'.format(self.max_iter)
             )
 
-        if self.study is not None and self.study.direction != 'maximize':
+        if self.study is not None \
+                and self.study.direction != structs.StudyDirection.MAXIMIZE:
             raise ValueError('direction of study must be \'maximize\'.')
 
     def _more_tags(self):
