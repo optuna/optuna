@@ -480,8 +480,11 @@ class Trial(BaseTrial):
         param_value = self.system_attrs['_manual_params'][name]
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
 
-        # TODO(ohta): Warn if the following line returns `False`.
-        return distribution._contains(param_value_in_internal_repr)
+        contained = distribution._contains(param_value_in_internal_repr)
+        if not contained:
+            warnings.warn("The parameter '{}' is the out of range value "
+                          "for '{}' distribution".format(param_value, name))
+        return contained
 
     def _is_relative_param(self, name, distribution):
         # type: (str, BaseDistribution) -> bool
