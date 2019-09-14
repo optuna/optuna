@@ -5,8 +5,8 @@ import pytest
 import lightgbm as lgb
 import optuna
 from optuna.integration.lightgbm import LightGBMPruningCallback
-from optuna.testing.integration import DeterministicPruner
 from optuna.testing.integration import create_running_trial
+from optuna.testing.integration import DeterministicPruner
 
 # If `True`, `lgb.cv(..)` will be used in the test, otherwise `lgb.train(..)` will be used.
 CV_FLAGS = [False, True]

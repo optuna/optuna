@@ -17,8 +17,8 @@ import numpy as np
 
 import optuna
 from optuna import distributions
-from optuna import structs
 from optuna.samplers import BaseSampler
+from optuna import structs
 
 
 class SimulatedAnnealingSampler(BaseSampler):

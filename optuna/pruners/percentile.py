@@ -2,9 +2,9 @@ import math
 
 import numpy as np
 
+from optuna.pruners import BasePruner
 from optuna import structs
 from optuna import type_checking
-from optuna.pruners import BasePruner
 
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA

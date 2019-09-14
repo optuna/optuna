@@ -3,9 +3,9 @@ import math
 import pytest
 
 import cma
-import optuna
 from mock import call
 from mock import patch
+import optuna
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution

@@ -7,12 +7,12 @@ from mock import patch
 from optuna import distributions
 from optuna import samplers
 from optuna import storages
-from optuna import type_checking
 from optuna.study import create_study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FixedTrial
 from optuna.trial import Trial
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     import typing  # NOQA

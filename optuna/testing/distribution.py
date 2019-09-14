@@ -1,5 +1,5 @@
-from optuna import type_checking
 from optuna.distributions import BaseDistribution
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA

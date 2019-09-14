@@ -3,10 +3,10 @@ import math
 import pytest
 
 import optuna
-from optuna import type_checking
 from optuna.pruners import percentile
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA

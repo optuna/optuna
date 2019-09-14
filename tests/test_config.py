@@ -4,8 +4,8 @@ import tempfile
 
 import pytest
 
-import optuna
 from mock import patch
+import optuna
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

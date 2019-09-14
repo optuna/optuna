@@ -12,11 +12,11 @@ You can run this example as follows:
 """
 
 import keras
-import optuna
 from keras.datasets import mnist
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.models import Sequential
+import optuna
 from optuna.integration import KerasPruningCallback
 
 N_TRAIN_EXAMPLES = 3000

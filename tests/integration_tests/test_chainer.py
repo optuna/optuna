@@ -1,20 +1,20 @@
-import math
 from collections import namedtuple
+import math
 
 import numpy as np
 import pytest
 
 import chainer
 import chainer.links as L
-import optuna
 from chainer.training import triggers
 from mock import Mock
 from mock import patch
-from optuna import type_checking
+import optuna
 from optuna.integration.chainer import ChainerPruningExtension
 from optuna.structs import TrialPruned
-from optuna.testing.integration import DeterministicPruner
 from optuna.testing.integration import create_running_trial
+from optuna.testing.integration import DeterministicPruner
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     import typing  # NOQA

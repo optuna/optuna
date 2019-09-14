@@ -1,7 +1,7 @@
 import pytest
 
-import optuna
 from mock import patch
+import optuna
 from optuna.integration import CmaEsSampler
 from optuna.integration import SkoptSampler
 from optuna.testing.sampler import FirstTrialOnlyRandomSampler

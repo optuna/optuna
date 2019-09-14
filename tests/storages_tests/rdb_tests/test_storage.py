@@ -4,22 +4,22 @@ import tempfile
 import pytest
 
 from mock import patch
-from optuna import type_checking
-from optuna import version
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import UniformDistribution
 from optuna.distributions import json_to_distribution
-from optuna.storages import RDBStorage
+from optuna.distributions import UniformDistribution
 from optuna.storages.rdb.models import SCHEMA_VERSION
 from optuna.storages.rdb.models import StudyModel
 from optuna.storages.rdb.models import TrialModel
 from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
+from optuna.storages import RDBStorage
 from optuna.structs import DuplicatedStudyError
 from optuna.structs import StorageInternalError
 from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
 from optuna.structs import TrialState
+from optuna import type_checking
+from optuna import version
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

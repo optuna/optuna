@@ -3,9 +3,9 @@ import pytest
 
 import mxnet as mx
 import optuna
-from optuna import type_checking
 from optuna.integration.mxnet import MXNetPruningCallback
 from optuna.testing.integration import DeterministicPruner
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA

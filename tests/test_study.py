@@ -10,8 +10,8 @@ import pandas as pd
 import pytest
 
 import optuna
-from optuna import type_checking
 from optuna.testing.storage import StorageSupplier
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

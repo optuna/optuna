@@ -1,8 +1,8 @@
 import pytest
 
-import optuna
 from mock import call
 from mock import patch
+import optuna
 from optuna import distributions
 from optuna.structs import FrozenTrial
 from skopt.space import space

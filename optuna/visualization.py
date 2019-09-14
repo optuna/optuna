@@ -1,7 +1,7 @@
-from optuna import type_checking
 from optuna.logging import get_logger
 from optuna.structs import TrialState
 from optuna.study import Study  # NOQA
+from optuna import type_checking
 
 logger = get_logger(__name__)
 

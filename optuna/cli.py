@@ -1,19 +1,19 @@
 from __future__ import absolute_import
 
+from argparse import ArgumentParser  # NOQA
+from argparse import Namespace  # NOQA
 import imp
 import logging
 import sys
-from argparse import ArgumentParser  # NOQA
-from argparse import Namespace  # NOQA
 
-import optuna
 from cliff.app import App
 from cliff.command import Command
 from cliff.commandmanager import CommandManager
 from cliff.lister import Lister
-from optuna import type_checking
+import optuna
 from optuna.storages import RDBStorage
 from optuna.structs import CLIUsageError
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
