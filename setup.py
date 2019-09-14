@@ -56,7 +56,7 @@ def get_extras_require():
         'testing': [
             'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
             'mpi4py', 'mxnet', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
-            'tensorflow', 'xgboost', 'scikit-learn>=0.20.0',
+            'tensorflow', 'xgboost', 'scikit-learn>=0.19.0',
         ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],

@@ -15,7 +15,7 @@ try:
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
     from sklearn.base import is_classifier
-    from sklearn.metrics import check_scoring
+    from sklearn.metrics.scorer import check_scoring
     from sklearn.model_selection._validation import _index_param_value
     from sklearn.model_selection import BaseCrossValidator  # NOQA
     from sklearn.model_selection import check_cv
@@ -67,7 +67,7 @@ def _check_sklearn_availability():
         raise ImportError(
             'scikit-learn is not available. Please install scikit-learn to '
             'use this feature. scikit-learn can be installed by executing '
-            '`$ pip install scikit-learn>=0.20.0`. For further information, '
+            '`$ pip install scikit-learn>=0.19.0`. For further information, '
             'please refer to the installation guide of scikit-learn. (The '
             'actual import error is as follows: ' + str(_import_error) + ')'
         )
