@@ -4,17 +4,14 @@ import gc
 import math
 import multiprocessing
 import multiprocessing.pool
-import pandas as pd
-from six.moves import queue
 import threading
 import time
 import warnings
 
-from optuna import logging
-from optuna import pruners
-from optuna import samplers
-from optuna import storages
-from optuna import structs
+import pandas as pd
+from six.moves import queue
+
+from optuna import logging, pruners, samplers, storages, structs
 from optuna import trial as trial_module
 from optuna import type_checking
 

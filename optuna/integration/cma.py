@@ -1,20 +1,18 @@
 from __future__ import absolute_import
 
 import math
-import numpy
 import random
 
+import numpy
+
 import optuna
-from optuna import distributions
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna import distributions, type_checking
+from optuna.distributions import (CategoricalDistribution,
+                                  DiscreteUniformDistribution,
+                                  IntUniformDistribution,
+                                  LogUniformDistribution, UniformDistribution)
 from optuna.samplers import BaseSampler
-from optuna.structs import StudyDirection
-from optuna.structs import TrialState
-from optuna import type_checking
+from optuna.structs import StudyDirection, TrialState
 
 try:
     import cma

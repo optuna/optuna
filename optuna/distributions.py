@@ -1,9 +1,8 @@
 import abc
 import json
+from typing import NamedTuple, Tuple, Union
+
 import six
-from typing import NamedTuple
-from typing import Tuple
-from typing import Union
 
 from optuna import type_checking
 

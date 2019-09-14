@@ -1,16 +1,17 @@
 import itertools
 import multiprocessing
 import os
-import pandas as pd
 import pickle
-import pytest
 import threading
 import time
 import uuid
 
+import pandas as pd
+import pytest
+
 import optuna
-from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
+from optuna.testing.storage import StorageSupplier
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

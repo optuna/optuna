@@ -1,19 +1,20 @@
 import os
-import py  # NOQA
-import pytest
 import re
 import shutil
 import subprocess
-from subprocess import CalledProcessError
 import tempfile
+from subprocess import CalledProcessError
+
+import py  # NOQA
+import pytest
 
 import optuna
+from optuna import type_checking
 from optuna.cli import Studies
-from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
+from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.structs import CLIUsageError
 from optuna.trial import Trial  # NOQA
-from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from type_checking import TracebackType  # NOQA

@@ -1,17 +1,13 @@
 import math
-from mock import Mock
-from mock import patch
+
 import pytest
 
-from optuna import distributions
-from optuna import samplers
-from optuna import storages
+from mock import Mock, patch
+from optuna import distributions, samplers, storages, type_checking
 from optuna.study import create_study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
-from optuna.trial import FixedTrial
-from optuna.trial import Trial
-from optuna import type_checking
+from optuna.trial import FixedTrial, Trial
 
 if type_checking.TYPE_CHECKING:
     import typing  # NOQA

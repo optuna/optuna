@@ -1,18 +1,16 @@
 from datetime import datetime
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from optuna.storages.rdb.models import BaseModel
-from optuna.storages.rdb.models import StudyModel
-from optuna.storages.rdb.models import StudySystemAttributeModel
-from optuna.storages.rdb.models import TrialModel
-from optuna.storages.rdb.models import TrialSystemAttributeModel
-from optuna.storages.rdb.models import TrialUserAttributeModel
-from optuna.storages.rdb.models import VersionInfoModel
-from optuna.structs import StudyDirection
-from optuna.structs import TrialState
+from optuna.storages.rdb.models import (BaseModel, StudyModel,
+                                        StudySystemAttributeModel, TrialModel,
+                                        TrialSystemAttributeModel,
+                                        TrialUserAttributeModel,
+                                        VersionInfoModel)
+from optuna.structs import StudyDirection, TrialState
 
 
 @pytest.fixture

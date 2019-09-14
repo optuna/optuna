@@ -2,11 +2,10 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import (CategoricalDistribution,
+                                  DiscreteUniformDistribution,
+                                  IntUniformDistribution,
+                                  LogUniformDistribution, UniformDistribution)
 from optuna.samplers import BaseSampler
 
 if optuna.type_checking.TYPE_CHECKING:

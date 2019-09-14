@@ -14,13 +14,14 @@ as follows:
 
 from __future__ import print_function
 
+import sys
+
+import numpy as np
+
 import chainer
 import chainer.functions as F
 import chainer.links as L
 import chainermn
-import numpy as np
-import sys
-
 import optuna
 
 N_TRAIN_EXAMPLES = 3000

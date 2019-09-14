@@ -1,10 +1,11 @@
-from mock import patch
 import os
-import pytest
 import shutil
 import tempfile
 
+import pytest
+
 import optuna
+from mock import patch
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

@@ -25,9 +25,9 @@ import numpy as np
 import sklearn.datasets
 import sklearn.metrics
 from sklearn.model_selection import train_test_split
-import xgboost as xgb
 
 import optuna
+import xgboost as xgb
 
 
 # FYI: Objective functions can take additional arguments

@@ -1,4 +1,5 @@
 import abc
+
 import six
 
 from optuna import type_checking

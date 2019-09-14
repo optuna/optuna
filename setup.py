@@ -1,8 +1,8 @@
 import os
-import pkg_resources
-from setuptools import find_packages
-from setuptools import setup
 import sys
+
+import pkg_resources
+from setuptools import find_packages, setup
 
 try:
     from typing import Dict  # NOQA

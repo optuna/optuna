@@ -1,31 +1,27 @@
+import copy
+import json
+import logging
+import os
+import sys
+import threading
+import uuid
+from collections import defaultdict
+from datetime import datetime
+
+import six
+from sqlalchemy import orm
+from sqlalchemy.engine import Engine  # NOQA
+from sqlalchemy.engine import create_engine
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+
 import alembic.command
 import alembic.config
 import alembic.migration
 import alembic.script
-from collections import defaultdict
-import copy
-from datetime import datetime
-import json
-import logging
-import os
-import six
-from sqlalchemy.engine import create_engine
-from sqlalchemy.engine import Engine  # NOQA
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import orm
-import sys
-import threading
-import uuid
-
 import optuna
-from optuna import distributions
-from optuna.storages.base import BaseStorage
-from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
+from optuna import distributions, structs, type_checking, version
+from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX, BaseStorage
 from optuna.storages.rdb import models
-from optuna import structs
-from optuna import type_checking
-from optuna import version
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

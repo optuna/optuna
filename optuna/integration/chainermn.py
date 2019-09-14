@@ -1,14 +1,13 @@
 from __future__ import absolute_import
 
 import gc
+import warnings
 
+from optuna import type_checking
 from optuna.logging import get_logger
-from optuna.storages import InMemoryStorage
-from optuna.storages import RDBStorage
+from optuna.storages import InMemoryStorage, RDBStorage
 from optuna.structs import TrialPruned
 from optuna.trial import BaseTrial
-from optuna import type_checking
-import warnings
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

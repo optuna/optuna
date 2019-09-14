@@ -1,12 +1,12 @@
 from __future__ import with_statement
 
-from alembic import context
 import logging
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+
+from sqlalchemy import engine_from_config, pool
 
 import optuna
+from alembic import context
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

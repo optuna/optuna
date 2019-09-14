@@ -1,12 +1,12 @@
-from keras.layers import Dense
-from keras import Sequential
 import numpy as np
 import pytest
 
 import optuna
+from keras import Sequential
+from keras.layers import Dense
 from optuna.integration import KerasPruningCallback
-from optuna.testing.integration import create_running_trial
-from optuna.testing.integration import DeterministicPruner
+from optuna.testing.integration import (DeterministicPruner,
+                                        create_running_trial)
 
 
 def test_keras_pruning_callback():

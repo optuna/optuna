@@ -1,8 +1,8 @@
 import math
 
+from optuna import type_checking
 from optuna.pruners.base import BasePruner
 from optuna.structs import StudyDirection
-from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA

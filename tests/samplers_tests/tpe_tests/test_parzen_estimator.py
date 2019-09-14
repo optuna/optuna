@@ -1,10 +1,11 @@
 import itertools
+
 import numpy as np
 import pytest
 
+from optuna import type_checking
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
 from optuna.samplers.tpe.sampler import default_weights
-from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA

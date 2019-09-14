@@ -1,11 +1,10 @@
-from mock import call
-from mock import patch
 import pytest
-from skopt.space import space
 
 import optuna
+from mock import call, patch
 from optuna import distributions
 from optuna.structs import FrozenTrial
+from skopt.space import space
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

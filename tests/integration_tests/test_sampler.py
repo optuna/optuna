@@ -1,9 +1,8 @@
-from mock import patch
 import pytest
 
 import optuna
-from optuna.integration import CmaEsSampler
-from optuna.integration import SkoptSampler
+from mock import patch
+from optuna.integration import CmaEsSampler, SkoptSampler
 from optuna.testing.sampler import FirstTrialOnlyRandomSampler
 
 if optuna.type_checking.TYPE_CHECKING:

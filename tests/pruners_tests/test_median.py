@@ -1,8 +1,8 @@
 import pytest
 
 import optuna
-from optuna.structs import TrialState
 from optuna import type_checking
+from optuna.structs import TrialState
 
 if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA

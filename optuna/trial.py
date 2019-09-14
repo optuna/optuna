@@ -1,11 +1,10 @@
 import abc
 import math
-import six
 import warnings
 
-from optuna import distributions
-from optuna import logging
-from optuna import type_checking
+import six
+
+from optuna import distributions, logging, type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

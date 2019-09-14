@@ -1,14 +1,15 @@
-from collections import OrderedDict
 import math
-from mock import patch
+from collections import OrderedDict
+
 import numpy as np
 import pytest
-import tensorflow as tf
 
 import optuna
+import tensorflow as tf
+from mock import patch
+from optuna import type_checking
 from optuna.integration import TensorFlowPruningHook
 from optuna.testing.integration import DeterministicPruner
-from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     import typing  # NOQA

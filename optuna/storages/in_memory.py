@@ -1,12 +1,11 @@
 import copy
-from datetime import datetime
 import threading
+from datetime import datetime
 
 from optuna import distributions  # NOQA
+from optuna import structs, type_checking
 from optuna.storages import base
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
-from optuna import structs
-from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

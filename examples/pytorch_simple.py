@@ -19,17 +19,16 @@ We have the following two ways to execute this example:
 
 """
 
-from __future__ import division
-from __future__ import print_function
+from __future__ import division, print_function
 
 import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data
-from torchvision import datasets
-from torchvision import transforms
+from torchvision import datasets, transforms
 
 DEVICE = torch.device('cpu')
 BATCHSIZE = 128

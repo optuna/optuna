@@ -1,7 +1,5 @@
 import optuna
-
-from optuna.samplers import tpe
-from optuna.samplers import TPESampler
+from optuna.samplers import TPESampler, tpe
 from optuna.structs import TrialPruned
 
 if optuna.type_checking.TYPE_CHECKING:

@@ -11,15 +11,15 @@ You can run this example as follows:
 
 """
 
-from __future__ import division
-from __future__ import print_function
+from __future__ import division, print_function
 
-import numpy as np
 import shutil
 import tempfile
-import tensorflow as tf
+
+import numpy as np
 
 import optuna
+import tensorflow as tf
 
 MODEL_DIR = tempfile.mkdtemp()
 BATCH_SIZE = 128

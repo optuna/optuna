@@ -1,15 +1,13 @@
 import math
+
 import numpy as np
 import scipy.special
 
-from optuna import distributions
-from optuna.samplers import base
-from optuna.samplers import random
-from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
-from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters
-from optuna import structs
+from optuna import distributions, structs, type_checking
+from optuna.samplers import base, random
+from optuna.samplers.tpe.parzen_estimator import (ParzenEstimator,
+                                                  ParzenEstimatorParameters)
 from optuna.structs import StudyDirection
-from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

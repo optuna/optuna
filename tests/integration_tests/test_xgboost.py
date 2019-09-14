@@ -1,10 +1,10 @@
 import pytest
-import xgboost as xgb
 
 import optuna
+import xgboost as xgb
 from optuna.integration.xgboost import XGBoostPruningCallback
-from optuna.testing.integration import create_running_trial
-from optuna.testing.integration import DeterministicPruner
+from optuna.testing.integration import (DeterministicPruner,
+                                        create_running_trial)
 
 
 def test_xgboost_pruning_callback_call():

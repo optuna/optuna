@@ -1,19 +1,16 @@
-import cma
 import math
-from mock import call
-from mock import patch
+
 import pytest
 
+import cma
 import optuna
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from mock import call, patch
+from optuna.distributions import (CategoricalDistribution,
+                                  DiscreteUniformDistribution,
+                                  IntUniformDistribution,
+                                  LogUniformDistribution, UniformDistribution)
 from optuna.integration.cma import _Optimizer
-from optuna.structs import FrozenTrial
-from optuna.structs import StudyDirection
-from optuna.structs import TrialState
+from optuna.structs import FrozenTrial, StudyDirection, TrialState
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 
