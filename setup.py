@@ -40,7 +40,7 @@ def get_install_requires():
     # type: () -> List[str]
 
     install_requires = [
-        'alembic', 'cliff', 'colorlog', 'numpy', 'pandas', 'scipy', 'six',
+        'alembic', 'cliff', 'colorlog', 'numpy', 'scipy', 'six',
         'sqlalchemy>=1.1.0', 'typing',
     ]
     if sys.version_info[0] == 2:
