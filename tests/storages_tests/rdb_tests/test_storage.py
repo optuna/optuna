@@ -392,17 +392,17 @@ def test_check_python_version():
 
     with patch.object(sys, 'version_info') as v_info:
         # If Python version is 3.4.0 to 3.4.3, RDBStrages raises RuntimeError.
-        for version in error_versions:
-            v_info.major = version["major"]
-            v_info.minor = version["minor"]
-            v_info.micro = version["micro"]
+        for ver in error_versions:
+            v_info.major = ver["major"]
+            v_info.minor = ver["minor"]
+            v_info.micro = ver["micro"]
 
             with pytest.raises(RuntimeError):
                 RDBStorage._check_python_version()
 
         # Otherwise, RDBStrages does not raise RuntimeError.
-        for version in valid_versions:
-            v_info.major = version["major"]
-            v_info.minor = version["minor"]
-            v_info.micro = version["micro"]
+        for ver in valid_versions:
+            v_info.major = ver["major"]
+            v_info.minor = ver["minor"]
+            v_info.micro = ver["micro"]
             RDBStorage._check_python_version()
