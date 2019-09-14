@@ -364,10 +364,10 @@ class Study(BaseStudy):
         user_attrs = user_attrs or {}
         system_attrs = copy.deepcopy(system_attrs or {})
         system_attrs['_manual_params'] = params
-        self.inject_trial(state=structs.TrialState.WAITING,
-                          user_attrs=user_attrs, system_attrs=system_attrs)
+        self._append_trial(state=structs.TrialState.WAITING,
+                           user_attrs=user_attrs, system_attrs=system_attrs)
 
-def _append_trial(
+    def _append_trial(
             self,
             value=None,  # type: Optional[float]
             params=None,  # type: Optional[Dict[str, Any]]
