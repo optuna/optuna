@@ -558,7 +558,7 @@ class Trial(BaseTrial):
         """
 
         return self.storage.get_trial_system_attrs(self._trial_id)
-    
+
     @property
     def datetime_start(self):
         # type: () -> Dict[str, BaseDistribution]

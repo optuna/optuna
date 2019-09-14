@@ -371,7 +371,7 @@ def test_datetime_start(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
 
     trial_datetime_start = [None]
-    
+
     def objective(trial):
         # type: (Trial) -> float
 
