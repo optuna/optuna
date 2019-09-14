@@ -225,7 +225,6 @@ jobs:
           command: |
             . venv/bin/activate
             pip install $(ls dist/*.tar.gz)[example]
-            
       - run: &examples
           name: examples
           command: |

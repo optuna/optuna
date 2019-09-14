@@ -109,6 +109,5 @@ setup(
     },
     install_requires=get_install_requires(),
     tests_require=get_extras_require()['testing'],
-    examples_require=get_extras_require()['example'],
     extras_require=get_extras_require(),
     entry_points={'console_scripts': ['optuna = optuna.cli:main']})
