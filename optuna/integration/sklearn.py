@@ -84,7 +84,7 @@ def safe_indexing(
     return sklearn_safe_indexing(X, indices)
 
 
-class Objective(object):
+class _Objective(object):
     """Callable that implements objective function.
 
     Args:
@@ -866,7 +866,7 @@ class OptunaSearchCV(BaseEstimator):
         else:
             self.study_ = self.study
 
-        objective = Objective(
+        objective = _Objective(
             self.estimator,
             self.param_distributions,
             X_res,
