@@ -100,6 +100,7 @@ class RDBStorage(BaseStorage):
 
     def delete_study(self, study_id):
         # type: (int) -> None
+
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
