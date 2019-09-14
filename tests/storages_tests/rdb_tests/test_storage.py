@@ -376,3 +376,33 @@ def test_storage_cache():
             wraps=TrialModel.find_or_raise_by_id) as mock_object:
         assert storage.get_all_trials(study_id) == trials
         assert mock_object.call_count == 1
+
+
+def test_python_version():
+    # type: () -> None
+
+    import mock
+    # Create mock data.
+    error_data = [{ "major": 3, "minor": 4, "micro": i } for i in range(0, 4)]
+    version_data = []
+    version_data.append({"major": 2, "minor": 4, "micro": 4})
+    version_data.append({"major": 3, "minor": 3, "micro": 4})
+    version_data.append({"major": 3, "minor": 7, "micro": 4})
+    version_data.append({"major": 3, "minor": 4, "micro": 4})
+
+    with mock.patch.object(sys, 'version_info') as v_info:
+        # If 3.4.0 < Python < 3.4.4 is runtime error.
+        for ver in error_data:
+            v_info.major = ver["major"]
+            v_info.minor = ver["minor"]
+            v_info.micro = ver["micro"]
+
+            with pytest.raises(RuntimeError):
+                create_test_storage()
+        
+        # If Python < 3.4.0 or 3.4.4 <= Python is not error.
+        for ver in version_data:
+            v_info.major = ver["major"]
+            v_info.minor = ver["minor"]
+            v_info.micro = ver["micro"]
+            create_test_storage()

@@ -55,6 +55,11 @@ class RDBStorage(BaseStorage):
     def __init__(self, url, engine_kwargs=None, enable_cache=True, skip_compatibility_check=False):
         # type: (str, Optional[Dict[str, Any]], bool, bool) -> None
 
+        if sys.version_info.major == 3 and sys.version_info.minor == 4:
+            if 0 <= sys.version_info.micro and sys.version_info.micro < 4:
+                raise RuntimeError(
+                    'RDBStorage does not support 3.4.0 <= Python and Python < 3.4.4.')
+
         engine_kwargs = engine_kwargs or {}
 
         url = self._fill_storage_url_template(url)
