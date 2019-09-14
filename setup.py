@@ -58,6 +58,11 @@ def get_extras_require():
             'mpi4py', 'mxnet', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
             'tensorflow', 'xgboost',
         ],
+        'example': [
+            'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
+            'tensorflow', 'mxnet', 'xgboost', 'torch', 'torchvision',
+            'dask-ml', 'dask[dataframe]'
+        ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],
     }
