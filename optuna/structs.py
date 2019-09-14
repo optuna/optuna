@@ -1,6 +1,9 @@
 import enum
 from datetime import datetime
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any
+from typing import Dict
+from typing import NamedTuple
+from typing import Optional
 
 from optuna.distributions import BaseDistribution
 

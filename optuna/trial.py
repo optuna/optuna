@@ -4,7 +4,9 @@ import warnings
 
 import six
 
-from optuna import distributions, logging, type_checking
+from optuna import distributions
+from optuna import logging
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

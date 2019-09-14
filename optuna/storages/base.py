@@ -2,7 +2,8 @@ import abc
 
 import six
 
-from optuna import structs, type_checking
+from optuna import structs
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

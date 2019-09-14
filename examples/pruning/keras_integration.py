@@ -14,7 +14,8 @@ You can run this example as follows:
 import keras
 import optuna
 from keras.datasets import mnist
-from keras.layers import Dense, Dropout
+from keras.layers import Dense
+from keras.layers import Dropout
 from keras.models import Sequential
 from optuna.integration import KerasPruningCallback
 

@@ -5,7 +5,8 @@ import warnings
 
 from optuna import type_checking
 from optuna.logging import get_logger
-from optuna.storages import InMemoryStorage, RDBStorage
+from optuna.storages import InMemoryStorage
+from optuna.storages import RDBStorage
 from optuna.structs import TrialPruned
 from optuna.trial import BaseTrial
 

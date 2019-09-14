@@ -1,12 +1,22 @@
 from datetime import datetime
 
-from sqlalchemy import (CheckConstraint, Column, DateTime, Enum, Float,
-                        ForeignKey, Integer, String, UniqueConstraint, func,
-                        orm)
+from sqlalchemy import CheckConstraint
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import Enum
+from sqlalchemy import Float
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy import UniqueConstraint
+from sqlalchemy import func
+from sqlalchemy import orm
 from sqlalchemy.ext.declarative import declarative_base
 
-from optuna import distributions, type_checking
-from optuna.structs import StudyDirection, TrialState
+from optuna import distributions
+from optuna import type_checking
+from optuna.structs import StudyDirection
+from optuna.structs import TrialState
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

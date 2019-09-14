@@ -3,7 +3,10 @@ from __future__ import absolute_import
 import numpy as np
 
 import optuna
-from optuna import distributions, samplers, structs, type_checking
+from optuna import distributions
+from optuna import samplers
+from optuna import structs
+from optuna import type_checking
 from optuna.samplers import BaseSampler
 from optuna.structs import StudyDirection
 

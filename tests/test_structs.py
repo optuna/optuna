@@ -3,8 +3,10 @@ from datetime import datetime
 import pytest
 
 import optuna
-from optuna.distributions import LogUniformDistribution, UniformDistribution
-from optuna.structs import FrozenTrial, TrialState
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
+from optuna.structs import FrozenTrial
+from optuna.structs import TrialState
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

@@ -6,12 +6,16 @@ import optuna
 from mock import patch
 from optuna import type_checking
 from optuna.distributions import BaseDistribution  # NOQA
-from optuna.distributions import (CategoricalDistribution,
-                                  LogUniformDistribution, UniformDistribution)
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna.storages import BaseStorage  # NOQA
-from optuna.storages import InMemoryStorage, RDBStorage
+from optuna.storages import InMemoryStorage
+from optuna.storages import RDBStorage
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.structs import FrozenTrial, StudyDirection, TrialState
+from optuna.structs import FrozenTrial
+from optuna.structs import StudyDirection
+from optuna.structs import TrialState
 from optuna.testing.storage import StorageSupplier
 
 if type_checking.TYPE_CHECKING:

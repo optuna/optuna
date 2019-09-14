@@ -1,5 +1,6 @@
 import os
-from typing import NamedTuple, Optional
+from typing import NamedTuple
+from typing import Optional
 
 import yaml
 

@@ -1,6 +1,8 @@
 import abc
 import json
-from typing import NamedTuple, Tuple, Union
+from typing import NamedTuple
+from typing import Tuple
+from typing import Union
 
 import six
 

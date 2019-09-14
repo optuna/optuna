@@ -16,7 +16,8 @@ You can run this example as follows:
 import numpy as np
 
 import optuna
-from optuna import distributions, structs
+from optuna import distributions
+from optuna import structs
 from optuna.samplers import BaseSampler
 
 

@@ -19,7 +19,8 @@ We have the following two ways to execute this example:
 
 """
 
-from __future__ import division, print_function
+from __future__ import division
+from __future__ import print_function
 
 import shutil
 import tempfile
