@@ -155,7 +155,7 @@ def test_delete_study(storage_init_func):
     assert len(trials) == 0
 
 
-def test_delete_study_after_create_multiple_study():
+def test_delete_study_after_create_multiple_studies():
     # type: () -> None
 
     storage = RDBStorage('sqlite:///:memory:')
