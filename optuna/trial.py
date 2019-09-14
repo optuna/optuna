@@ -97,6 +97,12 @@ class BaseTrial(object):
 
         raise NotImplementedError
 
+    @property
+    def datetime_start(self):
+        # type: () -> Optional[datetime]
+
+        raise NotImplementedError
+
 
 class Trial(BaseTrial):
     """A trial is a process of evaluating an objective function.
