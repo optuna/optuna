@@ -57,6 +57,8 @@ if type_checking.TYPE_CHECKING:
     TwoDimArrayLikeType = \
         Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
 
+logger = logging.get_logger(__name__)
+
 
 def _check_sklearn_availability():
     # type: () -> None
@@ -736,20 +738,6 @@ class OptunaSearchCV(BaseEstimator):
         if self.study is not None and self.study.direction != 'maximize':
             raise ValueError('direction of study must be \'maximize\'.')
 
-    def _get_logger(self):
-        # type: () -> Logger
-
-        logger = logging.get_logger(__name__)
-
-        if self.verbose > 1:
-            logger.setLevel(DEBUG)
-        elif self.verbose > 0:
-            logger.setLevel(INFO)
-        else:
-            logger.setLevel(WARNING)
-
-        return logger
-
     def _more_tags(self):
         # type: () -> Dict[str, bool]
 
@@ -764,7 +752,6 @@ class OptunaSearchCV(BaseEstimator):
         # type: (...) -> 'OptunaSearchCV'
 
         n_samples = _num_samples(X)
-        logger = self._get_logger()
 
         self.best_estimator_ = clone(self.estimator)
 
@@ -824,7 +811,14 @@ class OptunaSearchCV(BaseEstimator):
         random_state = check_random_state(self.random_state)
         max_samples = self.subsample
         n_samples = _num_samples(X)
-        logger = self._get_logger()
+        old_level = logger.getEffectiveLevel()
+
+        if self.verbose > 1:
+            logger.setLevel(DEBUG)
+        elif self.verbose > 0:
+            logger.setLevel(INFO)
+        else:
+            logger.setLevel(WARNING)
 
         self.sample_indices_ = np.arange(n_samples)
 
@@ -903,6 +897,8 @@ class OptunaSearchCV(BaseEstimator):
 
         if self.refit:
             self._refit(X, y, **fit_params)
+
+        logger.setLevel(old_level)
 
         return self
 
