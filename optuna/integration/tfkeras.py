@@ -26,7 +26,7 @@ class TFKerasPruningCallback(Callback):
 
         .. code::
 
-            model.fit(x, y, callbacks=TFKerasPruningCallback(trial, 'val_loss'))
+            model.fit(x, y, callbacks=[TFKerasPruningCallback(trial, 'val_loss')])
 
     Args:
         trial:
