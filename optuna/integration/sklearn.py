@@ -42,9 +42,9 @@ from optuna import storages  # NOQA
 from optuna import structs
 from optuna import study as study_module
 from optuna import trial as trial_module  # NOQA
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
