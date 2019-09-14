@@ -558,6 +558,17 @@ class Trial(BaseTrial):
         """
 
         return self.storage.get_trial_system_attrs(self._trial_id)
+    
+    @property
+    def datetime_start(self):
+        # type: () -> Dict[str, BaseDistribution]
+        """Return datetime of the trial started.
+
+        Returns:
+            Datetime where the trial started.
+        """
+
+        return self.storage.get_trial(self._trial_id).datetime_start
 
 
 class FixedTrial(BaseTrial):

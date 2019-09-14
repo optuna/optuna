@@ -364,3 +364,21 @@ def test_relative_parameters(storage_init_func):
     distribution4 = distributions.UniformDistribution(low=0, high=10)
     with pytest.raises(ValueError):
         trial4._suggest('z', distribution4)
+
+
+@parametrize_storage
+def test_datetime_start(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    trial_datetime_start = [None]
+    
+    def objective(trial):
+        # type: (Trial) -> float
+
+        trial_datetime_start[0] = trial.datetime_start
+        return 1.0
+
+    study = create_study(storage_init_func())
+    study.optimize(objective, n_trials=1)
+
+    assert study.trials[0].datetime_start == trial_datetime_start[0]
