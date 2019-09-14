@@ -580,6 +580,21 @@ def test_enqueue_trial(storage_mode):
         assert study._pop_waiting_trial_id() is None
 
 
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_enqueue_trial_properly_sets_param_values(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.enqueue_trial(params={'x': -1, 'y': 1})
+        trial_id = study._pop_waiting_trial_id()
+        trial = optuna.Trial(study, trial_id)
+        assert trial.suggest_int('x', low=-10, high=10) == -1
+        assert trial.suggest_int('y', low=-10, high=10) == 1
+
+
 def test_storage_property():
     # type: () -> None
 
