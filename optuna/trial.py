@@ -3,12 +3,11 @@ import math
 import six
 import warnings
 
-import optuna
 from optuna import distributions
 from optuna import logging
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
@@ -127,7 +126,7 @@ class Trial(BaseTrial):
         self._trial_id = trial_id
 
         self.study_id = self.study.study_id
-        self.storage = self.study.storage
+        self.storage = self.study._storage
         self.logger = logging.get_logger(__name__)
 
         self._init_relative_params()
@@ -135,11 +134,11 @@ class Trial(BaseTrial):
     def _init_relative_params(self):
         # type: () -> None
 
-        study = optuna.study.InTrialStudy(self.study)
         trial = self.storage.get_trial(self._trial_id)
 
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
-        self.relative_params = self.study.sampler.sample_relative(study, trial,
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(
+            self.study, trial)
+        self.relative_params = self.study.sampler.sample_relative(self.study, trial,
                                                                   self.relative_search_space)
 
     def suggest_uniform(self, name, low, high):
@@ -158,7 +157,7 @@ class Trial(BaseTrial):
 
                 >>> def objective(trial):
                 >>>     ...
-                >>>     dropout_rate = trial.suggest_unifrom('dropout_rate', 0, 1.0)
+                >>>     dropout_rate = trial.suggest_uniform('dropout_rate', 0, 1.0)
                 >>>     ...
 
         Args:
@@ -197,7 +196,7 @@ class Trial(BaseTrial):
 
                 >>> def objective(trial):
                 >>>     ...
-                >>>     c = trial.suggest_logunifrom('c', 1e-5, 1e2)
+                >>>     c = trial.suggest_loguniform('c', 1e-5, 1e2)
                 >>>     clf = sklearn.svm.SVC(C=c)
                 >>>     ...
 
@@ -388,14 +387,14 @@ class Trial(BaseTrial):
             A boolean value. If :obj:`True`, the trial should be pruned. Otherwise, the trial will
             be continued.
         """
-        if step is None:
-            step = max(self.storage.get_trial(self._trial_id).intermediate_values.keys())
-        else:
+        if step is not None:
             warnings.warn(
                 'The use of `step` argument is deprecated. '
-                'You can omit to pass this parameter.', DeprecationWarning)
+                'The last reported step is used instead of '
+                'the step given by the argument.', DeprecationWarning)
 
-        return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
+        trial = self.study._storage.get_trial(self._trial_id)
+        return self.study.pruner.prune(self.study, trial)
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -449,10 +448,9 @@ class Trial(BaseTrial):
         if self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
-            study = optuna.study.InTrialStudy(self.study)
             trial = self.storage.get_trial(self._trial_id)
             param_value = self.study.sampler.sample_independent(
-                study, trial, name, distribution)
+                self.study, trial, name, distribution)
 
         return self._set_new_param_or_get_existing(name, param_value, distribution)
 

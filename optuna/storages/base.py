@@ -1,17 +1,16 @@
 import abc
-import numpy as np
 import six
 
-from optuna import distributions  # NOQA
-from optuna import structs  # NOQA
-from optuna import types
+from optuna import structs
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
+
+    from optuna import distributions  # NOQA
 
 DEFAULT_STUDY_NAME_PREFIX = 'no-name-'
 
@@ -29,7 +28,7 @@ class BaseStorage(object):
     # Basic study manipulation
 
     @abc.abstractmethod
-    def create_new_study_id(self, study_name=None):
+    def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
 
         raise NotImplementedError
@@ -99,8 +98,8 @@ class BaseStorage(object):
     # Basic trial manipulation
 
     @abc.abstractmethod
-    def create_new_trial_id(self, study_id):
-        # type: (int) -> int
+    def create_new_trial(self, study_id, template_trial=None):
+        # type: (int, Optional[structs.FronzenTrial]) -> int
 
         raise NotImplementedError
 
@@ -199,54 +198,6 @@ class BaseStorage(object):
         # type: (int) -> Dict[str, Any]
 
         return self.get_trial(trial_id).system_attrs
-
-    # Methods for the TPE sampler
-
-    def get_trial_param_result_pairs(self, study_id, param_name):
-        # type: (int, str) -> List[Tuple[float, float]]
-
-        # Be careful: this method returns param values in internal representation
-        all_trials = self.get_all_trials(study_id)
-
-        return [(t.params_in_internal_repr[param_name], t.value) for t in all_trials
-                if (t.value is not None and param_name in t.params
-                    and t.state is structs.TrialState.COMPLETE)
-                # TODO(Akiba): We also want to use pruned results
-                ]
-
-    # Methods for PercentilePruner and MedianPruner
-
-    def get_best_intermediate_result_over_steps(self, trial_id):
-        # type: (int) -> float
-
-        values = np.array(list(self.get_trial(trial_id).intermediate_values.values()), np.float)
-
-        study_id = self.get_study_id_from_trial_id(trial_id)
-        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
-            return np.nanmax(values)
-        return np.nanmin(values)
-
-    def get_percentile_intermediate_result_over_trials(self, study_id, step, percentile):
-        # type: (int, int, float) -> float
-
-        all_trials = [
-            t for t in self.get_all_trials(study_id) if t.state == structs.TrialState.COMPLETE
-        ]
-
-        if len(all_trials) == 0:
-            raise ValueError("No trials have been completed.")
-
-        direction = self.get_study_direction(study_id)
-        if direction == structs.StudyDirection.MAXIMIZE:
-            percentile = 100 - percentile
-
-        return float(
-            np.nanpercentile(
-                np.array([
-                    t.intermediate_values[step]
-                    for t in all_trials if step in t.intermediate_values
-                ], np.float),
-                percentile))
 
     def remove_session(self):
         # type: () -> None

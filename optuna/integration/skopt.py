@@ -8,7 +8,7 @@ from optuna import samplers
 from optuna.samplers import BaseSampler
 from optuna import structs
 from optuna.structs import StudyDirection
-from optuna import types
+from optuna import type_checking
 
 try:
     import skopt
@@ -20,7 +20,7 @@ except ImportError as e:
     # SkoptSampler is disabled because Scikit-Optimize is not available.
     _available = False
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
@@ -29,7 +29,7 @@ if types.TYPE_CHECKING:
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
-    from optuna.study import InTrialStudy  # NOQA
+    from optuna.study import Study  # NOQA
 
 
 class SkoptSampler(BaseSampler):
@@ -56,7 +56,7 @@ class SkoptSampler(BaseSampler):
             sampling. The parameters not contained in the relative search space are sampled
             by this sampler.
             The search space for :class:`~optuna.integration.SkoptSampler` is determined by
-            :func:`~optuna.samplers.product_search_space()`.
+            :func:`~optuna.samplers.intersection_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
             as the default.
@@ -96,10 +96,10 @@ class SkoptSampler(BaseSampler):
         self._warn_independent_sampling = warn_independent_sampling
 
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         search_space = {}
-        for name, distribution in samplers.product_search_space(study).items():
+        for name, distribution in samplers.intersection_search_space(study).items():
             if distribution.single():
                 if not isinstance(distribution, distributions.CategoricalDistribution):
                     # `skopt` cannot handle non-categorical distributions that contain just
@@ -113,7 +113,7 @@ class SkoptSampler(BaseSampler):
         return search_space
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
         if len(search_space) == 0:
             return {}
@@ -123,7 +123,7 @@ class SkoptSampler(BaseSampler):
         return optimizer.ask()
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
+        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
 
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
@@ -178,7 +178,7 @@ class _Optimizer(object):
         self._optimizer = skopt.Optimizer(dimensions, **skopt_kwargs)
 
     def tell(self, study):
-        # type: (InTrialStudy) -> None
+        # type: (Study) -> None
 
         xs = []
         ys = []
@@ -211,7 +211,7 @@ class _Optimizer(object):
     def _is_compatible(self, trial):
         # type: (FrozenTrial) -> bool
 
-        # Thanks to `product_search_space()` function, in sequential optimization,
+        # Thanks to `intersection_search_space()` function, in sequential optimization,
         # the parameters of complete trials are always compatible with the search space.
         #
         # However, in distributed optimization, incompatible trials may complete on a worker
@@ -230,7 +230,7 @@ class _Optimizer(object):
         return True
 
     def _complete_trial_to_skopt_observation(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Tuple[List[Any], float]
+        # type: (Study, FrozenTrial) -> Tuple[List[Any], float]
 
         param_values = []
         for name, distribution in sorted(self._search_space.items()):

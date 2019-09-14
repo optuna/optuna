@@ -13,10 +13,10 @@ from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
 from optuna.structs import CLIUsageError
 from optuna.trial import Trial  # NOQA
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
-    from types import TracebackType  # NOQA
+if type_checking.TYPE_CHECKING:
+    from type_checking import TracebackType  # NOQA
     from typing import Any  # NOQA
     from typing import IO  # NOQA
     from typing import List  # NOQA
@@ -149,7 +149,7 @@ def test_study_set_user_attr_command(options):
         storage = RDBStorage(storage_url)
 
         # Create study.
-        study_name = storage.get_study_name_from_id(storage.create_new_study_id())
+        study_name = storage.get_study_name_from_id(storage.create_new_study())
 
         base_command = ['optuna', 'study', 'set-user-attr', '--study', study_name]
         base_command = _add_option(base_command, '--storage', storage_url, 'storage' in options)
@@ -246,7 +246,7 @@ def test_dashboard_command(options):
             tempfile.NamedTemporaryFile('r') as tf_report:
 
         storage = RDBStorage(storage_url)
-        study_name = storage.get_study_name_from_id(storage.create_new_study_id())
+        study_name = storage.get_study_name_from_id(storage.create_new_study())
 
         command = ['optuna', 'dashboard', '--study', study_name, '--out', tf_report.name]
         command = _add_option(command, '--storage', storage_url, 'storage' in options)
@@ -268,7 +268,7 @@ def test_dashboard_command_with_allow_websocket_origin(origins):
             tempfile.NamedTemporaryFile('r') as tf_report:
 
         storage = RDBStorage(storage_url)
-        study_name = storage.get_study_name_from_id(storage.create_new_study_id())
+        study_name = storage.get_study_name_from_id(storage.create_new_study())
         command = [
             'optuna', 'dashboard', '--study', study_name, '--out', tf_report.name, '--storage',
             storage_url
@@ -297,7 +297,7 @@ def test_study_optimize_command(options):
     with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
         storage = RDBStorage(storage_url)
 
-        study_name = storage.get_study_name_from_id(storage.create_new_study_id())
+        study_name = storage.get_study_name_from_id(storage.create_new_study())
         command = [
             'optuna', 'study', 'optimize', '--study', study_name, '--n-trials', '10', __file__,
             'objective_func'

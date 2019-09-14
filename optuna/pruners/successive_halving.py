@@ -1,13 +1,14 @@
 import math
 
 from optuna.pruners.base import BasePruner
-from optuna.storages import BaseStorage  # NOQA
-from optuna.structs import FrozenTrial  # NOQA
 from optuna.structs import StudyDirection
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
+
+    from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import Study  # NOQA
 
 
 class SuccessiveHalvingPruner(BasePruner):
@@ -93,12 +94,12 @@ class SuccessiveHalvingPruner(BasePruner):
         self.reduction_factor = reduction_factor
         self.min_early_stopping_rate = min_early_stopping_rate
 
-    def prune(self, storage, study_id, trial_id, step):
-        # type: (BaseStorage, int, int, int) -> bool
+    def prune(self, study, trial):
+        # type: (Study, FrozenTrial) -> bool
         """Please consult the documentation for :func:`BasePruner.prune`."""
 
-        trial = storage.get_trial(trial_id)
-        if len(trial.intermediate_values) == 0:
+        step = trial.last_step
+        if step is None:
             return False
 
         rung = _get_current_rung(trial)
@@ -114,10 +115,10 @@ class SuccessiveHalvingPruner(BasePruner):
                 return True
 
             if all_trials is None:
-                all_trials = storage.get_all_trials(study_id)
+                all_trials = study.trials
 
-            storage.set_trial_system_attr(trial_id, _completed_rung_key(rung), value)
-            direction = storage.get_study_direction(study_id)
+            study._storage.set_trial_system_attr(trial.trial_id, _completed_rung_key(rung), value)
+            direction = study.direction
             if not self._is_promotable(rung, value, all_trials, direction):
                 return True
 

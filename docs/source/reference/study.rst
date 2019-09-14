@@ -5,9 +5,8 @@ Study
 
 .. autoclass:: Study
     :members:
-    :exclude-members: system_attrs, set_system_attr
-
-.. autoclass:: InTrialStudy
+    :inherited-members:
+    :exclude-members: system_attrs, set_system_attr, storage
 
 .. autofunction:: create_study
 .. autofunction:: load_study

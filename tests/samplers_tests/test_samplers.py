@@ -8,9 +8,8 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
-from optuna.study import InTrialStudy
 
-if optuna.types.TYPE_CHECKING:
+if optuna.type_checking.TYPE_CHECKING:
     import typing  # NOQA
     from typing import Dict  # NOQA
 
@@ -25,7 +24,8 @@ parametrize_sampler = pytest.mark.parametrize(
     [
         optuna.samplers.RandomSampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(skopt_kwargs={'n_initial_points': 1})
+        lambda: optuna.integration.SkoptSampler(skopt_kwargs={'n_initial_points': 1}),
+        lambda: optuna.integration.CmaEsSampler()
     ])
 
 
@@ -39,15 +39,14 @@ def test_uniform(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], UniformDistribution) -> None
 
     study = optuna.study.create_study(sampler=sampler_class())
-    in_trial_study = InTrialStudy(study)
     points = np.array([
-        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+        study.sampler.sample_independent(study, _create_new_trial(study), 'x',
                                          distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
     assert not isinstance(
-        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+        study.sampler.sample_independent(study, _create_new_trial(study), 'x',
                                          distribution), np.floating)
 
 
@@ -57,15 +56,14 @@ def test_log_uniform(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], LogUniformDistribution) -> None
 
     study = optuna.study.create_study(sampler=sampler_class())
-    in_trial_study = InTrialStudy(study)
     points = np.array([
-        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+        study.sampler.sample_independent(study, _create_new_trial(study), 'x',
                                          distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points < distribution.high)
     assert not isinstance(
-        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+        study.sampler.sample_independent(study, _create_new_trial(study), 'x',
                                          distribution), np.floating)
 
 
@@ -78,15 +76,14 @@ def test_discrete_uniform(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], DiscreteUniformDistribution) -> None
 
     study = optuna.study.create_study(sampler=sampler_class())
-    in_trial_study = InTrialStudy(study)
     points = np.array([
-        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+        study.sampler.sample_independent(study, _create_new_trial(study), 'x',
                                          distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
     assert not isinstance(
-        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+        study.sampler.sample_independent(study, _create_new_trial(study), 'x',
                                          distribution), np.floating)
 
     # Check all points are multiples of distribution.q.
@@ -107,33 +104,31 @@ def test_int(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], IntUniformDistribution) -> None
 
     study = optuna.study.create_study(sampler=sampler_class())
-    in_trial_study = InTrialStudy(study)
     points = np.array([
-        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+        study.sampler.sample_independent(study, _create_new_trial(study), 'x',
                                          distribution) for _ in range(100)
     ])
     assert np.all(points >= distribution.low)
     assert np.all(points <= distribution.high)
     assert not isinstance(
-        study.sampler.sample_independent(in_trial_study, _create_new_trial(study), 'x',
+        study.sampler.sample_independent(study, _create_new_trial(study), 'x',
                                          distribution), np.integer)
 
 
 @parametrize_sampler
-@pytest.mark.parametrize('choices', [(1, 2, 3), ('a', 'b', 'c')])
+@pytest.mark.parametrize('choices', [(1, 2, 3), ('a', 'b', 'c'), (1, 'a')])
 def test_categorical(sampler_class, choices):
     # type: (typing.Callable[[], BaseSampler], typing.Tuple[T, ...]) -> None
 
     distribution = CategoricalDistribution(choices)
 
     study = optuna.study.create_study(sampler=sampler_class())
-    in_trial_study = InTrialStudy(study)
 
     def sample():
         # type: () -> float
 
         trial = _create_new_trial(study)
-        param_value = study.sampler.sample_independent(in_trial_study, trial, 'x', distribution)
+        param_value = study.sampler.sample_independent(study, trial, 'x', distribution)
         return distribution.to_internal_repr(param_value)
 
     points = np.array([sample() for _ in range(100)])
@@ -148,8 +143,8 @@ def test_categorical(sampler_class, choices):
 def _create_new_trial(study):
     # type: (Study) -> FrozenTrial
 
-    trial_id = study.storage.create_new_trial_id(study.study_id)
-    return study.storage.get_trial(trial_id)
+    trial_id = study._storage.create_new_trial(study.study_id)
+    return study._storage.get_trial(trial_id)
 
 
 class FixedSampler(BaseSampler):
@@ -161,17 +156,17 @@ class FixedSampler(BaseSampler):
         self.unknown_param_value = unknown_param_value
 
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         return self.relative_search_space
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
 
         return self.relative_params
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+        # type: (Study, FrozenTrial, str, BaseDistribution) -> float
 
         return self.unknown_param_value
 
@@ -211,6 +206,46 @@ def test_sample_relative():
     study.optimize(objective, n_trials=10, catch=())
     for trial in study.trials:
         assert trial.params == {'a': 3.2, 'b': 'baz', 'c': 30, 'd': 30, 'e': 30}
+
+
+def test_intersection_search_space():
+    # type: () -> None
+
+    study = optuna.create_study()
+
+    # No trial.
+    assert optuna.samplers.intersection_search_space(study) == {}
+
+    # First trial.
+    study.optimize(lambda t: t.suggest_int('x', 0, 10) + t.suggest_uniform('y', -3, 3), n_trials=1)
+    assert optuna.samplers.intersection_search_space(study) == {
+        'x': IntUniformDistribution(low=0, high=10),
+        'y': UniformDistribution(low=-3, high=3)
+    }
+
+    # Second trial (only 'y' parameter is suggested in this trial).
+    study.optimize(lambda t: t.suggest_uniform('y', -3, 3), n_trials=1)
+    assert optuna.samplers.intersection_search_space(study) == {
+        'y': UniformDistribution(low=-3, high=3)
+    }
+
+    # Failed or pruned trials are not considered in the calculation of a product search space.
+    def objective(trial, exception):
+        # type: (optuna.trial.Trial, Exception) -> float
+
+        trial.suggest_uniform('z', 0, 1)
+        raise exception
+
+    study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1)
+    study.optimize(lambda t: objective(t, optuna.structs.TrialPruned()), n_trials=1)
+    assert optuna.samplers.intersection_search_space(study) == {
+        'y': UniformDistribution(low=-3, high=3)
+    }
+
+    # If two parameters have the same name but different distributions,
+    # those are regarded as different trials.
+    study.optimize(lambda t: t.suggest_uniform('y', -1, 1), n_trials=1)
+    assert optuna.samplers.intersection_search_space(study) == {}
 
 
 def test_product_search_space():

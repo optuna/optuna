@@ -1,6 +1,5 @@
 import os
 import pkg_resources
-from pkg_resources import Distribution  # NOQA
 from setuptools import find_packages
 from setuptools import setup
 import sys
@@ -9,6 +8,8 @@ try:
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
+
+    from pkg_resources import Distribution  # NOQA
 except ImportError:
     # Built-in `typing` module is only available in Python 3.5 or newer.
     # The above imports are only used by `mypy`, so we simply ignore them
@@ -27,12 +28,20 @@ def get_version():
     assert False
 
 
+def get_long_description():
+    # type: () -> str
+
+    readme_filepath = os.path.join(os.path.dirname(__file__), 'README.md')
+    with open(readme_filepath) as f:
+        return f.read()
+
+
 def get_install_requires():
     # type: () -> List[str]
 
     install_requires = [
-        'sqlalchemy>=1.1.0', 'numpy', 'scipy', 'six',
-        'cliff', 'colorlog', 'pandas', 'alembic', 'typing'
+        'alembic', 'cliff', 'colorlog', 'numpy', 'pandas', 'scipy', 'six',
+        'sqlalchemy>=1.1.0', 'typing',
     ]
     if sys.version_info[0] == 2:
         install_requires.extend(['enum34'])
@@ -45,8 +54,9 @@ def get_extras_require():
     extras_require = {
         'checking': ['autopep8', 'hacking'],
         'testing': [
-            'pytest', 'mock', 'bokeh', 'plotly', 'chainer>=5.0.0', 'xgboost', 'mpi4py', 'lightgbm',
-            'keras', 'mxnet', 'scikit-optimize', 'scikit-learn>=0.20.0', 'tensorflow'
+            'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
+            'mpi4py', 'mxnet', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
+            'tensorflow', 'xgboost', 'scikit-learn>=0.20.0',
         ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],
@@ -78,7 +88,9 @@ if pfnopt_pkg is not None:
 setup(
     name='optuna',
     version=get_version(),
-    description='',
+    description='A hyperparameter optimization framework',
+    long_description=get_long_description(),
+    long_description_content_type='text/markdown',
     author='Takuya Akiba',
     author_email='akiba@preferred.jp',
     url='https://optuna.org/',

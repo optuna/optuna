@@ -1,4 +1,5 @@
 import gc
+import os
 import pytest
 
 from optuna import create_study
@@ -15,10 +16,10 @@ from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
-    from types import TracebackType  # NOQA
+if type_checking.TYPE_CHECKING:
+    from type_checking import TracebackType  # NOQA
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
@@ -39,7 +40,11 @@ except ImportError:
 
 STORAGE_MODES = ['new', 'common']
 PRUNER_INIT_FUNCS = [lambda: pruners.MedianPruner(), lambda: pruners.SuccessiveHalvingPruner()]
-CACHE_MODES = [True, False]
+
+if os.getenv('INCLUDE_SLOW_TESTS') is None:
+    CACHE_MODES = [True]
+else:
+    CACHE_MODES = [True, False]
 
 
 def setup_module():
@@ -511,7 +516,7 @@ def _create_new_chainermn_trial(study, comm):
     # type: (Study, CommunicatorBase) -> integration.chainermn.ChainerMNTrial
 
     if comm.rank == 0:
-        trial_id = study.storage.create_new_trial_id(study.study_id)
+        trial_id = study._storage.create_new_trial(study.study_id)
         trial = Trial(study, trial_id)
         mn_trial = integration.chainermn.ChainerMNTrial(trial, comm)
     else:

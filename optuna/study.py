@@ -1,4 +1,3 @@
-import abc
 import collections
 import datetime
 import gc
@@ -6,9 +5,10 @@ import math
 import multiprocessing
 import multiprocessing.pool
 import pandas as pd
-import six
 from six.moves import queue
+import threading
 import time
+import warnings
 
 from optuna import logging
 from optuna import pruners
@@ -16,9 +16,9 @@ from optuna import samplers
 from optuna import storages
 from optuna import structs
 from optuna import trial as trial_module
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from multiprocessing import Queue  # NOQA
     from typing import Any  # NOQA
     from typing import Callable
@@ -35,12 +35,17 @@ if types.TYPE_CHECKING:
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
-@six.add_metaclass(abc.ABCMeta)
 class BaseStudy(object):
+    def __init__(self, study_id, storage):
+        # type: (int, storages.BaseStorage) -> None
+
+        self.study_id = study_id
+        self._storage = storage
+
     @property
     def best_params(self):
         # type: () -> Dict[str, Any]
-        """Return parameters of the best trial in the :class:`~optuna.study.BaseStudy`.
+        """Return parameters of the best trial in the study.
 
         Returns:
             A dictionary containing parameters of the best trial.
@@ -51,7 +56,7 @@ class BaseStudy(object):
     @property
     def best_value(self):
         # type: () -> float
-        """Return the best objective value in the :class:`~optuna.study.BaseStudy`.
+        """Return the best objective value in the study.
 
         Returns:
             A float representing the best objective value.
@@ -64,40 +69,63 @@ class BaseStudy(object):
         return best_value
 
     @property
-    @abc.abstractmethod
     def best_trial(self):
         # type: () -> structs.FrozenTrial
-        """Return the best trial in the :class:`~optuna.study.BaseStudy`.
+        """Return the best trial in the study.
 
         Returns:
             A :class:`~optuna.structs.FrozenTrial` object of the best trial.
         """
 
-        raise NotImplementedError
+        return self._storage.get_best_trial(self.study_id)
 
     @property
-    @abc.abstractmethod
     def direction(self):
         # type: () -> structs.StudyDirection
-        """Return the direction of the :class:`~optuna.study.BaseStudy`.
+        """Return the direction of the study.
 
         Returns:
             A :class:`~optuna.structs.StudyDirection` object.
         """
 
-        raise NotImplementedError
+        return self._storage.get_study_direction(self.study_id)
 
     @property
-    @abc.abstractmethod
     def trials(self):
         # type: () -> List[structs.FrozenTrial]
-        """Return all trials in the :class:`~optuna.study.BaseStudy`.
+        """Return all trials in the study.
 
         Returns:
             A list of :class:`~optuna.structs.FrozenTrial` objects.
         """
 
-        raise NotImplementedError
+        return self._storage.get_all_trials(self.study_id)
+
+    @property
+    def storage(self):
+        # type: () -> storages.BaseStorage
+        """Return the storage object used by the study.
+
+        .. deprecated:: 0.15.0
+            The direct use of storage is deprecated.
+            Please access to storage via study's public methods
+            (e.g., :meth:`~optuna.study.Study.set_user_attr`).
+
+        Returns:
+            A storage object.
+        """
+
+        warnings.warn("The direct use of storage is deprecated. "
+                      "Please access to storage via study's public methods "
+                      "(e.g., `Study.set_user_attr`)",
+                      DeprecationWarning)
+
+        logger = logging.get_logger(__name__)
+        logger.warning("The direct use of storage is deprecated. "
+                       "Please access to storage via study's public methods "
+                       "(e.g., `Study.set_user_attr`)")
+
+        return self._storage
 
 
 class Study(BaseStudy):
@@ -140,18 +168,23 @@ class Study(BaseStudy):
         # type: (...) -> None
 
         self.study_name = study_name
-        self.storage = storages.get_storage(storage)
+        storage = storages.get_storage(storage)
+        study_id = storage.get_study_id_from_name(study_name)
+        super(Study, self).__init__(study_id, storage)
+
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        self.study_id = self.storage.get_study_id_from_name(study_name)
         self.logger = logging.get_logger(__name__)
+
+        self._optimize_lock = threading.Lock()
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
         del state['logger']
+        del state['_optimize_lock']
         return state
 
     def __setstate__(self, state):
@@ -159,65 +192,7 @@ class Study(BaseStudy):
 
         self.__dict__.update(state)
         self.logger = logging.get_logger(__name__)
-
-    @property
-    def best_params(self):
-        # type: () -> Dict[str, Any]
-        """Return parameters of the best trial in the :class:`~optuna.study.Study`.
-
-        Returns:
-            A dictionary containing parameters of the best trial.
-        """
-
-        return self.best_trial.params
-
-    @property
-    def best_value(self):
-        # type: () -> float
-        """Return the best objective value in the :class:`~optuna.study.Study`.
-
-        Returns:
-            A float representing the best objective value.
-        """
-
-        best_value = self.best_trial.value
-        if best_value is None:
-            raise ValueError('No trials are completed yet.')
-
-        return best_value
-
-    @property
-    def best_trial(self):
-        # type: () -> structs.FrozenTrial
-        """Return the best trial in the :class:`~optuna.study.Study`.
-
-        Returns:
-            A :class:`~optuna.structs.FrozenTrial` object of the best trial.
-        """
-
-        return self.storage.get_best_trial(self.study_id)
-
-    @property
-    def direction(self):
-        # type: () -> structs.StudyDirection
-        """Return the direction of the :class:`~optuna.study.Study`.
-
-        Returns:
-            A :class:`~optuna.structs.StudyDirection` object.
-        """
-
-        return self.storage.get_study_direction(self.study_id)
-
-    @property
-    def trials(self):
-        # type: () -> List[structs.FrozenTrial]
-        """Return all trials in the :class:`~optuna.study.Study`.
-
-        Returns:
-            A list of :class:`~optuna.structs.FrozenTrial` objects.
-        """
-
-        return self.storage.get_all_trials(self.study_id)
+        self._optimize_lock = threading.Lock()
 
     @property
     def user_attrs(self):
@@ -228,7 +203,7 @@ class Study(BaseStudy):
             A dictionary containing all user attributes.
         """
 
-        return self.storage.get_study_user_attrs(self.study_id)
+        return self._storage.get_study_user_attrs(self.study_id)
 
     @property
     def system_attrs(self):
@@ -239,7 +214,7 @@ class Study(BaseStudy):
             A dictionary containing all system attributes.
         """
 
-        return self.storage.get_study_system_attrs(self.study_id)
+        return self._storage.get_study_system_attrs(self.study_id)
 
     def optimize(
             self,
@@ -276,14 +251,20 @@ class Study(BaseStudy):
 
         """
 
-        if n_jobs == 1:
-            self._optimize_sequential(func, n_trials, timeout, catch)
-        else:
-            self._optimize_parallel(func, n_trials, timeout, n_jobs, catch)
+        if not self._optimize_lock.acquire(False):
+            raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
+
+        try:
+            if n_jobs == 1:
+                self._optimize_sequential(func, n_trials, timeout, catch)
+            else:
+                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch)
+        finally:
+            self._optimize_lock.release()
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
-        """Set a user attribute to the :class:`~optuna.study.Study`.
+        """Set a user attribute to the study.
 
         Args:
             key: A key string of the attribute.
@@ -291,11 +272,11 @@ class Study(BaseStudy):
 
         """
 
-        self.storage.set_study_user_attr(self.study_id, key, value)
+        self._storage.set_study_user_attr(self.study_id, key, value)
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
-        """Set a system attribute to the :class:`~optuna.study.Study`.
+        """Set a system attribute to the study.
 
         Note that Optuna internally uses this method to save system messages. Please use
         :func:`~optuna.study.Study.set_user_attr` to set users' attributes.
@@ -306,7 +287,7 @@ class Study(BaseStudy):
 
         """
 
-        self.storage.set_study_system_attr(self.study_id, key, value)
+        self._storage.set_study_system_attr(self.study_id, key, value)
 
     def trials_dataframe(self, include_internal_fields=False):
         # type: (bool) -> pd.DataFrame
@@ -365,9 +346,51 @@ class Study(BaseStudy):
                     column_agg[field].add((field, non_nested_field))
             records.append(record)
 
-        columns = sum((sorted(column_agg[k]) for k in structs.FrozenTrial._fields), [])
+        columns = sum((sorted(column_agg[k]) for k in structs.FrozenTrial._fields),
+                      [])  # type: List[Tuple['str', 'str']]
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+
+    def _append_trial(
+            self,
+            value=None,  # type: Optional[float]
+            params=None,  # type: Optional[Dict[str, Any]]
+            distributions=None,  # type: Optional[Dict[str, BaseDistribution]]
+            user_attrs=None,  # type: Optional[Dict[str, Any]]
+            system_attrs=None,  # type: Optional[Dict[str, Any]]
+            intermediate_values=None,  # type: Optional[Dict[int, float]]
+            state=structs.TrialState.COMPLETE,  # type: structs.TrialState
+            datetime_start=None,  # type: Optional[datetime.datetime]
+            datetime_complete=None  # type: Optional[datetime.datetime]
+    ):
+        # type: (...) -> None
+
+        params = params or {}
+        distributions = distributions or {}
+        user_attrs = user_attrs or {}
+        system_attrs = system_attrs or {}
+        intermediate_values = intermediate_values or {}
+        datetime_start = datetime_start or datetime.datetime.now()
+
+        if state.is_finished():
+            datetime_complete = datetime_complete or datetime.datetime.now()
+
+        trial = structs.FrozenTrial(
+            number=-1,  # dummy value.
+            trial_id=-1,  # dummy value.
+            state=state,
+            value=value,
+            datetime_start=datetime_start,
+            datetime_complete=datetime_complete,
+            params=params,
+            distributions=distributions,
+            user_attrs=user_attrs,
+            system_attrs=system_attrs,
+            intermediate_values=intermediate_values)
+
+        trial._validate()
+
+        self.storage.create_new_trial(self.study_id, template_trial=trial)
 
     def _optimize_sequential(
             self,
@@ -424,7 +447,7 @@ class Study(BaseStudy):
 
             while que.get():
                 self._run_trial(func, catch)
-            self.storage.remove_session()
+            self._storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
         for _ in range(n_jobs):
@@ -460,7 +483,7 @@ class Study(BaseStudy):
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
-        trial_id = self.storage.create_new_trial_id(self.study_id)
+        trial_id = self._storage.create_new_trial(self.study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
@@ -471,14 +494,14 @@ class Study(BaseStudy):
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
             self.logger.info(message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
+            self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
         except catch as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
                 .format(trial_number, structs.TrialState.FAIL, repr(e))
             self.logger.warning(message, exc_info=True)
-            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
         finally:
             # The following line mitigates memory problems that can be occurred in some
@@ -497,20 +520,20 @@ class Study(BaseStudy):
                       'objective function cannot be casted to float. Returned value is: ' \
                       '{}'.format(trial_number, structs.TrialState.FAIL, repr(result))
             self.logger.warning(message)
-            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
         if math.isnan(result):
             message = 'Setting status of trial#{} as {} because the objective function ' \
                       'returned {}.'.format(trial_number, structs.TrialState.FAIL, result)
             self.logger.warning(message)
-            self.storage.set_trial_system_attr(trial_id, 'fail_reason', message)
-            self.storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
         trial.report(result)
-        self.storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
+        self._storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
         self._log_completed_trial(trial_number, result)
 
         return trial
@@ -521,63 +544,6 @@ class Study(BaseStudy):
         self.logger.info('Finished trial#{} resulted in value: {}. '
                          'Current best value is {} with parameters: {}.'.format(
                              trial_number, value, self.best_value, self.best_params))
-
-
-class InTrialStudy(BaseStudy):
-    """An object to access a study instance inside a trial instance safely.
-
-    To prevent unexpected recursive calls of :func:`~optuna.study.Study.optimize()`, this class
-    does not allow to call :func:`~optuna.study.InTrialStudy.optimize()` unlike
-    :class:`~optuna.study.Study`.
-
-    Note that this object is created within Optuna library, so
-    it is not intended that library users directly use this constructor.
-
-    Args:
-        study:
-            A :class:`~optuna.study.Study` object.
-
-    """
-
-    def __init__(self, study):
-        # type: (Study) -> None
-
-        self.study_name = study.study_name
-        self.study_id = study.study_id
-        self.storage = study.storage
-
-    @property
-    def best_trial(self):
-        # type: () -> structs.FrozenTrial
-        """Return the best trial in the :class:`~optuna.study.InTrialStudy`.
-
-        Returns:
-            A :class:`~optuna.structs.FrozenTrial` object of the best trial.
-        """
-
-        return self.storage.get_best_trial(self.study_id)
-
-    @property
-    def direction(self):
-        # type: () -> structs.StudyDirection
-        """Return the direction of the :class:`~optuna.study.InTrialStudy`.
-
-        Returns:
-            A :class:`~optuna.structs.StudyDirection` object.
-        """
-
-        return self.storage.get_study_direction(self.study_id)
-
-    @property
-    def trials(self):
-        # type: () -> List[structs.FrozenTrial]
-        """Return all trials in the :class:`~optuna.study.InTrialStudy`.
-
-        Returns:
-            A list of :class:`~optuna.structs.FrozenTrial` objects.
-        """
-
-        return self.storage.get_all_trials(self.study_id)
 
 
 def create_study(
@@ -596,8 +562,9 @@ def create_study(
             Database URL. If this argument is set to None, in-memory storage is used, and the
             :class:`~optuna.study.Study` will not be persistent.
         sampler:
-            A sampler object that implements background algorithm for value suggestion. See also
-            :class:`~optuna.samplers`.
+            A sampler object that implements background algorithm for value suggestion.
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
+            as the default. See also :class:`~optuna.samplers`.
         pruner:
             A pruner object that decides early stopping of unpromising trials. See also
             :class:`~optuna.pruners`.
@@ -621,7 +588,7 @@ def create_study(
 
     storage = storages.get_storage(storage)
     try:
-        study_id = storage.create_new_study_id(study_name)
+        study_id = storage.create_new_study(study_name)
     except structs.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
@@ -647,7 +614,7 @@ def create_study(
     else:
         raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
 
-    study.storage.set_study_direction(study_id, _direction)
+    study._storage.set_study_direction(study_id, _direction)
 
     return study
 

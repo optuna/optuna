@@ -1,4 +1,4 @@
-<div align="center"><img src="docs/image/optuna-logo.png" width="800"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/pfnet/optuna/master/docs/image/optuna-logo.png" width="800"/></div>
 
 # Optuna: A hyperparameter optimization framework
 
@@ -96,4 +96,4 @@ MIT License (see [LICENSE](./LICENSE)).
 ## Reference
 
 Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, and Masanori Koyama. 2019.
-Optuna: A Next-generation Hyperparameter Optimization Framework. In KDD (to appear).
+Optuna: A Next-generation Hyperparameter Optimization Framework. In KDD ([arXiv](https://arxiv.org/abs/1907.10902)).

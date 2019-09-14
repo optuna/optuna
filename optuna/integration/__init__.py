@@ -3,12 +3,13 @@ import sys
 from types import ModuleType
 from typing import Any  # NOQA
 
-from optuna.types import TYPE_CHECKING
+from optuna.type_checking import TYPE_CHECKING
 
 
 _import_structure = {
     'chainer': ['ChainerPruningExtension'],
     'chainermn': ['ChainerMNStudy'],
+    'cma': ['CmaEsSampler'],
     'keras': ['KerasPruningCallback'],
     'lightgbm': ['LightGBMPruningCallback'],
     'sklearn': ['OptunaSearchCV'],
@@ -25,6 +26,7 @@ __all__ = list(_import_structure.keys()) + sum(_import_structure.values(), [])
 if sys.version_info[0] == 2 or TYPE_CHECKING:
     from optuna.integration.chainer import ChainerPruningExtension  # NOQA
     from optuna.integration.chainermn import ChainerMNStudy  # NOQA
+    from optuna.integration.cma import CmaEsSampler  # NOQA
     from optuna.integration.keras import KerasPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
     from optuna.integration.mxnet import MXNetPruningCallback  # NOQA

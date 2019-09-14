@@ -17,10 +17,10 @@ from optuna.structs import StorageInternalError
 from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
 from optuna.structs import TrialState
-from optuna import types
+from optuna import type_checking
 from optuna import version
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
@@ -87,14 +87,14 @@ def test_engine_kwargs():
         create_test_storage(engine_kwargs={'wrong_key': 'wrong_value'})
 
 
-def test_create_new_study_id_multiple_studies():
+def test_create_new_study_multiple_studies():
     # type: () -> None
 
     storage = create_test_storage()
     session = storage.scoped_session()
 
-    study_id_1 = storage.create_new_study_id()
-    study_id_2 = storage.create_new_study_id()
+    study_id_1 = storage.create_new_study()
+    study_id_2 = storage.create_new_study()
 
     result = session.query(StudyModel).all()
     result = sorted(result, key=lambda x: x.study_id)
@@ -103,14 +103,14 @@ def test_create_new_study_id_multiple_studies():
     assert result[1].study_id == study_id_2
 
 
-def test_create_new_study_id_duplicated_name():
+def test_create_new_study_duplicated_name():
     # type: () -> None
 
     storage = create_test_storage()
     study_name = 'sample_study_name'
-    storage.create_new_study_id(study_name)
+    storage.create_new_study(study_name)
     with pytest.raises(DuplicatedStudyError):
-        storage.create_new_study_id(study_name)
+        storage.create_new_study(study_name)
 
 
 def test_set_trial_param_to_check_distribution_json():
@@ -123,9 +123,9 @@ def test_set_trial_param_to_check_distribution_json():
 
     storage = create_test_storage()
     session = storage.scoped_session()
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
 
-    trial_id = storage.create_new_trial_id(study_id)
+    trial_id = storage.create_new_trial(study_id)
     storage.set_trial_param(trial_id, 'x', 1.5, example_distributions['x'])
     storage.set_trial_param(trial_id, 'y', 2, example_distributions['y'])
 
@@ -145,11 +145,11 @@ def test_get_all_study_summaries_with_multiple_studies():
     storage = create_test_storage()
 
     # Set up a MINIMIZE study.
-    study_id_1 = storage.create_new_study_id()
+    study_id_1 = storage.create_new_study()
     storage.set_study_direction(study_id_1, StudyDirection.MINIMIZE)
 
-    trial_id_1_1 = storage.create_new_trial_id(study_id_1)
-    trial_id_1_2 = storage.create_new_trial_id(study_id_1)
+    trial_id_1_1 = storage.create_new_trial(study_id_1)
+    trial_id_1_2 = storage.create_new_trial(study_id_1)
 
     storage.set_trial_value(trial_id_1_1, 100)
     storage.set_trial_value(trial_id_1_2, 0)
@@ -158,11 +158,11 @@ def test_get_all_study_summaries_with_multiple_studies():
     storage.set_trial_state(trial_id_1_2, TrialState.COMPLETE)
 
     # Set up a MAXIMIZE study.
-    study_id_2 = storage.create_new_study_id()
+    study_id_2 = storage.create_new_study()
     storage.set_study_direction(study_id_2, StudyDirection.MAXIMIZE)
 
-    trial_id_2_1 = storage.create_new_trial_id(study_id_2)
-    trial_id_2_2 = storage.create_new_trial_id(study_id_2)
+    trial_id_2_1 = storage.create_new_trial(study_id_2)
+    trial_id_2_2 = storage.create_new_trial(study_id_2)
 
     storage.set_trial_value(trial_id_2_1, -100)
     storage.set_trial_value(trial_id_2_2, -200)
@@ -171,7 +171,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     storage.set_trial_state(trial_id_2_2, TrialState.COMPLETE)
 
     # Set up an empty study.
-    study_id_3 = storage.create_new_study_id()
+    study_id_3 = storage.create_new_study()
 
     summaries = storage.get_all_study_summaries()
     summaries = sorted(summaries, key=lambda x: x.study_id)
@@ -265,12 +265,12 @@ def test_create_new_trial_number():
     # type: () -> None
 
     storage = create_test_storage()
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
 
-    trial_id = storage.create_new_trial_id(study_id)
+    trial_id = storage.create_new_trial(study_id)
     assert storage._create_new_trial_number(trial_id) == 0
 
-    trial_id = storage.create_new_trial_id(study_id)
+    trial_id = storage.create_new_trial(study_id)
     assert storage._create_new_trial_number(trial_id) == 1
 
 
@@ -278,10 +278,10 @@ def test_update_finished_trial():
     # type: () -> None
 
     storage = create_test_storage()
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
 
     # Running trials are allowed to be updated.
-    trial_id = storage.create_new_trial_id(study_id)
+    trial_id = storage.create_new_trial(study_id)
     assert storage.get_trial(trial_id).state == TrialState.RUNNING
 
     storage.set_trial_intermediate_value(trial_id, 3, 5)
@@ -293,7 +293,7 @@ def test_update_finished_trial():
 
     # Finished trials are not allowed to be updated.
     for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
-        trial_id = storage.create_new_trial_id(study_id)
+        trial_id = storage.create_new_trial(study_id)
         storage.set_trial_state(trial_id, state)
 
         with pytest.raises(RuntimeError):
@@ -330,7 +330,7 @@ def test_storage_cache():
         # type: (RDBStorage, int) -> List[FrozenTrial]
 
         for state in [TrialState.RUNNING, TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
-            trial_id = storage.create_new_trial_id(study_id)
+            trial_id = storage.create_new_trial(study_id)
             storage.set_trial_state(trial_id, state)
 
         trials = storage.get_all_trials(study_id)
@@ -340,7 +340,7 @@ def test_storage_cache():
 
     # Storage cache is disabled.
     storage = create_test_storage(enable_cache=False)
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
     trials = setup_trials(storage, study_id)
 
     with patch.object(
@@ -356,7 +356,7 @@ def test_storage_cache():
 
     # Storage cache is enabled.
     storage = create_test_storage(enable_cache=True)
-    study_id = storage.create_new_study_id()
+    study_id = storage.create_new_study()
     trials = setup_trials(storage, study_id)
 
     with patch.object(

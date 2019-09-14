@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import scipy.special
 
@@ -6,26 +7,32 @@ from optuna.samplers import base
 from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
 from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters
+from optuna import structs
 from optuna.structs import StudyDirection
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
-    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
-    from optuna.study import InTrialStudy  # NOQA
+    from optuna.study import Study  # NOQA
 
 EPS = 1e-12
 
 
 def default_gamma(x):
+    # type: (int) -> int
+
+    return min(int(np.ceil(0.1 * x)), 25)
+
+
+def hyperopt_default_gamma(x):
     # type: (int) -> int
 
     return min(int(np.ceil(0.25 * np.sqrt(x))), 25)
@@ -45,6 +52,39 @@ def default_weights(x):
 
 
 class TPESampler(base.BaseSampler):
+    """Sampler using TPE (Tree-structured Parzen Estimator) algorithm.
+
+    This sampler is based on *independent sampling*.
+    See also :class:`~optuna.samplers.BaseSampler` for more details of 'independent sampling'.
+
+    On each trial, for each parameter, TPE fits one Gaussian Mixture Model (GMM) ``l(x)`` to
+    the set of parameter values associated with the best objective values, and another GMM
+    ``g(x)`` to the remaining parameter values. It chooses the parameter value ``x`` that
+    maximizes the ratio ``l(x)/g(x)``.
+
+    For further information about TPE algorithm, please refer to the following papers:
+
+    - `Algorithms for Hyper-Parameter Optimization
+      <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
+    - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
+      Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+
+    Example:
+
+        .. code::
+
+            import optuna
+            from optuna.samplers import TPESampler
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -10, 10)
+                return x**2
+
+            study = optuna.create_study(sampler=TPESampler())
+            study.optimize(objective, n_trials=100)
+
+    """
+
     def __init__(
             self,
             consider_prior=True,  # type: bool
@@ -72,32 +112,27 @@ class TPESampler(base.BaseSampler):
         self.random_sampler = random.RandomSampler(seed=seed)
 
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         return {}
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
         return {}
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
+        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
 
-        observation_pairs = study.storage.get_trial_param_result_pairs(
-            study.study_id, param_name)
-        if study.direction == StudyDirection.MAXIMIZE:
-            observation_pairs = [(p, -v) for p, v in observation_pairs]
+        values, scores = _get_observation_pairs(study, param_name)
 
-        n = len(observation_pairs)
+        n = len(values)
 
         if n < self.n_startup_trials:
             return self.random_sampler.sample_independent(
                 study, trial, param_name, param_distribution)
 
-        below_param_values, above_param_values = self._split_observation_pairs(
-            list(range(n)), [p[0] for p in observation_pairs], list(range(n)),
-            [p[1] for p in observation_pairs])
+        below_param_values, above_param_values = self._split_observation_pairs(values, scores)
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._sample_uniform(param_distribution, below_param_values, above_param_values)
@@ -108,8 +143,7 @@ class TPESampler(base.BaseSampler):
             return self._sample_discrete_uniform(param_distribution, below_param_values,
                                                  above_param_values)
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            return int(self._sample_int(param_distribution, below_param_values,
-                                        above_param_values))
+            return self._sample_int(param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             index = self._sample_categorical_index(param_distribution, below_param_values,
                                                    above_param_values)
@@ -128,26 +162,18 @@ class TPESampler(base.BaseSampler):
 
     def _split_observation_pairs(
             self,
-            config_idxs,  # type: List[int]
             config_vals,  # type: List[float]
-            loss_idxs,  # type: List[int]
-            loss_vals  # type: List[float]
+            loss_vals  # type: List[Tuple[float, float]]
     ):
         # type: (...) -> Tuple[np.ndarray, np.ndarray]
 
-        config_idxs, config_vals, loss_idxs, loss_vals = map(
-            np.asarray, [config_idxs, config_vals, loss_idxs, loss_vals])
+        config_vals = np.asarray(config_vals)
+        loss_vals = np.asarray(loss_vals, dtype=[('step', float), ('score', float)])
+
         n_below = self.gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
-
-        keep_idxs = set(loss_idxs[loss_ascending[:n_below]])
-        below = [v for i, v in zip(config_idxs, config_vals) if i in keep_idxs]
-
-        keep_idxs = set(loss_idxs[loss_ascending[n_below:]])
-        above = [v for i, v in zip(config_idxs, config_vals) if i in keep_idxs]
-
-        below = np.asarray(below, dtype=float)
-        above = np.asarray(above, dtype=float)
+        below = config_vals[np.sort(loss_ascending[:n_below])]
+        above = config_vals[np.sort(loss_ascending[n_below:])]
         return below, above
 
     def _sample_uniform(self, distribution, below, above):
@@ -176,7 +202,7 @@ class TPESampler(base.BaseSampler):
         return min(max(best_sample, distribution.low), distribution.high)
 
     def _sample_int(self, distribution, below, above):
-        # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> float
+        # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> int
 
         q = 1.0
         low = distribution.low - 0.5 * q
@@ -248,7 +274,7 @@ class TPESampler(base.BaseSampler):
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
         weighted_below = counts_below + self.prior_weight
         weighted_below /= weighted_below.sum()
-        samples_below = self._sample_from_categorical_dist(weighted_below, size=size)
+        samples_below = self._sample_from_categorical_dist(weighted_below, size)
         log_likelihoods_below = TPESampler._categorical_log_pdf(samples_below, weighted_below)
 
         weights_above = self.weights(len(above))
@@ -361,19 +387,12 @@ class TPESampler(base.BaseSampler):
         return_val.shape = _samples.shape
         return return_val
 
-    def _sample_from_categorical_dist(self, probabilities, size=()):
-        # type: (Union[np.ndarray, np.ndarray], Tuple) -> Union[np.ndarray, np.ndarray]
+    def _sample_from_categorical_dist(self, probabilities, size):
+        # type: (np.ndarray, Tuple[int]) -> np.ndarray
 
         if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
             probabilities = probabilities[0]
         probabilities = np.asarray(probabilities)
-
-        if size == ():
-            size = (1, )
-        elif isinstance(size, (int, np.number)):
-            size = (size, )
-        else:
-            size = tuple(size)
 
         if size == (0, ):
             return np.asarray([], dtype=float)
@@ -447,3 +466,97 @@ class TPESampler(base.BaseSampler):
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
         z = denominator / numerator
         return .5 + .5 * scipy.special.erf(z)
+
+    @staticmethod
+    def hyperopt_parameters():
+        # type: () -> Dict[str, Any]
+        """Return the the default parameters of hyperopt (v0.1.2).
+
+        :class:`~optuna.samplers.TPESampler` can be instantiated with the parameters returned
+        by this method.
+
+        Example:
+
+            Create a :class:`~optuna.samplers.TPESampler` instance with the default
+            parameters of `hyperopt <https://github.com/hyperopt/hyperopt/tree/0.1.2>`_.
+
+            .. code::
+
+                    import optuna
+                    from optuna.samplers import TPESampler
+
+                    def objective(trial):
+                        x = trial.suggest_uniform('x', -10, 10)
+                        return x**2
+
+                    sampler = TPESampler(**TPESampler.hyperopt_parameters())
+                    study = optuna.create_study(sampler=sampler)
+                    study.optimize(objective, n_trials=100)
+
+        Returns:
+            A dictionary containing the default parameters of hyperopt.
+
+        """
+
+        return {
+            'consider_prior': True,
+            'prior_weight': 1.0,
+            'consider_magic_clip': True,
+            'consider_endpoints': False,
+            'n_startup_trials': 20,
+            'n_ei_candidates': 24,
+            'gamma': hyperopt_default_gamma,
+            'weights': default_weights,
+        }
+
+
+def _get_observation_pairs(study, param_name):
+    # type: (Study, str) -> Tuple[List[float], List[Tuple[float, float]]]
+    """Get observation pairs from the study.
+
+       This function collects observation pairs from the complete or pruned trials of the study.
+       The trials that don't contain the parameter named ``param_name`` are excluded
+       from the result.
+
+       An observation pair fundamentally consists of a parameter value and an objective value.
+       However, due to the pruning mechanism of Optuna, final objective values are not always
+       available. Therefore, this function uses intermediate values in addition to the final
+       ones, and reports the value with its step count as ``(-step, value)``.
+       Consequently, the structure of the observation pair is as follows:
+       ``(param_value, (-step, value))``.
+
+       The second element of an observation pair is used to rank observations in
+       ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
+       ``(-step, value)``).
+    """
+
+    sign = 1
+    if study.direction == StudyDirection.MAXIMIZE:
+        sign = -1
+
+    values = []
+    scores = []
+    for trial in study.trials:
+        if param_name not in trial.params:
+            continue
+
+        if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
+            score = (-float('inf'), sign * trial.value)
+        elif trial.state is structs.TrialState.PRUNED:
+            if len(trial.intermediate_values) > 0:
+                step, intermediate_value = max(trial.intermediate_values.items())
+                if math.isnan(intermediate_value):
+                    score = (-step, float('inf'))
+                else:
+                    score = (-step, sign * intermediate_value)
+            else:
+                score = (float('inf'), 0.0)
+        else:
+            continue
+
+        distribution = trial.distributions[param_name]
+        param_value = distribution.to_internal_repr(trial.params[param_name])
+        values.append(param_value)
+        scores.append(score)
+
+    return values, scores

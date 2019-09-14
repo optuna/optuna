@@ -1,15 +1,15 @@
 import abc
 import six
 
-from optuna import types
+from optuna import type_checking
 
-if types.TYPE_CHECKING:
+if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
-    from optuna.study import InTrialStudy  # NOQA
+    from optuna.study import Study  # NOQA
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -27,11 +27,27 @@ class BaseSampler(object):
     *The independent sampling* determines a value of a single parameter without considering any
     relationship between parameters. Target parameters of the independent sampling are the
     parameters not described in the relative search space.
+
+    More specifically, parameters are sampled by the following procedure.
+    At the beginning of a trial, :meth:`~optuna.samplers.BaseSampler.infer_relative_search_space`
+    is called to determine the relative search space for the trial. Then,
+    :meth:`~optuna.samplers.BaseSampler.sample_relative` is invoked to sample parameters
+    from the relative search space. During the execution of the objective function,
+    :meth:`~optuna.samplers.BaseSampler.sample_independent` is used to sample
+    parameters that don't belong to the relative search space.
+
+    The following figure depicts the lifetime of a trial and how the above three methods are
+    called in the trial.
+
+    .. image:: ../../image/sampling-sequence.png
+
+    |
+
     """
 
     @abc.abstractmethod
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
         """Infer the search space that will be used by relative sampling in the target trial.
 
         This method is called right before :func:`~optuna.samplers.BaseSampler.sample_relative`
@@ -49,15 +65,15 @@ class BaseSampler(object):
             A dictionary containing the parameter names and parameter's distributions.
 
         .. seealso::
-            Please refer to :func:`~optuna.samplers.product_search_space` as an implementation of
-            :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
+            Please refer to :func:`~optuna.samplers.intersection_search_space` as an
+            implementation of :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
         """
 
         raise NotImplementedError
 
     @abc.abstractmethod
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
         """Sample parameters in a given search space.
 
         This method is called once at the beginning of each trial, i.e., right before the
@@ -82,7 +98,7 @@ class BaseSampler(object):
 
     @abc.abstractmethod
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
+        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
         """Sample a parameter for a given distribution.
 
         This method is called only for the parameters not contained in the search space returned
