@@ -11,9 +11,10 @@ You can run this example as follows:
 
 """
 
-import optuna
 import tensorflow as tf
 import tensorflow_datasets as tfds
+
+import optuna
 from optuna.integration import TFKerasPruningCallback
 
 
@@ -100,7 +101,7 @@ def objective(trial):
         callbacks=callbacks,
     )
 
-    # TODO: Investigate why the logger below is called twice.
+    # TODO(@sfujiwara): Investigate why the logger here is called twice.
     # tf.logging.info(history.history[monitor][-1])
 
     return history.history[monitor][-1]

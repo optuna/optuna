@@ -4,8 +4,8 @@ import optuna
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
     from typing import Any  # NOQA
+    from typing import Dict  # NOQA
 
 try:
     from tensorflow.keras.callbacks import Callback
