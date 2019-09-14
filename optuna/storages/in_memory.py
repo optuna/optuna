@@ -46,7 +46,7 @@ class InMemoryStorage(base.BaseStorage):
         self.__dict__.update(state)
         self._lock = threading.RLock()
 
-    def create_new_study_id(self, study_name=None):
+    def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
 
         if study_name is not None:
@@ -135,26 +135,38 @@ class InMemoryStorage(base.BaseStorage):
                 datetime_start=datetime_start)
         ]
 
-    def create_new_trial_id(self, study_id):
-        # type: (int) -> int
+    def create_new_trial(self, study_id, template_trial=None):
+        # type: (int, Optional[structs.FrozenTrial]) -> int
 
         self._check_study_id(study_id)
+
+        if template_trial is None:
+            trial = self._create_running_trial()
+        else:
+            trial = copy.deepcopy(template_trial)
+
         with self._lock:
             trial_id = len(self.trials)
-            self.trials.append(
-                structs.FrozenTrial(
-                    number=trial_id,
-                    state=structs.TrialState.RUNNING,
-                    params={},
-                    distributions={},
-                    user_attrs={},
-                    system_attrs={'_number': trial_id},
-                    value=None,
-                    intermediate_values={},
-                    datetime_start=datetime.now(),
-                    datetime_complete=None,
-                    trial_id=trial_id))
+            trial.system_attrs['_number'] = trial_id
+            self.trials.append(trial._replace(number=trial_id, trial_id=trial_id))
         return trial_id
+
+    @staticmethod
+    def _create_running_trial():
+        # type: () -> structs.FrozenTrial
+
+        return structs.FrozenTrial(
+            trial_id=-1,  # dummy value.
+            number=-1,  # dummy value.
+            state=structs.TrialState.RUNNING,
+            params={},
+            distributions={},
+            user_attrs={},
+            system_attrs={},
+            value=None,
+            intermediate_values={},
+            datetime_start=datetime.now(),
+            datetime_complete=None)
 
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> None

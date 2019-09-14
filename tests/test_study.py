@@ -9,7 +9,6 @@ import time
 import uuid
 
 import optuna
-from optuna.study import InTrialStudy
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 
@@ -540,27 +539,32 @@ def test_load_study(storage_mode, cache_mode):
         assert created_study.study_id == loaded_study.study_id
 
 
+def test_nested_optimization():
+    # type: () -> None
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        with pytest.raises(RuntimeError):
+            trial.study.optimize(lambda _: 0.0, n_trials=1)
+
+        return 1.0
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=10, catch=())
+
+
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_in_trial_study(storage_mode):
+def test_append_trial(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
+        assert len(study.trials) == 0
 
-        # Run ten trials.
-        study.optimize(lambda t: t.suggest_int('x', 0, 10), n_trials=10)
-
-        # Create an `InTrialStudy` instance.
-        in_trial_study = InTrialStudy(study)
-
-        # Test best trial and trials.
-        assert in_trial_study.best_params == study.best_params
-        assert in_trial_study.best_value == study.best_value
-        assert in_trial_study.best_trial == study.best_trial
-        assert in_trial_study.trials == study.trials
-
-        # Test study direction.
-        assert in_trial_study.direction == study.direction
+        study._append_trial(value=0.8)
+        assert len(study.trials) == 1
+        assert study.best_value == 0.8
 
 
 def test_storage_property():

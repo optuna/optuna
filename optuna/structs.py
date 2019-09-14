@@ -5,7 +5,7 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
-from optuna.distributions import BaseDistribution  # NOQA
+from optuna.distributions import BaseDistribution
 
 
 class TrialState(enum.Enum):
@@ -39,7 +39,7 @@ class StudyDirection(enum.Enum):
     Attributes:
         NOT_SET:
             Direction has not been set.
-        MNIMIZE:
+        MINIMIZE:
             :class:`~optuna.study.Study` minimizes the objective function.
         MAXIMIZE:
             :class:`~optuna.study.Study` maximizes the objective function.
@@ -97,6 +97,45 @@ class FrozenTrial(
     """
 
     internal_fields = ['distributions', 'trial_id']
+
+    def _validate(self):
+        # type: () -> None
+
+        if self.datetime_start is None:
+            raise ValueError('`datetime_start` is supposed to be set.')
+
+        if self.state.is_finished():
+            if self.datetime_complete is None:
+                raise ValueError('`datetime_complete` is supposed to be set for a finished trial.')
+        else:
+            if self.datetime_complete is not None:
+                raise ValueError(
+                    '`datetime_complete` is supposed to not be set for a finished trial.')
+
+        if self.state == TrialState.COMPLETE and self.value is None:
+            raise ValueError('`value` is supposed to be set for a complete trial.')
+
+        if set(self.params.keys()) != set(self.distributions.keys()):
+            raise ValueError('Inconsistent parameters {} and distributions {}.'.format(
+                set(self.params.keys()), set(self.distributions.keys())))
+
+        for param_name, param_value in self.params.items():
+            distribution = self.distributions[param_name]
+
+            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            if not distribution._contains(param_value_in_internal_repr):
+                raise ValueError(
+                    "The value {} of parameter '{}' isn't contained in the distribution {}.".
+                    format(param_value, param_name, distribution))
+
+    @property
+    def last_step(self):
+        # type: () -> Optional[int]
+
+        if len(self.intermediate_values) == 0:
+            return None
+        else:
+            return max(self.intermediate_values.keys())
 
 
 class StudySummary(

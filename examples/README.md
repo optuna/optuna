@@ -12,6 +12,7 @@ This page contains a list of example codes written with Optuna.
 * [scikit-learn](./sklearn_simple.py)
 * [Chainer](./chainer_simple.py)
 * [ChainerMN](./chainermn_simple.py)
+* [Dask-ML](./dask_ml_simple.py)
 * [LightGBM](./lightgbm_simple.py)
 * [CatBoost](./catboost_simple.py)
 * [MXNet](./mxnet_simple.py)
@@ -19,6 +20,7 @@ This page contains a list of example codes written with Optuna.
 * [XGBoost](./xgboost_simple.py)
 * [Tensorflow](./tensorflow_estimator_simple.py)
 * [Tensorflow(eager)](./tensorflow_eager_simple.py)
+* [Keras](./keras_simple.py)
 
 ### An example where an objective function uses additional arguments
 

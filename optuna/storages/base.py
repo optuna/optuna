@@ -28,7 +28,7 @@ class BaseStorage(object):
     # Basic study manipulation
 
     @abc.abstractmethod
-    def create_new_study_id(self, study_name=None):
+    def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
 
         raise NotImplementedError
@@ -98,8 +98,8 @@ class BaseStorage(object):
     # Basic trial manipulation
 
     @abc.abstractmethod
-    def create_new_trial_id(self, study_id):
-        # type: (int) -> int
+    def create_new_trial(self, study_id, template_trial=None):
+        # type: (int, Optional[structs.FronzenTrial]) -> int
 
         raise NotImplementedError
 
