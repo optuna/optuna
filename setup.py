@@ -56,7 +56,12 @@ def get_extras_require():
         'testing': [
             'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
             'mpi4py', 'mxnet', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
-            'tensorflow', 'tensorflow-datasets', 'xgboost',
+            'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0',
+        ],
+        'example': [
+            'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
+            'tensorflow', 'mxnet', 'xgboost', 'torch', 'torchvision',
+            'dask-ml', 'dask[dataframe]'
         ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],

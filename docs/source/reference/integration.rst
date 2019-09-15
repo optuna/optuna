@@ -31,3 +31,6 @@ Integration
 
 .. autoclass:: XGBoostPruningCallback
     :members:
+
+.. autoclass:: OptunaSearchCV
+    :members:
