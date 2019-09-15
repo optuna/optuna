@@ -1,10 +1,11 @@
 """
 Optuna example that demonstrates a pruner for tf.keras.
 
-In this example, we optimize the validation accuracy of hand-written digit recognition using
-Keras and MNIST, where the architecture of the neural network and the learning rate of optimizer
-is optimized. Throughout the training of neural networks, a pruner observes intermediate
-results and stops unpromising trials.
+In this example, we optimize the validation accuracy of hand-written digit recognition
+using tf.keras and MNIST, where the architecture of the neural network
+and the parameters of optimizer are optimized.
+Throughout the training of neural networks,
+a pruner observes intermediate results and stops unpromising trials.
 
 You can run this example as follows:
     $ python tfkeras_integration.py
