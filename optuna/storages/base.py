@@ -171,11 +171,10 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
-    @abc.abstractmethod
     def unsafe_get_all_trials(self, study_id):
         # type: (int) -> List[structs.FrozenTrial]
 
-        raise NotImplementedError
+        return self.get_all_trials(study_id)
 
     @abc.abstractmethod
     def get_n_trials(self, study_id, state=None):
