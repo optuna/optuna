@@ -164,6 +164,7 @@ class Study(BaseStudy):
             storage,  # type: Union[str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
+            force_garbage_collection=True,  # type: bool
     ):
         # type: (...) -> None
 
@@ -178,6 +179,7 @@ class Study(BaseStudy):
         self.logger = logging.get_logger(__name__)
 
         self._optimize_lock = threading.Lock()
+        self.force_garbage_collection = force_garbage_collection
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -508,7 +510,8 @@ class Study(BaseStudy):
             # environments (e.g., services that use computing containers such as CircleCI).
             # Please refer to the following PR for further details:
             # https://github.com/pfnet/optuna/pull/325.
-            gc.collect()
+            if self.force_garbage_collection:
+                gc.collect()
 
         try:
             result = float(result)
@@ -553,6 +556,7 @@ def create_study(
         study_name=None,  # type: Optional[str]
         direction='minimize',  # type: str
         load_if_exists=False,  # type: bool
+        force_garbage_collection=True,  # type: bool
 ):
     # type: (...) -> Study
     """Create a new :class:`~optuna.study.Study`.
@@ -580,6 +584,8 @@ def create_study(
             a :class:`~optuna.structs.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
+        force_garbage_collection:
+            Flag to force gc.collect() for every trial.
 
     Returns:
         A :class:`~optuna.study.Study` object.
@@ -605,7 +611,8 @@ def create_study(
         study_name=study_name,
         storage=storage,
         sampler=sampler,
-        pruner=pruner)
+        pruner=pruner,
+        force_garbage_collection=force_garbage_collection)
 
     if direction == 'minimize':
         _direction = structs.StudyDirection.MINIMIZE
