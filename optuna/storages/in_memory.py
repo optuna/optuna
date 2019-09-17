@@ -252,7 +252,7 @@ class InMemoryStorage(base.BaseStorage):
                     self.best_trial_id = trial_id
                 return
             if self.trials[self.best_trial_id].value > self.trials[trial_id].value:
-                    self.best_trial_id = trial_id
+                self.best_trial_id = trial_id
             return
 
 
