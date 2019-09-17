@@ -102,6 +102,17 @@ class BaseStudy(object):
         return self._storage.get_all_trials(self.study_id)
 
     @property
+    def unsafe_trials(self):
+        # type: () -> List[structs.FrozenTrial]
+        """Return all trials in the study. The inner data are directly returned.
+
+        Returns:
+            A list of :class:`~optuna.structs.FrozenTrial` objects.
+        """
+
+        return self._storage.unsafe_get_all_trials(self.study_id)
+
+    @property
     def storage(self):
         # type: () -> storages.BaseStorage
         """Return the storage object used by the study.
