@@ -255,7 +255,6 @@ class InMemoryStorage(base.BaseStorage):
                 self.best_trial_id = trial_id
             return
 
-
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> bool
 
