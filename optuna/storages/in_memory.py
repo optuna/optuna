@@ -247,7 +247,8 @@ class InMemoryStorage(base.BaseStorage):
             if self.best_trial_id is None:
                 self.best_trial_id = trial_id
                 return
-            if self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) == structs.StudyDirection.MAXIMIZE:
+            if (self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) ==
+                    structs.StudyDirection.MAXIMIZE):
                 if self.trials[self.best_trial_id].value < self.trials[trial_id].value:
                     self.best_trial_id = trial_id
                 return
