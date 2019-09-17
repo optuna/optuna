@@ -579,7 +579,7 @@ def test_callbacks(n_jobs):
     values = []
     callbacks = [lambda study, trial: values.append(trial.value)]
     study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
-    assert values == [1 for _ in range(10)]
+    assert values == [1] * 10
 
     # Two callbacks.
     values = []
@@ -589,15 +589,15 @@ def test_callbacks(n_jobs):
         lambda study, trial: params.append(trial.params)
     ]
     study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
-    assert values == [1 for _ in range(10)]
-    assert params == [{'x': 1} for _ in range(10)]
+    assert values == [1] * 10
+    assert params == [{'x': 1}] * 10
 
     # If a trial is failed with an exception and the exception is caught by the study,
     # callbacks are invoked.
     states = []
     callbacks = [lambda study, trial: states.append(trial.state)]
     study.optimize(lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
-    assert states == [optuna.structs.TrialState.FAIL for _ in range(10)]
+    assert states == [optuna.structs.TrialState.FAIL] * 10
 
     # NOTE: Because `Study.optimize` blocks forever if `n_jobs` is more than `1` and
     #       an uncaught exception is raised during an optimization,
