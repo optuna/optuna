@@ -227,7 +227,7 @@ class InMemoryStorage(base.BaseStorage):
     def get_best_trial(self, study_id):
         # type: (int) -> structs.FrozenTrial
 
-        if self.best_trial_id == None:
+        if self.best_trial_id is None:
             raise ValueError('No trials are completed yet.')
         return self.get_trial(self.best_trial_id)
 
