@@ -32,6 +32,7 @@ class InMemoryStorage(base.BaseStorage):
         self.study_user_attrs = {}  # type: Dict[str, Any]
         self.study_system_attrs = {}  # type: Dict[str, Any]
         self.study_name = DEFAULT_STUDY_NAME_PREFIX + IN_MEMORY_STORAGE_STUDY_UUID  # type: str
+        self.best_trial_id = None
 
         self._lock = threading.RLock()
 
@@ -61,6 +62,7 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             self.trials = []
+            self.best_trial_id = None
             self.param_distribution = {}
             self.direction = structs.StudyDirection.NOT_SET
             self.study_user_attrs = {}
@@ -222,6 +224,13 @@ class InMemoryStorage(base.BaseStorage):
 
         return trial_id
 
+    def get_best_trial(self, study_id):
+        # type: (int) -> structs.FrozenTrial
+
+        if self.best_trial_id == None:
+            raise ValueError('No trials are completed yet.')
+        return self.get_trial(self.best_trial_id)
+
     def get_trial_param(self, trial_id, param_name):
         # type: (int, str) -> float
 
@@ -235,6 +244,17 @@ class InMemoryStorage(base.BaseStorage):
             self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
 
             self.trials[trial_id] = self.trials[trial_id]._replace(value=value)
+            if self.best_trial_id is None:
+                self.best_trial_id = trial_id
+                return
+            if self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) == structs.StudyDirection.MAXIMIZE:
+                if self.trials[self.best_trial_id].value < self.trials[trial_id].value:
+                    self.best_trial_id = trial_id
+                return
+            if self.trials[self.best_trial_id].value > self.trials[trial_id].value:
+                    self.best_trial_id = trial_id
+            return
+
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> bool
