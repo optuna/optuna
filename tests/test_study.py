@@ -1,7 +1,7 @@
 import itertools
+from mock import patch
 import multiprocessing
 import os
-from mock import patch
 import pandas as pd
 import pickle
 import pytest
