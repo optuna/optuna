@@ -1,5 +1,5 @@
 import itertools
-from mock import patch
+from mock import patch, Mock
 import multiprocessing
 import os
 import pandas as pd
@@ -577,7 +577,7 @@ def test_storage_property():
 
 @patch('optuna.study.gc.collect')
 def test_force_gc(collect_mock):
-    # type: () -> None
+    # type: (Mock) -> None
 
     study = optuna.create_study(force_garbage_collection=True)
     study.optimize(func, n_trials=10)
@@ -587,7 +587,7 @@ def test_force_gc(collect_mock):
 
 @patch('optuna.study.gc.collect')
 def test_no_force_gc(collect_mock):
-    # type: () -> None
+    # type: (Mock) -> None
 
     study = optuna.create_study(force_garbage_collection=False)
     study.optimize(func, n_trials=10)
