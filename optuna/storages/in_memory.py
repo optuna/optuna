@@ -194,6 +194,7 @@ class InMemoryStorage(base.BaseStorage):
             if state.is_finished():
                 self.trials[trial_id] = \
                     self.trials[trial_id]._replace(datetime_complete=datetime.now())
+                self.update_cache(trial_id)
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
         # type: (int, str, float, distributions.BaseDistribution) -> bool
@@ -245,30 +246,31 @@ class InMemoryStorage(base.BaseStorage):
             self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
 
             self.trials[trial_id] = self.trials[trial_id]._replace(value=value)
-            self.update_cache(trial_id)
 
     def update_cache(self, trial_id):
         # type: (int) -> None
 
-        if trial.state == structs.TrialState.COMPLETE:
-            if self.best_trial_id is None:
-                self.best_trial_id = trial_id
-                return
-            best_value = self.trials[self.best_trial_id].value
-            new_value = self.trials[trial_id].value
-            if best_value is None:
-                self.best_trial_id = trial_id
-                return
-            if new_value is None:
-                return
-            if (self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) ==
-                    structs.StudyDirection.MAXIMIZE):
-                if best_value < new_value:
-                    self.best_trial_id = trial_id
-                return
-            if best_value > new_value:
+        if self.trials[trial_id].state != structs.TrialState.COMPLETE:
+            return
+    
+        if self.best_trial_id is None:
+            self.best_trial_id = trial_id
+            return
+        best_value = self.trials[self.best_trial_id].value
+        new_value = self.trials[trial_id].value
+        if best_value is None:
+            self.best_trial_id = trial_id
+            return
+        if new_value is None:
+            return
+        if (self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) ==
+                structs.StudyDirection.MAXIMIZE):
+            if best_value < new_value:
                 self.best_trial_id = trial_id
             return
+        if best_value > new_value:
+            self.best_trial_id = trial_id
+        return
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> bool
