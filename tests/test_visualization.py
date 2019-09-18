@@ -1,7 +1,7 @@
 from optuna.study import create_study
 from optuna.trial import Trial  # NOQA
-from optuna.visualization import _get_optimization_history_plot
 from optuna.visualization import _get_intermediate_plot
+from optuna.visualization import _get_optimization_history_plot
 
 
 def test_get_intermediate_plot():
@@ -29,7 +29,8 @@ def test_get_intermediate_plot():
     assert tuple(figure.data[0].y) == (1.0, 2.0)
 
     # Test with trials, one of which contains no intermediate value.
-    figure = study.optimize(lambda t: objective(t, False), n_trials=1)
+    study.optimize(lambda t: objective(t, False), n_trials=1)
+    figure = _get_intermediate_plot(study)
     assert len(figure.data) == 1
 
     # Ignore failed trials.
@@ -38,7 +39,8 @@ def test_get_intermediate_plot():
 
         raise ValueError
 
-    figure = study.optimize(fail_objective, n_trials=1)
+    study.optimize(fail_objective, n_trials=1)
+    figure = _get_intermediate_plot(study)
     assert len(figure.data) == 1
 
 
