@@ -33,7 +33,7 @@ class TFKerasPruningCallback(Callback):
 
     Args:
         trial:
-            A :class: `~optuna.trial.Trial` corresponding to the current evaluation of the
+            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
             objective function.
         monitor:
             An evaluation metric for pruning, e.g., ``val_loss`` or ``val_acc``.
