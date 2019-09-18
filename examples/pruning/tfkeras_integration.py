@@ -28,7 +28,6 @@ VALIDATION_STEPS = 30
 
 
 def train_dataset():
-    # type: () -> tf.data.Dataset
 
     ds = tfds.load('mnist', split=tfds.Split.TRAIN, shuffle_files=True)
     ds = ds.map(lambda x: (tf.cast(x['image'], tf.float32)/255., x['label']))
@@ -39,7 +38,6 @@ def train_dataset():
 
 
 def eval_dataset():
-    # type: () -> tf.data.Dataset
 
     ds = tfds.load('mnist', split=tfds.Split.TEST, shuffle_files=False)
     ds = ds.map(lambda x: (tf.cast(x['image'], tf.float32)/255., x['label']))
@@ -50,7 +48,6 @@ def eval_dataset():
 
 
 def create_model(trial):
-    # type: (optuna.trial) -> tf.keras.Model
 
     # Hyper parameters to be tuned by Optuna.
     lr = trial.suggest_loguniform('lr', 1e-4, 1e-1)
@@ -74,7 +71,6 @@ def create_model(trial):
 
 
 def objective(trial):
-    # type: (optuna.Trial) -> float
 
     # Metrics to be monitored by Optuna.
     if tf.__version__ >= '2':
@@ -113,7 +109,6 @@ def objective(trial):
 
 
 def show_result(study):
-    # type: (optuna.Study) -> None
 
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
     complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
