@@ -164,6 +164,7 @@ class InMemoryStorage(base.BaseStorage):
             trial_id = len(self.trials)
             trial.system_attrs['_number'] = trial_id
             self.trials.append(trial._replace(number=trial_id, trial_id=trial_id))
+            self.update_cache(trial_id)
         return trial_id
 
     @staticmethod
@@ -244,24 +245,29 @@ class InMemoryStorage(base.BaseStorage):
             self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
 
             self.trials[trial_id] = self.trials[trial_id]._replace(value=value)
-            if self.best_trial_id is None:
-                self.best_trial_id = trial_id
-                return
-            best_value = self.trials[self.best_trial_id].value
-            new_value = self.trials[trial_id].value
-            if best_value is None:
-                self.best_trial_id = trial_id
-                return
-            if new_value is None:
-                return
-            if (self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) ==
-                    structs.StudyDirection.MAXIMIZE):
-                if best_value < new_value:
-                    self.best_trial_id = trial_id
-                return
-            if best_value > new_value:
+            self.update_cache(trial_id)
+
+    def update_cache(self, trial_id):
+        # type: (int) -> None
+
+        if self.best_trial_id is None:
+            self.best_trial_id = trial_id
+            return
+        best_value = self.trials[self.best_trial_id].value
+        new_value = self.trials[trial_id].value
+        if best_value is None:
+            self.best_trial_id = trial_id
+            return
+        if new_value is None:
+            return
+        if (self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) ==
+                structs.StudyDirection.MAXIMIZE):
+            if best_value < new_value:
                 self.best_trial_id = trial_id
             return
+        if best_value > new_value:
+            self.best_trial_id = trial_id
+        return
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> bool
