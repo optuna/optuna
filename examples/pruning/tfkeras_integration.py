@@ -49,7 +49,7 @@ def eval_dataset():
 
 def create_model(trial):
 
-    # Hyper parameters to be tuned by Optuna.
+    # Hyperparameters to be tuned by Optuna.
     lr = trial.suggest_loguniform('lr', 1e-4, 1e-1)
     momentum = trial.suggest_uniform('momentum', 0.0, 1.0)
     units = trial.suggest_categorical('units', [32, 64, 128, 256, 512])
