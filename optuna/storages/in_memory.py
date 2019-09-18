@@ -13,6 +13,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
+    from typing import Union
 
 IN_MEMORY_STORAGE_STUDY_ID = 0
 IN_MEMORY_STORAGE_STUDY_UUID = '00000000-0000-0000-0000-000000000000'
@@ -24,6 +25,7 @@ class InMemoryStorage(base.BaseStorage):
     This class is not supposed to be directly accessed by library users.
     """
 
+
     def __init__(self):
         # type: () -> None
         self.trials = []  # type: List[structs.FrozenTrial]
@@ -32,7 +34,7 @@ class InMemoryStorage(base.BaseStorage):
         self.study_user_attrs = {}  # type: Dict[str, Any]
         self.study_system_attrs = {}  # type: Dict[str, Any]
         self.study_name = DEFAULT_STUDY_NAME_PREFIX + IN_MEMORY_STORAGE_STUDY_UUID  # type: str
-        self.best_trial_id = None
+        self.best_trial_id = None  # type: Optional[int]
 
         self._lock = threading.RLock()
 
@@ -247,12 +249,19 @@ class InMemoryStorage(base.BaseStorage):
             if self.best_trial_id is None:
                 self.best_trial_id = trial_id
                 return
+            best_value = self.trials[self.best_trial_id].value
+            new_value = self.trials[trial_id].value
+            if best_value is None:
+                self.best_trial_id = trial_id
+                return
+            if new_value is None:
+                return
             if (self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) ==
                     structs.StudyDirection.MAXIMIZE):
-                if self.trials[self.best_trial_id].value < self.trials[trial_id].value:
+                if best_value < new_value:
                     self.best_trial_id = trial_id
                 return
-            if self.trials[self.best_trial_id].value > self.trials[trial_id].value:
+            if best_value > new_value:
                 self.best_trial_id = trial_id
             return
 
