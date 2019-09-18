@@ -252,7 +252,7 @@ class InMemoryStorage(base.BaseStorage):
 
         if self.trials[trial_id].state != structs.TrialState.COMPLETE:
             return
-    
+
         if self.best_trial_id is None:
             self.best_trial_id = trial_id
             return
