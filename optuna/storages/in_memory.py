@@ -13,7 +13,6 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
-    from typing import Union
 
 IN_MEMORY_STORAGE_STUDY_ID = 0
 IN_MEMORY_STORAGE_STUDY_UUID = '00000000-0000-0000-0000-000000000000'
@@ -24,7 +23,6 @@ class InMemoryStorage(base.BaseStorage):
 
     This class is not supposed to be directly accessed by library users.
     """
-
 
     def __init__(self):
         # type: () -> None
