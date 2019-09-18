@@ -4,7 +4,15 @@ import gc
 import math
 import multiprocessing
 import multiprocessing.pool
-import pandas as pd
+
+try:
+    import pandas as pd  # NOQA
+    _pandas_available = True
+except ImportError as e:
+    _pandas_import_error = e
+    # trials_dataframe is disabled because pandas is not available.
+    _pandas_available = False
+
 from six.moves import queue
 import threading
 import time
@@ -324,6 +332,7 @@ class Study(BaseStudy):
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
+        _check_pandas_availability()
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
@@ -672,3 +681,14 @@ def get_all_study_summaries(storage):
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
+
+
+def _check_pandas_availability():
+    # type: () -> None
+
+    if not _pandas_available:
+        raise ImportError(
+            'pandas is not available. Please install pandas to use this feature. '
+            'pandas can be installed by executing `$ pip install pandas`. '
+            'For further information, please refer to the installation guide of pandas. '
+            '(The actual import error is as follows: ' + str(_pandas_import_error) + ')')
