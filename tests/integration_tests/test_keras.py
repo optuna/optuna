@@ -23,7 +23,7 @@ def test_keras_pruning_callback():
             np.zeros((16, ), np.int32),
             batch_size=1,
             epochs=1,
-            callbacks=[KerasPruningCallback(trial, 'acc')],
+            callbacks=[KerasPruningCallback(trial, 'accuracy')],
             verbose=0)
 
         return 1.0
