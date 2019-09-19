@@ -22,7 +22,7 @@ except ImportError as e:
 
 def plot_intermediate_values(study):
     # type: (Study) -> None
-    """Inside Jupyter notebook, plot intermediate values of all trials in a study.
+    """Plot intermediate values of all trials in a study.
 
     Example:
 
@@ -95,7 +95,7 @@ def _get_intermediate_plot(study):
 
 def plot_optimization_history(study):
     # type: (Study) -> None
-    """Inside Jupyter notebook, plot optimization history of all trials in a study.
+    """Plot optimization history of all trials in a study.
 
     Example:
 
@@ -130,7 +130,7 @@ def _get_optimization_history_plot(study):
 
     layout = go.Layout(
         title='Optimization History Plot',
-        xaxis={'title': 'Trial'},
+        xaxis={'title': 'Number of Trial'},
         yaxis={'title': 'Objective Value'},
     )
 
@@ -143,8 +143,8 @@ def _get_optimization_history_plot(study):
         elif isinstance(trial.value, float):
             trial_value = trial.value
         else:
-            logger.warning('Your study has a non-numeric value.')
-            return go.Figure(data=[], layout=layout)
+            raise ValueError(
+                'Trial{} has COMPLETE state, but its value is non-numeric.'.formate(trial.number)
         if study.direction == StudyDirection.MINIMIZE:
             best_values.append(min(best_values[-1], trial_value))
         else:
