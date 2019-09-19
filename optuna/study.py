@@ -4,7 +4,15 @@ import gc
 import math
 import multiprocessing
 import multiprocessing.pool
-import pandas as pd
+
+try:
+    import pandas as pd  # NOQA
+    _pandas_available = True
+except ImportError as e:
+    _pandas_import_error = e
+    # trials_dataframe is disabled because pandas is not available.
+    _pandas_available = False
+
 from six.moves import queue
 import threading
 import time
@@ -29,6 +37,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
     from typing import Type  # NOQA
     from typing import Union  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
@@ -322,6 +332,7 @@ class Study(BaseStudy):
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
+        _check_pandas_availability()
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
@@ -350,6 +361,47 @@ class Study(BaseStudy):
                       [])  # type: List[Tuple['str', 'str']]
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+
+    def _append_trial(
+            self,
+            value=None,  # type: Optional[float]
+            params=None,  # type: Optional[Dict[str, Any]]
+            distributions=None,  # type: Optional[Dict[str, BaseDistribution]]
+            user_attrs=None,  # type: Optional[Dict[str, Any]]
+            system_attrs=None,  # type: Optional[Dict[str, Any]]
+            intermediate_values=None,  # type: Optional[Dict[int, float]]
+            state=structs.TrialState.COMPLETE,  # type: structs.TrialState
+            datetime_start=None,  # type: Optional[datetime.datetime]
+            datetime_complete=None  # type: Optional[datetime.datetime]
+    ):
+        # type: (...) -> None
+
+        params = params or {}
+        distributions = distributions or {}
+        user_attrs = user_attrs or {}
+        system_attrs = system_attrs or {}
+        intermediate_values = intermediate_values or {}
+        datetime_start = datetime_start or datetime.datetime.now()
+
+        if state.is_finished():
+            datetime_complete = datetime_complete or datetime.datetime.now()
+
+        trial = structs.FrozenTrial(
+            number=-1,  # dummy value.
+            trial_id=-1,  # dummy value.
+            state=state,
+            value=value,
+            datetime_start=datetime_start,
+            datetime_complete=datetime_complete,
+            params=params,
+            distributions=distributions,
+            user_attrs=user_attrs,
+            system_attrs=system_attrs,
+            intermediate_values=intermediate_values)
+
+        trial._validate()
+
+        self.storage.create_new_trial(self.study_id, template_trial=trial)
 
     def _optimize_sequential(
             self,
@@ -458,7 +510,7 @@ class Study(BaseStudy):
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
-        trial_id = self._storage.create_new_trial_id(self.study_id)
+        trial_id = self._storage.create_new_trial(self.study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
@@ -563,7 +615,7 @@ def create_study(
 
     storage = storages.get_storage(storage)
     try:
-        study_id = storage.create_new_study_id(study_name)
+        study_id = storage.create_new_study(study_name)
     except structs.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
@@ -640,3 +692,14 @@ def get_all_study_summaries(storage):
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
+
+
+def _check_pandas_availability():
+    # type: () -> None
+
+    if not _pandas_available:
+        raise ImportError(
+            'pandas is not available. Please install pandas to use this feature. '
+            'pandas can be installed by executing `$ pip install pandas`. '
+            'For further information, please refer to the installation guide of pandas. '
+            '(The actual import error is as follows: ' + str(_pandas_import_error) + ')')
