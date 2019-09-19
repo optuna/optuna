@@ -1,4 +1,5 @@
 from optuna.logging import get_logger
+from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 from optuna.study import Study  # NOQA
 from optuna import type_checking
@@ -36,7 +37,7 @@ def plot_intermediate_values(study):
                 ...
 
             study = optuna.create_study()
-            study.optimize(n_trials=100)
+            study.optimize(objective ,n_trials=100)
 
             optuna.visualization.plot_intermediate_values(study)
 
@@ -105,11 +106,10 @@ def plot_optimization_history(study):
             import optuna
 
             def objective(trial):
-                # Intermediate values are supposed to be reported inside the objective function.
                 ...
 
             study = optuna.create_study()
-            study.optimize(n_trials=100)
+            study.optimize(objective ,n_trials=100)
 
             optuna.visualization.plot_optimization_history(study)
 
@@ -134,9 +134,9 @@ def _get_optimization_history_plot(study):
         yaxis={'title': 'Objective Value'},
     )
 
-    trials = study.trials
+    trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
-    best_values = [float('inf')]
+    best_values = [float('inf')] if study.direction == StudyDirection.MINIMIZE else [-float('inf')]
     for trial in trials:
         if isinstance(trial.value, int):
             trial_value = float(trial.value)
@@ -145,7 +145,10 @@ def _get_optimization_history_plot(study):
         else:
             logger.warning('Your study has a non-numeric value.')
             return go.Figure(data=[], layout=layout)
-        best_values.append(min(best_values[-1], trial_value))
+        if study.direction == StudyDirection.MINIMIZE:
+            best_values.append(min(best_values[-1], trial_value))
+        else:
+            best_values.append(max(best_values[-1], trial_value))
     best_values.pop(0)
     traces = [
         go.Scatter(x=[t.number for t in trials], y=[t.value for t in trials],
