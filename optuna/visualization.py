@@ -41,7 +41,7 @@ def plot_intermediate_values(study):
                 ...
 
             study = optuna.create_study()
-            study.optimize(objective ,n_trials=100)
+            study.optimize(objective, n_trials=100)
 
             optuna.visualization.plot_intermediate_values(study)
 
@@ -182,11 +182,10 @@ def plot_parallel_coordinate(study, params=[]):
             import optuna
 
             def objective(trial):
-                # Intermediate values are supposed to be reported inside the objective function.
                 ...
 
             study = optuna.create_study()
-            study.optimize(n_trials=100)
+            study.optimize(objective, n_trials=100)
 
             optuna.visualization.plot_parallel_coordinate(study, params=['param_a', 'param_b'])
 
