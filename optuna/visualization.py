@@ -144,7 +144,7 @@ def _get_optimization_history_plot(study):
             trial_value = trial.value
         else:
             raise ValueError(
-                'Trial{} has COMPLETE state, but its value is non-numeric.'.formate(trial.number)
+                'Trial{} has COMPLETE state, but its value is non-numeric.'.format(trial.number))
         if study.direction == StudyDirection.MINIMIZE:
             best_values.append(min(best_values[-1], trial_value))
         else:
