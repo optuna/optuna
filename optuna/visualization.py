@@ -21,9 +21,6 @@ except ImportError as e:
     _available = False
 
 
-TARGET_STATUS = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
-
-
 def plot_intermediate_values(study):
     # type: (Study) -> None
     """Plot intermediate values of all trials in a study.
@@ -67,7 +64,8 @@ def _get_intermediate_plot(study):
         showlegend=False
     )
 
-    trials = study.trials
+    target_state = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
+    trials = [trial for trial in study.trials if trial.state in target_state]
 
     if len(trials) == 0:
         logger.warning('Study instance does not contain trials.')
@@ -77,8 +75,6 @@ def _get_intermediate_plot(study):
             'You need to set up the pruning feature to utilize plot_intermediate_values()')
         return go.Figure(data=[], layout=layout)
 
-    target_state = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
-    trials = [trial for trial in trials if trial.state in target_state]
     traces = []
     for trial in trials:
         trace = go.Scatter(
@@ -210,9 +206,9 @@ def _get_parallel_coordinate_plot(study, params=[]):
         title='Parallel Coordinate Plot',
     )
 
-    trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
-    if len(study.trials) == 0:
+    if len(trials) == 0:
         logger.warning('Your study does not have any completed trials.')
         return go.Figure(data=[], layout=layout)
 

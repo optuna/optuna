@@ -97,9 +97,8 @@ def test_get_optimization_history_plot():
 def test_get_parallel_coordinate_plot():
     # type: () -> None
 
-    study = create_study()
-
     # Test with no trial.
+    study = create_study()
     figure = _get_parallel_coordinate_plot(study)
     assert len(figure.data) == 0
 
@@ -167,4 +166,4 @@ def test_get_parallel_coordinate_plot():
     study = create_study()
     study.optimize(fail_objective, n_trials=1)
     figure = _get_parallel_coordinate_plot(study)
-    assert len(figure.data) == 1
+    assert len(figure.data) == 0
