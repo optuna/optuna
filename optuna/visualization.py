@@ -1,4 +1,5 @@
 from optuna.logging import get_logger
+from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 from optuna.study import Study  # NOQA
 from optuna import type_checking
@@ -21,7 +22,7 @@ except ImportError as e:
 
 def plot_intermediate_values(study):
     # type: (Study) -> None
-    """Inside Jupyter notebook, plot intermediate values of all trials in a study.
+    """Plot intermediate values of all trials in a study.
 
     Example:
 
@@ -36,7 +37,7 @@ def plot_intermediate_values(study):
                 ...
 
             study = optuna.create_study()
-            study.optimize(n_trials=100)
+            study.optimize(objective ,n_trials=100)
 
             optuna.visualization.plot_intermediate_values(study)
 
@@ -86,6 +87,74 @@ def _get_intermediate_plot(study):
             name='Trial{}'.format(trial.number)
         )
         traces.append(trace)
+
+    figure = go.Figure(data=traces, layout=layout)
+
+    return figure
+
+
+def plot_optimization_history(study):
+    # type: (Study) -> None
+    """Plot optimization history of all trials in a study.
+
+    Example:
+
+        The following code snippet shows how to plot optimization history inside Jupyter Notebook.
+
+        .. code::
+
+            import optuna
+
+            def objective(trial):
+                ...
+
+            study = optuna.create_study()
+            study.optimize(objective ,n_trials=100)
+
+            optuna.visualization.plot_optimization_history(study)
+
+    Args:
+        study:
+            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
+            values.
+    """
+
+    _check_plotly_availability()
+    init_notebook_mode(connected=True)
+    figure = _get_optimization_history_plot(study)
+    figure.show()
+
+
+def _get_optimization_history_plot(study):
+    # type: (Study) -> Figure
+
+    layout = go.Layout(
+        title='Optimization History Plot',
+        xaxis={'title': 'Number of Trial'},
+        yaxis={'title': 'Objective Value'},
+    )
+
+    trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+
+    best_values = [float('inf')] if study.direction == StudyDirection.MINIMIZE else [-float('inf')]
+    for trial in trials:
+        if isinstance(trial.value, int):
+            trial_value = float(trial.value)
+        elif isinstance(trial.value, float):
+            trial_value = trial.value
+        else:
+            raise ValueError(
+                'Trial{} has COMPLETE state, but its value is non-numeric.'.format(trial.number))
+        if study.direction == StudyDirection.MINIMIZE:
+            best_values.append(min(best_values[-1], trial_value))
+        else:
+            best_values.append(max(best_values[-1], trial_value))
+    best_values.pop(0)
+    traces = [
+        go.Scatter(x=[t.number for t in trials], y=[t.value for t in trials],
+                   mode='markers', name='Objective Value'),
+        go.Scatter(x=[t.number for t in trials], y=best_values, name='Best Value')
+    ]
 
     figure = go.Figure(data=traces, layout=layout)
 
