@@ -91,7 +91,7 @@ def test_get_optimization_history_plot():
     study = create_study()
     study.optimize(fail_objective, n_trials=1)
     figure = _get_parallel_coordinate_plot(study)
-    assert len(figure.data) == 1
+    assert len(figure.data) == 0
 
 
 def test_get_parallel_coordinate_plot():
@@ -134,7 +134,7 @@ def test_get_parallel_coordinate_plot():
         }
     )
 
-    # Test with a trial
+    # Test with a trial.
     figure = _get_parallel_coordinate_plot(study)
     assert len(figure.data[0]['dimensions']) == 3
     assert figure.data[0]['dimensions'][0]['label'] == 'Objective Value'
@@ -147,7 +147,7 @@ def test_get_parallel_coordinate_plot():
     assert figure.data[0]['dimensions'][2]['range'] == (0.0, 2.0)
     assert figure.data[0]['dimensions'][2]['values'] == (2.0, 0.0, 1.0)
 
-    # Test with a trial to select parameter
+    # Test with a trial to select parameter.
     figure = _get_parallel_coordinate_plot(study, params=['param_a'])
     assert len(figure.data[0]['dimensions']) == 2
     assert figure.data[0]['dimensions'][0]['label'] == 'Objective Value'
