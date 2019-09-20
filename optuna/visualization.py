@@ -13,7 +13,6 @@ if type_checking.TYPE_CHECKING:
 try:
     import plotly.graph_objs as go
     from plotly.graph_objs._figure import Figure  # NOQA
-    from plotly.offline import init_notebook_mode
     _available = True
 except ImportError as e:
     _import_error = e
@@ -49,7 +48,6 @@ def plot_intermediate_values(study):
     """
 
     _check_plotly_availability()
-    init_notebook_mode(connected=True)
     figure = _get_intermediate_plot(study)
     figure.show()
 
@@ -120,7 +118,6 @@ def plot_optimization_history(study):
     """
 
     _check_plotly_availability()
-    init_notebook_mode(connected=True)
     figure = _get_optimization_history_plot(study)
     figure.show()
 
@@ -163,7 +160,7 @@ def _get_optimization_history_plot(study):
 
 def plot_parallel_coordinate(study, params=[]):
     # type: (Study, List[str]) -> None
-    """Inside Jupyter notebook, plot the high-dimentional parameter relationships in a study.
+    """Plot the high-dimentional parameter relationships in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
         plotted.
@@ -194,7 +191,6 @@ def plot_parallel_coordinate(study, params=[]):
     """
 
     _check_plotly_availability()
-    init_notebook_mode(connected=True)
     figure = _get_parallel_coordinate_plot(study, params)
     figure.show()
 
@@ -259,7 +255,7 @@ def _get_parallel_coordinate_plot(study, params=[]):
                     title='Objective Value'
                 ),
                 showscale=True,
-                reversescale=True if study.direction == StudyDirection.MINIMIZE else False
+                reversescale=study.direction == StudyDirection.MINIMIZE
             )
         )
     ]
