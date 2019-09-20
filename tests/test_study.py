@@ -1,6 +1,6 @@
 import itertools
-from mock import patch
 from mock import Mock  # NOQA
+from mock import patch
 import multiprocessing
 import os
 import pandas as pd
