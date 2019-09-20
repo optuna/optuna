@@ -1,3 +1,5 @@
+import time
+
 from optuna.logging import get_logger
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
@@ -10,6 +12,7 @@ if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
 try:
+    from IPython.display import display, HTML
     import plotly.graph_objs as go
     from plotly.graph_objs._figure import Figure  # NOQA
     from plotly.offline import init_notebook_mode
@@ -179,3 +182,132 @@ def _check_plotly_availability():
             'Please install plotly version 4.0.0 or higher. '
             'Plotly can be installed by executing `$ pip install -U plotly>=4.0.0`. '
             'For further information, please refer to the installation guide of plotly. ')
+
+
+class ProgressBar:
+    def __init__(self, gen):
+        self.gen = gen
+        if self.gen <= 0 or isinstance(self.gen, int) == False:
+            print('gen must be an int and greater than 1.')
+        self.now_iter = 0
+        self.progress = self._html_progress_bar(self.now_iter, '')
+        self.out = display(HTML(self.progress), display_id=True)
+        self.start_t = time.time()
+        self.comment = ''
+        self.text = ''
+
+    # TODO: get Lock
+    def update(self):
+        self.now_iter += 1
+        if self.now_iter > self.gen:
+            print('Now iter is greater than gen.')
+            return False
+        cur_t = time.time()
+        avg_t = (cur_t - self.start_t) / self.now_iter
+        self.pred_t = avg_t * self.gen
+        self.last_t = cur_t
+        self._update_bar()
+        if self.now_iter == self.gen:
+            self._on_iter_end()
+
+    def _update_bar(self):
+        elapsed_t = self.last_t - self.start_t
+        remaining_t = self._format_time(self.pred_t - elapsed_t)
+        elapsed_t = self._format_time(elapsed_t)
+        end = '' if len(self.comment) == 0 else f' {self.comment}'
+        self._on_update(
+            f'{100 * self.now_iter/self.gen:.2f}% [{self.now_iter}/{self.gen} {elapsed_t}<{remaining_t}{end}]')
+
+    def _on_update(self, text):
+        self.progress = self._html_progress_bar(self.now_iter, text)
+        self.out.update(HTML(self.progress))
+
+    def _on_iter_end(self):
+        if self.text.endswith('<p>'):
+            self.text = self.text[:-3]
+        self.out.update(HTML(self.text))
+
+    def _html_progress_bar(self, value, label):
+        return f"""
+        <div>
+            <style>
+                /* Turns off some styling */
+                progress {{
+                    /* gets rid of default border in Firefox and Opera. */
+                    border: none;
+                    /* Needs to be in here for Safari polyfill so background images work as expected. */
+                    background-size: auto;
+                }}
+            </style>
+        <progress value='{value}' max='{self.gen}', style='width:300px; height:20px; vertical-align: middle;'></progress>
+        {label}
+        </div>
+        """
+
+    def _format_time(self, time):
+        time = int(time)
+        hour, minute, second = time//3600, (time//60) % 60, time % 60
+        if hour != 0:
+            return f'{hour}:{minute:02d}:{second:02d}'
+        else:
+            return f'{minute:02d}:{second:02d}'
+
+
+class ProgressPlot:
+    def __init__(self, study, plot_type=['history']):
+        self.plot_type = plot_type
+        self.figures = self._initialize_figures(study)
+        init_notebook_mode(connected=True)
+        for figure in self.figures:
+            display(figure, display_id=True)
+
+    def update(self, study):
+        df = study.trials_dataframe()
+        df = df.rename(columns={'number': 'trial_id'})
+        for i, plot in enumerate(self.plot_type):
+            if plot == 'history':
+                updated_figure = _get_optimization_history_plot(study)
+                if len(self.figures[i].data) == 0:
+                    self.figures[i].add_scatter(updated_figure.data[0])
+                    self.figures[i].add_scatter(updated_figure.data[1])
+                else:
+                    self.figures[i].data[0].x = updated_figure.data[0].x
+                    self.figures[i].data[0].y = updated_figure.data[0].y
+                    self.figures[i].data[1].x = updated_figure.data[1].x
+                    self.figures[i].data[1].y = updated_figure.data[1].y
+            elif plot == 'intermediate_value':
+                updated_figure = _get_intermediate_plot(study)
+                self.figures[i].data = updated_figure.data
+            elif plot == 'parallel_coordinate':
+                updated_figure = _get_parallel_coordinate_plot(study)
+                self.figures[i].data = updated_figure.data
+            elif plot == 'contour':
+                df = study.trials_dataframe()
+                params = df['params'].columns
+                updated_figure = _get_contour_plot(study, params)
+                self.figures[i].data = updated_figure.data
+            elif plot == 'slice':
+                df = study.trials_dataframe()
+                params = df['params'].columns
+                updated_figure = _get_slice_plot(study, params)
+                self.figures[i].data = updated_figure.data
+
+    def _initialize_figures(self, study):
+        figures = []
+        for plot in self.plot_type:
+            if plot == 'history':
+                figures.append(go.FigureWidget(_get_optimization_history_plot(study)))
+            elif plot == 'intermediate_value':
+                figures.append(go.FigureWidget(_get_intermediate_plot(study)))
+            elif plot == 'parallel_coordinate':
+                figures.append(go.FigureWidget(_get_parallel_coordinate_plot(study)))
+            elif plot == 'contour':
+                df = study.trials_dataframe()
+                params = df['params'].columns
+                figures.append(go.FigureWidget(_get_contour_plot(study, params)))
+            elif plot == 'slice':
+                df = study.trials_dataframe()
+                params = df['params'].columns
+                figures.append(go.FigureWidget(_get_slice_plot(study, params)))
+
+        return figures

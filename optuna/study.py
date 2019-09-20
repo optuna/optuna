@@ -25,6 +25,7 @@ from optuna import storages
 from optuna import structs
 from optuna import trial as trial_module
 from optuna import type_checking
+from optuna import visualization
 
 if type_checking.TYPE_CHECKING:
     from multiprocessing import Queue  # NOQA
@@ -231,7 +232,10 @@ class Study(BaseStudy):
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
             catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks=None  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            progress_bar=False,
+            # ["history", "intermediate_value", "parallel_coordinate", "contour", "slice"]
+            progress_graphs=None
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -263,6 +267,11 @@ class Study(BaseStudy):
 
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
+
+        if progress_bar:
+            self.progress_bar = visualization.ProgressBar(n_trials)
+        if progress_graphs is not None:
+            self.progress_graphs = visualization.ProgressPlot(self, progress_graphs)
 
         try:
             if n_jobs == 1:
@@ -427,6 +436,10 @@ class Study(BaseStudy):
                     break
 
             self._run_trial_and_callbacks(func, catch, callbacks)
+            if hasattr(self, 'progress_bar'):
+                self.progress_bar.update()
+            if hasattr(self, 'progress_graphs'):
+                self.progress_graphs.update(self)
 
     def _optimize_parallel(
             self,
@@ -460,6 +473,10 @@ class Study(BaseStudy):
 
             while que.get():
                 self._run_trial_and_callbacks(func, catch, callbacks)
+                if hasattr(self, 'progress_bar'):
+                    self.progress_bar.update()
+                if hasattr(self, 'progress_graphs'):
+                    self.progress_graphs.update(self)
             self._storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
