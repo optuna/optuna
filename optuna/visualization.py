@@ -12,7 +12,6 @@ if type_checking.TYPE_CHECKING:
 try:
     import plotly.graph_objs as go
     from plotly.graph_objs._figure import Figure  # NOQA
-    from plotly.offline import init_notebook_mode
     _available = True
 except ImportError as e:
     _import_error = e
@@ -48,7 +47,6 @@ def plot_intermediate_values(study):
     """
 
     _check_plotly_availability()
-    init_notebook_mode(connected=True)
     figure = _get_intermediate_plot(study)
     figure.show()
 
@@ -63,7 +61,8 @@ def _get_intermediate_plot(study):
         showlegend=False
     )
 
-    trials = study.trials
+    target_state = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
+    trials = [trial for trial in study.trials if trial.state in target_state]
 
     if len(trials) == 0:
         logger.warning('Study instance does not contain trials.')
@@ -73,8 +72,6 @@ def _get_intermediate_plot(study):
             'You need to set up the pruning feature to utilize plot_intermediate_values()')
         return go.Figure(data=[], layout=layout)
 
-    target_state = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
-    trials = [trial for trial in trials if trial.state in target_state]
     traces = []
     for trial in trials:
         trace = go.Scatter(
@@ -120,7 +117,6 @@ def plot_optimization_history(study):
     """
 
     _check_plotly_availability()
-    init_notebook_mode(connected=True)
     figure = _get_optimization_history_plot(study)
     figure.show()
 
@@ -130,21 +126,23 @@ def _get_optimization_history_plot(study):
 
     layout = go.Layout(
         title='Optimization History Plot',
-        xaxis={'title': 'Number of Trial'},
+        xaxis={'title': '#Trials'},
         yaxis={'title': 'Objective Value'},
     )
 
     trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
+    if len(trials) == 0:
+        logger.warning('Study instance does not contain trials.')
+        return go.Figure(data=[], layout=layout)
+
     best_values = [float('inf')] if study.direction == StudyDirection.MINIMIZE else [-float('inf')]
     for trial in trials:
-        if isinstance(trial.value, int):
-            trial_value = float(trial.value)
-        elif isinstance(trial.value, float):
+        if isinstance(trial.value, float):
             trial_value = trial.value
         else:
             raise ValueError(
-                'Trial{} has COMPLETE state, but its value is non-numeric.'.format(trial.number))
+                'Trial{} has COMPLETE state, but its value is non float.'.format(trial.number))
         if study.direction == StudyDirection.MINIMIZE:
             best_values.append(min(best_values[-1], trial_value))
         else:
