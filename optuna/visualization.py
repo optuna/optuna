@@ -7,12 +7,13 @@ from optuna import type_checking
 logger = get_logger(__name__)
 
 if type_checking.TYPE_CHECKING:
-    from optuna.structs import FrozenTrial  # NOQA
     from plotly.graph_objs import Contour  # NOQA
     from plotly.graph_objs import Scatter  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
+
+    from optuna.structs import FrozenTrial  # NOQA
 
 try:
     import plotly.graph_objs as go
@@ -176,8 +177,7 @@ def plot_contour(study, params=[]):
 
     Example:
 
-        The following code snippet shows how to plot the parameter relationship as contour plot
-        inside Jupyter Notebook.
+        The following code snippet shows how to plot the parameter relationship as contour plot.
 
         .. code::
 
@@ -200,13 +200,13 @@ def plot_contour(study, params=[]):
     """
 
     _check_plotly_availability()
-    init_notebook_mode(connected=True)
     figure = _get_contour_plot(study, params)
     figure.show()
 
 
 def _get_contour_plot(study, params=[]):
     # type: (Study, List[str]) -> Figure
+
     layout = go.Layout(
         title='Contour Plot',
     )
@@ -275,6 +275,7 @@ def _get_contour_plot(study, params=[]):
 
 def _generate_contour_subplot(trials, x_param, y_param, direction):
     # type: (List[FrozenTrial], str, str, StudyDirection) -> Tuple[Contour, Scatter]
+
     x_indexes = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
     y_indexes = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
     if len(x_indexes) < 2:
