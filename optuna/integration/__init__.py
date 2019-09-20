@@ -16,6 +16,7 @@ _import_structure = {
     'mxnet': ['MXNetPruningCallback'],
     'skopt': ['SkoptSampler'],
     'tensorflow': ['TensorFlowPruningHook'],
+    'tfkeras': ['TFKerasPruningCallback'],
     'xgboost': ['XGBoostPruningCallback'],
 }
 
@@ -33,6 +34,7 @@ if sys.version_info[0] == 2 or TYPE_CHECKING:
     from optuna.integration.sklearn import OptunaSearchCV  # NOQA
     from optuna.integration.skopt import SkoptSampler  # NOQA
     from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA
+    from optuna.integration.tfkeras import TFKerasPruningCallback  # NOQA
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
 else:
     class _IntegrationModule(ModuleType):
