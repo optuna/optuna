@@ -135,7 +135,7 @@ def main():
         pruner=optuna.pruners.MedianPruner(n_startup_trials=2)
     )
 
-    study.optimize(objective, n_trials=25, timeout=600
+    study.optimize(objective, n_trials=25, timeout=600)
 
     show_result(study)
 
