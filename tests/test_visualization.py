@@ -7,7 +7,7 @@ from optuna.visualization import _get_optimization_history_plot
 def test_get_intermediate_plot():
     # type: () -> None
 
-    # Test with no trial
+    # Test with no trial.
     study = create_study()
     figure = _get_intermediate_plot(study)
     assert len(figure.data) == 0
@@ -25,8 +25,8 @@ def test_get_intermediate_plot():
     study.optimize(lambda t: objective(t, True), n_trials=1)
     figure = _get_intermediate_plot(study)
     assert len(figure.data) == 1
-    assert tuple(figure.data[0].x) == (0, 1)
-    assert tuple(figure.data[0].y) == (1.0, 2.0)
+    assert figure.data[0].x == (0, 1)
+    assert figure.data[0].y == (1.0, 2.0)
 
     # Test with trials, one of which contains no intermediate value.
     study = create_study()
@@ -54,10 +54,7 @@ def test_get_optimization_history_plot():
     # Test with no trial.
     study = create_study()
     figure = _get_optimization_history_plot(study)
-    assert len(figure.data[0].x) == 0
-    assert len(figure.data[0].y) == 0
-    assert len(figure.data[1].x) == 0
-    assert len(figure.data[1].y) == 0
+    assert len(figure.data) == 0
 
     def objective(trial):
         # type: (Trial) -> float
@@ -70,15 +67,15 @@ def test_get_optimization_history_plot():
             return 0.0
         return 0.0
 
-    # Test with a trial
+    # Test with a trial.
     study = create_study()
     study.optimize(objective, n_trials=3)
     figure = _get_optimization_history_plot(study)
     assert len(figure.data) == 2
-    assert tuple(figure.data[0].x) == (0, 1, 2)
-    assert tuple(figure.data[0].y) == (1.0, 2.0, 0.0)
-    assert tuple(figure.data[1].x) == (0, 1, 2)
-    assert tuple(figure.data[1].y) == (1.0, 1.0, 0.0)
+    assert figure.data[0].x == (0, 1, 2)
+    assert figure.data[0].y == (1.0, 2.0, 0.0)
+    assert figure.data[1].x == (0, 1, 2)
+    assert figure.data[1].y == (1.0, 1.0, 0.0)
 
     # Ignore failed trials.
     def fail_objective(_):
@@ -89,4 +86,4 @@ def test_get_optimization_history_plot():
     study = create_study()
     study.optimize(fail_objective, n_trials=1)
     figure = _get_optimization_history_plot(study)
-    assert len(figure.data) == 2
+    assert len(figure.data) == 0
