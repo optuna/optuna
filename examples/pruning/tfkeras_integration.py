@@ -71,6 +71,8 @@ def create_model(trial):
 
 
 def objective(trial):
+    # Clear clutter from previous TensorFlow graphs.
+    tf.keras.backend.clear_session()
 
     # Metrics to be monitored by Optuna.
     if tf.__version__ >= '2':
