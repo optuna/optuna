@@ -229,8 +229,9 @@ class Trial(BaseTrial):
         this method returns one of the values in the sequence
         :math:`\\mathsf{low}, \\mathsf{low} + q, \\mathsf{low} + 2 q, \\dots,
         \\mathsf{low} + k q \\le \\mathsf{high}`,
-        where :math:`k` denotes an integer. Note that :math:`high` may be
-        excluded from ranges due to round-off errors if :math:`q` is not an integer.
+        where :math:`k` denotes an integer. Note that :math:`high` may be changed due to round-off
+        errors if :math:`q` is not an integer. Please check warning messages to find the changed
+        values.
 
         Example:
 
