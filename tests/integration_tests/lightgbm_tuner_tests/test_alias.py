@@ -1,7 +1,8 @@
-from optuna.integration.lightgbm_autotune.alias import handling_alias_parameters
+from optuna.integration.lightgbm_tuner.alias import handling_alias_parameters
 
 
 def test_handling_alias_parameters():
+    # type: () -> None
     params = {'reg_alpha': 0.1}
     handling_alias_parameters(params)
     assert 'reg_alpha' not in params
@@ -9,6 +10,7 @@ def test_handling_alias_parameters():
 
 
 def test_handling_alias_parameter_with_user_supplied_param():
+    # type: () -> None
     params = {
         'num_boost_round': 5,
         'early_stopping_rounds': 2,
@@ -22,6 +24,7 @@ def test_handling_alias_parameter_with_user_supplied_param():
 
 
 def test_handling_alias_parameter_with_default_value():
+    # type: () -> None
     params = {
         'num_boost_round': 5,
         'early_stopping_rounds': 2,
@@ -34,6 +37,7 @@ def test_handling_alias_parameter_with_default_value():
 
 
 def test_handling_alias_parameter():
+    # type: () -> None
     params = {
         'num_boost_round': 5,
         'early_stopping_rounds': 2,

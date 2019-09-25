@@ -8,15 +8,22 @@ import numpy as np
 import tqdm
 
 import optuna
-from optuna.integration.lightgbm_autotune.alias import handling_alias_parameters
+from optuna.integration.lightgbm_tuner.alias import handling_alias_parameters
 from optuna import type_checking
 
 
 if type_checking.TYPE_CHECKING:
     from type_checking import Any  # NOQA
+    from type_checking import Callable  # NOQA
     from type_checking import Dict  # NOQA
+    from type_checking import Generator  # NOQA
     from type_checking import List  # NOQA
     from type_checking import Optional  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.samplers.base import InTrialStudy  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
+    from optuna.trial import Trial  # NOQA
 
 
 # Default time budget for tuning `learning_rate`
@@ -28,11 +35,13 @@ EPS = 1e-12
 class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
 
     def __init__(self, param_name, param_values):
+        # type: (str, Any) -> None
         self.param_name = param_name
         self.param_values = tuple(param_values)
         self.value_idx = 0
 
     def sample_relative(self, study, trial, search_space):
+        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
         # todo (g-votte): Take care of distributed optimization.
         assert self.value_idx < len(self.param_values)
         param_value = self.param_values[self.value_idx]
@@ -40,24 +49,29 @@ class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
         return {self.param_name: param_value}
 
     def sample_independent(self, study, trial, param_name, param_distribution):
+        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> None
         raise ValueError(
             'Suggest method is called for an invalid parameter: {}.'.format(param_name))
 
     def infer_relative_search_space(self, study, trial):
+        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
         distribution = optuna.distributions.UniformDistribution(-float('inf'), float('inf'))
         return {self.param_name: distribution}
 
 
 class _TimeKeeper(object):
     def __init__(self):
+        # type: () -> None
         self.time = time.time()
 
     def elapsed_secs(self):
+        # type: () -> float
         return time.time() - self.time
 
 
 @contextlib.contextmanager
 def _timer():
+    # type: () -> Generator[_TimeKeeper, None, None]
     timekeeper = _TimeKeeper()
     yield timekeeper
 
@@ -73,7 +87,7 @@ class BaseTuner(object):
         self.lgbm_kwargs = lgbm_kwargs if lgbm_kwargs is not None else {}
 
     def get_booster_best_score(self, booster):
-        # type: () -> lgb.Booster
+        # type: (lgb.Booster) -> float
         metric = self.lgbm_params.get('metric', 'binary_logloss')
 
         # todo (smly): Make this better.
@@ -109,10 +123,12 @@ class BaseTuner(object):
         return val_score
 
     def higher_is_better(self):
+        # type: () -> bool
         metric_name = self.lgbm_params.get('metric', 'binary_logloss')
         return metric_name.startswith(('auc', 'ndcg@', 'map@', 'accuracy'))
 
     def compare_validation_metrics(self, val_score, best_score):
+        # type: (float, float) -> bool
         if self.higher_is_better():
             return val_score > best_score
         else:
@@ -147,6 +163,7 @@ class OptunaObjective(BaseTuner):
         self._check_target_names_supported()
 
     def _check_target_names_supported(self):
+        # type: () -> None
         supported_param_names = [
             'lambda_l1',
             'lambda_l2',
@@ -160,6 +177,7 @@ class OptunaObjective(BaseTuner):
                 raise NotImplementedError("Parameter `{}` is not supported for tunning")
 
     def __call__(self, trial):
+        # type: (Trial) -> float
         pbar_fmt = "{}, val_score: {:.6f}"
 
         if self.pbar is not None:
@@ -210,7 +228,7 @@ class OptunaObjective(BaseTuner):
         return val_score
 
 
-class LGBMAutoTune(BaseTuner):
+class LightGBMTuner(BaseTuner):
     """Hyperparameter-tuning with Optuna for LightGBM."""
 
     def __init__(
@@ -220,16 +238,16 @@ class LGBMAutoTune(BaseTuner):
             num_boost_round=1000,  # type: int
             valid_sets=None,  # type: Optional[Any]
             valid_names=None,  # type: Optional[Any]
-            fobj=None,
-            feval=None,
+            fobj=None,  # type: Optional[Callable[Any, Any]]
+            feval=None,  # type: Optional[Callable[Any, Any]]
             feature_name='auto',  # type: str
             categorical_feature='auto',  # type: str
             early_stopping_rounds=None,  # type: Optional[int]
-            evals_result=None,
-            verbose_eval=True,
-            learning_rates=None,
-            keep_training_booster=False,
-            callbacks=None,
+            evals_result=None,  # type: Optional[Dict[Any, Any]]
+            verbose_eval=True,  # type: Optional[bool]
+            learning_rates=None,  # type: Optional[List[float]]
+            keep_training_booster=False,  # type: Optional[bool]
+            callbacks=None,  # type: Optional[List[Callable[Any, Any]]]
             time_budget=None,  # type: Optional[int]
             sample_size=None,  # type: Optional[int]
             best_params=None,  # type: Optional[Dict[str, Any]]
@@ -271,11 +289,13 @@ class LGBMAutoTune(BaseTuner):
             raise ValueError("`valid_sets` is required.")
 
     def get_params(self):
+        # type: () -> Dict[str, Any]
         params = copy.deepcopy(self.lgbm_params)
         params.update(self.best_params)
         return params
 
     def _parse_args(self, *args, **kwargs):
+        # type: (List[Any], Dict[str, Any]) -> None
         self.auto_options = {
             option_name: kwargs.get(option_name)
             for option_name in [
@@ -302,11 +322,13 @@ class LGBMAutoTune(BaseTuner):
         self.original_lgbm_params = self.lgbm_params.copy()
 
     def _suggest_early_stopping_rounds(self):
+        # type: () -> int
         num_boost_round = self.lgbm_kwargs.get('num_boost_round', 1000)
         early_stopping_rounds = min(int(num_boost_round * 0.05), 50)
         return early_stopping_rounds
 
     def run(self):
+        # type: () -> lgb.Booster
         """Perform the hyperparameter-tuning with given parameters.
 
         Returns:

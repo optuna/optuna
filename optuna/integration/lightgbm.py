@@ -21,9 +21,13 @@ if _available:
         setattr(sys.modules[__name__], api_name, lgb.__dict__[api_name])
 
     # API from optuna integration
-    import optuna.integration.lightgbm_autotune as autotune
-    for api_name in ['train', 'LGBMModel', 'LGBMClassifier', 'LGBMRegressor', 'LGBMAutoTune']:
-        setattr(sys.modules[__name__], api_name, autotune.__dict__[api_name])
+    import optuna.integration.lightgbm_tuner as tuner
+
+    # Workaround for mypy
+    from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
+
+    for api_name in ['train', 'LGBMModel', 'LGBMClassifier', 'LGBMRegressor', 'LightGBMTuner']:
+        setattr(sys.modules[__name__], api_name, tuner.__dict__[api_name])
 
 
 class LightGBMPruningCallback(object):

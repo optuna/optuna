@@ -1,14 +1,21 @@
 import warnings
 
 import lightgbm as lgb
+import numpy as np
+from scipy.sparse.compressed import _cs_matrix
 
-from optuna.integration.lightgbm_autotune.optimize import LGBMAutoTune
+from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
 from optuna import type_checking
 
 
 if type_checking.TYPE_CHECKING:
     from type_checking import Any  # NOQA
+    from type_checking import Callable  # NOQA
+    from type_checking import Dict  # NOQA
+    from type_checking import List  # NOQA
     from type_checking import Optional  # NOQA
+    from type_checking import Tuple  # NOQA
+    from type_checking import Union  # NOQA
 
 
 class LGBMModel(lgb.LGBMModel):
@@ -24,27 +31,33 @@ class LGBMModel(lgb.LGBMModel):
             lgb.train(param, dtrain, valid_sets[d_val])
     """
 
-    def fit(self, *args, **kwargs):  # NOQA
+    def fit(self, *args, **kwargs):
+        # type: (List[Any], Dict[str, Any]) -> lgb.Booster
         if 'is_tuned' not in self.__dict__:
             warnings.warn('Not tuned hyperparameter yet. Call `tune()` before `fit()`.')
         return super().fit(*args, **kwargs)
 
-    def tune(self, X, y,
-             sample_weight=None,
-             init_score=None,
-             group=None,
-             eval_set=None,
-             eval_names=None,
-             eval_sample_weight=None,
-             eval_class_weight=None,
-             eval_init_score=None,
-             eval_group=None,
-             eval_metric=None,
-             early_stopping_rounds=None,
-             verbose=True,
-             feature_name='auto',
-             categorical_feature='auto',
-             callbacks=None):
+    def tune(
+            self,
+            X,  # type: Union[np.ndarray, _cs_matrix]
+            y,  # type: Union[np.ndarray, _cs_matrix]
+            sample_weight=None,  # type: Optional[np.ndarray]
+            init_score=None,  # type: Optional[np.ndarray]
+            group=None,  # type: Optional[np.ndarray]
+            eval_set=None,  # type: Optional[List[Tuple[Any, Any]]]
+            eval_names=None,  # type: Optional[List[str]]
+            eval_sample_weight=None,  # type: Any
+            eval_class_weight=None,  # type: Any
+            eval_init_score=None,  # type: Any
+            eval_group=None,  # type: Any
+            eval_metric=None,  # type: Any
+            early_stopping_rounds=None,  # type: Any
+            verbose=True,  # type: Any
+            feature_name='auto',  # type: Any
+            categorical_feature='auto',  # type: Any
+            callbacks=None,  # type: Optional[Callable[Any, Any]]
+    ):
+        # type: (...) -> Any
         self.is_tuned = True
 
         trn_data = lgb.Dataset(X, label=y)
@@ -60,7 +73,7 @@ class LGBMModel(lgb.LGBMModel):
         else:
             raise ValueError("given `eval_set` value is unknown type")
 
-        auto_booster = LGBMAutoTune(
+        auto_booster = LightGBMTuner(
             self.get_params(),
             trn_data,
             valid_sets=valid_sets,
@@ -76,15 +89,31 @@ class LGBMModel(lgb.LGBMModel):
 
 class LGBMClassifier(lgb.LGBMClassifier):
     def fit(self, *args, **kwargs):
+        # type: (List[Any], Dict[str, Any]) -> lgb.Booster
         if 'is_tuned' not in self.__dict__:
             warnings.warn('Not tuned hyperparameter yet. Call `tune()` before `fit()`.')
         return super().fit(*args, **kwargs)
 
-    def tune(self, X, y, sample_weight=None, init_score=None,
-             eval_set=None, eval_names=None, eval_sample_weight=None,
-             eval_class_weight=None, eval_init_score=None, eval_group=None,
-             eval_metric=None, early_stopping_rounds=None, verbose=True,
-             feature_name='auto', categorical_feature='auto', callbacks=None):
+    def tune(
+            self,
+            X,  # type: Union[np.ndarray, _cs_matrix]
+            y,  # type: Union[np.ndarray, _cs_matrix]
+            sample_weight=None,  # type: Optional[np.ndarray]
+            init_score=None,  # type: Optional[np.ndarray]
+            eval_set=None,  # type: Optional[List[Tuple[Any, Any]]]
+            eval_names=None,  # type: Optional[List[str]]
+            eval_sample_weight=None,  # type: Any
+            eval_class_weight=None,  # type: Any
+            eval_init_score=None,  # type: Any
+            eval_group=None,  # type: Any
+            eval_metric=None,  # type: Any
+            early_stopping_rounds=None,  # type: Any
+            verbose=True,  # type: Any
+            feature_name='auto',  # type: Any
+            categorical_feature='auto',  # type: Any
+            callbacks=None,  # type: Any
+    ):
+        # type: (...) -> Any
         self.is_tuned = True
 
         trn_data = lgb.Dataset(X, label=y)
@@ -100,7 +129,7 @@ class LGBMClassifier(lgb.LGBMClassifier):
         else:
             raise ValueError("given `eval_set` value is unknown type")
 
-        auto_booster = LGBMAutoTune(
+        auto_booster = LightGBMTuner(
             self.get_params(),
             trn_data,
             valid_sets=valid_sets,
@@ -113,23 +142,29 @@ class LGBMClassifier(lgb.LGBMClassifier):
 
 class LGBMRegressor(lgb.LGBMRegressor):
     def fit(self, *args, **kwargs):
+        # type: (List[Any], Dict[str, Any]) -> lgb.Booster
         if 'is_tuned' not in self.__dict__:
             warnings.warn('Not tuned hyperparameter yet. Call `tune()` before `fit()`.')
         return super().fit(*args, **kwargs)
 
-    def tune(self, X, y,
-             sample_weight=None,
-             init_score=None,
-             eval_set=None,
-             eval_names=None,
-             eval_sample_weight=None,
-             eval_init_score=None,
-             eval_metric=None,
-             early_stopping_rounds=None,
-             verbose=True,
-             feature_name='auto',
-             categorical_feature='auto',
-             callbacks=None):
+    def tune(
+            self,
+            X,  # type: Union[np.ndarray, _cs_matrix]
+            y,  # type: Union[np.ndarray, _cs_matrix]
+            sample_weight=None,  # type: Optional[np.ndarray]
+            init_score=None,  # type: Optional[np.ndarray]
+            eval_set=None,  # type: Optional[List[Tuple[Any, Any]]]
+            eval_names=None,  # type: Optional[List[str]]
+            eval_sample_weight=None,  # type: Any
+            eval_init_score=None,  # type: Any
+            eval_metric=None,  # type: Any
+            early_stopping_rounds=None,  # type: Any
+            verbose=True,  # type: Any
+            feature_name='auto',  # type: Any
+            categorical_feature='auto',  # type: Any
+            callbacks=None,  # type: Any
+    ):
+        # type: (...) -> Any
         self.is_tuned = True
 
         trn_data = lgb.Dataset(X, label=y)
@@ -145,7 +180,7 @@ class LGBMRegressor(lgb.LGBMRegressor):
         else:
             raise ValueError("given `eval_set` value is unknown type")
 
-        auto_booster = LGBMAutoTune(
+        auto_booster = LightGBMTuner(
             self.get_params(),
             trn_data,
             valid_sets=valid_sets,
