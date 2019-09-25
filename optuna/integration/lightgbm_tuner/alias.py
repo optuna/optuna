@@ -1,3 +1,11 @@
+from optuna import type_checking
+
+if type_checking.TYPE_CHECKING:
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
+
+
 ALIAS_GROUP_LIST = [
     {
         'param_name': 'bagging_fraction',
@@ -45,10 +53,11 @@ ALIAS_GROUP_LIST = [
         'alias_names': ['min_split_gain'],
         'default_value': None,
     },
-]
+]  # type: List[Dict[str, Any]]
 
 
 def handling_alias_parameters(lgbm_params):
+    # type: (Dict[str, Any]) -> None
     """Handling alias parameters"""
     for alias_group in ALIAS_GROUP_LIST:
         param_name = alias_group['param_name']
