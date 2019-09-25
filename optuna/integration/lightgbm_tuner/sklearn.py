@@ -1,8 +1,6 @@
 import warnings
 
 import lightgbm as lgb
-import numpy as np
-from scipy.sparse.compressed import _cs_matrix
 
 from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
 from optuna import type_checking
@@ -16,6 +14,9 @@ if type_checking.TYPE_CHECKING:
     from type_checking import Optional  # NOQA
     from type_checking import Tuple  # NOQA
     from type_checking import Union  # NOQA
+
+    import numpy as np  # NOQA
+    from scipy.sparse.compressed import _cs_matrix  # NOQA
 
 
 class LGBMModel(lgb.LGBMModel):
