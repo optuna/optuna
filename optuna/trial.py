@@ -3,12 +3,12 @@ import decimal
 import six
 import warnings
 
-import optuna
 from optuna import distributions
 from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    from datetime import datetime  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
@@ -135,11 +135,11 @@ class Trial(BaseTrial):
     def _init_relative_params(self):
         # type: () -> None
 
-        study = optuna.study.InTrialStudy(self.study)
         trial = self.storage.get_trial(self._trial_id)
 
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
-        self.relative_params = self.study.sampler.sample_relative(study, trial,
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(
+            self.study, trial)
+        self.relative_params = self.study.sampler.sample_relative(self.study, trial,
                                                                   self.relative_search_space)
 
     def suggest_uniform(self, name, low, high):
@@ -388,14 +388,14 @@ class Trial(BaseTrial):
             A boolean value. If :obj:`True`, the trial should be pruned. Otherwise, the trial will
             be continued.
         """
-        if step is None:
-            step = max(self.storage.get_trial(self._trial_id).intermediate_values.keys())
-        else:
+        if step is not None:
             warnings.warn(
                 'The use of `step` argument is deprecated. '
-                'You can omit to pass this parameter.', DeprecationWarning)
+                'The last reported step is used instead of '
+                'the step given by the argument.', DeprecationWarning)
 
-        return self.study.pruner.prune(self.storage, self.study_id, self._trial_id, step)
+        trial = self.study._storage.get_trial(self._trial_id)
+        return self.study.pruner.prune(self.study, trial)
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -449,15 +449,14 @@ class Trial(BaseTrial):
         if self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
-            study = optuna.study.InTrialStudy(self.study)
             trial = self.storage.get_trial(self._trial_id)
             param_value = self.study.sampler.sample_independent(
-                study, trial, name, distribution)
+                self.study, trial, name, distribution)
 
         return self._set_new_param_or_get_existing(name, param_value, distribution)
 
     def _set_new_param_or_get_existing(self, name, param_value, distribution):
-        # type: (str, Any, distributions.BaseDistribution) -> Any
+        # type: (str, Any, BaseDistribution) -> Any
 
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
         set_success = self.storage.set_trial_param(self._trial_id, name,
@@ -560,6 +559,16 @@ class Trial(BaseTrial):
         """
 
         return self.storage.get_trial_system_attrs(self._trial_id)
+
+    @property
+    def datetime_start(self):
+        # type: () -> Optional[datetime]
+        """Return start datetime.
+
+        Returns:
+            Datetime where the :class:`~optuna.trial.Trial` started.
+        """
+        return self.storage.get_trial(self._trial_id).datetime_start
 
 
 class FixedTrial(BaseTrial):

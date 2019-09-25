@@ -55,6 +55,27 @@ class TestStudySystemAttributeModel(object):
         # Check the case of unknown study_id.
         assert 0 == len(StudySystemAttributeModel.where_study_id(-1, session))
 
+    @staticmethod
+    def test_cascade_delete_on_study(session):
+        # type: (Session) -> None
+
+        study_id = 1
+        study = StudyModel(study_id=study_id, study_name='test-study',
+                           direction=StudyDirection.MINIMIZE)
+        study.system_attributes.append(StudySystemAttributeModel(
+            study_id=study_id, key='sample-key1', value_json='1'))
+        study.system_attributes.append(StudySystemAttributeModel(
+            study_id=study_id, key='sample-key2', value_json='2'))
+        session.add(study)
+        session.commit()
+
+        assert 2 == len(StudySystemAttributeModel.where_study_id(study_id, session))
+
+        session.delete(study)
+        session.commit()
+
+        assert 0 == len(StudySystemAttributeModel.where_study_id(study_id, session))
+
 
 class TestTrialModel(object):
     @staticmethod
@@ -109,6 +130,25 @@ class TestTrialModel(object):
         session.add(trial_2_1)
         session.commit()
         assert 0 == trial_2_1.count_past_trials(session)
+
+    @staticmethod
+    def test_cascade_delete_on_study(session):
+        # type: (Session) -> None
+
+        study_id = 1
+        study = StudyModel(study_id=study_id, study_name='test-study',
+                           direction=StudyDirection.MINIMIZE)
+        study.trials.append(TrialModel(study_id=study.study_id, state=TrialState.COMPLETE))
+        study.trials.append(TrialModel(study_id=study.study_id, state=TrialState.RUNNING))
+        session.add(study)
+        session.commit()
+
+        assert 2 == len(TrialModel.where_study_id(study_id, session))
+
+        session.delete(study)
+        session.commit()
+
+        assert 0 == len(TrialModel.where_study_id(study_id, session))
 
 
 class TestTrialUserAttributeModel(object):
@@ -178,6 +218,28 @@ class TestTrialUserAttributeModel(object):
         assert 'sample-key' == user_attributes[0].key
         assert '1' == user_attributes[0].value_json
 
+    @staticmethod
+    def test_cascade_delete_on_trial(session):
+        # type: (Session) -> None
+
+        trial_id = 1
+        study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
+        trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
+        trial.user_attributes.append(TrialUserAttributeModel(
+            trial_id=trial_id, key='sample-key1', value_json='1'))
+        trial.user_attributes.append(TrialUserAttributeModel(
+            trial_id=trial_id, key='sample-key2', value_json='2'))
+        study.trials.append(trial)
+        session.add(study)
+        session.commit()
+
+        assert 2 == len(TrialUserAttributeModel.where_trial_id(trial_id, session))
+
+        session.delete(trial)
+        session.commit()
+
+        assert 0 == len(TrialUserAttributeModel.where_trial_id(trial_id, session))
+
 
 class TestTrialSystemAttributeModel(object):
     @staticmethod
@@ -245,6 +307,28 @@ class TestTrialSystemAttributeModel(object):
         assert 1 == len(system_attributes)
         assert 'sample-key' == system_attributes[0].key
         assert '1' == system_attributes[0].value_json
+
+    @staticmethod
+    def test_cascade_delete_on_trial(session):
+        # type: (Session) -> None
+
+        trial_id = 1
+        study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
+        trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
+        trial.system_attributes.append(TrialSystemAttributeModel(
+            trial_id=trial_id, key='sample-key1', value_json='1'))
+        trial.system_attributes.append(TrialSystemAttributeModel(
+            trial_id=trial_id, key='sample-key2', value_json='2'))
+        study.trials.append(trial)
+        session.add(study)
+        session.commit()
+
+        assert 2 == len(TrialSystemAttributeModel.where_trial_id(trial_id, session))
+
+        session.delete(trial)
+        session.commit()
+
+        assert 0 == len(TrialSystemAttributeModel.where_trial_id(trial_id, session))
 
 
 class TestVersionInfoModel(object):

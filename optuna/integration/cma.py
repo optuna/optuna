@@ -32,8 +32,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Set  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.samplers.base import InTrialStudy  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import Study  # NOQA
 
 # Minimum value of sigma0 to avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
 MIN_SIGMA0 = 1e-10
@@ -102,7 +102,7 @@ class CmaEsSampler(BaseSampler):
             sampling. The parameters not contained in the relative search space are sampled
             by this sampler.
             The search space for :class:`~optuna.integration.CmaEsSampler` is determined by
-            :func:`~optuna.samplers.product_search_space()`.
+            :func:`~optuna.samplers.intersection_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
             as the default.
@@ -149,10 +149,10 @@ class CmaEsSampler(BaseSampler):
         self._logger = optuna.logging.get_logger(__name__)
 
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         search_space = {}
-        for name, distribution in optuna.samplers.product_search_space(study).items():
+        for name, distribution in optuna.samplers.intersection_search_space(study).items():
             if distribution.single():
                 # `cma` cannot handle distributions that contain just a single value, so we skip
                 # them. Note that the parameter values for such distributions are sampled in
@@ -164,7 +164,7 @@ class CmaEsSampler(BaseSampler):
         return search_space
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+        # type: (Study, FrozenTrial, str, BaseDistribution) -> float
 
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
@@ -175,7 +175,7 @@ class CmaEsSampler(BaseSampler):
                                                             param_distribution)
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
 
         if len(search_space) == 0:
             return {}
@@ -372,7 +372,7 @@ class _Optimizer(object):
     def _is_compatible(self, trial):
         # type: (FrozenTrial) -> bool
 
-        # Thanks to `product_search_space()` function, in sequential optimization,
+        # Thanks to `intersection_search_space()` function, in sequential optimization,
         # the parameters of complete trials are always compatible with the search space.
         #
         # However, in distributed optimization, incompatible trials may complete on a worker
