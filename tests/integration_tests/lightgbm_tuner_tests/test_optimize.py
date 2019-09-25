@@ -26,7 +26,7 @@ if type_checking.TYPE_CHECKING:
     from type_checking import List  # NOQA
     from type_checking import Tuple  # NOQA
 
-if sys.version_info.major == 3:
+if sys.version_info >= (3, 5):
     from contextlib import ExitStack
 
 
@@ -41,7 +41,7 @@ def turnoff_tuner():
         (fqn_prefix + '.get_params', {}),
     ]  # type: List[Tuple[str, Any]]
 
-    if sys.version_info.major == 3:
+    if sys.version_info >= (3, 5):
         with ExitStack() as stack:
             for fqn, return_value in mock_pairs:
                 stack.enter_context(mock.patch(fqn, return_value=return_value))
@@ -120,7 +120,7 @@ class TestLGBMModel(object):
         # type: () -> None
         X_trn, y_trn, X_val, y_val = self._generate_dataset()
 
-        if sys.version_info.major == 3:
+        if sys.version_info >= (3, 5):
             with turnoff_tuner():
                 clf = lgb.LGBMModel(objective='binary', n_estimators=5)
                 clf.fit(X_trn, y_trn, eval_set=(X_val, y_val), early_stopping_rounds=2)
@@ -132,7 +132,7 @@ class TestLGBMModel(object):
         # type: () -> None
         X_trn, y_trn, X_val, y_val = self._generate_dataset()
 
-        if sys.version_info.major == 3:
+        if sys.version_info >= (3, 5):
             with turnoff_tuner():
                 # Case1
                 clf = lgb.LGBMModel(objective='binary', n_estimators=5)
@@ -156,7 +156,7 @@ class TestLGBMModel(object):
         # type: () -> None
         X_trn, y_trn, X_val, y_val = self._generate_dataset()
 
-        if sys.version_info.major == 3:
+        if sys.version_info >= (3, 5):
             with turnoff_tuner():
                 clf = lgb.LGBMModel(objective='binary', n_estimators=5)
                 clf.tune(X_trn, y_trn, eval_set=[(X_val, y_val)], early_stopping_rounds=2)
@@ -166,7 +166,7 @@ class TestLGBMModel(object):
         # type: () -> None
         X_trn, y_trn, X_val, y_val = self._generate_dataset()
 
-        if sys.version_info.major == 3:
+        if sys.version_info >= (3, 5):
             with turnoff_tuner():
                 clf = lgb.LGBMModel(objective='binary', n_estimators=5)
 
