@@ -19,7 +19,7 @@ from optuna.trial import Trial
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from type_checking import TracebackType  # NOQA
+    from types import TracebackType  # NOQA
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
