@@ -82,7 +82,6 @@ class TestOptunaObjective(object):
 
         assert execinfo.type is NotImplementedError
 
-    @turnoff_train()
     def test_call(self):
         # type: () -> None
         target_param_names = ['lambda_l1']
@@ -93,17 +92,18 @@ class TestOptunaObjective(object):
         lgbm_kwargs = {'valid_sets': val_set}
         best_score = -np.inf
 
-        objective = OptunaObjective(
-            target_param_names,
-            lgbm_params,
-            train_set,
-            lgbm_kwargs,
-            best_score,
-        )
-        study = optuna.create_study(direction='minimize')
-        study.optimize(objective, n_trials=10)
+        with turnoff_train():
+            objective = OptunaObjective(
+                target_param_names,
+                lgbm_params,
+                train_set,
+                lgbm_kwargs,
+                best_score,
+            )
+            study = optuna.create_study(direction='minimize')
+            study.optimize(objective, n_trials=10)
 
-        assert study.best_value == 0.5
+            assert study.best_value == 0.5
 
 
 class TestLGBMModel(object):
