@@ -594,3 +594,59 @@ def test_no_force_gc(collect_mock):
     study.optimize(func, n_trials=10)
     check_study(study)
     assert collect_mock.call_count == 0
+
+
+@pytest.mark.parametrize('n_jobs', [1, 4])
+def test_callbacks(n_jobs):
+    # type: (int) -> None
+
+    study = optuna.create_study()
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        return trial.suggest_int('x', 1, 1)
+
+    # Empty callback list.
+    study.optimize(objective, callbacks=[], n_trials=10, n_jobs=n_jobs)
+
+    # A callback.
+    values = []
+    callbacks = [lambda study, trial: values.append(trial.value)]
+    study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
+    assert values == [1] * 10
+
+    # Two callbacks.
+    values = []
+    params = []
+    callbacks = [
+        lambda study, trial: values.append(trial.value),
+        lambda study, trial: params.append(trial.params)
+    ]
+    study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
+    assert values == [1] * 10
+    assert params == [{'x': 1}] * 10
+
+    # If a trial is failed with an exception and the exception is caught by the study,
+    # callbacks are invoked.
+    states = []
+    callbacks = [lambda study, trial: states.append(trial.state)]
+    study.optimize(lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
+    assert states == [optuna.structs.TrialState.FAIL] * 10
+
+    # NOTE: Because `Study.optimize` blocks forever if `n_jobs` is more than `1` and
+    #       an uncaught exception is raised during an optimization,
+    #       we test the following scenario only when `n_jobs==1`.
+    #       For the details of this problem, please see https://github.com/pfnet/optuna/issues/538.
+    #
+    # TODO(ohta): Fix `Study.optimize`
+
+    if n_jobs == 1:
+        # If a trial is failed with an exception and the exception isn't caught by the study,
+        # callbacks aren't invoked.
+        states = []
+        callbacks = [lambda study, trial: states.append(trial.state)]
+        with pytest.raises(ZeroDivisionError):
+            study.optimize(lambda t: 1/0, callbacks=callbacks,
+                           n_trials=10, n_jobs=n_jobs, catch=())
+        assert states == []
