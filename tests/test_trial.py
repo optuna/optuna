@@ -317,6 +317,14 @@ def test_fixed_trial_should_prune():
     assert FixedTrial({}).should_prune(1) is False
 
 
+def test_fixed_trial_datetime_start():
+    # type: () -> None
+
+    params = {'x': 1}
+    trial = FixedTrial(params)
+    assert trial.datetime_start is not None
+
+
 @parametrize_storage
 def test_relative_parameters(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
