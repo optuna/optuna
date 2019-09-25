@@ -1,4 +1,5 @@
 import abc
+from datetime import datetime
 import decimal
 import six
 import warnings
@@ -8,7 +9,6 @@ from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from datetime import datetime  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
@@ -617,6 +617,7 @@ class FixedTrial(BaseTrial):
         self._distributions = {}  # type: Dict[str, BaseDistribution]
         self._user_attrs = {}  # type: Dict[str, Any]
         self._system_attrs = {}  # type: Dict[str, Any]
+        self._datetime_start = datetime.now()
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -710,6 +711,12 @@ class FixedTrial(BaseTrial):
         # type: () -> Dict[str, Any]
 
         return self._system_attrs
+
+    @property
+    def datetime_start(self):
+        # type: () -> Optional[datetime]
+
+        return self._datetime_start
 
 
 def _adjust_discrete_uniform_high(name, low, high, q):
