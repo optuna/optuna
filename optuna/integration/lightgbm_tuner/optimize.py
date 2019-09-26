@@ -21,8 +21,8 @@ if type_checking.TYPE_CHECKING:
     from type_checking import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.samplers.base import InTrialStudy  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
 
 
@@ -41,7 +41,7 @@ class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
         self.value_idx = 0
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
         # todo (g-votte): Take care of distributed optimization.
         assert self.value_idx < len(self.param_values)
         param_value = self.param_values[self.value_idx]
@@ -49,12 +49,12 @@ class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
         return {self.param_name: param_value}
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> None
+        # type: (Study, FrozenTrial, str, BaseDistribution) -> None
         raise ValueError(
             'Suggest method is called for an invalid parameter: {}.'.format(param_name))
 
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
         distribution = optuna.distributions.UniformDistribution(-float('inf'), float('inf'))
         return {self.param_name: distribution}
 
