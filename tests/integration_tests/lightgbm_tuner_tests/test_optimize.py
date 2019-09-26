@@ -413,7 +413,7 @@ class TestLightGBMTuner(object):
             assert runner.lgbm_params['num_leaves'] != unexpected_value
             assert len(runner.tuning_history) > 0
 
-    def test_tune_bagging_fraction(self):
+    def test_tune_bagging(self):
         # type: () -> None
         unexpected_value = 1  # out of scope
 
@@ -425,7 +425,7 @@ class TestLightGBMTuner(object):
                 best_params={},
             ))
             assert len(runner.tuning_history) == 0
-            runner.tune_bagging_fraction()
+            runner.tune_bagging()
 
             assert runner.lgbm_params['bagging_fraction'] != unexpected_value
             assert len(runner.tuning_history) > 0

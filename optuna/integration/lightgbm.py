@@ -21,7 +21,7 @@ if _available:
         setattr(sys.modules[__name__], api_name, lgb.__dict__[api_name])
 
     # API from optuna integration
-    import optuna.integration.lightgbm_tuner as tuner
+    from optuna.integration import lightgbm_tuner as tuner
 
     # Workaround for mypy
     from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA

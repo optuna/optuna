@@ -170,6 +170,7 @@ class OptunaObjective(BaseTuner):
             'num_leaves',
             'feature_fraction',
             'bagging_fraction',
+            'bagging_freq',
             'min_child_samples',
         ]
         for target_param_name in self.target_param_names:
@@ -197,6 +198,8 @@ class OptunaObjective(BaseTuner):
         if 'bagging_fraction' in self.target_param_names:
             param_value = min(trial.suggest_uniform('bagging_fraction', 0.4, 1.0 + EPS), 1.0)
             self.lgbm_params['bagging_fraction'] = param_value
+        if 'bagging_freq' in self.target_param_names:
+            self.lgbm_params['bagging_freq'] = trial.suggest_int('bagging_freq', 1, 7)
         if 'min_child_samples' in self.target_param_names:
             param_value = int(trial.suggest_uniform('min_child_samples', 5, 100 + EPS))
             self.lgbm_params['min_child_samples'] = param_value
@@ -253,6 +256,7 @@ class LightGBMTuner(BaseTuner):
             best_params=None,  # type: Optional[Dict[str, Any]]
             tuning_history=None,  # type: Optional[List[Dict[str, Any]]]
             enable_adjusting_lr=False,  # type: bool
+            verbosity=0,  # type: Optional[int]  # todo(smly): later.
     ):
         params = copy.deepcopy(params)
         args = [params, train_set]
@@ -270,6 +274,7 @@ class LightGBMTuner(BaseTuner):
                       keep_training_booster=keep_training_booster,
                       callbacks=callbacks,
                       time_budget=time_budget,
+                      verbosity=verbosity,
                       sample_size=sample_size)  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
         self.best_booster = None
@@ -304,6 +309,7 @@ class LightGBMTuner(BaseTuner):
                 'best_params',
                 'tuning_history'
                 'enable_adjusting_lr'
+                'verbosity',
             ]
         }
 
@@ -363,7 +369,7 @@ class LightGBMTuner(BaseTuner):
                 self.best_params.update(self.get_params())
                 return self.best_booster
 
-            self.tune_bagging_fraction()
+            self.tune_bagging()
             if time_budget is not None and time_budget > t.elapsed_secs():
                 self.best_params.update(self.get_params())
                 return self.best_booster
@@ -413,12 +419,11 @@ class LightGBMTuner(BaseTuner):
         # type: (int) -> None
         self.tune_params(['num_leaves'], n_trials, optuna.samplers.TPESampler())
 
-    def tune_bagging_fraction(self, n_trials=7):
+    def tune_bagging(self, n_trials=10):
         # type: (int) -> None
-        param_name = 'bagging_fraction'
-        param_values = np.linspace(0.4, 1.0, n_trials)
-        sampler = _GridSamplerUniform1D(param_name, param_values)
-        self.tune_params([param_name], len(param_values), sampler)
+        self.tune_params(['bagging_fraction', 'bagging_freq'],
+                         n_trials,
+                         optuna.samplers.TPESampler())
 
     def tune_feature_fraction_stage2(self, n_trials=6):
         # type: (int) -> None
