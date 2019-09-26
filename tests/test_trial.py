@@ -85,6 +85,8 @@ def test_suggest_low_equals_high(storage_init_func):
         assert mock_object.call_count == 0
 
 
+# TODO(Yanase): Remove version check after Python 2.7 is retired.
+@pytest.mark.skipif('sys.version_info < (3, 5)')
 @parametrize_storage
 @pytest.mark.parametrize(
     'range_config',
@@ -126,6 +128,12 @@ def test_suggest_low_equals_high(storage_init_func):
             'high': 10.,
             'q': math.pi,
             'mod_high': 3 * math.pi
+        },
+        {
+            'low': 0.,
+            'high': 3.45,
+            'q': 0.1,
+            'mod_high': 3.4
         }
     ])
 def test_suggest_discrete_uniform_range(storage_init_func, range_config):
