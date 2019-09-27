@@ -539,6 +539,21 @@ def test_load_study(storage_mode, cache_mode):
         assert created_study.study_id == loaded_study.study_id
 
 
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_delete_study(storage_mode, cache_mode):
+    # type: (str, bool) -> None
+
+    with StorageSupplier(storage_mode, cache_mode) as storage:
+        # Test deleting a non-existing study.
+        with pytest.raises(ValueError):
+            optuna.delete_study("invalid-study-name", storage)
+
+        # Test deleting an existing study.
+        study = optuna.create_study(storage=storage, load_if_exists=False)
+        optuna.delete_study(study.study_name, storage)
+
+
 def test_nested_optimization():
     # type: () -> None
 

@@ -677,6 +677,27 @@ def load_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
+def delete_study(
+        study_name,  # type: str
+        storage=None,  # type: Union[None, str, storages.BaseStorage]
+):
+    # type: (...) -> None
+    """Delete a :class:`~optuna.study.Study` object.
+
+    Args:
+        study_name:
+            Study's name.
+        storage:
+            Database URL. If this argument is set to None, in-memory storage is used, and the
+            :class:`~optuna.study.Study` will not be persistent.
+
+    """
+
+    storage = storages.get_storage(storage)
+    study_id = storage.get_study_id_from_name(study_name)
+    storage.delete_study(study_id)
+
+
 def get_all_study_summaries(storage):
     # type: (Union[str, storages.BaseStorage]) -> List[structs.StudySummary]
     """Get all history of studies stored in a specified storage.
