@@ -53,7 +53,7 @@ class ParzenEstimator(object):
             consider_endpoints,  # type: bool
             weights_func  # type: Callable[[int], ndarray]
     ):
-        # type: (...) -> Tuple[List[float], List[float], List[float]]
+        # type: (...) -> Tuple[ndarray, ndarray, ndarray]
         mus = numpy.asarray(mus)
         sigma = numpy.asarray([], dtype=float)
         prior_pos = 0
@@ -90,7 +90,7 @@ class ParzenEstimator(object):
             low_sorted_mus_high[-1] = high
             low_sorted_mus_high[0] = low
             sigma = numpy.maximum(low_sorted_mus_high[1:-1] - low_sorted_mus_high[0:-2],
-                                        low_sorted_mus_high[2:] - low_sorted_mus_high[1:-1])
+                                  low_sorted_mus_high[2:] - low_sorted_mus_high[1:-1])
             if not consider_endpoints and low_sorted_mus_high.size > 2:
                 sigma[0] = low_sorted_mus_high[2] - low_sorted_mus_high[1]
                 sigma[-1] = low_sorted_mus_high[-2] - low_sorted_mus_high[-3]
