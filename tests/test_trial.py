@@ -14,6 +14,7 @@ from optuna.trial import Trial
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    from datetime import datetime  # NOQA
     import typing  # NOQA
 
 parametrize_storage = pytest.mark.parametrize(
@@ -84,6 +85,8 @@ def test_suggest_low_equals_high(storage_init_func):
         assert mock_object.call_count == 0
 
 
+# TODO(Yanase): Remove version check after Python 2.7 is retired.
+@pytest.mark.skipif('sys.version_info < (3, 5)')
 @parametrize_storage
 @pytest.mark.parametrize(
     'range_config',
@@ -111,20 +114,26 @@ def test_suggest_low_equals_high(storage_init_func):
             'low': 0.,
             'high': 10.,
             'q': 0.1,
-            'mod_high': 9.9
+            'mod_high': 10.0
         },
         # high is excluded doe to the round-off error of 10.1 // 0.1
         {
             'low': 0.,
             'high': 10.1,
             'q': 0.1,
-            'mod_high': 10.
+            'mod_high': 10.1
         },
         {
             'low': 0.,
             'high': 10.,
             'q': math.pi,
             'mod_high': 3 * math.pi
+        },
+        {
+            'low': 0.,
+            'high': 3.45,
+            'q': 0.1,
+            'mod_high': 3.4
         }
     ])
 def test_suggest_discrete_uniform_range(storage_init_func, range_config):
@@ -316,6 +325,14 @@ def test_fixed_trial_should_prune():
     assert FixedTrial({}).should_prune(1) is False
 
 
+def test_fixed_trial_datetime_start():
+    # type: () -> None
+
+    params = {'x': 1}
+    trial = FixedTrial(params)
+    assert trial.datetime_start is not None
+
+
 @parametrize_storage
 def test_relative_parameters(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
@@ -364,3 +381,21 @@ def test_relative_parameters(storage_init_func):
     distribution4 = distributions.UniformDistribution(low=0, high=10)
     with pytest.raises(ValueError):
         trial4._suggest('z', distribution4)
+
+
+@parametrize_storage
+def test_datetime_start(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    trial_datetime_start = [None]  # type: typing.List[typing.Optional[datetime]]
+
+    def objective(trial):
+        # type: (Trial) -> float
+
+        trial_datetime_start[0] = trial.datetime_start
+        return 1.0
+
+    study = create_study(storage_init_func())
+    study.optimize(objective, n_trials=1)
+
+    assert study.trials[0].datetime_start == trial_datetime_start[0]
