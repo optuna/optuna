@@ -5,6 +5,7 @@ if type_checking.TYPE_CHECKING:
     from optuna import structs  # NOQA
     from optuna.study import Study  # NOQA
 
+
 class NopPruner(BasePruner):
     """Pruner which never prunes trials.
 

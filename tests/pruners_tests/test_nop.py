@@ -1,11 +1,4 @@
-import pytest
-
 import optuna
-from optuna.structs import TrialState
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import Tuple  # NOQA
 
 
 def test_nop_pruner():
