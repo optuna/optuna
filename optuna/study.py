@@ -688,8 +688,10 @@ def delete_study(
         study_name:
             Study's name.
         storage:
-            Database URL. If this argument is set to None, in-memory storage is used, and the
-            :class:`~optuna.study.Study` will not be persistent.
+            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
+            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
+            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
+            further details.
 
     """
 
