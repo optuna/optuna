@@ -82,6 +82,27 @@ class CreateStudy(BaseCommand):
         print(study_name)
 
 
+class DeleteStudy(BaseCommand):
+    def get_parser(self, prog_name):
+        # type: (str) -> ArgumentParser
+
+        parser = super(DeleteStudy, self).get_parser(prog_name)
+        parser.add_argument(
+            '--study-name',
+            default=None,
+            help='A human-readable name of a study to distinguish it from others.')
+        return parser
+
+    def take_action(self, parsed_args):
+        # type: (Namespace) -> None
+
+        config = optuna.config.load_optuna_config(self.app_args.config)
+        storage_url = get_storage_url(self.app_args.storage, config)
+        storage = optuna.storages.RDBStorage(storage_url)
+        study_id = storage.get_study_id_from_name(parsed_args.study_name)
+        storage.delete_study(study_id)
+
+
 class StudySetUserAttribute(BaseCommand):
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
@@ -258,6 +279,7 @@ class StorageUpgrade(BaseCommand):
 
 _COMMANDS = {
     'create-study': CreateStudy,
+    'delete-study': DeleteStudy,
     'study set-user-attr': StudySetUserAttribute,
     'studies': Studies,
     'dashboard': Dashboard,

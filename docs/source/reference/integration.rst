@@ -29,5 +29,11 @@ Integration
 .. autoclass:: TensorFlowPruningHook
     :members:
 
+.. autoclass:: TFKerasPruningCallback
+    :members:
+
 .. autoclass:: XGBoostPruningCallback
+    :members:
+
+.. autoclass:: OptunaSearchCV
     :members:

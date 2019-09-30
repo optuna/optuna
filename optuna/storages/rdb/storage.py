@@ -98,6 +98,16 @@ class RDBStorage(BaseStorage):
 
         return study.study_id
 
+    def delete_study(self, study_id):
+        # type: (int) -> None
+
+        session = self.scoped_session()
+
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        session.delete(study)
+
+        self._commit_with_integrity_check(session)
+
     @staticmethod
     def _create_unique_study_name(session):
         # type: (orm.Session) -> str
@@ -327,7 +337,7 @@ class RDBStorage(BaseStorage):
         return study_sumarries
 
     def create_new_trial(self, study_id, template_trial=None):
-        # type: (int, Optional[structs.FronzenTrial]) -> int
+        # type: (int, Optional[structs.FrozenTrial]) -> int
 
         session = self.scoped_session()
 

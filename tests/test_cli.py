@@ -16,7 +16,7 @@ from optuna.trial import Trial  # NOQA
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from type_checking import TracebackType  # NOQA
+    from types import TracebackType  # NOQA
     from typing import Any  # NOQA
     from typing import IO  # NOQA
     from typing import List  # NOQA
@@ -139,6 +139,32 @@ def test_create_study_command_with_direction():
         # --direction should be either 'minimize' or 'maximize'.
         with pytest.raises(subprocess.CalledProcessError):
             subprocess.check_call(command)
+
+
+@pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
+def test_delete_study_command(options):
+    # type: (List[str]) -> None
+
+    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
+        storage = RDBStorage(storage_url)
+        study_name = "delete-study-test"
+
+        # Create study.
+        command = ['optuna', 'create-study', '--storage', storage_url, '--study-name', study_name]
+        subprocess.check_call(command)
+        assert study_name in {s.study_name: s for s in storage.get_all_study_summaries()}
+
+        # Delete study.
+        command = ['optuna', 'delete-study', '--storage', storage_url, '--study-name', study_name]
+        subprocess.check_call(command)
+        assert study_name not in {s.study_name: s for s in storage.get_all_study_summaries()}
+
+
+def test_delete_study_command_without_storage_url():
+    # type: () -> None
+
+    with pytest.raises(subprocess.CalledProcessError):
+        subprocess.check_output(['optuna', 'delete-study', '--study-name', 'dummy_study'])
 
 
 @pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])

@@ -139,6 +139,38 @@ def test_create_new_study_with_name(storage_mode, cache_mode):
         assert study_name == storage.get_study_name_from_id(study_id)
 
 
+@parametrize_storage
+def test_delete_study(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+    study_id = storage.create_new_study()
+    storage.create_new_trial(study_id)
+    trials = storage.get_all_trials(study_id)
+    assert len(trials) == 1
+
+    storage.delete_study(study_id)
+    study_id = storage.create_new_study()
+    trials = storage.get_all_trials(study_id)
+    assert len(trials) == 0
+
+
+def test_delete_study_after_create_multiple_studies():
+    # type: () -> None
+
+    storage = RDBStorage('sqlite:///:memory:')
+    study_id1 = storage.create_new_study()
+    study_id2 = storage.create_new_study()
+    study_id3 = storage.create_new_study()
+
+    storage.delete_study(study_id2)
+
+    studies = {s.study_id: s for s in storage.get_all_study_summaries()}
+    assert study_id1 in studies
+    assert study_id2 not in studies
+    assert study_id3 in studies
+
+
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('cache_mode', CACHE_MODES)
 def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode, cache_mode):
