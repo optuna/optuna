@@ -12,7 +12,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Iterable  # NOQA
 
 
-def test__ignite_pruning_handler():
+def test_ignite_pruning_handler():
     # type: () -> None
 
     def update(engine, batch):
