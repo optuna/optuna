@@ -60,7 +60,7 @@ def get_extras_require():
         ],
         'example': [
             'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
-            'tensorflow', 'mxnet', 'xgboost', 'torch', 'torchvision',
+            'tensorflow', 'mxnet', 'xgboost', 'torch', 'torchvision', 'pytorch-ignite',
             'dask-ml', 'dask[dataframe]'
         ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
