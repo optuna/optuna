@@ -105,7 +105,7 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def create_new_trial(self, study_id, template_trial=None):
-        # type: (int, Optional[structs.FronzenTrial]) -> int
+        # type: (int, Optional[structs.FrozenTrial]) -> int
 
         raise NotImplementedError
 
