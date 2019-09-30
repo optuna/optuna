@@ -553,6 +553,12 @@ def test_delete_study(storage_mode, cache_mode):
         study = optuna.create_study(storage=storage, load_if_exists=False)
         optuna.delete_study(study.study_name, storage)
 
+        # Test failed to delete the study which is already deleted.
+        if not isinstance(study._storage, optuna.storages.InMemoryStorage):
+            # Skip `InMemoryStorage` because it just internally initializes trials and so on.
+            with pytest.raises(ValueError):
+                optuna.delete_study(study.study_name, storage)
+
 
 def test_nested_optimization():
     # type: () -> None
