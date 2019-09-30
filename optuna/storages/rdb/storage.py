@@ -352,7 +352,7 @@ class RDBStorage(BaseStorage):
         return study_sumarries
 
     def create_new_trial(self, study_id, template_trial=None):
-        # type: (int, Optional[structs.FronzenTrial]) -> int
+        # type: (int, Optional[structs.FrozenTrial]) -> int
 
         session = self.scoped_session()
 
