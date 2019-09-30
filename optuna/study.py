@@ -679,7 +679,7 @@ def load_study(
 
 def delete_study(
         study_name,  # type: str
-        storage=None,  # type: Union[None, str, storages.BaseStorage]
+        storage=None,  # type: Union[str, storages.BaseStorage]
 ):
     # type: (...) -> None
     """Delete a :class:`~optuna.study.Study` object.
