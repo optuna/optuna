@@ -28,6 +28,7 @@ from ignite.metrics import Accuracy
 import torch
 from torch import nn
 import torch.nn.functional as F
+from torch.optim import Adam
 from torch.optim import SGD
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
@@ -48,7 +49,7 @@ N_VALID_EXAMPLES = 1000
 
 class Net(nn.Module):
     def __init__(self, trial):
-        # Optimize dropout rate in a convolutional neural network.
+        # We optimize dropout rate in a convolutional neural network.
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
@@ -65,6 +66,20 @@ class Net(nn.Module):
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
         return F.log_softmax(x, dim=-1)
+
+
+def create_optimizer(trial, model):
+    # We optimize the choice of optimizers as well as their parameters.
+    optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'MomentumSGD'])
+
+    if optimizer_name == 'Adam':
+        adam_lr = trial.suggest_loguniform('adam_lr', 1e-5, 1e-1)
+        optimizer = Adam(model.parameters(), lr=adam_lr)
+    else:
+        sgd_lr = trial.suggest_loguniform('sgd_lr', 1e-7, 1e-1)
+        momentum = trial.suggest_uniform('momentum', 0.1, 0.9)
+        optimizer = SGD(model.parameters(), lr=sgd_lr, momentum=momentum)
+    return optimizer
 
 
 def get_data_loaders(train_batch_size, val_batch_size):
@@ -84,15 +99,11 @@ def get_data_loaders(train_batch_size, val_batch_size):
 def objective(trial):
     # Create a convolutional neural network.
     model = Net(trial)
+
     device = 'cpu'
     if torch.cuda.is_available():
         device = 'cuda'
-
-    # We optimize the learning rate and momentum factor of optimizer.
-    lr = trial.suggest_loguniform('lr', 1e-7, 1e-1)
-    momentum = trial.suggest_uniform('momentum', 0.1, 0.9)
-
-    optimizer = SGD(model.parameters(), lr=lr, momentum=momentum)
+    optimizer = create_optimizer(trial, model)
     trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)
     evaluator = create_supervised_evaluator(model,
                                             metrics={'accuracy': Accuracy()},
