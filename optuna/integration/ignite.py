@@ -14,6 +14,34 @@ except ImportError as e:
 
 
 class IgnitePruningHandler(object):
+    """PyTorch Ignite handler to prune unpromising trials.
+
+    Example:
+
+        Add a pruning handler which observes validation accuracy.
+
+        .. code::
+
+                evaluator = create_supervised_evaluator(model,
+                                                        metrics={'accuracy': Accuracy()},
+                                                        device=device)
+                handler = PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
+                evaluator.add_event_handler(Events.COMPLETED, handler)
+
+                @trainer.on(Events.EPOCH_COMPLETED)
+                def log_validation_results(engine):
+                    evaluator.run(val_loader)
+
+    Args:
+        trial:
+            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            objective function.
+        metric:
+            A name of metric for pruning, e.g., ``accuracy`` and ``loss``.
+        trainer:
+            A trainer engine of PyTorch Ignite. Please refer to `ignite.engine.Engine reference
+            <https://pytorch.org/ignite/engine.html#ignite.engine.Engine>`_ for further details.
+    """
 
     def __init__(self, trial, metric, trainer):
         # type: (Trial, str, Engine) -> None
