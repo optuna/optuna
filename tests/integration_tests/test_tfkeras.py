@@ -22,7 +22,7 @@ def test_tfkeras_pruning_callback():
             np.zeros((16, ), np.int32),
             batch_size=1,
             epochs=1,
-            callbacks=[TFKerasPruningCallback(trial, 'acc')],
+            callbacks=[TFKerasPruningCallback(trial, 'accuracy')],
             verbose=0
         )
 
