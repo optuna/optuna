@@ -1,5 +1,6 @@
 import abc
-import math
+from datetime import datetime
+import decimal
 import six
 import warnings
 
@@ -93,6 +94,12 @@ class BaseTrial(object):
     @property
     def system_attrs(self):
         # type: () -> Dict[str, Any]
+
+        raise NotImplementedError
+
+    @property
+    def datetime_start(self):
+        # type: () -> Optional[datetime]
 
         raise NotImplementedError
 
@@ -228,8 +235,9 @@ class Trial(BaseTrial):
         this method returns one of the values in the sequence
         :math:`\\mathsf{low}, \\mathsf{low} + q, \\mathsf{low} + 2 q, \\dots,
         \\mathsf{low} + k q \\le \\mathsf{high}`,
-        where :math:`k` denotes an integer. Note that :math:`high` may be
-        excluded from ranges due to round-off errors if :math:`q` is not an integer.
+        where :math:`k` denotes an integer. Note that :math:`high` may be changed due to round-off
+        errors if :math:`q` is not an integer. Please check warning messages to find the changed
+        values.
 
         Example:
 
@@ -457,7 +465,7 @@ class Trial(BaseTrial):
         return self._set_new_param_or_get_existing(name, param_value, distribution)
 
     def _set_new_param_or_get_existing(self, name, param_value, distribution):
-        # type: (str, Any, distributions.BaseDistribution) -> Any
+        # type: (str, Any, BaseDistribution) -> Any
 
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
         set_success = self.storage.set_trial_param(self._trial_id, name,
@@ -579,6 +587,16 @@ class Trial(BaseTrial):
 
         return self.storage.get_trial_system_attrs(self._trial_id)
 
+    @property
+    def datetime_start(self):
+        # type: () -> Optional[datetime]
+        """Return start datetime.
+
+        Returns:
+            Datetime where the :class:`~optuna.trial.Trial` started.
+        """
+        return self.storage.get_trial(self._trial_id).datetime_start
+
 
 class FixedTrial(BaseTrial):
     """A trial class which suggests a fixed value for each parameter.
@@ -620,6 +638,7 @@ class FixedTrial(BaseTrial):
         self._distributions = {}  # type: Dict[str, BaseDistribution]
         self._user_attrs = {}  # type: Dict[str, Any]
         self._system_attrs = {}  # type: Dict[str, Any]
+        self._datetime_start = datetime.now()
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -714,14 +733,24 @@ class FixedTrial(BaseTrial):
 
         return self._system_attrs
 
+    @property
+    def datetime_start(self):
+        # type: () -> Optional[datetime]
+
+        return self._datetime_start
+
 
 def _adjust_discrete_uniform_high(name, low, high, q):
     # type: (str, float, float, float) -> float
 
-    r = high - low
+    d_high = decimal.Decimal(str(high))
+    d_low = decimal.Decimal(str(low))
+    d_q = decimal.Decimal(str(q))
 
-    if math.fmod(r, q) != 0:
-        high = (r // q) * q + low
+    d_r = d_high - d_low
+
+    if d_r % d_q != decimal.Decimal('0'):
+        high = float((d_r // d_q) * d_q + d_low)
         logger = logging.get_logger(__name__)
         logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
                        'replaced by [{}, {}].'.format(name, low, high))

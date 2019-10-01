@@ -34,6 +34,12 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def delete_study(self, study_id):
+        # type: (int) -> None
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
@@ -99,7 +105,7 @@ class BaseStorage(object):
 
     @abc.abstractmethod
     def create_new_trial(self, study_id, template_trial=None):
-        # type: (int, Optional[structs.FronzenTrial]) -> int
+        # type: (int, Optional[structs.FrozenTrial]) -> int
 
         raise NotImplementedError
 

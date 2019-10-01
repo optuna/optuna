@@ -5,7 +5,15 @@ import gc
 import math
 import multiprocessing
 import multiprocessing.pool
-import pandas as pd
+
+try:
+    import pandas as pd  # NOQA
+    _pandas_available = True
+except ImportError as e:
+    _pandas_import_error = e
+    # trials_dataframe is disabled because pandas is not available.
+    _pandas_available = False
+
 from six.moves import queue
 import threading
 import time
@@ -223,7 +231,8 @@ class Study(BaseStudy):
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
-            catch=(Exception, )  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            callbacks=None  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -249,7 +258,8 @@ class Study(BaseStudy):
                 this argument. Default is (`Exception <https://docs.python.org/3/library/
                 exceptions.html#Exception>`_,), where all non-exit exceptions are handled
                 by this logic.
-
+            callbacks:
+                List of callback functions that are invoked at the end of each trial.
         """
 
         if not self._optimize_lock.acquire(False):
@@ -257,9 +267,9 @@ class Study(BaseStudy):
 
         try:
             if n_jobs == 1:
-                self._optimize_sequential(func, n_trials, timeout, catch)
+                self._optimize_sequential(func, n_trials, timeout, catch, callbacks)
             else:
-                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch)
+                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch, callbacks)
         finally:
             self._optimize_lock.release()
 
@@ -323,6 +333,7 @@ class Study(BaseStudy):
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
+        _check_pandas_availability()
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
@@ -413,7 +424,8 @@ class Study(BaseStudy):
             func,  # type: ObjectiveFuncType
             n_trials,  # type: Optional[int]
             timeout,  # type: Optional[float]
-            catch  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
 
@@ -430,7 +442,7 @@ class Study(BaseStudy):
                 if elapsed_seconds >= timeout:
                     break
 
-            self._run_trial(func, catch)
+            self._run_trial_and_callbacks(func, catch, callbacks)
 
     def _optimize_parallel(
             self,
@@ -438,7 +450,8 @@ class Study(BaseStudy):
             n_trials,  # type: Optional[int]
             timeout,  # type: Optional[float]
             n_jobs,  # type: int
-            catch  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
 
@@ -462,7 +475,7 @@ class Study(BaseStudy):
             # type: (Queue) -> None
 
             while que.get():
-                self._run_trial(func, catch)
+                self._run_trial_and_callbacks(func, catch, callbacks)
             self._storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
@@ -510,6 +523,20 @@ class Study(BaseStudy):
             return trial.trial_id
 
         return None
+
+    def _run_trial_and_callbacks(
+            self,
+            func,  # type: ObjectiveFuncType
+            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+    ):
+        # type: (...) -> None
+
+        trial = self._run_trial(func, catch)
+        if callbacks is not None:
+            frozen_trial = self._storage.get_trial(trial._trial_id)
+            for callback in callbacks:
+                callback(self, frozen_trial)
 
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
@@ -684,6 +711,29 @@ def load_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
+def delete_study(
+        study_name,  # type: str
+        storage,  # type: Union[str, storages.BaseStorage]
+):
+    # type: (...) -> None
+    """Delete a :class:`~optuna.study.Study` object.
+
+    Args:
+        study_name:
+            Study's name.
+        storage:
+            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
+            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
+            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
+            further details.
+
+    """
+
+    storage = storages.get_storage(storage)
+    study_id = storage.get_study_id_from_name(study_name)
+    storage.delete_study(study_id)
+
+
 def get_all_study_summaries(storage):
     # type: (Union[str, storages.BaseStorage]) -> List[structs.StudySummary]
     """Get all history of studies stored in a specified storage.
@@ -699,3 +749,14 @@ def get_all_study_summaries(storage):
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
+
+
+def _check_pandas_availability():
+    # type: () -> None
+
+    if not _pandas_available:
+        raise ImportError(
+            'pandas is not available. Please install pandas to use this feature. '
+            'pandas can be installed by executing `$ pip install pandas`. '
+            'For further information, please refer to the installation guide of pandas. '
+            '(The actual import error is as follows: ' + str(_pandas_import_error) + ')')
