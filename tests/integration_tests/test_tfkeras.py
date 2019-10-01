@@ -1,4 +1,5 @@
 import numpy as np
+import pkg_resources
 import pytest
 import tensorflow as tf
 
@@ -17,12 +18,18 @@ def test_tfkeras_pruning_callback():
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.Dense(1, activation='sigmoid', input_dim=20))
         model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
+
+        # TODO(Yanase): Unify the metric with 'accuracy' after stopping TensorFlow 1.x support.
+        callback_metric_name = 'accuracy'
+        if pkg_resources.parse_version(tf.__version__) < pkg_resources.parse_version('2.0.0'):
+            callback_metric_name = 'acc'
+
         model.fit(
             np.zeros((16, 20), np.float32),
             np.zeros((16, ), np.int32),
             batch_size=1,
             epochs=1,
-            callbacks=[TFKerasPruningCallback(trial, 'accuracy')],
+            callbacks=[TFKerasPruningCallback(trial, callback_metric_name)],
             verbose=0
         )
 
