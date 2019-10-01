@@ -539,6 +539,31 @@ def test_load_study(storage_mode, cache_mode):
         assert created_study.study_id == loaded_study.study_id
 
 
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_delete_study(storage_mode, cache_mode):
+    # type: (str, bool) -> None
+
+    with StorageSupplier(storage_mode, cache_mode) as storage:
+        # Get storage object because delete_study does not accept None.
+        storage = optuna.storages.get_storage(storage=storage)
+        assert storage is not None
+
+        # Test deleting a non-existing study.
+        with pytest.raises(ValueError):
+            optuna.delete_study("invalid-study-name", storage)
+
+        # Test deleting an existing study.
+        study = optuna.create_study(storage=storage, load_if_exists=False)
+        optuna.delete_study(study.study_name, storage)
+
+        # Test failed to delete the study which is already deleted.
+        if not isinstance(study._storage, optuna.storages.InMemoryStorage):
+            # Skip `InMemoryStorage` because it just internally initializes trials and so on.
+            with pytest.raises(ValueError):
+                optuna.delete_study(study.study_name, storage)
+
+
 def test_nested_optimization():
     # type: () -> None
 
