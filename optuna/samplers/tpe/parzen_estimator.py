@@ -54,6 +54,7 @@ class ParzenEstimator(object):
             weights_func  # type: Callable[[int], ndarray]
     ):
         # type: (...) -> Tuple[ndarray, ndarray, ndarray]
+
         mus = numpy.asarray(mus)
         sigma = numpy.asarray([], dtype=float)
         prior_pos = 0
