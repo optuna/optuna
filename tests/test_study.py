@@ -545,7 +545,7 @@ def test_delete_study(storage_mode, cache_mode):
     # type: (str, bool) -> None
 
     with StorageSupplier(storage_mode, cache_mode) as storage:
-        # Get storage object because delete_study does not accept None
+        # Get storage object because delete_study does not accept None.
         storage = optuna.storages.get_storage(storage=storage)
         assert storage is not None
 
