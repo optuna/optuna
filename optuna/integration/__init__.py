@@ -12,9 +12,11 @@ _import_structure = {
     'cma': ['CmaEsSampler'],
     'keras': ['KerasPruningCallback'],
     'lightgbm': ['LightGBMPruningCallback'],
+    'sklearn': ['OptunaSearchCV'],
     'mxnet': ['MXNetPruningCallback'],
     'skopt': ['SkoptSampler'],
     'tensorflow': ['TensorFlowPruningHook'],
+    'tfkeras': ['TFKerasPruningCallback'],
     'xgboost': ['XGBoostPruningCallback'],
 }
 
@@ -29,8 +31,10 @@ if sys.version_info[0] == 2 or TYPE_CHECKING:
     from optuna.integration.keras import KerasPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
     from optuna.integration.mxnet import MXNetPruningCallback  # NOQA
+    from optuna.integration.sklearn import OptunaSearchCV  # NOQA
     from optuna.integration.skopt import SkoptSampler  # NOQA
     from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA
+    from optuna.integration.tfkeras import TFKerasPruningCallback  # NOQA
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
 else:
     class _IntegrationModule(ModuleType):

@@ -92,7 +92,9 @@ class StudyUserAttributeModel(BaseModel):
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
-    study = orm.relationship(StudyModel)
+    study = orm.relationship(
+        StudyModel,
+        backref=orm.backref("user_attributes", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_study_and_key(cls, study, key, session):
@@ -118,7 +120,9 @@ class StudySystemAttributeModel(BaseModel):
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
-    study = orm.relationship(StudyModel)
+    study = orm.relationship(
+        StudyModel,
+        backref=orm.backref("system_attributes", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_study_and_key(cls, study, key, session):
@@ -145,7 +149,9 @@ class TrialModel(BaseModel):
     datetime_start = Column(DateTime, default=datetime.now)
     datetime_complete = Column(DateTime)
 
-    study = orm.relationship(StudyModel)
+    study = orm.relationship(
+        StudyModel,
+        backref=orm.backref("trials", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_id(cls, trial_id, session):
@@ -170,6 +176,14 @@ class TrialModel(BaseModel):
         # type: (StudyModel, orm.Session) -> List[TrialModel]
 
         trials = session.query(cls).filter(cls.study_id == study.study_id).all()
+
+        return trials
+
+    @classmethod
+    def where_study_id(cls, study_id, session):
+        # type: (int, orm.Session) -> List[TrialModel]
+
+        trials = session.query(cls).filter(cls.study_id == study_id).all()
 
         return trials
 
@@ -216,7 +230,9 @@ class TrialUserAttributeModel(BaseModel):
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
-    trial = orm.relationship(TrialModel)
+    trial = orm.relationship(
+        TrialModel,
+        backref=orm.backref("user_attributes", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_trial_and_key(cls, trial, key, session):
@@ -263,7 +279,9 @@ class TrialSystemAttributeModel(BaseModel):
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
-    trial = orm.relationship(TrialModel)
+    trial = orm.relationship(
+        TrialModel,
+        backref=orm.backref("system_attributes", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_trial_and_key(cls, trial, key, session):
@@ -311,7 +329,9 @@ class TrialParamModel(BaseModel):
     param_value = Column(Float)
     distribution_json = Column(String(MAX_STRING_LENGTH))
 
-    trial = orm.relationship(TrialModel)
+    trial = orm.relationship(
+        TrialModel,
+        backref=orm.backref("params", cascade="all, delete-orphan"))
 
     def check_and_add(self, session):
         # type: (orm.Session) -> None
@@ -385,7 +405,9 @@ class TrialValueModel(BaseModel):
     step = Column(Integer)
     value = Column(Float)
 
-    trial = orm.relationship(TrialModel)
+    trial = orm.relationship(
+        TrialModel,
+        backref=orm.backref("values", cascade="all, delete-orphan"))
 
     @classmethod
     def find_by_trial_and_step(cls, trial, step, session):

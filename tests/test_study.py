@@ -539,6 +539,31 @@ def test_load_study(storage_mode, cache_mode):
         assert created_study.study_id == loaded_study.study_id
 
 
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_delete_study(storage_mode, cache_mode):
+    # type: (str, bool) -> None
+
+    with StorageSupplier(storage_mode, cache_mode) as storage:
+        # Get storage object because delete_study does not accept None.
+        storage = optuna.storages.get_storage(storage=storage)
+        assert storage is not None
+
+        # Test deleting a non-existing study.
+        with pytest.raises(ValueError):
+            optuna.delete_study("invalid-study-name", storage)
+
+        # Test deleting an existing study.
+        study = optuna.create_study(storage=storage, load_if_exists=False)
+        optuna.delete_study(study.study_name, storage)
+
+        # Test failed to delete the study which is already deleted.
+        if not isinstance(study._storage, optuna.storages.InMemoryStorage):
+            # Skip `InMemoryStorage` because it just internally initializes trials and so on.
+            with pytest.raises(ValueError):
+                optuna.delete_study(study.study_name, storage)
+
+
 def test_nested_optimization():
     # type: () -> None
 
@@ -572,3 +597,59 @@ def test_storage_property():
 
     study = optuna.create_study()
     assert study.storage == study._storage
+
+
+@pytest.mark.parametrize('n_jobs', [1, 4])
+def test_callbacks(n_jobs):
+    # type: (int) -> None
+
+    study = optuna.create_study()
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        return trial.suggest_int('x', 1, 1)
+
+    # Empty callback list.
+    study.optimize(objective, callbacks=[], n_trials=10, n_jobs=n_jobs)
+
+    # A callback.
+    values = []
+    callbacks = [lambda study, trial: values.append(trial.value)]
+    study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
+    assert values == [1] * 10
+
+    # Two callbacks.
+    values = []
+    params = []
+    callbacks = [
+        lambda study, trial: values.append(trial.value),
+        lambda study, trial: params.append(trial.params)
+    ]
+    study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
+    assert values == [1] * 10
+    assert params == [{'x': 1}] * 10
+
+    # If a trial is failed with an exception and the exception is caught by the study,
+    # callbacks are invoked.
+    states = []
+    callbacks = [lambda study, trial: states.append(trial.state)]
+    study.optimize(lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
+    assert states == [optuna.structs.TrialState.FAIL] * 10
+
+    # NOTE: Because `Study.optimize` blocks forever if `n_jobs` is more than `1` and
+    #       an uncaught exception is raised during an optimization,
+    #       we test the following scenario only when `n_jobs==1`.
+    #       For the details of this problem, please see https://github.com/pfnet/optuna/issues/538.
+    #
+    # TODO(ohta): Fix `Study.optimize`
+
+    if n_jobs == 1:
+        # If a trial is failed with an exception and the exception isn't caught by the study,
+        # callbacks aren't invoked.
+        states = []
+        callbacks = [lambda study, trial: states.append(trial.state)]
+        with pytest.raises(ZeroDivisionError):
+            study.optimize(lambda t: 1/0, callbacks=callbacks,
+                           n_trials=10, n_jobs=n_jobs, catch=())
+        assert states == []
