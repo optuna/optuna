@@ -31,6 +31,7 @@ N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
 
+# Set log level for MXNet.
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
