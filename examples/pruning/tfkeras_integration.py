@@ -132,10 +132,8 @@ def show_result(study):
 
 def main():
 
-    study = optuna.create_study(
-        direction='maximize',
-        pruner=optuna.pruners.MedianPruner(n_startup_trials=2)
-    )
+    study = optuna.create_study(direction='maximize',
+                                pruner=optuna.pruners.MedianPruner(n_startup_trials=2))
 
     study.optimize(objective, n_trials=25, timeout=600)
 
