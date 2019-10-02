@@ -31,12 +31,13 @@ N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
 
+# Set log level for MXNet.
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
 def create_model(trial):
-    # We optimize the number or layers and count of their hidden units in our MLP.
+    # We optimize the number of layers and hidden units in each layer.
     n_layers = trial.suggest_int('n_layers', 1, 3)
 
     data = mx.symbol.Variable('data')
