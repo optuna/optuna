@@ -75,7 +75,7 @@ class TestOptunaObjective(object):
 
     def test_init_(self):
         # type: () -> None
-        target_param_names = ['learning_rate']  # Invalid parameter name
+        target_param_names = ['learning_rate']  # Invalid parameter name.
 
         with pytest.raises(NotImplementedError) as execinfo:
             OptunaObjective(target_param_names, {}, None, {}, 0)
@@ -311,7 +311,7 @@ class TestLightGBMTuner(object):
     def _helper_get_minimum_runner(self, params={}, train_set=None, kwargs_options={}):
         # type: (Dict[str, Any], lgb.Dataset, Dict[str, Any]) -> lgb.LightGBMTuner
 
-        # Required keyword arguments
+        # Required keyword arguments.
         dummy_dataset = lgb.Dataset(None)
 
         kwargs = dict(
@@ -374,18 +374,18 @@ class TestLightGBMTuner(object):
                                                  kwargs_options=dict(sample_size=sample_size))
         runner.sampling_train_set()
 
-        # Workaround for mypy
+        # Workaround for mypy.
         if not type_checking.TYPE_CHECKING:
-            runner.train_subset.construct()  # Cannt get label before construct Dataset
+            runner.train_subset.construct()  # Cannt get label before construct Dataset.
             assert runner.train_subset.get_label().shape[0] == sample_size
 
     def test_tune_feature_fraction(self):
         # type: () -> None
-        unexpected_value = 1.1  # out of scope
+        unexpected_value = 1.1  # out of scope.
 
         with turnoff_train():
             runner = self._helper_get_minimum_runner(params=dict(
-                feature_fraction=unexpected_value,  # set default as unexpected value
+                feature_fraction=unexpected_value,  # set default as unexpected value.
             ), kwargs_options=dict(
                 tuning_history=[],
                 best_params={},
@@ -398,7 +398,7 @@ class TestLightGBMTuner(object):
 
     def test_tune_num_leaves(self):
         # type: () -> None
-        unexpected_value = 1  # out of scope
+        unexpected_value = 1  # out of scope.
 
         with turnoff_train():
             runner = self._helper_get_minimum_runner(params=dict(
@@ -415,7 +415,7 @@ class TestLightGBMTuner(object):
 
     def test_tune_bagging(self):
         # type: () -> None
-        unexpected_value = 1  # out of scope
+        unexpected_value = 1  # out of scope.
 
         with turnoff_train():
             runner = self._helper_get_minimum_runner(params=dict(
@@ -432,11 +432,11 @@ class TestLightGBMTuner(object):
 
     def test_tune_feature_fraction_stage2(self):
         # type: () -> None
-        unexpected_value = 1.1  # out of scope
+        unexpected_value = 1.1  # out of scope.
 
         with turnoff_train():
             runner = self._helper_get_minimum_runner(params=dict(
-                feature_fraction=unexpected_value,  # set default as unexpected value
+                feature_fraction=unexpected_value,  # set default as unexpected value.
             ), kwargs_options=dict(
                 tuning_history=[],
                 best_params={},
@@ -448,11 +448,11 @@ class TestLightGBMTuner(object):
 
     def test_tune_regularization_factors(self):
         # type: () -> None
-        unexpected_value = 20  # out of scope
+        unexpected_value = 20  # out of scope.
 
         with turnoff_train():
             runner = self._helper_get_minimum_runner(params=dict(
-                lambda_l1=unexpected_value,  # set default as unexpected value
+                lambda_l1=unexpected_value,  # set default as unexpected value.
             ), kwargs_options=dict(
                 tuning_history=[],
                 best_params={},
@@ -465,11 +465,11 @@ class TestLightGBMTuner(object):
 
     def test_tune_min_data_in_leaf(self):
         # type: () -> None
-        unexpected_value = 1  # out of scope
+        unexpected_value = 1  # out of scope.
 
         with turnoff_train():
             runner = self._helper_get_minimum_runner(params=dict(
-                min_child_samples=unexpected_value,  # set default as unexpected value
+                min_child_samples=unexpected_value,  # set default as unexpected value.
             ), kwargs_options=dict(
                 tuning_history=[],
                 best_params={},

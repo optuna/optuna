@@ -14,16 +14,16 @@ except ImportError as e:
 
 # Attach lightgbm API.
 if _available:
-    # API from lightgbm
+    # API from lightgbm.
     for api_name in lgb.__dict__['__all__']:
         if api_name in ['train', 'LGBMModel', 'LGBMClassifier', 'LGBMRegressor']:
             continue
         setattr(sys.modules[__name__], api_name, lgb.__dict__[api_name])
 
-    # API from optuna integration
+    # API from optuna integration.
     from optuna.integration import lightgbm_tuner as tuner
 
-    # Workaround for mypy
+    # Workaround for mypy.
     from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
 
     for api_name in ['train', 'LGBMModel', 'LGBMClassifier', 'LGBMRegressor', 'LightGBMTuner']:

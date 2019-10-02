@@ -26,7 +26,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
-# Default time budget for tuning `learning_rate`
+# Default time budget for tuning `learning_rate`.
 DEFAULT_TIME_BUDGET_FOR_TUNING_LR = 4 * 60 * 60
 
 EPS = 1e-12
@@ -284,10 +284,9 @@ class LightGBMTuner(BaseTuner):
         self.tuning_history = tuning_history if tuning_history is not None else []
         self.enable_adjusting_lr = enable_adjusting_lr
 
-        # Check optuna logging
+        # Check optuna logging.
         self.is_optuna_logging_enabled = (optuna.logging._default_handler is None)
 
-        # Check args
         if early_stopping_rounds is None:
             self._suggest_early_stopping_rounds()
         if valid_sets is None:
@@ -313,17 +312,17 @@ class LightGBMTuner(BaseTuner):
             ]
         }
 
-        # Split options
+        # Split options.
         for option_name in self.auto_options.keys():
             if option_name in kwargs:
                 del kwargs[option_name]
 
         self.lgbm_params = args[0]
         self.train_set = args[1]
-        self.train_subset = None  # Use for sampling
+        self.train_subset = None  # Use for sampling.
         self.lgbm_kwargs = kwargs
 
-        # Keep original kwargs
+        # Keep original kwargs.
         self.original_lgbm_kwargs = kwargs.copy()
         self.original_lgbm_params = self.lgbm_params.copy()
 
@@ -342,19 +341,19 @@ class LightGBMTuner(BaseTuner):
             booster : Booster
                 The trained Booster model.
         """
-        # Surpress log messages
+        # Surpress log messages.
         optuna.logging.disable_default_handler()
         self.lgbm_params['verbose'] = -1
         self.lgbm_params['seed'] = 111
         self.lgbm_kwargs['verbose_eval'] = False
 
-        # Handling aliases
+        # Handling aliases.
         _handling_alias_parameters(self.lgbm_params)
 
-        # Sampling
+        # Sampling.
         self.sampling_train_set()
 
-        # Tuning
+        # Tuning.
         time_budget = self.auto_options['time_budget']
 
         self.start_time = time.time()
@@ -451,7 +450,7 @@ class LightGBMTuner(BaseTuner):
         # type: (List[str], int, optuna.samplers.BaseSampler) -> None
         pbar = tqdm.tqdm(total=n_trials, ascii=True)
 
-        # Set current best parameters
+        # Set current best parameters.
         self.lgbm_params.update(self.best_params)
 
         train_set = self.train_set
@@ -474,7 +473,7 @@ class LightGBMTuner(BaseTuner):
         pbar.close()
         del pbar
 
-        # Add tuning history
+        # Add tuning history.
         self.tuning_history += objective.report
 
         updated_params = {p: study.best_trial.params[p] for p in target_param_names}
@@ -488,7 +487,7 @@ class LightGBMTuner(BaseTuner):
     def tune_learning_rate(self):
         # type: () -> None
 
-        # Update parameter
+        # Update parameter.
         self.lgbm_params.update(self.best_params)
 
         if self.higher_is_better():
@@ -538,7 +537,7 @@ class LightGBMTuner(BaseTuner):
                 },
             }
 
-        # Adjusting learning rate
+        # Adjusting learning rate. (Default: False)
         if not self.enable_adjusting_lr:
             return
 
@@ -549,7 +548,7 @@ class LightGBMTuner(BaseTuner):
         else:
             predefined_params['lgbm_params']['learning_rate'] = [0.01, 0.003, 0.001]
 
-        # Fix num_boost_round and early_stopping_rounds
+        # Fix num_boost_round and early_stopping_rounds.
         for kwargs_name in predefined_params['lgbm_kwargs'].keys():
             self.lgbm_kwargs[kwargs_name] = predefined_params['lgbm_kwargs'][kwargs_name]
 
@@ -581,6 +580,6 @@ class LightGBMTuner(BaseTuner):
                 # End if lower lr got worse result.
                 break
 
-            # Break the time limitation
+            # Break the time limitation.
             if time.time() > self.start_time + time_budget:
                 break
