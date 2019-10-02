@@ -1,8 +1,3 @@
-"""
-reminder:
-
-* add `_`-prefix for all private functions.
-"""
 import contextlib
 import sys
 
