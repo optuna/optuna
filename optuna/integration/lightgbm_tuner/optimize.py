@@ -410,8 +410,8 @@ class LightGBMTuner(BaseTuner):
 
     def sampling_train_set(self):
         # type: () -> None
-
         """Make subset of `self.train_set` Dataset object"""
+
         if self.auto_options['sample_size'] is None:
             return
 
