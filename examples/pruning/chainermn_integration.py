@@ -78,7 +78,7 @@ def objective(trial, comm):
 
     # Add Chainer extension for pruners.
     trainer.extend(
-        optuna.integration.ChainerPruningExtension(trial, 'main/accuracy',
+        optuna.integration.ChainerPruningExtension(trial, 'validation/main/accuracy',
                                                    (PRUNER_INTERVAL, 'epoch')))
     evaluator = chainer.training.extensions.Evaluator(test_iter, model)
     trainer.extend(chainermn.create_multi_node_evaluator(evaluator, comm))
