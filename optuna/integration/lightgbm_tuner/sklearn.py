@@ -48,18 +48,18 @@ class LGBMModel(lgb.LGBMModel):
             group=None,  # type: Optional[np.ndarray]
             eval_set=None,  # type: Optional[List[Tuple[Any, Any]]]
             eval_names=None,  # type: Optional[List[str]]
-            eval_sample_weight=None,  # type: Any
+            eval_sample_weight=None,  # type: Optional[List[np.ndarray]]
             eval_class_weight=None,  # type: Any
-            eval_init_score=None,  # type: Any
+            eval_init_score=None,  # type: Optional[List[np.ndarray]]
             eval_group=None,  # type: Any
             eval_metric=None,  # type: Any
-            early_stopping_rounds=None,  # type: Any
-            verbose=True,  # type: Any
-            feature_name='auto',  # type: Any
-            categorical_feature='auto',  # type: Any
+            early_stopping_rounds=None,  # type: Optional[int]
+            verbose=True,  # type: bool
+            feature_name='auto',  # type: Union[List[str], str]
+            categorical_feature='auto',  # type: Union[List[str], str]
             callbacks=None,  # type: Optional[Callable[Any, Any]]
     ):
-        # type: (...) -> Any
+        # type: (...) -> lgb.Booster
 
         self.is_tuned = True
 
@@ -106,18 +106,18 @@ class LGBMClassifier(lgb.LGBMClassifier):
             init_score=None,  # type: Optional[np.ndarray]
             eval_set=None,  # type: Optional[List[Tuple[Any, Any]]]
             eval_names=None,  # type: Optional[List[str]]
-            eval_sample_weight=None,  # type: Any
+            eval_sample_weight=None,  # type: Optional[List[np.ndarray]]
             eval_class_weight=None,  # type: Any
-            eval_init_score=None,  # type: Any
+            eval_init_score=None,  # type: Optional[List[np.ndarray]]
             eval_group=None,  # type: Any
             eval_metric=None,  # type: Any
-            early_stopping_rounds=None,  # type: Any
-            verbose=True,  # type: Any
-            feature_name='auto',  # type: Any
-            categorical_feature='auto',  # type: Any
+            early_stopping_rounds=None,  # type: Optional[int]
+            verbose=True,  # type: bool
+            feature_name='auto',  # type: Union[List[str], str]
+            categorical_feature='auto',  # type: Union[List[str], str]
             callbacks=None,  # type: Any
     ):
-        # type: (...) -> Any
+        # type: (...) -> lgb.Booster
 
         self.is_tuned = True
 
@@ -161,16 +161,16 @@ class LGBMRegressor(lgb.LGBMRegressor):
             init_score=None,  # type: Optional[np.ndarray]
             eval_set=None,  # type: Optional[List[Tuple[Any, Any]]]
             eval_names=None,  # type: Optional[List[str]]
-            eval_sample_weight=None,  # type: Any
-            eval_init_score=None,  # type: Any
+            eval_sample_weight=None,  # type: Optional[List[np.ndarray]]
+            eval_init_score=None,  # type: Optional[List[np.ndarray]]
             eval_metric=None,  # type: Any
-            early_stopping_rounds=None,  # type: Any
-            verbose=True,  # type: Any
-            feature_name='auto',  # type: Any
-            categorical_feature='auto',  # type: Any
+            early_stopping_rounds=None,  # type: Optional[int]
+            verbose=True,  # type: bool
+            feature_name='auto',  # type: Union[List[str], str]
+            categorical_feature='auto',  # type: Union[List[str], str]
             callbacks=None,  # type: Any
     ):
-        # type: (...) -> Any
+        # type: (...) -> lgb.Booster
 
         self.is_tuned = True
 
