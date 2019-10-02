@@ -34,6 +34,7 @@ class LGBMModel(lgb.LGBMModel):
 
     def fit(self, *args, **kwargs):
         # type: (List[Any], Dict[str, Any]) -> lgb.Booster
+
         if 'is_tuned' not in self.__dict__:
             warnings.warn('Not tuned hyperparameter yet. Call `tune()` before `fit()`.')
         return super(LGBMModel, self).fit(*args, **kwargs)
@@ -59,6 +60,7 @@ class LGBMModel(lgb.LGBMModel):
             callbacks=None,  # type: Optional[Callable[Any, Any]]
     ):
         # type: (...) -> Any
+
         self.is_tuned = True
 
         trn_data = lgb.Dataset(X, label=y)
@@ -91,6 +93,7 @@ class LGBMModel(lgb.LGBMModel):
 class LGBMClassifier(lgb.LGBMClassifier):
     def fit(self, *args, **kwargs):
         # type: (List[Any], Dict[str, Any]) -> lgb.Booster
+
         if 'is_tuned' not in self.__dict__:
             warnings.warn('Not tuned hyperparameter yet. Call `tune()` before `fit()`.')
         return super(LGBMClassifier, self).fit(*args, **kwargs)
@@ -115,6 +118,7 @@ class LGBMClassifier(lgb.LGBMClassifier):
             callbacks=None,  # type: Any
     ):
         # type: (...) -> Any
+
         self.is_tuned = True
 
         trn_data = lgb.Dataset(X, label=y)
@@ -144,6 +148,7 @@ class LGBMClassifier(lgb.LGBMClassifier):
 class LGBMRegressor(lgb.LGBMRegressor):
     def fit(self, *args, **kwargs):
         # type: (List[Any], Dict[str, Any]) -> lgb.Booster
+
         if 'is_tuned' not in self.__dict__:
             warnings.warn('Not tuned hyperparameter yet. Call `tune()` before `fit()`.')
         return super(LGBMRegressor, self).fit(*args, **kwargs)
@@ -166,6 +171,7 @@ class LGBMRegressor(lgb.LGBMRegressor):
             callbacks=None,  # type: Any
     ):
         # type: (...) -> Any
+
         self.is_tuned = True
 
         trn_data = lgb.Dataset(X, label=y)

@@ -28,6 +28,7 @@ if sys.version_info >= (3, 5):
 @contextlib.contextmanager
 def turnoff_tuner():
     # type: () -> Generator[None, None, None]
+
     fqn_prefix = 'optuna.integration.lightgbm_tuner.LightGBMTuner'
     mock_pairs = [
         (fqn_prefix + '.__init__', None),
@@ -46,18 +47,21 @@ def turnoff_tuner():
 @contextlib.contextmanager
 def turnoff_train():
     # type: () -> Generator[None, None, None]
+
     unexpected_value = 0.5
     dummy_num_iterations = 1234
 
     class DummyBooster(object):
         def __init__(self):
             # type: () -> None
+
             self.best_score = {
                 'valid_0': {'binary_logloss': unexpected_value},
             }
 
         def current_iteration(self):
             # type: () -> int
+
             return dummy_num_iterations
 
     dummy_booster = DummyBooster()
@@ -70,6 +74,7 @@ class TestOptunaObjective(object):
 
     def test_init_(self):
         # type: () -> None
+
         target_param_names = ['learning_rate']  # Invalid parameter name.
 
         with pytest.raises(NotImplementedError) as execinfo:
@@ -79,6 +84,7 @@ class TestOptunaObjective(object):
 
     def test_call(self):
         # type: () -> None
+
         target_param_names = ['lambda_l1']
         lgbm_params = {}  # type: Dict[str, Any]
         train_set = lgb.Dataset(None)
@@ -105,6 +111,7 @@ class TestLGBMModel(object):
 
     def _generate_dataset(self):
         # type: () -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+
         X_trn = np.random.uniform(10, size=20).reshape((4, 5))
         y_trn = np.random.randint(2, size=4)
         X_val = np.random.uniform(10, size=20).reshape((4, 5))
@@ -113,6 +120,7 @@ class TestLGBMModel(object):
 
     def test_fit(self):
         # type: () -> None
+
         X_trn, y_trn, X_val, y_val = self._generate_dataset()
 
         if sys.version_info >= (3, 5):
@@ -125,6 +133,7 @@ class TestLGBMModel(object):
 
     def test_tune__required_parameters(self):
         # type: () -> None
+
         X_trn, y_trn, X_val, y_val = self._generate_dataset()
 
         if sys.version_info >= (3, 5):
@@ -159,6 +168,7 @@ class TestLGBMModel(object):
 
     def test_tune__warning_before_tuned(self):
         # type: () -> None
+
         X_trn, y_trn, X_val, y_val = self._generate_dataset()
 
         if sys.version_info >= (3, 5):
@@ -198,6 +208,7 @@ class TestLGBMModel(object):
 class Test_TimeKeeper(object):
     def test__timer_elapsed_secs(self):
         # type: () -> None
+
         with mock.patch('time.time', return_value=1):
             tk = _TimeKeeper()
             with mock.patch('time.time', return_value=10):
@@ -206,6 +217,7 @@ class Test_TimeKeeper(object):
 
 def test__timer_context():
     # type: () -> None
+
     with mock.patch('time.time', return_value=1):
         with _timer() as t:
             with mock.patch('time.time', return_value=10):
@@ -215,11 +227,13 @@ def test__timer_context():
 class TestBaseTuner(object):
     def test_get_booster_best_score(self):
         # type: () -> None
+
         expected_value = 1.0
 
         class DummyBooster(object):
             def __init__(self):
                 # type: () -> None
+
                 self.best_score = {
                     'valid_0': {'binary_logloss': expected_value}
                 }
@@ -233,6 +247,7 @@ class TestBaseTuner(object):
 
     def test_higher_is_better(self):
         # type: () -> None
+
         for metric in ['auc', 'accuracy']:
             tuner = BaseTuner(lgbm_params={'metric': metric})
             assert tuner.higher_is_better()
@@ -243,11 +258,13 @@ class TestBaseTuner(object):
 
     def test_get_booster_best_score__using_valid_names_as_str(self):
         # type: () -> None
+
         expected_value = 1.0
 
         class DummyBooster(object):
             def __init__(self):
                 # type: () -> None
+
                 self.best_score = {
                     'dev': {'binary_logloss': expected_value}
                 }
@@ -264,12 +281,14 @@ class TestBaseTuner(object):
 
     def test_get_booster_best_score__using_valid_names_as_list(self):
         # type: () -> None
+
         unexpected_value = 0.5
         expected_value = 1.0
 
         class DummyBooster(object):
             def __init__(self):
                 # type: () -> None
+
                 self.best_score = {
                     'train': {'binary_logloss': unexpected_value},
                     'val': {'binary_logloss': expected_value}
@@ -288,6 +307,7 @@ class TestBaseTuner(object):
 
     def test_compare_validation_metrics(self):
         # type: () -> None
+
         for metric in ['auc', 'accuracy']:
             tuner = BaseTuner(lgbm_params={'metric': metric})
             assert tuner.compare_validation_metrics(0.5, 0.1)
@@ -321,6 +341,7 @@ class TestLightGBMTuner(object):
 
     def test_no_eval_set_args(self):
         # type: () -> None
+
         params = {}  # type: Dict[str, Any]
         train_set = lgb.Dataset(None)
         with pytest.raises(ValueError) as excinfo:
@@ -334,6 +355,7 @@ class TestLightGBMTuner(object):
 
     def test_with_minimum_required_args(self):
         # type: () -> None
+
         runner = self._helper_get_minimum_runner()
         assert 'num_boost_round' in runner.lgbm_kwargs
         assert 'num_boost_round' not in runner.auto_options
@@ -341,6 +363,7 @@ class TestLightGBMTuner(object):
 
     def test__parse_args_wrapper_args(self):
         # type: () -> None
+
         params = {}  # type: Dict[str, Any]
         train_set = lgb.Dataset(None)
         val_set = lgb.Dataset(None)
@@ -360,6 +383,7 @@ class TestLightGBMTuner(object):
 
     def test_sampling_train_set(self):
         # type: () -> None
+
         sample_size = 3
 
         X_trn = np.random.uniform(10, size=50).reshape((10, 5))
@@ -376,6 +400,7 @@ class TestLightGBMTuner(object):
 
     def test_tune_feature_fraction(self):
         # type: () -> None
+
         unexpected_value = 1.1  # out of scope.
 
         with turnoff_train():
@@ -393,6 +418,7 @@ class TestLightGBMTuner(object):
 
     def test_tune_num_leaves(self):
         # type: () -> None
+
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
@@ -410,6 +436,7 @@ class TestLightGBMTuner(object):
 
     def test_tune_bagging(self):
         # type: () -> None
+
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
@@ -427,6 +454,7 @@ class TestLightGBMTuner(object):
 
     def test_tune_feature_fraction_stage2(self):
         # type: () -> None
+
         unexpected_value = 1.1  # out of scope.
 
         with turnoff_train():
@@ -443,6 +471,7 @@ class TestLightGBMTuner(object):
 
     def test_tune_regularization_factors(self):
         # type: () -> None
+
         unexpected_value = 20  # out of scope.
 
         with turnoff_train():
@@ -460,6 +489,7 @@ class TestLightGBMTuner(object):
 
     def test_tune_min_data_in_leaf(self):
         # type: () -> None
+
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
