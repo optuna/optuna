@@ -233,7 +233,7 @@ class TestBaseTuner(object):
         dummy_dataset = lgb.Dataset(None)
 
         tuner = BaseTuner(lgbm_kwargs=dict(valid_sets=dummy_dataset))
-        val_score = tuner.get_booster_best_score(booster)
+        val_score = tuner._get_booster_best_score(booster)
         assert val_score == expected_value
 
     def test_higher_is_better(self):
@@ -264,7 +264,7 @@ class TestBaseTuner(object):
             'valid_names': 'dev',
             'valid_sets': dummy_dataset,
         })
-        val_score = tuner.get_booster_best_score(booster)
+        val_score = tuner._get_booster_best_score(booster)
         assert val_score == expected_value
 
     def test_get_booster_best_score__using_valid_names_as_list(self):
@@ -288,7 +288,7 @@ class TestBaseTuner(object):
             'valid_names': ['train', 'val'],
             'valid_sets': [dummy_train_dataset, dummy_val_dataset],
         })
-        val_score = tuner.get_booster_best_score(booster)
+        val_score = tuner._get_booster_best_score(booster)
         assert val_score == expected_value
 
     def test_compare_validation_metrics(self):

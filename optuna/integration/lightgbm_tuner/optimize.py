@@ -8,7 +8,7 @@ import numpy as np
 import tqdm
 
 import optuna
-from optuna.integration.lightgbm_tuner.alias import handling_alias_parameters
+from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
 from optuna import type_checking
 
 
@@ -86,7 +86,7 @@ class BaseTuner(object):
         self.lgbm_params = lgbm_params if lgbm_params is not None else {}
         self.lgbm_kwargs = lgbm_kwargs if lgbm_kwargs is not None else {}
 
-    def get_booster_best_score(self, booster):
+    def _get_booster_best_score(self, booster):
         # type: (lgb.Booster) -> float
         metric = self.lgbm_params.get('metric', 'binary_logloss')
 
@@ -207,7 +207,7 @@ class OptunaObjective(BaseTuner):
         with _timer() as t:
             booster = lgb.train(self.lgbm_params, self.train_set, **self.lgbm_kwargs)
 
-        val_score = self.get_booster_best_score(booster)
+        val_score = self._get_booster_best_score(booster)
         elapsed_secs = t.elapsed_secs()
         average_iteration_time = elapsed_secs / booster.current_iteration()
         if self.compare_validation_metrics(val_score, self.best_score):
@@ -349,7 +349,7 @@ class LightGBMTuner(BaseTuner):
         self.lgbm_kwargs['verbose_eval'] = False
 
         # Handling aliases
-        handling_alias_parameters(self.lgbm_params)
+        _handling_alias_parameters(self.lgbm_params)
 
         # Sampling
         self.sampling_train_set()
@@ -563,7 +563,7 @@ class LightGBMTuner(BaseTuner):
 
                 booster = lgb.train(self.lgbm_params, train_set, **self.lgbm_kwargs)
 
-            val_score = self.get_booster_best_score(booster)
+            val_score = self._get_booster_best_score(booster)
             elapsed_secs = t.elapsed_secs()
             average_iteration_time = elapsed_secs / booster.current_iteration()
             if self.compare_validation_metrics(val_score, self.best_score):

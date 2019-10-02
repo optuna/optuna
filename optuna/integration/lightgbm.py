@@ -12,7 +12,7 @@ except ImportError as e:
     _available = False
 
 
-# Attach lightgbm API
+# Attach lightgbm API.
 if _available:
     # API from lightgbm
     for api_name in lgb.__dict__['__all__']:

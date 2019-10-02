@@ -56,7 +56,7 @@ ALIAS_GROUP_LIST = [
 ]  # type: List[Dict[str, Any]]
 
 
-def handling_alias_parameters(lgbm_params):
+def _handling_alias_parameters(lgbm_params):
     # type: (Dict[str, Any]) -> None
     """Handling alias parameters"""
     for alias_group in ALIAS_GROUP_LIST:

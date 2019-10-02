@@ -1,10 +1,10 @@
-from optuna.integration.lightgbm_tuner.alias import handling_alias_parameters
+from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
 
 
-def test_handling_alias_parameters():
+def test__handling_alias_parameters():
     # type: () -> None
     params = {'reg_alpha': 0.1}
-    handling_alias_parameters(params)
+    _handling_alias_parameters(params)
     assert 'reg_alpha' not in params
     assert 'lambda_l1' in params
 
@@ -16,7 +16,7 @@ def test_handling_alias_parameter_with_user_supplied_param():
         'early_stopping_rounds': 2,
         'eta': 0.5,
     }
-    handling_alias_parameters(params)
+    _handling_alias_parameters(params)
 
     assert 'eta' not in params
     assert 'learning_rate' in params
@@ -29,7 +29,7 @@ def test_handling_alias_parameter_with_default_value():
         'num_boost_round': 5,
         'early_stopping_rounds': 2,
     }
-    handling_alias_parameters(params)
+    _handling_alias_parameters(params)
 
     assert 'eta' not in params
     assert 'learning_rate' in params
@@ -43,7 +43,7 @@ def test_handling_alias_parameter():
         'early_stopping_rounds': 2,
         'min_data': 0.2,
     }
-    handling_alias_parameters(params)
+    _handling_alias_parameters(params)
     assert 'min_data' not in params
     assert 'min_data_in_leaf' in params
     assert params['min_data_in_leaf'] == 0.2
