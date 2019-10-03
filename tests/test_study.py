@@ -408,6 +408,13 @@ def test_study_pickle():
     assert len(study_2.trials) == 20
 
 
+def test_study_trials_dataframe_with_no_trials():
+    # type: () -> None
+    study_with_no_trials = optuna.create_study()
+    trials_df = study_with_no_trials.trials_dataframe()
+    assert trials_df.empty
+
+
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('cache_mode', CACHE_MODES)
 @pytest.mark.parametrize('include_internal_fields', [True, False])

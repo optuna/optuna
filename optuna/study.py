@@ -334,6 +334,10 @@ class Study(BaseStudy):
         """
         _check_pandas_availability()
 
+        # If no trials, return an empty dataframe.
+        if not len(self.trials):
+            return pd.DataFrame()
+
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
         # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
