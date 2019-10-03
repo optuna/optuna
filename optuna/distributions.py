@@ -86,7 +86,7 @@ class BaseDistribution(object):
     def __eq__(self, other):
         # type: (Any) -> bool
 
-        if other is None or type(self) != type(other):
+        if type(self) != type(other):
             return False
 
         return self.__dict__ == other.__dict__
@@ -99,7 +99,7 @@ class BaseDistribution(object):
     def __hash__(self):
         # type: () -> int
 
-        return self.__dict__.__hash__()
+        return hash(self.__dict__)
 
 
 class UniformDistribution(BaseDistribution):
