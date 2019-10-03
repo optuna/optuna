@@ -64,19 +64,19 @@ def test_check_distribution_compatibility():
     # test dynamic value range (CategoricalDistribution)
     pytest.raises(
         ValueError, lambda: distributions.check_distribution_compatibility(
-            EXAMPLE_DISTRIBUTIONS['c2'], EXAMPLE_DISTRIBUTIONS['c2']._replace(
-                choice=('Roppongi', 'Akasaka'))))
+            EXAMPLE_DISTRIBUTIONS['c2'],
+            distributions.CategoricalDistribution(choices=('Roppongi', 'Akasaka'))))
 
     # test dynamic value range (except CategoricalDistribution)
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['u'], EXAMPLE_DISTRIBUTIONS['u']._replace(low=-1.0, high=-2.0))
+        EXAMPLE_DISTRIBUTIONS['u'], distributions.UniformDistribution(low=-3.0, high=-2.0))
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['l'], EXAMPLE_DISTRIBUTIONS['l']._replace(low=-0.1, high=1.0))
+        EXAMPLE_DISTRIBUTIONS['l'], distributions.LogUniformDistribution(low=-0.1, high=1.0))
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['du'], EXAMPLE_DISTRIBUTIONS['du']._replace(
-            low=-1.0, high=10.0, q=3.))
+        EXAMPLE_DISTRIBUTIONS['du'],
+        distributions.DiscreteUniformDistribution(low=-1.0, high=10.0, q=3.))
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['iu'], EXAMPLE_DISTRIBUTIONS['iu']._replace(low=-1, high=1))
+        EXAMPLE_DISTRIBUTIONS['iu'], distributions.IntUniformDistribution(low=-1, high=1))
 
 
 def test_contains():
