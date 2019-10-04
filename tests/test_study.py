@@ -410,6 +410,7 @@ def test_study_pickle():
 
 def test_study_trials_dataframe_with_no_trials():
     # type: () -> None
+
     study_with_no_trials = optuna.create_study()
     trials_df = study_with_no_trials.trials_dataframe()
     assert trials_df.empty
