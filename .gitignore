@@ -5,7 +5,7 @@ train-images-idx3-ubyte*
 train-labels-idx1-ubyte*
 training.pt
 test.pt
-catboost_info
+catboost_info/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
