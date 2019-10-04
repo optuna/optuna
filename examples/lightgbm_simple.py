@@ -47,7 +47,7 @@ def objective(trial):
         'feature_fraction': min(trial.suggest_uniform('feature_fraction', 0.4, 1.0 + EPS), 1.0),
         'bagging_fraction': min(trial.suggest_uniform('bagging_fraction', 0.4, 1.0 + EPS), 1.0),
         'bagging_freq': trial.suggest_int('bagging_freq', 1, 7),
-        'min_child_samples': int(trial.suggest_uniform('min_child_samples', 5, 100 + EPS)),
+        'min_child_samples': trial.suggest_int('min_child_samples', 5, 100),
     }
 
     gbm = lgb.train(param, dtrain)
