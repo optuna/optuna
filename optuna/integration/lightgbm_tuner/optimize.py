@@ -91,8 +91,8 @@ class BaseTuner(object):
     ):
         # type: (Dict[str, Any], Dict[str,Any]) -> None
 
-        self.lgbm_params = lgbm_params if lgbm_params is not None else {}
-        self.lgbm_kwargs = lgbm_kwargs if lgbm_kwargs is not None else {}
+        self.lgbm_params = lgbm_params or {}
+        self.lgbm_kwargs = lgbm_kwargs or {}
 
     def _get_booster_best_score(self, booster):
         # type: (lgb.Booster) -> float
@@ -110,7 +110,7 @@ class BaseTuner(object):
             raise NotImplementedError
 
         valid_sets = self.lgbm_kwargs.get('valid_sets')
-        if self.lgbm_kwargs.get('valid_names', None) is not None:
+        if self.lgbm_kwargs.get('valid_names') is not None:
             if type(self.lgbm_kwargs['valid_names']) is str:
                 valid_name = self.lgbm_kwargs['valid_names']
             elif type(self.lgbm_kwargs['valid_names']) in [list, tuple]:
@@ -293,8 +293,8 @@ class LightGBMTuner(BaseTuner):
         self.best_booster = None
 
         self.best_score = -np.inf if self.higher_is_better() else np.inf
-        self.best_params = best_params if best_params is not None else {}
-        self.tuning_history = tuning_history if tuning_history is not None else []
+        self.best_params = best_params or {}
+        self.tuning_history = tuning_history or []
         self.enable_adjusting_lr = enable_adjusting_lr
 
         if early_stopping_rounds is None:
