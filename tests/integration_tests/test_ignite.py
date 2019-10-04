@@ -31,7 +31,7 @@ def test_ignite_pruning_handler():
         with pytest.raises(optuna.structs.TrialPruned):
             handler(trainer)
 
-    # # The pruner is not activated.
+    # The pruner is not activated.
     study = optuna.create_study(pruner=DeterministicPruner(False))
     trial = create_running_trial(study, 1.0)
 
