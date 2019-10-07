@@ -27,8 +27,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
 
-
-VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
+    VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
 
 # Default time budget for tuning `learning_rate`.
 DEFAULT_TIME_BUDGET_FOR_TUNING_LR = 4 * 60 * 60
