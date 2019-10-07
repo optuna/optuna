@@ -136,23 +136,6 @@ class Study(BaseStudy):
     For creating and loading studies, please refer to the documentation of
     :func:`~optuna.study.create_study` and :func:`~optuna.study.load_study` respectively.
 
-    Args:
-        study_name:
-            Study's name. Each study has a unique name as an identifier.
-        storage:
-            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
-            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
-            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
-            further details.
-        sampler:
-            A sampler object that implements background algorithm for value suggestion.
-            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
-            as the default. See also :class:`~optuna.samplers`.
-        pruner:
-            A pruner object that decides early stopping of unpromising trials.
-            If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
-            as the default. See also :class:`~optuna.pruners`.
-
     """
 
     def __init__(
