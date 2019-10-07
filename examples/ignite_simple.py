@@ -73,8 +73,7 @@ def create_optimizer(trial, model):
     optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'MomentumSGD'])
 
     if optimizer_name == 'Adam':
-        adam_lr = trial.suggest_loguniform('adam_lr', 1e-5, 1e-1)
-        optimizer = Adam(model.parameters(), lr=adam_lr)
+        optimizer = Adam(model.parameters())
     else:
         sgd_lr = trial.suggest_loguniform('sgd_lr', 1e-7, 1e-1)
         momentum = trial.suggest_uniform('momentum', 0.1, 0.9)
