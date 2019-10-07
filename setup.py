@@ -61,8 +61,11 @@ def get_extras_require():
         ],
         'example': [
             'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
-            'tensorflow', 'mxnet', 'xgboost', 'torch', 'torchvision',
-            'dask-ml', 'dask[dataframe]'
+            'mxnet', 'xgboost', 'torch', 'torchvision', 'pytorch-ignite',
+            'dask-ml', 'dask[dataframe]',
+            # TODO(Yanase): Update examples to support TensorFlow 2.0.
+            # See https://github.com/pfnet/optuna/issues/565 for further details.
+            'tensorflow<2.0.0'
         ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],
