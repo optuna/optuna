@@ -55,8 +55,9 @@ class Net(nn.Module):
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
         dropout_rate = trial.suggest_uniform('dropout_rate', 0, 1)
         self.conv2_drop = nn.Dropout2d(p=dropout_rate)
-        self.fc1 = nn.Linear(320, 50)
-        self.fc2 = nn.Linear(50, 10)
+        fc2_input_dim = trial.suggest_int('fc2_input_dim', 40, 80)
+        self.fc1 = nn.Linear(320, fc2_input_dim)
+        self.fc2 = nn.Linear(fc2_input_dim, 10)
 
     def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
