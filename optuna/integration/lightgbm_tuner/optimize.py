@@ -19,12 +19,16 @@ if type_checking.TYPE_CHECKING:
     from type_checking import Generator  # NOQA
     from type_checking import List  # NOQA
     from type_checking import Optional  # NOQA
+    from type_checking import Tuple  # NOQA
+    from type_checking import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
 
+
+VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
 
 # Default time budget for tuning `learning_rate`.
 DEFAULT_TIME_BUDGET_FOR_TUNING_LR = 4 * 60 * 60
@@ -108,8 +112,8 @@ class BaseTuner(object):
             metric = list(metric)[-1]
         else:
             raise NotImplementedError
+        valid_sets = self.lgbm_kwargs.get('valid_sets')  # type: Optional[VALID_SET_TYPE]
 
-        valid_sets = self.lgbm_kwargs.get('valid_sets')
         if self.lgbm_kwargs.get('valid_names') is not None:
             if type(self.lgbm_kwargs['valid_names']) is str:
                 valid_name = self.lgbm_kwargs['valid_names']
@@ -252,7 +256,7 @@ class LightGBMTuner(BaseTuner):
             params,  # type: Dict[str, Any]
             train_set,  # type: lgb.Dataset
             num_boost_round=1000,  # type: int
-            valid_sets=None,  # type: Optional[Any]
+            valid_sets=None,  # type: Optional[VALID_SET_TYPE]
             valid_names=None,  # type: Optional[Any]
             fobj=None,  # type: Optional[Callable[Any, Any]]
             feval=None,  # type: Optional[Callable[Any, Any]]
