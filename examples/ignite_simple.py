@@ -2,8 +2,8 @@
 Optuna example that optimizes convolutional neural networks using PyTorch Ignite.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-PyTorch Ignite and MNIST. We optimize the neural network architecture as well as the optimizer
-configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
+PyTorch Ignite and MNIST. We optimize the neural network architecture as well as the
+regularization. As it is too time consuming to use the whole MNIST dataset, we here use a small
 subset of it.
 
 We have the following two ways to execute this example:
@@ -29,7 +29,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.optim import Adam
-from torch.optim import SGD
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
 from torchvision.datasets.mnist import MNIST
@@ -69,19 +68,6 @@ class Net(nn.Module):
         return F.log_softmax(x, dim=-1)
 
 
-def create_optimizer(trial, model):
-    # We optimize the choice of optimizers as well as their parameters.
-    optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'MomentumSGD'])
-
-    if optimizer_name == 'Adam':
-        optimizer = Adam(model.parameters())
-    else:
-        sgd_lr = trial.suggest_loguniform('sgd_lr', 1e-7, 1e-1)
-        momentum = trial.suggest_uniform('momentum', 0.1, 0.9)
-        optimizer = SGD(model.parameters(), lr=sgd_lr, momentum=momentum)
-    return optimizer
-
-
 def get_data_loaders(train_batch_size, val_batch_size):
     data_transform = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))])
 
@@ -103,7 +89,8 @@ def objective(trial):
     device = 'cpu'
     if torch.cuda.is_available():
         device = 'cuda'
-    optimizer = create_optimizer(trial, model)
+
+    optimizer = Adam(model.parameters())
     trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)
     evaluator = create_supervised_evaluator(model,
                                             metrics={'accuracy': Accuracy()},
