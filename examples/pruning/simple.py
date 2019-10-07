@@ -34,18 +34,18 @@ def objective(trial):
         clf.partial_fit(train_x, train_y, classes=classes)
 
         # Report intermediate objective value.
-        intermediate_value = 1.0 - clf.score(test_x, test_y)
+        intermediate_value = clf.score(test_x, test_y)
         trial.report(intermediate_value, step)
 
         # Handle pruning based on the intermediate value.
         if trial.should_prune():
             raise optuna.structs.TrialPruned()
 
-    return 1.0 - clf.score(test_x, test_y)
+    return clf.score(test_x, test_y)
 
 
 if __name__ == '__main__':
-    study = optuna.create_study()
+    study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)
 
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]

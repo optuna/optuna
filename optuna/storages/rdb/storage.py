@@ -55,6 +55,8 @@ class RDBStorage(BaseStorage):
     def __init__(self, url, engine_kwargs=None, enable_cache=True, skip_compatibility_check=False):
         # type: (str, Optional[Dict[str, Any]], bool, bool) -> None
 
+        self._check_python_version()
+
         engine_kwargs = engine_kwargs or {}
 
         url = self._fill_storage_url_template(url)
@@ -76,6 +78,19 @@ class RDBStorage(BaseStorage):
             self._version_manager.check_table_schema_compatibility()
 
         self._finished_trials_cache = _FinishedTrialsCache(enable_cache)
+
+    @staticmethod
+    def _check_python_version():
+        # type: () -> None
+
+        if sys.version_info.major != 3:
+            return
+
+        if sys.version_info.minor != 4:
+            return
+
+        if 0 <= sys.version_info.micro and sys.version_info.micro < 4:
+            raise RuntimeError('RDBStorage does not support Python 3.4.0 to 3.4.3.')
 
     def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
