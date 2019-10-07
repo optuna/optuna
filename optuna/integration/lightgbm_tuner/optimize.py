@@ -105,7 +105,7 @@ class BaseTuner(object):
         elif type(metric) is list:
             metric = metric[-1]
         elif type(metric) is set:
-            metric = metric[-1]
+            metric = list(metric)[-1]
         else:
             raise NotImplementedError
 
