@@ -8,7 +8,7 @@ if optuna.type_checking.TYPE_CHECKING:
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
-    from optuna.study import InTrialStudy  # NOQA
+    from optuna.study import Study  # NOQA
 
 
 class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
@@ -19,17 +19,17 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
         self.relative_params = relative_params
 
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         return self.relative_search_space
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
         return self.relative_params
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
+        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             param_value = param_distribution.low  # type: Union[float, str]
@@ -49,7 +49,7 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
 
 class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
 
         if len(study.trials) > 1:
             raise RuntimeError("`FirstTrialOnlyRandomSampler` only works on the first trial.")
@@ -57,7 +57,7 @@ class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):
         return super(FirstTrialOnlyRandomSampler, self).sample_relative(study, trial, search_space)
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> float
+        # type: (Study, FrozenTrial, str, BaseDistribution) -> float
 
         if len(study.trials) > 1:
             raise RuntimeError("`FirstTrialOnlyRandomSampler` only works on the first trial.")

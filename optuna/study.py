@@ -4,8 +4,17 @@ import gc
 import math
 import multiprocessing
 import multiprocessing.pool
-import pandas as pd
+
+try:
+    import pandas as pd  # NOQA
+    _pandas_available = True
+except ImportError as e:
+    _pandas_import_error = e
+    # trials_dataframe is disabled because pandas is not available.
+    _pandas_available = False
+
 from six.moves import queue
+import threading
 import time
 import warnings
 
@@ -28,6 +37,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
     from typing import Type  # NOQA
     from typing import Union  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
@@ -157,11 +168,14 @@ class Study(BaseStudy):
 
         self.logger = logging.get_logger(__name__)
 
+        self._optimize_lock = threading.Lock()
+
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
         del state['logger']
+        del state['_optimize_lock']
         return state
 
     def __setstate__(self, state):
@@ -169,6 +183,7 @@ class Study(BaseStudy):
 
         self.__dict__.update(state)
         self.logger = logging.get_logger(__name__)
+        self._optimize_lock = threading.Lock()
 
     @property
     def user_attrs(self):
@@ -198,7 +213,8 @@ class Study(BaseStudy):
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
-            catch=(Exception, )  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            callbacks=None  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -224,13 +240,20 @@ class Study(BaseStudy):
                 this argument. Default is (`Exception <https://docs.python.org/3/library/
                 exceptions.html#Exception>`_,), where all non-exit exceptions are handled
                 by this logic.
-
+            callbacks:
+                List of callback functions that are invoked at the end of each trial.
         """
 
-        if n_jobs == 1:
-            self._optimize_sequential(func, n_trials, timeout, catch)
-        else:
-            self._optimize_parallel(func, n_trials, timeout, n_jobs, catch)
+        if not self._optimize_lock.acquire(False):
+            raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
+
+        try:
+            if n_jobs == 1:
+                self._optimize_sequential(func, n_trials, timeout, catch, callbacks)
+            else:
+                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch, callbacks)
+        finally:
+            self._optimize_lock.release()
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -292,6 +315,11 @@ class Study(BaseStudy):
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
+        _check_pandas_availability()
+
+        # If no trials, return an empty dataframe.
+        if not len(self.trials):
+            return pd.DataFrame()
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
@@ -321,12 +349,54 @@ class Study(BaseStudy):
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
+    def _append_trial(
+            self,
+            value=None,  # type: Optional[float]
+            params=None,  # type: Optional[Dict[str, Any]]
+            distributions=None,  # type: Optional[Dict[str, BaseDistribution]]
+            user_attrs=None,  # type: Optional[Dict[str, Any]]
+            system_attrs=None,  # type: Optional[Dict[str, Any]]
+            intermediate_values=None,  # type: Optional[Dict[int, float]]
+            state=structs.TrialState.COMPLETE,  # type: structs.TrialState
+            datetime_start=None,  # type: Optional[datetime.datetime]
+            datetime_complete=None  # type: Optional[datetime.datetime]
+    ):
+        # type: (...) -> None
+
+        params = params or {}
+        distributions = distributions or {}
+        user_attrs = user_attrs or {}
+        system_attrs = system_attrs or {}
+        intermediate_values = intermediate_values or {}
+        datetime_start = datetime_start or datetime.datetime.now()
+
+        if state.is_finished():
+            datetime_complete = datetime_complete or datetime.datetime.now()
+
+        trial = structs.FrozenTrial(
+            number=-1,  # dummy value.
+            trial_id=-1,  # dummy value.
+            state=state,
+            value=value,
+            datetime_start=datetime_start,
+            datetime_complete=datetime_complete,
+            params=params,
+            distributions=distributions,
+            user_attrs=user_attrs,
+            system_attrs=system_attrs,
+            intermediate_values=intermediate_values)
+
+        trial._validate()
+
+        self.storage.create_new_trial(self.study_id, template_trial=trial)
+
     def _optimize_sequential(
             self,
             func,  # type: ObjectiveFuncType
             n_trials,  # type: Optional[int]
             timeout,  # type: Optional[float]
-            catch  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
 
@@ -343,7 +413,7 @@ class Study(BaseStudy):
                 if elapsed_seconds >= timeout:
                     break
 
-            self._run_trial(func, catch)
+            self._run_trial_and_callbacks(func, catch, callbacks)
 
     def _optimize_parallel(
             self,
@@ -351,7 +421,8 @@ class Study(BaseStudy):
             n_trials,  # type: Optional[int]
             timeout,  # type: Optional[float]
             n_jobs,  # type: int
-            catch  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
 
@@ -375,7 +446,7 @@ class Study(BaseStudy):
             # type: (Queue) -> None
 
             while que.get():
-                self._run_trial(func, catch)
+                self._run_trial_and_callbacks(func, catch, callbacks)
             self._storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
@@ -409,10 +480,24 @@ class Study(BaseStudy):
         que.close()
         que.join_thread()
 
+    def _run_trial_and_callbacks(
+            self,
+            func,  # type: ObjectiveFuncType
+            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+    ):
+        # type: (...) -> None
+
+        trial = self._run_trial(func, catch)
+        if callbacks is not None:
+            frozen_trial = self._storage.get_trial(trial._trial_id)
+            for callback in callbacks:
+                callback(self, frozen_trial)
+
     def _run_trial(self, func, catch):
         # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
 
-        trial_id = self._storage.create_new_trial_id(self.study_id)
+        trial_id = self._storage.create_new_trial(self.study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
@@ -475,30 +560,6 @@ class Study(BaseStudy):
                              trial_number, value, self.best_value, self.best_params))
 
 
-class InTrialStudy(BaseStudy):
-    """An object to access a study instance inside a trial instance safely.
-
-    To prevent unexpected recursive calls of :func:`~optuna.study.Study.optimize()`, this class
-    does not allow to call :func:`~optuna.study.InTrialStudy.optimize()` unlike
-    :class:`~optuna.study.Study`.
-
-    Note that this object is created within Optuna library, so
-    it is not intended that library users directly use this constructor.
-
-    Args:
-        study:
-            A :class:`~optuna.study.Study` object.
-
-    """
-
-    def __init__(self, study):
-        # type: (Study) -> None
-
-        super(InTrialStudy, self).__init__(study.study_id, study._storage)
-
-        self.study_name = study.study_name
-
-
 def create_study(
         storage=None,  # type: Union[None, str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
@@ -515,8 +576,9 @@ def create_study(
             Database URL. If this argument is set to None, in-memory storage is used, and the
             :class:`~optuna.study.Study` will not be persistent.
         sampler:
-            A sampler object that implements background algorithm for value suggestion. See also
-            :class:`~optuna.samplers`.
+            A sampler object that implements background algorithm for value suggestion.
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
+            as the default. See also :class:`~optuna.samplers`.
         pruner:
             A pruner object that decides early stopping of unpromising trials. See also
             :class:`~optuna.pruners`.
@@ -540,7 +602,7 @@ def create_study(
 
     storage = storages.get_storage(storage)
     try:
-        study_id = storage.create_new_study_id(study_name)
+        study_id = storage.create_new_study(study_name)
     except structs.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
@@ -602,6 +664,29 @@ def load_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
+def delete_study(
+        study_name,  # type: str
+        storage,  # type: Union[str, storages.BaseStorage]
+):
+    # type: (...) -> None
+    """Delete a :class:`~optuna.study.Study` object.
+
+    Args:
+        study_name:
+            Study's name.
+        storage:
+            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
+            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
+            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
+            further details.
+
+    """
+
+    storage = storages.get_storage(storage)
+    study_id = storage.get_study_id_from_name(study_name)
+    storage.delete_study(study_id)
+
+
 def get_all_study_summaries(storage):
     # type: (Union[str, storages.BaseStorage]) -> List[structs.StudySummary]
     """Get all history of studies stored in a specified storage.
@@ -617,3 +702,14 @@ def get_all_study_summaries(storage):
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
+
+
+def _check_pandas_availability():
+    # type: () -> None
+
+    if not _pandas_available:
+        raise ImportError(
+            'pandas is not available. Please install pandas to use this feature. '
+            'pandas can be installed by executing `$ pip install pandas`. '
+            'For further information, please refer to the installation guide of pandas. '
+            '(The actual import error is as follows: ' + str(_pandas_import_error) + ')')

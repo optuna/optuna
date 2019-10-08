@@ -11,6 +11,7 @@ from optuna import type_checking
 import warnings
 
 if type_checking.TYPE_CHECKING:
+    from datetime import datetime  # NOQA
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
@@ -357,6 +358,18 @@ class ChainerMNTrial(BaseTrial):
 
             assert self.delegate is not None
             return self.delegate.system_attrs
+
+        return self._call_with_mpi(func)
+
+    @property
+    def datetime_start(self):
+        # type: () -> Optional[datetime]
+
+        def func():
+            # type: () -> Optional[datetime]
+
+            assert self.delegate is not None
+            return self.delegate.datetime_start
 
         return self._call_with_mpi(func)
 
