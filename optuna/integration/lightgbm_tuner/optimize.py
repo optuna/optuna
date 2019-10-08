@@ -366,7 +366,7 @@ class LightGBMTuner(BaseTuner):
         _handling_alias_parameters(self.lgbm_params)
 
         # Sampling.
-        self.sampling_train_set()
+        self.sample_train_set()
 
         # Tuning.
         time_budget = self.auto_options['time_budget']
@@ -409,7 +409,7 @@ class LightGBMTuner(BaseTuner):
         self.best_params.update(self._get_params())
         return self.best_booster
 
-    def sampling_train_set(self):
+    def sample_train_set(self):
         # type: () -> None
         """Make subset of `self.train_set` Dataset object."""
 

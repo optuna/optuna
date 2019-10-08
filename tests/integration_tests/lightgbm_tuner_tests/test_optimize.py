@@ -107,7 +107,7 @@ class TestOptunaObjective(object):
             assert study.best_value == 0.5
 
 
-class Test_TimeKeeper(object):
+class TestTimeKeeper(object):
     def test__timer_elapsed_secs(self):
         # type: () -> None
 
@@ -283,7 +283,7 @@ class TestLightGBMTuner(object):
             assert new_arg not in runner.lgbm_kwargs
             assert new_arg in runner.auto_options
 
-    def test_sampling_train_set(self):
+    def test_sample_train_set(self):
         # type: () -> None
 
         sample_size = 3
@@ -293,7 +293,7 @@ class TestLightGBMTuner(object):
         train_dataset = lgb.Dataset(X_trn, label=y_trn)
         runner = self._helper_get_minimum_runner(train_set=train_dataset,
                                                  kwargs_options=dict(sample_size=sample_size))
-        runner.sampling_train_set()
+        runner.sample_train_set()
 
         # Workaround for mypy.
         if not type_checking.TYPE_CHECKING:
