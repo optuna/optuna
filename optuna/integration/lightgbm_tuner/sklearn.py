@@ -28,7 +28,7 @@ class LGBMModel(lgb.LGBMModel):
         # type: (List[Any], Dict[str, Any]) -> None
 
         warnings.warn("LightGBMTuner doesn't support sklearn API. "
-                      "Ues `train()` or `LightGBMTuner` for hyperparameter tuning.")
+                      "Use `train()` or `LightGBMTuner` for hyperparameter tuning.")
         super(LGBMModel, self).__init__(*args, **kwargs)
 
 
@@ -42,7 +42,7 @@ class LGBMClassifier(lgb.LGBMClassifier):
         # type: (List[Any], Dict[str, Any]) -> None
 
         warnings.warn("LightGBMTuner doesn't support sklearn API. "
-                      "Ues `train()` or `LightGBMTuner` for hyperparameter tuning.")
+                      "Use `train()` or `LightGBMTuner` for hyperparameter tuning.")
         super(LGBMClassifier, self).__init__(*args, **kwargs)
 
 
@@ -56,5 +56,5 @@ class LGBMRegressor(lgb.LGBMRegressor):
         # type: (List[Any], Dict[str, Any]) -> None
 
         warnings.warn("LightGBMTuner doesn't support sklearn API. "
-                      "Ues `train()` or `LightGBMTuner` for hyperparameter tuning.")
+                      "Use `train()` or `LightGBMTuner` for hyperparameter tuning.")
         super(LGBMRegressor, self).__init__(*args, **kwargs)
