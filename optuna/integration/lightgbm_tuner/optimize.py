@@ -303,7 +303,7 @@ class LightGBMTuner(BaseTuner):
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
 
-    def get_params(self):
+    def _get_params(self):
         # type: () -> Dict[str, Any]
 
         params = copy.deepcopy(self.lgbm_params)
@@ -375,38 +375,38 @@ class LightGBMTuner(BaseTuner):
         with _timer() as t:
             self.tune_feature_fraction()
             if time_budget is not None and time_budget > t.elapsed_secs():
-                self.best_params.update(self.get_params())
+                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_num_leaves()
             if time_budget is not None and time_budget > t.elapsed_secs():
-                self.best_params.update(self.get_params())
+                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_bagging()
             if time_budget is not None and time_budget > t.elapsed_secs():
-                self.best_params.update(self.get_params())
+                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_feature_fraction_stage2()
             if time_budget is not None and time_budget > t.elapsed_secs():
-                self.best_params.update(self.get_params())
+                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_regularization_factors()
             if time_budget is not None and time_budget > t.elapsed_secs():
-                self.best_params.update(self.get_params())
+                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_min_data_in_leaf()
             if time_budget is not None and time_budget > t.elapsed_secs():
-                self.best_params.update(self.get_params())
+                self.best_params.update(self._get_params())
                 return self.best_booster
 
             if self.enable_adjusting_lr:
                 self.tune_learning_rate()
 
-        self.best_params.update(self.get_params())
+        self.best_params.update(self._get_params())
         return self.best_booster
 
     def sampling_train_set(self):

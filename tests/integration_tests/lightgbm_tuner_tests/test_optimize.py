@@ -34,7 +34,7 @@ def turnoff_tuner():
         (fqn_prefix + '.__init__', None),
         (fqn_prefix + '.run', True),
         (fqn_prefix + '._parse_args', None),
-        (fqn_prefix + '.get_params', {}),
+        (fqn_prefix + '._get_params', {}),
     ]  # type: List[Tuple[str, Any]]
 
     if sys.version_info >= (3, 5):
