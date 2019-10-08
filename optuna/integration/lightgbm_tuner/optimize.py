@@ -188,7 +188,7 @@ class OptunaObjective(BaseTuner):
         ]
         for target_param_name in self.target_param_names:
             if target_param_name not in supported_param_names:
-                raise NotImplementedError("Parameter `{}` is not supported for tunning")
+                raise NotImplementedError("Parameter `{}` is not supported for tunning.")
 
     def __call__(self, trial):
         # type: (Trial) -> float
@@ -411,7 +411,7 @@ class LightGBMTuner(BaseTuner):
 
     def sampling_train_set(self):
         # type: () -> None
-        """Make subset of `self.train_set` Dataset object"""
+        """Make subset of `self.train_set` Dataset object."""
 
         if self.auto_options['sample_size'] is None:
             return
