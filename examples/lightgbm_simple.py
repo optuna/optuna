@@ -26,9 +26,6 @@ from sklearn.model_selection import train_test_split
 import optuna
 
 
-EPS = 1e-12
-
-
 # FYI: Objective functions can take additional arguments
 # (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
@@ -44,8 +41,8 @@ def objective(trial):
         'lambda_l1': trial.suggest_loguniform('lambda_l1', 1e-8, 10.0),
         'lambda_l2': trial.suggest_loguniform('lambda_l2', 1e-8, 10.0),
         'num_leaves': trial.suggest_int('num_leaves', 2, 256),
-        'feature_fraction': min(trial.suggest_uniform('feature_fraction', 0.4, 1.0 + EPS), 1.0),
-        'bagging_fraction': min(trial.suggest_uniform('bagging_fraction', 0.4, 1.0 + EPS), 1.0),
+        'feature_fraction': trial.suggest_uniform('feature_fraction', 0.4, 1.0),
+        'bagging_fraction': trial.suggest_uniform('bagging_fraction', 0.4, 1.0),
         'bagging_freq': trial.suggest_int('bagging_freq', 1, 7),
         'min_child_samples': trial.suggest_int('min_child_samples', 5, 100),
     }
