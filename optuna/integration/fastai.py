@@ -26,6 +26,16 @@ class FastaiPruningCallback(LearnerCallback):
 
     Example:
 
+        Add a pruning callback which observes validation losses.
+
+        .. code::
+
+            learn.fit(n_epochs, callbacks=[FastaiPruningCallback(learn, trial, 'valid_loss')])
+            # If you want to use `fit_one_cycle`
+            learn.fit_one_cycle(
+                n_epochs, cyc_len, max_lr,
+                callbacks=[FastaiPruningCallback(learn, trial, 'valid_loss')])
+
     Args:
         learn:
             A entity of fastai.basic
