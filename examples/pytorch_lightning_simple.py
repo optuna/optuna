@@ -165,7 +165,7 @@ def objective(trial):
 
     # Sample optimizer parameters.
     optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'RMSprop', 'SGD'])
-    lr = trial.suggest_uniform('lr', 1e-5, 1e-1)
+    lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
 
     # Generate the PyTorch Lightning model.
     model = LightningNet(model, optimizer_name, lr)
