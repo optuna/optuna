@@ -41,6 +41,7 @@ In addition, integration modules are available for the following libraries, prov
 * [pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
 * [pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
 * [pruning with Keras integration module](./pruning/keras_integration.py)
+* [pruning with MXNet integration module](./pruning/mxnet_integration.py)
 
 ### Examples of User-Defined Sampler
 
