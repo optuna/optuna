@@ -163,7 +163,7 @@ def objective(trial):
     # Generate the model.
     model = Net(trial)
 
-    # Generate the optimizers.
+    # Sample optimizer parameters.
     optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'RMSprop', 'SGD'])
     lr = trial.suggest_uniform('lr', 1e-5, 1e-1)
 
