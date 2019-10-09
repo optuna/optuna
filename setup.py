@@ -57,6 +57,7 @@ def get_extras_require():
             'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
             'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
             'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0',
+            'torch', 'torchvision', 'fastai==1.0.58',
         ],
         'example': [
             'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
@@ -64,7 +65,8 @@ def get_extras_require():
             'pytorch-lightning', 'dask-ml', 'dask[dataframe]',
             # TODO(Yanase): Update examples to support TensorFlow 2.0.
             # See https://github.com/pfnet/optuna/issues/565 for further details.
-            'tensorflow<2.0.0'
+            'tensorflow<2.0.0',
+            'fastai',
         ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],
