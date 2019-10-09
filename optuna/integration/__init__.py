@@ -18,6 +18,7 @@ _import_structure = {
     'tensorflow': ['TensorFlowPruningHook'],
     'tfkeras': ['TFKerasPruningCallback'],
     'xgboost': ['XGBoostPruningCallback'],
+    'fastai': ['FastaiPruningCallback'],
 }
 
 

@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import numpy
+
 import optuna
 from optuna import type_checking
 
@@ -10,7 +12,8 @@ if type_checking.TYPE_CHECKING:
 
 try:
     import torch
-    from fastai.callback import Callback
+    from fastai.basic_train import Learner
+    from fastai.basic_train import LearnerCallback
     _available = True
 except ImportError as e:
     _import_error = e
@@ -18,7 +21,7 @@ except ImportError as e:
     Callback = object
 
 
-class FastaiPruningCallback(Callback):
+class FastaiPruningCallback(LearnerCallback):
     """FastAI callback to prune unpromising trials.
 
     Example:
@@ -27,7 +30,8 @@ class FastaiPruningCallback(Callback):
         learn:
             A entity of fastai.basic
         trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the objective function.
+            A :class:`~optuna.trial.Trial` corresponding to the current
+            evaluation of the objective function.
         monitor:
             Ane evaluation metric for pruning, e.g. ``valid_loss`` and ``Accuracy``.
             Please refer to `fastai.Callback reference
@@ -35,8 +39,8 @@ class FastaiPruningCallback(Callback):
             details.
     """
 
-    def __init__(self, learn, trial, monitor):
-        # type: (fastai.basic_train.Learner, optuna.trial.Trial, str) -> None
+    def __init__(self, learn, trial=None, monitor=''):
+        # type: (Learner, optuna.trial.Trial, str) -> None
 
         super(FastaiPruningCallback, self).__init__(learn)
 
@@ -45,17 +49,10 @@ class FastaiPruningCallback(Callback):
         self.trial = trial
         self.monitor = monitor
 
-    def on_train_begin(self, **kwargs):
-        # type: (Dict[Any, Any]) -> None
-
-        """Initialize recording status at beginning of training."""
-
-        if self.monitor not in self.learn.recorder.names:
-            raise RuntimeError(
-                'Invalid `monitor` argument. '
-                'Available monitors are {}'.format(
-                    ', '.join(self.learn.recorder.names[1:])))
-        self._index_to_monitor = self.learn.recorder.names.index(self.monitor)
+    # TODO (crcrpar): Remove this method if possible.
+    def register_trial_monitor(self, trial, monitor):
+        self.trial = trial
+        self.monitor = monitor
 
     def on_epoch_end(self, epoch, smooth_loss, last_metrics, **kwargs):
         # type: (...) -> None
@@ -63,12 +60,24 @@ class FastaiPruningCallback(Callback):
         if last_metrics is None:
             raise RuntimeError('Empty `last_metrics`')
 
+        # NOTE (crcrpar): In `LearnerCallback` implementation,
+        #         setattr(self.learn, self.cb_name, self)
+        # the above snippet exists.
+        # This makes it impossible to set the index of ``self.monitor`` to
+        # this callback.
+        if self.monitor not in self.learn.recorder.names:
+            raise RuntimeError(
+                'Invalid `monitor` argument ({}). '
+                'Available monitors are {}'.format(
+                    self.monitor,
+                    ', '.join(self.learn.recorder.names[1:])))
+
         epoch_stats = [epoch, smooth_loss] + last_metrics
-        value_to_monitor = epoch_stats[self._index_to_monitor]
-        if isinstance(value_to_monitor, torch.Tensor):
+        value_to_monitor = epoch_stats[
+            self.learn.recorder.names.index(self.monitor)]
+        if isinstance(value_to_monitor, (torch.Tensor, numpy.ndarray)):
             value_to_monitor = value_to_monitor.item()
 
-        assert isinstance(value_to_monitor, float)
         self.trial.report(value_to_monitor, step=epoch)
         if self.trial.should_prune():
             message = 'Trial was pruned at epoch {}.'.format(epoch)
