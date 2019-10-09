@@ -18,6 +18,7 @@ This page contains a list of example codes written with Optuna.
 * [MXNet](./mxnet_simple.py)
 * [PyTorch](./pytorch_simple.py)
 * [PyTorch Ignite](./ignite_simple.py)
+* [PyTorch Lightning](./pytorch_lightning_simple.py)
 * [XGBoost](./xgboost_simple.py)
 * [Tensorflow](./tensorflow_estimator_simple.py)
 * [Tensorflow(eager)](./tensorflow_eager_simple.py)
