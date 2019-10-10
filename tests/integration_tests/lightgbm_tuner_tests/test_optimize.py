@@ -297,7 +297,7 @@ class TestLightGBMTuner(object):
 
         # Workaround for mypy.
         if not type_checking.TYPE_CHECKING:
-            runner.train_subset.construct()  # Cannt get label before construct Dataset.
+            runner.train_subset.construct()  # Cannot get label before construct `lgb.Dataset`.
             assert runner.train_subset.get_label().shape[0] == sample_size
 
     def test_tune_feature_fraction(self):
