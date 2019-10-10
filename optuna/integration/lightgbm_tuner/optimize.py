@@ -100,7 +100,7 @@ class BaseTuner(object):
 
         metric = self.lgbm_params.get('metric', 'binary_logloss')
 
-        # todo (smly): Make this better.
+        # todo (smly): This implementation is different logic from the LightGBM's python bindings.
         if type(metric) is str:
             pass
         elif type(metric) is list:
@@ -270,7 +270,7 @@ class LightGBMTuner(BaseTuner):
             best_params=None,  # type: Optional[Dict[str, Any]]
             tuning_history=None,  # type: Optional[List[Dict[str, Any]]]
             enable_adjusting_lr=False,  # type: bool
-            verbosity=1,  # type: Optional[int]  # todo(smly): later.
+            verbosity=1,  # type: Optional[int]
     ):
         params = copy.deepcopy(params)
         args = [params, train_set]
