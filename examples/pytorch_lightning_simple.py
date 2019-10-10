@@ -141,7 +141,7 @@ def objective(trial):
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         os.path.join(MODEL_DIR, 'trial_{}'.format(trial.number)))
 
-    # The default logger in PyTorch Lightining writes to event files to be consumed by
+    # The default logger in PyTorch Lightning writes to event files to be consumed by
     # TensorBoard. We create a simple logger instead that holds the log in memory so that the
     # final accuracy can be obtained after optimization. When using the default logger, the
     # final accuracy could be stored in an attribute of the `Trainer` instead.
