@@ -17,6 +17,7 @@ from optuna.testing.integration import DeterministicPruner
 # https://docs.fast.ai/basic_data.html#Using-a-custom-Dataset-in-fastai
 class ArrayDataset(Dataset):
     "Sample numpy array dataset"
+
     def __init__(self, x, y):
         self.x, self.y = x, y
         self.c = 2
@@ -103,8 +104,7 @@ def test_fastai_pruning_callback_observation_isnan(tmpdir):
     learn.fit(1)
 
     with pytest.raises(optuna.structs.TrialPruned):
-        callback.on_epoch_end(1, torch.from_numpy(np.ones((1,))), [1.0])
+        callback.on_epoch_end(1, torch.from_numpy(np.ones((1, ))), [1.0])
 
     with pytest.raises(optuna.structs.TrialPruned):
-        callback.on_epoch_end(
-            1, torch.from_numpy(np.ones((1,))), [float('nan')])
+        callback.on_epoch_end(1, torch.from_numpy(np.ones((1, ))), [float('nan')])

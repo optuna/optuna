@@ -76,15 +76,12 @@ class FastaiPruningCallback(LearnerCallback):
         # This makes it impossible to set the index of ``self.monitor`` to
         # this callback.
         if self.monitor not in self.learn.recorder.names:
-            raise RuntimeError(
-                'Invalid `monitor` argument ({}). '
-                'Available monitors are {}'.format(
-                    self.monitor,
-                    ', '.join(self.learn.recorder.names[1:])))
+            raise RuntimeError('Invalid `monitor` argument ({}). '
+                               'Available monitors are {}'.format(
+                                   self.monitor, ', '.join(self.learn.recorder.names[1:])))
 
         epoch_stats = [epoch, smooth_loss] + last_metrics
-        value_to_monitor = epoch_stats[
-            self.learn.recorder.names.index(self.monitor)]
+        value_to_monitor = epoch_stats[self.learn.recorder.names.index(self.monitor)]
         if isinstance(value_to_monitor, (torch.Tensor, numpy.ndarray)):
             value_to_monitor = value_to_monitor.item()
 
