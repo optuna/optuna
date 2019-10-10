@@ -22,6 +22,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import shutil
 
 import pytorch_lightning as pl
 import torch
@@ -40,6 +41,7 @@ BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 10
 DIR = os.getcwd()
+MODEL_DIR = os.path.join(DIR, 'result')
 
 
 class DictLogger(pl.logging.LightningLoggerBase):
@@ -137,7 +139,7 @@ def objective(trial):
     # PyTorch Lightning will try to restore model parameters from previous trials if checkpoint
     # filenames match. Therefore, the filenames for each trial must be made unique.
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        os.path.join(DIR, 'results', 'trial_{}'.format(trial.number)))
+        os.path.join(MODEL_DIR, 'trial_{}'.format(trial.number)))
 
     # The default logger in PyTorch Lightining writes to event files to be consumed by
     # TensorBoard. We create a simple logger instead that holds the log in memory so that the
@@ -174,3 +176,5 @@ if __name__ == '__main__':
     print('  Params: ')
     for key, value in trial.params.items():
         print('    {}: {}'.format(key, value))
+
+    shutil.rmtree(MODEL_DIR)
