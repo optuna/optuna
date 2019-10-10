@@ -53,9 +53,7 @@ class DictLogger(pl.logging.LightningLoggerBase):
         self.metrics.append(metric)
 
 
-# The code for `Net` is taken from `pytorch_simple.py`.
 class Net(nn.Module):
-    # Constructor for trial network.
     def __init__(self, trial):
         super(Net, self).__init__()
         self.layers = []
@@ -81,7 +79,6 @@ class Net(nn.Module):
         for idx, dropout in enumerate(self.dropouts):
             setattr(self, 'drop{}'.format(idx), dropout)
 
-    # Forward pass computation function.
     def forward(self, data):
         data = data.view(-1, 28 * 28)
         for layer, dropout in zip(self.layers, self.dropouts):
