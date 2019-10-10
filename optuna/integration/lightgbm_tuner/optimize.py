@@ -561,7 +561,7 @@ class LightGBMTuner(BaseTuner):
                 },
             }
 
-        # Adjusting learning rate. (Default: False)
+        # Adjust learning rate. (Default: False)
         if not self.enable_adjusting_lr:
             return
 
