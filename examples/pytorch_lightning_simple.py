@@ -2,9 +2,8 @@
 Optuna example that optimizes multi-layer perceptrons using PyTorch Lightning.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-PyTorch Lightning, and MNIST. We optimize the neural network architecture as well as the optimizer
-configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
-subset of it.
+PyTorch Lightning, and MNIST. We optimize the neural network architecture. As it is too time
+consuming to use the whole MNIST dataset, we here use a small subset of it.
 
 We have the following two ways to execute this example:
 
@@ -28,7 +27,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
+from torch.optim import Adam
 import torch.utils.data
 from torchvision import datasets
 from torchvision import transforms
@@ -93,13 +92,11 @@ class Net(nn.Module):
 
 class LightningNet(pl.LightningModule):
 
-    def __init__(self, model, optimizer_name, lr):
+    def __init__(self, trial):
         super(LightningNet, self).__init__()
 
         # Be careful not to overwrite `pl.LightningModule` attributes such as `self.model`.
-        self._model = model
-        self._optimizer_name = optimizer_name
-        self._lr = lr
+        self._model = Net(trial)
 
     def forward(self, data):
         return self._model(data)
@@ -124,7 +121,7 @@ class LightningNet(pl.LightningModule):
         return {'log': {'accuracy': accuracy}}
 
     def configure_optimizers(self):
-        return getattr(optim, self._optimizer_name)(self._model.parameters(), lr=self._lr)
+        return Adam(self._model.parameters())
 
     @pl.data_loader
     def train_dataloader(self):
@@ -160,15 +157,7 @@ def objective(trial):
         gpus=0 if torch.cuda.is_available() else None,
     )
 
-    # Generate the model.
-    model = Net(trial)
-
-    # Sample optimizer parameters.
-    optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'RMSprop', 'SGD'])
-    lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
-
-    # Generate the PyTorch Lightning model.
-    model = LightningNet(model, optimizer_name, lr)
+    model = LightningNet(trial)
     trainer.fit(model)
 
     return logger.metrics[-1]['accuracy']
