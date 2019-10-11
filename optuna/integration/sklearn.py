@@ -7,8 +7,6 @@ from numbers import Number
 from time import time
 
 import numpy as np
-import pandas as pd  # NOQA
-from scipy.sparse import spmatrix  # NOQA
 
 try:
     from sklearn.base import BaseEstimator
@@ -42,6 +40,8 @@ from optuna import trial as trial_module  # NOQA
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    import pandas as pd  # NOQA
+    from scipy.sparse import spmatrix  # NOQA
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
