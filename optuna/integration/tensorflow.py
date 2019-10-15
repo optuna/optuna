@@ -58,6 +58,8 @@ class TensorFlowPruningHook(SessionRunHook):
     def __init__(self, trial, estimator, metric, run_every_steps, is_higher_better=None):
         # type: (optuna.trial.Trial, tf.estimator.Estimator, str, int, Optional[bool]) -> None
 
+        _check_tensorflow_availability()
+
         self.trial = trial
         self.estimator = estimator
         self.current_summary_step = -1
