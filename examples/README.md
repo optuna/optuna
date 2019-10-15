@@ -54,3 +54,5 @@ In addition, integration modules are available for the following libraries, prov
 * [plotting learning curves](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_intermediate_values.ipynb)
 * [plotting optimization history](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_optimization_history.ipynb)
 * [plotting relationship between two parameters (contour plot)](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_contour.ipynb)
+=======
+* [plotting parallel coordinate](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_parallel_coordinate.ipynb)
