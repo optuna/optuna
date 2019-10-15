@@ -88,7 +88,7 @@ def test_get_optimization_history_plot():
     study = create_study()
     study.optimize(fail_objective, n_trials=1)
     figure = _get_optimization_history_plot(study)
-    assert len(figure.data) == 2
+    assert len(figure.data) == 0
 
 
 def test_get_slice_plot():

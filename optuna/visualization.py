@@ -259,7 +259,6 @@ def _generate_slice_subplot(study, trials, param):
             'colorbar': {'title': '#Trials'}
         },
         showlegend=False,
-        reversescale=study.direction == StudyDirection.MINIMIZE
     )
 
 
