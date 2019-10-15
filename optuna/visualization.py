@@ -431,6 +431,104 @@ def _get_parallel_coordinate_plot(study, params=None):
     return figure
 
 
+def plot_slice(study, params=None):
+    # type: (Study, Optional[List[str]]) -> None
+    """Plot the parameter relationship as slice plot in a study.
+
+        Note that, If a parameter contains missing values, a trial with missing values is not
+        plotted.
+
+    Example:
+
+        The following code snippet shows how to plot the parameter relationship as slice plot.
+
+        .. code::
+
+            import optuna
+
+            def objective(trial):
+                ...
+
+            study = optuna.create_study()
+            study.optimize(objective, n_trials=100)
+
+            optuna.visualization.plot_slice(study, params=['param_a', 'param_b'])
+
+    Args:
+        study:
+            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
+            values.
+        params:
+            Parameter list to visualize. The default is all parameters.
+    """
+
+    _check_plotly_availability()
+    figure = _get_slice_plot(study, params)
+    figure.show()
+
+
+def _get_slice_plot(study, params=None):
+    # type: (Study, Optional[List[str]]) -> Figure
+
+    layout = go.Layout(
+        title='Slice Plot',
+    )
+
+    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+
+    if len(trials) == 0:
+        logger.warning('Your study does not have any completed trials.')
+        return go.Figure(data=[], layout=layout)
+
+    all_params = {p_name for t in trials for p_name in t.params.keys()}
+    if params is None:
+        sorted_params = sorted(list(all_params))
+    else:
+        for input_p_name in params:
+            if input_p_name not in all_params:
+                raise ValueError('Parameter {} does not exist in your study.'.format(input_p_name))
+        sorted_params = sorted(list(set(params)))
+
+    if len(sorted_params) == 1:
+        figure = go.Figure(
+            data=[_generate_slice_subplot(study, trials, sorted_params[0])],
+            layout=layout
+        )
+        figure.update_xaxes(title_text=sorted_params[0])
+        figure.update_yaxes(title_text='Objective Value')
+    else:
+        figure = make_subplots(rows=1, cols=len(sorted_params), shared_yaxes=True)
+        figure.update_layout(layout)
+        showscale = True   # showscale option only needs to be specified once.
+        for i, param in enumerate(sorted_params):
+            trace = _generate_slice_subplot(study, trials, param)
+            trace.update(marker=dict(showscale=showscale))  # showscale's default is True.
+            if showscale:
+                showscale = False
+            figure.add_trace(trace, row=1, col=i + 1)
+            figure.update_xaxes(title_text=param, row=1, col=i + 1)
+            if i == 0:
+                figure.update_yaxes(title_text='Objective Value', row=1, col=1)
+
+    return figure
+
+
+def _generate_slice_subplot(study, trials, param):
+    # type: (Study, List[FrozenTrial], str) -> Scatter
+
+    return go.Scatter(
+        x=[t.params[param] for t in trials if param in t.params],
+        y=[t.value for t in trials if param in t.params],
+        mode='markers',
+        marker={
+            'color': [t.number for t in trials if param in t.params],
+            'colorscale': 'Blues',
+            'colorbar': {'title': '#Trials'}
+        },
+        showlegend=False,
+    )
+
+
 def _check_plotly_availability():
     # type: () -> None
 
