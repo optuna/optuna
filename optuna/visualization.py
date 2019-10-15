@@ -7,11 +7,18 @@ from optuna import type_checking
 logger = get_logger(__name__)
 
 if type_checking.TYPE_CHECKING:
+    from plotly.graph_objs import Contour  # NOQA
+    from plotly.graph_objs import Scatter  # NOQA
     from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
+
+    from optuna.structs import FrozenTrial  # NOQA
 
 try:
     import plotly.graph_objs as go
     from plotly.graph_objs._figure import Figure  # NOQA
+    from plotly.subplots import make_subplots
     _available = True
 except ImportError as e:
     _import_error = e
@@ -157,6 +164,164 @@ def _get_optimization_history_plot(study):
     figure = go.Figure(data=traces, layout=layout)
 
     return figure
+
+
+def plot_contour(study, params=[]):
+    # type: (Study, List[str]) -> None
+    """Plot the parameter relationship as contour plot in a study.
+
+        Note that, If a parameter contains missing values, a trial with missing values is not
+        plotted.
+
+    Example:
+
+        The following code snippet shows how to plot the parameter relationship as contour plot.
+
+        .. code::
+
+            import optuna
+
+            def objective(trial):
+                ...
+
+            study = optuna.create_study()
+            study.optimize(objective, n_trials=100)
+
+            optuna.visualization.plot_contour(study, params=['param_a', 'param_b'])
+
+    Args:
+        study:
+            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
+            values.
+        params:
+            Parameter list to visualize. The default is all parameters.
+    """
+
+    _check_plotly_availability()
+    figure = _get_contour_plot(study, params)
+    figure.show()
+
+
+def _get_contour_plot(study, params=[]):
+    # type: (Study, List[str]) -> Figure
+
+    layout = go.Layout(
+        title='Contour Plot',
+    )
+
+    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+
+    if len(trials) == 0:
+        logger.warning('Your study does not have any completed trials.')
+        return go.Figure(data=[], layout=layout)
+
+    all_params = {p_name for t in trials for p_name in t.params.keys()}
+    if len(params) == 0:
+        sorted_params = sorted(list(all_params))
+    elif len(params) == 1:
+        logger.warning('The length of params must be greater than 1.')
+        return go.Figure(data=[], layout=layout)
+    else:
+        for input_p_name in params:
+            if input_p_name not in all_params:
+                logger.warning('Parameter {} does not exist in your study.'.format(input_p_name))
+                return go.Figure(data=[], layout=layout)
+        sorted_params = sorted(list(set(params)))
+
+    param_values_range = dict()
+    for p_name in sorted_params:
+        values = [t.params[p_name] for t in trials if p_name in t.params]
+        param_values_range[p_name] = (min(values), max(values))
+
+    if len(sorted_params) == 2:
+        x_param = sorted_params[0]
+        y_param = sorted_params[1]
+        sub_plots = _generate_contour_subplot(
+            trials, x_param, y_param, study.direction)
+        figure = go.Figure(data=sub_plots)
+        figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
+        figure.update_yaxes(title_text=y_param, range=param_values_range[y_param])
+    else:
+        figure = make_subplots(rows=len(sorted_params),
+                               cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True)
+        showscale = True   # showscale option only needs to be specified once
+        for x_i, x_param in enumerate(sorted_params):
+            for y_i, y_param in enumerate(sorted_params):
+                if x_param == y_param:
+                    figure.add_trace(go.Scatter(), row=y_i + 1, col=x_i + 1)
+                else:
+                    sub_plots = _generate_contour_subplot(
+                        trials, x_param, y_param, study.direction)
+                    contour = sub_plots[0]
+                    scatter = sub_plots[1]
+                    contour.update(showscale=showscale)  # showscale's default is True
+                    if showscale:
+                        showscale = False
+                    figure.add_trace(contour, row=y_i + 1, col=x_i + 1)
+                    figure.add_trace(scatter, row=y_i + 1, col=x_i + 1)
+                figure.update_xaxes(range=param_values_range[x_param],
+                                    row=y_i + 1, col=x_i + 1)
+                figure.update_yaxes(range=param_values_range[y_param],
+                                    row=y_i + 1, col=x_i + 1)
+                if x_i == 0:
+                    figure.update_yaxes(title_text=y_param, row=y_i + 1, col=x_i + 1)
+                if y_i == len(sorted_params) - 1:
+                    figure.update_xaxes(title_text=x_param, row=y_i + 1, col=x_i + 1)
+
+    return figure
+
+
+def _generate_contour_subplot(trials, x_param, y_param, direction):
+    # type: (List[FrozenTrial], str, str, StudyDirection) -> Tuple[Contour, Scatter]
+
+    x_indexes = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
+    y_indexes = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
+    if len(x_indexes) < 2:
+        logger.warning('Param {} unique value length is less than 2.'.format(x_param))
+        return go.Contour(), go.Scatter()
+    if len(y_indexes) < 2:
+        logger.warning('Param {} unique value length is less than 2.'.format(y_param))
+        return go.Contour(), go.Scatter()
+    z = [[float('nan') for _ in range(len(x_indexes))] for _ in range(len(y_indexes))]
+
+    x_values = []
+    y_values = []
+    for trial in trials:
+        if x_param not in trial.params or y_param not in trial.params:
+            continue
+        x_values.append(trial.params[x_param])
+        y_values.append(trial.params[y_param])
+        x_i = x_indexes.index(trial.params[x_param])
+        y_i = y_indexes.index(trial.params[y_param])
+        if isinstance(trial.value, int):
+            value = float(trial.value)
+        elif isinstance(trial.value, float):
+            value = trial.value
+        else:
+            raise ValueError(
+                'Trial{} has COMPLETE state, but its value is non-numeric.'.format(trial.number))
+        z[y_i][x_i] = value
+
+    contour = go.Contour(
+        x=x_indexes, y=y_indexes, z=z,
+        colorbar={'title': 'Objective Value'},
+        colorscale='blues',
+        connectgaps=True,
+        contours_coloring='heatmap',
+        hoverinfo='none',
+        line_smoothing=1.3,
+        reversescale=True if direction == StudyDirection.MINIMIZE else False
+    )
+
+    scatter = go.Scatter(
+        x=x_values,
+        y=y_values,
+        marker={'color': 'black'},
+        mode='markers',
+        showlegend=False
+    )
+
+    return (contour, scatter)
 
 
 def _check_plotly_availability():
