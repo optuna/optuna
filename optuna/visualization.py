@@ -32,7 +32,7 @@ def plot_intermediate_values(study):
 
     Example:
 
-        The following code snippet shows how to plot intermediate values inside Jupyter Notebook.
+        The following code snippet shows how to plot intermediate values.
 
         .. code::
 
@@ -103,7 +103,7 @@ def plot_optimization_history(study):
 
     Example:
 
-        The following code snippet shows how to plot optimization history inside Jupyter Notebook.
+        The following code snippet shows how to plot optimization history.
 
         .. code::
 
@@ -166,8 +166,8 @@ def _get_optimization_history_plot(study):
     return figure
 
 
-def plot_contour(study, params=[]):
-    # type: (Study, List[str]) -> None
+def plot_contour(study, params=None):
+    # type: (Study, Optional[List[str]]) -> None
     """Plot the parameter relationship as contour plot in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -202,8 +202,8 @@ def plot_contour(study, params=[]):
     figure.show()
 
 
-def _get_contour_plot(study, params=[]):
-    # type: (Study, List[str]) -> Figure
+def _get_contour_plot(study, params=None):
+    # type: (Study, Optional[List[str]]) -> Figure
 
     layout = go.Layout(
         title='Contour Plot',
@@ -216,16 +216,15 @@ def _get_contour_plot(study, params=[]):
         return go.Figure(data=[], layout=layout)
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
-    if len(params) == 0:
+    if params is None:
         sorted_params = sorted(list(all_params))
-    elif len(params) == 1:
+    elif len(params) <= 1:
         logger.warning('The length of params must be greater than 1.')
         return go.Figure(data=[], layout=layout)
     else:
         for input_p_name in params:
             if input_p_name not in all_params:
-                logger.warning('Parameter {} does not exist in your study.'.format(input_p_name))
-                return go.Figure(data=[], layout=layout)
+                raise ValueError('Parameter {} does not exist in your study.'.format(input_p_name))
         sorted_params = sorted(list(set(params)))
 
     param_values_range = dict()
