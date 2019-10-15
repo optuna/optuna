@@ -56,7 +56,6 @@ class IgnitePruningHandler(object):
         score = engine.state.metrics[self.metric]
         self.trial.report(score, engine.state.epoch)
         if self.trial.should_prune():
-            self.trainer.terminate()
             message = "Trial was pruned at {} epoch.".format(engine.state.epoch)
             raise optuna.structs.TrialPruned(message)
 
