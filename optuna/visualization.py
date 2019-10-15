@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from optuna.logging import get_logger
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
@@ -9,6 +11,7 @@ logger = get_logger(__name__)
 if type_checking.TYPE_CHECKING:
     from typing import DefaultDict  # NOQA
     from typing import List  # NOQA
+    from typing import Optional  # NOQA
 
 try:
     import plotly.graph_objs as go
@@ -160,8 +163,8 @@ def _get_optimization_history_plot(study):
     return figure
 
 
-def plot_parallel_coordinate(study, params=[]):
-    # type: (Study, List[str]) -> None
+def plot_parallel_coordinate(study, params=None):
+    # type: (Study, Optional[List[str]]) -> None
     """Plot the high-dimentional parameter relationships in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -197,8 +200,8 @@ def plot_parallel_coordinate(study, params=[]):
     figure.show()
 
 
-def _get_parallel_coordinate_plot(study, params=[]):
-    # type: (Study, List[str]) -> Figure
+def _get_parallel_coordinate_plot(study, params=None):
+    # type: (Study, Optional[List[str]]) -> Figure
 
     layout = go.Layout(
         title='Parallel Coordinate Plot',
@@ -211,7 +214,7 @@ def _get_parallel_coordinate_plot(study, params=[]):
         return go.Figure(data=[], layout=layout)
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
-    if len(params) != 0:
+    if params is not None:
         for input_p_name in params:
             if input_p_name not in all_params:
                 logger.warning('Parameter {} does not exist in your study.'.format(input_p_name))
@@ -233,7 +236,6 @@ def _get_parallel_coordinate_plot(study, params=[]):
         try:
             tuple(map(float, values))
         except (TypeError, ValueError):
-            from collections import defaultdict
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
             values = [vocab[v] for v in values]
             is_categorical = True
