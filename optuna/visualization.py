@@ -9,6 +9,7 @@ logger = get_logger(__name__)
 if type_checking.TYPE_CHECKING:
     from plotly.graph_objs import Scatter  # NOQA
     from typing import List  # NOQA
+    from typing import Optional  # NOQA
 
     from optuna.structs import FrozenTrial  # NOQA
 
@@ -29,7 +30,7 @@ def plot_intermediate_values(study):
 
     Example:
 
-        The following code snippet shows how to plot intermediate values inside Jupyter Notebook.
+        The following code snippet shows how to plot intermediate values.
 
         .. code::
 
@@ -100,7 +101,7 @@ def plot_optimization_history(study):
 
     Example:
 
-        The following code snippet shows how to plot optimization history inside Jupyter Notebook.
+        The following code snippet shows how to plot optimization history.
 
         .. code::
 
@@ -163,8 +164,8 @@ def _get_optimization_history_plot(study):
     return figure
 
 
-def plot_slice(study, params=[]):
-    # type: (Study, List[str]) -> None
+def plot_slice(study, params=None):
+    # type: (Study, Optional[List[str]]) -> None
     """Plot the parameter relationship as slice plot in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -172,8 +173,7 @@ def plot_slice(study, params=[]):
 
     Example:
 
-        The following code snippet shows how to plot the parameter relationship as slice plot
-        inside Jupyter Notebook.
+        The following code snippet shows how to plot the parameter relationship as slice plot.
 
         .. code::
 
@@ -200,8 +200,8 @@ def plot_slice(study, params=[]):
     figure.show()
 
 
-def _get_slice_plot(study, params=[]):
-    # type: (Study, List[str]) -> Figure
+def _get_slice_plot(study, params=None):
+    # type: (Study, Optional[List[str]]) -> Figure
 
     layout = go.Layout(
         title='Slice Plot',
@@ -214,18 +214,17 @@ def _get_slice_plot(study, params=[]):
         return go.Figure(data=[], layout=layout)
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
-    if len(params) == 0:
+    if params is None:
         sorted_params = sorted(list(all_params))
     else:
         for input_p_name in params:
             if input_p_name not in all_params:
-                logger.warning('Parameter {} does not exist in your study.'.format(input_p_name))
-                return go.Figure(data=[], layout=layout)
+                raise ValueError('Parameter {} does not exist in your study.'.format(input_p_name))
         sorted_params = sorted(list(set(params)))
 
     if len(sorted_params) == 1:
         figure = go.Figure(
-            data=[_generate_slice_subplot(trials, sorted_params[0])],
+            data=[_generate_slice_subplot(study, trials, sorted_params[0])],
             layout=layout
         )
         figure.update_xaxes(title_text=sorted_params[0])
@@ -233,10 +232,10 @@ def _get_slice_plot(study, params=[]):
     else:
         figure = make_subplots(rows=1, cols=len(sorted_params), shared_yaxes=True)
         figure.update_layout(layout)
-        showscale = True   # showscale option only needs to be specified once
+        showscale = True   # showscale option only needs to be specified once.
         for i, param in enumerate(sorted_params):
-            trace = _generate_slice_subplot(trials, param)
-            trace.update(marker=dict(showscale=showscale))  # showscale's default is True
+            trace = _generate_slice_subplot(study, trials, param)
+            trace.update(marker=dict(showscale=showscale))  # showscale's default is True.
             if showscale:
                 showscale = False
             figure.add_trace(trace, row=1, col=i + 1)
@@ -247,8 +246,8 @@ def _get_slice_plot(study, params=[]):
     return figure
 
 
-def _generate_slice_subplot(trials, param):
-    # type: (List[FrozenTrial], str) -> Scatter
+def _generate_slice_subplot(study, trials, param):
+    # type: (Study, List[FrozenTrial], str) -> Scatter
 
     return go.Scatter(
         x=[t.params[param] for t in trials if param in t.params],
@@ -259,7 +258,8 @@ def _generate_slice_subplot(trials, param):
             'colorscale': 'Blues',
             'colorbar': {'title': '#Trials'}
         },
-        showlegend=False
+        showlegend=False,
+        reversescale=study.direction == StudyDirection.MINIMIZE
     )
 
 
