@@ -18,6 +18,7 @@ This page contains a list of example codes written with Optuna.
 * [MXNet](./mxnet_simple.py)
 * [PyTorch](./pytorch_simple.py)
 * [PyTorch Ignite](./ignite_simple.py)
+* [PyTorch Lightning](./pytorch_lightning_simple.py)
 * [XGBoost](./xgboost_simple.py)
 * [Tensorflow](./tensorflow_estimator_simple.py)
 * [Tensorflow(eager)](./tensorflow_eager_simple.py)
@@ -50,4 +51,5 @@ In addition, integration modules are available for the following libraries, prov
 
 ### Examples of Visualization
 
-* [plotting learning curves](./visualization/plot_intermediate_values.ipynb)
+* [plotting learning curves](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_intermediate_values.ipynb)
+* [plotting optimization history](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_optimization_history.ipynb)
