@@ -166,6 +166,7 @@ def test_get_parallel_coordinate_plot():
     figure = _get_parallel_coordinate_plot(study)
     assert len(figure.data) == 0
 
+
 def test_get_slice_plot():
     # type: () -> None
 
