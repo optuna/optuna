@@ -29,7 +29,7 @@ def plot_intermediate_values(study):
 
     Example:
 
-        The following code snippet shows how to plot intermediate values inside Jupyter Notebook.
+        The following code snippet shows how to plot intermediate values.
 
         .. code::
 
@@ -100,7 +100,7 @@ def plot_optimization_history(study):
 
     Example:
 
-        The following code snippet shows how to plot optimization history inside Jupyter Notebook.
+        The following code snippet shows how to plot optimization history.
 
         .. code::
 
@@ -172,8 +172,7 @@ def plot_parallel_coordinate(study, params=None):
 
     Example:
 
-        The following code snippet shows how to plot the high-dimentional parameter relationships
-        inside Jupyter Notebook.
+        The following code snippet shows how to plot the high-dimentional parameter relationships.
 
         .. code::
 
