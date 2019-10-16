@@ -66,7 +66,7 @@ def objective(trial):
 
     # Add Chainer extension for pruners.
     trainer.extend(
-        optuna.integration.ChainerPruningExtension(trial, 'validation/main/loss',
+        optuna.integration.ChainerPruningExtension(trial, 'validation/main/accuracy',
                                                    (PRUNER_INTERVAL, 'epoch')))
 
     trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
@@ -89,11 +89,11 @@ def objective(trial):
     for key, value in log_last.items():
         trial.set_user_attr(key, value)
 
-    return log_report_extension.log[-1]['validation/main/loss']
+    return log_report_extension.log[-1]['validation/main/accuracy']
 
 
 if __name__ == '__main__':
-    study = optuna.create_study(pruner=optuna.pruners.MedianPruner())
+    study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
     study.optimize(objective, n_trials=100)
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
     complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
