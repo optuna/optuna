@@ -191,7 +191,7 @@ jobs:
     docker:
       - image: circleci/python:3.6
     steps:
-      [checkout, run: *install, run: *tests-full, run: *test-python-lightning-full, run: *tests-mn-full]
+      [checkout, run: *install, run: *tests-full, run: *tests-pytorch-lightning-full, run: *tests-mn-full]
 
   tests-python35-full:
     docker:
