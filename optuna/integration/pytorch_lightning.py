@@ -35,7 +35,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             objective function.
         monitor:
             An evaluation metric for pruning, e.g., ``val_loss`` or
-            ``avg_val_acc``. The metrics are obtained from the returned dictionaries from e.g.
+            ``val_acc``. The metrics are obtained from the returned dictionaries from e.g.
             ``pytorch_lightning.LightningModule.training_step`` or
             ``pytorch_lightning.LightningModule.validation_end`` and the names thus depend on
             how this dictionary is formatted.
