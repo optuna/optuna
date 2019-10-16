@@ -34,12 +34,9 @@ class ParzenEstimator(object):
     ):
         # type: (...) -> None
 
-        s_weights, s_mus, sigmas = ParzenEstimator._calculate(
+        self.weights, self.mus, self.sigmas = ParzenEstimator._calculate(
             mus, low, high, parameters.consider_prior, parameters.prior_weight,
             parameters.consider_magic_clip, parameters.consider_endpoints, parameters.weights)
-        self.weights = numpy.asarray(s_weights)
-        self.mus = numpy.asarray(s_mus)
-        self.sigmas = numpy.asarray(sigmas)
 
     @classmethod
     def _calculate(
