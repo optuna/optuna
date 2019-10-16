@@ -9,6 +9,8 @@ try:
     from pytorch_lightning.callbacks import EarlyStopping
     _available = True
 except (ImportError, SyntaxError) as e:
+    # SyntaxError is raised with Python versions below 3.6 since PyTorch Lightning does not
+    # support them.
     _import_error = e
     # PyTorchLightningPruningCallback is disabled because PyTorch Lightning is not available.
     _available = False
