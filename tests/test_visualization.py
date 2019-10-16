@@ -309,6 +309,8 @@ def test_get_slice_plot():
 
 
 def _is_plotly_available():
+    # type: () -> bool
+
     try:
         import plotly  # NOQA
         available = True
@@ -318,10 +320,14 @@ def _is_plotly_available():
 
 
 def test_visualization_available():
+    # type: () -> None
+
     assert visualization.available == _is_plotly_available()
 
 
 def test_check_plotly_availability():
+    # type: () -> None
+
     if _is_plotly_available():
         # Check that nothing is raised.
         check_plotly_availability()
