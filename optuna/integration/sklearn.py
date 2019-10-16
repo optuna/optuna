@@ -2,14 +2,11 @@ from __future__ import absolute_import
 
 from logging import DEBUG
 from logging import INFO
-from logging import Logger  # NOQA
 from logging import WARNING
 from numbers import Number
 from time import time
 
 import numpy as np
-import pandas as pd  # NOQA
-from scipy.sparse import spmatrix  # NOQA
 
 try:
     from sklearn.base import BaseEstimator
@@ -36,15 +33,15 @@ except ImportError as e:
 
 from optuna import distributions
 from optuna import logging
-from optuna import pruners  # NOQA
 from optuna import samplers  # NOQA
-from optuna import storages  # NOQA
 from optuna import structs
 from optuna import study as study_module
 from optuna import trial as trial_module  # NOQA
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    import pandas as pd  # NOQA
+    from scipy.sparse import spmatrix  # NOQA
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
@@ -334,6 +331,10 @@ class _Objective(object):
 
 class OptunaSearchCV(BaseEstimator):
     """Hyperparameter search with cross-validation.
+
+    .. warning::
+
+        This feature is experimental. The interface can change in the future.
 
     Args:
         estimator:

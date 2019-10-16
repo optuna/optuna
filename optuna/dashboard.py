@@ -52,16 +52,21 @@ _DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 if _available:
 
     class _CompleteTrialsWidget(object):
-        def __init__(self, trials):
-            # type: (List[optuna.structs.FrozenTrial]) -> None
+        def __init__(self, trials, direction):
+            # type: (List[optuna.structs.FrozenTrial], optuna.structs.StudyDirection) -> None
 
             complete_trials = [
                 trial for trial in trials if trial.state == optuna.structs.TrialState.COMPLETE
             ]
             self.trial_ids = set([trial.trial_id for trial in complete_trials])
 
+            self.direction = direction
             values = [trial.value for trial in complete_trials]
-            best_values = np.minimum.accumulate(values, axis=0)
+            if direction == optuna.structs.StudyDirection.MINIMIZE:
+                best_values = np.minimum.accumulate(values, axis=0)
+            else:
+                best_values = np.maximum.accumulate(values, axis=0)
+
             self.cds = bokeh.models.ColumnDataSource({
                 '#': list(range(len(complete_trials))),
                 'value': values,
@@ -92,7 +97,10 @@ if _available:
                     continue
                 stream_dict['#'].append(len(self.trial_ids))
                 stream_dict['value'].append(trial.value)
-                self.best_value = min(self.best_value, trial.value)
+                if self.direction == optuna.structs.StudyDirection.MINIMIZE:
+                    self.best_value = min(self.best_value, trial.value)
+                else:
+                    self.best_value = max(self.best_value, trial.value)
                 stream_dict['best_value'].append(self.best_value)
                 self.trial_ids.add(trial.trial_id)
 
@@ -170,7 +178,8 @@ if _available:
             self.current_trials = \
                 self.study.trials  # type: Optional[List[optuna.structs.FrozenTrial]]
             self.new_trials = None  # type: Optional[List[optuna.structs.FrozenTrial]]
-            self.complete_trials_widget = _CompleteTrialsWidget(self.current_trials)
+            self.complete_trials_widget = _CompleteTrialsWidget(
+                self.current_trials, self.study.direction)
             self.all_trials_widget = _AllTrialsWidget(self.current_trials)
 
             self.doc.title = 'Optuna Dashboard (Beta)'

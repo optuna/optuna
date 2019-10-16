@@ -55,13 +55,16 @@ def get_extras_require():
         'checking': ['autopep8', 'hacking'],
         'testing': [
             'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
-            'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest',
-            'scikit-optimize', 'tensorflow', 'xgboost', 'scikit-learn>=0.19.0',
+            'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
+            'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0',
         ],
         'example': [
             'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
-            'tensorflow', 'mxnet', 'xgboost', 'torch', 'torchvision',
-            'dask-ml', 'dask[dataframe]'
+            'mxnet', 'xgboost', 'torch', 'torchvision', 'pytorch-ignite',
+            'pytorch-lightning', 'dask-ml', 'dask[dataframe]',
+            # TODO(Yanase): Update examples to support TensorFlow 2.0.
+            # See https://github.com/pfnet/optuna/issues/565 for further details.
+            'tensorflow<2.0.0'
         ],
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],
