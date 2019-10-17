@@ -71,8 +71,7 @@ class BaseStudy(object):
         """
 
         best_value = self.best_trial.value
-        if best_value is None:
-            raise ValueError('No trials are completed yet.')
+        assert best_value is not None
 
         return best_value
 
