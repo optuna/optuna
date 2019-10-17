@@ -57,7 +57,7 @@ def get_extras_require():
             'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
             'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
             'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0', 'torch',
-            'pytorch-ignite'
+            'pytorch-ignite', 'pytorch_lightning'
         ],
         'example': [
             'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
