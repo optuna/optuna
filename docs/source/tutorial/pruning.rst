@@ -82,6 +82,7 @@ To implement pruning mechanism in much simpler forms, Optuna provides integratio
 - TensorFlow :class:`optuna.integration.TensorFlowPruningHook`
 - tf.keras :class:`optuna.integration.TFKerasPruningCallback`
 - MXNet :class:`optuna.integration.MXNetPruningCallback`
+- PyTorch Ignite :class:`optuna.integration.IgnitePruningHandler`
 - PyTorch Lightning :class:`optuna.integration.PyTorchLightningPruningCallback`
 
 For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
