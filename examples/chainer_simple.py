@@ -112,7 +112,8 @@ def objective(trial):
 if __name__ == '__main__':
     import optuna
     from optuna.integration import ChainerPruningExtension
-    optuna.logging.set_verbosity(optuna.logging.WARNING)  # This verbosity change is just to simplify the notebook output.
+    # This verbosity change is just to simplify the notebook output.
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
 
     study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
     study.optimize(objective, n_trials=100)
