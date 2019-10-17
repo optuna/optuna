@@ -59,7 +59,7 @@ class FastaiPruningCallback(TrackerCallback):
         self.trial = trial
 
     def on_epoch_end(self, epoch, **kwargs):
-        # type: (epoch, Any) -> None
+        # type: (int, Any) -> None
 
         value = self.get_monitor_value()
         if value is None:
