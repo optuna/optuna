@@ -164,7 +164,7 @@ jobs:
           name: tests-full
           command: |
             . venv/bin/activate
-            pytest tests  --ignore tests/integration_tests/test_pytorch_lightning.py
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py
           environment:
             OMP_NUM_THREADS: 1
             INCLUDE_SLOW_TESTS: 1
