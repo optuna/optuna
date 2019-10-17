@@ -1,7 +1,5 @@
 from __future__ import print_function
 
-import numpy
-
 import optuna
 from optuna import type_checking
 
@@ -11,9 +9,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
 
 try:
-    import torch
     from fastai.basic_train import Learner
-    from fastai.basic_train import LearnerCallback
+    from fastai.callbacks import TrackerCallback
     _available = True
 except ImportError as e:
     _import_error = e
@@ -21,7 +18,7 @@ except ImportError as e:
     Callback = object
 
 
-class FastaiPruningCallback(LearnerCallback):
+class FastaiPruningCallback(TrackerCallback):
     """FastAI callback to prune unpromising trials for fastai<=2.0.
 
     Example:
@@ -30,13 +27,16 @@ class FastaiPruningCallback(LearnerCallback):
 
         .. code::
 
-            learn.fit(n_epochs, callbacks=[FastaiPruningCallback(learn, trial, 'valid_loss')])
+            # If registering this callback in construction
+            learn = cnn_learner(
+                data, models.resnet18, metrics=[accuracy],
+                callback_fns=[partial(FastaiPruningCallback, trial=trial, monitor='valid_loss')])
+            # If use `fit`
+            # learn.fit(n_epochs, callbacks=[FastaiPruningCallback(learn, trial, 'valid_loss')])
             # If you want to use `fit_one_cycle`
-            learn.fit_one_cycle(
-                n_epochs, cyc_len, max_lr,
-                callbacks=[FastaiPruningCallback(learn, trial, 'valid_loss')])
-            # For `fit`
-            learn.fit(2, 1e-3, callbacks=[FastaiPruningCallback(learn, trial, 'valid_loss')])
+            # learn.fit_one_cycle(
+            #     n_epochs, cyc_len, max_lr,
+            #     callbacks=[FastaiPruningCallback(learn, trial, 'valid_loss')])
 
     Args:
         learn:
@@ -51,38 +51,23 @@ class FastaiPruningCallback(LearnerCallback):
             details.
     """
 
-    def __init__(self, learn, trial=None, monitor=''):
+    def __init__(self, learn, trial, monitor):
         # type: (Learner, optuna.trial.Trial, str) -> None
 
-        super(FastaiPruningCallback, self).__init__(learn)
+        super(FastaiPruningCallback, self).__init__(learn, monitor)
 
         _check_fastai_availability()
 
         self.trial = trial
-        self.monitor = monitor
 
-    def on_epoch_end(self, epoch, smooth_loss, last_metrics, **kwargs):
+    def on_epoch_end(self, epoch, **kwargs):
         # type: (...) -> None
 
-        if last_metrics is None:
-            raise RuntimeError('Empty `last_metrics`')
+        value = self.get_monitor_value()
+        if value is None:
+            return
 
-        # NOTE(crcrpar): In `LearnerCallback` implementation,
-        #         setattr(self.learn, self.cb_name, self)
-        # the above snippet exists.
-        # This makes it impossible to set the index of ``self.monitor`` to
-        # this callback.
-        if self.monitor not in self.learn.recorder.names:
-            raise RuntimeError('Invalid `monitor` argument ({}). '
-                               'Available monitors are {}'.format(
-                                   self.monitor, ', '.join(self.learn.recorder.names[1:])))
-
-        epoch_stats = [epoch, smooth_loss] + last_metrics
-        value_to_monitor = epoch_stats[self.learn.recorder.names.index(self.monitor)]
-        if isinstance(value_to_monitor, (torch.Tensor, numpy.ndarray)):
-            value_to_monitor = value_to_monitor.item()
-
-        self.trial.report(value_to_monitor, step=epoch)
+        self.trial.report(value, step=epoch)
         if self.trial.should_prune():
             message = 'Trial was pruned at epoch {}.'.format(epoch)
             raise optuna.structs.TrialPruned(message)
