@@ -1,17 +1,18 @@
 from functools import partial
+import typing  # NOQA
 
 from fastai.basic_data import DataBunch
 from fastai.basic_train import Learner
 from fastai.metrics import accuracy
+
+import torch.nn as nn
 from torch.utils.data import Dataset
+
 import numpy as np
 import pytest
-import torch
-import torch.nn as nn
 
 import optuna
 from optuna.integration import FastaiPruningCallback
-from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -20,23 +21,31 @@ class ArrayDataset(Dataset):
     "Sample numpy array dataset"
 
     def __init__(self, x, y):
+        # type: (typing.Any, typing.Any) -> None
+
         self.x, self.y = x, y
         self.c = 2
 
     def __len__(self):
+        # type: () -> int
+
         return len(self.x)
 
     def __getitem__(self, i):
+        # type: (int) -> typing.Tuple[typing.Any, typing.Any]
+
         return self.x[i], self.y[i]
 
 
 @pytest.fixture(scope='session')
 def tmpdir(tmpdir_factory):
+    # type: (typing.Any) -> typing.Any
+
     return tmpdir_factory.mktemp('fastai_integration_test')
 
 
 def test_fastai_pruning_callback(tmpdir):
-    # type: () -> None
+    # type: (typing.Any) -> None
 
     train_x = np.zeros((16, 20), np.float32)
     train_y = np.zeros((16, ), np.int64)

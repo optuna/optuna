@@ -5,11 +5,9 @@ from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
-    from typing import Collection  # NOQA
-    from typing import Dict  # NOQA
 
 try:
-    from fastai.basic_train import Learner
+    from fastai.basic_train import Learner  # NOQA
     from fastai.callbacks import TrackerCallback
     _available = True
 except ImportError as e:
@@ -61,7 +59,7 @@ class FastaiPruningCallback(TrackerCallback):
         self.trial = trial
 
     def on_epoch_end(self, epoch, **kwargs):
-        # type: (...) -> None
+        # type: (epoch, Any) -> None
 
         value = self.get_monitor_value()
         if value is None:
