@@ -111,7 +111,15 @@ jobs:
           name: tests
           command: |
             . venv/bin/activate
-            pytest tests
+            pytest tests --ignore tests/integration_tests/test_fastai.py
+          environment:
+            OMP_NUM_THREADS: 1
+
+      - run: &test-fastai-integration
+          name: test-fastai-integration
+          command: |
+            . venv/bin/activate
+            pytest tests/integration_tests/test_fastai.py
           environment:
             OMP_NUM_THREADS: 1
 
@@ -130,6 +138,7 @@ jobs:
       - checkout
       - run: *install
       - run: *tests
+      - run: *test-fastai-integration
       - run: *tests-mn
 
   tests-python35:
