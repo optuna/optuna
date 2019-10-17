@@ -1,3 +1,5 @@
+import pytest
+
 from optuna.distributions import UniformDistribution
 from optuna.study import create_study
 from optuna.trial import Trial  # NOQA
@@ -141,6 +143,10 @@ def test_get_contour_plot():
     assert figure.data[1]['y'] == (2.0, 1.0)
     assert figure.layout['xaxis']['range'] == (1.0, 2.5)
     assert figure.layout['yaxis']['range'] == (0.0, 2.0)
+
+    # Test ValueError due to wrong params
+    with pytest.raises(ValueError):
+        _get_contour_plot(study, ['optuna', 'Optuna'])
 
     # Test with a trial to select parameter
     figure = _get_contour_plot(study, params=['param_a', 'param_b'])
