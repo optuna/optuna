@@ -4,6 +4,7 @@ import optuna
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
+    from typing import Optional  # NOQA
 
 try:
     from pytorch_lightning.callbacks import EarlyStopping
