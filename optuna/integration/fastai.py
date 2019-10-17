@@ -22,7 +22,7 @@ except ImportError as e:
 
 
 class FastaiPruningCallback(LearnerCallback):
-    """FastAI callback to prune unpromising trials.
+    """FastAI callback to prune unpromising trials for fastai<=2.0.
 
     Example:
 
@@ -35,15 +35,17 @@ class FastaiPruningCallback(LearnerCallback):
             learn.fit_one_cycle(
                 n_epochs, cyc_len, max_lr,
                 callbacks=[FastaiPruningCallback(learn, trial, 'valid_loss')])
+            # For `fit`
+            learn.fit(2, 1e-3, callbacks=[FastaiPruningCallback(learn, trial, 'valid_loss')])
 
     Args:
         learn:
-            A entity of fastai.basic
+            An entity of fastai.basic
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current
             evaluation of the objective function.
         monitor:
-            Ane evaluation metric for pruning, e.g. ``valid_loss`` and ``Accuracy``.
+            An evaluation metric for pruning, e.g. ``valid_loss`` and ``Accuracy``.
             Please refer to `fastai.Callback reference
             <https://docs.fast.ai/callback.html#Callback>`_ for further
             details.
@@ -59,18 +61,13 @@ class FastaiPruningCallback(LearnerCallback):
         self.trial = trial
         self.monitor = monitor
 
-    # TODO (crcrpar): Remove this method if possible.
-    def register_trial_monitor(self, trial, monitor):
-        self.trial = trial
-        self.monitor = monitor
-
     def on_epoch_end(self, epoch, smooth_loss, last_metrics, **kwargs):
         # type: (...) -> None
 
         if last_metrics is None:
             raise RuntimeError('Empty `last_metrics`')
 
-        # NOTE (crcrpar): In `LearnerCallback` implementation,
+        # NOTE(crcrpar): In `LearnerCallback` implementation,
         #         setattr(self.learn, self.cb_name, self)
         # the above snippet exists.
         # This makes it impossible to set the index of ``self.monitor`` to
