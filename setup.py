@@ -55,19 +55,19 @@ def get_extras_require():
     _fastai_available = (_major == 3) and (_sub > 5)
 
     testing_requirements = [
-            'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
-            'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
-            'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0',
-            'torch', 'torchvision'
+        'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
+        'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
+        'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0',
+        'torch', 'torchvision'
     ]
 
     example_requirements = [
-            'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
-            'mxnet', 'xgboost', 'torch', 'torchvision', 'pytorch-ignite',
-            'pytorch-lightning', 'dask-ml', 'dask[dataframe]',
-            # TODO(Yanase): Update examples to support TensorFlow 2.0.
-            # See https://github.com/pfnet/optuna/issues/565 for further details.
-            'tensorflow<2.0.0',
+        'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
+        'mxnet', 'xgboost', 'torch', 'torchvision', 'pytorch-ignite',
+        'pytorch-lightning', 'dask-ml', 'dask[dataframe]',
+        # TODO(Yanase): Update examples to support TensorFlow 2.0.
+        # See https://github.com/pfnet/optuna/issues/565 for further details.
+        'tensorflow<2.0.0',
     ]
     if _fastai_available:
         testing_requirements.append("fastai==1.0.58")
