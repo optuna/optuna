@@ -261,8 +261,9 @@ class InMemoryStorage(base.BaseStorage):
         if best_value is None:
             self.best_trial_id = trial_id
             return
-        if new_value is None:
-            return
+        # Complete trials do not have `None` values.
+        assert new_value is not None
+
         if (self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) ==
                 structs.StudyDirection.MAXIMIZE):
             if best_value < new_value:
