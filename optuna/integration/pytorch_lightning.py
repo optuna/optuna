@@ -52,7 +52,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
         self.monitor = monitor
 
     def on_epoch_end(self, epoch, logs=None):
-        # type: (int, Dict[str, float]) -> None
+        # type: (int, Optional[Dict[str, float]]) -> None
 
         logs = logs or {}
         current_score = logs.get(self.monitor)
