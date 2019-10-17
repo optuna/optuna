@@ -1,12 +1,11 @@
-from functools import partial
-import torch
-import torch.nn as nn
-from torch.utils.data import Dataset
 from fastai.basic_data import DataBunch
 from fastai.basic_train import Learner
 from fastai.metrics import accuracy
+from torch.utils.data import Dataset
 import numpy as np
 import pytest
+import torch
+import torch.nn as nn
 
 import optuna
 from optuna.integration import FastaiPruningCallback
