@@ -276,15 +276,15 @@ def _get_contour_plot(study, params=None):
 def _generate_contour_subplot(trials, x_param, y_param, direction):
     # type: (List[FrozenTrial], str, str, StudyDirection) -> Tuple[Contour, Scatter]
 
-    x_indexes = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
-    y_indexes = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
-    if len(x_indexes) < 2:
+    x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
+    y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
+    if len(x_indices) < 2:
         logger.warning('Param {} unique value length is less than 2.'.format(x_param))
         return go.Contour(), go.Scatter()
-    if len(y_indexes) < 2:
+    if len(y_indices) < 2:
         logger.warning('Param {} unique value length is less than 2.'.format(y_param))
         return go.Contour(), go.Scatter()
-    z = [[float('nan') for _ in range(len(x_indexes))] for _ in range(len(y_indexes))]
+    z = [[float('nan') for _ in range(len(x_indices))] for _ in range(len(y_indices))]
 
     x_values = []
     y_values = []
@@ -293,8 +293,8 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
             continue
         x_values.append(trial.params[x_param])
         y_values.append(trial.params[y_param])
-        x_i = x_indexes.index(trial.params[x_param])
-        y_i = y_indexes.index(trial.params[y_param])
+        x_i = x_indices.index(trial.params[x_param])
+        y_i = y_indices.index(trial.params[y_param])
         if isinstance(trial.value, int):
             value = float(trial.value)
         elif isinstance(trial.value, float):
@@ -305,7 +305,7 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
         z[y_i][x_i] = value
 
     contour = go.Contour(
-        x=x_indexes, y=y_indexes, z=z,
+        x=x_indices, y=y_indices, z=z,
         colorbar={'title': 'Objective Value'},
         colorscale='blues',
         connectgaps=True,
