@@ -210,7 +210,7 @@ class OptunaObjective(BaseTuner):
             self.lgbm_params['num_leaves'] = trial.suggest_int(
                 'num_leaves', 2, 2 ** max_depth)
         if 'feature_fraction' in self.target_param_names:
-            param_value = min(trial.suggest_uniform('feature_fraction', 0.4, 1.0 + EPS), 1.0)
+            param_value = min(trial.suggest_uniform('feature_fraction', 0.4 - EPS, 1.0 + EPS), 1.0)
             self.lgbm_params['feature_fraction'] = param_value
         if 'bagging_fraction' in self.target_param_names:
             param_value = min(trial.suggest_uniform('bagging_fraction', 0.4, 1.0 + EPS), 1.0)
@@ -454,7 +454,7 @@ class LightGBMTuner(BaseTuner):
             self.lgbm_params[param_name] - 0.08,
             self.lgbm_params[param_name] + 0.08,
             n_trials))
-        param_values = [val for val in param_values if val >= 0.0 and val <= 1.0]
+        param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
         sampler = _GridSamplerUniform1D(param_name, param_values)
         self.tune_params([param_name], len(param_values), sampler)
 
