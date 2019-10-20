@@ -1,6 +1,5 @@
 import contextlib
 import copy
-import math
 import time
 
 import lightgbm as lgb
@@ -28,9 +27,6 @@ if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
     VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
-
-# Default time budget for tuning `learning_rate`.
-DEFAULT_TIME_BUDGET_FOR_TUNING_LR = 4 * 60 * 60
 
 
 class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
@@ -269,7 +265,6 @@ class LightGBMTuner(BaseTuner):
             sample_size=None,  # type: Optional[int]
             best_params=None,  # type: Optional[Dict[str, Any]]
             tuning_history=None,  # type: Optional[List[Dict[str, Any]]]
-            enable_adjusting_lr=False,  # type: bool
             verbosity=1,  # type: Optional[int]
     ):
         params = copy.deepcopy(params)
@@ -296,7 +291,6 @@ class LightGBMTuner(BaseTuner):
         self.best_score = -np.inf if self.higher_is_better() else np.inf
         self.best_params = best_params or {}
         self.tuning_history = tuning_history or []
-        self.enable_adjusting_lr = enable_adjusting_lr
 
         if early_stopping_rounds is None:
             self._suggest_early_stopping_rounds()
@@ -320,7 +314,6 @@ class LightGBMTuner(BaseTuner):
                 'sample_size',
                 'best_params',
                 'tuning_history',
-                'enable_adjusting_lr',
                 'verbosity',
             ]
         }
@@ -402,9 +395,6 @@ class LightGBMTuner(BaseTuner):
             if time_budget is not None and time_budget > t.elapsed_secs():
                 self.best_params.update(self._get_params())
                 return self.best_booster
-
-            if self.enable_adjusting_lr:
-                self.tune_learning_rate()
 
         self.best_params.update(self._get_params())
         return self.best_booster
@@ -506,103 +496,3 @@ class LightGBMTuner(BaseTuner):
         if self.compare_validation_metrics(study.best_value, self.best_score):
             self.best_score = study.best_value
             self.best_booster = objective.best_booster
-
-    def tune_learning_rate(self):
-        # type: () -> None
-
-        # Update parameter.
-        self.lgbm_params.update(self.best_params)
-
-        if self.higher_is_better():
-            best_model_running_time = list(sorted(
-                self.tuning_history, key=lambda x: x['val_score']))[-1]['elapsed_secs']
-        else:
-            best_model_running_time = list(sorted(
-                self.tuning_history, key=lambda x: x['val_score']))[0]['elapsed_secs']
-
-        sec_per_round = best_model_running_time / self.lgbm_kwargs['num_boost_round']
-        time_budget = self.auto_options['time_budget']
-        if time_budget is None:
-            time_budget = DEFAULT_TIME_BUDGET_FOR_TUNING_LR
-
-        max_feasible_rounds = int(time_budget / sec_per_round)
-        if max_feasible_rounds > 10000:
-            num_boost_round = 10000
-            n_trials = math.floor(max_feasible_rounds / num_boost_round)
-
-            predefined_params = {
-                'lgbm_kwargs': {
-                    'num_boost_round': num_boost_round,
-                    'early_stopping_rounds': int(num_boost_round / 20),
-                    'verbose_eval': int(num_boost_round / 10),
-                },
-                'lgbm_params': {},
-            }  # type: Dict[str, Dict[str, Any]]
-
-        elif max_feasible_rounds > 1000:
-            num_boost_round = 1000
-            n_trials = math.floor(max_feasible_rounds / num_boost_round)
-
-            predefined_params = {
-                'lgbm_kwargs': {
-                    'num_boost_round': num_boost_round,
-                    'early_stopping_rounds': int(num_boost_round / 20),
-                    'verbose_eval': int(num_boost_round / 10),
-                },
-                'lgbm_params': {}
-            }
-        else:
-            n_trials = math.floor(max_feasible_rounds / self.lgbm_kwargs['num_boost_round'])
-            predefined_params = {
-                'lgbm_kwargs': {},
-                'lgbm_params': {
-                    'learning_rate': {},
-                },
-            }
-
-        # Adjust learning rate. (Default: False)
-        if not self.enable_adjusting_lr:
-            return
-
-        if n_trials <= 1:
-            predefined_params['lgbm_params']['learning_rate'] = [0.01]
-        elif n_trials == 2:
-            predefined_params['lgbm_params']['learning_rate'] = [0.01, 0.001]
-        else:
-            predefined_params['lgbm_params']['learning_rate'] = [0.01, 0.003, 0.001]
-
-        # Fix num_boost_round and early_stopping_rounds.
-        for kwargs_name in predefined_params['lgbm_kwargs'].keys():
-            self.lgbm_kwargs[kwargs_name] = predefined_params['lgbm_kwargs'][kwargs_name]
-
-        for i_trial, lr in enumerate(predefined_params['lgbm_params']['learning_rate']):
-            self.lgbm_params['learning_rate'] = lr
-
-            with _timer() as t:
-                train_set = self.train_set
-                if self.train_subset is not None:
-                    train_set = self.train_subset
-
-                booster = lgb.train(self.lgbm_params, train_set, **self.lgbm_kwargs)
-
-            val_score = self._get_booster_best_score(booster)
-            elapsed_secs = t.elapsed_secs()
-            average_iteration_time = elapsed_secs / booster.current_iteration()
-            if self.compare_validation_metrics(val_score, self.best_score):
-                self.best_score = val_score
-                self.best_booster = booster
-
-                self.tuning_history.append(dict(
-                    action='adjust_learning_rate',
-                    trial=i_trial,
-                    value=lr,
-                    val_score=val_score,
-                    elapsed_secs=elapsed_secs,
-                    average_iteration_time=average_iteration_time))
-            else:
-                # End if lower lr got worse result.
-                break
-
-            # Break the time limitation.
-            if time.time() > self.start_time + time_budget:
-                break

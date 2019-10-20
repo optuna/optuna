@@ -34,9 +34,11 @@ def test_handling_alias_parameter_with_default_value():
     }
     _handling_alias_parameters(params)
 
-    assert 'eta' not in params
-    assert 'learning_rate' in params
-    assert params['learning_rate'] == 0.1
+    # We currently do not have parameters with default values so the `params` dictionary should not
+    # contain additional entries.
+    assert len(params) == 2
+    assert params['num_boost_round'] == 5
+    assert params['early_stopping_rounds'] == 2
 
 
 def test_handling_alias_parameter():
