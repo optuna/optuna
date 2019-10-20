@@ -319,7 +319,7 @@ class LightGBMTuner(BaseTuner):
                 'time_budget',
                 'sample_size',
                 'best_params',
-                'tuning_history'
+                'tuning_history',
                 'enable_adjusting_lr',
                 'verbosity',
             ]
