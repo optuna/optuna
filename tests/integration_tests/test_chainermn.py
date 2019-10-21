@@ -19,7 +19,7 @@ from optuna.trial import Trial
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from type_checking import TracebackType  # NOQA
+    from types import TracebackType  # NOQA
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
@@ -510,6 +510,18 @@ class TestChainerMNTrial(object):
                     raise RuntimeError
 
                 mn_trial._call_with_mpi(func)
+
+    @staticmethod
+    @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+    @pytest.mark.parametrize('cache_mode', CACHE_MODES)
+    def test_datetime_start(storage_mode, cache_mode, comm):
+        # type: (str, bool, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, cache_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            mn_trial = _create_new_chainermn_trial(study, comm)
+
+            assert mn_trial.datetime_start is not None
 
 
 def _create_new_chainermn_trial(study, comm):

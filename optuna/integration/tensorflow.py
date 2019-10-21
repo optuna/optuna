@@ -7,7 +7,7 @@ if optuna.type_checking.TYPE_CHECKING:
 
 try:
     import tensorflow as tf
-    from tensorflow.train import SessionRunHook
+    from tensorflow.estimator import SessionRunHook
     from tensorflow_estimator.python.estimator.early_stopping import read_eval_metrics
     _available = True
 except ImportError as e:
@@ -58,12 +58,14 @@ class TensorFlowPruningHook(SessionRunHook):
     def __init__(self, trial, estimator, metric, run_every_steps, is_higher_better=None):
         # type: (optuna.trial.Trial, tf.estimator.Estimator, str, int, Optional[bool]) -> None
 
+        _check_tensorflow_availability()
+
         self.trial = trial
         self.estimator = estimator
         self.current_summary_step = -1
         self.metric = metric
         self.global_step_tensor = None
-        self.timer = tf.train.SecondOrStepTimer(every_secs=None, every_steps=run_every_steps)
+        self.timer = tf.estimator.SecondOrStepTimer(every_secs=None, every_steps=run_every_steps)
 
         if is_higher_better is not None:
             raise ValueError('Please do not use is_higher_better argument of '
@@ -73,16 +75,16 @@ class TensorFlowPruningHook(SessionRunHook):
     def begin(self):
         # type: () -> None
 
-        self.global_step_tensor = tf.train.get_global_step()
+        self.global_step_tensor = tf.compat.v1.train.get_global_step()
 
     def before_run(self, run_context):
-        # type: (tf.train.SessionRunContext) -> tf.train.SessionRunArgs
+        # type: (tf.estimator.SessionRunContext) -> tf.estimator.SessionRunArgs
 
         del run_context
-        return tf.train.SessionRunArgs(self.global_step_tensor)
+        return tf.estimator.SessionRunArgs(self.global_step_tensor)
 
     def after_run(self, run_context, run_values):
-        # type: (tf.train.SessionRunContext, tf.train.SessionRunValues) -> None
+        # type: (tf.estimator.SessionRunContext, tf.estimator.SessionRunValues) -> None
 
         global_step = run_values.results
         # Get eval metrics every n steps.

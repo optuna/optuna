@@ -28,33 +28,32 @@ def objective(trial):
 
     param = {
         'objective': 'binary',
-        'metric': 'binary_error',
+        'metric': 'auc',
         'verbosity': -1,
-        'boosting_type': trial.suggest_categorical('boosting', ['gbdt', 'dart', 'goss']),
-        'num_leaves': trial.suggest_int('num_leaves', 10, 1000),
-        'learning_rate': trial.suggest_loguniform('learning_rate', 1e-8, 1.0)
+        'boosting_type': 'gbdt',
+        'lambda_l1': trial.suggest_loguniform('lambda_l1', 1e-8, 10.0),
+        'lambda_l2': trial.suggest_loguniform('lambda_l2', 1e-8, 10.0),
+        'num_leaves': trial.suggest_int('num_leaves', 2, 256),
+        'feature_fraction': trial.suggest_uniform('feature_fraction', 0.4, 1.0),
+        'bagging_fraction': trial.suggest_uniform('bagging_fraction', 0.4, 1.0),
+        'bagging_freq': trial.suggest_int('bagging_freq', 1, 7),
+        'min_child_samples': trial.suggest_int('min_child_samples', 5, 100),
     }
 
-    if param['boosting_type'] == 'dart':
-        param['drop_rate'] = trial.suggest_loguniform('drop_rate', 1e-8, 1.0)
-        param['skip_drop'] = trial.suggest_loguniform('skip_drop', 1e-8, 1.0)
-    if param['boosting_type'] == 'goss':
-        param['top_rate'] = trial.suggest_uniform('top_rate', 0.0, 1.0)
-        param['other_rate'] = trial.suggest_uniform('other_rate', 0.0, 1.0 - param['top_rate'])
-
     # Add a callback for pruning.
-    pruning_callback = optuna.integration.LightGBMPruningCallback(trial, 'binary_error')
+    pruning_callback = optuna.integration.LightGBMPruningCallback(trial, 'auc')
     gbm = lgb.train(
         param, dtrain, valid_sets=[dtest], verbose_eval=False, callbacks=[pruning_callback])
 
     preds = gbm.predict(test_x)
     pred_labels = np.rint(preds)
     accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
-    return 1.0 - accuracy
+    return accuracy
 
 
 if __name__ == '__main__':
-    study = optuna.create_study(pruner=optuna.pruners.MedianPruner(n_warmup_steps=10))
+    study = optuna.create_study(pruner=optuna.pruners.MedianPruner(n_warmup_steps=10),
+                                direction='maximize')
     study.optimize(objective, n_trials=100)
 
     print('Number of finished trials: {}'.format(len(study.trials)))

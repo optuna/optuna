@@ -17,6 +17,8 @@ This page contains a list of example codes written with Optuna.
 * [CatBoost](./catboost_simple.py)
 * [MXNet](./mxnet_simple.py)
 * [PyTorch](./pytorch_simple.py)
+* [PyTorch Ignite](./ignite_simple.py)
+* [PyTorch Lightning](./pytorch_lightning_simple.py)
 * [XGBoost](./xgboost_simple.py)
 * [Tensorflow](./tensorflow_estimator_simple.py)
 * [Tensorflow(eager)](./tensorflow_eager_simple.py)
@@ -41,6 +43,7 @@ In addition, integration modules are available for the following libraries, prov
 * [pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
 * [pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
 * [pruning with Keras integration module](./pruning/keras_integration.py)
+* [pruning with MXNet integration module](./pruning/mxnet_integration.py)
 
 ### Examples of User-Defined Sampler
 
@@ -48,4 +51,8 @@ In addition, integration modules are available for the following libraries, prov
 
 ### Examples of Visualization
 
-* [plotting learning curves](./visualization/plot_intermediate_values.ipynb)
+* [plotting learning curves](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_intermediate_values.ipynb)
+* [plotting optimization history](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_optimization_history.ipynb)
+* [plotting relationship between a parameter and objective value (slice plot)](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_slice.ipynb)
+* [plotting relationship between two parameters (contour plot)](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_contour.ipynb)
+* [plotting parallel coordinate](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_parallel_coordinate.ipynb)
