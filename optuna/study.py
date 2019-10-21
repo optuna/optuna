@@ -597,7 +597,7 @@ def create_study(
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
         force_garbage_collection:
-            Flag to force gc.collect() for every trial.
+            Flag to force `gc.collect()` for every trial.
 
     Returns:
         A :class:`~optuna.study.Study` object.
