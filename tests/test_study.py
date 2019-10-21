@@ -610,23 +610,28 @@ def test_storage_property():
 
 
 @patch('optuna.study.gc.collect')
-def test_force_gc(collect_mock):
-    # type: (Mock) -> None
+@pytest.mark.parametrize('force_gc, call_count', [(True, 10), (False, 0)])
+def test_create_study_force_gc(collect_mock, force_gc, call_count):
+    # type: (Mock, bool, int) -> None
 
-    study = optuna.create_study(force_garbage_collection=True)
+    study = optuna.create_study(force_garbage_collection=force_gc)
     study.optimize(func, n_trials=10)
     check_study(study)
-    assert collect_mock.call_count == 10
+    assert collect_mock.call_count == call_count
 
 
 @patch('optuna.study.gc.collect')
-def test_no_force_gc(collect_mock):
-    # type: (Mock) -> None
+@pytest.mark.parametrize('force_gc, call_count', [(True, 10), (False, 0)])
+def test_load_study_force_gc(collect_mock, force_gc, call_count):
+    # type: (Mock, bool, int) -> None
 
-    study = optuna.create_study(force_garbage_collection=False)
+    storage = optuna.storages.RDBStorage('sqlite:///:memory:')
+    study_name = optuna.create_study(storage=storage).study_name
+    study = optuna.load_study(study_name=study_name, storage=storage,
+                              force_garbage_collection=force_gc)
     study.optimize(func, n_trials=10)
     check_study(study)
-    assert collect_mock.call_count == 0
+    assert collect_mock.call_count == call_count
 
 
 @pytest.mark.parametrize('n_jobs', [1, 4])

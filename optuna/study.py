@@ -643,6 +643,7 @@ def load_study(
         storage,  # type: Union[str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
+        force_garbage_collection=True,  # type: bool
 ):
     # type: (...) -> Study
     """Load the existing :class:`~optuna.study.Study` that has the specified name.
@@ -663,10 +664,13 @@ def load_study(
             A pruner object that decides early stopping of unpromising trials.
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
+        force_garbage_collection:
+            Flag to force `gc.collect()` for every trial.
 
     """
 
-    return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
+    return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner,
+                 force_garbage_collection=force_garbage_collection)
 
 
 def delete_study(
