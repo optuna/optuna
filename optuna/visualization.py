@@ -141,6 +141,7 @@ def _get_optimization_history_plot(study):
     )
 
     trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    trials = sorted(trials, key=lambda t: t.number)
 
     if len(trials) == 0:
         logger.warning('Study instance does not contain trials.')
