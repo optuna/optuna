@@ -77,7 +77,7 @@ def _get_intermediate_plot(study):
     if len(trials) == 0:
         logger.warning('Study instance does not contain trials.')
         return go.Figure(data=[], layout=layout)
-    if hasattr(trials[0], 'intermediate_values') is False:
+    if not hasattr(trials[0], 'intermediate_values'):
         logger.warning(
             'You need to set up the pruning feature to utilize plot_intermediate_values()')
         return go.Figure(data=[], layout=layout)
@@ -148,11 +148,12 @@ def _get_optimization_history_plot(study):
 
     best_values = [float('inf')] if study.direction == StudyDirection.MINIMIZE else [-float('inf')]
     for trial in trials:
-        if isinstance(trial.value, float):
-            trial_value = trial.value
+        if isinstance(trial.value, (int, float)):
+            trial_value = float(trial.value)
         else:
             raise ValueError(
-                'Trial{} has COMPLETE state, but its value is non float.'.format(trial.number))
+                'Trial{} has COMPLETE state, but its value is not int nor float.'.format(
+                    trial.number))
         if study.direction == StudyDirection.MINIMIZE:
             best_values.append(min(best_values[-1], trial_value))
         else:
@@ -370,6 +371,9 @@ def _get_parallel_coordinate_plot(study, params=None):
     )
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+
+    if not all(isinstance(t.value, (int, float)) for t in trials):
+        raise ValueError('trials with non numeral values are not supported')
 
     if len(trials) == 0:
         logger.warning('Your study does not have any completed trials.')
