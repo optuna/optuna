@@ -17,8 +17,23 @@ from optuna.visualization import _get_parallel_coordinate_plot
 from optuna.visualization import _get_slice_plot
 
 
-def prepare_study_with_trials(no_trials=False, less_than_two=False, with_c_d=True):
+def _prepare_study_with_trials(no_trials=False, less_than_two=False, with_c_d=True):
     # type: (bool, bool, bool) -> Study
+    """Prepare a study for tests.
+
+    Args:
+        no_trials (bool): If ``False``, create a study with no trials.
+        less_than_two (bool): If ``True``, create a study with two/four hyperparams where
+            'param_a' (and 'param_c') appear(s) only once while 'param_b' (and 'param_b')
+            appear(s) twice in `study.trials`.
+        with_c_d (bool): If ``True``, the study has four hyperparams named 'param_a',
+            'param_b', 'param_c', and 'param_d'. Otherwise, there are only two
+            hyperparams ('param_a' and 'param_b').
+
+    Returns:
+        :class:`~optuna.study.Study`
+
+    """
 
     study = create_study()
     if no_trials:
@@ -90,7 +105,7 @@ def test_get_intermediate_plot():
     # type: () -> None
 
     # Test with no trial.
-    study = prepare_study_with_trials(no_trials=True)
+    study = _prepare_study_with_trials(no_trials=True)
     figure = _get_intermediate_plot(study)
     assert len(figure.data) == 0
 
@@ -131,7 +146,7 @@ def test_get_intermediate_plot():
 
 
 @pytest.mark.parametrize('direction', ['minimize', 'maximize'])
-def test_get_optimization_history_plot(direction): 
+def test_get_optimization_history_plot(direction):
     # type: (str) -> None
 
     # Test with no trial.
@@ -214,7 +229,7 @@ def test_get_contour_plot(params):
     # type: (Optional[List[str]]) -> None
 
     # Test with no trial.
-    study_without_trials = prepare_study_with_trials(no_trials=True)
+    study_without_trials = _prepare_study_with_trials(no_trials=True)
     figure = _get_contour_plot(study_without_trials, params=params)
     assert len(figure.data) == 0
 
@@ -229,13 +244,14 @@ def test_get_contour_plot(params):
     study.optimize(fail_objective, n_trials=1)
     figure = _get_contour_plot(study, params=params)
     assert not figure.data
-    
+
+    # Test with some trials.
+    study = _prepare_study_with_trials()
+
     # Test ValueError due to wrong params.
     with pytest.raises(ValueError):
         _get_contour_plot(study, ['optuna', 'Optuna'])
 
-    # Test with some trials.
-    study = prepare_study_with_trials(no_trials=False)
     figure = _get_contour_plot(study, params=params)
     if params is not None and len(params) < 3:
         if len(params) <= 1:
@@ -248,7 +264,7 @@ def test_get_contour_plot(params):
             assert figure.layout['xaxis']['range'] == (1.0, 2.5)
             assert figure.layout['yaxis']['range'] == (0.0, 2.0)
     else:
-        # TODO(crcrpar): Add more checks.
+        # TODO(crcrpar): Add more checks. Currently this checks the number.
         n_params = len(params) if params is not None else 4
         assert len(figure.data) == n_params ** 2 + n_params * (n_params - 1)
 
@@ -258,7 +274,7 @@ def test_generate_contour_plot_for_few_observations():
 
     direction = 'minimize'
 
-    study = prepare_study_with_trials(less_than_two=True)
+    study = _prepare_study_with_trials(less_than_two=True)
     trials = study.trials
 
     # `x_axis` has one observation.
@@ -310,7 +326,7 @@ def test_get_parallel_coordinate_plot():
     figure = _get_parallel_coordinate_plot(study)
     assert len(figure.data) == 0
 
-    study = prepare_study_with_trials(with_c_d=False)
+    study = _prepare_study_with_trials(with_c_d=False)
 
     # Test with a trial.
     figure = _get_parallel_coordinate_plot(study)
@@ -419,11 +435,11 @@ def test_get_slice_plot():
     # type: () -> None
 
     # Test with no trial.
-    study = prepare_study_with_trials(no_trials=True)
+    study = _prepare_study_with_trials(no_trials=True)
     figure = _get_slice_plot(study)
     assert len(figure.data) == 0
 
-    study = prepare_study_with_trials(with_c_d=False)
+    study = _prepare_study_with_trials(with_c_d=False)
 
     # Test with a trial.
     figure = _get_slice_plot(study)
