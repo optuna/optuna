@@ -44,6 +44,7 @@ In addition, integration modules are available for the following libraries, prov
 * [pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
 * [pruning with Keras integration module](./pruning/keras_integration.py)
 * [pruning with MXNet integration module](./pruning/mxnet_integration.py)
+* [pruning with PyTorch Ignite integration module](./ignite_simple.py)
 
 ### Examples of User-Defined Sampler
 
