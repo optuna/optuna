@@ -1,6 +1,8 @@
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 
+import pytest
+
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
 from optuna.structs import StudyDirection
@@ -13,8 +15,6 @@ from optuna.visualization import _get_intermediate_plot
 from optuna.visualization import _get_optimization_history_plot
 from optuna.visualization import _get_parallel_coordinate_plot
 from optuna.visualization import _get_slice_plot
-
-import pytest
 
 
 def prepare_study_with_trials(no_trials=False, less_than_two=False, with_c_d=True):
@@ -218,7 +218,7 @@ def test_get_contour_plot(params):
     figure = _get_contour_plot(study_without_trials, params=params)
     assert len(figure.data) == 0
 
-    # Test the API ignores failed trials.
+    # Test whether trials with `ValueError`s are ignored.
 
     def fail_objective(_):
         # type: (Trial) -> float
@@ -229,6 +229,10 @@ def test_get_contour_plot(params):
     study.optimize(fail_objective, n_trials=1)
     figure = _get_contour_plot(study, params=params)
     assert not figure.data
+    
+    # Test ValueError due to wrong params.
+    with pytest.raises(ValueError):
+        _get_contour_plot(study, ['optuna', 'Optuna'])
 
     # Test with some trials.
     study = prepare_study_with_trials(no_trials=False)
