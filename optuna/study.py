@@ -152,8 +152,7 @@ class Study(BaseStudy):
             study_name,  # type: str
             storage,  # type: Union[str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
-            pruner=None,  # type: pruners.BasePruner
-            force_garbage_collection=True,  # type: bool
+            pruner=None  # type: pruners.BasePruner
     ):
         # type: (...) -> None
 
@@ -168,7 +167,6 @@ class Study(BaseStudy):
         self.logger = logging.get_logger(__name__)
 
         self._optimize_lock = threading.Lock()
-        self.force_garbage_collection = force_garbage_collection
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -214,7 +212,8 @@ class Study(BaseStudy):
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
             catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks=None  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            force_garbage_collection=True  # type: bool
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -242,6 +241,8 @@ class Study(BaseStudy):
                 by this logic.
             callbacks:
                 List of callback functions that are invoked at the end of each trial.
+            force_garbage_collection:
+                Flag to force `gc.collect()` for every trial.
         """
 
         if not self._optimize_lock.acquire(False):
@@ -249,9 +250,11 @@ class Study(BaseStudy):
 
         try:
             if n_jobs == 1:
-                self._optimize_sequential(func, n_trials, timeout, catch, callbacks)
+                self._optimize_sequential(func, n_trials, timeout, catch, callbacks,
+                                          force_garbage_collection)
             else:
-                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch, callbacks)
+                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch, callbacks,
+                                        force_garbage_collection)
         finally:
             self._optimize_lock.release()
 
@@ -396,7 +399,8 @@ class Study(BaseStudy):
             n_trials,  # type: Optional[int]
             timeout,  # type: Optional[float]
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            force_garbage_collection  # type: bool
     ):
         # type: (...) -> None
 
@@ -413,7 +417,7 @@ class Study(BaseStudy):
                 if elapsed_seconds >= timeout:
                     break
 
-            self._run_trial_and_callbacks(func, catch, callbacks)
+            self._run_trial_and_callbacks(func, catch, callbacks, force_garbage_collection)
 
     def _optimize_parallel(
             self,
@@ -422,7 +426,8 @@ class Study(BaseStudy):
             timeout,  # type: Optional[float]
             n_jobs,  # type: int
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            force_garbage_collection  # type: bool
     ):
         # type: (...) -> None
 
@@ -446,7 +451,7 @@ class Study(BaseStudy):
             # type: (Queue) -> None
 
             while que.get():
-                self._run_trial_and_callbacks(func, catch, callbacks)
+                self._run_trial_and_callbacks(func, catch, callbacks, force_garbage_collection)
             self._storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
@@ -484,18 +489,24 @@ class Study(BaseStudy):
             self,
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            force_garbage_collection  # type: bool
     ):
         # type: (...) -> None
 
-        trial = self._run_trial(func, catch)
+        trial = self._run_trial(func, catch, force_garbage_collection)
         if callbacks is not None:
             frozen_trial = self._storage.get_trial(trial._trial_id)
             for callback in callbacks:
                 callback(self, frozen_trial)
 
-    def _run_trial(self, func, catch):
-        # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
+    def _run_trial(
+            self,
+            func,  # type: ObjectiveFuncType
+            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            force_garbage_collection  # type: bool
+    ):
+        # type: (...) -> trial_module.Trial
 
         trial_id = self._storage.create_new_trial(self.study_id)
         trial = trial_module.Trial(self, trial_id)
@@ -522,7 +533,7 @@ class Study(BaseStudy):
             # environments (e.g., services that use computing containers such as CircleCI).
             # Please refer to the following PR for further details:
             # https://github.com/pfnet/optuna/pull/325.
-            if self.force_garbage_collection:
+            if force_garbage_collection:
                 gc.collect()
 
         try:
@@ -568,7 +579,6 @@ def create_study(
         study_name=None,  # type: Optional[str]
         direction='minimize',  # type: str
         load_if_exists=False,  # type: bool
-        force_garbage_collection=True,  # type: bool
 ):
     # type: (...) -> Study
     """Create a new :class:`~optuna.study.Study`.
@@ -596,8 +606,6 @@ def create_study(
             a :class:`~optuna.structs.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
-        force_garbage_collection:
-            Flag to force gc.collect() for every trial.
 
     Returns:
         A :class:`~optuna.study.Study` object.
@@ -623,8 +631,7 @@ def create_study(
         study_name=study_name,
         storage=storage,
         sampler=sampler,
-        pruner=pruner,
-        force_garbage_collection=force_garbage_collection)
+        pruner=pruner)
 
     if direction == 'minimize':
         _direction = structs.StudyDirection.MINIMIZE
