@@ -25,22 +25,6 @@ def test_handling_alias_parameter_with_user_supplied_param():
     assert params['learning_rate'] == 0.5
 
 
-def test_handling_alias_parameter_with_default_value():
-    # type: () -> None
-
-    params = {
-        'num_boost_round': 5,
-        'early_stopping_rounds': 2,
-    }
-    _handling_alias_parameters(params)
-
-    # We currently do not have parameters with default values so the `params` dictionary should not
-    # contain additional entries.
-    assert len(params) == 2
-    assert params['num_boost_round'] == 5
-    assert params['early_stopping_rounds'] == 2
-
-
 def test_handling_alias_parameter():
     # type: () -> None
 
