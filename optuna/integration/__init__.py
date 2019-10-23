@@ -31,6 +31,7 @@ if sys.version_info[0] == 2 or TYPE_CHECKING:
     from optuna.integration.chainer import ChainerPruningExtension  # NOQA
     from optuna.integration.chainermn import ChainerMNStudy  # NOQA
     from optuna.integration.cma import CmaEsSampler  # NOQA
+    from optuna.integration.fastai import FastAIPruningCallback  # NOQA
     from optuna.integration.ignite import IgnitePruningHandler  # NOQA
     from optuna.integration.keras import KerasPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
@@ -42,8 +43,6 @@ if sys.version_info[0] == 2 or TYPE_CHECKING:
     from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA
     from optuna.integration.tfkeras import TFKerasPruningCallback  # NOQA
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
-    if sys.version_info[0] == 3:
-        from optuna.integration.fastai import FastAIPruningCallback  # NOQA
 else:
     class _IntegrationModule(ModuleType):
         """Module class that implements `optuna.integration` package.

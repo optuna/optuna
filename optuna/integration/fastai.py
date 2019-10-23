@@ -13,7 +13,7 @@ try:
 except ImportError as e:
     _import_error = e
     _available = False
-    Callback = object
+    TrackerCallback = object
 
 
 class FastAIPruningCallback(TrackerCallback):
