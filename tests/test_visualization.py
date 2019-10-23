@@ -9,7 +9,7 @@ from optuna.visualization import _get_intermediate_plot
 from optuna.visualization import _get_optimization_history_plot
 from optuna.visualization import _get_parallel_coordinate_plot
 from optuna.visualization import _get_slice_plot
-from optuna.visualization import check_plotly_availability
+from optuna.visualization import check_available
 
 
 def test_get_intermediate_plot():
@@ -319,18 +319,18 @@ def _is_plotly_available():
     return available
 
 
-def test_visualization_available():
+def test_visualization_is_available():
     # type: () -> None
 
-    assert visualization.available == _is_plotly_available()
+    assert visualization.is_available() == _is_plotly_available()
 
 
-def test_check_plotly_availability():
+def test_check_available():
     # type: () -> None
 
     if _is_plotly_available():
         # Check that nothing is raised.
-        check_plotly_availability()
+        check_available()
     else:
         with pytest.raises(ImportError):
-            check_plotly_availability()
+            check_available()

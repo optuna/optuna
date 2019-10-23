@@ -22,11 +22,22 @@ try:
     import plotly.graph_objs as go
     from plotly.graph_objs._figure import Figure  # NOQA
     from plotly.subplots import make_subplots
-    available = True
+    _available = True
 except ImportError as e:
     _import_error = e
     # Visualization features are disabled because plotly is not available.
     available = False
+
+
+def is_available():
+    # type: () -> bool
+    """Returns whether visualization is available or not.
+
+    Returns:
+        ``True`` is visualization is available, ``False`` otherwise.
+    """
+
+    return _available
 
 
 def plot_intermediate_values(study):
@@ -56,7 +67,7 @@ def plot_intermediate_values(study):
             values.
     """
 
-    check_plotly_availability()
+    check_available()
     figure = _get_intermediate_plot(study)
     figure.show()
 
@@ -126,7 +137,7 @@ def plot_optimization_history(study):
             values.
     """
 
-    check_plotly_availability()
+    check_available()
     figure = _get_optimization_history_plot(study)
     figure.show()
 
@@ -200,7 +211,7 @@ def plot_contour(study, params=None):
             Parameter list to visualize. The default is all parameters.
     """
 
-    check_plotly_availability()
+    check_available()
     figure = _get_contour_plot(study, params)
     figure.show()
 
@@ -357,7 +368,7 @@ def plot_parallel_coordinate(study, params=None):
             Parameter list to visualize. The default is all parameters.
     """
 
-    check_plotly_availability()
+    check_available()
     figure = _get_parallel_coordinate_plot(study, params)
     figure.show()
 
@@ -462,7 +473,7 @@ def plot_slice(study, params=None):
             Parameter list to visualize. The default is all parameters.
     """
 
-    check_plotly_availability()
+    check_available()
     figure = _get_slice_plot(study, params)
     figure.show()
 
@@ -529,10 +540,15 @@ def _generate_slice_subplot(study, trials, param):
     )
 
 
-def check_plotly_availability():
+def check_available():
     # type: () -> None
+    """Checks whether visualization is available or not.
 
-    if not available:
+    Raises:
+        :class:`ImportError`: If visualization is not available.
+    """
+
+    if not is_available():
         raise ImportError(
             'Plotly is not available. Please install plotly to use this feature. '
             'Plotly can be installed by executing `$ pip install plotly`. '
