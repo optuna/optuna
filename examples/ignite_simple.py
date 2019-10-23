@@ -12,7 +12,7 @@ We have the following two ways to execute this example:
     $ python ignite_simple.py [--pruning]
 
 
-(3) Execute through CLI. Pruning is enabled automatically.
+(2) Execute through CLI. Pruning is enabled automatically.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
     $ optuna study optimize ignite_simple.py objective --n-trials=100 --study $STUDY_NAME \
       --storage sqlite:///example.db
