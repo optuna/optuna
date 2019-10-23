@@ -131,7 +131,7 @@ def test_get_intermediate_plot():
 
 
 @pytest.mark.parametrize('direction', ['minimize', 'maximize'])
-def test_get_optimization_history_plot(direction):  # type: ignore
+def test_get_optimization_history_plot(direction): 
     # type: (str) -> None
 
     # Test with no trial.
