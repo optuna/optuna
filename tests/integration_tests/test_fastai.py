@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.integration import FastaiPruningCallback
+from optuna.integration import FastAIPruningCallback
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -67,7 +67,7 @@ def test_fastai_pruning_callback(tmpdir):
 
         model = nn.Sequential(nn.Linear(20, 1), nn.Sigmoid())
         learn = Learner(data_bunch, model, metrics=[accuracy], callback_fns=[
-            partial(FastaiPruningCallback, trial=trial, monitor='valid_loss')
+            partial(FastAIPruningCallback, trial=trial, monitor='valid_loss')
         ])
 
         learn.fit(1)

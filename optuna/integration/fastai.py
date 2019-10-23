@@ -16,29 +16,40 @@ except ImportError as e:
     Callback = object
 
 
-class FastaiPruningCallback(TrackerCallback):
-    """FastAI callback to prune unpromising trials for fastai<=2.0.
+class FastAIPruningCallback(TrackerCallback):
+    """FastAI callback to prune unpromising trials for fastai.
+
+    .. note::
+        This callback is for fastai :math:`\\le` 2.0.
 
     Example:
 
-        Add a pruning callback which observes validation losses.
+        Add a pruning callback which monitors validation loss directly to ``Learner``.
 
         .. code::
 
             # If registering this callback in construction
-            learn = cnn_learner(
-                data, models.resnet18, metrics=[accuracy],
-                callback_fns=[partial(FastaiPruningCallback, trial=trial, monitor='valid_loss')])
-            # If use `fit`
-            # learn.fit(n_epochs, callbacks=[FastaiPruningCallback(learn, trial, 'valid_loss')])
-            # If you want to use `fit_one_cycle`
-            # learn.fit_one_cycle(
-            #     n_epochs, cyc_len, max_lr,
-            #     callbacks=[FastaiPruningCallback(learn, trial, 'valid_loss')])
+            from functools import partial
+
+            learn = Learner(
+                data, model,
+                allback_fns=[partial(FastAIPruningCallback, trial=trial, monitor='valid_loss')])
+
+    Example:
+
+        Register a pruning callback to ``learn.fit`` and ``learn.fit_one_cycle``.
+
+        .. code::
+
+            learn.fit(n_epochs, callbacks=[FastAIPruningCallback(learn, trial, 'valid_loss')])
+            learn.fit_one_cycle(
+                n_epochs, cyc_len, max_lr,
+                callbacks=[FastAIPruningCallback(learn, trial, 'valid_loss')])
+
 
     Args:
         learn:
-            An entity of fastai.basic
+            `fastai.basic_train.Learner <https://docs.fast.ai/basic_train.html#Learner>`_.
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current
             evaluation of the objective function.
@@ -52,7 +63,7 @@ class FastaiPruningCallback(TrackerCallback):
     def __init__(self, learn, trial, monitor):
         # type: (Learner, optuna.trial.Trial, str) -> None
 
-        super(FastaiPruningCallback, self).__init__(learn, monitor)
+        super(FastAIPruningCallback, self).__init__(learn, monitor)
 
         _check_fastai_availability()
 

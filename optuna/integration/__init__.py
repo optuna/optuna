@@ -20,7 +20,7 @@ _import_structure = {
     'tensorflow': ['TensorFlowPruningHook'],
     'tfkeras': ['TFKerasPruningCallback'],
     'xgboost': ['XGBoostPruningCallback'],
-    'fastai': ['FastaiPruningCallback'],
+    'fastai': ['FastAIPruningCallback'],
 }
 
 
@@ -43,7 +43,7 @@ if sys.version_info[0] == 2 or TYPE_CHECKING:
     from optuna.integration.tfkeras import TFKerasPruningCallback  # NOQA
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
     if sys.version_info[0] == 3:
-        from optuna.integration.fastai import FastaiPruningCallback  # NOQA
+        from optuna.integration.fastai import FastAIPruningCallback  # NOQA
 else:
     class _IntegrationModule(ModuleType):
         """Module class that implements `optuna.integration` package.
