@@ -494,7 +494,7 @@ class LightGBMTuner(BaseTuner):
         study = optuna.create_study(
             direction='maximize' if self.higher_is_better() else 'minimize',
             sampler=sampler)
-        study.optimize(objective, n_trials=n_trials)
+        study.optimize(objective, n_trials=n_trials, catch=())
 
         pbar.close()
         del pbar
