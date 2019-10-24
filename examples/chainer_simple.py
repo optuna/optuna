@@ -100,7 +100,7 @@ def objective(trial):
     # Run!
     trainer.run(show_loop_exception_msg=False)
 
-# Set the user attributes such as loss and accuracy for train and validation sets
+    # Set the user attributes such as loss and accuracy for train and validation sets
     log_last = log_report_extension.log[-1]
     for key, value in log_last.items():
         trial.set_user_attr(key, value)
