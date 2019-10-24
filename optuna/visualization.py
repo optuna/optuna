@@ -26,7 +26,7 @@ try:
 except ImportError as e:
     _import_error = e
     # Visualization features are disabled because plotly is not available.
-    available = False
+    _available = False
 
 
 def is_available():
