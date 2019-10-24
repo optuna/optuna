@@ -230,6 +230,10 @@ def test_optimize_with_catch(storage_mode, cache_mode):
 
             raise ValueError
 
+        # Test default exceptions.
+        with pytest.raises(ValueError):
+            study.optimize(func_value_error, n_trials=20)
+
         # Test acceptable exception.
         study.optimize(func_value_error, n_trials=20, catch=(ValueError, ))
 
@@ -481,7 +485,7 @@ def test_trials_dataframe_with_failure(storage_mode, cache_mode):
 
     with StorageSupplier(storage_mode, cache_mode) as storage:
         study = optuna.create_study(storage=storage)
-        study.optimize(f, n_trials=3)
+        study.optimize(f, n_trials=3, catch=(ValueError,))
         df = study.trials_dataframe()
         # Change index to access rows via trial number.
         df.set_index(('number', ''), inplace=True, drop=False)
@@ -664,7 +668,9 @@ def test_callbacks(n_jobs):
     # callbacks are invoked.
     states = []
     callbacks = [lambda study, trial: states.append(trial.state)]
-    study.optimize(lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
+    study.optimize(
+        lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs,
+        catch=(ZeroDivisionError,))
     assert states == [optuna.structs.TrialState.FAIL] * 10
 
     # NOTE: Because `Study.optimize` blocks forever if `n_jobs` is more than `1` and

@@ -213,7 +213,7 @@ class Study(BaseStudy):
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
-            catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks=None  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
     ):
         # type: (...) -> None
@@ -236,10 +236,9 @@ class Study(BaseStudy):
                 The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
                 set to CPU counts.
             catch:
-                A study continues to run even when a trial raises one of exceptions specified in
-                this argument. Default is (`Exception <https://docs.python.org/3/library/
-                exceptions.html#Exception>`_,), where all non-exit exceptions are handled
-                by this logic.
+                A study continues to run even when a trial raises one of the exceptions specified
+                in this argument. Default is an empty tuple, i.e. the study will stop for any
+                exception.
             callbacks:
                 List of callback functions that are invoked at the end of each trial.
         """

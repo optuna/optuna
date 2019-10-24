@@ -49,7 +49,7 @@ def test_get_intermediate_plot():
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = _get_intermediate_plot(study)
     assert len(figure.data) == 0
 
@@ -90,7 +90,7 @@ def test_get_optimization_history_plot():
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = _get_optimization_history_plot(study)
     assert len(figure.data) == 0
 
@@ -164,7 +164,7 @@ def test_get_contour_plot():
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = _get_contour_plot(study)
     assert len(figure.data) == 0
 
@@ -239,7 +239,7 @@ def test_get_parallel_coordinate_plot():
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = _get_parallel_coordinate_plot(study)
     assert len(figure.data) == 0
 
@@ -305,6 +305,6 @@ def test_get_slice_plot():
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = _get_slice_plot(study)
     assert len(figure.data) == 0
