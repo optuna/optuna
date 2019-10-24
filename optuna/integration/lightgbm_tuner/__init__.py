@@ -11,7 +11,11 @@ if type_checking.TYPE_CHECKING:
 
 def train(*args, **kwargs):
     # type: (List[Any], Optional[Dict[Any, Any]]) -> Any
-    """Wrapper function of LightGBM API: train() to tune hyperparameters.
+    """Wrapper of LightGBM Training API to tune hyperparameters.
+
+    .. warning::
+
+        This feature is experimental. The interface can change in the future.
 
     It tunes important hyperparameters (e.g., `min_child_samples` and `feature_fraction`) in a
     stepwise manner. Arguments and keyword arguments for `lightgbm.train()
