@@ -1,29 +1,23 @@
 """
-Optuna example that optimizes multi-layer perceptrons using MXNet.
+Optuna example that demonstrates a pruner for MXNet.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-MXNet and MNIST. We optimize the neural network architecture as well as the optimizer
-configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
-subset of it.
+MXNet and MNIST, where the architecture of the neural network and the learning rate of optimizer
+is optimized. Throughout the training of neural networks, a pruner observes intermediate
+results and stops unpromising trials.
 
-We have the following two ways to execute this example:
-
-(1) Execute this code directly.
-    $ python mxnet_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize mxnet_simple.py objective --n-trials=100 --study $STUDY_NAME \
-      --storage sqlite:///example.db
+You can run this example as follows:
+    $ python mxnet_integration.py
 
 """
 
 from __future__ import print_function
-
 import logging
+
 import mxnet as mx
 import numpy as np
+
+from optuna.integration import MXNetPruningCallback
 
 
 N_TRAIN_EXAMPLES = 3000
@@ -43,7 +37,7 @@ def create_model(trial):
     data = mx.symbol.Variable('data')
     data = mx.sym.flatten(data=data)
     for i in range(n_layers):
-        num_hidden = int(trial.suggest_loguniform('n_units_l{}'.format(i), 4, 128))
+        num_hidden = int(trial.suggest_loguniform('n_units_1{}'.format(i), 4, 128))
         data = mx.symbol.FullyConnected(data=data, num_hidden=num_hidden)
         data = mx.symbol.Activation(data=data, act_type="relu")
 
@@ -91,11 +85,13 @@ def objective(trial):
 
     # Create our MXNet trainable model and fit it on MNIST data.
     model = mx.mod.Module(symbol=mlp)
-    model.fit(train_data=train,
-              eval_data=val,
-              optimizer=optimizer,
-              optimizer_params={'rescale_grad': 1.0 / BATCHSIZE},
-              num_epoch=EPOCH)
+    model.fit(
+        train_data=train,
+        eval_data=val,
+        eval_end_callback=MXNetPruningCallback(trial, eval_metric='accuracy'),
+        optimizer=optimizer,
+        optimizer_params={'rescale_grad': 1.0 / BATCHSIZE},
+        num_epoch=EPOCH)
 
     # Compute the accuracy on the entire test set.
     test = mx.io.NDArrayIter(
@@ -109,10 +105,15 @@ def objective(trial):
 
 if __name__ == '__main__':
     import optuna
-    study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=100)
+    study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
+    study.optimize(objective, n_trials=100, timeout=600)
+    pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
+    complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
 
-    print('Number of finished trials: ', len(study.trials))
+    print('Study statistics: ')
+    print('  Number of finished trials: ', len(study.trials))
+    print('  Number of pruned trials: ', len(pruned_trials))
+    print('  Number of complete trials: ', len(complete_trials))
 
     print('Best trial:')
     trial = study.best_trial

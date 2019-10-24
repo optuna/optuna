@@ -8,7 +8,7 @@ neural networks, a pruner observes intermediate results and stops unpromising tr
 ChainerMN and it's Optuna integration are supposed to be invoked via MPI. You can run this example
 as follows:
     $ STORAGE_URL=sqlite:///example.db
-    $ STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
+    $ STUDY_NAME=`optuna create-study --storage $STORAGE_URL --direction maximize`
     $ mpirun -n 2 -- python chainermn_integration.py $STUDY_NAME $STORAGE_URL
 
 """
@@ -78,7 +78,7 @@ def objective(trial, comm):
 
     # Add Chainer extension for pruners.
     trainer.extend(
-        optuna.integration.ChainerPruningExtension(trial, 'validation/main/loss',
+        optuna.integration.ChainerPruningExtension(trial, 'validation/main/accuracy',
                                                    (PRUNER_INTERVAL, 'epoch')))
     evaluator = chainer.training.extensions.Evaluator(test_iter, model)
     trainer.extend(chainermn.create_multi_node_evaluator(evaluator, comm))
@@ -99,7 +99,7 @@ def objective(trial, comm):
     evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
     report = evaluator()
 
-    return 1.0 - report['main/accuracy']
+    return report['main/accuracy']
 
 
 if __name__ == '__main__':

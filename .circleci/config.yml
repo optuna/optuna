@@ -111,7 +111,15 @@ jobs:
           name: tests
           command: |
             . venv/bin/activate
-            pytest tests
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py
+          environment:
+            OMP_NUM_THREADS: 1
+
+      - run: &tests-pytorch-lightning
+          name: tests-pytorch-lightning
+          command: |
+            . venv/bin/activate
+            pytest tests/integration_tests/test_pytorch_lightning.py
           environment:
             OMP_NUM_THREADS: 1
 
@@ -130,6 +138,7 @@ jobs:
       - checkout
       - run: *install
       - run: *tests
+      - run: *tests-pytorch-lightning
       - run: *tests-mn
 
   tests-python35:
@@ -155,7 +164,16 @@ jobs:
           name: tests-full
           command: |
             . venv/bin/activate
-            pytest tests
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py
+          environment:
+            OMP_NUM_THREADS: 1
+            INCLUDE_SLOW_TESTS: 1
+
+      - run: &tests-pytorch-lightning-full
+          name: tests-pytorch-lightning-full
+          command: |
+            . venv/bin/activate
+            pytest tests/integration_tests/test_pytorch_lightning.py
           environment:
             OMP_NUM_THREADS: 1
             INCLUDE_SLOW_TESTS: 1
@@ -173,7 +191,7 @@ jobs:
     docker:
       - image: circleci/python:3.6
     steps:
-      [checkout, run: *install, run: *tests-full, run: *tests-mn-full]
+      [checkout, run: *install, run: *tests-full, run: *tests-pytorch-lightning-full, run: *tests-mn-full]
 
   tests-python35-full:
     docker:
@@ -221,19 +239,27 @@ jobs:
       - run: *install
 
       - run: &install-examples
-          name: install
+          name: install-examples
           command: |
             . venv/bin/activate
             pip install $(ls dist/*.tar.gz)[example]
-            
+
       - run: &examples
           name: examples
           command: |
             . venv/bin/activate
-            for file in `find examples -name '*.py' -not -name 'chainermn_*.py' -not -name 'dask_ml*.py'`
+            for file in `find examples -name '*.py' -not -name 'chainermn_*.py' -not -name 'dask_ml*.py' -not -name 'pytorch_lightning_simple.py'`
             do
                python $file
             done
+          environment:
+            OMP_NUM_THREADS: 1
+
+      - run: &examples-pytorch-lightning
+          name: examples-pytorch-lightning
+          command: |
+            . venv/bin/activate
+            python examples/pytorch_lightning_simple.py
           environment:
             OMP_NUM_THREADS: 1
 
@@ -263,7 +289,7 @@ jobs:
     docker:
       - image: circleci/python:3.6
     steps:
-      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn, run: *examples-dask-ml]
+      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-pytorch-lightning, run: *examples-mn, run: *examples-dask-ml]
 
   examples-python35:
     docker:

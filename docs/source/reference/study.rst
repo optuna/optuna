@@ -10,4 +10,5 @@ Study
 
 .. autofunction:: create_study
 .. autofunction:: load_study
+.. autofunction:: delete_study
 .. autofunction:: get_all_study_summaries

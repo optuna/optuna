@@ -1,4 +1,6 @@
 import itertools
+from mock import Mock  # NOQA
+from mock import patch
 import multiprocessing
 import os
 import pandas as pd
@@ -408,6 +410,14 @@ def test_study_pickle():
     assert len(study_2.trials) == 20
 
 
+def test_study_trials_dataframe_with_no_trials():
+    # type: () -> None
+
+    study_with_no_trials = optuna.create_study()
+    trials_df = study_with_no_trials.trials_dataframe()
+    assert trials_df.empty
+
+
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('cache_mode', CACHE_MODES)
 @pytest.mark.parametrize('include_internal_fields', [True, False])
@@ -539,6 +549,31 @@ def test_load_study(storage_mode, cache_mode):
         assert created_study.study_id == loaded_study.study_id
 
 
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_delete_study(storage_mode, cache_mode):
+    # type: (str, bool) -> None
+
+    with StorageSupplier(storage_mode, cache_mode) as storage:
+        # Get storage object because delete_study does not accept None.
+        storage = optuna.storages.get_storage(storage=storage)
+        assert storage is not None
+
+        # Test deleting a non-existing study.
+        with pytest.raises(ValueError):
+            optuna.delete_study("invalid-study-name", storage)
+
+        # Test deleting an existing study.
+        study = optuna.create_study(storage=storage, load_if_exists=False)
+        optuna.delete_study(study.study_name, storage)
+
+        # Test failed to delete the study which is already deleted.
+        if not isinstance(study._storage, optuna.storages.InMemoryStorage):
+            # Skip `InMemoryStorage` because it just internally initializes trials and so on.
+            with pytest.raises(ValueError):
+                optuna.delete_study(study.study_name, storage)
+
+
 def test_nested_optimization():
     # type: () -> None
 
@@ -572,6 +607,26 @@ def test_storage_property():
 
     study = optuna.create_study()
     assert study.storage == study._storage
+
+
+@patch('optuna.study.gc.collect')
+def test_force_gc(collect_mock):
+    # type: (Mock) -> None
+
+    study = optuna.create_study(force_garbage_collection=True)
+    study.optimize(func, n_trials=10)
+    check_study(study)
+    assert collect_mock.call_count == 10
+
+
+@patch('optuna.study.gc.collect')
+def test_no_force_gc(collect_mock):
+    # type: (Mock) -> None
+
+    study = optuna.create_study(force_garbage_collection=False)
+    study.optimize(func, n_trials=10)
+    check_study(study)
+    assert collect_mock.call_count == 0
 
 
 @pytest.mark.parametrize('n_jobs', [1, 4])

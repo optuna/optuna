@@ -32,6 +32,7 @@ def objective(trial):
     param = {
         'silent': 1,
         'objective': 'binary:logistic',
+        'eval_metric': 'auc',
         'booster': trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart']),
         'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
         'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0)
@@ -49,15 +50,16 @@ def objective(trial):
         param['skip_drop'] = trial.suggest_loguniform('skip_drop', 1e-8, 1.0)
 
     # Add a callback for pruning.
-    pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'validation-error')
+    pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'validation-auc')
     bst = xgb.train(param, dtrain, evals=[(dtest, 'validation')], callbacks=[pruning_callback])
     preds = bst.predict(dtest)
     pred_labels = np.rint(preds)
     accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
-    return 1.0 - accuracy
+    return accuracy
 
 
 if __name__ == '__main__':
-    study = optuna.create_study(pruner=optuna.pruners.MedianPruner(n_warmup_steps=5))
+    study = optuna.create_study(pruner=optuna.pruners.MedianPruner(n_warmup_steps=5),
+                                direction='maximize')
     study.optimize(objective, n_trials=100)
     print(study.best_trial)

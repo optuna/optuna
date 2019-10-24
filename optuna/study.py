@@ -71,8 +71,7 @@ class BaseStudy(object):
         """
 
         best_value = self.best_trial.value
-        if best_value is None:
-            raise ValueError('No trials are completed yet.')
+        assert best_value is not None
 
         return best_value
 
@@ -139,30 +138,12 @@ class BaseStudy(object):
 class Study(BaseStudy):
     """A study corresponds to an optimization task, i.e., a set of trials.
 
-    Note that the direct use of this constructor is not recommended.
-
     This object provides interfaces to run a new :class:`~optuna.trial.Trial`, access trials'
     history, set/get user-defined attributes of the study itself.
 
-    For creating and loading studies, please refer to the documentation of
+    Note that the direct use of this constructor is not recommended.
+    To create and load a study, please refer to the documentation of
     :func:`~optuna.study.create_study` and :func:`~optuna.study.load_study` respectively.
-
-    Args:
-        study_name:
-            Study's name. Each study has a unique name as an identifier.
-        storage:
-            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
-            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
-            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
-            further details.
-        sampler:
-            A sampler object that implements background algorithm for value suggestion.
-            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
-            as the default. See also :class:`~optuna.samplers`.
-        pruner:
-            A pruner object that decides early stopping of unpromising trials.
-            If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
-            as the default. See also :class:`~optuna.pruners`.
 
     """
 
@@ -172,6 +153,7 @@ class Study(BaseStudy):
             storage,  # type: Union[str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
             pruner=None,  # type: pruners.BasePruner
+            force_garbage_collection=True,  # type: bool
     ):
         # type: (...) -> None
 
@@ -186,6 +168,7 @@ class Study(BaseStudy):
         self.logger = logging.get_logger(__name__)
 
         self._optimize_lock = threading.Lock()
+        self.force_garbage_collection = force_garbage_collection
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -333,6 +316,10 @@ class Study(BaseStudy):
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
         _check_pandas_availability()
+
+        # If no trials, return an empty dataframe.
+        if not len(self.trials):
+            return pd.DataFrame()
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
@@ -535,7 +522,8 @@ class Study(BaseStudy):
             # environments (e.g., services that use computing containers such as CircleCI).
             # Please refer to the following PR for further details:
             # https://github.com/pfnet/optuna/pull/325.
-            gc.collect()
+            if self.force_garbage_collection:
+                gc.collect()
 
         try:
             result = float(result)
@@ -580,6 +568,7 @@ def create_study(
         study_name=None,  # type: Optional[str]
         direction='minimize',  # type: str
         load_if_exists=False,  # type: bool
+        force_garbage_collection=True,  # type: bool
 ):
     # type: (...) -> Study
     """Create a new :class:`~optuna.study.Study`.
@@ -607,6 +596,8 @@ def create_study(
             a :class:`~optuna.structs.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
+        force_garbage_collection:
+            Flag to force gc.collect() for every trial.
 
     Returns:
         A :class:`~optuna.study.Study` object.
@@ -632,7 +623,8 @@ def create_study(
         study_name=study_name,
         storage=storage,
         sampler=sampler,
-        pruner=pruner)
+        pruner=pruner,
+        force_garbage_collection=force_garbage_collection)
 
     if direction == 'minimize':
         _direction = structs.StudyDirection.MINIMIZE
@@ -675,6 +667,29 @@ def load_study(
     """
 
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
+
+
+def delete_study(
+        study_name,  # type: str
+        storage,  # type: Union[str, storages.BaseStorage]
+):
+    # type: (...) -> None
+    """Delete a :class:`~optuna.study.Study` object.
+
+    Args:
+        study_name:
+            Study's name.
+        storage:
+            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
+            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
+            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
+            further details.
+
+    """
+
+    storage = storages.get_storage(storage)
+    study_id = storage.get_study_id_from_name(study_name)
+    storage.delete_study(study_id)
 
 
 def get_all_study_summaries(storage):

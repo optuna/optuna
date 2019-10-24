@@ -22,7 +22,7 @@ from optuna.integration import TFKerasPruningCallback
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 20
-N_TRAIN_EXAMPLES = 60000
+N_TRAIN_EXAMPLES = 3000
 STEPS_PER_EPOCH = int(N_TRAIN_EXAMPLES / BATCHSIZE / 10)
 VALIDATION_STEPS = 30
 
@@ -71,6 +71,8 @@ def create_model(trial):
 
 
 def objective(trial):
+    # Clear clutter from previous TensorFlow graphs.
+    tf.keras.backend.clear_session()
 
     # Metrics to be monitored by Optuna.
     if tf.__version__ >= '2':
@@ -130,10 +132,8 @@ def show_result(study):
 
 def main():
 
-    study = optuna.create_study(
-        direction='maximize',
-        pruner=optuna.pruners.MedianPruner(n_startup_trials=2)
-    )
+    study = optuna.create_study(direction='maximize',
+                                pruner=optuna.pruners.MedianPruner(n_startup_trials=2))
 
     study.optimize(objective, n_trials=25, timeout=600)
 
