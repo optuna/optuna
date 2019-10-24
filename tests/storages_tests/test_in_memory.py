@@ -17,18 +17,18 @@ def test_update_cache(study_direction):
     sign = -1 if study_direction == 'minimize' else 1
 
     study = optuna.create_study(storage=storage, direction=study_direction)
-    study.optimize(lambda x: sign * x.number, n_trials=1)
+    study.optimize(lambda trial: sign * trial.number, n_trials=1)
     assert storage.best_trial_id == 0
 
-    study.optimize(lambda x: sign * x.number, n_trials=1)
+    study.optimize(lambda trial: sign * trial.number, n_trials=1)
     assert storage.best_trial_id == 1
 
     # The objective value is equal to the best value.
-    study.optimize(lambda x: sign * (x.number - 1), n_trials=1)
+    study.optimize(lambda trial: sign * (trial.number - 1), n_trials=1)
     assert storage.best_trial_id == 1
 
     # The objective value is inferior to the best value.
-    study.optimize(lambda x: sign * (x.number - 2), n_trials=1)
+    study.optimize(lambda trial: sign * (trial.number - 2), n_trials=1)
     assert storage.best_trial_id == 1
 
 
@@ -38,9 +38,9 @@ def test_update_cache_none_value():
     storage = InMemoryStorage()
 
     study = optuna.create_study(storage=storage)
-    study.optimize(lambda x: -1 * x.number, n_trials=1)
+    study.optimize(lambda trial: -1 * trial.number, n_trials=1)
     assert storage.best_trial_id == 0
 
     # The objective value is None.
-    study.optimize(lambda x: None, n_trials=1)  # type: ignore
+    study.optimize(lambda trial: None, n_trials=1)  # type: ignore
     assert storage.best_trial_id == 0
