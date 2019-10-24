@@ -41,7 +41,7 @@ def get_install_requires():
 
     install_requires = [
         'alembic', 'cliff', 'colorlog', 'numpy', 'scipy', 'six',
-        'sqlalchemy>=1.1.0', 'typing',
+        'sqlalchemy>=1.1.0', 'tqdm', 'typing',
     ]
     if sys.version_info[0] == 2:
         install_requires.extend(['enum34'])
@@ -56,7 +56,8 @@ def get_extras_require():
         'testing': [
             'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
             'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
-            'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0',
+            'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0', 'torch',
+            'pytorch-ignite', 'pytorch_lightning'
         ],
         'example': [
             'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',

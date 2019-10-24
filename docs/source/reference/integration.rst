@@ -13,6 +13,9 @@ Integration
     :members:
     :exclude-members: infer_relative_search_space, sample_relative, sample_independent
 
+.. autoclass:: IgnitePruningHandler
+    :members:
+
 .. autoclass:: KerasPruningCallback
     :members:
 
@@ -20,6 +23,9 @@ Integration
     :members:
 
 .. autoclass:: MXNetPruningCallback
+    :members:
+
+.. autoclass:: PyTorchLightningPruningCallback
     :members:
 
 .. autoclass:: SkoptSampler

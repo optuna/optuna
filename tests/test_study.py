@@ -1,4 +1,6 @@
 import itertools
+from mock import Mock  # NOQA
+from mock import patch
 import multiprocessing
 import os
 import pandas as pd
@@ -605,6 +607,26 @@ def test_storage_property():
 
     study = optuna.create_study()
     assert study.storage == study._storage
+
+
+@patch('optuna.study.gc.collect')
+def test_force_gc(collect_mock):
+    # type: (Mock) -> None
+
+    study = optuna.create_study(force_garbage_collection=True)
+    study.optimize(func, n_trials=10)
+    check_study(study)
+    assert collect_mock.call_count == 10
+
+
+@patch('optuna.study.gc.collect')
+def test_no_force_gc(collect_mock):
+    # type: (Mock) -> None
+
+    study = optuna.create_study(force_garbage_collection=False)
+    study.optimize(func, n_trials=10)
+    check_study(study)
+    assert collect_mock.call_count == 0
 
 
 @pytest.mark.parametrize('n_jobs', [1, 4])
