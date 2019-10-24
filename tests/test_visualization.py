@@ -1,5 +1,3 @@
-import pytest
-
 from optuna.distributions import UniformDistribution
 from optuna.study import create_study
 from optuna.trial import Trial  # NOQA
@@ -9,7 +7,6 @@ from optuna.visualization import _get_intermediate_plot
 from optuna.visualization import _get_optimization_history_plot
 from optuna.visualization import _get_parallel_coordinate_plot
 from optuna.visualization import _get_slice_plot
-from optuna.visualization import check_available
 
 
 def test_get_intermediate_plot():
@@ -323,14 +320,3 @@ def test_visualization_is_available():
     # type: () -> None
 
     assert visualization.is_available() == _is_plotly_available()
-
-
-def test_check_available():
-    # type: () -> None
-
-    if _is_plotly_available():
-        # Check that nothing is raised.
-        check_available()
-    else:
-        with pytest.raises(ImportError):
-            check_available()

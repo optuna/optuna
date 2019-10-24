@@ -67,7 +67,7 @@ def plot_intermediate_values(study):
             values.
     """
 
-    check_available()
+    _check_plotly_availability()
     figure = _get_intermediate_plot(study)
     figure.show()
 
@@ -137,7 +137,7 @@ def plot_optimization_history(study):
             values.
     """
 
-    check_available()
+    _check_plotly_availability()
     figure = _get_optimization_history_plot(study)
     figure.show()
 
@@ -211,7 +211,7 @@ def plot_contour(study, params=None):
             Parameter list to visualize. The default is all parameters.
     """
 
-    check_available()
+    _check_plotly_availability()
     figure = _get_contour_plot(study, params)
     figure.show()
 
@@ -368,7 +368,7 @@ def plot_parallel_coordinate(study, params=None):
             Parameter list to visualize. The default is all parameters.
     """
 
-    check_available()
+    _check_plotly_availability()
     figure = _get_parallel_coordinate_plot(study, params)
     figure.show()
 
@@ -473,7 +473,7 @@ def plot_slice(study, params=None):
             Parameter list to visualize. The default is all parameters.
     """
 
-    check_available()
+    _check_plotly_availability()
     figure = _get_slice_plot(study, params)
     figure.show()
 
@@ -540,13 +540,8 @@ def _generate_slice_subplot(study, trials, param):
     )
 
 
-def check_available():
+def _check_plotly_availability():
     # type: () -> None
-    """Checks whether visualization is available or not.
-
-    Raises:
-        :class:`ImportError`: If visualization is not available.
-    """
 
     if not is_available():
         raise ImportError(
