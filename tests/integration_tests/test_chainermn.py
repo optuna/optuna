@@ -248,9 +248,9 @@ class TestChainerMNStudy(object):
             # Assert trial count.
             assert len(mn_study.trials) == n_trials + 1
 
-            # Assert aborted trial count.
-            aborted_trials = [t for t in mn_study.trials if t.state == TrialState.RUNNING]
-            assert len(aborted_trials) == 1
+            # Assert failed trial count.
+            failed_trials = [t for t in mn_study.trials if t.state == TrialState.FAIL]
+            assert len(failed_trials) == n_trials + 1
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
