@@ -102,6 +102,8 @@ class BaseStudy(object):
         # type: () -> List[structs.FrozenTrial]
         """Return all trials in the study.
 
+        The returned trials are ordered by trial number.
+
         Returns:
             A list of :class:`~optuna.structs.FrozenTrial` objects.
         """
