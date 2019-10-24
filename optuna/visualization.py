@@ -34,7 +34,7 @@ def is_available():
     """Returns whether visualization is available or not.
 
     Returns:
-        ``True`` is visualization is available, ``False`` otherwise.
+        ``True`` if visualization is available, ``False`` otherwise.
     """
 
     return _available
