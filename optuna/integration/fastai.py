@@ -20,7 +20,7 @@ class FastAIPruningCallback(TrackerCallback):
     """FastAI callback to prune unpromising trials for fastai.
 
     .. note::
-        This callback is for fastai :math:`\\le` 2.0.
+        This callback is for fastai<2.0.
 
     Example:
 

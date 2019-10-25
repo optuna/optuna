@@ -70,8 +70,8 @@ def get_extras_require():
         'tensorflow<2.0.0',
     ]
     if _fastai_available:
-        testing_requirements.append("fastai==1.0.58")
-        example_requirements.append("fastai==1.0.58")
+        testing_requirements.append("fastai<2")
+        example_requirements.append("fastai<2")
 
     extras_require = {
         'checking': ['autopep8', 'hacking'],
