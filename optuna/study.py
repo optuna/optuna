@@ -213,7 +213,7 @@ class Study(BaseStudy):
             n_jobs=1,  # type: int
             catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            disable_gc=False  # type: bool
+            gc_after_trial=True  # type: bool
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -241,8 +241,8 @@ class Study(BaseStudy):
                 by this logic.
             callbacks:
                 List of callback functions that are invoked at the end of each trial.
-            disable_gc:
-                Flag to disable garbage collection at the end of each trial. By default, the
+            gc_after_trial:
+                Flag to execute garbage collection at the end of each trial. By default, the
                 garbage collection is executed to mitigate memory problems that can be occurred
                 in some environments (e.g., services that use computing containers such as
                 CircleCI).
@@ -254,10 +254,10 @@ class Study(BaseStudy):
         try:
             if n_jobs == 1:
                 self._optimize_sequential(func, n_trials, timeout, catch, callbacks,
-                                          disable_gc)
+                                          gc_after_trial)
             else:
                 self._optimize_parallel(func, n_trials, timeout, n_jobs, catch, callbacks,
-                                        disable_gc)
+                                        gc_after_trial)
         finally:
             self._optimize_lock.release()
 
@@ -403,7 +403,7 @@ class Study(BaseStudy):
             timeout,  # type: Optional[float]
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            disable_gc  # type: bool
+            gc_after_trial  # type: bool
     ):
         # type: (...) -> None
 
@@ -420,7 +420,7 @@ class Study(BaseStudy):
                 if elapsed_seconds >= timeout:
                     break
 
-            self._run_trial_and_callbacks(func, catch, callbacks, disable_gc)
+            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
 
     def _optimize_parallel(
             self,
@@ -430,7 +430,7 @@ class Study(BaseStudy):
             n_jobs,  # type: int
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            disable_gc  # type: bool
+            gc_after_trial  # type: bool
     ):
         # type: (...) -> None
 
@@ -454,7 +454,7 @@ class Study(BaseStudy):
             # type: (Queue) -> None
 
             while que.get():
-                self._run_trial_and_callbacks(func, catch, callbacks, disable_gc)
+                self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
             self._storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
@@ -493,11 +493,11 @@ class Study(BaseStudy):
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            disable_gc  # type: bool
+            gc_after_trial  # type: bool
     ):
         # type: (...) -> None
 
-        trial = self._run_trial(func, catch, disable_gc)
+        trial = self._run_trial(func, catch, gc_after_trial)
         if callbacks is not None:
             frozen_trial = self._storage.get_trial(trial._trial_id)
             for callback in callbacks:
@@ -507,7 +507,7 @@ class Study(BaseStudy):
             self,
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            disable_gc  # type: bool
+            gc_after_trial  # type: bool
     ):
         # type: (...) -> trial_module.Trial
 
@@ -536,7 +536,7 @@ class Study(BaseStudy):
             # environments (e.g., services that use computing containers such as CircleCI).
             # Please refer to the following PR for further details:
             # https://github.com/pfnet/optuna/pull/325.
-            if not disable_gc:
+            if gc_after_trial:
                 gc.collect()
 
         try:

@@ -341,7 +341,7 @@ def test_run_trial(storage_mode, cache_mode):
         study = optuna.create_study(storage=storage)
 
         # Test trial without exception.
-        study._run_trial(func, catch=(Exception, ), disable_gc=False)
+        study._run_trial(func, catch=(Exception, ), gc_after_trial=True)
         check_study(study)
 
         # Test trial with acceptable exception.
@@ -350,7 +350,7 @@ def test_run_trial(storage_mode, cache_mode):
 
             raise ValueError
 
-        trial = study._run_trial(func_value_error, catch=(ValueError, ), disable_gc=False)
+        trial = study._run_trial(func_value_error, catch=(ValueError, ), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#1 as TrialState.FAIL because of the ' \
@@ -360,7 +360,7 @@ def test_run_trial(storage_mode, cache_mode):
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
-            study._run_trial(func_value_error, catch=(ArithmeticError, ), disable_gc=False)
+            study._run_trial(func_value_error, catch=(ArithmeticError, ), gc_after_trial=True)
 
         # Test trial with invalid objective value: None
         def func_none(_):
@@ -368,7 +368,7 @@ def test_run_trial(storage_mode, cache_mode):
 
             return None  # type: ignore
 
-        trial = study._run_trial(func_none, catch=(Exception, ), disable_gc=False)
+        trial = study._run_trial(func_none, catch=(Exception, ), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#3 as TrialState.FAIL because the returned ' \
@@ -383,7 +383,7 @@ def test_run_trial(storage_mode, cache_mode):
 
             return float('nan')
 
-        trial = study._run_trial(func_nan, catch=(Exception, ), disable_gc=False)
+        trial = study._run_trial(func_nan, catch=(Exception, ), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#4 as TrialState.FAIL because the objective ' \
@@ -614,7 +614,7 @@ def test_optimize_with_gc(collect_mock):
     # type: (Mock) -> None
 
     study = optuna.create_study()
-    study.optimize(func, n_trials=10, disable_gc=False)
+    study.optimize(func, n_trials=10, gc_after_trial=True)
     check_study(study)
     assert collect_mock.call_count == 10
 
@@ -624,7 +624,7 @@ def test_optimize_without_gc(collect_mock):
     # type: (Mock) -> None
 
     study = optuna.create_study()
-    study.optimize(func, n_trials=10, disable_gc=True)
+    study.optimize(func, n_trials=10, gc_after_trial=False)
     check_study(study)
     assert collect_mock.call_count == 0
 
