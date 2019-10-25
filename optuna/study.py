@@ -517,7 +517,7 @@ class Study(BaseStudy):
             self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
 
-            if any(isinstance(e, cls) for cls in catch):
+            if isinstance(e, catch):
                 return trial
             raise
         finally:
