@@ -15,7 +15,7 @@ def train(*args, **kwargs):
 
     .. warning::
 
-        This feature is experimental. The interface can be changed in the future.
+        This feature is experimental. The interface may be changed in the future.
 
     It tunes important hyperparameters (e.g., `min_child_samples` and `feature_fraction`) in a
     stepwise manner. Arguments and keyword arguments for `lightgbm.train()
