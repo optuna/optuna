@@ -13,3 +13,5 @@ Visualization
 .. autofunction:: plot_parallel_coordinate
 
 .. autofunction:: plot_slice
+
+.. autofunction:: is_available
