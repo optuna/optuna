@@ -242,10 +242,9 @@ class Study(BaseStudy):
             callbacks:
                 List of callback functions that are invoked at the end of each trial.
             gc_after_trial:
-                Flag to execute garbage collection at the end of each trial. By default, the
-                garbage collection is executed to mitigate memory problems that can be occurred
-                in some environments (e.g., services that use computing containers such as
-                CircleCI).
+                Flag to execute garbage collection at the end of each trial. By default, garbage
+                collection is enabled, just in case. You can turn it off with this argument if
+                memory is safely managed in your objective function.
         """
 
         if not self._optimize_lock.acquire(False):
