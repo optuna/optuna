@@ -175,7 +175,9 @@ class TrialModel(BaseModel):
     def where_study(cls, study, session):
         # type: (StudyModel, orm.Session) -> List[TrialModel]
 
-        trials = session.query(cls).filter(cls.study_id == study.study_id).all()
+        trials = session.query(cls) \
+            .filter(cls.study_id == study.study_id) \
+            .order_by(cls.trial_id).all()
 
         return trials
 
@@ -217,7 +219,9 @@ class TrialModel(BaseModel):
     def get_all_trial_ids_where_study(cls, study, session):
         # type: (StudyModel, orm.Session) -> List[int]
 
-        trials = session.query(cls.trial_id).filter(cls.study_id == study.study_id).all()
+        trials = session.query(cls.trial_id) \
+            .filter(cls.study_id == study.study_id) \
+            .order_by(cls.trial_id).all()
 
         return [t.trial_id for t in trials]
 
