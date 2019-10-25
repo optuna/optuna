@@ -16,7 +16,7 @@ from optuna.integration import FastAIPruningCallback
 from optuna.testing.integration import DeterministicPruner
 
 
-# https://docs.fast.ai/basic_data.html#Using-a-custom-Dataset-in-fastai
+# See https://docs.fast.ai/basic_data.html#Using-a-custom-Dataset-in-fastai.
 class ArrayDataset(Dataset):
     "Sample numpy array dataset"
 
