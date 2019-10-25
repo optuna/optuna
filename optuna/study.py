@@ -238,7 +238,7 @@ class Study(BaseStudy):
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
-                exception.
+                exception except for :class:`structs.TrialPruned`.
             callbacks:
                 List of callback functions that are invoked at the end of each trial.
         """
