@@ -242,6 +242,21 @@ def test_optimize_with_catch(storage_mode, cache_mode):
         assert all(trial.state == optuna.structs.TrialState.FAIL for trial in study.trials)
 
 
+@pytest.mark.parametrize('catch', [[], [Exception], None, 1])
+def test_optimize_with_catch_invalid_type(catch):
+    # type: (Any) -> None
+
+    study = optuna.create_study()
+
+    def func_value_error(_):
+        # type: (optuna.trial.Trial) -> float
+
+        raise ValueError
+
+    with pytest.raises(TypeError):
+        study.optimize(func_value_error, n_trials=20, catch=catch)
+
+
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('cache_mode', CACHE_MODES)
 def test_study_set_and_get_user_attrs(storage_mode, cache_mode):

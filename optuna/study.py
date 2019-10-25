@@ -246,6 +246,9 @@ class Study(BaseStudy):
 
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
+        if not isinstance(catch, tuple):
+            raise TypeError("The catch argument is of type \'{}\' but must be a tuple.".format(
+                type(catch).__name__))
 
         try:
             if n_jobs == 1:
