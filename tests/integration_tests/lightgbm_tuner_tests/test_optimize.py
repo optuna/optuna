@@ -1,5 +1,4 @@
 import contextlib
-import sys
 
 import mock
 import numpy as np
@@ -15,33 +14,9 @@ from optuna import type_checking
 
 
 if type_checking.TYPE_CHECKING:
-    from type_checking import Any  # NOQA
-    from type_checking import Dict  # NOQA
-    from type_checking import Generator  # NOQA
-    from type_checking import List  # NOQA
-    from type_checking import Tuple  # NOQA
-
-if sys.version_info >= (3, 5):
-    from contextlib import ExitStack
-
-
-@contextlib.contextmanager
-def turnoff_tuner():
-    # type: () -> Generator[None, None, None]
-
-    fqn_prefix = 'optuna.integration.lightgbm_tuner.LightGBMTuner'
-    mock_pairs = [
-        (fqn_prefix + '.__init__', None),
-        (fqn_prefix + '.run', True),
-        (fqn_prefix + '._parse_args', None),
-        (fqn_prefix + '._get_params', {}),
-    ]  # type: List[Tuple[str, Any]]
-
-    if sys.version_info >= (3, 5):
-        with ExitStack() as stack:
-            for fqn, return_value in mock_pairs:
-                stack.enter_context(mock.patch(fqn, return_value=return_value))
-            yield
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import Generator  # NOQA
 
 
 @contextlib.contextmanager
