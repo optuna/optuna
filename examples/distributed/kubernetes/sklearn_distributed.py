@@ -1,5 +1,6 @@
 """
-Optuna distributed optimization example that optimizes an sklearn classifier configuration for Iris dataset on Kubernetes.
+Optuna distributed optimization example that optimizes
+an sklearn classifier for the Iris dataset on Kubernetes.
 
 This example's code is mostly the same as the sklearn_simple.py example, except for two things:
 
