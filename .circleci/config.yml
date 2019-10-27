@@ -248,7 +248,7 @@ jobs:
           name: examples
           command: |
             . venv/bin/activate
-            for file in `find examples -name '*.py' -not -name 'chainermn_*.py' -not -name 'dask_ml*.py' -not -name 'pytorch_lightning_simple.py'`
+            for file in `find examples -name '*.py' -not -name 'chainermn_*.py' -not -name 'dask_ml*.py' -not -name 'pytorch_lightning_simple.py' -not -name '*_distributed.py'`
             do
                python $file
             done
