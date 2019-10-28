@@ -251,6 +251,9 @@ jobs:
             for file in `find examples -name '*.py' -not -name 'chainermn_*.py' -not -name 'dask_ml*.py' -not -name 'pytorch_lightning_simple.py'`
             do
                python $file
+               if grep -e '\-\-pruning' $file > /dev/null; then
+                  python $file --pruning
+               fi
             done
           environment:
             OMP_NUM_THREADS: 1
