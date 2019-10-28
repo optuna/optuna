@@ -17,6 +17,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Generator  # NOQA
+    from typing import List  # NOQA
 
 
 @contextlib.contextmanager
@@ -281,8 +282,8 @@ class TestLightGBMTuner(object):
         unexpected_value = 1.1  # out of scope.
 
         with turnoff_train():
-            tuning_history = []
-            best_params = {}
+            tuning_history = []  # type: List[Dict[str, float]]
+            best_params = {}  # type: Dict[str, Any]
 
             runner = self._get_tuner_object(params=dict(
                 feature_fraction=unexpected_value,  # set default as unexpected value.
@@ -304,7 +305,7 @@ class TestLightGBMTuner(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
-            tuning_history = []
+            tuning_history = []  # type: List[Dict[str, float]]
 
             runner = self._get_tuner_object(params=dict(
                 num_leaves=unexpected_value,
@@ -324,7 +325,7 @@ class TestLightGBMTuner(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
-            tuning_history = []
+            tuning_history = []  # type: List[Dict[str, float]]
 
             runner = self._get_tuner_object(params=dict(
                 bagging_fraction=unexpected_value,
@@ -344,7 +345,7 @@ class TestLightGBMTuner(object):
         unexpected_value = 0.5
 
         with turnoff_train():
-            tuning_history = []
+            tuning_history = []  # type: List[Dict[str, float]]
 
             runner = self._get_tuner_object(params=dict(
                 feature_fraction=unexpected_value,
@@ -364,7 +365,7 @@ class TestLightGBMTuner(object):
         unexpected_value = 20  # out of scope.
 
         with turnoff_train():
-            tuning_history = []
+            tuning_history = []  # type: List[Dict[str, float]]
 
             runner = self._get_tuner_object(params=dict(
                 lambda_l1=unexpected_value,  # set default as unexpected value.
@@ -384,7 +385,7 @@ class TestLightGBMTuner(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
-            tuning_history = []
+            tuning_history = []  # type: List[Dict[str, float]]
 
             runner = self._get_tuner_object(params=dict(
                 min_child_samples=unexpected_value,  # set default as unexpected value.
