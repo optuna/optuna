@@ -97,7 +97,7 @@ def objective(trial):
                                             metrics={'accuracy': Accuracy()},
                                             device=device)
 
-    # Create another evaluator which calls pruning handler.
+    # Create another evaluator which calls the pruning handler.
     pruning_evaluator = create_supervised_evaluator(model,
                                                     metrics={'accuracy': Accuracy()},
                                                     device=device)
