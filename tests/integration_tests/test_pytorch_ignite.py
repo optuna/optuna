@@ -12,7 +12,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Iterable  # NOQA
 
 
-def test_ignite_pruning_handler():
+def test_pytorch_ignite_pruning_handler():
     # type: () -> None
 
     def update(engine, batch):
@@ -26,7 +26,7 @@ def test_ignite_pruning_handler():
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)
 
-    handler = optuna.integration.IgnitePruningHandler(trial, 'accuracy', trainer)
+    handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
     with patch.object(trainer, 'state', epoch=Mock(return_value=1), metrics={'accuracy': 1}):
         with pytest.raises(optuna.structs.TrialPruned):
             handler(trainer)
@@ -35,6 +35,6 @@ def test_ignite_pruning_handler():
     study = optuna.create_study(pruner=DeterministicPruner(False))
     trial = create_running_trial(study, 1.0)
 
-    handler = optuna.integration.IgnitePruningHandler(trial, 'accuracy', trainer)
+    handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
     with patch.object(trainer, 'state', epoch=Mock(return_value=1), metrics={'accuracy': 1}):
         handler(trainer)

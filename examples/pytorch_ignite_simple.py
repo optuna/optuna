@@ -9,13 +9,13 @@ subset of it.
 We have the following two ways to execute this example:
 
 (1) Execute this code directly. Pruning can be turned on and off with the `--pruning` argument.
-    $ python ignite_simple.py [--pruning]
+    $ python pytorch_ignite_simple.py [--pruning]
 
 
 (2) Execute through CLI. Pruning is enabled automatically.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize ignite_simple.py objective --n-trials=100 --study $STUDY_NAME \
-      --storage sqlite:///example.db
+    $ optuna study optimize pytorch_ignite_simple.py objective --n-trials=100 \
+      --study $STUDY_NAME --storage sqlite:///example.db
 """
 
 from __future__ import division
@@ -101,7 +101,7 @@ def objective(trial):
     pruning_evaluator = create_supervised_evaluator(model,
                                                     metrics={'accuracy': Accuracy()},
                                                     device=device)
-    pruning_handler = optuna.integration.IgnitePruningHandler(trial, 'accuracy', trainer)
+    pruning_handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
     pruning_evaluator.add_event_handler(Events.COMPLETED, pruning_handler)
 
     # Load MNIST dataset.
