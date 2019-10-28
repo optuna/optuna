@@ -8,7 +8,7 @@ subset of it.
 
 We have the following two ways to execute this example:
 
-(1) Execute this code directly. Pruning can be turned on and off with `--pruning` argument.
+(1) Execute this code directly. Pruning can be turned on and off with the `--pruning` argument.
     $ python ignite_simple.py [--pruning]
 
 
