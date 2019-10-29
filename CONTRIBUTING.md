@@ -1,7 +1,7 @@
 # Contributing guidelines
 
 Once you send a pull request, it is automatically tested on [CircleCI](https://circleci.com/).
-By set upping
+By setting up the
 [CircleCI Local CLI](https://circleci.com/docs/2.0/local-cli/), you can check your code in your local
 environment before submitting the pull request.
 
