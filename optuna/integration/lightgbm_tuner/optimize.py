@@ -12,14 +12,14 @@ from optuna import type_checking
 
 
 if type_checking.TYPE_CHECKING:
-    from type_checking import Any  # NOQA
-    from type_checking import Callable  # NOQA
-    from type_checking import Dict  # NOQA
-    from type_checking import Generator  # NOQA
-    from type_checking import List  # NOQA
-    from type_checking import Optional  # NOQA
-    from type_checking import Tuple  # NOQA
-    from type_checking import Union  # NOQA
+    from typing import Any  # NOQA
+    from typing import Callable  # NOQA
+    from typing import Dict  # NOQA
+    from typing import Generator  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
+    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
@@ -122,7 +122,7 @@ class BaseTuner(object):
         elif type(valid_sets) is lgb.Dataset:
             valid_name = 'valid_0'
 
-        elif type(valid_sets) in [list, tuple] and len(valid_sets) > 0:
+        elif isinstance(valid_sets, (list, tuple)) and len(valid_sets) > 0:
             valid_set_idx = len(valid_sets) - 1
             valid_name = 'valid_{}'.format(valid_set_idx)
 
@@ -261,8 +261,8 @@ class LightGBMTuner(BaseTuner):
             num_boost_round=1000,  # type: int
             valid_sets=None,  # type: Optional[VALID_SET_TYPE]
             valid_names=None,  # type: Optional[Any]
-            fobj=None,  # type: Optional[Callable[Any, Any]]
-            feval=None,  # type: Optional[Callable[Any, Any]]
+            fobj=None,  # type: Optional[Callable[..., Any]]
+            feval=None,  # type: Optional[Callable[..., Any]]
             feature_name='auto',  # type: str
             categorical_feature='auto',  # type: str
             early_stopping_rounds=None,  # type: Optional[int]
@@ -270,7 +270,7 @@ class LightGBMTuner(BaseTuner):
             verbose_eval=True,  # type: Optional[bool]
             learning_rates=None,  # type: Optional[List[float]]
             keep_training_booster=False,  # type: Optional[bool]
-            callbacks=None,  # type: Optional[List[Callable[Any, Any]]]
+            callbacks=None,  # type: Optional[List[Callable[..., Any]]]
             time_budget=None,  # type: Optional[int]
             sample_size=None,  # type: Optional[int]
             best_params=None,  # type: Optional[Dict[str, Any]]
@@ -315,7 +315,7 @@ class LightGBMTuner(BaseTuner):
         return params
 
     def _parse_args(self, *args, **kwargs):
-        # type: (List[Any], Dict[str, Any]) -> None
+        # type: (Any, Any) -> None
 
         self.auto_options = {
             option_name: kwargs.get(option_name)

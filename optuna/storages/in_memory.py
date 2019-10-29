@@ -130,8 +130,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: () -> List[structs.StudySummary]
 
         best_trial = None
-        n_complete_trials = len([t for t in self.trials if t.state == structs.TrialState.COMPLETE])
-        if n_complete_trials > 0:
+        if any(t for t in self.trials if t.state == structs.TrialState.COMPLETE):
             best_trial = self.get_best_trial(IN_MEMORY_STORAGE_STUDY_ID)
 
         datetime_start = None

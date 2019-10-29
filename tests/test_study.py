@@ -345,7 +345,7 @@ def test_run_trial(storage_mode, cache_mode):
         study = optuna.create_study(storage=storage)
 
         # Test trial without exception.
-        study._run_trial(func, catch=(Exception, ))
+        study._run_trial(func, catch=(Exception, ), gc_after_trial=True)
         check_study(study)
 
         # Test trial with acceptable exception.
@@ -354,7 +354,7 @@ def test_run_trial(storage_mode, cache_mode):
 
             raise ValueError
 
-        trial = study._run_trial(func_value_error, catch=(ValueError, ))
+        trial = study._run_trial(func_value_error, catch=(ValueError, ), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#1 as TrialState.FAIL because of the ' \
@@ -364,7 +364,7 @@ def test_run_trial(storage_mode, cache_mode):
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
-            study._run_trial(func_value_error, catch=(ArithmeticError, ))
+            study._run_trial(func_value_error, catch=(ArithmeticError, ), gc_after_trial=True)
 
         # Test trial with invalid objective value: None
         def func_none(_):
@@ -372,7 +372,7 @@ def test_run_trial(storage_mode, cache_mode):
 
             return None  # type: ignore
 
-        trial = study._run_trial(func_none, catch=(Exception, ))
+        trial = study._run_trial(func_none, catch=(Exception, ), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#3 as TrialState.FAIL because the returned ' \
@@ -387,7 +387,7 @@ def test_run_trial(storage_mode, cache_mode):
 
             return float('nan')
 
-        trial = study._run_trial(func_nan, catch=(Exception, ))
+        trial = study._run_trial(func_nan, catch=(Exception, ), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#4 as TrialState.FAIL because the objective ' \
@@ -614,21 +614,21 @@ def test_storage_property():
 
 
 @patch('optuna.study.gc.collect')
-def test_force_gc(collect_mock):
+def test_optimize_with_gc(collect_mock):
     # type: (Mock) -> None
 
-    study = optuna.create_study(force_garbage_collection=True)
-    study.optimize(func, n_trials=10)
+    study = optuna.create_study()
+    study.optimize(func, n_trials=10, gc_after_trial=True)
     check_study(study)
     assert collect_mock.call_count == 10
 
 
 @patch('optuna.study.gc.collect')
-def test_no_force_gc(collect_mock):
+def test_optimize_without_gc(collect_mock):
     # type: (Mock) -> None
 
-    study = optuna.create_study(force_garbage_collection=False)
-    study.optimize(func, n_trials=10)
+    study = optuna.create_study()
+    study.optimize(func, n_trials=10, gc_after_trial=False)
     check_study(study)
     assert collect_mock.call_count == 0
 

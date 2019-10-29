@@ -334,7 +334,7 @@ class OptunaSearchCV(BaseEstimator):
 
     .. warning::
 
-        This feature is experimental. The interface can change in the future.
+        This feature is experimental. The interface may be changed in the future.
 
     Args:
         estimator:

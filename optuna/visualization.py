@@ -29,6 +29,24 @@ except ImportError as e:
     _available = False
 
 
+def is_available():
+    # type: () -> bool
+    """Returns whether visualization is available or not.
+
+    .. note::
+
+        :mod:`~optuna.visualization` module depends on plotly version 4.0.0 or higher. If a
+        supported version of plotly isn't installed in your environment, this function will return
+        :obj:`False`. In such case, please execute ``$ pip install -U plotly>=4.0.0`` to install
+        plotly.
+
+    Returns:
+        :obj:`True` if visualization is available, :obj:`False` otherwise.
+    """
+
+    return _available
+
+
 def plot_intermediate_values(study):
     # type: (Study) -> None
     """Plot intermediate values of all trials in a study.
@@ -532,7 +550,7 @@ def _generate_slice_subplot(study, trials, param):
 def _check_plotly_availability():
     # type: () -> None
 
-    if not _available:
+    if not is_available():
         raise ImportError(
             'Plotly is not available. Please install plotly to use this feature. '
             'Plotly can be installed by executing `$ pip install plotly`. '

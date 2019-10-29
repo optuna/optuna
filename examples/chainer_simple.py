@@ -94,8 +94,11 @@ def objective(trial):
         ]))
     trainer.extend(log_report_extension)
 
+    trainer.extend(
+        ChainerPruningExtension(trial, 'validation/main/accuracy', (1, 'epoch')))
+
     # Run!
-    trainer.run()
+    trainer.run(show_loop_exception_msg=False)
 
     # Set the user attributes such as loss and accuracy for train and validation sets
     log_last = log_report_extension.log[-1]
@@ -108,7 +111,11 @@ def objective(trial):
 
 if __name__ == '__main__':
     import optuna
-    study = optuna.create_study(direction='maximize')
+    from optuna.integration import ChainerPruningExtension
+    # This verbosity change is just to simplify the script output.
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
     study.optimize(objective, n_trials=100)
 
     print('Number of finished trials: ', len(study.trials))
