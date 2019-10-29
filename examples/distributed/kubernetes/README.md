@@ -26,7 +26,7 @@ docker image build -t optuna-kubernetes:example .
 3 - Apply the kubernetes manifests:
 
 ```bash
-kubectl apply -f k8s-maniftests.yaml
+kubectl apply -f k8s-manifests.yaml
 ```
 
 4 - Track the progress of each worker by checking their logs:
