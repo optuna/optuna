@@ -46,7 +46,8 @@ jobs:
           command: |
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            pip install .[checking]
+            pip install -U pip
+            pip install --progress-bar off .[checking]
 
       - run:
           name: autopep8
@@ -78,7 +79,8 @@ jobs:
           command: |
             python -m venv venv || virtualenv venv --python=python3
             . venv/bin/activate
-            pip install .[document]
+            pip install -U pip
+            pip install --progress-bar off .[document]
 
       - run:
           name: build
@@ -103,9 +105,10 @@ jobs:
             sudo apt-get -y install openmpi-bin libopenmpi-dev
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            pip install -U setuptools
+            pip install -U pip
+            pip install --progress-bar off -U setuptools
             python setup.py sdist
-            pip install $(ls dist/*.tar.gz)[testing]
+            pip install --progress-bar off $(ls dist/*.tar.gz)[testing]
 
       - run: &tests
           name: tests
@@ -217,7 +220,8 @@ jobs:
           name: install-codecov
           command: |
             . venv/bin/activate
-            pip install .[codecov]
+            pip install -U pip
+            pip install --progress-bar off .[codecov]
 
       - run:
           name: codecov
@@ -242,7 +246,8 @@ jobs:
           name: install-examples
           command: |
             . venv/bin/activate
-            pip install $(ls dist/*.tar.gz)[example]
+            pip install -U pip
+            pip install --progress-bar off $(ls dist/*.tar.gz)[example]
 
       - run: &examples
           name: examples
