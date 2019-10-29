@@ -9,44 +9,21 @@ from optuna.cli import Studies
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
 from optuna.structs import CLIUsageError
+from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from types import TracebackType  # NOQA
-    from typing import Any  # NOQA
-    from typing import IO  # NOQA
     from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Type  # NOQA
 
     from optuna.trial import Trial  # NOQA
-
-
-class StorageSupplier(object):
-    def __init__(self):
-        # type: () -> None
-
-        self.tempfile_storage = None  # type: Optional[IO[Any]]
-
-    def __enter__(self):
-        # type: () -> str
-
-        self.tempfile_storage = tempfile.NamedTemporaryFile()
-
-        return 'sqlite:///{}'.format(self.tempfile_storage.name)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        # type: (Type[BaseException], BaseException, TracebackType) -> None
-
-        if self.tempfile_storage:
-            self.tempfile_storage.close()
 
 
 def test_create_study_command():
     # type: () -> None
 
-    with StorageSupplier() as storage_url:
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
         # Create study.
         command = ['optuna', 'create-study', '--storage', storage_url]
@@ -65,8 +42,9 @@ def test_create_study_command():
 def test_create_study_command_with_study_name():
     # type: () -> None
 
-    with StorageSupplier() as storage_url:
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
         study_name = 'test_study'
 
         # Create study with name.
@@ -90,8 +68,9 @@ def test_create_study_command_without_storage_url():
 def test_create_study_command_with_direction():
     # type: () -> None
 
-    with StorageSupplier() as storage_url:
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
         command = ['optuna', 'create-study', '--storage', storage_url, '--direction', 'minimize']
         study_name = str(subprocess.check_output(command).decode().strip())
@@ -113,8 +92,9 @@ def test_create_study_command_with_direction():
 def test_delete_study_command():
     # type: () -> None
 
-    with StorageSupplier() as storage_url:
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
         study_name = "delete-study-test"
 
         # Create study.
@@ -138,8 +118,9 @@ def test_delete_study_command_without_storage_url():
 def test_study_set_user_attr_command():
     # type: () -> None
 
-    with StorageSupplier() as storage_url:
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
         # Create study.
         study_name = storage.get_study_name_from_id(storage.create_new_study())
@@ -161,8 +142,9 @@ def test_study_set_user_attr_command():
 def test_studies_command():
     # type: () -> None
 
-    with StorageSupplier() as storage_url:
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
         # First study.
         study_1 = optuna.create_study(storage)
@@ -199,8 +181,9 @@ def test_studies_command():
 def test_create_study_command_with_skip_if_exists():
     # type: () -> None
 
-    with StorageSupplier() as storage_url:
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
         study_name = 'test_study'
 
         # Create study with name.
@@ -229,9 +212,10 @@ def test_create_study_command_with_skip_if_exists():
 def test_dashboard_command():
     # type: () -> None
 
-    with StorageSupplier() as storage_url, tempfile.NamedTemporaryFile('r') as tf_report:
+    with StorageSupplier('new') as storage, tempfile.NamedTemporaryFile('r') as tf_report:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
-        storage = RDBStorage(storage_url)
         study_name = storage.get_study_name_from_id(storage.create_new_study())
 
         command = ['optuna', 'dashboard', '--study', study_name, '--out', tf_report.name,
@@ -248,9 +232,10 @@ def test_dashboard_command():
 def test_dashboard_command_with_allow_websocket_origin(origins):
     # type: (List[str]) -> None
 
-    with StorageSupplier() as storage_url, tempfile.NamedTemporaryFile('r') as tf_report:
+    with StorageSupplier('new') as storage, tempfile.NamedTemporaryFile('r') as tf_report:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
-        storage = RDBStorage(storage_url)
         study_name = storage.get_study_name_from_id(storage.create_new_study())
         command = [
             'optuna', 'dashboard', '--study', study_name, '--out', tf_report.name, '--storage',
@@ -276,8 +261,9 @@ def objective_func(trial):
 def test_study_optimize_command():
     # type: () -> None
 
-    with StorageSupplier() as storage_url:
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
         study_name = storage.get_study_name_from_id(storage.create_new_study())
         command = [
@@ -333,7 +319,10 @@ def test_check_storage_url():
 def test_storage_upgrade_command():
     # type: () -> None
 
-    with StorageSupplier() as storage_url:
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
+
         command = ['optuna', 'storage', 'upgrade']
         with pytest.raises(CalledProcessError):
             subprocess.check_call(command)
