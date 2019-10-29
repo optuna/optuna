@@ -232,10 +232,29 @@ def test_optimize_with_catch(storage_mode, cache_mode):
 
         # Test acceptable exception.
         study.optimize(func_value_error, n_trials=20, catch=(ValueError, ))
+        assert len(study.trials) == 20
+        assert all(trial.state == optuna.structs.TrialState.FAIL for trial in study.trials)
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
             study.optimize(func_value_error, n_trials=20, catch=(ArithmeticError, ))
+        assert len(study.trials) == 21
+        assert all(trial.state == optuna.structs.TrialState.FAIL for trial in study.trials)
+
+
+@pytest.mark.parametrize('catch', [[], [Exception], None, 1])
+def test_optimize_with_catch_invalid_type(catch):
+    # type: (Any) -> None
+
+    study = optuna.create_study()
+
+    def func_value_error(_):
+        # type: (optuna.trial.Trial) -> float
+
+        raise ValueError
+
+    with pytest.raises(TypeError):
+        study.optimize(func_value_error, n_trials=20, catch=catch)
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)

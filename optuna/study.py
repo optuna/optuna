@@ -251,6 +251,9 @@ class Study(BaseStudy):
 
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
+        if not isinstance(catch, tuple):
+            raise TypeError("The catch argument is of type \'{}\' but must be a tuple.".format(
+                type(catch).__name__))
 
         try:
             if n_jobs == 1:
@@ -525,13 +528,16 @@ class Study(BaseStudy):
             self.logger.info(message)
             self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
-        except catch as e:
+        except Exception as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
                 .format(trial_number, structs.TrialState.FAIL, repr(e))
             self.logger.warning(message, exc_info=True)
             self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
-            return trial
+
+            if isinstance(e, catch):
+                return trial
+            raise
         finally:
             # The following line mitigates memory problems that can be occurred in some
             # environments (e.g., services that use computing containers such as CircleCI).
