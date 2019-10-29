@@ -33,7 +33,7 @@ Please see also our [Coding Style Conventions](https://github.com/pfnet/optuna/w
 The following circleci job runs all unit tests in Python 3.7:
 
 ```console
-// Note that this job will download several hundred megabytes data to
+// Note that this job will download several hundred megabytes of data to
 // install all the packages required for testing,
 // and take several tens of minutes to complete all tests.
 $ circleci build --job tests-python37
