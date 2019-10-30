@@ -269,7 +269,7 @@ jobs:
           name: examples
           command: |
             . venv/bin/activate
-            for file in `find examples -name '*.py' -not -name 'chainermn_*.py'`
+            for file in `find examples -name '*.py' | grep -vE "$IGNORES"`
             do
                python $file
                if grep -e '\-\-pruning' $file > /dev/null; then
@@ -278,6 +278,7 @@ jobs:
             done
           environment:
             OMP_NUM_THREADS: 1
+            IGNORES: chainermn_.*
 
       - run: &examples-mn
           name: examples-mn
@@ -310,15 +311,9 @@ jobs:
 
       - run:
           <<: *examples
-          command: |
-            . venv/bin/activate
-            for file in `find examples -name '*.py' -not -name 'chainermn_*.py' -not -name 'pytorch_lightning_simple.py'`
-            do
-               python $file
-               if grep -e '\-\-pruning' $file > /dev/null; then
-                  python $file --pruning
-               fi
-            done
+          environment:
+            OMP_NUM_THREADS: 1
+            IGNORES: chainermn_.*|pytorch_lightning.*
 
       - run: *examples-mn
 
@@ -334,14 +329,8 @@ jobs:
 
       - run:
           <<: *examples
-          command: |
-            . venv/bin/activate
-            for file in `find examples -name '*.py' -not -name 'chainermn_*.py' -not -name 'pytorch_lightning_*.py' -not -name 'xgboost_*.py'`
-            do
-               python $file
-               if grep -e '\-\-pruning' $file > /dev/null; then
-                  python $file --pruning
-               fi
-            done
+          environment:
+            OMP_NUM_THREADS: 1
+            IGNORES: chainermn_.*|pytorch_lightning.*|xgboost_.*
 
       - run: *examples-mn
