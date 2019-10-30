@@ -15,7 +15,7 @@ Please write a clear and concise description of the feature proposal.
 
 Please write the motivation for the proposal.
 
-If your feature request related to a problem, please describe a clear and concise description of what the problem is.
+If your feature request is related to a problem, please describe a clear and concise description of what the problem is.
 
 ## Description
 
