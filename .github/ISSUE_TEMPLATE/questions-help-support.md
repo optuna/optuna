@@ -7,8 +7,6 @@ assignees: ''
 
 ---
 
-## Question
-
 Please write your question here.
 
 ### Note to the questioner

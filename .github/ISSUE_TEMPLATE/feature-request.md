@@ -7,8 +7,6 @@ assignees: ''
 
 ---
 
-## Summary
-
 Please write a clear and concise description of the feature proposal.
 
 ## Motivation

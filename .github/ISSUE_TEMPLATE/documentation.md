@@ -7,6 +7,4 @@ assignees: ''
 
 ---
 
-## Documentation
-
 Please write a clear and concise description of what content in https://optuna.readthedocs.io/ is an issue.

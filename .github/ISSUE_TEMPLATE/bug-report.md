@@ -7,15 +7,13 @@ assignees: ''
 
 ---
 
-## Bug
-
 Please write a clear and concise description of what the bug is.
 
 ## Expected behavior
 
 Please write a clear and concise description of what you expected to happen.
 
-## Environment 
+## Environment
 
 - Optuna version:
 - Python version:
