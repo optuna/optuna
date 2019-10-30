@@ -331,6 +331,6 @@ jobs:
           <<: *examples
           environment:
             OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|pytorch_lightning.*|xgboost_.*
+            IGNORES: chainermn_.*|pytorch_lightning.*|xgboost_.*|dask_ml_.*
 
       - run: *examples-mn
