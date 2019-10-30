@@ -23,17 +23,13 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
 
 
-def get_storage_url(storage_url, config):
-    # type: (Optional[str], optuna.config.OptunaConfig) -> str
+def check_storage_url(storage_url):
+    # type: (Optional[str]) -> str
 
-    if storage_url is not None:
-        return storage_url
-
-    if config.default_storage is None:
+    if storage_url is None:
         raise CLIUsageError(
-            'Storage URL is specified neither in config file nor --storage option.')
-
-    return config.default_storage
+            'Storage URL is not specified.')
+    return storage_url
 
 
 class BaseCommand(Command):
@@ -71,8 +67,7 @@ class CreateStudy(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        config = optuna.config.load_optuna_config(self.app_args.config)
-        storage_url = get_storage_url(self.app_args.storage, config)
+        storage_url = check_storage_url(self.app_args.storage)
         storage = optuna.storages.RDBStorage(storage_url)
         study_name = optuna.create_study(
             storage,
@@ -96,8 +91,7 @@ class DeleteStudy(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        config = optuna.config.load_optuna_config(self.app_args.config)
-        storage_url = get_storage_url(self.app_args.storage, config)
+        storage_url = check_storage_url(self.app_args.storage)
         storage = optuna.storages.RDBStorage(storage_url)
         study_id = storage.get_study_id_from_name(parsed_args.study_name)
         storage.delete_study(study_id)
@@ -116,8 +110,7 @@ class StudySetUserAttribute(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        config = optuna.config.load_optuna_config(self.app_args.config)
-        storage_url = get_storage_url(self.app_args.storage, config)
+        storage_url = check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
@@ -138,8 +131,7 @@ class Studies(Lister):
     def take_action(self, parsed_args):
         # type: (Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]
 
-        config = optuna.config.load_optuna_config(self.app_args.config)
-        storage_url = get_storage_url(self.app_args.storage, config)
+        storage_url = check_storage_url(self.app_args.storage)
         summaries = optuna.get_all_study_summaries(storage=storage_url)
 
         rows = []
@@ -179,8 +171,7 @@ class Dashboard(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        config = optuna.config.load_optuna_config(self.app_args.config)
-        storage_url = get_storage_url(self.app_args.storage, config)
+        storage_url = check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
 
         if parsed_args.out is None:
@@ -220,8 +211,7 @@ class StudyOptimize(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> int
 
-        config = optuna.config.load_optuna_config(self.app_args.config)
-        storage_url = get_storage_url(self.app_args.storage, config)
+        storage_url = check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
@@ -255,12 +245,7 @@ class StorageUpgrade(BaseCommand):
     def take_action(self, parsed_args):
         # type: (Namespace) -> None
 
-        if self.app_args.storage is None and self.app_args.config is None:
-            raise CLIUsageError("Either --storage or --config option is required.")
-
-        config = optuna.config.load_optuna_config(self.app_args.config)
-        storage_url = get_storage_url(self.app_args.storage, config)
-
+        storage_url = check_storage_url(self.app_args.storage)
         storage = RDBStorage(storage_url, skip_compatibility_check=True)
         current_version = storage.get_current_version()
         head_version = storage.get_head_version()
@@ -302,8 +287,6 @@ class OptunaApp(App):
         # type: (str, str, Optional[Dict]) -> ArgumentParser
 
         parser = super(OptunaApp, self).build_option_parser(description, version, argparse_kwargs)
-        parser.add_argument(
-            '--config', default=None, help='Config file path. (default=$HOME/.optuna.yml)')
         parser.add_argument('--storage', default=None, help='DB URL. (e.g. sqlite:///example.db)')
         return parser
 
