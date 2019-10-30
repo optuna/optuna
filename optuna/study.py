@@ -213,7 +213,7 @@ class Study(BaseStudy):
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
-            catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial=True  # type: bool
     ):
@@ -237,10 +237,9 @@ class Study(BaseStudy):
                 The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
                 set to CPU counts.
             catch:
-                A study continues to run even when a trial raises one of exceptions specified in
-                this argument. Default is (`Exception <https://docs.python.org/3/library/
-                exceptions.html#Exception>`_,), where all non-exit exceptions are handled
-                by this logic.
+                A study continues to run even when a trial raises one of the exceptions specified
+                in this argument. Default is an empty tuple, i.e. the study will stop for any
+                exception except for :class:`~structs.TrialPruned`.
             callbacks:
                 List of callback functions that are invoked at the end of each trial.
             gc_after_trial:
@@ -251,6 +250,9 @@ class Study(BaseStudy):
 
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
+        if not isinstance(catch, tuple):
+            raise TypeError("The catch argument is of type \'{}\' but must be a tuple.".format(
+                type(catch).__name__))
 
         try:
             if n_jobs == 1:
@@ -525,13 +527,16 @@ class Study(BaseStudy):
             self.logger.info(message)
             self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
-        except catch as e:
+        except Exception as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
                 .format(trial_number, structs.TrialState.FAIL, repr(e))
             self.logger.warning(message, exc_info=True)
             self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
-            return trial
+
+            if isinstance(e, catch):
+                return trial
+            raise
         finally:
             # The following line mitigates memory problems that can be occurred in some
             # environments (e.g., services that use computing containers such as CircleCI).

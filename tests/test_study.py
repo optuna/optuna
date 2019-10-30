@@ -230,12 +230,37 @@ def test_optimize_with_catch(storage_mode, cache_mode):
 
             raise ValueError
 
+        # Test default exceptions.
+        with pytest.raises(ValueError):
+            study.optimize(func_value_error, n_trials=20)
+        assert len(study.trials) == 1
+        assert all(trial.state == optuna.structs.TrialState.FAIL for trial in study.trials)
+
         # Test acceptable exception.
         study.optimize(func_value_error, n_trials=20, catch=(ValueError, ))
+        assert len(study.trials) == 21
+        assert all(trial.state == optuna.structs.TrialState.FAIL for trial in study.trials)
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
             study.optimize(func_value_error, n_trials=20, catch=(ArithmeticError, ))
+        assert len(study.trials) == 22
+        assert all(trial.state == optuna.structs.TrialState.FAIL for trial in study.trials)
+
+
+@pytest.mark.parametrize('catch', [[], [Exception], None, 1])
+def test_optimize_with_catch_invalid_type(catch):
+    # type: (Any) -> None
+
+    study = optuna.create_study()
+
+    def func_value_error(_):
+        # type: (optuna.trial.Trial) -> float
+
+        raise ValueError
+
+    with pytest.raises(TypeError):
+        study.optimize(func_value_error, n_trials=20, catch=catch)
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -481,7 +506,7 @@ def test_trials_dataframe_with_failure(storage_mode, cache_mode):
 
     with StorageSupplier(storage_mode, cache_mode) as storage:
         study = optuna.create_study(storage=storage)
-        study.optimize(f, n_trials=3)
+        study.optimize(f, n_trials=3, catch=(ValueError,))
         df = study.trials_dataframe()
         # Change index to access rows via trial number.
         df.set_index(('number', ''), inplace=True, drop=False)
@@ -664,7 +689,9 @@ def test_callbacks(n_jobs):
     # callbacks are invoked.
     states = []
     callbacks = [lambda study, trial: states.append(trial.state)]
-    study.optimize(lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
+    study.optimize(
+        lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs,
+        catch=(ZeroDivisionError,))
     assert states == [optuna.structs.TrialState.FAIL] * 10
 
     # NOTE: Because `Study.optimize` blocks forever if `n_jobs` is more than `1` and

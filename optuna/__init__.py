@@ -1,4 +1,3 @@
-from optuna import config  # NOQA
 from optuna import dashboard  # NOQA
 from optuna import distributions  # NOQA
 from optuna import integration  # NOQA
