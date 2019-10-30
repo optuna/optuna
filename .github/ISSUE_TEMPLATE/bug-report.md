@@ -20,7 +20,7 @@ Please write a clear and concise description of what you expected to happen.
 - Optuna version:
 - Python version:
 - OS:
-- Machine Learning library to be optimized:
+- (Optional) Other libraries and their versions:
 
 ## Error messages, stack traces, or logs
 
