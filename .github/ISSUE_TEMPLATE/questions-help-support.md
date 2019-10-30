@@ -2,7 +2,7 @@
 name: "\U00002753Questions/Help/Support"
 about: Please let us know if you have any questions.
 title: ''
-labels: ''
+labels: 'question'
 assignees: ''
 
 ---
