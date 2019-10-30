@@ -9,10 +9,11 @@ assignees: ''
 
 Please write your question here.
 
-### Note to the questioner
+## Note to the questioner
 
-If your issue is a **request for support in using Optuna**, please consider to post it on [Stack Overflow].
-Support is also available in the `#general` channel of [chainer slack] and [chainer-jp slack].
+If you are more comfortable with [Stack Overflow], you may consider posting your question there instead.
+Alternatively, for issues that would benefit from more of an interactive session with the developers,
+you may refer to the `#general` channel in the [chainer slack] or the [chainer-jp slack] (Japanese) Slack workspaces.
 
 [Stack Overflow]: https://stackoverflow.com/questions/tagged/optuna
 [chainer slack]: https://bit.ly/join-chainer-slack
