@@ -1,5 +1,5 @@
 ---
-name: "\U0001F5CEDocumentation"
+name: "\U0001f4d6Documentation"
 about: "Report an issue related to https://optuna.readthedocs.io/."
 title: ''
 labels: documentation
