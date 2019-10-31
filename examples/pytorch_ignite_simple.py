@@ -8,19 +8,20 @@ subset of it.
 
 We have the following two ways to execute this example:
 
-(1) Execute this code directly.
-    $ python ignite_simple.py
+(1) Execute this code directly. Pruning can be turned on and off with the `--pruning` argument.
+    $ python pytorch_ignite_simple.py [--pruning]
 
 
-(2) Execute through CLI.
+(2) Execute through CLI. Pruning is enabled automatically.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize ignite_simple.py objective --n-trials=100 --study $STUDY_NAME \
-      --storage sqlite:///example.db
+    $ optuna study optimize pytorch_ignite_simple.py objective --n-trials=100 \
+      --study $STUDY_NAME --storage sqlite:///example.db
 """
 
 from __future__ import division
 from __future__ import print_function
 
+import argparse
 from ignite.engine import create_supervised_evaluator
 from ignite.engine import create_supervised_trainer
 from ignite.engine import Events
@@ -96,6 +97,13 @@ def objective(trial):
                                             metrics={'accuracy': Accuracy()},
                                             device=device)
 
+    # Create another evaluator which calls the pruning handler.
+    pruning_evaluator = create_supervised_evaluator(model,
+                                                    metrics={'accuracy': Accuracy()},
+                                                    device=device)
+    pruning_handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
+    pruning_evaluator.add_event_handler(Events.COMPLETED, pruning_handler)
+
     # Load MNIST dataset.
     train_loader, val_loader = get_data_loaders(TRAIN_BATCH_SIZE, VAL_BATCH_SIZE)
 
@@ -103,8 +111,8 @@ def objective(trial):
     def log_results(engine):
         evaluator.run(train_loader)
         train_acc = evaluator.state.metrics['accuracy']
-        evaluator.run(val_loader)
-        validation_acc = evaluator.state.metrics['accuracy']
+        pruning_evaluator.run(val_loader)
+        validation_acc = pruning_evaluator.state.metrics['accuracy']
         print(
             "Epoch: {}  Train accuracy: {:.2f}  Validation accuracy: {:.2f}"
             .format(engine.state.epoch, train_acc, validation_acc)
@@ -117,7 +125,14 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    study = optuna.create_study(direction='maximize')
+    parser = argparse.ArgumentParser(description='PyTorch Ignite example.')
+    parser.add_argument('--pruning', '-p', action='store_true',
+                        help='Activate the pruning feature. `MedianPruner` stops unpromising '
+                             'trials at the early stages of training.')
+    args = parser.parse_args()
+    pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
+
+    study = optuna.create_study(direction='maximize', pruner=pruner)
     study.optimize(objective, n_trials=100, timeout=600)
 
     print('Number of finished trials: ', len(study.trials))
