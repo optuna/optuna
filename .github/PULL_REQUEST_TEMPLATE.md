@@ -1,7 +1,5 @@
 Thank you for creating a pull request!
 
-Please double-check the following.
+Please go through [our contribution guide][CONTRIBUTING.md] to hopefully get your changes merged quicker.
 
-- Read [our contribution guide](https://github.com/pfnet/optuna/blob/master/CONTRIBUTING.md).
-- Did you write sufficient test code?
-- Did you write sufficient documentation?
+[CONTRIBUTING.md]: https://github.com/pfnet/optuna/blob/master/CONTRIBUTING.md
