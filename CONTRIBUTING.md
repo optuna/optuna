@@ -32,7 +32,7 @@ Please see also our [Coding Style Conventions](https://github.com/pfnet/optuna/w
 
 When adding a new feature or fixing a bug, you also need to write sufficient test code.
 We use [pytest](https://pytest.org/) as the testing framework and
-unit tests are stored under [tests directory](./tests).
+unit tests are stored under the [tests directory](./tests).
 
 You can run your tests as follows:
 ```console
