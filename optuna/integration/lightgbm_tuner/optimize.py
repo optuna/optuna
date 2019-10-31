@@ -299,8 +299,8 @@ class LightGBMTuner(BaseTuner):
         self.best_booster = None
 
         self.best_score = -np.inf if self.higher_is_better() else np.inf
-        self.best_params = best_params or {}
-        self.tuning_history = tuning_history or []
+        self.best_params = {} if best_params is None else best_params
+        self.tuning_history = [] if tuning_history is None else tuning_history
 
         if early_stopping_rounds is None:
             self._suggest_early_stopping_rounds()

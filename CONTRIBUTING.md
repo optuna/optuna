@@ -1,8 +1,8 @@
 # Contributing guidelines
 
 Once you send a pull request, it is automatically tested on [CircleCI](https://circleci.com/).
-Please setup
-[CircleCI Local CLI](https://circleci.com/docs/2.0/local-cli/) and check your code in your local
+By setting up the
+[CircleCI Local CLI](https://circleci.com/docs/2.0/local-cli/), you can check your code in your local
 environment before submitting the pull request.
 
 
@@ -26,16 +26,20 @@ Note that we use comment-style type annotation for compatibility with Python 2.
 * [PEP484](https://www.python.org/dev/peps/pep-0484/)
 * [Syntax cheat sheet](http://mypy.readthedocs.io/en/latest/cheat_sheet.html)
 
+Please see also our [Coding Style Conventions](https://github.com/pfnet/optuna/wiki/Coding-Style-Conventions).
 
 ## Testing
 
 The following circleci job runs all unit tests in Python 3.7:
 
-```
+```console
+// Note that this job will download several hundred megabytes of data to
+// install all the packages required for testing,
+// and take several tens of minutes to complete all tests.
 $ circleci build --job tests-python37
 ```
 
-Please make sure that the following jobs work without any errors in your environment:
+You can run tests and examples for each Python version using the following jobs:
 
 - `tests-python27`
 - `tests-python35`
@@ -52,8 +56,6 @@ In addition, to check the documents, run:
 ```
 $ circleci build --job document
 ```
-
-Please make sure that you can generate the documents without any errors.
 
 
 ## Documentation

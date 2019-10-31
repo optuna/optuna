@@ -1,8 +1,5 @@
-import os
-import py  # NOQA
 import pytest
 import re
-import shutil
 import subprocess
 from subprocess import CalledProcessError
 import tempfile
@@ -12,69 +9,24 @@ from optuna.cli import Studies
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
 from optuna.structs import CLIUsageError
-from optuna.trial import Trial  # NOQA
+from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from types import TracebackType  # NOQA
-    from typing import Any  # NOQA
-    from typing import IO  # NOQA
     from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
-    from typing import Type  # NOQA
 
-TEST_CONFIG_TEMPLATE = 'default_storage: sqlite:///{default_storage}\n'
+    from optuna.trial import Trial  # NOQA
 
 
-class StorageConfigSupplier(object):
-    def __init__(self, config_template):
-        # type: (str) -> None
+def test_create_study_command():
+    # type: () -> None
 
-        self.tempfile_storage = None  # type: Optional[IO[Any]]
-        self.tempfile_config = None  # type: Optional[IO[Any]]
-        self.config_template = config_template
-
-    def __enter__(self):
-        # type: () -> Tuple[str, str]
-
-        self.tempfile_storage = tempfile.NamedTemporaryFile()
-        self.tempfile_config = tempfile.NamedTemporaryFile()
-
-        with open(self.tempfile_config.name, 'w') as fw:
-            fw.write(self.config_template.format(default_storage=self.tempfile_storage.name))
-
-        return 'sqlite:///{}'.format(self.tempfile_storage.name), self.tempfile_config.name
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        # type: (Type[BaseException], BaseException, TracebackType) -> None
-
-        if self.tempfile_storage:
-            self.tempfile_storage.close()
-        if self.tempfile_config:
-            self.tempfile_config.close()
-
-
-def _add_option(base_command, key, value, condition):
-    # type: (List[str], str, str, bool) -> List[str]
-
-    if condition:
-        return base_command + [key, value]
-    else:
-        return base_command
-
-
-@pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
-def test_create_study_command(options):
-    # type: (List[str]) -> None
-
-    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
         # Create study.
-        command = ['optuna', 'create-study']
-        command = _add_option(command, '--storage', storage_url, 'storage' in options)
-        command = _add_option(command, '--config', config_path, 'config' in options)
+        command = ['optuna', 'create-study', '--storage', storage_url]
         subprocess.check_call(command)
 
         # Command output should be in name string format (no-name + UUID).
@@ -90,8 +42,9 @@ def test_create_study_command(options):
 def test_create_study_command_with_study_name():
     # type: () -> None
 
-    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
         study_name = 'test_study'
 
         # Create study with name.
@@ -106,23 +59,18 @@ def test_create_study_command_with_study_name():
 def test_create_study_command_without_storage_url():
     # type: () -> None
 
-    dummy_home = tempfile.mkdtemp()
-
-    env = os.environ
-    env['HOME'] = dummy_home
     with pytest.raises(subprocess.CalledProcessError) as err:
-        subprocess.check_output(['optuna', 'create-study'], env=env)
+        subprocess.check_output(['optuna', 'create-study'])
     usage = err.value.output.decode()
     assert usage.startswith('usage:')
-
-    shutil.rmtree(dummy_home)
 
 
 def test_create_study_command_with_direction():
     # type: () -> None
 
-    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
         command = ['optuna', 'create-study', '--storage', storage_url, '--direction', 'minimize']
         study_name = str(subprocess.check_output(command).decode().strip())
@@ -141,12 +89,12 @@ def test_create_study_command_with_direction():
             subprocess.check_call(command)
 
 
-@pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
-def test_delete_study_command(options):
-    # type: (List[str]) -> None
+def test_delete_study_command():
+    # type: () -> None
 
-    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
         study_name = "delete-study-test"
 
         # Create study.
@@ -167,19 +115,18 @@ def test_delete_study_command_without_storage_url():
         subprocess.check_output(['optuna', 'delete-study', '--study-name', 'dummy_study'])
 
 
-@pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
-def test_study_set_user_attr_command(options):
-    # type: (List[str]) -> None
+def test_study_set_user_attr_command():
+    # type: () -> None
 
-    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
         # Create study.
         study_name = storage.get_study_name_from_id(storage.create_new_study())
 
-        base_command = ['optuna', 'study', 'set-user-attr', '--study', study_name]
-        base_command = _add_option(base_command, '--storage', storage_url, 'storage' in options)
-        base_command = _add_option(base_command, '--config', config_path, 'config' in options)
+        base_command = ['optuna', 'study', 'set-user-attr', '--study', study_name, '--storage',
+                        storage_url]
 
         example_attrs = {'architecture': 'ResNet', 'baselen_score': '0.002'}
         for key, value in example_attrs.items():
@@ -192,12 +139,12 @@ def test_study_set_user_attr_command(options):
         assert all([study_user_attrs[k] == v for k, v in example_attrs.items()])
 
 
-@pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
-def test_studies_command(options):
-    # type: (List[str]) -> None
+def test_studies_command():
+    # type: () -> None
 
-    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
         # First study.
         study_1 = optuna.create_study(storage)
@@ -207,9 +154,7 @@ def test_studies_command(options):
         study_2.optimize(objective_func, n_trials=10)
 
         # Run command.
-        command = ['optuna', 'studies']
-        command = _add_option(command, '--storage', storage_url, 'storage' in options)
-        command = _add_option(command, '--config', config_path, 'config' in options)
+        command = ['optuna', 'studies', '--storage', storage_url]
 
         output = str(subprocess.check_output(command).decode().strip())
         rows = output.split('\n')
@@ -236,8 +181,9 @@ def test_studies_command(options):
 def test_create_study_command_with_skip_if_exists():
     # type: () -> None
 
-    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
         study_name = 'test_study'
 
         # Create study with name.
@@ -263,20 +209,17 @@ def test_create_study_command_with_skip_if_exists():
         assert study_id == new_study_id  # The existing study instance is reused.
 
 
-@pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
-def test_dashboard_command(options):
-    # type: (List[str]) -> None
+def test_dashboard_command():
+    # type: () -> None
 
-    with \
-            StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path), \
-            tempfile.NamedTemporaryFile('r') as tf_report:
+    with StorageSupplier('new') as storage, tempfile.NamedTemporaryFile('r') as tf_report:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
-        storage = RDBStorage(storage_url)
         study_name = storage.get_study_name_from_id(storage.create_new_study())
 
-        command = ['optuna', 'dashboard', '--study', study_name, '--out', tf_report.name]
-        command = _add_option(command, '--storage', storage_url, 'storage' in options)
-        command = _add_option(command, '--config', config_path, 'config' in options)
+        command = ['optuna', 'dashboard', '--study', study_name, '--out', tf_report.name,
+                   '--storage', storage_url]
         subprocess.check_call(command)
 
         html = tf_report.read()
@@ -289,11 +232,10 @@ def test_dashboard_command(options):
 def test_dashboard_command_with_allow_websocket_origin(origins):
     # type: (List[str]) -> None
 
-    with \
-            StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path), \
-            tempfile.NamedTemporaryFile('r') as tf_report:
+    with StorageSupplier('new') as storage, tempfile.NamedTemporaryFile('r') as tf_report:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
-        storage = RDBStorage(storage_url)
         study_name = storage.get_study_name_from_id(storage.create_new_study())
         command = [
             'optuna', 'dashboard', '--study', study_name, '--out', tf_report.name, '--storage',
@@ -316,20 +258,18 @@ def objective_func(trial):
     return (x + 5)**2
 
 
-@pytest.mark.parametrize('options', [['storage'], ['config'], ['storage', 'config']])
-def test_study_optimize_command(options):
-    # type: (List[str]) -> None
+def test_study_optimize_command():
+    # type: () -> None
 
-    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
-        storage = RDBStorage(storage_url)
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
 
         study_name = storage.get_study_name_from_id(storage.create_new_study())
         command = [
             'optuna', 'study', 'optimize', '--study', study_name, '--n-trials', '10', __file__,
-            'objective_func'
+            'objective_func', '--storage', storage_url
         ]
-        command = _add_option(command, '--storage', storage_url, 'storage' in options)
-        command = _add_option(command, '--config', config_path, 'config' in options)
         subprocess.check_call(command)
 
         study = optuna.load_study(storage=storage_url, study_name=study_name)
@@ -366,41 +306,26 @@ def test_empty_argv():
     assert command_empty_output == command_help_output
 
 
-def test_get_storage_url(tmpdir):
-    # type: (py.path.local) -> None
+def test_check_storage_url():
+    # type: () -> None
 
     storage_in_args = 'sqlite:///args.db'
-    storage_in_config = 'sqlite:///config.db'
-    sample_config_file = tmpdir.join('optuna.yml')
-    sample_config_file.write('default_storage: {}'.format(storage_in_config))
+    assert storage_in_args == optuna.cli.check_storage_url(storage_in_args)
 
-    sample_config = optuna.config.load_optuna_config(str(sample_config_file))
-    default_config = optuna.config.load_optuna_config(None)
-
-    # storage_url has priority over config_path.
-    assert storage_in_args == optuna.cli.get_storage_url(storage_in_args, sample_config)
-    assert storage_in_args == optuna.cli.get_storage_url(storage_in_args, default_config)
-    assert storage_in_config == optuna.cli.get_storage_url(None, sample_config)
-
-    # Config file does not have default_storage key.
-    empty_config_file = tmpdir.join('empty.yml')
-    empty_config_file.write('')
-    empty_config = optuna.config.load_optuna_config(str(empty_config_file))
     with pytest.raises(CLIUsageError):
-        optuna.cli.get_storage_url(None, empty_config)
+        optuna.cli.check_storage_url(None)
 
 
-@pytest.mark.parametrize('options', [[], ['storage'], ['config'], ['storage', 'config']])
-def test_storage_upgrade_command(options):
-    # type: (List[str]) -> None
+def test_storage_upgrade_command():
+    # type: () -> None
 
-    with StorageConfigSupplier(TEST_CONFIG_TEMPLATE) as (storage_url, config_path):
+    with StorageSupplier('new') as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
+
         command = ['optuna', 'storage', 'upgrade']
-        command = _add_option(command, '--storage', storage_url, 'storage' in options)
-        command = _add_option(command, '--config', config_path, 'config' in options)
-
-        if len(options) == 0:
-            with pytest.raises(CalledProcessError):
-                subprocess.check_call(command)
-        else:
+        with pytest.raises(CalledProcessError):
             subprocess.check_call(command)
+
+        command.extend(['--storage', storage_url])
+        subprocess.check_call(command)
