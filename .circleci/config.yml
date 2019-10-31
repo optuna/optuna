@@ -269,7 +269,7 @@ jobs:
           name: examples
           command: |
             . venv/bin/activate
-            for file in `find examples -name '*.py' | grep -vE "$IGNORES"`
+            for file in `find examples -name '*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`
             do
                python $file
                if grep -e '\-\-pruning' $file > /dev/null; then
