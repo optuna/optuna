@@ -30,6 +30,22 @@ Please see also our [Coding Style Conventions](https://github.com/pfnet/optuna/w
 
 ## Testing
 
+When adding a new feature or fixing a bug, you also need to write sufficient test code.
+We use [pytest](https://pytest.org/) as the testing framework and
+unit tests are stored under [tests directory](./tests).
+
+You can run your tests as follows:
+```console
+// Run all the unit tests.
+$ pytest
+
+// Run all the unit tests defined in the specified test file.
+$ pytest tests/${TARGET_TEST_FILE_NAME}
+```
+
+
+### CircleCI Local CLI
+
 The following circleci job runs all unit tests in Python 3.7:
 
 ```console
