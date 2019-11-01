@@ -408,7 +408,7 @@ def test_trial_report():
     study = create_study()
     trial = Trial(study, study._storage.create_new_trial(study.study_id))
 
-    # Report values that can be casted to `float` (OK).
+    # Report values that can be cast to `float` (OK).
     trial.report(1.23)
     trial.report(float('nan'))
     trial.report('1.23')
@@ -416,7 +416,7 @@ def test_trial_report():
     trial.report(1)
     trial.report(np.array([1], dtype=np.float32)[0])
 
-    # Report values that cannot be casted to `float` (Error).
+    # Report values that cannot be cast to `float` (Error).
     with pytest.raises(TypeError):
         trial.report(None)
 

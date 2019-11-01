@@ -376,8 +376,7 @@ class Trial(BaseTrial):
         """
 
         try:
-            # We allow users to pass values which have float-like types (e.g., numpy.float32)
-            # for convenience.
+            # For convenience, we allow users to report a value that can be cast to `float`.
             value = float(value)
         except (TypeError, ValueError):
             message = 'The `value` argument is of type \'{}\' but supposed to be a float.'.format(
