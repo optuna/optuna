@@ -1,6 +1,7 @@
 import math
 from mock import Mock
 from mock import patch
+import numpy as np
 import pytest
 
 from optuna import distributions
@@ -399,3 +400,28 @@ def test_datetime_start(storage_init_func):
     study.optimize(objective, n_trials=1)
 
     assert study.trials[0].datetime_start == trial_datetime_start[0]
+
+
+def test_trial_report():
+    # type: () -> None
+
+    study = create_study()
+    trial = Trial(study, study._storage.create_new_trial(study.study_id))
+
+    # Report values that can be casted to `float` (OK).
+    trial.report(1.23)
+    trial.report(float('nan'))
+    trial.report('1.23')
+    trial.report('inf')
+    trial.report(1)
+    trial.report(np.array([1], dtype=np.float32)[0])
+
+    # Report values that cannot be casted to `float` (Error).
+    with pytest.raises(TypeError):
+        trial.report(None)
+
+    with pytest.raises(TypeError):
+        trial.report('foo')
+
+    with pytest.raises(TypeError):
+        trial.report([1, 2, 3])
