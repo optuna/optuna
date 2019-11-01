@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+from optuna.distributions import LogUniformDistribution
 from optuna.logging import get_logger
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
@@ -514,6 +515,8 @@ def _get_slice_plot(study, params=None):
         )
         figure.update_xaxes(title_text=sorted_params[0])
         figure.update_yaxes(title_text='Objective Value')
+        if _is_log_scale(trials, sorted_params[0]):
+            figure.update_xaxes(type='log')
     else:
         figure = make_subplots(rows=1, cols=len(sorted_params), shared_yaxes=True)
         figure.update_layout(layout)
@@ -527,8 +530,17 @@ def _get_slice_plot(study, params=None):
             figure.update_xaxes(title_text=param, row=1, col=i + 1)
             if i == 0:
                 figure.update_yaxes(title_text='Objective Value', row=1, col=1)
+            if _is_log_scale(trials, param):
+                figure.update_xaxes(type='log', row=1, col=i + 1)
 
     return figure
+
+
+def _is_log_scale(trials, param):
+    # type: (List[FrozenTrial], str) -> bool
+
+    return any(isinstance(t.distributions[param], LogUniformDistribution)
+               for t in trials if param in t.params)
 
 
 def _generate_slice_subplot(study, trials, param):
