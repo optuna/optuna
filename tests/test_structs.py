@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime
 import pytest
 
@@ -34,23 +35,28 @@ def test_frozen_trial_validate():
     valid_trial._validate()
 
     # Invalid: `datetime_start` is not set.
-    invalid_trial = valid_trial._replace(datetime_start=None)
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.datetime_start = None
     with pytest.raises(ValueError):
         invalid_trial._validate()
 
     # Invalid: `state` is `RUNNING` and `datetime_complete` is set.
-    invalid_trial = valid_trial._replace(state=TrialState.RUNNING)
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.state = TrialState.RUNNING
     with pytest.raises(ValueError):
         invalid_trial._validate()
 
     # Invalid: `state` is not `RUNNING` and `datetime_complete` is not set.
     for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
-        invalid_trial = valid_trial._replace(state=state, datetime_complete=None)
+        invalid_trial = copy.copy(valid_trial)
+        invalid_trial.state = state
+        invalid_trial.datetime_complete = None
         with pytest.raises(ValueError):
             invalid_trial._validate()
 
     # Invalid: `state` is `COMPLETE` and `value` is not set.
-    invalid_trial = valid_trial._replace(value=None)
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.value = None
     with pytest.raises(ValueError):
         invalid_trial._validate()
 
@@ -81,6 +87,8 @@ def test_frozen_trial_validate():
     ]  # type: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]]
 
     for params, distributions in inconsistent_pairs:
-        invalid_trial = valid_trial._replace(params=params, distributions=distributions)
+        invalid_trial = copy.copy(valid_trial)
+        invalid_trial.params = params
+        invalid_trial.distributions = distributions
         with pytest.raises(ValueError):
             invalid_trial._validate()

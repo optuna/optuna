@@ -299,7 +299,7 @@ class Study(BaseStudy):
         histogram of objective values and to export trials as a CSV file. Note that DataFrames
         returned by :func:`~optuna.study.Study.trials_dataframe()` employ MultiIndex_, and columns
         have a hierarchical structure. Please refer to the example below to access DataFrame
-        elements.
+        elements. If there are no trials, an empty DataFrame_ is returned.
 
         Example:
 
@@ -326,9 +326,15 @@ class Study(BaseStudy):
         """
         _check_pandas_availability()
 
+        trials = self.trials
+
         # If no trials, return an empty dataframe.
-        if not len(self.trials):
+        if not len(trials):
             return pd.DataFrame()
+
+        assert all(isinstance(trial, structs.FrozenTrial) for trial in trials)
+        fields = structs.FrozenTrial._fields
+        internal_fields = structs.FrozenTrial.internal_fields
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
@@ -336,25 +342,30 @@ class Study(BaseStudy):
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
         non_nested_field = ''
 
-        records = []  # type: List[Dict[Tuple[str, str], Any]]
-        for trial in self.trials:
-            trial_dict = trial._asdict()
+        def _create_record_and_aggregate_column(trial):
+            # type: (structs.FrozenTrial) -> Dict[Tuple[str, str], Any]
 
             record = {}
-            for field, value in trial_dict.items():
-                if not include_internal_fields and field in structs.FrozenTrial.internal_fields:
+            for field in fields:
+                if not include_internal_fields and field in internal_fields:
                     continue
-                if isinstance(value, dict):
-                    for in_field, in_value in value.items():
-                        record[(field, in_field)] = in_value
-                        column_agg[field].add((field, in_field))
-                else:
-                    record[(field, non_nested_field)] = value
-                    column_agg[field].add((field, non_nested_field))
-            records.append(record)
 
-        columns = sum((sorted(column_agg[k]) for k in structs.FrozenTrial._fields),
-                      [])  # type: List[Tuple['str', 'str']]
+                value = getattr(trial, field)
+                # Python conventional underscores are omitted in the dataframe.
+                processed_field = field if not field.startswith('_') else field[1:]
+
+                if isinstance(value, dict):
+                    for nested_field, nested_value in value.items():
+                        record[(processed_field, nested_field)] = nested_value
+                        column_agg[field].add((processed_field, nested_field))
+                else:
+                    record[(processed_field, non_nested_field)] = value
+                    column_agg[field].add((processed_field, non_nested_field))
+            return record
+
+        records = list([_create_record_and_aggregate_column(trial) for trial in trials])
+        columns = sum(
+            (sorted(column_agg[k]) for k in fields), [])  # type: List[Tuple[str, str]]
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 

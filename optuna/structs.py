@@ -1,11 +1,16 @@
 from datetime import datetime
 import enum
+import warnings
+
 from typing import Any
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
-from optuna.distributions import BaseDistribution
+from optuna import type_checking
+
+if type_checking.TYPE_CHECKING:
+    from optuna.distributions import BaseDistribution  # NOQA
 
 
 class TrialState(enum.Enum):
@@ -50,20 +55,7 @@ class StudyDirection(enum.Enum):
     MAXIMIZE = 2
 
 
-class FrozenTrial(
-        NamedTuple('_BaseFrozenTrial', [
-            ('number', int),
-            ('state', TrialState),
-            ('value', Optional[float]),
-            ('datetime_start', Optional[datetime]),
-            ('datetime_complete', Optional[datetime]),
-            ('params', Dict[str, Any]),
-            ('distributions', Dict[str, BaseDistribution]),
-            ('user_attrs', Dict[str, Any]),
-            ('system_attrs', Dict[str, Any]),
-            ('intermediate_values', Dict[int, float]),
-            ('trial_id', int),
-        ])):
+class FrozenTrial(object):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
     Attributes:
@@ -96,7 +88,71 @@ class FrozenTrial(
             :class:`~optuna.study.Study.study_id` to identify a :class:`~optuna.trial.Trial`.
     """
 
-    internal_fields = ['distributions', 'trial_id']
+    def __init__(
+        self,
+        number,  # type: int
+        state,  # type: TrialState
+        value,  # type: Optional[float]
+        datetime_start,  # type: Optional[datetime]
+        datetime_complete,  # type: Optional[datetime]
+        params,  # type: Dict[str, Any]
+        distributions,  # type: Dict[str, BaseDistribution]
+        user_attrs,  # type: Dict[str, Any]
+        system_attrs,  # type: Dict[str, Any]
+        intermediate_values,  # type: Dict[int, float]
+        trial_id,  # type: int
+    ):
+        self.number = number
+        self.state = state
+        self.value = value
+        self.datetime_start = datetime_start
+        self.datetime_complete = datetime_complete
+        self.params = params
+        self.distributions = distributions
+        self.user_attrs = user_attrs
+        self.system_attrs = system_attrs
+        self.intermediate_values = intermediate_values
+        self._trial_id = trial_id
+
+    internal_fields = ['distributions', '_trial_id']
+    _fields = [
+        'number', 'state', 'value', 'datetime_start', 'datetime_complete', 'params',
+        'distributions', 'user_attrs', 'system_attrs', 'intermediate_values', '_trial_id']
+
+    def __eq__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, type(self)):
+            return False
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        # type: (Any) -> bool
+
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        # type: () -> int
+
+        return hash(self.__dict__)
+
+    @property
+    def trial_id(self):
+        # type: () -> int
+        """Return trial ID.
+
+        Note that the use of this is deprecated.
+        Please use :attr:`~optuna.trial.FrozenTrial.number` instead.
+
+        Returns:
+            A trial ID.
+        """
+
+        warnings.warn(
+            'The use of `FrozenTrial.trial_id` is deprecated. '
+            'Please use `FrozenTrial.number` instead.', DeprecationWarning)
+
+        return self._trial_id
 
     def _validate(self):
         # type: () -> None
