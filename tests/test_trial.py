@@ -411,17 +411,17 @@ def test_trial_report():
     # Report values that can be cast to `float` (OK).
     trial.report(1.23)
     trial.report(float('nan'))
-    trial.report('1.23')
-    trial.report('inf')
+    trial.report('1.23')  # type: ignore
+    trial.report('inf')  # type: ignore
     trial.report(1)
     trial.report(np.array([1], dtype=np.float32)[0])
 
     # Report values that cannot be cast to `float` (Error).
     with pytest.raises(TypeError):
-        trial.report(None)
+        trial.report(None)  # type: ignore
 
     with pytest.raises(TypeError):
-        trial.report('foo')
+        trial.report('foo')  # type: ignore
 
     with pytest.raises(TypeError):
-        trial.report([1, 2, 3])
+        trial.report([1, 2, 3])  # type: ignore
