@@ -1,5 +1,4 @@
 import contextlib
-import sys
 
 import mock
 import numpy as np
@@ -15,33 +14,10 @@ from optuna import type_checking
 
 
 if type_checking.TYPE_CHECKING:
-    from type_checking import Any  # NOQA
-    from type_checking import Dict  # NOQA
-    from type_checking import Generator  # NOQA
-    from type_checking import List  # NOQA
-    from type_checking import Tuple  # NOQA
-
-if sys.version_info >= (3, 5):
-    from contextlib import ExitStack
-
-
-@contextlib.contextmanager
-def turnoff_tuner():
-    # type: () -> Generator[None, None, None]
-
-    fqn_prefix = 'optuna.integration.lightgbm_tuner.LightGBMTuner'
-    mock_pairs = [
-        (fqn_prefix + '.__init__', None),
-        (fqn_prefix + '.run', True),
-        (fqn_prefix + '._parse_args', None),
-        (fqn_prefix + '._get_params', {}),
-    ]  # type: List[Tuple[str, Any]]
-
-    if sys.version_info >= (3, 5):
-        with ExitStack() as stack:
-            for fqn, return_value in mock_pairs:
-                stack.enter_context(mock.patch(fqn, return_value=return_value))
-            yield
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import Generator  # NOQA
+    from typing import List  # NOQA
 
 
 @contextlib.contextmanager
@@ -225,7 +201,7 @@ class TestBaseTuner(object):
 
 class TestLightGBMTuner(object):
 
-    def _helper_get_minimum_runner(self, params={}, train_set=None, kwargs_options={}):
+    def _get_tuner_object(self, params={}, train_set=None, kwargs_options={}):
         # type: (Dict[str, Any], lgb.Dataset, Dict[str, Any]) -> lgb.LightGBMTuner
 
         # Required keyword arguments.
@@ -258,7 +234,7 @@ class TestLightGBMTuner(object):
     def test_with_minimum_required_args(self):
         # type: () -> None
 
-        runner = self._helper_get_minimum_runner()
+        runner = self._get_tuner_object()
         assert 'num_boost_round' in runner.lgbm_kwargs
         assert 'num_boost_round' not in runner.auto_options
         assert runner.lgbm_kwargs['num_boost_round'] == 5
@@ -291,8 +267,8 @@ class TestLightGBMTuner(object):
         X_trn = np.random.uniform(10, size=50).reshape((10, 5))
         y_trn = np.random.randint(2, size=10)
         train_dataset = lgb.Dataset(X_trn, label=y_trn)
-        runner = self._helper_get_minimum_runner(train_set=train_dataset,
-                                                 kwargs_options=dict(sample_size=sample_size))
+        runner = self._get_tuner_object(train_set=train_dataset,
+                                        kwargs_options=dict(sample_size=sample_size))
         runner.sample_train_set()
 
         # Workaround for mypy.
@@ -306,17 +282,22 @@ class TestLightGBMTuner(object):
         unexpected_value = 1.1  # out of scope.
 
         with turnoff_train():
-            runner = self._helper_get_minimum_runner(params=dict(
+            tuning_history = []  # type: List[Dict[str, float]]
+            best_params = {}  # type: Dict[str, Any]
+
+            runner = self._get_tuner_object(params=dict(
                 feature_fraction=unexpected_value,  # set default as unexpected value.
             ), kwargs_options=dict(
-                tuning_history=[],
-                best_params={},
+                tuning_history=tuning_history,
+                best_params=best_params,
             ))
-            assert len(runner.tuning_history) == 0
+            assert len(tuning_history) == 0
+            assert len(best_params) == 0
             runner.tune_feature_fraction()
 
             assert runner.lgbm_params['feature_fraction'] != unexpected_value
-            assert len(runner.tuning_history) > 0
+            assert len(tuning_history) == 7
+            assert len(best_params) == 1
 
     def test_tune_num_leaves(self):
         # type: () -> None
@@ -324,17 +305,19 @@ class TestLightGBMTuner(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
-            runner = self._helper_get_minimum_runner(params=dict(
+            tuning_history = []  # type: List[Dict[str, float]]
+
+            runner = self._get_tuner_object(params=dict(
                 num_leaves=unexpected_value,
             ), kwargs_options=dict(
-                tuning_history=[],
+                tuning_history=tuning_history,
                 best_params={},
             ))
-            assert len(runner.tuning_history) == 0
+            assert len(tuning_history) == 0
             runner.tune_num_leaves()
 
             assert runner.lgbm_params['num_leaves'] != unexpected_value
-            assert len(runner.tuning_history) > 0
+            assert len(tuning_history) == 20
 
     def test_tune_bagging(self):
         # type: () -> None
@@ -342,34 +325,39 @@ class TestLightGBMTuner(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
-            runner = self._helper_get_minimum_runner(params=dict(
+            tuning_history = []  # type: List[Dict[str, float]]
+
+            runner = self._get_tuner_object(params=dict(
                 bagging_fraction=unexpected_value,
             ), kwargs_options=dict(
-                tuning_history=[],
+                tuning_history=tuning_history,
                 best_params={},
             ))
-            assert len(runner.tuning_history) == 0
+            assert len(tuning_history) == 0
             runner.tune_bagging()
 
             assert runner.lgbm_params['bagging_fraction'] != unexpected_value
-            assert len(runner.tuning_history) > 0
+            assert len(tuning_history) == 10
 
     def test_tune_feature_fraction_stage2(self):
         # type: () -> None
 
-        unexpected_value = 1.1  # out of scope.
+        unexpected_value = 0.5
 
         with turnoff_train():
-            runner = self._helper_get_minimum_runner(params=dict(
-                feature_fraction=unexpected_value,  # set default as unexpected value.
+            tuning_history = []  # type: List[Dict[str, float]]
+
+            runner = self._get_tuner_object(params=dict(
+                feature_fraction=unexpected_value,
             ), kwargs_options=dict(
-                tuning_history=[],
+                tuning_history=tuning_history,
                 best_params={},
             ))
-            assert len(runner.tuning_history) == 0
-            runner.tune_feature_fraction()
+            assert len(tuning_history) == 0
+            runner.tune_feature_fraction_stage2()
 
-            assert len(runner.tuning_history) > 0
+            assert runner.lgbm_params['feature_fraction'] != unexpected_value
+            assert len(tuning_history) == 6
 
     def test_tune_regularization_factors(self):
         # type: () -> None
@@ -377,17 +365,19 @@ class TestLightGBMTuner(object):
         unexpected_value = 20  # out of scope.
 
         with turnoff_train():
-            runner = self._helper_get_minimum_runner(params=dict(
+            tuning_history = []  # type: List[Dict[str, float]]
+
+            runner = self._get_tuner_object(params=dict(
                 lambda_l1=unexpected_value,  # set default as unexpected value.
             ), kwargs_options=dict(
-                tuning_history=[],
+                tuning_history=tuning_history,
                 best_params={},
             ))
-            assert len(runner.tuning_history) == 0
+            assert len(tuning_history) == 0
             runner.tune_regularization_factors()
 
             assert runner.lgbm_params['lambda_l1'] != unexpected_value
-            assert len(runner.tuning_history) > 0
+            assert len(tuning_history) == 20
 
     def test_tune_min_data_in_leaf(self):
         # type: () -> None
@@ -395,14 +385,16 @@ class TestLightGBMTuner(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
-            runner = self._helper_get_minimum_runner(params=dict(
+            tuning_history = []  # type: List[Dict[str, float]]
+
+            runner = self._get_tuner_object(params=dict(
                 min_child_samples=unexpected_value,  # set default as unexpected value.
             ), kwargs_options=dict(
-                tuning_history=[],
+                tuning_history=tuning_history,
                 best_params={},
             ))
-            assert len(runner.tuning_history) == 0
+            assert len(tuning_history) == 0
             runner.tune_min_data_in_leaf()
 
             assert runner.lgbm_params['min_child_samples'] != unexpected_value
-            assert len(runner.tuning_history) > 0
+            assert len(tuning_history) == 5

@@ -13,7 +13,7 @@ Integration
     :members:
     :exclude-members: infer_relative_search_space, sample_relative, sample_independent
 
-.. autoclass:: IgnitePruningHandler
+.. autoclass:: PyTorchIgnitePruningHandler
     :members:
 
 .. autoclass:: KerasPruningCallback
@@ -21,6 +21,8 @@ Integration
 
 .. autoclass:: LightGBMPruningCallback
     :members:
+
+.. autofunction:: optuna.integration.lightgbm.train
 
 .. autoclass:: MXNetPruningCallback
     :members:

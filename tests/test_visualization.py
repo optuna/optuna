@@ -9,6 +9,7 @@ from optuna.structs import StudyDirection
 from optuna.study import create_study
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
+from optuna import visualization
 from optuna.visualization import _generate_contour_subplot
 from optuna.visualization import _get_contour_plot
 from optuna.visualization import _get_intermediate_plot
@@ -140,7 +141,7 @@ def test_get_intermediate_plot():
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = _get_intermediate_plot(study)
     assert len(figure.data) == 0
 
@@ -185,7 +186,8 @@ def test_get_optimization_history_plot(direction):
         raise ValueError
 
     study = create_study(direction=direction)
-    study.optimize(fail_objective, n_trials=1)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+
     figure = _get_optimization_history_plot(study)
     assert len(figure.data) == 0
 
@@ -241,9 +243,9 @@ def test_get_contour_plot(params):
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = _get_contour_plot(study, params=params)
-    assert not figure.data
+    assert len(figure.data) == 0
 
     # Test with some trials.
     study = _prepare_study_with_trials()
@@ -358,7 +360,7 @@ def test_get_parallel_coordinate_plot():
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = _get_parallel_coordinate_plot(study)
     assert len(figure.data) == 0
 
@@ -462,6 +464,23 @@ def test_get_slice_plot():
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1)
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = _get_slice_plot(study)
     assert len(figure.data) == 0
+
+
+def _is_plotly_available():
+    # type: () -> bool
+
+    try:
+        import plotly  # NOQA
+        available = True
+    except Exception:
+        available = False
+    return available
+
+
+def test_visualization_is_available():
+    # type: () -> None
+
+    assert visualization.is_available() == _is_plotly_available()

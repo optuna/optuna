@@ -1,6 +1,5 @@
 import contextlib
 import copy
-import math
 import time
 
 import lightgbm as lgb
@@ -13,14 +12,14 @@ from optuna import type_checking
 
 
 if type_checking.TYPE_CHECKING:
-    from type_checking import Any  # NOQA
-    from type_checking import Callable  # NOQA
-    from type_checking import Dict  # NOQA
-    from type_checking import Generator  # NOQA
-    from type_checking import List  # NOQA
-    from type_checking import Optional  # NOQA
-    from type_checking import Tuple  # NOQA
-    from type_checking import Union  # NOQA
+    from typing import Any  # NOQA
+    from typing import Callable  # NOQA
+    from typing import Dict  # NOQA
+    from typing import Generator  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
+    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
@@ -29,8 +28,9 @@ if type_checking.TYPE_CHECKING:
 
     VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
 
-# Default time budget for tuning `learning_rate`.
-DEFAULT_TIME_BUDGET_FOR_TUNING_LR = 4 * 60 * 60
+
+# EPS is used to ensure that a sampled parameter value is in pre-defined value range.
+EPS = 1e-12
 
 
 class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
@@ -122,7 +122,7 @@ class BaseTuner(object):
         elif type(valid_sets) is lgb.Dataset:
             valid_name = 'valid_0'
 
-        elif type(valid_sets) in [list, tuple] and len(valid_sets) > 0:
+        elif isinstance(valid_sets, (list, tuple)) and len(valid_sets) > 0:
             valid_set_idx = len(valid_sets) - 1
             valid_name = 'valid_{}'.format(valid_set_idx)
 
@@ -207,15 +207,21 @@ class OptunaObjective(BaseTuner):
             self.lgbm_params['num_leaves'] = trial.suggest_int(
                 'num_leaves', 2, 2 ** max_depth)
         if 'feature_fraction' in self.target_param_names:
-            param_value = trial.suggest_uniform('feature_fraction', 0.4, 1.0)
+            # `_GridSamplerUniform1D` is used for sampling feature_fraction value.
+            # The value 1.0 for the hyperparameter is always sampled.
+            param_value = min(trial.suggest_uniform('feature_fraction', 0.4, 1.0 + EPS), 1.0)
             self.lgbm_params['feature_fraction'] = param_value
         if 'bagging_fraction' in self.target_param_names:
-            param_value = trial.suggest_uniform('bagging_fraction', 0.4, 1.0)
+            # `TPESampler` is used for sampling bagging_fraction value.
+            # The value 1.0 for the hyperparameter might by sampled.
+            param_value = min(trial.suggest_uniform('bagging_fraction', 0.4, 1.0 + EPS), 1.0)
             self.lgbm_params['bagging_fraction'] = param_value
         if 'bagging_freq' in self.target_param_names:
             self.lgbm_params['bagging_freq'] = trial.suggest_int('bagging_freq', 1, 7)
         if 'min_child_samples' in self.target_param_names:
-            param_value = int(trial.suggest_uniform('min_child_samples', 5, 100))
+            # `_GridSamplerUniform1D` is used for sampling min_child_samples value.
+            # The value 1.0 for the hyperparameter is always sampled.
+            param_value = int(trial.suggest_uniform('min_child_samples', 5, 100 + EPS))
             self.lgbm_params['min_child_samples'] = param_value
 
         with _timer() as t:
@@ -255,8 +261,8 @@ class LightGBMTuner(BaseTuner):
             num_boost_round=1000,  # type: int
             valid_sets=None,  # type: Optional[VALID_SET_TYPE]
             valid_names=None,  # type: Optional[Any]
-            fobj=None,  # type: Optional[Callable[Any, Any]]
-            feval=None,  # type: Optional[Callable[Any, Any]]
+            fobj=None,  # type: Optional[Callable[..., Any]]
+            feval=None,  # type: Optional[Callable[..., Any]]
             feature_name='auto',  # type: str
             categorical_feature='auto',  # type: str
             early_stopping_rounds=None,  # type: Optional[int]
@@ -264,12 +270,11 @@ class LightGBMTuner(BaseTuner):
             verbose_eval=True,  # type: Optional[bool]
             learning_rates=None,  # type: Optional[List[float]]
             keep_training_booster=False,  # type: Optional[bool]
-            callbacks=None,  # type: Optional[List[Callable[Any, Any]]]
+            callbacks=None,  # type: Optional[List[Callable[..., Any]]]
             time_budget=None,  # type: Optional[int]
             sample_size=None,  # type: Optional[int]
             best_params=None,  # type: Optional[Dict[str, Any]]
             tuning_history=None,  # type: Optional[List[Dict[str, Any]]]
-            enable_adjusting_lr=False,  # type: bool
             verbosity=1,  # type: Optional[int]
     ):
         params = copy.deepcopy(params)
@@ -294,9 +299,8 @@ class LightGBMTuner(BaseTuner):
         self.best_booster = None
 
         self.best_score = -np.inf if self.higher_is_better() else np.inf
-        self.best_params = best_params or {}
-        self.tuning_history = tuning_history or []
-        self.enable_adjusting_lr = enable_adjusting_lr
+        self.best_params = {} if best_params is None else best_params
+        self.tuning_history = [] if tuning_history is None else tuning_history
 
         if early_stopping_rounds is None:
             self._suggest_early_stopping_rounds()
@@ -311,7 +315,7 @@ class LightGBMTuner(BaseTuner):
         return params
 
     def _parse_args(self, *args, **kwargs):
-        # type: (List[Any], Dict[str, Any]) -> None
+        # type: (Any, Any) -> None
 
         self.auto_options = {
             option_name: kwargs.get(option_name)
@@ -320,7 +324,6 @@ class LightGBMTuner(BaseTuner):
                 'sample_size',
                 'best_params',
                 'tuning_history',
-                'enable_adjusting_lr',
                 'verbosity',
             ]
         }
@@ -403,9 +406,6 @@ class LightGBMTuner(BaseTuner):
                 self.best_params.update(self._get_params())
                 return self.best_booster
 
-            if self.enable_adjusting_lr:
-                self.tune_learning_rate()
-
         self.best_params.update(self._get_params())
         return self.best_booster
 
@@ -451,7 +451,7 @@ class LightGBMTuner(BaseTuner):
             self.lgbm_params[param_name] - 0.08,
             self.lgbm_params[param_name] + 0.08,
             n_trials))
-        param_values = [val for val in param_values if val >= 0.0 and val <= 1.0]
+        param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
         sampler = _GridSamplerUniform1D(param_name, param_values)
         self.tune_params([param_name], len(param_values), sampler)
 
@@ -491,7 +491,7 @@ class LightGBMTuner(BaseTuner):
         study = optuna.create_study(
             direction='maximize' if self.higher_is_better() else 'minimize',
             sampler=sampler)
-        study.optimize(objective, n_trials=n_trials)
+        study.optimize(objective, n_trials=n_trials, catch=())
 
         pbar.close()
         del pbar
@@ -506,103 +506,3 @@ class LightGBMTuner(BaseTuner):
         if self.compare_validation_metrics(study.best_value, self.best_score):
             self.best_score = study.best_value
             self.best_booster = objective.best_booster
-
-    def tune_learning_rate(self):
-        # type: () -> None
-
-        # Update parameter.
-        self.lgbm_params.update(self.best_params)
-
-        if self.higher_is_better():
-            best_model_running_time = list(sorted(
-                self.tuning_history, key=lambda x: x['val_score']))[-1]['elapsed_secs']
-        else:
-            best_model_running_time = list(sorted(
-                self.tuning_history, key=lambda x: x['val_score']))[0]['elapsed_secs']
-
-        sec_per_round = best_model_running_time / self.lgbm_kwargs['num_boost_round']
-        time_budget = self.auto_options['time_budget']
-        if time_budget is None:
-            time_budget = DEFAULT_TIME_BUDGET_FOR_TUNING_LR
-
-        max_feasible_rounds = int(time_budget / sec_per_round)
-        if max_feasible_rounds > 10000:
-            num_boost_round = 10000
-            n_trials = math.floor(max_feasible_rounds / num_boost_round)
-
-            predefined_params = {
-                'lgbm_kwargs': {
-                    'num_boost_round': num_boost_round,
-                    'early_stopping_rounds': int(num_boost_round / 20),
-                    'verbose_eval': int(num_boost_round / 10),
-                },
-                'lgbm_params': {},
-            }  # type: Dict[str, Dict[str, Any]]
-
-        elif max_feasible_rounds > 1000:
-            num_boost_round = 1000
-            n_trials = math.floor(max_feasible_rounds / num_boost_round)
-
-            predefined_params = {
-                'lgbm_kwargs': {
-                    'num_boost_round': num_boost_round,
-                    'early_stopping_rounds': int(num_boost_round / 20),
-                    'verbose_eval': int(num_boost_round / 10),
-                },
-                'lgbm_params': {}
-            }
-        else:
-            n_trials = math.floor(max_feasible_rounds / self.lgbm_kwargs['num_boost_round'])
-            predefined_params = {
-                'lgbm_kwargs': {},
-                'lgbm_params': {
-                    'learning_rate': {},
-                },
-            }
-
-        # Adjust learning rate. (Default: False)
-        if not self.enable_adjusting_lr:
-            return
-
-        if n_trials <= 1:
-            predefined_params['lgbm_params']['learning_rate'] = [0.01]
-        elif n_trials == 2:
-            predefined_params['lgbm_params']['learning_rate'] = [0.01, 0.001]
-        else:
-            predefined_params['lgbm_params']['learning_rate'] = [0.01, 0.003, 0.001]
-
-        # Fix num_boost_round and early_stopping_rounds.
-        for kwargs_name in predefined_params['lgbm_kwargs'].keys():
-            self.lgbm_kwargs[kwargs_name] = predefined_params['lgbm_kwargs'][kwargs_name]
-
-        for i_trial, lr in enumerate(predefined_params['lgbm_params']['learning_rate']):
-            self.lgbm_params['learning_rate'] = lr
-
-            with _timer() as t:
-                train_set = self.train_set
-                if self.train_subset is not None:
-                    train_set = self.train_subset
-
-                booster = lgb.train(self.lgbm_params, train_set, **self.lgbm_kwargs)
-
-            val_score = self._get_booster_best_score(booster)
-            elapsed_secs = t.elapsed_secs()
-            average_iteration_time = elapsed_secs / booster.current_iteration()
-            if self.compare_validation_metrics(val_score, self.best_score):
-                self.best_score = val_score
-                self.best_booster = booster
-
-                self.tuning_history.append(dict(
-                    action='adjust_learning_rate',
-                    trial=i_trial,
-                    value=lr,
-                    val_score=val_score,
-                    elapsed_secs=elapsed_secs,
-                    average_iteration_time=average_iteration_time))
-            else:
-                # End if lower lr got worse result.
-                break
-
-            # Break the time limitation.
-            if time.time() > self.start_time + time_budget:
-                break

@@ -17,7 +17,7 @@ This page contains a list of example codes written with Optuna.
 * [CatBoost](./catboost_simple.py)
 * [MXNet](./mxnet_simple.py)
 * [PyTorch](./pytorch_simple.py)
-* [PyTorch Ignite](./ignite_simple.py)
+* [PyTorch Ignite](./pytorch_ignite_simple.py)
 * [PyTorch Lightning](./pytorch_lightning_simple.py)
 * [XGBoost](./xgboost_simple.py)
 * [Tensorflow](./tensorflow_estimator_simple.py)
@@ -44,6 +44,7 @@ In addition, integration modules are available for the following libraries, prov
 * [pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
 * [pruning with Keras integration module](./pruning/keras_integration.py)
 * [pruning with MXNet integration module](./pruning/mxnet_integration.py)
+* [pruning with PyTorch Ignite integration module](./pytorch_ignite_simple.py)
 
 ### Examples of User-Defined Sampler
 
@@ -56,3 +57,8 @@ In addition, integration modules are available for the following libraries, prov
 * [plotting relationship between a parameter and objective value (slice plot)](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_slice.ipynb)
 * [plotting relationship between two parameters (contour plot)](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_contour.ipynb)
 * [plotting parallel coordinate](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_parallel_coordinate.ipynb)
+
+
+### Examples of Distributed Optimization
+
+* [optimizing on kubernetes](./distributed/kubernetes/README.md)

@@ -130,8 +130,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: () -> List[structs.StudySummary]
 
         best_trial = None
-        n_complete_trials = len([t for t in self.trials if t.state == structs.TrialState.COMPLETE])
-        if n_complete_trials > 0:
+        if any(t for t in self.trials if t.state == structs.TrialState.COMPLETE):
             best_trial = self.get_best_trial(IN_MEMORY_STORAGE_STUDY_ID)
 
         datetime_start = None
@@ -164,7 +163,7 @@ class InMemoryStorage(base.BaseStorage):
             trial_id = len(self.trials)
             trial.system_attrs['_number'] = trial_id
             self.trials.append(trial._replace(number=trial_id, trial_id=trial_id))
-            self.update_cache(trial_id)
+            self._update_cache(trial_id)
         return trial_id
 
     @staticmethod
@@ -194,7 +193,7 @@ class InMemoryStorage(base.BaseStorage):
             if state.is_finished():
                 self.trials[trial_id] = \
                     self.trials[trial_id]._replace(datetime_complete=datetime.now())
-                self.update_cache(trial_id)
+                self._update_cache(trial_id)
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
         # type: (int, str, float, distributions.BaseDistribution) -> bool
@@ -247,7 +246,7 @@ class InMemoryStorage(base.BaseStorage):
 
             self.trials[trial_id] = self.trials[trial_id]._replace(value=value)
 
-    def update_cache(self, trial_id):
+    def _update_cache(self, trial_id):
         # type: (int) -> None
 
         if self.trials[trial_id].state != structs.TrialState.COMPLETE:
@@ -261,8 +260,9 @@ class InMemoryStorage(base.BaseStorage):
         if best_value is None:
             self.best_trial_id = trial_id
             return
-        if new_value is None:
-            return
+        # Complete trials do not have `None` values.
+        assert new_value is not None
+
         if (self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) ==
                 structs.StudyDirection.MAXIMIZE):
             if best_value < new_value:
