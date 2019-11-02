@@ -121,21 +121,27 @@ def test_median_pruner_n_warmup_steps():
 def test_median_pruner_interval_steps():
     # type: () -> None
 
-    pruner = optuna.pruners.MedianPruner(0, 0, 2)
+    pruner = optuna.pruners.MedianPruner(0, 1, 2)
     study = optuna.study.create_study()
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
     trial.report(1, 1)
     trial.report(1, 2)
+    trial.report(1, 3)
     study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
     trial.report(2, 1)
-    # A pruner is not activated between interval steps.
+    # A pruner is not activated during warm-up steps.
     assert not pruner.prune(
         study=study, trial=study._storage.get_trial(trial.trial_id))
 
     trial.report(2, 2)
+    # A pruner is not activated between interval steps.
+    assert not pruner.prune(
+        study=study, trial=study._storage.get_trial(trial.trial_id))
+
+    trial.report(2, 3)
     # A pruner is activated on intervals.
     assert pruner.prune(
         study=study, trial=study._storage.get_trial(trial.trial_id))
