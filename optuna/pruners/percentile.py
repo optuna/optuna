@@ -96,10 +96,11 @@ class PercentilePruner(BasePruner):
         if step is None:
             return False
 
+        n_warmup_steps = self.n_warmup_steps
         if (step - n_warmup_steps) % self.interval_steps != 0:
             return False
 
-        if step <= self.n_warmup_steps:
+        if step <= n_warmup_steps:
             return False
 
         if len(trial.intermediate_values) == 0:
