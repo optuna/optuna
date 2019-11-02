@@ -17,7 +17,7 @@ Integration
     :members:
     :exclude-members: on_epoch_end
 
-.. autoclass:: IgnitePruningHandler
+.. autoclass:: PyTorchIgnitePruningHandler
     :members:
 
 .. autoclass:: KerasPruningCallback
@@ -25,6 +25,8 @@ Integration
 
 .. autoclass:: LightGBMPruningCallback
     :members:
+
+.. autofunction:: optuna.integration.lightgbm.train
 
 .. autoclass:: MXNetPruningCallback
     :members:

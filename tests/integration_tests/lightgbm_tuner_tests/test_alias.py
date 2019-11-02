@@ -25,20 +25,6 @@ def test_handling_alias_parameter_with_user_supplied_param():
     assert params['learning_rate'] == 0.5
 
 
-def test_handling_alias_parameter_with_default_value():
-    # type: () -> None
-
-    params = {
-        'num_boost_round': 5,
-        'early_stopping_rounds': 2,
-    }
-    _handling_alias_parameters(params)
-
-    assert 'eta' not in params
-    assert 'learning_rate' in params
-    assert params['learning_rate'] == 0.1
-
-
 def test_handling_alias_parameter():
     # type: () -> None
 

@@ -59,7 +59,7 @@ class TFKerasPruningCallback(Callback):
             return
 
         # Report current score and epoch to Optuna's trial.
-        self.trial.report(current_score, step=epoch)
+        self.trial.report(float(current_score), step=epoch)
 
         # Prune trial if needed
         if self.trial.should_prune():

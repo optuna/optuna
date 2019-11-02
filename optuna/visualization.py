@@ -29,6 +29,24 @@ except ImportError as e:
     _available = False
 
 
+def is_available():
+    # type: () -> bool
+    """Returns whether visualization is available or not.
+
+    .. note::
+
+        :mod:`~optuna.visualization` module depends on plotly version 4.0.0 or higher. If a
+        supported version of plotly isn't installed in your environment, this function will return
+        :obj:`False`. In such case, please execute ``$ pip install -U plotly>=4.0.0`` to install
+        plotly.
+
+    Returns:
+        :obj:`True` if visualization is available, :obj:`False` otherwise.
+    """
+
+    return _available
+
+
 def plot_intermediate_values(study):
     # type: (Study) -> None
     """Plot intermediate values of all trials in a study.
@@ -276,15 +294,15 @@ def _get_contour_plot(study, params=None):
 def _generate_contour_subplot(trials, x_param, y_param, direction):
     # type: (List[FrozenTrial], str, str, StudyDirection) -> Tuple[Contour, Scatter]
 
-    x_indexes = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
-    y_indexes = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
-    if len(x_indexes) < 2:
+    x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
+    y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
+    if len(x_indices) < 2:
         logger.warning('Param {} unique value length is less than 2.'.format(x_param))
         return go.Contour(), go.Scatter()
-    if len(y_indexes) < 2:
+    if len(y_indices) < 2:
         logger.warning('Param {} unique value length is less than 2.'.format(y_param))
         return go.Contour(), go.Scatter()
-    z = [[float('nan') for _ in range(len(x_indexes))] for _ in range(len(y_indexes))]
+    z = [[float('nan') for _ in range(len(x_indices))] for _ in range(len(y_indices))]
 
     x_values = []
     y_values = []
@@ -293,8 +311,8 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
             continue
         x_values.append(trial.params[x_param])
         y_values.append(trial.params[y_param])
-        x_i = x_indexes.index(trial.params[x_param])
-        y_i = y_indexes.index(trial.params[y_param])
+        x_i = x_indices.index(trial.params[x_param])
+        y_i = y_indices.index(trial.params[y_param])
         if isinstance(trial.value, int):
             value = float(trial.value)
         elif isinstance(trial.value, float):
@@ -305,7 +323,7 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
         z[y_i][x_i] = value
 
     contour = go.Contour(
-        x=x_indexes, y=y_indexes, z=z,
+        x=x_indices, y=y_indices, z=z,
         colorbar={'title': 'Objective Value'},
         colorscale='blues',
         connectgaps=True,
@@ -532,7 +550,7 @@ def _generate_slice_subplot(study, trials, param):
 def _check_plotly_availability():
     # type: () -> None
 
-    if not _available:
+    if not is_available():
         raise ImportError(
             'Plotly is not available. Please install plotly to use this feature. '
             'Plotly can be installed by executing `$ pip install plotly`. '
