@@ -144,7 +144,7 @@ jobs:
           <<: *tests
           command: |
             . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_fastai.py
 
       - run: *tests-mn
 
@@ -160,7 +160,7 @@ jobs:
           <<: *tests
           command: |
             . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py  --ignore tests/integration_tests/test_fastai.py
 
       - run: *tests-mn
 
@@ -204,7 +204,7 @@ jobs:
           <<: *tests-full
           command: |
             . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_fastai.py
 
       - run: *tests-mn-full
 
@@ -220,7 +220,7 @@ jobs:
           <<: *tests-full
           command: |
             . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py --ignore tests/integration_tests/test_fastai.py
 
       - run: *tests-mn-full
 
