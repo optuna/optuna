@@ -20,7 +20,7 @@ class FastAIPruningCallback(TrackerCallback):
     """FastAI callback to prune unpromising trials for fastai.
 
     .. note::
-        This callback is for fastai<2.0.
+        This callback is for fastai<2.0, not the coming version developed in fastai/fastai_dev.
 
     Example:
 
@@ -33,7 +33,7 @@ class FastAIPruningCallback(TrackerCallback):
 
             learn = Learner(
                 data, model,
-                allback_fns=[partial(FastAIPruningCallback, trial=trial, monitor='valid_loss')])
+                callback_fns=[partial(FastAIPruningCallback, trial=trial, monitor='valid_loss')])
 
     Example:
 
