@@ -453,8 +453,8 @@ class Trial(BaseTrial):
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
 
-        if self._is_manual_param(name, distribution):
-            param_value = self.system_attrs['_manual_params'][name]
+        if self._is_fixed_param(name, distribution):
+            param_value = self.system_attrs['fixed_params'][name]
         elif self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
@@ -476,16 +476,16 @@ class Trial(BaseTrial):
 
         return param_value
 
-    def _is_manual_param(self, name, distribution):
+    def _is_fixed_param(self, name, distribution):
         # type: (str, BaseDistribution) -> bool
 
-        if '_manual_params' not in self.system_attrs:
+        if 'fixed_params' not in self.system_attrs:
             return False
 
-        if name not in self.system_attrs['_manual_params']:
+        if name not in self.system_attrs['fixed_params']:
             return False
 
-        param_value = self.system_attrs['_manual_params'][name]
+        param_value = self.system_attrs['fixed_params'][name]
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
 
         contained = distribution._contains(param_value_in_internal_repr)

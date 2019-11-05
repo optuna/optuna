@@ -370,7 +370,7 @@ class Study(BaseStudy):
         params = params or {}
         user_attrs = user_attrs or {}
         system_attrs = copy.deepcopy(system_attrs or {})
-        system_attrs['_manual_params'] = params
+        system_attrs['fixed_params'] = params
         self._append_trial(state=structs.TrialState.WAITING,
                            user_attrs=user_attrs, system_attrs=system_attrs)
 
