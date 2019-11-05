@@ -11,6 +11,7 @@ Structs
 
 .. autoclass:: FrozenTrial
     :members:
+    :exclude-members: system_attrs, set_system_attr, trial_id
 
 .. autoclass:: StudySummary
     :members:
