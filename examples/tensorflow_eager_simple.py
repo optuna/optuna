@@ -19,7 +19,6 @@ We have the following two ways to execute this example:
 """
 
 import tensorflow as tf
-import tensorflow.contrib.eager as tfe
 from tensorflow.keras.datasets import mnist
 
 N_TRAIN_EXAMPLES = 3000
@@ -68,7 +67,7 @@ def create_optimizer(trial):
 
 
 def learn(model, optimizer, dataset, mode='eval'):
-    accuracy = tfe.metrics.Accuracy('accuracy', dtype=tf.float32)
+    accuracy = tf.contrib.eager.metrics.Accuracy('accuracy', dtype=tf.float32)
 
     for batch, (images, labels) in enumerate(dataset):
         with tf.GradientTape() as tape:

@@ -72,8 +72,7 @@ class BaseStudy(object):
         """
 
         best_value = self.best_trial.value
-        if best_value is None:
-            raise ValueError('No trials are completed yet.')
+        assert best_value is not None
 
         return best_value
 
@@ -103,6 +102,8 @@ class BaseStudy(object):
     def trials(self):
         # type: () -> List[structs.FrozenTrial]
         """Return all trials in the study.
+
+        The returned trials are ordered by trial number.
 
         Returns:
             A list of :class:`~optuna.structs.FrozenTrial` objects.
@@ -140,30 +141,12 @@ class BaseStudy(object):
 class Study(BaseStudy):
     """A study corresponds to an optimization task, i.e., a set of trials.
 
-    Note that the direct use of this constructor is not recommended.
-
     This object provides interfaces to run a new :class:`~optuna.trial.Trial`, access trials'
     history, set/get user-defined attributes of the study itself.
 
-    For creating and loading studies, please refer to the documentation of
+    Note that the direct use of this constructor is not recommended.
+    To create and load a study, please refer to the documentation of
     :func:`~optuna.study.create_study` and :func:`~optuna.study.load_study` respectively.
-
-    Args:
-        study_name:
-            Study's name. Each study has a unique name as an identifier.
-        storage:
-            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
-            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
-            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
-            further details.
-        sampler:
-            A sampler object that implements background algorithm for value suggestion.
-            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
-            as the default. See also :class:`~optuna.samplers`.
-        pruner:
-            A pruner object that decides early stopping of unpromising trials.
-            If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
-            as the default. See also :class:`~optuna.pruners`.
 
     """
 
@@ -172,7 +155,7 @@ class Study(BaseStudy):
             study_name,  # type: str
             storage,  # type: Union[str, storages.BaseStorage]
             sampler=None,  # type: samplers.BaseSampler
-            pruner=None,  # type: pruners.BasePruner
+            pruner=None  # type: pruners.BasePruner
     ):
         # type: (...) -> None
 
@@ -231,8 +214,9 @@ class Study(BaseStudy):
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
             n_jobs=1,  # type: int
-            catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks=None  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            gc_after_trial=True  # type: bool
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -254,22 +238,30 @@ class Study(BaseStudy):
                 The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
                 set to CPU counts.
             catch:
-                A study continues to run even when a trial raises one of exceptions specified in
-                this argument. Default is (`Exception <https://docs.python.org/3/library/
-                exceptions.html#Exception>`_,), where all non-exit exceptions are handled
-                by this logic.
+                A study continues to run even when a trial raises one of the exceptions specified
+                in this argument. Default is an empty tuple, i.e. the study will stop for any
+                exception except for :class:`~structs.TrialPruned`.
             callbacks:
                 List of callback functions that are invoked at the end of each trial.
+            gc_after_trial:
+                Flag to execute garbage collection at the end of each trial. By default, garbage
+                collection is enabled, just in case. You can turn it off with this argument if
+                memory is safely managed in your objective function.
         """
 
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
+        if not isinstance(catch, tuple):
+            raise TypeError("The catch argument is of type \'{}\' but must be a tuple.".format(
+                type(catch).__name__))
 
         try:
             if n_jobs == 1:
-                self._optimize_sequential(func, n_trials, timeout, catch, callbacks)
+                self._optimize_sequential(func, n_trials, timeout, catch, callbacks,
+                                          gc_after_trial)
             else:
-                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch, callbacks)
+                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch, callbacks,
+                                        gc_after_trial)
         finally:
             self._optimize_lock.release()
 
@@ -334,6 +326,10 @@ class Study(BaseStudy):
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
         _check_pandas_availability()
+
+        # If no trials, return an empty dataframe.
+        if not len(self.trials):
+            return pd.DataFrame()
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
@@ -425,7 +421,8 @@ class Study(BaseStudy):
             n_trials,  # type: Optional[int]
             timeout,  # type: Optional[float]
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            gc_after_trial  # type: bool
     ):
         # type: (...) -> None
 
@@ -442,7 +439,7 @@ class Study(BaseStudy):
                 if elapsed_seconds >= timeout:
                     break
 
-            self._run_trial_and_callbacks(func, catch, callbacks)
+            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
 
     def _optimize_parallel(
             self,
@@ -451,7 +448,8 @@ class Study(BaseStudy):
             timeout,  # type: Optional[float]
             n_jobs,  # type: int
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            gc_after_trial  # type: bool
     ):
         # type: (...) -> None
 
@@ -475,7 +473,7 @@ class Study(BaseStudy):
             # type: (Queue) -> None
 
             while que.get():
-                self._run_trial_and_callbacks(func, catch, callbacks)
+                self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
             self._storage.remove_session()
 
         que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
@@ -528,18 +526,24 @@ class Study(BaseStudy):
             self,
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+            gc_after_trial  # type: bool
     ):
         # type: (...) -> None
 
-        trial = self._run_trial(func, catch)
+        trial = self._run_trial(func, catch, gc_after_trial)
         if callbacks is not None:
             frozen_trial = self._storage.get_trial(trial._trial_id)
             for callback in callbacks:
                 callback(self, frozen_trial)
 
-    def _run_trial(self, func, catch):
-        # type: (ObjectiveFuncType, Union[Tuple[()], Tuple[Type[Exception]]]) -> trial_module.Trial
+    def _run_trial(
+            self,
+            func,  # type: ObjectiveFuncType
+            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+            gc_after_trial  # type: bool
+    ):
+        # type: (...) -> trial_module.Trial
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
@@ -557,19 +561,23 @@ class Study(BaseStudy):
             self.logger.info(message)
             self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
-        except catch as e:
+        except Exception as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
                 .format(trial_number, structs.TrialState.FAIL, repr(e))
             self.logger.warning(message, exc_info=True)
             self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
-            return trial
+
+            if isinstance(e, catch):
+                return trial
+            raise
         finally:
             # The following line mitigates memory problems that can be occurred in some
             # environments (e.g., services that use computing containers such as CircleCI).
             # Please refer to the following PR for further details:
             # https://github.com/pfnet/optuna/pull/325.
-            gc.collect()
+            if gc_after_trial:
+                gc.collect()
 
         try:
             result = float(result)

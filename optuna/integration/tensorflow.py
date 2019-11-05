@@ -58,6 +58,8 @@ class TensorFlowPruningHook(SessionRunHook):
     def __init__(self, trial, estimator, metric, run_every_steps, is_higher_better=None):
         # type: (optuna.trial.Trial, tf.estimator.Estimator, str, int, Optional[bool]) -> None
 
+        _check_tensorflow_availability()
+
         self.trial = trial
         self.estimator = estimator
         self.current_summary_step = -1
@@ -99,7 +101,7 @@ class TensorFlowPruningHook(SessionRunHook):
                 current_score = latest_eval_metrics[self.metric]
                 if current_score is None:
                     current_score = float('nan')
-                self.trial.report(current_score, step=summary_step)
+                self.trial.report(float(current_score), step=summary_step)
                 self.current_summary_step = summary_step
             if self.trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(self.current_summary_step)
