@@ -32,6 +32,11 @@ class TrialState(enum.Enum):
     PRUNED = 2
     FAIL = 3
 
+    def __repr__(self):
+        # type: () -> str
+
+        return str(self)
+
     def is_finished(self):
         # type: () -> bool
 
@@ -124,7 +129,8 @@ class FrozenTrial(object):
 
         if not isinstance(other, type(self)):
             return False
-        return self.__dict__ == other.__dict__
+        return all(getattr(self, field) == getattr(other, field)
+                   for field in self._fields)
 
     def __ne__(self, other):
         # type: (Any) -> bool
@@ -134,7 +140,16 @@ class FrozenTrial(object):
     def __hash__(self):
         # type: () -> int
 
-        return hash(self.__dict__)
+        return hash(tuple(getattr(self, field) for field in self._fields))
+
+    def __repr__(self):
+        # type: () -> str
+
+        return ('{cls}({kwargs})'.format(
+            cls=self.__class__.__name__,
+            kwargs=', '.join('{field}={value}'.format(
+                field=field if not field.startswith('_') else field[1:],
+                value=repr(getattr(self, field))) for field in self._fields)))
 
     @property
     def trial_id(self):

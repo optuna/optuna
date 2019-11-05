@@ -1,5 +1,5 @@
 import copy
-from datetime import datetime
+import datetime
 import pytest
 
 import optuna
@@ -25,8 +25,8 @@ def test_frozen_trial_validate():
                               trial_id=0,
                               state=TrialState.COMPLETE,
                               value=0.2,
-                              datetime_start=datetime.now(),
-                              datetime_complete=datetime.now(),
+                              datetime_start=datetime.datetime.now(),
+                              datetime_complete=datetime.datetime.now(),
                               params={'x': 10},
                               distributions={'x': UniformDistribution(5, 12)},
                               user_attrs={},
@@ -92,3 +92,43 @@ def test_frozen_trial_validate():
         invalid_trial.distributions = distributions
         with pytest.raises(ValueError):
             invalid_trial._validate()
+
+
+def test_frozen_trial_eq_ne():
+    # type: () -> None
+
+    trial = FrozenTrial(number=0,
+                        trial_id=0,
+                        state=TrialState.COMPLETE,
+                        value=0.2,
+                        datetime_start=datetime.datetime.now(),
+                        datetime_complete=datetime.datetime.now(),
+                        params={'x': 10},
+                        distributions={'x': UniformDistribution(5, 12)},
+                        user_attrs={},
+                        system_attrs={},
+                        intermediate_values={})
+
+    trial_other = copy.copy(trial)
+    assert trial == trial_other
+
+    trial_other.value = 0.3
+    assert trial != trial_other
+
+
+def test_frozen_trial_repr():
+    # type: () -> None
+
+    trial = FrozenTrial(number=0,
+                        trial_id=0,
+                        state=TrialState.COMPLETE,
+                        value=0.2,
+                        datetime_start=datetime.datetime.now(),
+                        datetime_complete=datetime.datetime.now(),
+                        params={'x': 10},
+                        distributions={'x': UniformDistribution(5, 12)},
+                        user_attrs={},
+                        system_attrs={},
+                        intermediate_values={})
+
+    assert trial == eval(repr(trial))
