@@ -3,6 +3,7 @@ import warnings
 import optuna
 from optuna import logging
 from optuna.samplers.base import BaseSampler  # NOQA
+from optuna.samplers.grid import GridSampler  # NOQA
 from optuna.samplers.random import RandomSampler  # NOQA
 from optuna.samplers.tpe import TPESampler  # NOQA
 
