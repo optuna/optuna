@@ -4,12 +4,10 @@ import typing  # NOQA
 from fastai.basic_data import DataBunch
 from fastai.basic_train import Learner
 from fastai.metrics import accuracy
-
-import torch.nn as nn
-from torch.utils.data import Dataset
-
 import numpy as np
 import pytest
+import torch.nn as nn
+from torch.utils.data import Dataset
 
 import optuna
 from optuna.integration import FastAIPruningCallback
