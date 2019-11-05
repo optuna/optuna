@@ -65,7 +65,7 @@ class GridSampler(BaseSampler):
 
         # Instead of returning param values, GridSampler puts the target grid id as a system attr,
         # and the values are returned from `sample_independent`. This is because the distribution
-        # object is hard to get in the beginning of trial, while we need the access to the object
+        # object is hard to get at the beginning of trial, while we need the access to the object
         # to validate the sampled value.
         unvisited_grids = self._get_unvisited_grid_ids(study)
 
@@ -82,7 +82,7 @@ class GridSampler(BaseSampler):
         # todo(g-votte): deal with discrete_uniform.
 
         grid_id = trial.system_attrs['grid_id']
-        # todo(g-votte): deal with values that are not in the grid setting.
+        # todo(g-votte): deal with param names that are not in the grid setting.
         param_value = self._grid_product[grid_id][self._param_names.index(param_name)]
         contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))
         if not contains:

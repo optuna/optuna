@@ -45,3 +45,6 @@ def test_study_optimize():
     sampler = samplers.GridSampler(grid)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=5 * 10 * 2)
+
+    ids = sorted([t.system_attrs['grid_id'] for t in study.trials])
+    assert ids == list(range(100))
