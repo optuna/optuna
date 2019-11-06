@@ -360,8 +360,8 @@ def test_get_parallel_coordinate_plot():
     assert figure.data[0]['dimensions'][1]['values'] == (1.0, 2.5)
 
     # Test with wrong params that do not exist in trials
-    figure = _get_parallel_coordinate_plot(study, params=['optuna', 'optuna'])
-    assert not figure.data
+    with pytest.raises(ValueError):
+        _get_parallel_coordinate_plot(study, params=['optuna', 'optuna'])
 
     # Ignore failed trials.
     def fail_objective(_):

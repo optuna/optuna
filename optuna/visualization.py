@@ -410,8 +410,7 @@ def _get_parallel_coordinate_plot(study, params=None):
     if params is not None:
         for input_p_name in params:
             if input_p_name not in all_params:
-                logger.warning('Parameter {} does not exist in your study.'.format(input_p_name))
-                return go.Figure(data=[], layout=layout)
+                ValueError('Parameter {} does not exist in your study.'.format(input_p_name))
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
