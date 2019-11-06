@@ -95,9 +95,9 @@ def _get_intermediate_plot(study):
     if len(trials) == 0:
         logger.warning('Study instance does not contain trials.')
         return go.Figure(data=[], layout=layout)
-    if not hasattr(trials[0], 'intermediate_values'):
+    if any([len(t.intermediate_values) == 0 for t in trials]):
         logger.warning(
-            'You need to set up the pruning feature to utilize plot_intermediate_values()')
+            'You need to set up the pruning feature to utilize `plot_intermediate_values()`')
         return go.Figure(data=[], layout=layout)
 
     traces = []
