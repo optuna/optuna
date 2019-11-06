@@ -9,11 +9,11 @@ try:
     _available = True
 except ImportError as e:
     _import_error = e
-    # IgnitePruningHandler is disabled because pytorch-ignite is not available.
+    # PyTorchIgnitePruningHandler is disabled because pytorch-ignite is not available.
     _available = False
 
 
-class IgnitePruningHandler(object):
+class PyTorchIgnitePruningHandler(object):
     """PyTorch Ignite handler to prune unpromising trials.
 
     Example:

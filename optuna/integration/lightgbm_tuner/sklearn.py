@@ -6,16 +6,9 @@ from optuna import type_checking
 
 
 if type_checking.TYPE_CHECKING:
-    from type_checking import Any  # NOQA
-    from type_checking import Callable  # NOQA
-    from type_checking import Dict  # NOQA
-    from type_checking import List  # NOQA
-    from type_checking import Optional  # NOQA
-    from type_checking import Tuple  # NOQA
-    from type_checking import Union  # NOQA
-
-    import numpy as np  # NOQA
-    from scipy.sparse.compressed import _cs_matrix  # NOQA
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
 
 
 class LGBMModel(lgb.LGBMModel):

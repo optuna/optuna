@@ -143,12 +143,12 @@ class TestTrialModel(object):
         session.add(study)
         session.commit()
 
-        assert 2 == len(TrialModel.where_study_id(study_id, session))
+        assert 2 == len(TrialModel.where_study(study, session))
 
         session.delete(study)
         session.commit()
 
-        assert 0 == len(TrialModel.where_study_id(study_id, session))
+        assert 0 == len(TrialModel.where_study(study, session))
 
 
 class TestTrialUserAttributeModel(object):

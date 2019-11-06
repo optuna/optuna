@@ -46,7 +46,8 @@ jobs:
           command: |
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            pip install .[checking]
+            pip install -U pip
+            pip install --progress-bar off .[checking]
 
       - run:
           name: autopep8
@@ -78,7 +79,8 @@ jobs:
           command: |
             python -m venv venv || virtualenv venv --python=python3
             . venv/bin/activate
-            pip install .[document]
+            pip install -U pip
+            pip install --progress-bar off .[document]
 
       - run:
           name: build
@@ -103,23 +105,16 @@ jobs:
             sudo apt-get -y install openmpi-bin libopenmpi-dev
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            pip install -U setuptools
+            pip install -U pip
+            pip install --progress-bar off -U setuptools
             python setup.py sdist
-            pip install $(ls dist/*.tar.gz)[testing]
+            pip install --progress-bar off $(ls dist/*.tar.gz)[testing]
 
       - run: &tests
           name: tests
           command: |
             . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py
-          environment:
-            OMP_NUM_THREADS: 1
-
-      - run: &tests-pytorch-lightning
-          name: tests-pytorch-lightning
-          command: |
-            . venv/bin/activate
-            pytest tests/integration_tests/test_pytorch_lightning.py
+            pytest tests
           environment:
             OMP_NUM_THREADS: 1
 
@@ -135,23 +130,39 @@ jobs:
     docker:
       - image: circleci/python:3.6
     steps:
-      - checkout
-      - run: *install
-      - run: *tests
-      - run: *tests-pytorch-lightning
-      - run: *tests-mn
+      [checkout, run: *install, run: *tests, run: *tests-mn]
 
   tests-python35:
     docker:
       - image: circleci/python:3.5
     steps:
-      [checkout, run: *install, run: *tests, run: *tests-mn]
+      - checkout
+
+      - run: *install
+
+      - run:
+          <<: *tests
+          command: |
+            . venv/bin/activate
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py
+
+      - run: *tests-mn
 
   tests-python27:
     docker:
       - image: circleci/python:2.7
     steps:
-      [checkout, run: *install, run: *tests, run: *tests-mn]
+      - checkout
+
+      - run: *install
+
+      - run:
+          <<: *tests
+          command: |
+            . venv/bin/activate
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py
+
+      - run: *tests-mn
 
   tests-python37-full:
     docker:
@@ -160,29 +171,17 @@ jobs:
       - checkout
 
       - run: *install
-      - run: &tests-full
-          name: tests-full
-          command: |
-            . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py
-          environment:
-            OMP_NUM_THREADS: 1
-            INCLUDE_SLOW_TESTS: 1
 
-      - run: &tests-pytorch-lightning-full
-          name: tests-pytorch-lightning-full
-          command: |
-            . venv/bin/activate
-            pytest tests/integration_tests/test_pytorch_lightning.py
+      - run: &tests-full
+          <<: *tests
+          name: tests-full
           environment:
             OMP_NUM_THREADS: 1
             INCLUDE_SLOW_TESTS: 1
 
       - run: &tests-mn-full
+          <<: *tests-mn
           name: tests-mn-full
-          command: |
-            . venv/bin/activate
-            mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
           environment:
             OMP_NUM_THREADS: 1
             INCLUDE_SLOW_TESTS: 1
@@ -191,19 +190,39 @@ jobs:
     docker:
       - image: circleci/python:3.6
     steps:
-      [checkout, run: *install, run: *tests-full, run: *tests-pytorch-lightning-full, run: *tests-mn-full]
+      [checkout, run: *install, run: *tests-full, run: *tests-mn-full]
 
   tests-python35-full:
     docker:
       - image: circleci/python:3.5
     steps:
-      [checkout, run: *install, run: *tests-full, run: *tests-mn-full]
+      - checkout
+
+      - run: *install
+
+      - run:
+          <<: *tests-full
+          command: |
+            . venv/bin/activate
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py
+
+      - run: *tests-mn-full
 
   tests-python27-full:
     docker:
       - image: circleci/python:2.7
     steps:
-      [checkout, run: *install, run: *tests-full, run: *tests-mn-full]
+      - checkout
+
+      - run: *install
+
+      - run:
+          <<: *tests-full
+          command: |
+            . venv/bin/activate
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py
+
+      - run: *tests-mn-full
 
   codecov:
     docker:
@@ -217,7 +236,8 @@ jobs:
           name: install-codecov
           command: |
             . venv/bin/activate
-            pip install .[codecov]
+            pip install -U pip
+            pip install --progress-bar off .[codecov]
 
       - run:
           name: codecov
@@ -242,26 +262,23 @@ jobs:
           name: install-examples
           command: |
             . venv/bin/activate
-            pip install $(ls dist/*.tar.gz)[example]
+            pip install -U pip
+            pip install --progress-bar off $(ls dist/*.tar.gz)[example]
 
       - run: &examples
           name: examples
           command: |
             . venv/bin/activate
-            for file in `find examples -name '*.py' -not -name 'chainermn_*.py' -not -name 'dask_ml*.py' -not -name 'pytorch_lightning_simple.py'`
+            for file in `find examples -name '*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`
             do
                python $file
+               if grep -e '\-\-pruning' $file > /dev/null; then
+                  python $file --pruning
+               fi
             done
           environment:
             OMP_NUM_THREADS: 1
-
-      - run: &examples-pytorch-lightning
-          name: examples-pytorch-lightning
-          command: |
-            . venv/bin/activate
-            python examples/pytorch_lightning_simple.py
-          environment:
-            OMP_NUM_THREADS: 1
+            IGNORES: chainermn_.*
 
       - run: &examples-mn
           name: examples-mn
@@ -276,29 +293,44 @@ jobs:
           environment:
             OMP_NUM_THREADS: 1
 
-      - run: &examples-dask-ml
-          name: examples-dask-ml
-          command: |
-            . venv/bin/activate
-            for file in `find examples -name 'dask_ml*.py'`
-            do
-               python $file
-            done
-
   examples-python36:
     docker:
       - image: circleci/python:3.6
     steps:
-      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-pytorch-lightning, run: *examples-mn, run: *examples-dask-ml]
+      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
 
   examples-python35:
     docker:
       - image: circleci/python:3.5
     steps:
-      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn, run: *examples-dask-ml]
+      - checkout
+
+      - run: *install
+
+      - run: *install-examples
+
+      - run:
+          <<: *examples
+          environment:
+            OMP_NUM_THREADS: 1
+            IGNORES: chainermn_.*|pytorch_lightning.*
+
+      - run: *examples-mn
 
   examples-python27:
     docker:
       - image: circleci/python:2.7
     steps:
-      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
+      - checkout
+
+      - run: *install
+
+      - run: *install-examples
+
+      - run:
+          <<: *examples
+          environment:
+            OMP_NUM_THREADS: 1
+            IGNORES: chainermn_.*|pytorch_lightning.*|xgboost_.*|dask_ml_.*
+
+      - run: *examples-mn
