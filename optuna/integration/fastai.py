@@ -76,7 +76,10 @@ class FastAIPruningCallback(TrackerCallback):
         if value is None:
             return
 
-        self.trial.report(value, step=epoch)
+        # This conversion is necessary to avoid problems reported in issues.
+        # - https://github.com/pfnet/optuna/issue/642
+        # - https://github.com/pfnet/optuna/issue/655.
+        self.trial.report(float(value), step=epoch)
         if self.trial.should_prune():
             message = 'Trial was pruned at epoch {}.'.format(epoch)
             raise optuna.structs.TrialPruned(message)
