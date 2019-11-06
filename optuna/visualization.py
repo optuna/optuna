@@ -331,7 +331,7 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
         contours_coloring='heatmap',
         hoverinfo='none',
         line_smoothing=1.3,
-        reversescale=True if direction == StudyDirection.MINIMIZE else False
+        reversescale=direction == StudyDirection.MINIMIZE
     )
 
     scatter = go.Scatter(
