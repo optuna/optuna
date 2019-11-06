@@ -18,8 +18,8 @@ from optuna.visualization import _get_parallel_coordinate_plot
 from optuna.visualization import _get_slice_plot
 
 
-def _prepare_study_with_trials(no_trials=False, less_than_two=False, with_c_d=True, intermediate_values=False):
-    # type: (bool, bool, bool, bool) -> Study
+def _prepare_study_with_trials(no_trials=False, less_than_two=False, with_c_d=True):
+    # type: (bool, bool, bool) -> Study
     """Prepare a study for tests.
 
     Args:
@@ -30,8 +30,6 @@ def _prepare_study_with_trials(no_trials=False, less_than_two=False, with_c_d=Tr
         with_c_d (bool): If ``True``, the study has four hyperparams named 'param_a',
             'param_b', 'param_c', and 'param_d'. Otherwise, there are only two
             hyperparams ('param_a' and 'param_b').
-        intermediate_values (bool): If ``True``, the returned `study`'s
-            trials have some intermediate values.
 
     Returns:
         :class:`~optuna.study.Study`
@@ -227,12 +225,12 @@ def test_get_optimization_history_plot(direction):
 
 @pytest.mark.parametrize('params',
                          [
-                             ([],),
-                             (['param_a'],),
-                             (['param_a', 'param_b'],),
-                             (['param_a', 'param_b', 'param_c'],),
-                             (['param_a', 'param_b', 'param_c', 'param_d'],),
-                             (None,),
+                             [],
+                             ['param_a'],
+                             ['param_a', 'param_b'],
+                             ['param_a', 'param_b', 'param_c'],
+                             ['param_a', 'param_b', 'param_c', 'param_d'],
+                             None,
                          ])
 def test_get_contour_plot(params):
     # type: (Optional[List[str]]) -> None
@@ -273,7 +271,7 @@ def test_get_contour_plot(params):
             assert figure.layout['xaxis']['range'] == (1.0, 2.5)
             assert figure.layout['yaxis']['range'] == (0.0, 2.0)
     else:
-        # TODO(crcrpar): Add more checks. Currently this checks the number.
+        # TODO(crcrpar): Add more checks. Currently this only checks the number of data.
         n_params = len(params) if params is not None else 4
         assert len(figure.data) == n_params ** 2 + n_params * (n_params - 1)
 
@@ -360,6 +358,10 @@ def test_get_parallel_coordinate_plot():
     assert figure.data[0]['dimensions'][1]['range'] == (1.0, 2.5)
     assert figure.data[0]['dimensions'][1]['values'] == (1.0, 2.5)
 
+    # Test with wrong params that do not exist in trials
+    figure = _get_parallel_coordinate_plot(study, params=['optuna', 'optuna'])
+    assert not figure.data
+
     # Ignore failed trials.
     def fail_objective(_):
         # type: (Trial) -> float
@@ -371,12 +373,9 @@ def test_get_parallel_coordinate_plot():
     figure = _get_parallel_coordinate_plot(study)
     assert len(figure.data) == 0
 
-    figure = _get_parallel_coordinate_plot(study, params=['optuna'])
-    assert not figure.data
-
     # Test with categorical params that cannot be converted to numeral.
-    study_str_trial_value = create_study()
-    study_str_trial_value._append_trial(
+    study_categorical_params = create_study()
+    study_categorical_params._append_trial(
         value=0.0,
         params={
             'category_a': 'preferred',
@@ -387,7 +386,7 @@ def test_get_parallel_coordinate_plot():
             'category_b': CategoricalDistribution(('net', 'una')),
         }
     )
-    study_str_trial_value._append_trial(
+    study_categorical_params._append_trial(
         value=2.0,
         params={
             'category_a': 'opt',
@@ -398,7 +397,7 @@ def test_get_parallel_coordinate_plot():
             'category_b': CategoricalDistribution(('net', 'una')),
         }
     )
-    figure = _get_parallel_coordinate_plot(study_str_trial_value)
+    figure = _get_parallel_coordinate_plot(study_categorical_params)
     assert len(figure.data[0]['dimensions']) == 3
     assert figure.data[0]['dimensions'][0]['label'] == 'Objective Value'
     assert figure.data[0]['dimensions'][0]['range'] == (0.0, 2.0)
@@ -463,6 +462,10 @@ def test_get_slice_plot():
     assert len(figure.data) == 1
     assert figure.data[0]['x'] == (1.0, 2.5)
     assert figure.data[0]['y'] == (0.0, 1.0)
+
+    # Test with wrong parameters.
+    with pytest.raises(ValueError):
+        _get_slice_plot(study, params=['optuna'])
 
     # Ignore failed trials.
     def fail_objective(_):
