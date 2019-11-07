@@ -79,8 +79,6 @@ class PercentilePruner(BasePruner):
         self.n_startup_trials = n_startup_trials
         self.n_warmup_steps = n_warmup_steps
         self.interval_steps = interval_steps
-        self._prev_lower_bound = None  # type: Optional[int]
-        self._is_prev_lower_bound_checked = False
 
     def prune(self, study, trial):
         # type: (Study, structs.FrozenTrial) -> bool
@@ -109,22 +107,17 @@ class PercentilePruner(BasePruner):
             return False
 
         interval_steps = self.interval_steps
-        lower_bound = n_warmup_steps + ((step - n_warmup_steps) // interval_steps) * interval_steps
-        if lower_bound == self._prev_lower_bound and self._is_prev_lower_bound_checked:
-            return False
-
-        is_first_above_bound = False
-        for s in reversed(sorted(intermediate_values.keys())):
+        base_index = 1
+        lower_bound = (
+            ((step - n_warmup_steps - base_index) // interval_steps) * interval_steps
+            + n_warmup_steps + base_index)
+        is_above_bound = False
+        for s in sorted(intermediate_values.keys(), reverse=True):
             if s >= lower_bound:
-                if is_first_above_bound:
-                    # Already checked for pruning for this interval.
+                if is_above_bound:
+                    # This pruning interval is already checked for an earlier report.
                     return False
-                is_first_above_bound = True
-        if is_first_above_bound:
-            self._is_prev_lower_bound_checked = True
-            self._prev_lower_bound = lower_bound
-        else:
-            return False
+                is_above_bound = True
 
         direction = study.direction
         best_intermediate_result = _get_best_intermediate_result_over_steps(trial, direction)
