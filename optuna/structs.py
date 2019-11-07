@@ -7,6 +7,7 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
+from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -118,6 +119,7 @@ class FrozenTrial(object):
         self.system_attrs = system_attrs
         self.intermediate_values = intermediate_values
         self._trial_id = trial_id
+        self.logger = logging.get_logger(__name__)
 
     internal_fields = ['distributions', '_trial_id']
     _fields = [
@@ -156,8 +158,9 @@ class FrozenTrial(object):
         # type: () -> int
         """Return trial ID.
 
-        Note that the use of this is deprecated.
-        Please use :attr:`~optuna.trial.FrozenTrial.number` instead.
+        .. deprecated:: 0.19.0
+            The direct use of this attribute is deprecated and it is recommended that you
+            use :attr:`~optuna.trial.FrozenTrial.number` instead.
 
         Returns:
             A trial ID.
@@ -166,6 +169,9 @@ class FrozenTrial(object):
         warnings.warn(
             'The use of `FrozenTrial.trial_id` is deprecated. '
             'Please use `FrozenTrial.number` instead.', DeprecationWarning)
+
+        self.logger.warning('The use of `FrozenTrial.trial_id` is deprecated. '
+                            'Please use `FrozenTrial.number` instead.')
 
         return self._trial_id
 
