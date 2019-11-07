@@ -108,6 +108,8 @@ jobs:
             pip install -U pip
             pip install --progress-bar off -U setuptools
             python setup.py sdist
+            pip install --progress-bar off $(ls dist/*.tar.gz)
+            python -c 'import optuna'
             pip install --progress-bar off $(ls dist/*.tar.gz)[testing]
 
       - run: &tests
