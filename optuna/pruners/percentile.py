@@ -118,6 +118,8 @@ class PercentilePruner(BasePruner):
                     # This pruning interval is already checked for an earlier report.
                     return False
                 is_above_bound = True
+            else:
+                break
 
         direction = study.direction
         best_intermediate_result = _get_best_intermediate_result_over_steps(trial, direction)
