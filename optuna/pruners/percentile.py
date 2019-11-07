@@ -7,6 +7,7 @@ from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
+    from typing import Optional  # NOQA
 
     from optuna.study import Study  # NOQA
 
@@ -78,6 +79,8 @@ class PercentilePruner(BasePruner):
         self.n_startup_trials = n_startup_trials
         self.n_warmup_steps = n_warmup_steps
         self.interval_steps = interval_steps
+        self._prev_lower_bound = None  # type: Optional[int]
+        self._is_prev_lower_bound_checked = False
 
     def prune(self, study, trial):
         # type: (Study, structs.FrozenTrial) -> bool
@@ -98,13 +101,29 @@ class PercentilePruner(BasePruner):
             return False
 
         n_warmup_steps = self.n_warmup_steps
-        if (step - n_warmup_steps) % self.interval_steps != 0:
-            return False
-
         if step <= n_warmup_steps:
             return False
 
-        if len(trial.intermediate_values) == 0:
+        intermediate_values = trial.intermediate_values
+        if len(intermediate_values) == 0:
+            return False
+
+        interval_steps = self.interval_steps
+        lower_bound = n_warmup_steps + ((step - n_warmup_steps) // interval_steps) * interval_steps
+        if lower_bound == self._prev_lower_bound and self._is_prev_lower_bound_checked:
+            return False
+
+        is_first_above_bound = False
+        for s in reversed(sorted(intermediate_values.keys())):
+            if s >= lower_bound:
+                if is_first_above_bound:
+                    # Already checked for pruning for this interval.
+                    return False
+                is_first_above_bound = True
+        if is_first_above_bound:
+            self._is_prev_lower_bound_checked = True
+            self._prev_lower_bound = lower_bound
+        else:
             return False
 
         direction = study.direction

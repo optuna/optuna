@@ -95,53 +95,32 @@ def test_median_pruner_n_startup_trials():
         study=study, trial=study._storage.get_trial(trial.trial_id))
 
 
-def test_median_pruner_n_warmup_steps():
-    # type: () -> None
+@pytest.mark.parametrize(
+    'n_warmup_steps,interval_steps,report_steps,expected_prune_steps', [
+        (1, 2, 1, (3,)),
+        (0, 3, 10, (10, 20, 30)),
+        (2, 3, 10, (10, 20, 30)),
+        (19, 3, 10, (19, 20, 30)),
+        (0, 10, 3, (3, 12, 21, 30)),
+        (2, 10, 3, (3, 12, 24, 33)),
+        (11, 10, 3, (12, 21, 33)),
+    ])
+def test_median_pruner_interval_steps(
+        n_warmup_steps, interval_steps, report_steps, expected_prune_steps):
+    # type: (int, int, int, Tuple[int, ...]) -> None
 
-    pruner = optuna.pruners.MedianPruner(0, 1)
+    pruner = optuna.pruners.MedianPruner(0, n_warmup_steps, interval_steps)
     study = optuna.study.create_study()
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
-    trial.report(1, 1)
-    trial.report(1, 2)
+    n_steps = max(expected_prune_steps)
+    for i in range(1, 1 + n_steps):
+        trial.report(1, i)
     study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
-    trial.report(2, 1)
-    # A pruner is not activated during warm-up steps.
-    assert not pruner.prune(
-        study=study, trial=study._storage.get_trial(trial.trial_id))
-
-    trial.report(2, 2)
-    # A pruner is activated after warm-up steps.
-    assert pruner.prune(
-        study=study, trial=study._storage.get_trial(trial.trial_id))
-
-
-def test_median_pruner_interval_steps():
-    # type: () -> None
-
-    pruner = optuna.pruners.MedianPruner(0, 1, 2)
-    study = optuna.study.create_study()
-
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
-    trial.report(1, 1)
-    trial.report(1, 2)
-    trial.report(1, 3)
-    study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
-
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
-    trial.report(2, 1)
-    # A pruner is not activated during warm-up steps.
-    assert not pruner.prune(
-        study=study, trial=study._storage.get_trial(trial.trial_id))
-
-    trial.report(2, 2)
-    # A pruner is not activated between interval steps.
-    assert not pruner.prune(
-        study=study, trial=study._storage.get_trial(trial.trial_id))
-
-    trial.report(2, 3)
-    # A pruner is activated on intervals.
-    assert pruner.prune(
-        study=study, trial=study._storage.get_trial(trial.trial_id))
+    for i in range(1, 1 + n_steps):
+        if i % report_steps == 0:
+            trial.report(2, i)
+        assert (pruner.prune(study=study, trial=study._storage.get_trial(trial.trial_id))
+                == (i > n_warmup_steps and i in expected_prune_steps))
