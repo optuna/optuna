@@ -83,15 +83,8 @@ class FrozenTrial(object):
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
-        system_attrs:
-            Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` internally
-            set by Optuna.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
-        trial_id:
-            Optuna's internal identifier of the :class:`~optuna.trial.Trial`. Note that this field
-            is not supposed to be used by library users. Instead, please use :attr:`number` and
-            :class:`~optuna.study.Study.study_id` to identify a :class:`~optuna.trial.Trial`.
     """
 
     def __init__(
