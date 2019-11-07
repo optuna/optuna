@@ -375,6 +375,14 @@ class Trial(BaseTrial):
                 Step of the trial (e.g., Epoch of neural network training).
         """
 
+        try:
+            # For convenience, we allow users to report a value that can be cast to `float`.
+            value = float(value)
+        except (TypeError, ValueError):
+            message = 'The `value` argument is of type \'{}\' but supposed to be a float.'.format(
+                type(value).__name__)
+            raise TypeError(message)
+
         self.storage.set_trial_value(self._trial_id, value)
         if step is not None:
             self.storage.set_trial_intermediate_value(self._trial_id, step, value)
