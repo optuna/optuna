@@ -58,13 +58,24 @@ def get_extras_require():
         'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
         'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
         'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0',
-        'torch', 'torchvision', 'pytorch-ignite', 'pytorch_lightning',
+        'torch', 'torchvision', 'pytorch-ignite',
+
+        # TODO(ohta):
+        # Remove this version constraint once
+        # https://github.com/williamFalcon/pytorch-lightning/issues/469 is resolved.
+        'pytorch_lightning<0.5.3',
     ]
 
     example_requirements = [
         'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
         'mxnet', 'xgboost', 'torch', 'torchvision', 'pytorch-ignite',
-        'pytorch-lightning', 'dask-ml', 'dask[dataframe]',
+        'dask-ml', 'dask[dataframe]',
+
+        # TODO(ohta):
+        # Remove this version constraint once
+        # https://github.com/williamFalcon/pytorch-lightning/issues/469 is resolved.
+        'pytorch-lightning<0.5.3',
+
         # TODO(Yanase): Update examples to support TensorFlow 2.0.
         # See https://github.com/pfnet/optuna/issues/565 for further details.
         'tensorflow<2.0.0',
