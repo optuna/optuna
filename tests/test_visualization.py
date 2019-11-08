@@ -127,7 +127,7 @@ def test_get_intermediate_plot():
     assert figure.data[0].x == (0, 1)
     assert figure.data[0].y == (1.0, 2.0)
 
-    # Test a study with lne trial with intermediate values and
+    # Test a study with one trial with intermediate values and
     # one trial without intermediate values.
     study.optimize(lambda t: objective(t, False), n_trials=1)
     assert len(study.trials) == 2
