@@ -11,12 +11,12 @@ from optuna.study import create_study
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
 from optuna import visualization
-from optuna.visualization import _generate_contour_subplot
-from optuna.visualization import _get_contour_plot
-from optuna.visualization import _get_intermediate_plot
-from optuna.visualization import _get_optimization_history_plot
-from optuna.visualization import _get_parallel_coordinate_plot
-from optuna.visualization import _get_slice_plot
+from optuna.visualization.contour import _generate_contour_subplot
+from optuna.visualization.contour import _get_contour_plot
+from optuna.visualization.intermediate_values import _get_intermediate_plot
+from optuna.visualization.optimization_history import _get_optimization_history_plot
+from optuna.visualization.parallel_coordinate import _get_parallel_coordinate_plot
+from optuna.visualization.slice import _get_slice_plot
 
 
 def _prepare_study_with_trials(no_trials=False, less_than_two=False, with_c_d=True):
@@ -545,8 +545,8 @@ def test_is_log_scale():
             'param_log': LogUniformDistribution(1e-5, 1.),
         }
     )
-    assert visualization._is_log_scale(study.trials, 'param_log')
-    assert not visualization._is_log_scale(study.trials, 'param_linear')
+    assert visualization.utils._is_log_scale(study.trials, 'param_log')
+    assert not visualization.utils._is_log_scale(study.trials, 'param_linear')
 
 
 def _is_plotly_available():
