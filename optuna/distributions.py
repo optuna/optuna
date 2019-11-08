@@ -101,6 +101,12 @@ class BaseDistribution(object):
 
         return hash(tuple(sorted(self.__dict__.items())))
 
+    def __repr__(self):
+        # type: () -> str
+
+        kwargs = ', '.join('{}={}'.format(k, v) for k, v in self.__dict__.items())
+        return '{}({})'.format(self.__class__.__name__, kwargs)
+
 
 class UniformDistribution(BaseDistribution):
     """A uniform distribution in the linear domain.

@@ -200,3 +200,14 @@ def test_eq_ne_hash():
 
     d2 = distributions.IntUniformDistribution(low=1, high=2)
     assert d0 != d2
+
+
+def test_repr():
+    # type: () -> None
+
+    # The following variable is needed to apply `eval` to distribution
+    # instances that contain `float('inf')` as a field value.
+    inf = float('inf')
+
+    for d in EXAMPLE_DISTRIBUTIONS.values():
+        assert d == eval('distributions.' + repr(d))
