@@ -190,14 +190,17 @@ def test_empty_distribution():
 def test_eq_ne_hash():
     # type: () -> None
 
+    # Two instances of a class are regarded as equivalent if the fields have the same values.
     for d in EXAMPLE_DISTRIBUTIONS.values():
         assert d == copy.deepcopy(d)
         assert hash(d) == hash(copy.deepcopy(d))
 
+    # Different field values.
     d0 = distributions.UniformDistribution(low=1, high=2)
     d1 = distributions.UniformDistribution(low=1, high=3)
     assert d0 != d1
 
+    # Different classes.
     d2 = distributions.IntUniformDistribution(low=1, high=2)
     assert d0 != d2
 
