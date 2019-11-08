@@ -1,3 +1,4 @@
+import copy
 import json
 import pytest
 
@@ -185,3 +186,17 @@ def test_empty_distribution():
 
     with pytest.raises(ValueError):
         distributions.CategoricalDistribution(choices=()),
+
+def test_eq_ne_hash():
+    # type: () -> None
+
+    for d in EXAMPLE_DISTRIBUTIONS.values():
+        assert d == copy.deepcopy(d)
+        assert hash(d) == hash(copy.deepcopy(d))
+
+    d0 = distributions.UniformDistribution(low=1, high=2)
+    d1 = distributions.UniformDistribution(low=1, high=3)
+    assert d0 != d1
+
+    d2 = distributions.IntUniformDistribution(low=1, high=2)
+    assert d0 != d2

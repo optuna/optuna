@@ -99,7 +99,7 @@ class BaseDistribution(object):
     def __hash__(self):
         # type: () -> int
 
-        return hash(self.__dict__)
+        return hash(tuple(sorted(self.__dict__.items())))
 
 
 class UniformDistribution(BaseDistribution):
