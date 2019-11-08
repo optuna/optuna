@@ -325,7 +325,7 @@ def test_generate_contour_plot_for_few_observations():
         _generate_contour_subplot(
             study_str_trial_value.trials, params[0], params[1], StudyDirection.MINIMIZE)
 
-        
+
 def test_get_contour_plot_log_scale():
     # type: () -> None
 
