@@ -98,23 +98,25 @@ def _get_intermediate_plot(study):
     if len(trials) == 0:
         logger.warning('Study instance does not contain trials.')
         return go.Figure(data=[], layout=layout)
-    if hasattr(trials[0], 'intermediate_values') is False:
-        logger.warning(
-            'You need to set up the pruning feature to utilize plot_intermediate_values()')
-        return go.Figure(data=[], layout=layout)
 
     traces = []
     for trial in trials:
-        trace = go.Scatter(
-            x=tuple(trial.intermediate_values.keys()),
-            y=tuple(trial.intermediate_values.values()),
-            mode='lines+markers',
-            marker={
-                'maxdisplayed': 10
-            },
-            name='Trial{}'.format(trial.number)
-        )
-        traces.append(trace)
+        if trial.intermediate_values:
+            trace = go.Scatter(
+                x=tuple(trial.intermediate_values.keys()),
+                y=tuple(trial.intermediate_values.values()),
+                mode='lines+markers',
+                marker={
+                    'maxdisplayed': 10
+                },
+                name='Trial{}'.format(trial.number)
+            )
+            traces.append(trace)
+
+    if not traces:
+        logger.warning(
+            'You need to set up the pruning feature to utilize `plot_intermediate_values()`')
+        return go.Figure(data=[], layout=layout)
 
     figure = go.Figure(data=traces, layout=layout)
 
@@ -169,11 +171,12 @@ def _get_optimization_history_plot(study):
 
     best_values = [float('inf')] if study.direction == StudyDirection.MINIMIZE else [-float('inf')]
     for trial in trials:
-        if isinstance(trial.value, float):
-            trial_value = trial.value
+        if isinstance(trial.value, (int, float)):
+            trial_value = float(trial.value)
         else:
             raise ValueError(
-                'Trial{} has COMPLETE state, but its value is non float.'.format(trial.number))
+                'Trial{} has COMPLETE state, but its value is not int nor float.'.format(
+                    trial.number))
         if study.direction == StudyDirection.MINIMIZE:
             best_values.append(min(best_values[-1], trial_value))
         else:
@@ -419,8 +422,7 @@ def _get_parallel_coordinate_plot(study, params=None):
     if params is not None:
         for input_p_name in params:
             if input_p_name not in all_params:
-                logger.warning('Parameter {} does not exist in your study.'.format(input_p_name))
-                return go.Figure(data=[], layout=layout)
+                ValueError('Parameter {} does not exist in your study.'.format(input_p_name))
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
