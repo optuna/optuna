@@ -25,8 +25,8 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 # -- Project information -----------------------------------------------------
 
 project = 'Optuna'
-copyright = '2018, Optuna Contributors'
-author = 'Optuna Contributors'
+copyright = '2018, Optuna Contributors.'
+author = 'Optuna Contributors.'
 
 # The short X.Y version
 version = __version__
@@ -135,7 +135,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Optuna.tex', 'Optuna Documentation', 'Optuna Contributors', 'manual'),
+    (master_doc, 'Optuna.tex', 'Optuna Documentation', 'Optuna Contributors.', 'manual'),
 ]
 
 # -- Options for manual page output ------------------------------------------
