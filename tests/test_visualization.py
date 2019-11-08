@@ -197,32 +197,6 @@ def test_get_optimization_history_plot(direction):
     figure = _get_optimization_history_plot(study)
     assert len(figure.data) == 0
 
-    study = create_study()
-    study._append_trial(
-        value='abc',  # type: ignore
-        params={
-            'param_a': 1.0,
-            'param_b': 1.0,
-        },
-        distributions={
-            'param_a': UniformDistribution(0.0, 3.0),
-            'param_b': UniformDistribution(0.0, 3.0),
-        }
-    )
-    study._append_trial(
-        value='def',  # type: ignore
-        params={
-            'param_a': 2.0,
-            'param_b': 2.0,
-        },
-        distributions={
-            'param_a': UniformDistribution(0.0, 3.0),
-            'param_b': UniformDistribution(0.0, 3.0),
-        }
-    )
-    with pytest.raises(ValueError):
-        _get_optimization_history_plot(study)
-
 
 @pytest.mark.parametrize('params',
                          [
@@ -280,8 +254,6 @@ def test_get_contour_plot(params):
 def test_generate_contour_plot_for_few_observations():
     # type: () -> None
 
-    direction = 'minimize'
-
     study = _prepare_study_with_trials(less_than_two=True)
     trials = study.trials
 
@@ -296,34 +268,6 @@ def test_generate_contour_plot_for_few_observations():
     contour, scatter = _generate_contour_subplot(
         trials, params[0], params[1], StudyDirection.MINIMIZE)
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
-
-    # Not numeral trial's value.
-    study_str_trial_value = create_study(direction=direction)
-    study_str_trial_value._append_trial(
-        value='opt',  # type: ignore
-        params={
-            'param_a': 1.0,
-            'param_b': 1.0,
-        },
-        distributions={
-            'param_a': UniformDistribution(0.0, 3.0),
-            'param_b': UniformDistribution(0.0, 3.0),
-        }
-    )
-    study_str_trial_value._append_trial(
-        value='una',  # type: ignore
-        params={
-            'param_a': 2.0,
-            'param_b': 2.0,
-        },
-        distributions={
-            'param_a': UniformDistribution(0.0, 3.0),
-            'param_b': UniformDistribution(0.0, 3.0),
-        }
-    )
-    with pytest.raises(ValueError):
-        _generate_contour_subplot(
-            study_str_trial_value.trials, params[0], params[1], StudyDirection.MINIMIZE)
 
 
 def test_get_contour_plot_log_scale():
@@ -504,33 +448,6 @@ def test_get_parallel_coordinate_plot():
     assert figure.data[0]['dimensions'][2]['range'] == (0, 1)
     assert figure.data[0]['dimensions'][2]['values'] == (0, 1)
     assert figure.data[0]['dimensions'][2]['ticktext'] == (['net', 0], ['una', 1])
-
-    # Test that the API raises when trials have str values.
-    study_str_trial_value = create_study()
-    study_str_trial_value._append_trial(
-        value='opt',  # type: ignore
-        params={
-            'category_a': 'preferred',
-            'category_b': 'net',
-        },
-        distributions={
-            'category_a': CategoricalDistribution(('preferred', 'opt')),
-            'category_b': CategoricalDistribution(('net', 'una')),
-        }
-    )
-    study_str_trial_value._append_trial(
-        value='una',  # type: ignore
-        params={
-            'category_a': 'opt',
-            'category_b': 'una',
-        },
-        distributions={
-            'category_a': CategoricalDistribution(('preferred', 'opt')),
-            'category_b': CategoricalDistribution(('net', 'una')),
-        }
-    )
-    with pytest.raises(ValueError):
-        _get_parallel_coordinate_plot(study_str_trial_value)
 
 
 def test_get_slice_plot():
