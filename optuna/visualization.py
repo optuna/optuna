@@ -1,4 +1,5 @@
 from collections import defaultdict
+import math
 
 from optuna.distributions import LogUniformDistribution
 from optuna.logging import get_logger
@@ -264,6 +265,12 @@ def _get_contour_plot(study, params=None):
         figure = go.Figure(data=sub_plots)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
         figure.update_yaxes(title_text=y_param, range=param_values_range[y_param])
+        if _is_log_scale(trials, x_param):
+            log_range = [math.log10(p) for p in param_values_range[x_param]]
+            figure.update_xaxes(range=log_range, type='log')
+        if _is_log_scale(trials, y_param):
+            log_range = [math.log10(p) for p in param_values_range[y_param]]
+            figure.update_yaxes(range=log_range, type='log')
     else:
         figure = make_subplots(rows=len(sorted_params),
                                cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True)
@@ -286,6 +293,12 @@ def _get_contour_plot(study, params=None):
                                     row=y_i + 1, col=x_i + 1)
                 figure.update_yaxes(range=param_values_range[y_param],
                                     row=y_i + 1, col=x_i + 1)
+                if _is_log_scale(trials, x_param):
+                    log_range = [math.log10(p) for p in param_values_range[x_param]]
+                    figure.update_xaxes(range=log_range, type='log', row=y_i + 1, col=x_i + 1)
+                if _is_log_scale(trials, y_param):
+                    log_range = [math.log10(p) for p in param_values_range[y_param]]
+                    figure.update_yaxes(range=log_range, type='log', row=y_i + 1, col=x_i + 1)
                 if x_i == 0:
                     figure.update_yaxes(title_text=y_param, row=y_i + 1, col=x_i + 1)
                 if y_i == len(sorted_params) - 1:
