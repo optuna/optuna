@@ -187,6 +187,7 @@ def test_empty_distribution():
     with pytest.raises(ValueError):
         distributions.CategoricalDistribution(choices=()),
 
+
 def test_eq_ne_hash():
     # type: () -> None
 
@@ -210,7 +211,7 @@ def test_repr():
 
     # The following variable is needed to apply `eval` to distribution
     # instances that contain `float('inf')` as a field value.
-    inf = float('inf')
+    inf = float('inf')  # NOQA
 
     for d in EXAMPLE_DISTRIBUTIONS.values():
         assert d == eval('distributions.' + repr(d))
