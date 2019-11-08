@@ -24,11 +24,11 @@ def _prepare_study_with_trials(no_trials=False, less_than_two=False, with_c_d=Tr
     """Prepare a study for tests.
 
     Args:
-        no_trials (bool): If ``False``, create a study with no trials.
-        less_than_two (bool): If ``True``, create a study with two/four hyperparams where
+        no_trials: If ``False``, create a study with no trials.
+        less_than_two: If ``True``, create a study with two/four hyperparams where
             'param_a' (and 'param_c') appear(s) only once while 'param_b' (and 'param_b')
             appear(s) twice in `study.trials`.
-        with_c_d (bool): If ``True``, the study has four hyperparams named 'param_a',
+        with_c_d: If ``True``, the study has four hyperparams named 'param_a',
             'param_b', 'param_c', and 'param_d'. Otherwise, there are only two
             hyperparams ('param_a' and 'param_b').
 
