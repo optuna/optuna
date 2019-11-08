@@ -98,23 +98,25 @@ def _get_intermediate_plot(study):
     if len(trials) == 0:
         logger.warning('Study instance does not contain trials.')
         return go.Figure(data=[], layout=layout)
-    if all([len(t.intermediate_values) == 0 for t in trials]):
-        logger.warning(
-            'You need to set up the pruning feature to utilize `plot_intermediate_values()`')
-        return go.Figure(data=[], layout=layout)
 
     traces = []
     for trial in trials:
-        trace = go.Scatter(
-            x=tuple(trial.intermediate_values.keys()),
-            y=tuple(trial.intermediate_values.values()),
-            mode='lines+markers',
-            marker={
-                'maxdisplayed': 10
-            },
-            name='Trial{}'.format(trial.number)
-        )
-        traces.append(trace)
+        if trial.intermediate_values:
+            trace = go.Scatter(
+                x=tuple(trial.intermediate_values.keys()),
+                y=tuple(trial.intermediate_values.values()),
+                mode='lines+markers',
+                marker={
+                    'maxdisplayed': 10
+                },
+                name='Trial{}'.format(trial.number)
+            )
+            traces.append(trace)
+
+    if not traces:
+        logger.warning(
+            'You need to set up the pruning feature to utilize `plot_intermediate_values()`')
+        return go.Figure(data=[], layout=layout)
 
     figure = go.Figure(data=traces, layout=layout)
 
