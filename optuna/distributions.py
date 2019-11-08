@@ -86,7 +86,7 @@ class BaseDistribution(object):
     def __eq__(self, other):
         # type: (Any) -> bool
 
-        if type(self) != type(other):
+        if not isinstance(other, type(self)):
             return False
 
         return self.__dict__ == other.__dict__
