@@ -177,7 +177,7 @@ class TrialModel(BaseModel):
         # type: (int, orm.Session) -> TrialModel
         trial = session.query(cls) \
             .filter(cls.study_id == study_id)\
-            .order_by(desc(cls.value)).one_or_none()
+            .order_by(desc(cls.value)).limit(1).one_or_none()
         if trial is None:
             raise ValueError(NOT_FOUND_MSG)
         return trial
@@ -187,7 +187,7 @@ class TrialModel(BaseModel):
         # type: (int, orm.Session) -> TrialModel
         trial = session.query(cls) \
             .filter(cls.study_id == study_id) \
-            .order_by(asc(cls.value)).one_or_none()
+            .order_by(asc(cls.value)).limit(1).one_or_none()
         if trial is None:
             raise ValueError(NOT_FOUND_MSG)
         return trial
