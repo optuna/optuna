@@ -315,6 +315,12 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             return copy.deepcopy(self.trials)
 
+    def get_best_value_trial(self, study_id):
+        # type: (int) -> structs.FrozenTrial
+        if self.best_trial_id is None:
+            raise ValueError('No trials are completed yet.')
+        return self.get_trial(self.best_trial_id)
+
     def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[structs.TrialState]) -> int
 

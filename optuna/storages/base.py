@@ -178,21 +178,14 @@ class BaseStorage(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_max_value_trial(self, study_id):
-        # type: (int) -> structs.FrozenTrial
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_min_value_trial(self, study_id):
+    def get_best_value_trial(self, study_id):
         # type: (int) -> structs.FrozenTrial
         raise NotImplementedError
 
     def get_best_trial(self, study_id):
         # type: (int) -> structs.FrozenTrial
 
-        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
-            return self.get_max_value_trial(study_id)
-        return self.get_min_value_trial(study_id)
+        return self.get_best_value_trial(study_id)
 
     def get_trial_params(self, trial_id):
         # type: (int) -> Dict[str, Any]
