@@ -5,6 +5,7 @@ from optuna.structs import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    from typing import List  # NOQA
     from typing import Tuple  # NOQA
 
 
@@ -120,7 +121,7 @@ def test_median_pruner_n_warmup_steps():
 
 @pytest.mark.parametrize(
     'n_warmup_steps,interval_steps,report_steps,expected_prune_steps', [
-        (1, 2, 1, (2, 4)),
+        (1, 2, 1, [2, 4]),
         (0, 3, 10, list(range(1, 30))),
         (2, 3, 10, list(range(11, 30))),
         (0, 10, 3, [1, 2, 3, 13, 14, 15, 22, 23, 24]),
@@ -128,7 +129,7 @@ def test_median_pruner_n_warmup_steps():
     ])
 def test_median_pruner_interval_steps(
         n_warmup_steps, interval_steps, report_steps, expected_prune_steps):
-    # type: (int, int, int, Tuple[int, ...]) -> None
+    # type: (int, int, int, List[int]) -> None
 
     pruner = optuna.pruners.MedianPruner(0, n_warmup_steps, interval_steps)
     study = optuna.study.create_study()
