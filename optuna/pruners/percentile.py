@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import six
 
 from optuna.pruners import BasePruner
 from optuna import structs
@@ -102,20 +103,15 @@ class PercentilePruner(BasePruner):
         if step <= n_warmup_steps:
             return False
 
-        interval_steps = self.interval_steps
-        base_index = 1
         lower_bound = (
-            ((step - n_warmup_steps - base_index) // interval_steps) * interval_steps
-            + n_warmup_steps + base_index)
-        is_above_bound = False
-        for s in sorted(trial.intermediate_values.keys(), reverse=True):
-            if s >= lower_bound:
-                if is_above_bound:
-                    # This pruning interval is already checked for an earlier report.
-                    return False
-                is_above_bound = True
-            else:
-                break
+            (step - n_warmup_steps - 1) // self.interval_steps * self.interval_steps
+            + n_warmup_steps + 1)
+        assert lower_bound >= 0
+        second_last_step = six.moves.reduce(
+            lambda second_last_step, s: s if s > second_last_step and s != step
+            else second_last_step, trial.intermediate_values.keys(), -1)
+        if lower_bound <= second_last_step:
+            return False
 
         direction = study.direction
         best_intermediate_result = _get_best_intermediate_result_over_steps(trial, direction)
