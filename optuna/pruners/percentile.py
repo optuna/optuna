@@ -102,17 +102,13 @@ class PercentilePruner(BasePruner):
         if step <= n_warmup_steps:
             return False
 
-        intermediate_values = trial.intermediate_values
-        if len(intermediate_values) == 0:
-            return False
-
         interval_steps = self.interval_steps
         base_index = 1
         lower_bound = (
             ((step - n_warmup_steps - base_index) // interval_steps) * interval_steps
             + n_warmup_steps + base_index)
         is_above_bound = False
-        for s in sorted(intermediate_values.keys(), reverse=True):
+        for s in sorted(trial.intermediate_values.keys(), reverse=True):
             if s >= lower_bound:
                 if is_above_bound:
                     # This pruning interval is already checked for an earlier report.
