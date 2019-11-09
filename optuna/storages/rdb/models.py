@@ -11,6 +11,7 @@ from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
+from sqlalchemy import desc, asc
 
 from optuna import distributions
 from optuna.structs import StudyDirection
@@ -174,9 +175,9 @@ class TrialModel(BaseModel):
     @classmethod
     def find_max_value_trial(cls, study_id, session):
         # type: (int, orm.Session) -> TrialModel
-        trial = session.query(cls.study_id, func.max(cls.value)) \
+        trial = session.query(cls) \
             .filter(cls.study_id == study_id)\
-            .group_by(cls.study_id).one_or_none()
+            .order_by(desc(cls.value)).one_or_none()
         if trial is None:
             raise ValueError(NOT_FOUND_MSG)
         return trial
@@ -184,9 +185,9 @@ class TrialModel(BaseModel):
     @classmethod
     def find_min_value_trial(cls, study_id, session):
         # type: (int, orm.Session) -> TrialModel
-        trial = session.query(cls.study_id, func.max(cls.value)) \
+        trial = session.query(cls) \
             .filter(cls.study_id == study_id) \
-            .group_by(cls.study_id).one_or_none()
+            .order_by(asc(cls.value)).one_or_none()
         if trial is None:
             raise ValueError(NOT_FOUND_MSG)
         return trial
