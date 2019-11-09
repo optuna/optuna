@@ -172,6 +172,22 @@ class TrialModel(BaseModel):
         return trial
 
     @classmethod
+    def find_max_value_trial(cls, study_id, session):
+        # type: (int, orm.Session) -> TrialModel
+        trial = session.query(cls, func.max(cls.value)).filter(cls.study_id == study_id).one_or_none()
+        if trial is None:
+            raise ValueError(NOT_FOUND_MSG)
+        return trial
+
+    @classmethod
+    def find_min_value_trial(cls, study_id, session):
+        # type: (int, orm.Session) -> TrialModel
+        trial = session.query(cls, func.min(cls.value)).filter(cls.study_id == study_id).one_or_none()
+        if trial is None:
+            raise ValueError(NOT_FOUND_MSG)
+        return trial
+
+    @classmethod
     def where_study(cls, study, session):
         # type: (StudyModel, orm.Session) -> List[TrialModel]
 

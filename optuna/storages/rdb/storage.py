@@ -645,6 +645,20 @@ class RDBStorage(BaseStorage):
         trials = [self.get_trial(trial_id) for trial_id in trial_ids]
         return trials
 
+    def get_max_value_trial(self, study_id):
+        # type: (int) -> structs.FrozenTrial
+
+        session = self.scoped_session()
+        trial = models.TrialModel.find_max_value_trial(study_id, session)
+        return trial
+
+    def get_min_value_trial(self, study_id):
+        # type: (int) -> structs.FrozenTrial
+
+        session = self.scoped_session()
+        trial = models.TrialModel.find_min_value_trial(study_id, session)
+        return trial
+
     def _get_all_trial_ids(self, study_id):
         # type: (int) -> List[int]
 
