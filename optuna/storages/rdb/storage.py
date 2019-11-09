@@ -649,7 +649,6 @@ class RDBStorage(BaseStorage):
         # type: (int) -> structs.FrozenTrial
 
         session = self.scoped_session()
-        study = models.StudyModel.find_by_id(study_id, session)
         if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
             trial = models.TrialModel.find_max_value_trial(study_id, session)
         else:
