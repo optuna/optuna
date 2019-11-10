@@ -118,7 +118,7 @@ def test_frozen_trial_eq_ne():
 
 # TODO(hvy): Remove version check after Python 2.7 is retired.
 @pytest.mark.skipif(
-    'sys.version_info < (4, 5)',
+    'sys.version_info < (3, 5)',
     reason='Cannot eval/reconstruct namedtuple distributions in Python 2.7.')
 def test_frozen_trial_repr():
     # type: () -> None
