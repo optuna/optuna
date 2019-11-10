@@ -333,7 +333,7 @@ class Study(BaseStudy):
             return pd.DataFrame()
 
         assert all(isinstance(trial, structs.FrozenTrial) for trial in trials)
-        fields_to_df_column = collections.OrderedDict()
+        fields_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
         for field in structs.FrozenTrial._ordered_fields:
             if field.startswith('_'):
                 if not include_internal_fields:
@@ -343,7 +343,7 @@ class Study(BaseStudy):
                     df_column = field[1:]
             else:
                 df_column = field
-            fields_to_df_column[field] = df_column
+            fields_to_df_columns[field] = df_column
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
@@ -355,7 +355,7 @@ class Study(BaseStudy):
             # type: (structs.FrozenTrial) -> Dict[Tuple[str, str], Any]
 
             record = {}
-            for field, df_column in fields_to_df_column.items():
+            for field, df_column in fields_to_df_columns.items():
                 value = getattr(trial, field)
                 if isinstance(value, dict):
                     for nested_field, nested_value in value.items():
