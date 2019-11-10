@@ -333,11 +333,20 @@ class Study(BaseStudy):
             return pd.DataFrame()
 
         assert all(isinstance(trial, structs.FrozenTrial) for trial in trials)
-        fields = structs.FrozenTrial._fields
-        internal_fields = structs.FrozenTrial.internal_fields
+        fields_to_df_column = collections.OrderedDict()
+        for field in structs.FrozenTrial._ordered_fields:
+            if field.startswith('_'):
+                if not include_internal_fields:
+                    continue
+                else:
+                    # Python conventional underscores are omitted in the dataframe.
+                    df_column = field[1:]
+            else:
+                df_column = field
+            fields_to_df_column[field] = df_column
 
         # column_agg is an aggregator of column names.
-        # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
+        # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
         # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
         non_nested_field = ''
@@ -346,26 +355,22 @@ class Study(BaseStudy):
             # type: (structs.FrozenTrial) -> Dict[Tuple[str, str], Any]
 
             record = {}
-            for field in fields:
-                if not include_internal_fields and field in internal_fields:
-                    continue
-
+            for field, df_column in fields_to_df_column.items():
                 value = getattr(trial, field)
-                # Python conventional underscores are omitted in the dataframe.
-                processed_field = field if not field.startswith('_') else field[1:]
-
                 if isinstance(value, dict):
                     for nested_field, nested_value in value.items():
-                        record[(processed_field, nested_field)] = nested_value
-                        column_agg[field].add((processed_field, nested_field))
+                        record[(df_column, nested_field)] = nested_value
+                        column_agg[field].add((df_column, nested_field))
                 else:
-                    record[(processed_field, non_nested_field)] = value
-                    column_agg[field].add((processed_field, non_nested_field))
+                    record[(df_column, non_nested_field)] = value
+                    column_agg[field].add((df_column, non_nested_field))
             return record
 
         records = list([_create_record_and_aggregate_column(trial) for trial in trials])
         columns = sum(
-            (sorted(column_agg[k]) for k in fields), [])  # type: List[Tuple[str, str]]
+            (sorted(column_agg[k])
+             for k in structs.FrozenTrial._ordered_fields if k in column_agg),
+            [])  # type: List[Tuple[str, str]]
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 

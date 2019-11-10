@@ -7,7 +7,6 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
-from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -107,25 +106,24 @@ class FrozenTrial(object):
         self.datetime_start = datetime_start
         self.datetime_complete = datetime_complete
         self.params = params
-        self.distributions = distributions
         self.user_attrs = user_attrs
         self.system_attrs = system_attrs
         self.intermediate_values = intermediate_values
+        self._distributions = distributions
         self._trial_id = trial_id
-        self.logger = logging.get_logger(__name__)
 
-    internal_fields = ['distributions', '_trial_id']
-    _fields = [
+    # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
+    # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
+    _ordered_fields = [
         'number', 'state', 'value', 'datetime_start', 'datetime_complete', 'params',
-        'distributions', 'user_attrs', 'system_attrs', 'intermediate_values', '_trial_id']
+        '_distributions', 'user_attrs', 'system_attrs', 'intermediate_values', '_trial_id', ]
 
     def __eq__(self, other):
         # type: (Any) -> bool
 
-        if not isinstance(other, type(self)):
-            return False
-        return all(getattr(self, field) == getattr(other, field)
-                   for field in self._fields)
+        if isinstance(other, type(self)):
+            return other.__dict__ == self.__dict__
+        return False
 
     def __ne__(self, other):
         # type: (Any) -> bool
@@ -135,7 +133,7 @@ class FrozenTrial(object):
     def __hash__(self):
         # type: () -> int
 
-        return hash(tuple(getattr(self, field) for field in self._fields))
+        return hash(tuple(getattr(self, field) for field in self._ordered_fields))
 
     def __repr__(self):
         # type: () -> str
@@ -144,29 +142,7 @@ class FrozenTrial(object):
             cls=self.__class__.__name__,
             kwargs=', '.join('{field}={value}'.format(
                 field=field if not field.startswith('_') else field[1:],
-                value=repr(getattr(self, field))) for field in self._fields)))
-
-    @property
-    def trial_id(self):
-        # type: () -> int
-        """Return trial ID.
-
-        .. deprecated:: 0.19.0
-            The direct use of this attribute is deprecated and it is recommended that you
-            use :attr:`~optuna.trial.FrozenTrial.number` instead.
-
-        Returns:
-            A trial ID.
-        """
-
-        warnings.warn(
-            'The use of `FrozenTrial.trial_id` is deprecated. '
-            'Please use `FrozenTrial.number` instead.', DeprecationWarning)
-
-        self.logger.warning('The use of `FrozenTrial.trial_id` is deprecated. '
-                            'Please use `FrozenTrial.number` instead.')
-
-        return self._trial_id
+                value=repr(getattr(self, field))) for field in self._ordered_fields)))
 
     def _validate(self):
         # type: () -> None
@@ -197,6 +173,49 @@ class FrozenTrial(object):
                 raise ValueError(
                     "The value {} of parameter '{}' isn't contained in the distribution {}.".
                     format(param_value, param_name, distribution))
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
+        """Return the distributions for this trial.
+
+        Returns:
+            The distributions.
+        """
+
+        return self._distributions
+
+    @distributions.setter
+    def distributions(self, value):
+        # type: (Dict[str, BaseDistribution]) -> None
+        """Sets the distributions for this trial.
+
+        Args:
+            value: The distributions.
+        """
+
+        self._distributions = value
+
+    @property
+    def trial_id(self):
+        # type: () -> int
+        """Return the trial ID.
+
+        .. deprecated:: 0.19.0
+            The direct use of this attribute is deprecated and it is recommended that you use
+            :attr:`~optuna.trial.FrozenTrial.number` instead.
+
+        Returns:
+            The trial ID.
+        """
+
+        warnings.warn(
+            'The use of `FrozenTrial.trial_id` is deprecated. '
+            'Please use `FrozenTrial.number` instead.', DeprecationWarning)
+
+        # TODO(hvy): Log warning without logger object instantiation.
+
+        return self._trial_id
 
     @property
     def last_step(self):

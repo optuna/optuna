@@ -725,5 +725,5 @@ def _check_example_trial_static_attributes(trial_1, trial_2):
     assert trial_1 is not None
     assert trial_2 is not None
     assert all(
-        getattr(trial_1, field) == getattr(trial_2, field) for field in FrozenTrial._fields
+        getattr(trial_1, field) == getattr(trial_2, field) for field in FrozenTrial._ordered_fields
         if field not in ['_trial_id', 'number', 'datetime_start', 'datetime_complete'])
