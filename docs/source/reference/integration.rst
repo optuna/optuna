@@ -13,6 +13,10 @@ Integration
     :members:
     :exclude-members: infer_relative_search_space, sample_relative, sample_independent
 
+.. autoclass:: FastAIPruningCallback
+    :members:
+    :exclude-members: on_epoch_end
+
 .. autoclass:: PyTorchIgnitePruningHandler
     :members:
 

@@ -31,6 +31,8 @@ if _available:
 
     for api_name in names_from_tuners:
         setattr(sys.modules[__name__], api_name, tuner.__dict__[api_name])
+else:
+    LightGBMTuner = object  # type: ignore
 
 
 class LightGBMPruningCallback(object):
