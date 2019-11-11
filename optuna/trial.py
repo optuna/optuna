@@ -353,7 +353,7 @@ class Trial(BaseTrial):
 
         Note that the reported value is converted to ``float`` type by applying ``float()``
         function internally. Thus, it accepts all float-like types (e.g., ``numpy.float32``).
-        If the conversion is failed, a ``TypeError`` is raised.
+        If the conversion fails, a ``TypeError`` is raised.
 
         Example:
 
