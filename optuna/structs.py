@@ -7,6 +7,7 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
+from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -213,7 +214,10 @@ class FrozenTrial(object):
             'The use of `FrozenTrial.trial_id` is deprecated. '
             'Please use `FrozenTrial.number` instead.', DeprecationWarning)
 
-        # TODO(hvy): Log warning without logger object instantiation.
+        logger = logging._get_library_root_logger()
+        logger.warning(
+            'The use of `FrozenTrial.trial_id` is deprecated. '
+            'Please use `FrozenTrial.number` instead.')
 
         return self._trial_id
 
