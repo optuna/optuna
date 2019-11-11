@@ -351,6 +351,10 @@ class Trial(BaseTrial):
         If step is set to :obj:`None`, the value is stored as a final value of the trial.
         Otherwise, it is saved as an intermediate value.
 
+        Note that the reported value is converted to ``float`` type by applying ``float()``
+        function internally. Thus, it accepts all float-like types (e.g., ``numpy.float32``).
+        If the conversion is failed, a ``TypeError`` exception is raised.
+
         Example:
 
             Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
