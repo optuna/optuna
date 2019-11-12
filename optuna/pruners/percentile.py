@@ -42,8 +42,7 @@ def _get_percentile_intermediate_result_over_trials(all_trials, direction, step,
             percentile))
 
 
-def _is_first_step_after_nearest_lower_pruning_step(
-        step, intermediate_steps, n_warmup_steps, interval_steps):
+def _is_first_in_interval_step(step, intermediate_steps, n_warmup_steps, interval_steps):
     # type: (int, Iterator[int], int, int) -> bool
 
     nearest_lower_pruning_step = (
@@ -120,7 +119,7 @@ class PercentilePruner(BasePruner):
         if step <= n_warmup_steps:
             return False
 
-        if not _is_first_step_after_nearest_lower_pruning_step(
+        if not _is_first_in_interval_step(
                 step, six.iterkeys(trial.intermediate_values), n_warmup_steps,
                 self.interval_steps):
             return False
