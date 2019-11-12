@@ -605,7 +605,7 @@ def create_study(
                 ``storage`` argument instead of URL.
 
              .. _SQLAlchemy: https://www.sqlalchemy.org/
-             .. SQLAlchemy's document:
+             .. _SQLAlchemy's document:
                  https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
              .. _SQLAlchemy Engine: https://docs.sqlalchemy.org/en/latest/core/engines.html
 
