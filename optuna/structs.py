@@ -101,6 +101,8 @@ class FrozenTrial(object):
         intermediate_values,  # type: Dict[int, float]
         trial_id,  # type: int
     ):
+        # type: (...) -> None
+
         self.number = number
         self.state = state
         self.value = value
