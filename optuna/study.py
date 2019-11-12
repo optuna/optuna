@@ -15,8 +15,8 @@ import threading
 import warnings
 
 from joblib import delayed
-from joblib import Parallel
 from joblib import effective_n_jobs
+from joblib import Parallel
 
 from optuna import exceptions
 from optuna import logging
