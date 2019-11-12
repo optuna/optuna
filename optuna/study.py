@@ -600,9 +600,9 @@ def create_study(
             .. note::
                 When a database URL is passed, Optuna internally uses `SQLAlchemy`_ to handle
                 the database. Please refer to `SQLAlchemy's document`_ for further details.
-                If you want to customize the options of `SQLAlchemy Engine`_, you can instantiate
-                :class:`~optuna.storages.RDBStorage` with your favorite options and pass it to
-                ``storage`` argument instead of URL.
+                If you want to specify non-default options to `SQLAlchemy Engine`_, you can
+                instantiate :class:`~optuna.storages.RDBStorage` with your desired options and
+                pass it to ``storage`` argument instead of URL.
 
              .. _SQLAlchemy: https://www.sqlalchemy.org/
              .. _SQLAlchemy's document:
