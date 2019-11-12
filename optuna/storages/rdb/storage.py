@@ -51,7 +51,8 @@ class RDBStorage(BaseStorage):
             cached on memory and never re-fetched from the storage.
             Otherwise, the trials are fetched from the storage whenever they are needed.
 
-    .. _sqlalchemy.engine.create_engine: https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
+    .. _sqlalchemy.engine.create_engine:
+        https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
 
     """
 
