@@ -44,7 +44,7 @@ def objective(trial):
     if param['bootstrap_type'] == 'Bayesian':
         param['bagging_temperature'] = trial.suggest_uniform('bagging_temperature', 0, 10)
     elif param['bootstrap_type'] == 'Bernoulli':
-        param['subsample'] = trial.suggest_uniform('subsample', 0, 1)
+        param['subsample'] = trial.suggest_uniform('subsample', 0.1, 1)
 
     gbm = cb.CatBoostClassifier(**param)
 

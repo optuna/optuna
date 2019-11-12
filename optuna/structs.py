@@ -1,11 +1,17 @@
 from datetime import datetime
 import enum
+import warnings
+
 from typing import Any
 from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
-from optuna.distributions import BaseDistribution
+from optuna import logging
+from optuna import type_checking
+
+if type_checking.TYPE_CHECKING:
+    from optuna.distributions import BaseDistribution  # NOQA
 
 
 class TrialState(enum.Enum):
@@ -26,6 +32,11 @@ class TrialState(enum.Enum):
     COMPLETE = 1
     PRUNED = 2
     FAIL = 3
+
+    def __repr__(self):
+        # type: () -> str
+
+        return str(self)
 
     def is_finished(self):
         # type: () -> bool
@@ -50,20 +61,7 @@ class StudyDirection(enum.Enum):
     MAXIMIZE = 2
 
 
-class FrozenTrial(
-        NamedTuple('_BaseFrozenTrial', [
-            ('number', int),
-            ('state', TrialState),
-            ('value', Optional[float]),
-            ('datetime_start', Optional[datetime]),
-            ('datetime_complete', Optional[datetime]),
-            ('params', Dict[str, Any]),
-            ('distributions', Dict[str, BaseDistribution]),
-            ('user_attrs', Dict[str, Any]),
-            ('system_attrs', Dict[str, Any]),
-            ('intermediate_values', Dict[int, float]),
-            ('trial_id', int),
-        ])):
+class FrozenTrial(object):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
     Attributes:
@@ -85,18 +83,69 @@ class FrozenTrial(
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
-        system_attrs:
-            Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` internally
-            set by Optuna.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
-        trial_id:
-            Optuna's internal identifier of the :class:`~optuna.trial.Trial`. Note that this field
-            is not supposed to be used by library users. Instead, please use :attr:`number` and
-            :class:`~optuna.study.Study.study_id` to identify a :class:`~optuna.trial.Trial`.
     """
 
-    internal_fields = ['distributions', 'trial_id']
+    def __init__(
+        self,
+        number,  # type: int
+        state,  # type: TrialState
+        value,  # type: Optional[float]
+        datetime_start,  # type: Optional[datetime]
+        datetime_complete,  # type: Optional[datetime]
+        params,  # type: Dict[str, Any]
+        distributions,  # type: Dict[str, BaseDistribution]
+        user_attrs,  # type: Dict[str, Any]
+        system_attrs,  # type: Dict[str, Any]
+        intermediate_values,  # type: Dict[int, float]
+        trial_id,  # type: int
+    ):
+        # type: (...) -> None
+
+        self.number = number
+        self.state = state
+        self.value = value
+        self.datetime_start = datetime_start
+        self.datetime_complete = datetime_complete
+        self.params = params
+        self.user_attrs = user_attrs
+        self.system_attrs = system_attrs
+        self.intermediate_values = intermediate_values
+        self._distributions = distributions
+        self._trial_id = trial_id
+
+    # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
+    # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
+    _ordered_fields = [
+        'number', 'state', 'value', 'datetime_start', 'datetime_complete', 'params',
+        '_distributions', 'user_attrs', 'system_attrs', 'intermediate_values', '_trial_id', ]
+
+    def __eq__(self, other):
+        # type: (Any) -> bool
+
+        if isinstance(other, type(self)):
+            return other.__dict__ == self.__dict__
+        return False
+
+    def __ne__(self, other):
+        # type: (Any) -> bool
+
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        # type: () -> int
+
+        return hash(tuple(getattr(self, field) for field in self._ordered_fields))
+
+    def __repr__(self):
+        # type: () -> str
+
+        return ('{cls}({kwargs})'.format(
+            cls=self.__class__.__name__,
+            kwargs=', '.join('{field}={value}'.format(
+                field=field if not field.startswith('_') else field[1:],
+                value=repr(getattr(self, field))) for field in self._ordered_fields)))
 
     def _validate(self):
         # type: () -> None
@@ -127,6 +176,52 @@ class FrozenTrial(
                 raise ValueError(
                     "The value {} of parameter '{}' isn't contained in the distribution {}.".
                     format(param_value, param_name, distribution))
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
+        """Return the distributions for this trial.
+
+        Returns:
+            The distributions.
+        """
+
+        return self._distributions
+
+    @distributions.setter
+    def distributions(self, value):
+        # type: (Dict[str, BaseDistribution]) -> None
+        """Set the distributions for this trial.
+
+        Args:
+            value: The distributions.
+        """
+
+        self._distributions = value
+
+    @property
+    def trial_id(self):
+        # type: () -> int
+        """Return the trial ID.
+
+        .. deprecated:: 0.19.0
+            The direct use of this attribute is deprecated and it is recommended that you use
+            :attr:`~optuna.trial.FrozenTrial.number` instead.
+
+        Returns:
+            The trial ID.
+        """
+
+        warnings.warn(
+            'The use of `FrozenTrial.trial_id` is deprecated. '
+            'Please use `FrozenTrial.number` instead.', DeprecationWarning)
+
+        logger = logging._get_library_root_logger()
+        logger.warning(
+            'The use of `FrozenTrial.trial_id` is deprecated. '
+            'Please use `FrozenTrial.number` instead.')
+
+        return self._trial_id
 
     @property
     def last_step(self):
