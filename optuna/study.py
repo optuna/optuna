@@ -16,6 +16,7 @@ import warnings
 
 from joblib import delayed
 from joblib import Parallel
+from joblib import effective_n_jobs
 
 from optuna import exceptions
 from optuna import logging
@@ -495,12 +496,13 @@ class Study(BaseStudy):
         with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
             # We get n_jobs from joblib to avoid
             # redoing the necessary checks for the different backends
-            # except for the case when n_jobs is -1.
-            n_trials_to_enqueue_per_iteration = max(parallel.n_jobs, 1)
+            n_trials_to_enqueue_per_iteration = effective_n_jobs(n_jobs)
             if n_trials is not None:
                 # The number of dispatched jobs must not
                 # be larger than the number of trials.
-                n_trials_to_enqueue_per_iteration = min(n_trials_to_enqueue_per_iteration, n_trials)
+                n_trials_to_enqueue_per_iteration = min(
+                    n_trials_to_enqueue_per_iteration, n_trials
+                )
             n_enqueued_trials = 0
 
             while True:
@@ -526,7 +528,10 @@ class Study(BaseStudy):
                     for _ in range(n_trials_to_enqueue_per_iteration)
                 )
 
-            parallel(delayed(self._storage.remove_session)() for _ in range(n_jobs))
+            parallel(
+                delayed(self._storage.remove_session)()
+                for _ in range(effective_n_jobs(n_jobs))
+            )
 
     def _run_trial_and_callbacks(
             self,
