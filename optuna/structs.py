@@ -189,7 +189,7 @@ class FrozenTrial(object):
     @distributions.setter
     def distributions(self, value):
         # type: (Dict[str, BaseDistribution]) -> None
-        """Sets the distributions for this trial.
+        """Set the distributions for this trial.
 
         Args:
             value: The distributions.
