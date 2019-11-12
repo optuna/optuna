@@ -37,18 +37,21 @@ if type_checking.TYPE_CHECKING:
 class RDBStorage(BaseStorage):
     """Storage class for RDB backend.
 
-    This class is not supposed to be directly accessed by library users.
+    Note that library users can instantiate this class, but the fields and methods
+    provided by this class are not supposed to be directly accessed by them.
 
     Args:
         url: URL of the storage.
         engine_kwargs:
             A dictionary of keyword arguments that is passed to
-            :func:`sqlalchemy.engine.create_engine`.
+            `sqlalchemy.engine.create_engine`_ function.
         enable_cache:
             Flag to control whether to enable storage layer caching.
             If this flag is set to :obj:`True` (the default), the finished trials are
             cached on memory and never re-fetched from the storage.
             Otherwise, the trials are fetched from the storage whenever they are needed.
+
+    .. _sqlalchemy.engine.create_engine: https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
 
     """
 
