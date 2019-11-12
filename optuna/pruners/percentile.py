@@ -7,6 +7,7 @@ from optuna import structs
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    from typing import KeysView  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
 
@@ -40,6 +41,22 @@ def _get_percentile_intermediate_result_over_trials(all_trials, direction, step,
                 for t in completed_trials if step in t.intermediate_values
             ], np.float),
             percentile))
+
+
+def _is_first_step_after_nearest_lower_pruning_step(
+        step, intermediate_steps, n_warmup_steps, interval_steps):
+    # type: (int, KeysView[int], int, int) -> bool
+
+    nearest_lower_pruning_step = (
+        (step - n_warmup_steps - 1) // interval_steps * interval_steps + n_warmup_steps + 1)
+    assert nearest_lower_pruning_step >= 0
+
+    # `intermediate_steps` may not be sorted so we must go through all elements.
+    second_last_step = six.moves.reduce(
+        lambda second_last_step, s: s if s > second_last_step and s != step
+        else second_last_step, intermediate_steps, -1)
+
+    return second_last_step < nearest_lower_pruning_step
 
 
 class PercentilePruner(BasePruner):
@@ -103,14 +120,9 @@ class PercentilePruner(BasePruner):
         if step <= n_warmup_steps:
             return False
 
-        lower_bound = (
-            (step - n_warmup_steps - 1) // self.interval_steps * self.interval_steps
-            + n_warmup_steps + 1)
-        assert lower_bound >= 0
-        second_last_step = six.moves.reduce(
-            lambda second_last_step, s: s if s > second_last_step and s != step
-            else second_last_step, trial.intermediate_values.keys(), -1)
-        if lower_bound <= second_last_step:
+        if not _is_first_step_after_nearest_lower_pruning_step(
+                step, trial.intermediate_values.keys(), n_warmup_steps,
+                self.interval_steps):
             return False
 
         direction = study.direction
