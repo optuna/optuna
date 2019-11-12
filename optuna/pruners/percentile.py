@@ -7,7 +7,7 @@ from optuna import structs
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from typing import KeysView  # NOQA
+    from typing import Iterator  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
 
@@ -45,7 +45,7 @@ def _get_percentile_intermediate_result_over_trials(all_trials, direction, step,
 
 def _is_first_step_after_nearest_lower_pruning_step(
         step, intermediate_steps, n_warmup_steps, interval_steps):
-    # type: (int, KeysView[int], int, int) -> bool
+    # type: (int, Iterator[int], int, int) -> bool
 
     nearest_lower_pruning_step = (
         (step - n_warmup_steps - 1) // interval_steps * interval_steps + n_warmup_steps + 1)
@@ -122,7 +122,7 @@ class PercentilePruner(BasePruner):
             return False
 
         if not _is_first_step_after_nearest_lower_pruning_step(
-                step, trial.intermediate_values.keys(), n_warmup_steps,
+                step, six.iterkeys(trial.intermediate_values), n_warmup_steps,
                 self.interval_steps):
             return False
 
