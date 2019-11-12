@@ -9,7 +9,6 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import Iterator  # NOQA
     from typing import List  # NOQA
-    from typing import Optional  # NOQA
 
     from optuna.study import Study  # NOQA
 
