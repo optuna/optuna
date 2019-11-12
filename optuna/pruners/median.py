@@ -28,8 +28,9 @@ class MedianPruner(PercentilePruner):
         n_warmup_steps:
             Pruning is disabled until the trial reaches the given number of step.
         interval_steps:
-            Interval in number of steps between the pruning checks, offsetted by the warmup steps.
-            By default, the pruner checks for possible pruning in each step after the warmup.
+            Interval in number of steps between the pruning checks, offset by the warmup steps.
+            If no value has been reported at the time of a pruning check, that particular check
+            will be postponed until a value is reported.
     """
 
     def __init__(self, n_startup_trials=5, n_warmup_steps=0, interval_steps=1):
