@@ -6,9 +6,9 @@ import tempfile
 
 import optuna
 from optuna.cli import Studies
+from optuna.exceptions import CLIUsageError
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
-from optuna.structs import CLIUsageError
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 

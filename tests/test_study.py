@@ -11,6 +11,7 @@ import time
 import uuid
 
 import optuna
+import optuna.exceptions
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 
@@ -544,7 +545,7 @@ def test_create_study(storage_mode, cache_mode):
             optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=False)
         else:
             # Test `load_if_exists=False` with existing study.
-            with pytest.raises(optuna.structs.DuplicatedStudyError):
+            with pytest.raises(optuna.exceptions.DuplicatedStudyError):
                 optuna.create_study(study_name=study.study_name,
                                     storage=storage,
                                     load_if_exists=False)

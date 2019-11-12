@@ -7,6 +7,7 @@ from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+import optuna.exceptions
 from optuna.samplers import BaseSampler
 
 if optuna.type_checking.TYPE_CHECKING:
@@ -238,7 +239,7 @@ def test_intersection_search_space():
         raise exception
 
     study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
-    study.optimize(lambda t: objective(t, optuna.structs.TrialPruned()), n_trials=1)
+    study.optimize(lambda t: objective(t, optuna.exceptions.TrialPruned()), n_trials=1)
     assert optuna.samplers.intersection_search_space(study) == {
         'y': UniformDistribution(low=-3, high=3)
     }
@@ -278,7 +279,7 @@ def test_product_search_space():
         raise exception
 
     study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
-    study.optimize(lambda t: objective(t, optuna.structs.TrialPruned()), n_trials=1)
+    study.optimize(lambda t: objective(t, optuna.exceptions.TrialPruned()), n_trials=1)
     assert optuna.samplers.product_search_space(study) == {
         'y': UniformDistribution(low=-3, high=3)
     }

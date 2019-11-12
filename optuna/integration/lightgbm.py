@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import sys
 
 import optuna
+import optuna.exceptions
 
 try:
     import lightgbm as lgb  # NOQA
@@ -114,7 +115,7 @@ class LightGBMPruningCallback(object):
             self.trial.report(current_score, step=env.iteration)
             if self.trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(env.iteration)
-                raise optuna.structs.TrialPruned(message)
+                raise optuna.exceptions.TrialPruned(message)
 
             return None
 

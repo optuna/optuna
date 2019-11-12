@@ -4,6 +4,7 @@ from mock import patch
 import pytest
 
 import optuna
+import optuna.exceptions
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 from optuna import type_checking
@@ -28,7 +29,7 @@ def test_pytorch_ignite_pruning_handler():
 
     handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
     with patch.object(trainer, 'state', epoch=Mock(return_value=1), metrics={'accuracy': 1}):
-        with pytest.raises(optuna.structs.TrialPruned):
+        with pytest.raises(optuna.exceptions.TrialPruned):
             handler(trainer)
 
     # The pruner is not activated.

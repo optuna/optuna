@@ -21,6 +21,9 @@ import optuna
 
 # FYI: Objective functions can take additional arguments
 # (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
+import optuna.exceptions
+
+
 def objective(trial):
     iris = sklearn.datasets.load_iris()
     classes = list(set(iris.target))
@@ -39,7 +42,7 @@ def objective(trial):
 
         # Handle pruning based on the intermediate value.
         if trial.should_prune():
-            raise optuna.structs.TrialPruned()
+            raise optuna.exceptions.TrialPruned()
 
     return clf.score(test_x, test_y)
 

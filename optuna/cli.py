@@ -11,8 +11,8 @@ import logging
 import sys
 
 import optuna
+from optuna.exceptions import CLIUsageError
 from optuna.storages import RDBStorage
-from optuna.structs import CLIUsageError
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

@@ -8,6 +8,8 @@ from time import time
 
 import numpy as np
 
+import optuna.exceptions
+
 try:
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
@@ -247,7 +249,7 @@ class _Objective(object):
             if trial.should_prune():
                 self._store_scores(trial, scores)
 
-                raise structs.TrialPruned(
+                raise optuna.exceptions.TrialPruned(
                     'trial was pruned at iteration {}.'.format(step)
                 )
 

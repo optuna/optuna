@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import optuna
+import optuna.exceptions
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
@@ -62,7 +63,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
         self.trial.report(current_score, step=epoch)
         if self.trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
-            raise optuna.structs.TrialPruned(message)
+            raise optuna.exceptions.TrialPruned(message)
 
 
 def _check_pytorch_lightning_availability():

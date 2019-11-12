@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 import optuna
+import optuna.exceptions
 from optuna.integration import KerasPruningCallback
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
@@ -45,8 +46,8 @@ def test_keras_pruning_callback_observation_isnan():
     trial = create_running_trial(study, 1.0)
     callback = KerasPruningCallback(trial, 'loss')
 
-    with pytest.raises(optuna.structs.TrialPruned):
+    with pytest.raises(optuna.exceptions.TrialPruned):
         callback.on_epoch_end(0, {'loss': 1.0})
 
-    with pytest.raises(optuna.structs.TrialPruned):
+    with pytest.raises(optuna.exceptions.TrialPruned):
         callback.on_epoch_end(0, {'loss': float('nan')})

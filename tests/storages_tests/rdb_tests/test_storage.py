@@ -6,14 +6,14 @@ import tempfile
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import json_to_distribution
 from optuna.distributions import UniformDistribution
+from optuna.exceptions import DuplicatedStudyError
+from optuna.exceptions import StorageInternalError
 from optuna.storages.rdb.models import SCHEMA_VERSION
 from optuna.storages.rdb.models import StudyModel
 from optuna.storages.rdb.models import TrialModel
 from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
-from optuna.structs import DuplicatedStudyError
-from optuna.structs import StorageInternalError
 from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
 from optuna.structs import TrialState

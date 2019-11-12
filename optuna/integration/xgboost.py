@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import optuna
+import optuna.exceptions
 
 try:
     import xgboost as xgb  # NOQA
@@ -51,7 +52,7 @@ class XGBoostPruningCallback(object):
         self.trial.report(current_score, step=env.iteration)
         if self.trial.should_prune():
             message = "Trial was pruned at iteration {}.".format(env.iteration)
-            raise optuna.structs.TrialPruned(message)
+            raise optuna.exceptions.TrialPruned(message)
 
 
 def _check_xgboost_availability():

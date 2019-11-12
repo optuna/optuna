@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import optuna
+import optuna.exceptions
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
@@ -105,7 +106,7 @@ class TensorFlowPruningHook(SessionRunHook):
                 self.current_summary_step = summary_step
             if self.trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(self.current_summary_step)
-                raise optuna.structs.TrialPruned(message)
+                raise optuna.exceptions.TrialPruned(message)
 
 
 def _check_tensorflow_availability():

@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import optuna
+import optuna.exceptions
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -82,7 +83,7 @@ class FastAIPruningCallback(TrackerCallback):
         self.trial.report(float(value), step=epoch)
         if self.trial.should_prune():
             message = 'Trial was pruned at epoch {}.'.format(epoch)
-            raise optuna.structs.TrialPruned(message)
+            raise optuna.exceptions.TrialPruned(message)
 
 
 def _check_fastai_availability():

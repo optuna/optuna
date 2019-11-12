@@ -5,6 +5,8 @@ import math
 import multiprocessing
 import multiprocessing.pool
 
+import optuna.exceptions
+
 try:
     import pandas as pd  # NOQA
     _pandas_available = True
@@ -239,7 +241,7 @@ class Study(BaseStudy):
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
-                exception except for :class:`~structs.TrialPruned`.
+                exception except for :class:`~exceptions.TrialPrunedtes`.
             callbacks:
                 List of callback functions that are invoked at the end of each trial.
             gc_after_trial:
@@ -536,7 +538,7 @@ class Study(BaseStudy):
 
         try:
             result = func(trial)
-        except structs.TrialPruned as e:
+        except optuna.exceptions.TrialPruned as e:
             message = 'Setting status of trial#{} as {}. {}'.format(trial_number,
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
@@ -640,7 +642,7 @@ def create_study(
     storage = storages.get_storage(storage)
     try:
         study_id = storage.create_new_study(study_name)
-    except structs.DuplicatedStudyError:
+    except optuna.exceptions.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
 
