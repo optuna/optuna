@@ -598,8 +598,8 @@ def create_study(
             :class:`~optuna.study.Study` will not be persistent.
 
             .. note::
-                When database URL is passed, Optuna internally uses `SQLAlchemy`_ to handle
-                databases. Please refer to `SQLAlchemy's document`_ for further details.
+                When a database URL is passed, Optuna internally uses `SQLAlchemy`_ to handle
+                the database. Please refer to `SQLAlchemy's document`_ for further details.
                 If you want to customize the options of `SQLAlchemy Engine`_, you can instantiate
                 :class:`~optuna.storages.RDBStorage` with your favorite options and pass it to
                 ``storage`` argument instead of URL.
