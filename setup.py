@@ -41,6 +41,7 @@ def get_install_requires():
         'sqlalchemy>=1.1.0',
         'tqdm',
         'typing',
+        'joblib',
     ]
 
 

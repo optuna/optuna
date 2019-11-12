@@ -2,8 +2,6 @@ import collections
 import datetime
 import gc
 import math
-import multiprocessing
-import multiprocessing.pool
 
 try:
     import pandas as pd  # NOQA
@@ -13,10 +11,11 @@ except ImportError as e:
     # trials_dataframe is disabled because pandas is not available.
     _pandas_available = False
 
-import queue
 import threading
-import time
 import warnings
+
+from joblib import delayed
+from joblib import Parallel
 
 from optuna import exceptions
 from optuna import logging
@@ -28,7 +27,6 @@ from optuna import trial as trial_module
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from multiprocessing import Queue  # NOQA
     from typing import Any  # NOQA
     from typing import Callable
     from typing import Dict  # NOQA
@@ -233,7 +231,7 @@ class Study(BaseStudy):
             func,  # type: ObjectiveFuncType
             n_trials=None,  # type: Optional[int]
             timeout=None,  # type: Optional[float]
-            n_jobs=1,  # type: int
+            n_jobs=1,  # type: Optional[int]
             catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial=True  # type: bool
@@ -256,7 +254,8 @@ class Study(BaseStudy):
                 termination signal such as Ctrl+C or SIGTERM.
             n_jobs:
                 The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
-                set to CPU counts.
+                set to CPU counts. If instead it is set to :obj:`None`, then the behaviour will
+                depend on the parallel backend.
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
@@ -475,7 +474,7 @@ class Study(BaseStudy):
             func,  # type: ObjectiveFuncType
             n_trials,  # type: Optional[int]
             timeout,  # type: Optional[float]
-            n_jobs,  # type: int
+            n_jobs,  # type: Optional[int]
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial  # type: bool
@@ -484,57 +483,50 @@ class Study(BaseStudy):
 
         self.start_datetime = datetime.datetime.now()
 
-        if n_jobs == -1:
-            n_jobs = multiprocessing.cpu_count()
-
         if n_trials is not None:
-            # The number of threads needs not to be larger than trials.
-            n_jobs = min(n_jobs, n_trials)
-
+            # No work to be done.
             if n_trials == 0:
-                return  # When n_jobs is zero, ThreadPool fails.
+                return
+            # The number of workers (threads, processes, etc)
+            # must not be larger than the number of trials.
+            if n_jobs is not None and n_jobs > 0:
+                n_jobs = min(n_jobs, n_trials)
 
-        pool = multiprocessing.pool.ThreadPool(n_jobs)  # type: ignore
-
-        # A queue is passed to each thread. When True is received, then the thread continues
-        # the evaluation. When False is received, then it quits.
-        def func_child_thread(que):
-            # type: (Queue) -> None
-
-            while que.get():
-                self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
-            self._storage.remove_session()
-
-        que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
-        for _ in range(n_jobs):
-            que.put(True)
-        n_enqueued_trials = n_jobs
-        imap_ite = pool.imap(func_child_thread, [que] * n_jobs, chunksize=1)
-
-        while True:
-            if timeout is not None:
-                elapsed_timedelta = datetime.datetime.now() - self.start_datetime
-                elapsed_seconds = elapsed_timedelta.total_seconds()
-                if elapsed_seconds > timeout:
-                    break
-
+        with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
+            # We get n_jobs from joblib to avoid
+            # redoing the necessary checks for the different backends
+            # except for the case when n_jobs is -1.
+            n_trials_to_enqueue_per_iteration = max(parallel.n_jobs, 1)
             if n_trials is not None:
-                if n_enqueued_trials >= n_trials:
-                    break
+                # The number of dispatched jobs must not
+                # be larger than the number of trials.
+                n_trials_to_enqueue_per_iteration = min(n_trials_to_enqueue_per_iteration, n_trials)
+            n_enqueued_trials = 0
 
-            try:
-                que.put_nowait(True)
-                n_enqueued_trials += 1
-            except queue.Full:
-                time.sleep(1)
+            while True:
+                if timeout is not None:
+                    elapsed_timedelta = datetime.datetime.now() - self.start_datetime
+                    elapsed_seconds = elapsed_timedelta.total_seconds()
+                    if elapsed_seconds > timeout:
+                        break
 
-        for _ in range(n_jobs):
-            que.put(False)
+                if n_trials is not None:
+                    if n_enqueued_trials >= n_trials:
+                        break
 
-        collections.deque(imap_ite, maxlen=0)  # Consume the iterator to wait for all threads.
-        pool.terminate()
-        que.close()
-        que.join_thread()
+                    n_trials_to_enqueue_per_iteration = min(
+                        n_trials_to_enqueue_per_iteration, n_trials - n_enqueued_trials
+                    )
+
+                n_enqueued_trials += n_trials_to_enqueue_per_iteration
+
+                parallel(
+                    delayed(self._run_trial_and_callbacks)
+                    (func, catch, callbacks, gc_after_trial)
+                    for _ in range(n_trials_to_enqueue_per_iteration)
+                )
+
+            parallel(delayed(self._storage.remove_session)() for _ in range(n_jobs))
 
     def _run_trial_and_callbacks(
             self,
