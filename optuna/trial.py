@@ -415,7 +415,7 @@ class Trial(BaseTrial):
 
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
-            configured pruning algorithm. Otherwise, the trial should continued.
+            configured pruning algorithm. Otherwise, the trial should continue.
         """
         if step is not None:
             warnings.warn(
