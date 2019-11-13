@@ -681,7 +681,7 @@ def load_study(
             Study's name. Each study has a unique name as an identifier.
         storage:
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
-            :func:`~optuna.study.create_study` for futhre details.
+            :func:`~optuna.study.create_study` for further details.
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
