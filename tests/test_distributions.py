@@ -1,3 +1,4 @@
+import copy
 import json
 import pytest
 
@@ -64,19 +65,19 @@ def test_check_distribution_compatibility():
     # test dynamic value range (CategoricalDistribution)
     pytest.raises(
         ValueError, lambda: distributions.check_distribution_compatibility(
-            EXAMPLE_DISTRIBUTIONS['c2'], EXAMPLE_DISTRIBUTIONS['c2']._replace(
-                choice=('Roppongi', 'Akasaka'))))
+            EXAMPLE_DISTRIBUTIONS['c2'],
+            distributions.CategoricalDistribution(choices=('Roppongi', 'Akasaka'))))
 
     # test dynamic value range (except CategoricalDistribution)
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['u'], EXAMPLE_DISTRIBUTIONS['u']._replace(low=-1.0, high=-2.0))
+        EXAMPLE_DISTRIBUTIONS['u'], distributions.UniformDistribution(low=-3.0, high=-2.0))
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['l'], EXAMPLE_DISTRIBUTIONS['l']._replace(low=-0.1, high=1.0))
+        EXAMPLE_DISTRIBUTIONS['l'], distributions.LogUniformDistribution(low=-0.1, high=1.0))
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['du'], EXAMPLE_DISTRIBUTIONS['du']._replace(
-            low=-1.0, high=10.0, q=3.))
+        EXAMPLE_DISTRIBUTIONS['du'],
+        distributions.DiscreteUniformDistribution(low=-1.0, high=10.0, q=3.))
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['iu'], EXAMPLE_DISTRIBUTIONS['iu']._replace(low=-1, high=1))
+        EXAMPLE_DISTRIBUTIONS['iu'], distributions.IntUniformDistribution(low=-1, high=1))
 
 
 def test_contains():
@@ -185,3 +186,36 @@ def test_empty_distribution():
 
     with pytest.raises(ValueError):
         distributions.CategoricalDistribution(choices=()),
+
+
+def test_eq_ne_hash():
+    # type: () -> None
+
+    # Two instances of a class are regarded as equivalent if the fields have the same values.
+    for d in EXAMPLE_DISTRIBUTIONS.values():
+        assert d == copy.deepcopy(d)
+        assert hash(d) == hash(copy.deepcopy(d))
+
+    # Different field values.
+    d0 = distributions.UniformDistribution(low=1, high=2)
+    d1 = distributions.UniformDistribution(low=1, high=3)
+    assert d0 != d1
+    assert hash(d0) != hash(d1)
+
+    # Different classes.
+    d2 = distributions.IntUniformDistribution(low=1, high=2)
+    assert d0 != d2
+
+    # In the implementation of `__hash__`, only attributes are considered.
+    assert hash(d0) == hash(d2)
+
+
+def test_repr():
+    # type: () -> None
+
+    # The following variable is needed to apply `eval` to distribution
+    # instances that contain `float('inf')` as a field value.
+    inf = float('inf')  # NOQA
+
+    for d in EXAMPLE_DISTRIBUTIONS.values():
+        assert d == eval('distributions.' + repr(d))
