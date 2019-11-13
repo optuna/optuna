@@ -104,7 +104,7 @@ class BaseDistribution(object):
     def __repr__(self):
         # type: () -> str
 
-        kwargs = ', '.join('{}={}'.format(k, v) for k, v in self.__dict__.items())
+        kwargs = ', '.join('{}={}'.format(k, v) for k, v in sorted(self.__dict__.items()))
         return '{}({})'.format(self.__class__.__name__, kwargs)
 
 
