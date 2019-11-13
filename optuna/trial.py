@@ -394,19 +394,28 @@ class Trial(BaseTrial):
 
     def should_prune(self, step=None):
         # type: (Optional[int]) -> bool
-        """Judge whether the trial should be pruned.
+        """Suggest whether the trial should be pruned or not.
 
-        This method calls prune method of the pruner, which judges whether the trial should
-        be pruned at the given step. Please refer to the example code of
-        :func:`optuna.trial.Trial.report`.
+        The suggestion is made by a pruning algorithm associated with the trial and is based on
+        previously reported values. The algorithm can be specified when constructing a
+        :class:`~optuna.study.Study`.
+
+        .. note::
+            If no values have been reported, the algorithm cannot make meaningful suggestions.
+            Similarly, if this method is called multiple times with the exact same set of reported
+            values, the suggestions will be the same.
+
+        .. seealso::
+            Please refer to the example code in :func:`optuna.trial.Trial.report`.
 
         Args:
             step:
-                Deprecated: Step of the trial (e.g., epoch of neural network training).
+                Deprecated since 0.12.0: Step of the trial (e.g., epoch of neural network
+                training). Deprecated in favor of always considering the most recent step.
 
         Returns:
-            A boolean value. If :obj:`True`, the trial should be pruned. Otherwise, the trial will
-            be continued.
+            A boolean value. If :obj:`True`, the trial should be pruned according to the
+            configured pruning algorithm. Otherwise, the trial should continue.
         """
         if step is not None:
             warnings.warn(
