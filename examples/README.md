@@ -5,11 +5,11 @@ This page contains a list of example codes written with Optuna.
 
 ### Simple Black-box Optimization
 
-* [quadratic function](./quadratic_simple.py)
+* [Quadratic function](./quadratic_simple.py)
 
 ### Examples with ML Libraries
 
-* [scikit-learn](./sklearn_simple.py)
+* [Scikit-learn](./sklearn_simple.py)
 * [Chainer](./chainer_simple.py)
 * [ChainerMN](./chainermn_simple.py)
 * [Dask-ML](./dask_ml_simple.py)
@@ -27,24 +27,24 @@ This page contains a list of example codes written with Optuna.
 ### An example where an objective function uses additional arguments
 
 The following example demonstrates how to implement an objective function that uses additional arguments other than `trial`.
-* [scikit-learn (callable class version)](./sklearn_additional_args.py)
+* [Scikit-learn (callable class version)](./sklearn_additional_args.py)
 
 ### Examples of Pruning
 
 The following example demonstrates how to implement pruning logic with Optuna.
 
-* [simple pruning (scikit-learn)](./pruning/simple.py)
+* [Simple pruning (scikit-learn)](./pruning/simple.py)
 
 In addition, integration modules are available for the following libraries, providing simpler interfaces to utilize pruning.
 
-* [pruning with Chainer integration module](./pruning/chainer_integration.py)
-* [pruning with XGBoost integration module](./pruning/xgboost_integration.py)
-* [pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
-* [pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
-* [pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
-* [pruning with Keras integration module](./pruning/keras_integration.py)
-* [pruning with MXNet integration module](./pruning/mxnet_integration.py)
-* [pruning with PyTorch Ignite integration module](./pytorch_ignite_simple.py)
+* [Pruning with Chainer integration module](./pruning/chainer_integration.py)
+* [Pruning with XGBoost integration module](./pruning/xgboost_integration.py)
+* [Pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
+* [Pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
+* [Pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
+* [Pruning with Keras integration module](./pruning/keras_integration.py)
+* [Pruning with MXNet integration module](./pruning/mxnet_integration.py)
+* [Pruning with PyTorch Ignite integration module](./pytorch_ignite_simple.py)
 
 ### Examples of User-Defined Sampler
 
@@ -52,13 +52,13 @@ In addition, integration modules are available for the following libraries, prov
 
 ### Examples of Visualization
 
-* [plotting learning curves](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_intermediate_values.ipynb)
-* [plotting optimization history](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_optimization_history.ipynb)
-* [plotting relationship between a parameter and objective value (slice plot)](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_slice.ipynb)
-* [plotting relationship between two parameters (contour plot)](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_contour.ipynb)
-* [plotting parallel coordinate](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_parallel_coordinate.ipynb)
+* [Visualizing learning curves](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_intermediate_values.ipynb)
+* [Visualizing optimization history](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_optimization_history.ipynb)
+* [Visualizing relationship between a parameter and objective value (slice plot)](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_slice.ipynb)
+* [Visualizing relationship between two parameters (contour plot)](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_contour.ipynb)
+* [Visualizing parallel coordinate](https://nbviewer.jupyter.org/github/pfnet/optuna/blob/master/examples/visualization/plot_parallel_coordinate.ipynb)
 
 
 ### Examples of Distributed Optimization
 
-* [optimizing on kubernetes](./distributed/kubernetes/README.md)
+* [Optimizing on Kubernetes](./distributed/kubernetes/README.md)
