@@ -602,7 +602,7 @@ def create_study(
                 the database. Please refer to `SQLAlchemy's document`_ for further details.
                 If you want to specify non-default options to `SQLAlchemy Engine`_, you can
                 instantiate :class:`~optuna.storages.RDBStorage` with your desired options and
-                pass it to ``storage`` argument instead of URL.
+                pass it to the ``storage`` argument instead of a URL.
 
              .. _SQLAlchemy: https://www.sqlalchemy.org/
              .. _SQLAlchemy's document:
