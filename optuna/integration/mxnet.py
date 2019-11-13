@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import optuna
-import optuna.exceptions
 
 try:
     import mxnet as mx  # NOQA

@@ -11,7 +11,6 @@ import time
 import uuid
 
 import optuna
-import optuna.exceptions
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 

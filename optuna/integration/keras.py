@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import optuna
-import optuna.exceptions
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

@@ -7,7 +7,6 @@ from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-import optuna.exceptions
 from optuna.samplers import BaseSampler
 
 if optuna.type_checking.TYPE_CHECKING:

@@ -2,7 +2,6 @@ from __future__ import absolute_import
 import sys
 
 import optuna
-import optuna.exceptions
 
 try:
     import lightgbm as lgb  # NOQA

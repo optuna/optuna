@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 import optuna
-import optuna.exceptions
 from optuna.integration import KerasPruningCallback
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner

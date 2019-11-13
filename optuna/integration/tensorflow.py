@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import optuna
-import optuna.exceptions
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA

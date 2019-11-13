@@ -20,7 +20,6 @@ import uuid
 
 import optuna
 from optuna import distributions
-import optuna.exceptions
 from optuna.storages.base import BaseStorage
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.rdb import models

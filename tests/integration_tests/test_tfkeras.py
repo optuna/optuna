@@ -4,7 +4,6 @@ import pytest
 import tensorflow as tf
 
 import optuna
-import optuna.exceptions
 from optuna.integration import TFKerasPruningCallback
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner

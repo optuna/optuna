@@ -3,7 +3,6 @@ import lightgbm as lgb
 import pytest
 
 import optuna
-import optuna.exceptions
 from optuna.integration.lightgbm import LightGBMPruningCallback
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner

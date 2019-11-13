@@ -4,7 +4,6 @@ from mock import patch
 import pytest
 
 import optuna
-import optuna.exceptions
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 from optuna import type_checking
