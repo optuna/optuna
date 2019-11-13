@@ -17,6 +17,7 @@ from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
+    from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
@@ -416,6 +417,24 @@ def test_run_trial(storage_mode, cache_mode):
                            'function returned nan.'
         assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
+
+
+# TODO(Yanase): Remove this test function after removing `optuna.structs.TrialPruned`.
+@pytest.mark.parametrize('trial_pruned_class', [optuna.exceptions.TrialPruned,
+                                                optuna.structs.TrialPruned])
+def test_run_trial_with_trial_pruned(trial_pruned_class):
+    # type: (Callable[[], optuna.exceptions.TrialPruned]) -> None
+
+    study = optuna.create_study()
+
+    def func_with_trial_pruned(_):
+        # type: (optuna.trial.Trial) -> float
+
+        raise trial_pruned_class()
+
+    trial = study._run_trial(func_with_trial_pruned, catch=(), gc_after_trial=True)
+    frozen_trial = study._storage.get_trial(trial._trial_id)
+    assert frozen_trial.state == optuna.structs.TrialState.PRUNED
 
 
 def test_study_pickle():

@@ -7,6 +7,7 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
+from optuna import exceptions
 from optuna import logging
 from optuna import type_checking
 
@@ -264,3 +265,37 @@ class StudySummary(
         datetime_start:
             Datetime where the :class:`~optuna.study.Study` started.
     """
+
+
+class TrialPruned(exceptions.TrialPruned):
+    """Exception for pruned trials.
+
+    .. deprecated:: 0.19.0
+
+        This class was moved to :mod:`~optuna.exceptions`. Please use
+        :class:`~optuna.exceptions.TrialPruned` instead.
+
+    This error tells a trainer that the current :class:`~optuna.trial.Trial` was pruned. It is
+    supposed to be raised after :func:`optuna.trial.Trial.should_prune` as shown in the following
+    example.
+
+    Example:
+
+        .. code::
+
+            >>> def objective(trial):
+            >>>     ...
+            >>>     for step in range(n_train_iter):
+            >>>         ...
+            >>>         if trial.should_prune():
+            >>>             raise TrailPruned()
+    """
+
+    def __init__(self, *args, **kwargs):
+        # type: (Any, Any) -> None
+
+        message = 'The use of `optuna.structs.TrialPruned` is deprecated. ' \
+                  'Please use `optuna.exceptions.TrialPruned` instead.'
+        warnings.warn(message, DeprecationWarning)
+        logger = logging.get_logger(__name__)
+        logger.warning(message)
