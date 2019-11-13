@@ -708,7 +708,7 @@ def delete_study(
             Study's name.
         storage:
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
-            :func:`~optuna.study.create_study` for futhre details.
+            :func:`~optuna.study.create_study` for further details.
 
     """
 
