@@ -24,7 +24,8 @@ class TrialState(enum.Enum):
         COMPLETE:
             The :class:`~optuna.trial.Trial` has been finished without any error.
         PRUNED:
-            The :class:`~optuna.trial.Trial` has been pruned with :class:`TrialPruned`.
+            The :class:`~optuna.trial.Trial` has been pruned with
+            :class:`~optuna.exceptions.TrialPruned`.
         FAIL:
             The :class:`~optuna.trial.Trial` has failed due to an uncaught error.
     """
