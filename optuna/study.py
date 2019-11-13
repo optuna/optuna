@@ -5,8 +5,6 @@ import math
 import multiprocessing
 import multiprocessing.pool
 
-import optuna.exceptions
-
 try:
     import pandas as pd  # NOQA
     _pandas_available = True
@@ -20,6 +18,7 @@ import threading
 import time
 import warnings
 
+from optuna import exceptions
 from optuna import logging
 from optuna import pruners
 from optuna import samplers
@@ -538,7 +537,7 @@ class Study(BaseStudy):
 
         try:
             result = func(trial)
-        except optuna.exceptions.TrialPruned as e:
+        except exceptions.TrialPruned as e:
             message = 'Setting status of trial#{} as {}. {}'.format(trial_number,
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
@@ -642,7 +641,7 @@ def create_study(
     storage = storages.get_storage(storage)
     try:
         study_id = storage.create_new_study(study_name)
-    except optuna.exceptions.DuplicatedStudyError:
+    except exceptions.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
 
