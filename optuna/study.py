@@ -629,7 +629,7 @@ def create_study(
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
-            a :class:`~optuna.structs.DuplicatedStudyError` is raised if ``load_if_exists`` is
+            a :class:`~optuna.exceptions.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
 
