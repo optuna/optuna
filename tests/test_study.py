@@ -1,4 +1,4 @@
-import copy
+import copy  # NOQA
 import itertools
 from mock import Mock  # NOQA
 from mock import patch
