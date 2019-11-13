@@ -1,3 +1,4 @@
+import copy
 import itertools
 from mock import Mock  # NOQA
 from mock import patch
@@ -710,3 +711,27 @@ def test_callbacks(n_jobs):
             study.optimize(lambda t: 1/0, callbacks=callbacks,
                            n_trials=10, n_jobs=n_jobs, catch=())
         assert states == []
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+@pytest.mark.parametrize('cache_mode', CACHE_MODES)
+def test_get_trials(storage_mode, cache_mode):
+    # type: (str, bool) -> None
+
+    with StorageSupplier(storage_mode, cache_mode) as storage:
+        storage = optuna.storages.get_storage(storage=storage)
+
+        study = optuna.create_study(storage=storage)
+        study.optimize(lambda t: t.suggest_int('x', 1, 5), n_trials=5)
+
+        with patch('copy.deepcopy') as mock_object:
+            study.get_trials(deepcopy=False)
+            assert mock_object.call_count == 0
+
+            study.get_trials(deepcopy=True)
+            assert mock_object.call_count > 0
+
+            # `study.trials` is equivalent to `study.get_trials(deepcopy=True)`.
+            old_count = mock_object.call_count
+            study.trials
+            assert mock_object.call_count > old_count

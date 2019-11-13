@@ -104,11 +104,34 @@ class BaseStudy(object):
 
         The returned trials are ordered by trial number.
 
+        This is a short form of ``self.get_trials(deepcopy=True)``.
+
         Returns:
             A list of :class:`~optuna.structs.FrozenTrial` objects.
         """
 
-        return self._storage.get_all_trials(self.study_id)
+        return self.get_trials()
+
+    def get_trials(self, deepcopy=True):
+        # type: (bool) -> List[structs.FrozenTrial]
+        """Return all trials in the study.
+
+        The returned trials are ordered by trial number.
+
+        For ordinal library users, it’s recommended to use more handy
+        :attr:`~optuna.study.Study.trials` property to get the trials instead.
+
+        Args:
+            deepcopy:
+                Flag to control to apply ``copy.deepcopy()`` to the trials or not.
+                Note that if you set the flag to :obj:`False`, you shouldn't mutate fields of the returned trial.
+                Otherwise the internal state of the study may corrupt and unexpected behavior may happen.
+
+        Returns:
+            A list of :class:`~optuna.structs.FrozenTrial` objects.
+        """
+
+        return self._storage.get_all_trials(self.study_id, deepcopy=deepcopy)
 
     @property
     def storage(self):
