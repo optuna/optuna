@@ -103,7 +103,7 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel(study_name=study_name, direction=structs.StudyDirection.NOT_SET)
         session.add(study)
         if not self._commit_with_integrity_check(session):
-            raise structs.DuplicatedStudyError(
+            raise optuna.exceptions.DuplicatedStudyError(
                 "Another study with name '{}' already exists. "
                 "Please specify a different name, or reuse the existing one "
                 "by setting `load_if_exists` (for Python API) or "
@@ -810,7 +810,8 @@ class RDBStorage(BaseStorage):
                 'This typically happens due to invalid data in the commit, ' \
                 'e.g. exceeding max length. ' \
                 '(The actual exception is as follows: {})'.format(repr(e))
-            six.reraise(structs.StorageInternalError, structs.StorageInternalError(message),
+            six.reraise(optuna.exceptions.StorageInternalError,
+                        optuna.exceptions.StorageInternalError(message),
                         sys.exc_info()[2])
 
     def remove_session(self):

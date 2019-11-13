@@ -82,7 +82,7 @@ class FastAIPruningCallback(TrackerCallback):
         self.trial.report(float(value), step=epoch)
         if self.trial.should_prune():
             message = 'Trial was pruned at epoch {}.'.format(epoch)
-            raise optuna.structs.TrialPruned(message)
+            raise optuna.exceptions.TrialPruned(message)
 
 
 def _check_fastai_availability():

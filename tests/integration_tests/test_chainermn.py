@@ -4,12 +4,12 @@ import pytest
 
 from optuna import create_study
 from optuna import distributions
+from optuna.exceptions import TrialPruned
 from optuna import integration
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.structs import TrialPruned
 from optuna.structs import TrialState
 from optuna import Study
 from optuna.testing.integration import DeterministicPruner

@@ -7,6 +7,7 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 
+from optuna import exceptions
 from optuna import logging
 from optuna import type_checking
 
@@ -23,7 +24,8 @@ class TrialState(enum.Enum):
         COMPLETE:
             The :class:`~optuna.trial.Trial` has been finished without any error.
         PRUNED:
-            The :class:`~optuna.trial.Trial` has been pruned with :class:`TrialPruned`.
+            The :class:`~optuna.trial.Trial` has been pruned with
+            :class:`~optuna.exceptions.TrialPruned`.
         FAIL:
             The :class:`~optuna.trial.Trial` has failed due to an uncaught error.
     """
@@ -266,14 +268,13 @@ class StudySummary(
     """
 
 
-class OptunaError(Exception):
-    """Base class for Optuna specific errors."""
-
-    pass
-
-
-class TrialPruned(OptunaError):
+class TrialPruned(exceptions.TrialPruned):
     """Exception for pruned trials.
+
+    .. deprecated:: 0.19.0
+
+        This class was moved to :mod:`~optuna.exceptions`. Please use
+        :class:`~optuna.exceptions.TrialPruned` instead.
 
     This error tells a trainer that the current :class:`~optuna.trial.Trial` was pruned. It is
     supposed to be raised after :func:`optuna.trial.Trial.should_prune` as shown in the following
@@ -291,31 +292,11 @@ class TrialPruned(OptunaError):
             >>>             raise TrailPruned()
     """
 
-    pass
+    def __init__(self, *args, **kwargs):
+        # type: (Any, Any) -> None
 
-
-class CLIUsageError(OptunaError):
-    """Exception for CLI.
-
-    CLI raises this exception when it receives invalid configuration.
-    """
-
-    pass
-
-
-class StorageInternalError(OptunaError):
-    """Exception for storage operation.
-
-    This error is raised when an operation failed in backend DB of storage.
-    """
-
-    pass
-
-
-class DuplicatedStudyError(OptunaError):
-    """Exception for a duplicated study name.
-
-    This error is raised when a specified study name already exists in the storage.
-    """
-
-    pass
+        message = 'The use of `optuna.structs.TrialPruned` is deprecated. ' \
+                  'Please use `optuna.exceptions.TrialPruned` instead.'
+        warnings.warn(message, DeprecationWarning)
+        logger = logging.get_logger(__name__)
+        logger.warning(message)

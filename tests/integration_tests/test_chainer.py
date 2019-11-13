@@ -9,8 +9,8 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna.exceptions import TrialPruned
 from optuna.integration.chainer import ChainerPruningExtension
-from optuna.structs import TrialPruned
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 from optuna import type_checking

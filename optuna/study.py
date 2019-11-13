@@ -18,6 +18,7 @@ import threading
 import time
 import warnings
 
+from optuna import exceptions
 from optuna import logging
 from optuna import pruners
 from optuna import samplers
@@ -239,7 +240,7 @@ class Study(BaseStudy):
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
-                exception except for :class:`~structs.TrialPruned`.
+                exception except for :class:`~optuna.exceptions.TrialPruned`.
             callbacks:
                 List of callback functions that are invoked at the end of each trial.
             gc_after_trial:
@@ -536,7 +537,7 @@ class Study(BaseStudy):
 
         try:
             result = func(trial)
-        except structs.TrialPruned as e:
+        except exceptions.TrialPruned as e:
             message = 'Setting status of trial#{} as {}. {}'.format(trial_number,
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
@@ -628,7 +629,7 @@ def create_study(
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
-            a :class:`~optuna.structs.DuplicatedStudyError` is raised if ``load_if_exists`` is
+            a :class:`~optuna.exceptions.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
 
@@ -640,7 +641,7 @@ def create_study(
     storage = storages.get_storage(storage)
     try:
         study_id = storage.create_new_study(study_name)
-    except structs.DuplicatedStudyError:
+    except exceptions.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
 

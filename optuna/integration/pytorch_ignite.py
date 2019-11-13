@@ -57,7 +57,7 @@ class PyTorchIgnitePruningHandler(object):
         self.trial.report(score, engine.state.epoch)
         if self.trial.should_prune():
             message = "Trial was pruned at {} epoch.".format(engine.state.epoch)
-            raise optuna.structs.TrialPruned(message)
+            raise optuna.exceptions.TrialPruned(message)
 
 
 def _check_pytorch_ignite_availability():

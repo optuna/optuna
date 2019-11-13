@@ -7,6 +7,7 @@ API Reference
     :maxdepth: 2
 
     distributions
+    exceptions
     integration
     logging
     pruners

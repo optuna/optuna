@@ -28,7 +28,7 @@ def test_pytorch_ignite_pruning_handler():
 
     handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
     with patch.object(trainer, 'state', epoch=Mock(return_value=1), metrics={'accuracy': 1}):
-        with pytest.raises(optuna.structs.TrialPruned):
+        with pytest.raises(optuna.exceptions.TrialPruned):
             handler(trainer)
 
     # The pruner is not activated.
