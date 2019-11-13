@@ -86,11 +86,24 @@ class PercentilePruner(BasePruner):
         interval_steps:
             Interval in number of steps between the pruning checks, offset by the warmup steps.
             If no value has been reported at the time of a pruning check, that particular check
-            will be postponed until a value is reported.
+            will be postponed until a value is reported. Value must be at least 1.
     """
 
     def __init__(self, percentile, n_startup_trials=5, n_warmup_steps=0, interval_steps=1):
         # type: (float, int, int, int) -> None
+
+        if not 0.0 <= percentile <= 100:
+            raise ValueError(
+                'Percentile must be between 0 and 100 inclusive but got {}.'.format(percentile))
+        if n_startup_trials < 0:
+            raise ValueError(
+                'Number of startup trials cannot be negative but got {}.'.format(n_startup_trials))
+        if n_warmup_steps < 0:
+            raise ValueError(
+                'Number of warmup steps cannot be negative but got {}.'.format(n_warmup_steps))
+        if interval_steps < 1:
+            raise ValueError(
+                'Pruning interval steps must be at least 1 but got {}.'.format(n_warmup_steps))
 
         self.percentile = percentile
         self.n_startup_trials = n_startup_trials

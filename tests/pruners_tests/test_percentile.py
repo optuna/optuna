@@ -14,6 +14,53 @@ if type_checking.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
 
 
+def test_percentile_pruner_percentile():
+    # type: () -> None
+
+    optuna.pruners.PercentilePruner(0.0)
+    optuna.pruners.PercentilePruner(25.0)
+    optuna.pruners.PercentilePruner(100.0)
+
+    with pytest.raises(ValueError):
+        optuna.pruners.PercentilePruner(-0.1)
+
+    with pytest.raises(ValueError):
+        optuna.pruners.PercentilePruner(100.1)
+
+
+def test_percentile_pruner_n_startup_trials():
+    # type: () -> None
+
+    optuna.pruners.PercentilePruner(25.0, n_startup_trials=0)
+    optuna.pruners.PercentilePruner(25.0, n_startup_trials=5)
+
+    with pytest.raises(ValueError):
+        optuna.pruners.PercentilePruner(25.0, n_startup_trials=-1)
+
+
+def test_percentile_pruner_n_warmup_steps():
+    # type: () -> None
+
+    optuna.pruners.PercentilePruner(25.0, n_warmup_steps=0)
+    optuna.pruners.PercentilePruner(25.0, n_warmup_steps=5)
+
+    with pytest.raises(ValueError):
+        optuna.pruners.PercentilePruner(25.0, n_warmup_steps=-1)
+
+
+def test_percentile_pruner_interval_steps():
+    # type: () -> None
+
+    optuna.pruners.PercentilePruner(25.0, interval_steps=1)
+    optuna.pruners.PercentilePruner(25.0, interval_steps=5)
+
+    with pytest.raises(ValueError):
+        optuna.pruners.PercentilePruner(25.0, interval_steps=-1)
+
+    with pytest.raises(ValueError):
+        optuna.pruners.PercentilePruner(25.0, interval_steps=0)
+
+
 def test_percentile_pruner_with_one_trial():
     # type: () -> None
 
