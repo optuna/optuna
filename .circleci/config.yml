@@ -108,6 +108,12 @@ jobs:
             pip install -U pip
             pip install --progress-bar off -U setuptools
             python setup.py sdist
+
+            # Install minimal dependencies and confirm that `import optuna` is successful.
+            pip install --progress-bar off $(ls dist/*.tar.gz)
+            python -c 'import optuna'
+
+            # Install all dependencies needed for testing.
             pip install --progress-bar off $(ls dist/*.tar.gz)[testing]
 
       - run: &tests
@@ -144,7 +150,7 @@ jobs:
           <<: *tests
           command: |
             . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_fastai.py
 
       - run: *tests-mn
 
@@ -160,7 +166,7 @@ jobs:
           <<: *tests
           command: |
             . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py --ignore tests/integration_tests/test_fastai.py
 
       - run: *tests-mn
 
@@ -204,7 +210,7 @@ jobs:
           <<: *tests-full
           command: |
             . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_fastai.py
 
       - run: *tests-mn-full
 
@@ -220,7 +226,7 @@ jobs:
           <<: *tests-full
           command: |
             . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py --ignore tests/integration_tests/test_fastai.py
 
       - run: *tests-mn-full
 

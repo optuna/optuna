@@ -377,32 +377,32 @@ class LightGBMTuner(BaseTuner):
         self.start_time = time.time()
         with _timer() as t:
             self.tune_feature_fraction()
-            if time_budget is not None and time_budget > t.elapsed_secs():
+            if time_budget is not None and time_budget < t.elapsed_secs():
                 self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_num_leaves()
-            if time_budget is not None and time_budget > t.elapsed_secs():
+            if time_budget is not None and time_budget < t.elapsed_secs():
                 self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_bagging()
-            if time_budget is not None and time_budget > t.elapsed_secs():
+            if time_budget is not None and time_budget < t.elapsed_secs():
                 self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_feature_fraction_stage2()
-            if time_budget is not None and time_budget > t.elapsed_secs():
+            if time_budget is not None and time_budget < t.elapsed_secs():
                 self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_regularization_factors()
-            if time_budget is not None and time_budget > t.elapsed_secs():
+            if time_budget is not None and time_budget < t.elapsed_secs():
                 self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_min_data_in_leaf()
-            if time_budget is not None and time_budget > t.elapsed_secs():
+            if time_budget is not None and time_budget < t.elapsed_secs():
                 self.best_params.update(self._get_params())
                 return self.best_booster
 

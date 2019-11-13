@@ -1,15 +1,14 @@
 import abc
 import json
 import six
-from typing import NamedTuple
-from typing import Tuple
-from typing import Union
 
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
+    from typing import Tuple  # NOQA
+    from typing import Union  # NOQA
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -79,16 +78,37 @@ class BaseDistribution(object):
 
         raise NotImplementedError
 
-    @abc.abstractmethod
     def _asdict(self):
         # type: () -> Dict
 
-        raise NotImplementedError
+        return self.__dict__
+
+    def __eq__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, type(self)):
+            return False
+
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        # type: (Any) -> bool
+
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        # type: () -> int
+
+        return hash(tuple(sorted(self.__dict__.items())))
+
+    def __repr__(self):
+        # type: () -> str
+
+        kwargs = ', '.join('{}={}'.format(k, v) for k, v in sorted(self.__dict__.items()))
+        return '{}({})'.format(self.__class__.__name__, kwargs)
 
 
-class UniformDistribution(
-        NamedTuple('_BaseUniformDistribution', [('low', float), ('high', float)]),
-        BaseDistribution):
+class UniformDistribution(BaseDistribution):
     """A uniform distribution in the linear domain.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_uniform`, and passed to
@@ -101,14 +121,15 @@ class UniformDistribution(
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
-    def __new__(cls, low, high):
-        # type: (float, float) -> UniformDistribution
+    def __init__(self, low, high):
+        # type: (float, float) -> None
 
         if low > high:
             raise ValueError("The `low` value must be smaller than or equal to the `high` value "
                              "(low={}, high={}).".format(low, high))
 
-        return super(UniformDistribution, cls).__new__(cls, low, high)
+        self.low = low
+        self.high = high
 
     def single(self):
         # type: () -> bool
@@ -125,9 +146,7 @@ class UniformDistribution(
             return self.low <= value and value < self.high
 
 
-class LogUniformDistribution(
-        NamedTuple('_BaseLogUniformDistribution', [('low', float), ('high', float)]),
-        BaseDistribution):
+class LogUniformDistribution(BaseDistribution):
     """A uniform distribution in the log domain.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_loguniform`, and passed to
@@ -140,14 +159,15 @@ class LogUniformDistribution(
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
-    def __new__(cls, low, high):
-        # type: (float, float) -> LogUniformDistribution
+    def __init__(self, low, high):
+        # type: (float, float) -> None
 
         if low > high:
             raise ValueError("The `low` value must be smaller than or equal to the `high` value "
                              "(low={}, high={}).".format(low, high))
 
-        return super(LogUniformDistribution, cls).__new__(cls, low, high)
+        self.low = low
+        self.high = high
 
     def single(self):
         # type: () -> bool
@@ -164,9 +184,7 @@ class LogUniformDistribution(
             return self.low <= value and value < self.high
 
 
-class DiscreteUniformDistribution(
-        NamedTuple('_BaseDiscreteUniformDistribution', [('low', float), ('high', float),
-                                                        ('q', float)]), BaseDistribution):
+class DiscreteUniformDistribution(BaseDistribution):
     """A discretized uniform distribution in the linear domain.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and passed
@@ -181,14 +199,16 @@ class DiscreteUniformDistribution(
             A discretization step.
     """
 
-    def __new__(cls, low, high, q):
-        # type: (float, float, float) -> DiscreteUniformDistribution
+    def __init__(self, low, high, q):
+        # type: (float, float, float) -> None
 
         if low > high:
             raise ValueError("The `low` value must be smaller than or equal to the `high` value "
                              "(low={}, high={}, q={}).".format(low, high, q))
 
-        return super(DiscreteUniformDistribution, cls).__new__(cls, low, high, q)
+        self.low = low
+        self.high = high
+        self.q = q
 
     def single(self):
         # type: () -> bool
@@ -202,9 +222,7 @@ class DiscreteUniformDistribution(
         return self.low <= value and value <= self.high
 
 
-class IntUniformDistribution(
-        NamedTuple('_BaseIntUniformDistribution', [('low', int), ('high', int)]),
-        BaseDistribution):
+class IntUniformDistribution(BaseDistribution):
     """A uniform distribution on integers.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
@@ -217,14 +235,15 @@ class IntUniformDistribution(
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
     """
 
-    def __new__(cls, low, high):
-        # type: (int, int) -> IntUniformDistribution
+    def __init__(self, low, high):
+        # type: (int, int) -> None
 
         if low > high:
             raise ValueError("The `low` value must be smaller than or equal to the `high` value "
                              "(low={}, high={}).".format(low, high))
 
-        return super(IntUniformDistribution, cls).__new__(cls, low, high)
+        self.low = low
+        self.high = high
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
@@ -248,9 +267,7 @@ class IntUniformDistribution(
         return self.low <= value and value <= self.high
 
 
-class CategoricalDistribution(
-        NamedTuple('_BaseCategoricalDistribution', [('choices', Tuple[Union[float, str], ...])]),
-        BaseDistribution):
+class CategoricalDistribution(BaseDistribution):
     """A categorical distribution.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_categorical`, and
@@ -261,13 +278,13 @@ class CategoricalDistribution(
             Candidates of parameter values.
     """
 
-    def __new__(cls, choices):
-        # type: (Tuple[Union[float, str], ...]) -> CategoricalDistribution
+    def __init__(self, choices):
+        # type: (Tuple[Union[float, str], ...]) -> None
 
         if len(choices) == 0:
             raise ValueError("The `choices` must contains one or more elements.")
 
-        return super(CategoricalDistribution, cls).__new__(cls, choices)
+        self.choices = choices
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> Union[float, str]

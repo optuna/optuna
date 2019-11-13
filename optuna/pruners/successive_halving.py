@@ -117,7 +117,7 @@ class SuccessiveHalvingPruner(BasePruner):
             if all_trials is None:
                 all_trials = study.trials
 
-            study._storage.set_trial_system_attr(trial.trial_id, _completed_rung_key(rung), value)
+            study._storage.set_trial_system_attr(trial._trial_id, _completed_rung_key(rung), value)
             direction = study.direction
             if not self._is_promotable(rung, value, all_trials, direction):
                 return True

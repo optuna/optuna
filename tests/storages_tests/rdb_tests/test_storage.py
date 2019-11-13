@@ -347,7 +347,7 @@ def test_storage_cache():
             TrialModel, 'find_or_raise_by_id',
             wraps=TrialModel.find_or_raise_by_id) as mock_object:
         for trial in trials:
-            assert storage.get_trial(trial.trial_id) == trial
+            assert storage.get_trial(trial._trial_id) == trial
         assert mock_object.call_count == 4
 
     with patch.object(TrialModel, 'where_study', wraps=TrialModel.where_study) as mock_object:
@@ -363,7 +363,7 @@ def test_storage_cache():
             TrialModel, 'find_or_raise_by_id',
             wraps=TrialModel.find_or_raise_by_id) as mock_object:
         for trial in trials:
-            assert storage.get_trial(trial.trial_id) == trial
+            assert storage.get_trial(trial._trial_id) == trial
         assert mock_object.call_count == 1  # Only a running trial was fetched from the storage.
 
     # If cache is enabled, running trials are fetched from the storage individually.
