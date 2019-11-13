@@ -37,7 +37,7 @@ if type_checking.TYPE_CHECKING:
 class RDBStorage(BaseStorage):
     """Storage class for RDB backend.
 
-    Note that library users can instantiate this class, but the fields and methods
+    Note that library users can instantiate this class, but the attributes
     provided by this class are not supposed to be directly accessed by them.
 
     Args:
