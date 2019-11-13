@@ -5,8 +5,8 @@ import scipy.special
 from optuna import distributions
 from optuna.samplers import base
 from optuna.samplers import random
-from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
-from optuna.samplers.tpe.parzen_estimator import ParzenEstimatorParameters
+from optuna.samplers.tpe.parzen_estimator import _ParzenEstimator
+from optuna.samplers.tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna import structs
 from optuna.structs import StudyDirection
 from optuna import type_checking
@@ -99,17 +99,17 @@ class TPESampler(base.BaseSampler):
     ):
         # type: (...) -> None
 
-        self.parzen_estimator_parameters = ParzenEstimatorParameters(
+        self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             consider_prior, prior_weight, consider_magic_clip, consider_endpoints, weights)
-        self.prior_weight = prior_weight
-        self.n_startup_trials = n_startup_trials
-        self.n_ei_candidates = n_ei_candidates
-        self.gamma = gamma
-        self.weights = weights
-        self.seed = seed
+        self._prior_weight = prior_weight
+        self._n_startup_trials = n_startup_trials
+        self._n_ei_candidates = n_ei_candidates
+        self._gamma = gamma
+        self._weights = weights
+        self._seed = seed
 
-        self.rng = np.random.RandomState(seed)
-        self.random_sampler = random.RandomSampler(seed=seed)
+        self._rng = np.random.RandomState(seed)
+        self._random_sampler = random.RandomSampler(seed=seed)
 
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
@@ -128,8 +128,8 @@ class TPESampler(base.BaseSampler):
 
         n = len(values)
 
-        if n < self.n_startup_trials:
-            return self.random_sampler.sample_independent(
+        if n < self._n_startup_trials:
+            return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution)
 
         below_param_values, above_param_values = self._split_observation_pairs(values, scores)
@@ -170,7 +170,7 @@ class TPESampler(base.BaseSampler):
         config_vals = np.asarray(config_vals)
         loss_vals = np.asarray(loss_vals, dtype=[('step', float), ('score', float)])
 
-        n_below = self.gamma(len(config_vals))
+        n_below = self._gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
         below = config_vals[np.sort(loss_ascending[:n_below])]
         above = config_vals[np.sort(loss_ascending[n_below:])]
@@ -226,10 +226,10 @@ class TPESampler(base.BaseSampler):
             below = np.log(below)
             above = np.log(above)
 
-        size = (self.n_ei_candidates, )
+        size = (self._n_ei_candidates, )
 
-        parzen_estimator_below = ParzenEstimator(
-            mus=below, low=low, high=high, parameters=self.parzen_estimator_parameters)
+        parzen_estimator_below = _ParzenEstimator(
+            mus=below, low=low, high=high, parameters=self._parzen_estimator_parameters)
         samples_below = self._sample_from_gmm(
             parzen_estimator=parzen_estimator_below,
             low=low,
@@ -245,8 +245,8 @@ class TPESampler(base.BaseSampler):
             q=q,
             is_log=is_log)
 
-        parzen_estimator_above = ParzenEstimator(
-            mus=above, low=low, high=high, parameters=self.parzen_estimator_parameters)
+        parzen_estimator_above = _ParzenEstimator(
+            mus=above, low=low, high=high, parameters=self._parzen_estimator_parameters)
 
         log_likelihoods_above = self._gmm_log_pdf(
             samples=samples_below,
@@ -268,18 +268,18 @@ class TPESampler(base.BaseSampler):
         below = list(map(int, below))
         above = list(map(int, above))
         upper = len(choices)
-        size = (self.n_ei_candidates, )
+        size = (self._n_ei_candidates,)
 
-        weights_below = self.weights(len(below))
+        weights_below = self._weights(len(below))
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
-        weighted_below = counts_below + self.prior_weight
+        weighted_below = counts_below + self._prior_weight
         weighted_below /= weighted_below.sum()
         samples_below = self._sample_from_categorical_dist(weighted_below, size)
         log_likelihoods_below = TPESampler._categorical_log_pdf(samples_below, weighted_below)
 
-        weights_above = self.weights(len(above))
+        weights_above = self._weights(len(above))
         counts_above = np.bincount(above, minlength=upper, weights=weights_above)
-        weighted_above = counts_above + self.prior_weight
+        weighted_above = counts_above + self._prior_weight
         weighted_above /= weighted_above.sum()
         log_likelihoods_above = TPESampler._categorical_log_pdf(samples_below, weighted_above)
 
@@ -290,7 +290,7 @@ class TPESampler(base.BaseSampler):
 
     def _sample_from_gmm(
             self,
-            parzen_estimator,  # type: ParzenEstimator
+            parzen_estimator,  # type: _ParzenEstimator
             low,  # type: float
             high,  # type: float
             q=None,  # type: Optional[float]
@@ -310,8 +310,8 @@ class TPESampler(base.BaseSampler):
                              "But (low, high) = ({}, {}).".format(low, high))
         samples = np.asarray([], dtype=float)
         while samples.size < n_samples:
-            active = np.argmax(self.rng.multinomial(1, weights))
-            draw = self.rng.normal(loc=mus[active], scale=sigmas[active])
+            active = np.argmax(self._rng.multinomial(1, weights))
+            draw = self._rng.normal(loc=mus[active], scale=sigmas[active])
             if low <= draw < high:
                 samples = np.append(samples, draw)
 
@@ -328,7 +328,7 @@ class TPESampler(base.BaseSampler):
     def _gmm_log_pdf(
             self,
             samples,  # type: np.ndarray
-            parzen_estimator,  # type: ParzenEstimator
+            parzen_estimator,  # type: _ParzenEstimator
             low,  # type: float
             high,  # type: float
             q=None,  # type: Optional[float]
@@ -400,7 +400,7 @@ class TPESampler(base.BaseSampler):
         assert probabilities.ndim == 1
 
         n_draws = int(np.prod(size))
-        sample = self.rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
+        sample = self._rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
         assert sample.shape == size + (probabilities.size, )
         return_val = np.dot(sample, np.arange(probabilities.size))
         return_val.shape = size
