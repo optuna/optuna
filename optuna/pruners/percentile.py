@@ -103,7 +103,7 @@ class PercentilePruner(BasePruner):
                 'Number of warmup steps cannot be negative but got {}.'.format(n_warmup_steps))
         if interval_steps < 1:
             raise ValueError(
-                'Pruning interval steps must be at least 1 but got {}.'.format(n_warmup_steps))
+                'Pruning interval steps must be at least 1 but got {}.'.format(interval_steps))
 
         self.percentile = percentile
         self.n_startup_trials = n_startup_trials
