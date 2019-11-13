@@ -78,6 +78,7 @@ def get_extras_require():
         'checking': ['autopep8', 'hacking'],
         'testing': testing_requirements,
         'example': example_requirements,
+        'doctest': ['pandas', 'scikit-learn>=0.19.0'],
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],
     }

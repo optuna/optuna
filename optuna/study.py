@@ -306,12 +306,27 @@ class Study(BaseStudy):
 
             Get an objective value and a value of parameter ``x`` in the first row.
 
-            >>> df = study.trials_dataframe()
-            >>> df
-            >>> df.value[0]
-            0.0
-            >>> df.params.x[0]
-            1.0
+            .. testsetup:: *
+
+                import optuna
+
+                def objective(trial):
+                    trial.report(trial.number)
+                    trial.suggest_uniform('x', float(trial.number), float(trial.number))
+                    return trial.number
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=2)
+
+            .. doctest::
+
+                >>> df = study.trials_dataframe()
+                >>> type(df)
+                <class 'pandas.core.frame.DataFrame'>
+                >>> df.value[0]
+                0.0
+                >>> df.params.x[1]
+                1.0
 
         Args:
             include_internal_fields:
