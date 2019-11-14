@@ -180,12 +180,14 @@ class BaseStorage(object):
     @abc.abstractmethod
     def get_best_value_trial(self, study_id):
         # type: (int) -> structs.FrozenTrial
+
         raise NotImplementedError
 
+    @abc.abstractmethod
     def get_best_trial(self, study_id):
         # type: (int) -> structs.FrozenTrial
 
-        return self.get_best_value_trial(study_id)
+        raise NotImplementedError
 
     def get_trial_params(self, trial_id):
         # type: (int) -> Dict[str, Any]

@@ -645,7 +645,7 @@ class RDBStorage(BaseStorage):
         trials = [self.get_trial(trial_id) for trial_id in trial_ids]
         return trials
 
-    def get_best_value_trial(self, study_id):
+    def get_best_trial(self, study_id):
         # type: (int) -> structs.FrozenTrial
 
         session = self.scoped_session()
@@ -653,6 +653,7 @@ class RDBStorage(BaseStorage):
             trial = models.TrialModel.find_max_value_trial(study_id, session)
         else:
             trial = models.TrialModel.find_min_value_trial(study_id, session)
+
         params = models.TrialParamModel.where_trial(trial, session)
         values = models.TrialValueModel.where_trial(trial, session)
         user_attributes = models.TrialUserAttributeModel.where_trial(trial, session)
