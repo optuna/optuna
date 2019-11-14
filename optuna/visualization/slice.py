@@ -96,7 +96,7 @@ def _get_slice_plot(study, params=None):
         showscale = True   # showscale option only needs to be specified once.
         for i, param in enumerate(sorted_params):
             trace = _generate_slice_subplot(study, trials, param)
-            trace.update(marker=dict(showscale=showscale))  # showscale's default is True.
+            trace.update(marker={'showscale': showscale})  # showscale's default is True.
             if showscale:
                 showscale = False
             figure.add_trace(trace, row=1, col=i + 1)

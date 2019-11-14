@@ -32,7 +32,7 @@ def plot_optimization_history(study):
                 ...
 
             study = optuna.create_study()
-            study.optimize(objective ,n_trials=100)
+            study.optimize(objective, n_trials=100)
 
             optuna.visualization.plot_optimization_history(study)
 

@@ -110,15 +110,13 @@ def _get_parallel_coordinate_plot(study, params=None):
     traces = [
         go.Parcoords(
             dimensions=dims,
-            line=dict(
-                color=[t.value for t in trials],
-                colorscale='blues',
-                colorbar=dict(
-                    title='Objective Value'
-                ),
-                showscale=True,
-                reversescale=study.direction == StudyDirection.MINIMIZE
-            )
+            line={
+                'color': dims[0]['values'],
+                'colorscale': 'blues',
+                'colorbar': {'title': 'Objective Value'},
+                'showscale': True,
+                'reversescale': study.direction == StudyDirection.MINIMIZE,
+            }
         )
     ]
 

@@ -90,7 +90,7 @@ def _get_contour_plot(study, params=None):
                 raise ValueError('Parameter {} does not exist in your study.'.format(input_p_name))
         sorted_params = sorted(list(set(params)))
 
-    param_values_range = dict()
+    param_values_range = {}
     for p_name in sorted_params:
         values = [t.params[p_name] for t in trials if p_name in t.params]
         param_values_range[p_name] = (min(values), max(values))
