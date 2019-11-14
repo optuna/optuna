@@ -12,6 +12,7 @@ API Reference
     logging
     pruners
     samplers
+    storages
     structs
     study
     trial

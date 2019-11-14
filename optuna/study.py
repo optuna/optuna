@@ -613,6 +613,19 @@ def create_study(
         storage:
             Database URL. If this argument is set to None, in-memory storage is used, and the
             :class:`~optuna.study.Study` will not be persistent.
+
+            .. note::
+                When a database URL is passed, Optuna internally uses `SQLAlchemy`_ to handle
+                the database. Please refer to `SQLAlchemy's document`_ for further details.
+                If you want to specify non-default options to `SQLAlchemy Engine`_, you can
+                instantiate :class:`~optuna.storages.RDBStorage` with your desired options and
+                pass it to the ``storage`` argument instead of a URL.
+
+             .. _SQLAlchemy: https://www.sqlalchemy.org/
+             .. _SQLAlchemy's document:
+                 https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
+             .. _SQLAlchemy Engine: https://docs.sqlalchemy.org/en/latest/core/engines.html
+
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
@@ -684,10 +697,8 @@ def load_study(
         study_name:
             Study's name. Each study has a unique name as an identifier.
         storage:
-            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
-            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
-            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
-            further details.
+            Database URL such as ``sqlite:///example.db``. Please see also the documentation of
+            :func:`~optuna.study.create_study` for further details.
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
@@ -713,10 +724,8 @@ def delete_study(
         study_name:
             Study's name.
         storage:
-            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
-            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
-            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
-            further details.
+            Database URL such as ``sqlite:///example.db``. Please see also the documentation of
+            :func:`~optuna.study.create_study` for further details.
 
     """
 
@@ -731,7 +740,8 @@ def get_all_study_summaries(storage):
 
     Args:
         storage:
-            Database URL.
+            Database URL such as ``sqlite:///example.db``. Please see also the documentation of
+            :func:`~optuna.study.create_study` for further details.
 
     Returns:
         List of study history summarized as :class:`~optuna.structs.StudySummary` objects.
