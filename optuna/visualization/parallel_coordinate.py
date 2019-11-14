@@ -4,9 +4,18 @@ from optuna.logging import get_logger
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 from optuna.study import Study  # NOQA
-# from optuna.visualization._imports import *  # NOQA
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import is_available
+
+from optuna import type_checking
+
+if type_checking.TYPE_CHECKING:
+    from typing import DefaultDict  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+
+    if is_available():
+        from optuna.visualization._imports import Figure  # NOQA
 
 logger = get_logger(__name__)
 

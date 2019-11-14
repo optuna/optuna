@@ -1,16 +1,26 @@
-# from optuna.visualization._imports import *  # NOQA
 from optuna.logging import get_logger
 from optuna.structs import TrialState
 from optuna.study import Study  # NOQA
+from optuna import type_checking
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import _is_log_scale
 from optuna.visualization.utils import is_available
 
-logger = get_logger(__name__)
+if type_checking.TYPE_CHECKING:
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+
+    from optuna.structs import FrozenTrial  # NOQA
+
+    if is_available():
+        from optuna.visualization._imports import Figure  # NOQA
+        from optuna.visualization._imports import Scatter  # NOQA
 
 if is_available():
     from optuna.visualization._imports import go
     from optuna.visualization._imports import make_subplots
+
+logger = get_logger(__name__)
 
 
 def plot_slice(study, params=None):

@@ -1,8 +1,11 @@
 from optuna import type_checking
+
 from optuna.distributions import LogUniformDistribution
 from optuna.visualization import _imports
 
 if type_checking.TYPE_CHECKING:
+    from typing import List  # NOQA
+
     from optuna.structs import FrozenTrial  # NOQA
 
 
