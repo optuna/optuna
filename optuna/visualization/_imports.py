@@ -1,5 +1,3 @@
-# from optuna import type_checking
-
 try:
     import plotly  # NOQA
     import plotly.graph_objs as go  # NOQA
