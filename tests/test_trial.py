@@ -430,4 +430,4 @@ def test_trial_report():
         trial.report('foo', -1)  # type: ignore
 
     with pytest.raises(ValueError):
-        trial.report(1.23, -1)  # type: ignore
+        trial.report(1.23, -1)
