@@ -64,12 +64,7 @@ def _get_optimization_history_plot(study):
 
     best_values = [float('inf')] if study.direction == StudyDirection.MINIMIZE else [-float('inf')]
     for trial in trials:
-        if isinstance(trial.value, (int, float)):
-            trial_value = float(trial.value)
-        else:
-            raise ValueError(
-                'Trial{} has COMPLETE state, but its value is not int nor float.'.format(
-                    trial.number))
+        trial_value = trial.value
         if study.direction == StudyDirection.MINIMIZE:
             best_values.append(min(best_values[-1], trial_value))
         else:

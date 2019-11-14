@@ -68,9 +68,6 @@ def _get_parallel_coordinate_plot(study, params=None):
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
-    if not all(isinstance(t.value, (int, float)) for t in trials):
-        raise ValueError('trials with non numeral values are not supported')
-
     if len(trials) == 0:
         logger.warning('Your study does not have any completed trials.')
         return go.Figure(data=[], layout=layout)
