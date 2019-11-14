@@ -42,7 +42,7 @@ class RDBStorage(BaseStorage):
 
     Example:
 
-        We create a :class:`~optuna.storages.RDBStorage` instance with
+        We create an :class:`~optuna.storages.RDBStorage` instance with
         customized ``pool_size`` and ``max_overflow`` settings.
 
         .. code::
