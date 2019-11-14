@@ -123,7 +123,7 @@ class BaseStudy(object):
 
         Args:
             deepcopy:
-                Flag to control to apply ``copy.deepcopy()`` to the trials or not.
+                Flag to control whether to apply ``copy.deepcopy()`` to the trials.
                 Note that if you set the flag to :obj:`False`, you shouldn't mutate
                 any fields of the returned trial. Otherwise the internal state of
                 the study may corrupt and unexpected behavior may happen.
