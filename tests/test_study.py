@@ -1,4 +1,4 @@
-import copy  # NOQA
+import copy
 import itertools
 from mock import Mock  # NOQA
 from mock import patch
@@ -724,14 +724,17 @@ def test_get_trials(storage_mode, cache_mode):
         study = optuna.create_study(storage=storage)
         study.optimize(lambda t: t.suggest_int('x', 1, 5), n_trials=5)
 
-        with patch('copy.deepcopy') as mock_object:
-            study.get_trials(deepcopy=False)
+        with patch('copy.deepcopy', wraps=copy.deepcopy) as mock_object:
+            trials0 = study.get_trials(deepcopy=False)
             assert mock_object.call_count == 0
+            assert len(trials0) == 5
 
-            study.get_trials(deepcopy=True)
+            trials1 = study.get_trials(deepcopy=True)
             assert mock_object.call_count > 0
+            assert trials0 == trials1
 
             # `study.trials` is equivalent to `study.get_trials(deepcopy=True)`.
             old_count = mock_object.call_count
-            study.trials
+            trials2 = study.trials
             assert mock_object.call_count > old_count
+            assert trials0 == trials2
