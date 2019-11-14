@@ -416,7 +416,7 @@ def test_trial_report():
     trial.report(1)
     trial.report(np.array([1], dtype=np.float32)[0])
 
-    # Report values that cannot be cast to `float` (Error).
+    # Report values that cannot be cast to `float` or steps that are negative (Error).
     with pytest.raises(TypeError):
         trial.report(None)  # type: ignore
 
@@ -425,3 +425,9 @@ def test_trial_report():
 
     with pytest.raises(TypeError):
         trial.report([1, 2, 3])  # type: ignore
+
+    with pytest.raises(TypeError):
+        trial.report('foo', -1)  # type: ignore
+
+    with pytest.raises(ValueError):
+        trial.report(1.23, -1)  # type: ignore
