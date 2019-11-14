@@ -144,7 +144,7 @@ def objective(trial):
     # PyTorch Lightning will try to restore model parameters from previous trials if checkpoint
     # filenames match. Therefore, the filenames for each trial must be made unique.
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        os.path.join(MODEL_DIR, 'trial_{}'.format(trial.number)))
+        os.path.join(MODEL_DIR, 'trial_{}'.format(trial.number)), save_best_only=False)
 
     # The default logger in PyTorch Lightning writes to event files to be consumed by
     # TensorBoard. We create a simple logger instead that holds the log in memory so that the
