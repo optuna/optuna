@@ -13,7 +13,9 @@ logger = get_logger(__name__)
 if type_checking.TYPE_CHECKING:
     from plotly.graph_objs import Contour  # NOQA
     from plotly.graph_objs import Scatter  # NOQA
+    from typing import Any  # NOQA
     from typing import DefaultDict  # NOQA
+    from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
@@ -50,8 +52,8 @@ def is_available():
     return _available
 
 
-def plot_intermediate_values(study):
-    # type: (Study) -> None
+def plot_intermediate_values(study, update_layout_params=None):
+    # type: (Study, Optional[Dict[Any, Any]]) -> None
     """Plot intermediate values of all trials in a study.
 
     Example:
@@ -75,10 +77,17 @@ def plot_intermediate_values(study):
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their intermediate
             values.
+
+        update_layout_params:
+            Parameters to customize the layout of Plotly's figure graph object. Please see the
+            document of `update_layout <https://plot.ly/python/creating-and-updating-figures/
+            #the-update-layout-method>`_ method for more details.
     """
 
     _check_plotly_availability()
     figure = _get_intermediate_plot(study)
+    if update_layout_params:
+        figure.update_layout(update_layout_params)
     figure.show()
 
 
