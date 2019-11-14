@@ -47,12 +47,17 @@ MODEL_DIR = os.path.join(DIR, 'result')
 class DictLogger(pl.logging.LightningLoggerBase):
     """PyTorch Lightning `dict` logger."""
 
-    def __init__(self):
+    def __init__(self, version):
         super(DictLogger, self).__init__()
         self.metrics = []
+        self._version = version
 
     def log_metrics(self, metric, step_num=None):
         self.metrics.append(metric)
+
+    @property
+    def version(self):
+        return self._version
 
 
 class Net(nn.Module):
@@ -145,7 +150,7 @@ def objective(trial):
     # TensorBoard. We create a simple logger instead that holds the log in memory so that the
     # final accuracy can be obtained after optimization. When using the default logger, the
     # final accuracy could be stored in an attribute of the `Trainer` instead.
-    logger = DictLogger()
+    logger = DictLogger(trial.number)
 
     trainer = pl.Trainer(
         logger=logger,
