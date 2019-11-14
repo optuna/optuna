@@ -63,12 +63,11 @@ def _get_optimization_history_plot(study):
         return go.Figure(data=[], layout=layout)
 
     best_values = [float('inf')] if study.direction == StudyDirection.MINIMIZE else [-float('inf')]
+    comp = min if study.direction == StudyDirection.MINIMIZE else max
     for trial in trials:
         trial_value = trial.value
-        if study.direction == StudyDirection.MINIMIZE:
-            best_values.append(min(best_values[-1], trial_value))
-        else:
-            best_values.append(max(best_values[-1], trial_value))
+        assert trial_value is not None  # For mypy
+        best_values.append(comp(best_values[-1], trial_value))
     best_values.pop(0)
     traces = [
         go.Scatter(x=[t.number for t in trials], y=[t.value for t in trials],
