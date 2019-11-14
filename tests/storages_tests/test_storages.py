@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime
 from mock import patch
 import pytest
@@ -674,6 +675,26 @@ def test_get_all_trials(storage_init_func):
     # Test getting trials per study.
     trials = sorted(storage.get_all_trials(study_id_2), key=lambda trial: trial._trial_id)
     _check_example_trial_static_attributes(trials[0], EXAMPLE_TRIALS[0])
+
+
+@parametrize_storage
+def test_get_all_trials_deepcopy_option(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+    study_id = storage.create_new_study()
+
+    for trial in EXAMPLE_TRIALS:
+        _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS, trial)
+
+    with patch('copy.deepcopy', wraps=copy.deepcopy) as mock_object:
+        trials0 = storage.get_all_trials(study_id, deepcopy=False)
+        assert mock_object.call_count == 0
+        assert len(trials0) == len(EXAMPLE_TRIALS)
+
+        trials1 = storage.get_all_trials(study_id, deepcopy=True)
+        assert mock_object.call_count > 0
+        assert trials0 == trials1
 
 
 @parametrize_storage
