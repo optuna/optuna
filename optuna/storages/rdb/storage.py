@@ -68,19 +68,14 @@ class RDBStorage(BaseStorage):
         engine_kwargs:
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
-        enable_cache:
-            Flag to control whether to enable storage layer caching.
-            If this flag is set to :obj:`True` (the default), the finished trials are
-            cached on memory and never re-fetched from the storage.
-            Otherwise, the trials are fetched from the storage whenever they are needed.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
 
     """
 
-    def __init__(self, url, engine_kwargs=None, enable_cache=True, skip_compatibility_check=False):
-        # type: (str, Optional[Dict[str, Any]], bool, bool) -> None
+    def __init__(self, url, engine_kwargs=None, skip_compatibility_check=False):
+        # type: (str, Optional[Dict[str, Any]], bool) -> None
 
         self._check_python_version()
 
@@ -104,7 +99,7 @@ class RDBStorage(BaseStorage):
         if not skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
 
-        self._finished_trials_cache = _FinishedTrialsCache(enable_cache)
+        self._finished_trials_cache = _FinishedTrialsCache()
 
     @staticmethod
     def _check_python_version():
@@ -1046,18 +1041,14 @@ class _VersionManager(object):
 
 
 class _FinishedTrialsCache(object):
-    def __init__(self, enabled):
-        # type: (bool) -> None
+    def __init__(self):
+        # type: () -> None
 
         self._finished_trials = {}  # type: Dict[int, structs.FrozenTrial]
-        self._enabled = enabled
         self._lock = threading.Lock()
 
     def is_empty(self):
         # type: () -> bool
-
-        if not self._enabled:
-            return True
 
         with self._lock:
             return len(self._finished_trials) == 0
@@ -1065,18 +1056,12 @@ class _FinishedTrialsCache(object):
     def cache_trial_if_finished(self, trial):
         # type: (structs.FrozenTrial) -> None
 
-        if not self._enabled:
-            return
-
         if trial.state.is_finished():
             with self._lock:
                 self._finished_trials[trial._trial_id] = copy.deepcopy(trial)
 
     def get_cached_trial(self, trial_id):
         # type: (int) -> Optional[structs.FrozenTrial]
-
-        if not self._enabled:
-            return None
 
         with self._lock:
             return self._finished_trials.get(trial_id)

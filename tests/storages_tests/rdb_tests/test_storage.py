@@ -242,9 +242,7 @@ def test_check_table_schema_compatibility():
 def create_test_storage(enable_cache=True, engine_kwargs=None):
     # type: (bool, Optional[Dict[str, Any]]) -> RDBStorage
 
-    storage = RDBStorage('sqlite:///:memory:',
-                         enable_cache=enable_cache,
-                         engine_kwargs=engine_kwargs)
+    storage = RDBStorage('sqlite:///:memory:', engine_kwargs=engine_kwargs)
     return storage
 
 
