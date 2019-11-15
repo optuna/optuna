@@ -77,8 +77,8 @@ class FastAIPruningCallback(TrackerCallback):
             return
 
         # This conversion is necessary to avoid problems reported in issues.
-        # - https://github.com/pfnet/optuna/issue/642
-        # - https://github.com/pfnet/optuna/issue/655.
+        # - https://github.com/optuna/optuna/issue/642
+        # - https://github.com/optuna/optuna/issue/655.
         self.trial.report(float(value), step=epoch)
         if self.trial.should_prune():
             message = 'Trial was pruned at epoch {}.'.format(epoch)

@@ -67,7 +67,7 @@ def get_extras_require():
         'dask-ml', 'dask[dataframe]', 'pytorch-lightning',
 
         # TODO(Yanase): Update examples to support TensorFlow 2.0.
-        # See https://github.com/pfnet/optuna/issues/565 for further details.
+        # See https://github.com/optuna/optuna/issues/565 for further details.
         'tensorflow<2.0.0',
     ]
     if _fastai_available:

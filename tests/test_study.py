@@ -716,7 +716,7 @@ def test_callbacks(n_jobs):
     # NOTE: Because `Study.optimize` blocks forever if `n_jobs` is more than `1` and
     #       an uncaught exception is raised during an optimization,
     #       we test the following scenario only when `n_jobs==1`.
-    #       For the details of this problem, please see https://github.com/pfnet/optuna/issues/538.
+    #       For further details, please see https://github.com/optuna/optuna/issues/538.
     #
     # TODO(ohta): Fix `Study.optimize`
 
