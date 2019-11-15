@@ -1,8 +1,8 @@
 from mock import patch
+import pickle
 import pytest
 import sys
 import tempfile
-import pickle
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import json_to_distribution

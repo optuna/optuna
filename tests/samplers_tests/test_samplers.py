@@ -14,6 +14,7 @@ if optuna.type_checking.TYPE_CHECKING:
     import typing  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
+    from typing import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
@@ -36,6 +37,7 @@ parametrize_sampler = pytest.mark.parametrize(
     [None, 0, 169208]
 )
 def test_pickle_random_sampler(seed):
+    # type: (Optional[int]) -> None
     sampler = optuna.samplers.RandomSampler(seed)
     restored_sampler = pickle.loads(pickle.dumps(sampler))
     assert sampler.seed == restored_sampler.seed
