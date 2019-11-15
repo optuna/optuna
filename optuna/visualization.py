@@ -342,7 +342,7 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
 
     # TODO(Yanase): Use reversescale argument to reverse colorscale if Plotly's bug is fixed.
     # If contours_coloring='heatmap' is specified, reversesecale argument of go.Contour does not
-    # work correctly. See https://github.com/pfnet/optuna/issues/606.
+    # work correctly. See https://github.com/optuna/optuna/issues/606.
     colorscale = plotly.colors.PLOTLY_SCALES['Blues']
     if direction == StudyDirection.MINIMIZE:
         colorscale = [[1 - t[0], t[1]] for t in colorscale]

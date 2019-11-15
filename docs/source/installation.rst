@@ -13,4 +13,4 @@ You can also install the development version of Optuna from master branch of Git
 
 .. code-block:: bash
 
-    $ pip install git+https://github.com/pfnet/optuna.git
+    $ pip install git+https://github.com/optuna/optuna.git
