@@ -53,7 +53,7 @@ def is_available():
 
 
 def plot_intermediate_values(study, update_layout_params=None):
-    # type: (Study, Optional[Dict[Any, Any]]) -> None
+    # type: (Study, Optional[Dict[str, Any]]) -> None
     """Plot intermediate values of all trials in a study.
 
     Example:
@@ -79,8 +79,8 @@ def plot_intermediate_values(study, update_layout_params=None):
             values.
 
         update_layout_params:
-            Parameters to customize the layout of Plotly's figure graph object. Please see the
-            document of `update_layout <https://plot.ly/python/creating-and-updating-figures/
+            Parameters to customize the layout of Plotly's figure graph object. Please check the
+            document of `update_layout() <https://plot.ly/python/creating-and-updating-figures/
             #the-update-layout-method>`_ method for more details.
     """
 
