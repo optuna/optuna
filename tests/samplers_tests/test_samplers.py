@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 import pytest
 
 import optuna
@@ -28,6 +29,21 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.integration.SkoptSampler(skopt_kwargs={'n_initial_points': 1}),
         lambda: optuna.integration.CmaEsSampler()
     ])
+
+
+@pytest.mark.parametrize(
+    'seed',
+    [None, 0, 169208]
+)
+def test_pickle_random_sampler(seed):
+    sampler = optuna.samplers.RandomSampler(seed)
+    restored_sampler = pickle.loads(pickle.dumps(sampler))
+    assert sampler.seed == restored_sampler.seed
+    assert sampler.rng != restored_sampler.rng
+    if seed is None:
+        assert sampler.rng.bytes(10) != restored_sampler.rng.bytes(10)
+    else:
+        assert sampler.rng.bytes(10) == restored_sampler.rng.bytes(10)
 
 
 @parametrize_sampler
