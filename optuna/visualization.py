@@ -5,7 +5,6 @@ from optuna.distributions import LogUniformDistribution
 from optuna.logging import get_logger
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
-from optuna.study import Study  # NOQA
 from optuna import type_checking
 
 logger = get_logger(__name__)
@@ -21,6 +20,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
 
     from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import Study  # NOQA
 
 try:
     import plotly
@@ -52,8 +52,8 @@ def is_available():
     return _available
 
 
-def plot_intermediate_values(study, update_layout_params=None):
-    # type: (Study, Optional[Dict[str, Any]]) -> None
+def plot_intermediate_values(study):
+    # type: (Study) -> Figure
     """Plot intermediate values of all trials in a study.
 
     Example:
@@ -78,17 +78,12 @@ def plot_intermediate_values(study, update_layout_params=None):
             A :class:`~optuna.study.Study` object whose trials are plotted for their intermediate
             values.
 
-        update_layout_params:
-            Parameters to customize the layout of Plotly's figure graph object. Please check the
-            document of `update_layout() <https://plot.ly/python/creating-and-updating-figures/
-            #the-update-layout-method>`_ method for more details.
+    Returns:
+        A :class:`plotly.graph_objs._figure.Figure` object.
     """
 
     _check_plotly_availability()
-    figure = _get_intermediate_plot(study)
-    if update_layout_params:
-        figure.update_layout(update_layout_params)
-    figure.show()
+    return _get_intermediate_plot(study)
 
 
 def _get_intermediate_plot(study):
@@ -133,7 +128,7 @@ def _get_intermediate_plot(study):
 
 
 def plot_optimization_history(study):
-    # type: (Study) -> None
+    # type: (Study) -> Figure
     """Plot optimization history of all trials in a study.
 
     Example:
@@ -156,11 +151,13 @@ def plot_optimization_history(study):
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
             values.
+
+    Returns:
+        A :class:`plotly.graph_objs._figure.Figure` object.
     """
 
     _check_plotly_availability()
-    figure = _get_optimization_history_plot(study)
-    figure.show()
+    return _get_optimization_history_plot(study)
 
 
 def _get_optimization_history_plot(study):
@@ -203,7 +200,7 @@ def _get_optimization_history_plot(study):
 
 
 def plot_contour(study, params=None):
-    # type: (Study, Optional[List[str]]) -> None
+    # type: (Study, Optional[List[str]]) -> Figure
     """Plot the parameter relationship as contour plot in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -231,11 +228,13 @@ def plot_contour(study, params=None):
             values.
         params:
             Parameter list to visualize. The default is all parameters.
+
+    Returns:
+        A :class:`plotly.graph_objs._figure.Figure` object.
     """
 
     _check_plotly_availability()
-    figure = _get_contour_plot(study, params)
-    figure.show()
+    return _get_contour_plot(study, params)
 
 
 def _get_contour_plot(study, params=None):
@@ -379,7 +378,7 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
 
 
 def plot_parallel_coordinate(study, params=None):
-    # type: (Study, Optional[List[str]]) -> None
+    # type: (Study, Optional[List[str]]) -> Figure
     """Plot the high-dimentional parameter relationships in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -407,11 +406,13 @@ def plot_parallel_coordinate(study, params=None):
             values.
         params:
             Parameter list to visualize. The default is all parameters.
+
+    Returns:
+        A :class:`plotly.graph_objs._figure.Figure` object.
     """
 
     _check_plotly_availability()
-    figure = _get_parallel_coordinate_plot(study, params)
-    figure.show()
+    return _get_parallel_coordinate_plot(study, params)
 
 
 def _get_parallel_coordinate_plot(study, params=None):
@@ -483,7 +484,7 @@ def _get_parallel_coordinate_plot(study, params=None):
 
 
 def plot_slice(study, params=None):
-    # type: (Study, Optional[List[str]]) -> None
+    # type: (Study, Optional[List[str]]) -> Figure
     """Plot the parameter relationship as slice plot in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -511,11 +512,13 @@ def plot_slice(study, params=None):
             values.
         params:
             Parameter list to visualize. The default is all parameters.
+
+    Returns:
+        A :class:`plotly.graph_objs._figure.Figure` object.
     """
 
     _check_plotly_availability()
-    figure = _get_slice_plot(study, params)
-    figure.show()
+    return _get_slice_plot(study, params)
 
 
 def _get_slice_plot(study, params=None):
