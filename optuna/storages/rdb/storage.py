@@ -37,18 +37,45 @@ if type_checking.TYPE_CHECKING:
 class RDBStorage(BaseStorage):
     """Storage class for RDB backend.
 
-    This class is not supposed to be directly accessed by library users.
+    Note that library users can instantiate this class, but the attributes
+    provided by this class are not supposed to be directly accessed by them.
+
+    Example:
+
+        We create an :class:`~optuna.storages.RDBStorage` instance with
+        customized ``pool_size`` and ``max_overflow`` settings.
+
+        .. code::
+
+            >>> import optuna
+            >>>
+            >>> def objective(trial):
+            >>>     ...
+            >>>
+            >>> storage = optuna.storages.RDBStorage(
+            >>>     url='postgresql://foo@localhost/db',
+            >>>     engine_kwargs={
+            >>>         'pool_size': 20,
+            >>>         'max_overflow': 0
+            >>>     }
+            >>> )
+            >>>
+            >>> study = optuna.create_study(storage=storage)
+            >>> study.optimize(objective)
 
     Args:
         url: URL of the storage.
         engine_kwargs:
             A dictionary of keyword arguments that is passed to
-            :func:`sqlalchemy.engine.create_engine`.
+            `sqlalchemy.engine.create_engine`_ function.
         enable_cache:
             Flag to control whether to enable storage layer caching.
             If this flag is set to :obj:`True` (the default), the finished trials are
             cached on memory and never re-fetched from the storage.
             Otherwise, the trials are fetched from the storage whenever they are needed.
+
+    .. _sqlalchemy.engine.create_engine:
+        https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
 
     """
 
@@ -103,7 +130,7 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel(study_name=study_name, direction=structs.StudyDirection.NOT_SET)
         session.add(study)
         if not self._commit_with_integrity_check(session):
-            raise structs.DuplicatedStudyError(
+            raise optuna.exceptions.DuplicatedStudyError(
                 "Another study with name '{}' already exists. "
                 "Please specify a different name, or reuse the existing one "
                 "by setting `load_if_exists` (for Python API) or "
@@ -768,9 +795,10 @@ class RDBStorage(BaseStorage):
             #
             # This is because `self.get_trial_number_from_id()` may call `session.commit()`
             # internally, which causes unintended changes of the states of `trials`.
-            # (see https://github.com/pfnet/optuna/pull/349#issuecomment-475086642 for details)
-            trial_number = self.get_trial_number_from_id(temp_trial.trial_id)
-            result.append(temp_trial._replace(number=trial_number))
+            # (see https://github.com/optuna/optuna/pull/349#issuecomment-475086642 for details)
+            trial_number = self.get_trial_number_from_id(temp_trial._trial_id)
+            temp_trial.number = trial_number
+            result.append(temp_trial)
 
         return result
 
@@ -809,7 +837,8 @@ class RDBStorage(BaseStorage):
                 'This typically happens due to invalid data in the commit, ' \
                 'e.g. exceeding max length. ' \
                 '(The actual exception is as follows: {})'.format(repr(e))
-            six.reraise(structs.StorageInternalError, structs.StorageInternalError(message),
+            six.reraise(optuna.exceptions.StorageInternalError,
+                        optuna.exceptions.StorageInternalError(message),
                         sys.exc_info()[2])
 
     def remove_session(self):
@@ -1041,7 +1070,7 @@ class _FinishedTrialsCache(object):
 
         if trial.state.is_finished():
             with self._lock:
-                self._finished_trials[trial.trial_id] = copy.deepcopy(trial)
+                self._finished_trials[trial._trial_id] = copy.deepcopy(trial)
 
     def get_cached_trial(self, trial_id):
         # type: (int) -> Optional[structs.FrozenTrial]

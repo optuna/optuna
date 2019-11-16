@@ -58,7 +58,7 @@ class MXNetPruningCallback(object):
             self.trial.report(current_score, step=param.epoch)
             if self.trial.should_prune():
                 message = "Trial was pruned at epoch {}.".format(param.epoch)
-                raise optuna.structs.TrialPruned(message)
+                raise optuna.exceptions.TrialPruned(message)
 
 
 def _check_mxnet_availability():

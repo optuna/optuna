@@ -1,5 +1,7 @@
 from collections import defaultdict
+import math
 
+from optuna.distributions import LogUniformDistribution
 from optuna.logging import get_logger
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
@@ -19,6 +21,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.structs import FrozenTrial  # NOQA
 
 try:
+    import plotly
     import plotly.graph_objs as go
     from plotly.graph_objs._figure import Figure  # NOQA
     from plotly.subplots import make_subplots
@@ -95,23 +98,25 @@ def _get_intermediate_plot(study):
     if len(trials) == 0:
         logger.warning('Study instance does not contain trials.')
         return go.Figure(data=[], layout=layout)
-    if hasattr(trials[0], 'intermediate_values') is False:
-        logger.warning(
-            'You need to set up the pruning feature to utilize plot_intermediate_values()')
-        return go.Figure(data=[], layout=layout)
 
     traces = []
     for trial in trials:
-        trace = go.Scatter(
-            x=tuple(trial.intermediate_values.keys()),
-            y=tuple(trial.intermediate_values.values()),
-            mode='lines+markers',
-            marker={
-                'maxdisplayed': 10
-            },
-            name='Trial{}'.format(trial.number)
-        )
-        traces.append(trace)
+        if trial.intermediate_values:
+            trace = go.Scatter(
+                x=tuple(trial.intermediate_values.keys()),
+                y=tuple(trial.intermediate_values.values()),
+                mode='lines+markers',
+                marker={
+                    'maxdisplayed': 10
+                },
+                name='Trial{}'.format(trial.number)
+            )
+            traces.append(trace)
+
+    if not traces:
+        logger.warning(
+            'You need to set up the pruning feature to utilize `plot_intermediate_values()`')
+        return go.Figure(data=[], layout=layout)
 
     figure = go.Figure(data=traces, layout=layout)
 
@@ -166,11 +171,12 @@ def _get_optimization_history_plot(study):
 
     best_values = [float('inf')] if study.direction == StudyDirection.MINIMIZE else [-float('inf')]
     for trial in trials:
-        if isinstance(trial.value, float):
-            trial_value = trial.value
+        if isinstance(trial.value, (int, float)):
+            trial_value = float(trial.value)
         else:
             raise ValueError(
-                'Trial{} has COMPLETE state, but its value is non float.'.format(trial.number))
+                'Trial{} has COMPLETE state, but its value is not int nor float.'.format(
+                    trial.number))
         if study.direction == StudyDirection.MINIMIZE:
             best_values.append(min(best_values[-1], trial_value))
         else:
@@ -261,6 +267,12 @@ def _get_contour_plot(study, params=None):
         figure = go.Figure(data=sub_plots)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
         figure.update_yaxes(title_text=y_param, range=param_values_range[y_param])
+        if _is_log_scale(trials, x_param):
+            log_range = [math.log10(p) for p in param_values_range[x_param]]
+            figure.update_xaxes(range=log_range, type='log')
+        if _is_log_scale(trials, y_param):
+            log_range = [math.log10(p) for p in param_values_range[y_param]]
+            figure.update_yaxes(range=log_range, type='log')
     else:
         figure = make_subplots(rows=len(sorted_params),
                                cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True)
@@ -283,6 +295,12 @@ def _get_contour_plot(study, params=None):
                                     row=y_i + 1, col=x_i + 1)
                 figure.update_yaxes(range=param_values_range[y_param],
                                     row=y_i + 1, col=x_i + 1)
+                if _is_log_scale(trials, x_param):
+                    log_range = [math.log10(p) for p in param_values_range[x_param]]
+                    figure.update_xaxes(range=log_range, type='log', row=y_i + 1, col=x_i + 1)
+                if _is_log_scale(trials, y_param):
+                    log_range = [math.log10(p) for p in param_values_range[y_param]]
+                    figure.update_yaxes(range=log_range, type='log', row=y_i + 1, col=x_i + 1)
                 if x_i == 0:
                     figure.update_yaxes(title_text=y_param, row=y_i + 1, col=x_i + 1)
                 if y_i == len(sorted_params) - 1:
@@ -322,15 +340,22 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
                 'Trial{} has COMPLETE state, but its value is non-numeric.'.format(trial.number))
         z[y_i][x_i] = value
 
+    # TODO(Yanase): Use reversescale argument to reverse colorscale if Plotly's bug is fixed.
+    # If contours_coloring='heatmap' is specified, reversesecale argument of go.Contour does not
+    # work correctly. See https://github.com/optuna/optuna/issues/606.
+    colorscale = plotly.colors.PLOTLY_SCALES['Blues']
+    if direction == StudyDirection.MINIMIZE:
+        colorscale = [[1 - t[0], t[1]] for t in colorscale]
+        colorscale.reverse()
+
     contour = go.Contour(
         x=x_indices, y=y_indices, z=z,
         colorbar={'title': 'Objective Value'},
-        colorscale='blues',
+        colorscale=colorscale,
         connectgaps=True,
         contours_coloring='heatmap',
         hoverinfo='none',
         line_smoothing=1.3,
-        reversescale=True if direction == StudyDirection.MINIMIZE else False
     )
 
     scatter = go.Scatter(
@@ -397,8 +422,7 @@ def _get_parallel_coordinate_plot(study, params=None):
     if params is not None:
         for input_p_name in params:
             if input_p_name not in all_params:
-                logger.warning('Parameter {} does not exist in your study.'.format(input_p_name))
-                return go.Figure(data=[], layout=layout)
+                ValueError('Parameter {} does not exist in your study.'.format(input_p_name))
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
@@ -514,6 +538,8 @@ def _get_slice_plot(study, params=None):
         )
         figure.update_xaxes(title_text=sorted_params[0])
         figure.update_yaxes(title_text='Objective Value')
+        if _is_log_scale(trials, sorted_params[0]):
+            figure.update_xaxes(type='log')
     else:
         figure = make_subplots(rows=1, cols=len(sorted_params), shared_yaxes=True)
         figure.update_layout(layout)
@@ -527,8 +553,17 @@ def _get_slice_plot(study, params=None):
             figure.update_xaxes(title_text=param, row=1, col=i + 1)
             if i == 0:
                 figure.update_yaxes(title_text='Objective Value', row=1, col=1)
+            if _is_log_scale(trials, param):
+                figure.update_xaxes(type='log', row=1, col=i + 1)
 
     return figure
+
+
+def _is_log_scale(trials, param):
+    # type: (List[FrozenTrial], str) -> bool
+
+    return any(isinstance(t.distributions[param], LogUniformDistribution)
+               for t in trials if param in t.params)
 
 
 def _generate_slice_subplot(study, trials, param):
@@ -539,6 +574,10 @@ def _generate_slice_subplot(study, trials, param):
         y=[t.value for t in trials if param in t.params],
         mode='markers',
         marker={
+            'line': {
+                'width': 0.5,
+                'color': 'Grey',
+            },
             'color': [t.number for t in trials if param in t.params],
             'colorscale': 'Blues',
             'colorbar': {'title': '#Trials'}
