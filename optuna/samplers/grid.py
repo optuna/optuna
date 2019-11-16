@@ -68,7 +68,7 @@ class GridSampler(BaseSampler):
     """
 
     def __init__(self, grid):
-        # type: (Dict[str, List[Any]], Optional[BaseSampler]) -> None
+        # type: (Dict[str, List[Any]]) -> None
 
         # todo(g-votte): detect non-identical girds and raise an error in case.
 
