@@ -12,9 +12,7 @@ logger = get_logger(__name__)
 if type_checking.TYPE_CHECKING:
     from plotly.graph_objs import Contour  # NOQA
     from plotly.graph_objs import Scatter  # NOQA
-    from typing import Any  # NOQA
     from typing import DefaultDict  # NOQA
-    from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
