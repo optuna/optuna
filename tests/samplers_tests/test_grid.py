@@ -34,16 +34,20 @@ def test_study_optimize():
         'd': [-0.5, 0.5],
         'e': [0.1]
     }
-    n_trials = int(np.prod([len(v) for v in grid.values()]))
+    n_grids = int(np.prod([len(v) for v in grid.values()]))
     study = optuna.create_study(sampler=samplers.GridSampler(grid))
-    study.optimize(objective, n_trials=n_trials)
+    study.optimize(objective, n_trials=n_grids)
 
     grid_product = itertools.product(*grid.values())
     all_suggested_values = [tuple([p for p in t.params.values()]) for t in study.trials]
     assert set(grid_product) == set(all_suggested_values)
 
     ids = sorted([t.system_attrs['grid_id'] for t in study.trials])
-    assert ids == list(range(n_trials))
+    assert ids == list(range(n_grids))
+
+    # Test that an optimization fails if the number of trials is more than that of all grids.
+    with pytest.raises(ValueError):
+        study.optimize(objective, n_trials=1)
 
     # Test a non-existing parameter name in the grid.
     grid = {'a': list(range(0, 100, 20))}
@@ -51,7 +55,7 @@ def test_study_optimize():
     with pytest.raises(ValueError):
         study.optimize(objective)
 
-    # Test an value with out of range.
+    # Test a value with out of range.
     grid = {
         'a': [110],  # 110 is out of range specified by the suggest method.
         'b': [0],

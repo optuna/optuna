@@ -9,7 +9,6 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
-    from typing import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
@@ -85,13 +84,16 @@ class GridSampler(BaseSampler):
     def sample_relative(self, study, trial, search_space):
         # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
-        # todo(g-votte): finish the study after all grids are visited.
-
         # Instead of returning param values, GridSampler puts the target grid id as a system attr,
         # and the values are returned from `sample_independent`. This is because the distribution
         # object is hard to get at the beginning of trial, while we need the access to the object
         # to validate the sampled value.
         unvisited_grids = self._get_unvisited_grid_ids(study)
+
+        if len(unvisited_grids) == 0:
+            raise ValueError('All grids have been evaluated. If you want to avoid this error, '
+                             'please make sure that unnecessary trials do not run during '
+                             'optimization by properly setting `n_trials` in `study.optimize`.')
 
         # In distributed optimization, multiple workers may simultaneously pick up the same grid.
         # To make the conflict less frequent, the grid is chosen randomly.
