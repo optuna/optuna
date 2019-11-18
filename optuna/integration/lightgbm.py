@@ -21,15 +21,15 @@ if _available:
     from lightgbm import Dataset  # NOQA
     from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
 
-    names_from_tuners = ['train', 'LGBMModel', 'LGBMClassifier', 'LGBMRegressor']
+    _names_from_tuners = ['train', 'LGBMModel', 'LGBMClassifier', 'LGBMRegressor']
 
     # API from lightgbm.
     for api_name in lgb.__dict__['__all__']:
-        if api_name in names_from_tuners:
+        if api_name in _names_from_tuners:
             continue
         setattr(sys.modules[__name__], api_name, lgb.__dict__[api_name])
 
-    for api_name in names_from_tuners:
+    for api_name in _names_from_tuners:
         setattr(sys.modules[__name__], api_name, tuner.__dict__[api_name])
 else:
     LightGBMTuner = object  # type: ignore
