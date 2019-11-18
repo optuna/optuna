@@ -51,22 +51,33 @@ def get_install_requires():
 def get_extras_require():
     # type: () -> Dict[str, List[str]]
 
+    _major, _sub = sys.version_info[:2]
+    _fastai_available = (_major == 3) and (_sub > 5)
+
+    testing_requirements = [
+        'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
+        'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
+        'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0',
+        'torch', 'torchvision', 'pytorch-ignite', 'pytorch-lightning',
+    ]
+
+    example_requirements = [
+        'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
+        'mxnet', 'xgboost', 'torch', 'torchvision', 'pytorch-ignite',
+        'dask-ml', 'dask[dataframe]', 'pytorch-lightning',
+
+        # TODO(Yanase): Update examples to support TensorFlow 2.0.
+        # See https://github.com/optuna/optuna/issues/565 for further details.
+        'tensorflow<2.0.0',
+    ]
+    if _fastai_available:
+        testing_requirements.append("fastai<2")
+        example_requirements.append("fastai<2")
+
     extras_require = {
         'checking': ['autopep8', 'hacking'],
-        'testing': [
-            'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
-            'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
-            'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0', 'torch',
-            'pytorch-ignite', 'pytorch_lightning'
-        ],
-        'example': [
-            'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
-            'mxnet', 'xgboost', 'torch', 'torchvision', 'pytorch-ignite',
-            'pytorch-lightning', 'dask-ml', 'dask[dataframe]',
-            # TODO(Yanase): Update examples to support TensorFlow 2.0.
-            # See https://github.com/pfnet/optuna/issues/565 for further details.
-            'tensorflow<2.0.0'
-        ],
+        'testing': testing_requirements,
+        'example': example_requirements,
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],
     }

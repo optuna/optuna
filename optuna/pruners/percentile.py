@@ -1,11 +1,13 @@
 import math
 import numpy as np
+import six
 
 from optuna.pruners import BasePruner
 from optuna import structs
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    from typing import Iterator  # NOQA
     from typing import List  # NOQA
 
     from optuna.study import Study  # NOQA
@@ -40,6 +42,21 @@ def _get_percentile_intermediate_result_over_trials(all_trials, direction, step,
             percentile))
 
 
+def _is_first_in_interval_step(step, intermediate_steps, n_warmup_steps, interval_steps):
+    # type: (int, Iterator[int], int, int) -> bool
+
+    nearest_lower_pruning_step = (
+        (step - n_warmup_steps - 1) // interval_steps * interval_steps + n_warmup_steps + 1)
+    assert nearest_lower_pruning_step >= 0
+
+    # `intermediate_steps` may not be sorted so we must go through all elements.
+    second_last_step = six.moves.reduce(
+        lambda second_last_step, s: s if s > second_last_step and s != step
+        else second_last_step, intermediate_steps, -1)
+
+    return second_last_step < nearest_lower_pruning_step
+
+
 class PercentilePruner(BasePruner):
     """Pruner to keep the specified percentile of the trials.
 
@@ -66,14 +83,32 @@ class PercentilePruner(BasePruner):
             Pruning is disabled until the given number of trials finish in the same study.
         n_warmup_steps:
             Pruning is disabled until the trial reaches the given number of step.
+        interval_steps:
+            Interval in number of steps between the pruning checks, offset by the warmup steps.
+            If no value has been reported at the time of a pruning check, that particular check
+            will be postponed until a value is reported. Value must be at least 1.
     """
 
-    def __init__(self, percentile, n_startup_trials=5, n_warmup_steps=0):
-        # type: (float, int, int) -> None
+    def __init__(self, percentile, n_startup_trials=5, n_warmup_steps=0, interval_steps=1):
+        # type: (float, int, int, int) -> None
+
+        if not 0.0 <= percentile <= 100:
+            raise ValueError(
+                'Percentile must be between 0 and 100 inclusive but got {}.'.format(percentile))
+        if n_startup_trials < 0:
+            raise ValueError(
+                'Number of startup trials cannot be negative but got {}.'.format(n_startup_trials))
+        if n_warmup_steps < 0:
+            raise ValueError(
+                'Number of warmup steps cannot be negative but got {}.'.format(n_warmup_steps))
+        if interval_steps < 1:
+            raise ValueError(
+                'Pruning interval steps must be at least 1 but got {}.'.format(interval_steps))
 
         self.percentile = percentile
         self.n_startup_trials = n_startup_trials
         self.n_warmup_steps = n_warmup_steps
+        self.interval_steps = interval_steps
 
     def prune(self, study, trial):
         # type: (Study, structs.FrozenTrial) -> bool
@@ -93,10 +128,13 @@ class PercentilePruner(BasePruner):
         if step is None:
             return False
 
-        if step <= self.n_warmup_steps:
+        n_warmup_steps = self.n_warmup_steps
+        if step <= n_warmup_steps:
             return False
 
-        if len(trial.intermediate_values) == 0:
+        if not _is_first_in_interval_step(
+                step, six.iterkeys(trial.intermediate_values), n_warmup_steps,
+                self.interval_steps):
             return False
 
         direction = study.direction

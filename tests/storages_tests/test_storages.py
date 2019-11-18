@@ -659,7 +659,7 @@ def test_get_all_trials(storage_init_func):
     datetime_after = datetime.now()
 
     # Test getting multiple trials.
-    trials = sorted(storage.get_all_trials(study_id_1), key=lambda x: x.trial_id)
+    trials = sorted(storage.get_all_trials(study_id_1), key=lambda trial: trial._trial_id)
     _check_example_trial_static_attributes(trials[0], EXAMPLE_TRIALS[0])
     _check_example_trial_static_attributes(trials[1], EXAMPLE_TRIALS[1])
     for t in trials:
@@ -672,7 +672,7 @@ def test_get_all_trials(storage_init_func):
             assert t.datetime_complete is None
 
     # Test getting trials per study.
-    trials = sorted(storage.get_all_trials(study_id_2), key=lambda x: x.trial_id)
+    trials = sorted(storage.get_all_trials(study_id_2), key=lambda trial: trial._trial_id)
     _check_example_trial_static_attributes(trials[0], EXAMPLE_TRIALS[0])
 
 
@@ -724,8 +724,6 @@ def _check_example_trial_static_attributes(trial_1, trial_2):
 
     assert trial_1 is not None
     assert trial_2 is not None
-
-    trial_1 = trial_1._replace(trial_id=-1, number=0, datetime_start=None, datetime_complete=None)
-    trial_2 = trial_2._replace(trial_id=-1, number=0, datetime_start=None, datetime_complete=None)
-
-    assert trial_1 == trial_2
+    assert all(
+        getattr(trial_1, field) == getattr(trial_2, field) for field in FrozenTrial._ordered_fields
+        if field not in ['_trial_id', 'number', 'datetime_start', 'datetime_complete'])

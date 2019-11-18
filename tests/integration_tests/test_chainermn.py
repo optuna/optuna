@@ -4,12 +4,12 @@ import pytest
 
 from optuna import create_study
 from optuna import distributions
+from optuna.exceptions import TrialPruned
 from optuna import integration
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.structs import TrialPruned
 from optuna.structs import TrialState
 from optuna import Study
 from optuna.testing.integration import DeterministicPruner
@@ -72,10 +72,10 @@ class Func(object):
         y = trial.suggest_loguniform('y', 20, 30)
         z = trial.suggest_categorical('z', (-1.0, 1.0))
 
-        self.suggested_values[trial._trial_id] = {}
-        self.suggested_values[trial._trial_id]['x'] = x
-        self.suggested_values[trial._trial_id]['y'] = y
-        self.suggested_values[trial._trial_id]['z'] = z
+        self.suggested_values[trial.number] = {}
+        self.suggested_values[trial.number]['x'] = x
+        self.suggested_values[trial.number]['y'] = y
+        self.suggested_values[trial.number]['z'] = z
 
         return (x - 2)**2 + (y - 25)**2 + z
 
@@ -182,7 +182,7 @@ class TestChainerMNStudy(object):
 
             # Assert the same parameters have been suggested among all nodes.
             for trial in mn_study.trials:
-                assert trial.params == func.suggested_values[trial.trial_id]
+                assert trial.params == func.suggested_values[trial.number]
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -312,8 +312,6 @@ class TestChainerMNTrial(object):
             mn_trial = _create_new_chainermn_trial(study, comm)
             trial = study.trials[-1]
 
-            assert mn_trial.trial_id == trial.trial_id
-            assert mn_trial._trial_id == trial.trial_id
             assert mn_trial.number == trial.number
 
     @staticmethod

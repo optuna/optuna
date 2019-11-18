@@ -31,6 +31,8 @@ if _available:
 
     for api_name in names_from_tuners:
         setattr(sys.modules[__name__], api_name, tuner.__dict__[api_name])
+else:
+    LightGBMTuner = object  # type: ignore
 
 
 class LightGBMPruningCallback(object):
@@ -112,7 +114,7 @@ class LightGBMPruningCallback(object):
             self.trial.report(current_score, step=env.iteration)
             if self.trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(env.iteration)
-                raise optuna.structs.TrialPruned(message)
+                raise optuna.exceptions.TrialPruned(message)
 
             return None
 

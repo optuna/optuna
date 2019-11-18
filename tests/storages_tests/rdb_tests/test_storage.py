@@ -6,14 +6,14 @@ import tempfile
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import json_to_distribution
 from optuna.distributions import UniformDistribution
+from optuna.exceptions import DuplicatedStudyError
+from optuna.exceptions import StorageInternalError
 from optuna.storages.rdb.models import SCHEMA_VERSION
 from optuna.storages.rdb.models import StudyModel
 from optuna.storages.rdb.models import TrialModel
 from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
-from optuna.structs import DuplicatedStudyError
-from optuna.structs import StorageInternalError
 from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
 from optuna.structs import TrialState
@@ -347,7 +347,7 @@ def test_storage_cache():
             TrialModel, 'find_or_raise_by_id',
             wraps=TrialModel.find_or_raise_by_id) as mock_object:
         for trial in trials:
-            assert storage.get_trial(trial.trial_id) == trial
+            assert storage.get_trial(trial._trial_id) == trial
         assert mock_object.call_count == 4
 
     with patch.object(TrialModel, 'where_study', wraps=TrialModel.where_study) as mock_object:
@@ -363,7 +363,7 @@ def test_storage_cache():
             TrialModel, 'find_or_raise_by_id',
             wraps=TrialModel.find_or_raise_by_id) as mock_object:
         for trial in trials:
-            assert storage.get_trial(trial.trial_id) == trial
+            assert storage.get_trial(trial._trial_id) == trial
         assert mock_object.call_count == 1  # Only a running trial was fetched from the storage.
 
     # If cache is enabled, running trials are fetched from the storage individually.

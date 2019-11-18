@@ -162,7 +162,9 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             trial_id = len(self.trials)
             trial.system_attrs['_number'] = trial_id
-            self.trials.append(trial._replace(number=trial_id, trial_id=trial_id))
+            trial.number = trial_id
+            trial._trial_id = trial_id
+            self.trials.append(trial)
             self._update_cache(trial_id)
         return trial_id
 
@@ -187,16 +189,16 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int, structs.TrialState) -> bool
 
         with self._lock:
-            self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
+            trial = self.trials[trial_id]
+            self.check_trial_is_updatable(trial_id, trial.state)
 
-            old_state = self.trials[trial_id].state
-            if state == structs.TrialState.RUNNING and old_state != structs.TrialState.WAITING:
+            if state == structs.TrialState.RUNNING and trial.state != structs.TrialState.WAITING:
                 return False
 
             self.trials[trial_id] = self.trials[trial_id]._replace(state=state)
+            trial.state = state
             if state.is_finished():
-                self.trials[trial_id] = \
-                    self.trials[trial_id]._replace(datetime_complete=datetime.now())
+                trial.datetime_complete = datetime.now()
                 self._update_cache(trial_id)
 
         return True
@@ -248,9 +250,10 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int, float) -> None
 
         with self._lock:
-            self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
+            trial = self.trials[trial_id]
+            self.check_trial_is_updatable(trial_id, trial.state)
 
-            self.trials[trial_id] = self.trials[trial_id]._replace(value=value)
+            trial.value = value
 
     def _update_cache(self, trial_id):
         # type: (int) -> None
