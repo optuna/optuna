@@ -364,14 +364,14 @@ class RDBStorage(BaseStorage):
             # Consolidate StudySummary.
             study_sumarries.append(
                 structs.StudySummary(
-                    study_id=study_model.study_id,
                     study_name=study_model.study_name,
                     direction=self.get_study_direction(study_model.study_id),
                     best_trial=best_trial,
                     user_attrs=self.get_study_user_attrs(study_model.study_id),
                     system_attrs=system_attrs,
                     n_trials=len(study_trial_models),
-                    datetime_start=datetime_start))
+                    datetime_start=datetime_start,
+                    study_id=study_model.study_id))
 
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)

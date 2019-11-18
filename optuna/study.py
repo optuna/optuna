@@ -187,6 +187,26 @@ class Study(BaseStudy):
         self._optimize_lock = threading.Lock()
 
     @property
+    def study_id(self):
+        # type: () -> int
+        """Return the study ID.
+
+        .. deprecated:: 0.20.0
+            The direct use of this attribute is deprecated and it is recommended that you use
+            :attr:`~optuna.study.Study.study_name` instead.
+
+        Returns:
+            The study ID.
+        """
+
+        message = 'The use of `Study.study_id` is deprecated. ' \
+                  'Please use `Study.study_name` instead.'
+        warnings.warn(message, DeprecationWarning)
+        self.logger.warning(message)
+
+        return self._study_id
+
+    @property
     def user_attrs(self):
         # type: () -> Dict[str, Any]
         """Return user attributes.

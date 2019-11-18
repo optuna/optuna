@@ -119,7 +119,7 @@ def test_create_new_study(storage_init_func):
 
     summaries = storage.get_all_study_summaries()
     assert len(summaries) == 1
-    assert summaries[0].study_id == study_id
+    assert summaries[0]._study_id == study_id
     assert summaries[0].study_name.startswith(DEFAULT_STUDY_NAME_PREFIX)
 
 
@@ -165,7 +165,7 @@ def test_delete_study_after_create_multiple_studies():
 
     storage.delete_study(study_id2)
 
-    studies = {s.study_id: s for s in storage.get_all_study_summaries()}
+    studies = {s._study_id: s for s in storage.get_all_study_summaries()}
     assert study_id1 in studies
     assert study_id2 not in studies
     assert study_id3 in studies
@@ -601,7 +601,7 @@ def test_get_all_study_summaries(storage_init_func):
     summaries = storage.get_all_study_summaries()
 
     assert len(summaries) == 1
-    assert summaries[0].study_id == study_id
+    assert summaries[0]._study_id == study_id
     assert summaries[0].study_name == storage.get_study_name_from_id(study_id)
     assert summaries[0].direction == StudyDirection.MINIMIZE
     assert summaries[0].user_attrs == EXAMPLE_ATTRS
