@@ -13,7 +13,7 @@ except ImportError as e:
     # trials_dataframe is disabled because pandas is not available.
     _pandas_available = False
 
-from six.moves import queue
+import queue
 import threading
 import time
 import warnings

@@ -40,9 +40,7 @@ def get_install_requires():
     # type: () -> List[str]
 
     install_requires = [
-        'alembic', 'cliff', 'colorlog', 'numpy', 'scipy', 'six',
-        'sqlalchemy>=1.1.0', 'tqdm', 'typing',
-    ]
+        'alembic', 'cliff', 'colorlog', 'numpy', 'scipy', 'sqlalchemy>=1.1.0', 'tqdm', 'typing']
     if sys.version_info[0] == 2:
         install_requires.extend(['enum34'])
     return install_requires
