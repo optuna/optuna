@@ -133,7 +133,7 @@ class Trial(BaseTrial):
         self.study = study
         self._trial_id = trial_id
 
-        self.study_id = self.study.study_id
+        self._study_id = self.study._study_id
         self.storage = self.study._storage
         self.logger = logging.get_logger(__name__)
 

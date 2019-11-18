@@ -48,7 +48,7 @@ class BaseStudy(object):
     def __init__(self, study_id, storage):
         # type: (int, storages.BaseStorage) -> None
 
-        self.study_id = study_id
+        self._study_id = study_id
         self._storage = storage
 
     @property
@@ -85,7 +85,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.FrozenTrial` object of the best trial.
         """
 
-        return self._storage.get_best_trial(self.study_id)
+        return self._storage.get_best_trial(self._study_id)
 
     @property
     def direction(self):
@@ -96,7 +96,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.StudyDirection` object.
         """
 
-        return self._storage.get_study_direction(self.study_id)
+        return self._storage.get_study_direction(self._study_id)
 
     @property
     def trials(self):
@@ -109,7 +109,7 @@ class BaseStudy(object):
             A list of :class:`~optuna.structs.FrozenTrial` objects.
         """
 
-        return self._storage.get_all_trials(self.study_id)
+        return self._storage.get_all_trials(self._study_id)
 
     @property
     def storage(self):
@@ -195,7 +195,7 @@ class Study(BaseStudy):
             A dictionary containing all user attributes.
         """
 
-        return self._storage.get_study_user_attrs(self.study_id)
+        return self._storage.get_study_user_attrs(self._study_id)
 
     @property
     def system_attrs(self):
@@ -206,7 +206,7 @@ class Study(BaseStudy):
             A dictionary containing all system attributes.
         """
 
-        return self._storage.get_study_system_attrs(self.study_id)
+        return self._storage.get_study_system_attrs(self._study_id)
 
     def optimize(
             self,
@@ -275,7 +275,7 @@ class Study(BaseStudy):
 
         """
 
-        self._storage.set_study_user_attr(self.study_id, key, value)
+        self._storage.set_study_user_attr(self._study_id, key, value)
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
@@ -290,7 +290,7 @@ class Study(BaseStudy):
 
         """
 
-        self._storage.set_study_system_attr(self.study_id, key, value)
+        self._storage.set_study_system_attr(self._study_id, key, value)
 
     def trials_dataframe(self, include_internal_fields=False):
         # type: (bool) -> pd.DataFrame
@@ -414,7 +414,7 @@ class Study(BaseStudy):
 
         trial._validate()
 
-        self.storage.create_new_trial(self.study_id, template_trial=trial)
+        self.storage.create_new_trial(self._study_id, template_trial=trial)
 
     def _optimize_sequential(
             self,
@@ -531,7 +531,7 @@ class Study(BaseStudy):
     ):
         # type: (...) -> trial_module.Trial
 
-        trial_id = self._storage.create_new_trial(self.study_id)
+        trial_id = self._storage.create_new_trial(self._study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 

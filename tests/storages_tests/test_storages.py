@@ -185,8 +185,8 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode, cache_m
         study = optuna.create_study(storage=storage, study_name=study_name)
 
         # Test existing study.
-        assert storage.get_study_name_from_id(study.study_id) == study_name
-        assert storage.get_study_id_from_name(study_name) == study.study_id
+        assert storage.get_study_name_from_id(study._study_id) == study_name
+        assert storage.get_study_id_from_name(study_name) == study._study_id
 
         # Test not existing study.
         with pytest.raises(ValueError):

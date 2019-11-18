@@ -336,7 +336,7 @@ def test_get_all_study_summaries(storage_mode, cache_mode):
         study.optimize(Func(), n_trials=5)
 
         summaries = optuna.get_all_study_summaries(study._storage)
-        summary = [s for s in summaries if s.study_id == study.study_id][0]
+        summary = [s for s in summaries if s.study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 5
@@ -351,7 +351,7 @@ def test_get_all_study_summaries_with_no_trials(storage_mode, cache_mode):
         study = optuna.create_study(storage=storage)
 
         summaries = optuna.get_all_study_summaries(study._storage)
-        summary = [s for s in summaries if s.study_id == study.study_id][0]
+        summary = [s for s in summaries if s.study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 0
@@ -590,7 +590,7 @@ def test_load_study(storage_mode, cache_mode):
 
         # Test loading an existing study.
         loaded_study = optuna.study.load_study(study_name=study_name, storage=storage)
-        assert created_study.study_id == loaded_study.study_id
+        assert created_study._study_id == loaded_study._study_id
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
