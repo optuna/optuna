@@ -729,3 +729,13 @@ def test_callbacks(n_jobs):
             study.optimize(lambda t: 1/0, callbacks=callbacks,
                            n_trials=10, n_jobs=n_jobs, catch=())
         assert states == []
+
+
+def test_study_id():
+    # type: () -> None
+
+    study = optuna.create_study()
+    assert study.study_id == study._study_id
+
+    with pytest.warns(DeprecationWarning):
+        study.study_id

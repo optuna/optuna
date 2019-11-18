@@ -293,10 +293,14 @@ class StudySummary(object):
 
         return not self.__eq__(other)
 
-    def __hash__(self):
-        # type: () -> int
+    def __lt__(self, other):
+        # type: (Any) -> bool
 
-        return hash(tuple(sorted(self.__dict__.items())))
+        if not isinstance(other, type(self)):
+            raise TypeError('\'<\' not supported between instances of {} and {}'.format(
+                type(self.__class__.__name__), type(other)))
+
+        return self._study_id < other._study_id
 
     @property
     def study_id(self):
