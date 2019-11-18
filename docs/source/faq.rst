@@ -5,7 +5,7 @@ Can I use Optuna with X? (where X is your favorite ML library)
 --------------------------------------------------------------
 
 Optuna is compatible with most ML libraries, and it's easy to use Optuna with those.
-Please refer to `examples <https://github.com/pfnet/optuna/tree/master/examples>`_.
+Please refer to `examples <https://github.com/optuna/optuna/tree/master/examples>`_.
 
 
 .. _objective-func-additional-args:
@@ -57,7 +57,7 @@ Below is an example that uses ``lambda``:
     study = optuna.create_study()
     study.optimize(lambda trial: objective(trial, min_x, max_x), n_trials=100)
 
-Please also refer to `sklearn_addtitional_args.py <https://github.com/pfnet/optuna/blob/master/examples/sklearn_additional_args.py>`_ example.
+Please also refer to `sklearn_addtitional_args.py <https://github.com/optuna/optuna/blob/master/examples/sklearn_additional_args.py>`_ example.
 
 
 Can I use Optuna without remote RDB servers?

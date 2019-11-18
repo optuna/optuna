@@ -22,9 +22,9 @@ class SuccessiveHalvingPruner(BasePruner):
     Note that, this class does not take care of the parameter for the maximum
     resource, referred to as :math:`R` in the paper. The maximum resource allocated to a trial is
     typically limited inside the objective function (e.g., ``step`` number in `simple.py
-    <https://github.com/pfnet/optuna/tree/c5777b3e/examples/pruning/simple.py#L31>`_,
+    <https://github.com/optuna/optuna/tree/c5777b3e/examples/pruning/simple.py#L31>`_,
     ``EPOCH`` number in `chainer_integration.py
-    <https://github.com/pfnet/optuna/tree/c5777b3e/examples/pruning/chainer_integration.py#L65>`_).
+    <https://github.com/optuna/optuna/tree/c5777b3e/examples/pruning/chainer_integration.py#L65>`_).
 
     Example:
 
@@ -90,9 +90,9 @@ class SuccessiveHalvingPruner(BasePruner):
                 'The value of `min_early_stopping_rate` is {}, '
                 'but must be `min_early_stopping_rate >= 0`'.format(min_early_stopping_rate))
 
-        self.min_resource = min_resource
-        self.reduction_factor = reduction_factor
-        self.min_early_stopping_rate = min_early_stopping_rate
+        self._min_resource = min_resource
+        self._reduction_factor = reduction_factor
+        self._min_early_stopping_rate = min_early_stopping_rate
 
     def prune(self, study, trial):
         # type: (Study, FrozenTrial) -> bool
@@ -106,8 +106,8 @@ class SuccessiveHalvingPruner(BasePruner):
         value = trial.intermediate_values[step]
         all_trials = None
         while True:
-            promotion_step = self.min_resource * \
-                (self.reduction_factor ** (self.min_early_stopping_rate + rung))
+            promotion_step = self._min_resource * \
+                (self._reduction_factor ** (self._min_early_stopping_rate + rung))
             if step < promotion_step:
                 return False
 
@@ -132,7 +132,7 @@ class SuccessiveHalvingPruner(BasePruner):
         competing_values.append(value)
         competing_values.sort()
 
-        promotable_idx = (len(competing_values) // self.reduction_factor) - 1
+        promotable_idx = (len(competing_values) // self._reduction_factor) - 1
         if promotable_idx == -1:
             # Optuna does not support to suspend/resume ongoing trials.
             #

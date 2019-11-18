@@ -388,6 +388,9 @@ class Trial(BaseTrial):
                 type(value).__name__)
             raise TypeError(message)
 
+        if step is not None and step < 0:
+            raise ValueError('The `step` argument is {} but cannot be negative.'.format(step))
+
         self.storage.set_trial_value(self._trial_id, value)
         if step is not None:
             self.storage.set_trial_intermediate_value(self._trial_id, step, value)
