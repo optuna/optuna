@@ -135,6 +135,15 @@ class FrozenTrial(object):
 
         return not self.__eq__(other)
 
+    def __lt__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, type(self)):
+            raise TypeError('\'<\' not supported between instances of {} and {}'.format(
+                type(self.__class__.__name__), type(other)))
+
+        return self.number < other.number
+
     def __hash__(self):
         # type: () -> int
 

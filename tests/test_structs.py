@@ -21,17 +21,7 @@ def test_frozen_trial_validate():
     # type: () -> None
 
     # Valid.
-    valid_trial = FrozenTrial(number=0,
-                              trial_id=0,
-                              state=TrialState.COMPLETE,
-                              value=0.2,
-                              datetime_start=datetime.datetime.now(),
-                              datetime_complete=datetime.datetime.now(),
-                              params={'x': 10},
-                              distributions={'x': UniformDistribution(5, 12)},
-                              user_attrs={},
-                              system_attrs={},
-                              intermediate_values={})
+    valid_trial = _create_frozen_trial()
     valid_trial._validate()
 
     # Invalid: `datetime_start` is not set.
@@ -97,23 +87,48 @@ def test_frozen_trial_validate():
 def test_frozen_trial_eq_ne():
     # type: () -> None
 
-    trial = FrozenTrial(number=0,
-                        trial_id=0,
-                        state=TrialState.COMPLETE,
-                        value=0.2,
-                        datetime_start=datetime.datetime.now(),
-                        datetime_complete=datetime.datetime.now(),
-                        params={'x': 10},
-                        distributions={'x': UniformDistribution(5, 12)},
-                        user_attrs={},
-                        system_attrs={},
-                        intermediate_values={})
+    trial = _create_frozen_trial()
 
     trial_other = copy.copy(trial)
     assert trial == trial_other
 
     trial_other.value = 0.3
     assert trial != trial_other
+
+
+def test_frozen_trial_lt():
+    # type: () -> None
+
+    trial = _create_frozen_trial()
+
+    trial_other = copy.copy(trial)
+    assert not trial < trial_other
+
+    trial_other.number = trial.number + 1
+    assert trial < trial_other
+    assert not trial_other < trial
+
+    # A list of FrozenTrials is sortable.
+    trials = [trial_other, trial]
+    trials.sort()
+    assert trials[0] == trial
+    assert trials[1] == trial_other
+
+
+def _create_frozen_trial():
+    # type: () -> FrozenTrial
+
+    return FrozenTrial(number=0,
+                       trial_id=0,
+                       state=TrialState.COMPLETE,
+                       value=0.2,
+                       datetime_start=datetime.datetime.now(),
+                       datetime_complete=datetime.datetime.now(),
+                       params={'x': 10},
+                       distributions={'x': UniformDistribution(5, 12)},
+                       user_attrs={},
+                       system_attrs={},
+                       intermediate_values={})
 
 
 # TODO(hvy): Remove version check after Python 2.7 is retired.
