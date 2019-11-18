@@ -60,7 +60,7 @@ You can use branches or loops depending on parameter values.
 
         return chainer.Sequential(*layers)
 
-Please also refer to `examples <https://github.com/pfnet/optuna/tree/master/examples>`_.
+Please also refer to `examples <https://github.com/optuna/optuna/tree/master/examples>`_.
 
 
 Note on the Number of Parameters

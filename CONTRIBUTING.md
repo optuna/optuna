@@ -26,7 +26,7 @@ Note that we use comment-style type annotation for compatibility with Python 2.
 * [PEP484](https://www.python.org/dev/peps/pep-0484/)
 * [Syntax cheat sheet](http://mypy.readthedocs.io/en/latest/cheat_sheet.html)
 
-Please see also our [Coding Style Conventions](https://github.com/pfnet/optuna/wiki/Coding-Style-Conventions).
+Please see also our [Coding Style Conventions](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 
 ## Testing
 
