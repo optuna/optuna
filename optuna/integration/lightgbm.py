@@ -114,7 +114,7 @@ class LightGBMPruningCallback(object):
             self.trial.report(current_score, step=env.iteration)
             if self.trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(env.iteration)
-                raise optuna.structs.TrialPruned(message)
+                raise optuna.exceptions.TrialPruned(message)
 
             return None
 

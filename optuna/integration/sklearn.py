@@ -32,6 +32,7 @@ except ImportError as e:
     _available = False
 
 from optuna import distributions
+from optuna import exceptions
 from optuna import logging
 from optuna import samplers  # NOQA
 from optuna import structs
@@ -247,7 +248,7 @@ class _Objective(object):
             if trial.should_prune():
                 self._store_scores(trial, scores)
 
-                raise structs.TrialPruned(
+                raise exceptions.TrialPruned(
                     'trial was pruned at iteration {}.'.format(step)
                 )
 

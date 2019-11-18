@@ -2,10 +2,10 @@ from __future__ import absolute_import
 
 import gc
 
+from optuna.exceptions import TrialPruned
 from optuna.logging import get_logger
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.structs import TrialPruned
 from optuna.trial import BaseTrial
 from optuna import type_checking
 import warnings
@@ -153,7 +153,7 @@ class ChainerMNStudy(object):
                     # The following line mitigates memory problems that can be occurred in some
                     # environments (e.g., services that use computing containers such as CircleCI).
                     # Please refer to the following PR for further details:
-                    # https://github.com/pfnet/optuna/pull/325.
+                    # https://github.com/optuna/optuna/pull/325.
                     gc.collect()
 
     def __getattr__(self, attr_name):
