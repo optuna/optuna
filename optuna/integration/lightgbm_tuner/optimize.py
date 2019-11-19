@@ -302,6 +302,17 @@ class LightGBMTuner(BaseTuner):
         self.best_params = {} if best_params is None else best_params
         self.tuning_history = [] if tuning_history is None else tuning_history
 
+        # Set default parameters as best.
+        self.best_params.update({
+            'lambda_l1': 0.0,
+            'lambda_l2': 0.0,
+            'num_leaves': 31,
+            'feature_fraction': 1.0,
+            'bagging_fraction': 1.0,
+            'bagging_freq': 0,
+            'min_child_samples': 20,
+        })
+
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
 
@@ -335,10 +346,6 @@ class LightGBMTuner(BaseTuner):
         self.train_set = args[1]
         self.train_subset = None  # Use for sampling.
         self.lgbm_kwargs = kwargs
-
-        # Keep original kwargs.
-        self.original_lgbm_kwargs = kwargs.copy()
-        self.original_lgbm_params = self.lgbm_params.copy()
 
     def run(self):
         # type: () -> lgb.Booster
