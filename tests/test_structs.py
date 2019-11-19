@@ -163,13 +163,31 @@ def test_study_summary_eq_ne_lt():
     summaries = study._storage.get_all_study_summaries()
     assert len(summaries) == 2
 
+    assert summaries[0] == copy.deepcopy(summaries[0])
+    assert summaries[0] != summaries[1]
+
+
+# TODO(Yanase): Remove version check after Python 2.7 is retired.
+@pytest.mark.skipif('sys.version_info < (3, 5)')
+def test_study_summary_lt():
+    # type: () -> None
+
+    storage = optuna.storages.RDBStorage('sqlite:///:memory:')
+
+    optuna.create_study(storage=storage)
+    study = optuna.create_study(storage=storage)
+
+    summaries = study._storage.get_all_study_summaries()
+    assert len(summaries) == 2
+
     summary_0 = summaries[0]
     summary_1 = summaries[1]
 
-    assert summary_0 == copy.deepcopy(summary_0)
-    assert summary_0 != summary_1
     assert summary_0 < summary_1
     assert not summary_1 < summary_0
+
+    with pytest.raises(TypeError):
+        summary_0 < 1
 
     # A list of StudySummaries is sortable.
     summaries.reverse()
