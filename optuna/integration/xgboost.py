@@ -41,15 +41,15 @@ class XGBoostPruningCallback(object):
 
         _check_xgboost_availability()
 
-        self.trial = trial
-        self.observation_key = observation_key
+        self._trial = trial
+        self._observation_key = observation_key
 
     def __call__(self, env):
         # type: (xgb.core.CallbackEnv) -> None
 
-        current_score = dict(env.evaluation_result_list)[self.observation_key]
-        self.trial.report(current_score, step=env.iteration)
-        if self.trial.should_prune():
+        current_score = dict(env.evaluation_result_list)[self._observation_key]
+        self._trial.report(current_score, step=env.iteration)
+        if self._trial.should_prune():
             message = "Trial was pruned at iteration {}.".format(env.iteration)
             raise optuna.exceptions.TrialPruned(message)
 

@@ -49,18 +49,18 @@ class PyTorchLightningPruningCallback(EarlyStopping):
 
         _check_pytorch_lightning_availability()
 
-        self.trial = trial
-        self.monitor = monitor
+        self._trial = trial
+        self._monitor = monitor
 
     def on_epoch_end(self, epoch, logs=None):
         # type: (int, Optional[Dict[str, float]]) -> None
 
         logs = logs or {}
-        current_score = logs.get(self.monitor)
+        current_score = logs.get(self._monitor)
         if current_score is None:
             return
-        self.trial.report(current_score, step=epoch)
-        if self.trial.should_prune():
+        self._trial.report(current_score, step=epoch)
+        if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.exceptions.TrialPruned(message)
 
