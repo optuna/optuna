@@ -403,7 +403,9 @@ class TestLightGBMTuner(object):
             assert len(tuning_history) == 5
 
     def test_when_tuning_num_leaves_doesnt_improve_best_score(self):
-        params = {}
+        # type: () -> None
+
+        params = {}  # type: Dict
         valid_data = np.zeros((10, 10))
         valid_sets = lgb.Dataset(valid_data)
         tuner = LightGBMTuner(params, None, valid_sets=valid_sets)
@@ -447,7 +449,7 @@ class TestLightGBMTuner(object):
             fake_objective.best_booster = None
             objective_mock.return_value = fake_objective
 
-            # Assume thattuning `num_leaves` doesn't improve the `best_score`.
+            # Assume that tuning `num_leaves` doesn't improve the `best_score`.
             fake_study = mock.MagicMock(spec=Study)
             fake_study._storage = mock.MagicMock()
             fake_study.best_value = 1.1
