@@ -138,7 +138,7 @@ class FrozenTrial(object):
     def __lt__(self, other):
         # type: (Any) -> bool
 
-        if not isinstance(other, type(self)):
+        if not isinstance(other, FrozenTrial):
             return NotImplemented
 
         return self.number < other.number
