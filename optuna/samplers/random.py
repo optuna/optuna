@@ -34,7 +34,6 @@ class RandomSampler(BaseSampler):
     def __init__(self, seed=None):
         # type: (Optional[int]) -> None
 
-        self._seed = seed
         self._rng = numpy.random.RandomState(seed)
 
     def infer_relative_search_space(self, study, trial):

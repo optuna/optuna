@@ -106,7 +106,6 @@ class TPESampler(base.BaseSampler):
         self._n_ei_candidates = n_ei_candidates
         self._gamma = gamma
         self._weights = weights
-        self._seed = seed
 
         self._rng = np.random.RandomState(seed)
         self._random_sampler = random.RandomSampler(seed=seed)
