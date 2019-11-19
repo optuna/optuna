@@ -2,7 +2,7 @@ import itertools
 import numpy as np
 import pytest
 
-from optuna.samplers.tpe.parzen_estimator import ParzenEstimator
+from optuna.samplers.tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers.tpe.sampler import default_weights
 from optuna import type_checking
 
@@ -25,11 +25,11 @@ class TestParzenEstimator(object):
         # type: (List[float], bool, bool, bool) -> None
 
         s_weights, s_mus, s_sigmas = \
-            ParzenEstimator._calculate(mus, -1.0, 1.0, prior_weight=1.0,
-                                       consider_prior=prior,
-                                       consider_magic_clip=magic_clip,
-                                       consider_endpoints=endpoints,
-                                       weights_func=default_weights)
+            _ParzenEstimator._calculate(mus, -1.0, 1.0, prior_weight=1.0,
+                                        consider_prior=prior,
+                                        consider_magic_clip=magic_clip,
+                                        consider_endpoints=endpoints,
+                                        weights_func=default_weights)
 
         # Result contains an additional value for a prior distribution if prior is True.
         assert len(s_weights) == len(mus) + int(prior)
@@ -89,11 +89,11 @@ class TestParzenEstimator(object):
         # type: (List[float], Dict[str, bool], Dict[str, List[float]]) -> None
 
         s_weights, s_mus, s_sigmas = \
-            ParzenEstimator._calculate(mus, -1.0, 1.0, prior_weight=1.0,
-                                       consider_prior=flags['prior'],
-                                       consider_magic_clip=flags['magic_clip'],
-                                       consider_endpoints=flags['endpoints'],
-                                       weights_func=default_weights)
+            _ParzenEstimator._calculate(mus, -1.0, 1.0, prior_weight=1.0,
+                                        consider_prior=flags['prior'],
+                                        consider_magic_clip=flags['magic_clip'],
+                                        consider_endpoints=flags['endpoints'],
+                                        weights_func=default_weights)
 
         # Result contains an additional value for a prior distribution if consider_prior is True.
         np.testing.assert_almost_equal(s_weights, expected['weights'])

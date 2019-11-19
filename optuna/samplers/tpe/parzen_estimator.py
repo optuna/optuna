@@ -13,7 +13,7 @@ if type_checking.TYPE_CHECKING:
 EPS = 1e-12
 
 
-class ParzenEstimatorParameters(
+class _ParzenEstimatorParameters(
         NamedTuple('_ParzenEstimatorParameters', [
             ('consider_prior', bool),
             ('prior_weight', Optional[float]),
@@ -24,17 +24,17 @@ class ParzenEstimatorParameters(
     pass
 
 
-class ParzenEstimator(object):
+class _ParzenEstimator(object):
     def __init__(
             self,
             mus,  # type: ndarray
             low,  # type: float
             high,  # type: float
-            parameters  # type: ParzenEstimatorParameters
+            parameters  # type: _ParzenEstimatorParameters
     ):
         # type: (...) -> None
 
-        self.weights, self.mus, self.sigmas = ParzenEstimator._calculate(
+        self.weights, self.mus, self.sigmas = _ParzenEstimator._calculate(
             mus, low, high, parameters.consider_prior, parameters.prior_weight,
             parameters.consider_magic_clip, parameters.consider_endpoints, parameters.weights)
 
