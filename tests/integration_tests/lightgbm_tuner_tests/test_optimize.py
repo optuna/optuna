@@ -9,7 +9,10 @@ import optuna.integration.lightgbm as lgb
 from optuna.integration.lightgbm_tuner.optimize import _TimeKeeper
 from optuna.integration.lightgbm_tuner.optimize import _timer
 from optuna.integration.lightgbm_tuner.optimize import BaseTuner
+from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration.lightgbm_tuner.optimize import OptunaObjective
+from optuna.study import Study
+from optuna.trial import Trial
 from optuna import type_checking
 
 
@@ -398,3 +401,68 @@ class TestLightGBMTuner(object):
 
             assert runner.lgbm_params['min_child_samples'] != unexpected_value
             assert len(tuning_history) == 5
+
+    def test_when_tuning_num_leaves_doesnt_improve_best_score(self):
+        params = {}
+        valid_data = np.zeros((10, 10))
+        valid_sets = lgb.Dataset(valid_data)
+        tuner = LightGBMTuner(params, None, valid_sets=valid_sets)
+        assert not tuner.higher_is_better()
+
+        objective_class_name = 'optuna.integration.lightgbm_tuner.optimize.OptunaObjective'
+
+        with mock.patch(objective_class_name) as objective_mock,\
+                mock.patch('optuna.study.Study') as study_mock,\
+                mock.patch('optuna.trial.Trial') as trial_mock:
+
+            fake_objective = mock.MagicMock(spec=OptunaObjective)
+            fake_objective.report = []
+            fake_objective.best_booster = None
+            objective_mock.return_value = fake_objective
+
+            fake_study = mock.MagicMock(spec=Study)
+            fake_study._storage = mock.MagicMock()
+            fake_study.best_value = 0.9
+            study_mock.return_value = fake_study
+
+            fake_trial = mock.MagicMock(spec=Trial)
+            fake_trial.best_params = {
+                'feature_fraction': 0.2,
+            }
+            trial_mock.return_value = fake_trial
+
+            tuner.tune_feature_fraction()
+
+            fake_study.optimize.assert_called()
+
+        assert 'feature_fraction' in tuner.best_params
+        assert tuner.best_score == 0.9
+
+        with mock.patch(objective_class_name) as objective_mock,\
+                mock.patch('optuna.study.Study') as study_mock,\
+                mock.patch('optuna.trial.Trial') as trial_mock:
+
+            fake_objective = mock.MagicMock(spec=OptunaObjective)
+            fake_objective.report = []
+            fake_objective.best_booster = None
+            objective_mock.return_value = fake_objective
+
+            # Assume thattuning `num_leaves` doesn't improve the `best_score`.
+            fake_study = mock.MagicMock(spec=Study)
+            fake_study._storage = mock.MagicMock()
+            fake_study.best_value = 1.1
+            study_mock.return_value = fake_study
+
+            fake_trial = mock.MagicMock(spec=Trial)
+            fake_trial.best_params = {
+                'num_leaves': 128,
+            }
+            trial_mock.return_value = fake_trial
+
+            tuner.tune_num_leaves()
+
+            fake_study.optimize.assert_called()
+
+        # `num_leaves` should not be included since default is better.
+        assert 'num_leaves' not in tuner.best_params
+        assert tuner.best_score == 0.9

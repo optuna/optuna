@@ -302,8 +302,6 @@ class LightGBMTuner(BaseTuner):
         self.best_params = {} if best_params is None else best_params
         self.tuning_history = [] if tuning_history is None else tuning_history
 
-        if early_stopping_rounds is None:
-            self._suggest_early_stopping_rounds()
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
 
@@ -342,13 +340,6 @@ class LightGBMTuner(BaseTuner):
         self.original_lgbm_kwargs = kwargs.copy()
         self.original_lgbm_params = self.lgbm_params.copy()
 
-    def _suggest_early_stopping_rounds(self):
-        # type: () -> int
-
-        num_boost_round = self.lgbm_kwargs.get('num_boost_round', 1000)
-        early_stopping_rounds = min(int(num_boost_round * 0.05), 50)
-        return early_stopping_rounds
-
     def run(self):
         # type: () -> lgb.Booster
         """Perform the hyperparameter-tuning with given parameters.
@@ -378,35 +369,28 @@ class LightGBMTuner(BaseTuner):
         with _timer() as t:
             self.tune_feature_fraction()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_num_leaves()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_bagging()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_feature_fraction_stage2()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_regularization_factors()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_min_data_in_leaf()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
-        self.best_params.update(self._get_params())
         return self.best_booster
 
     def sample_train_set(self):
@@ -499,10 +483,10 @@ class LightGBMTuner(BaseTuner):
         # Add tuning history.
         self.tuning_history += objective.report
 
-        updated_params = {p: study.best_trial.params[p] for p in target_param_names}
-        self.lgbm_params.update(updated_params)
-        self.best_params.update(updated_params)
-
         if self.compare_validation_metrics(study.best_value, self.best_score):
             self.best_score = study.best_value
             self.best_booster = objective.best_booster
+
+            updated_params = {p: study.best_trial.params[p] for p in target_param_names}
+            self.lgbm_params.update(updated_params)
+            self.best_params.update(updated_params)
