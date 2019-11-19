@@ -139,8 +139,7 @@ class FrozenTrial(object):
         # type: (Any) -> bool
 
         if not isinstance(other, type(self)):
-            raise TypeError('\'<\' not supported between instances of {} and {}'.format(
-                type(self.__class__.__name__), type(other)))
+            return NotImplemented
 
         return self.number < other.number
 
