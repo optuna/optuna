@@ -36,7 +36,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
 
 # Minimum value of sigma0 to avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
-MIN_SIGMA0 = 1e-10
+_MIN_SIGMA0 = 1e-10
 
 
 class CmaEsSampler(BaseSampler):
@@ -198,7 +198,7 @@ class CmaEsSampler(BaseSampler):
             sigma0 = self._initialize_sigma0(search_space)
         else:
             sigma0 = self._sigma0
-        sigma0 = max(sigma0, MIN_SIGMA0)
+        sigma0 = max(sigma0, _MIN_SIGMA0)
 
         optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds,
                                self._cma_opts)

@@ -5,10 +5,10 @@ from subprocess import CalledProcessError
 import tempfile
 
 import optuna
-from optuna.cli import Studies
+from optuna.cli import _Studies
+from optuna.exceptions import CLIUsageError
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
-from optuna.structs import CLIUsageError
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 
@@ -165,7 +165,7 @@ def test_studies_command():
             return [r.strip() for r in rows[row_index].split('|')[1:-1]]
 
         assert len(rows) == 6
-        assert tuple(get_row_elements(1)) == Studies._study_list_header
+        assert tuple(get_row_elements(1)) == _Studies._study_list_header
 
         # Check study_name and n_trials for the first study.
         elms = get_row_elements(3)
@@ -310,10 +310,10 @@ def test_check_storage_url():
     # type: () -> None
 
     storage_in_args = 'sqlite:///args.db'
-    assert storage_in_args == optuna.cli.check_storage_url(storage_in_args)
+    assert storage_in_args == optuna.cli._check_storage_url(storage_in_args)
 
     with pytest.raises(CLIUsageError):
-        optuna.cli.check_storage_url(None)
+        optuna.cli._check_storage_url(None)
 
 
 def test_storage_upgrade_command():

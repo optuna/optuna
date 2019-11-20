@@ -67,7 +67,7 @@ class FastAIPruningCallback(TrackerCallback):
 
         _check_fastai_availability()
 
-        self.trial = trial
+        self._trial = trial
 
     def on_epoch_end(self, epoch, **kwargs):
         # type: (int, Any) -> None
@@ -77,12 +77,12 @@ class FastAIPruningCallback(TrackerCallback):
             return
 
         # This conversion is necessary to avoid problems reported in issues.
-        # - https://github.com/pfnet/optuna/issue/642
-        # - https://github.com/pfnet/optuna/issue/655.
-        self.trial.report(float(value), step=epoch)
-        if self.trial.should_prune():
+        # - https://github.com/optuna/optuna/issue/642
+        # - https://github.com/optuna/optuna/issue/655.
+        self._trial.report(float(value), step=epoch)
+        if self._trial.should_prune():
             message = 'Trial was pruned at epoch {}.'.format(epoch)
-            raise optuna.structs.TrialPruned(message)
+            raise optuna.exceptions.TrialPruned(message)
 
 
 def _check_fastai_availability():

@@ -58,7 +58,7 @@ if _available:
             complete_trials = [
                 trial for trial in trials if trial.state == optuna.structs.TrialState.COMPLETE
             ]
-            self.trial_ids = set([trial.trial_id for trial in complete_trials])
+            self.trial_ids = set([trial._trial_id for trial in complete_trials])
 
             self.direction = direction
             values = [trial.value for trial in complete_trials]
@@ -93,7 +93,7 @@ if _available:
             for trial in new_trials:
                 if trial.state != optuna.structs.TrialState.COMPLETE:
                     continue
-                if trial.trial_id in self.trial_ids:
+                if trial._trial_id in self.trial_ids:
                     continue
                 stream_dict['#'].append(len(self.trial_ids))
                 stream_dict['value'].append(trial.value)
@@ -102,7 +102,7 @@ if _available:
                 else:
                     self.best_value = max(self.best_value, trial.value)
                 stream_dict['best_value'].append(self.best_value)
-                self.trial_ids.add(trial.trial_id)
+                self.trial_ids.add(trial._trial_id)
 
             if stream_dict:
                 self.cds.stream(stream_dict)
@@ -252,7 +252,7 @@ def _get_this_source_path():
     return path
 
 
-def serve(study, bokeh_allow_websocket_origins=None):
+def _serve(study, bokeh_allow_websocket_origins=None):
     # type: (optuna.study.Study, Optional[List[str]]) -> None
 
     global _mode, _study
@@ -282,7 +282,7 @@ def serve(study, bokeh_allow_websocket_origins=None):
     bokeh.command.bootstrap.main(command)
 
 
-def write(study, out_path):
+def _write(study, out_path):
     # type: (optuna.study.Study, str) -> None
 
     global _mode, _study

@@ -18,6 +18,7 @@ import threading
 import time
 import warnings
 
+from optuna import exceptions
 from optuna import logging
 from optuna import pruners
 from optuna import samplers
@@ -239,7 +240,7 @@ class Study(BaseStudy):
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
-                exception except for :class:`~structs.TrialPruned`.
+                exception except for :class:`~optuna.exceptions.TrialPruned`.
             callbacks:
                 List of callback functions that are invoked at the end of each trial.
             gc_after_trial:
@@ -299,7 +300,7 @@ class Study(BaseStudy):
         histogram of objective values and to export trials as a CSV file. Note that DataFrames
         returned by :func:`~optuna.study.Study.trials_dataframe()` employ MultiIndex_, and columns
         have a hierarchical structure. Please refer to the example below to access DataFrame
-        elements.
+        elements. If there are no trials, an empty DataFrame_ is returned.
 
         Example:
 
@@ -326,35 +327,51 @@ class Study(BaseStudy):
         """
         _check_pandas_availability()
 
+        trials = self.trials
+
         # If no trials, return an empty dataframe.
-        if not len(self.trials):
+        if not len(trials):
             return pd.DataFrame()
 
+        assert all(isinstance(trial, structs.FrozenTrial) for trial in trials)
+        fields_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
+        for field in structs.FrozenTrial._ordered_fields:
+            if field.startswith('_'):
+                if not include_internal_fields:
+                    continue
+                else:
+                    # Python conventional underscores are omitted in the dataframe.
+                    df_column = field[1:]
+            else:
+                df_column = field
+            fields_to_df_columns[field] = df_column
+
         # column_agg is an aggregator of column names.
-        # Keys of column agg are attributes of FrozenTrial such as 'trial_id' and 'params'.
+        # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
         # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
         non_nested_field = ''
 
-        records = []  # type: List[Dict[Tuple[str, str], Any]]
-        for trial in self.trials:
-            trial_dict = trial._asdict()
+        def _create_record_and_aggregate_column(trial):
+            # type: (structs.FrozenTrial) -> Dict[Tuple[str, str], Any]
 
             record = {}
-            for field, value in trial_dict.items():
-                if not include_internal_fields and field in structs.FrozenTrial.internal_fields:
-                    continue
+            for field, df_column in fields_to_df_columns.items():
+                value = getattr(trial, field)
                 if isinstance(value, dict):
-                    for in_field, in_value in value.items():
-                        record[(field, in_field)] = in_value
-                        column_agg[field].add((field, in_field))
+                    for nested_field, nested_value in value.items():
+                        record[(df_column, nested_field)] = nested_value
+                        column_agg[field].add((df_column, nested_field))
                 else:
-                    record[(field, non_nested_field)] = value
-                    column_agg[field].add((field, non_nested_field))
-            records.append(record)
+                    record[(df_column, non_nested_field)] = value
+                    column_agg[field].add((df_column, non_nested_field))
+            return record
 
-        columns = sum((sorted(column_agg[k]) for k in structs.FrozenTrial._fields),
-                      [])  # type: List[Tuple['str', 'str']]
+        records = list([_create_record_and_aggregate_column(trial) for trial in trials])
+        columns = sum(
+            (sorted(column_agg[k])
+             for k in structs.FrozenTrial._ordered_fields if k in column_agg),
+            [])  # type: List[Tuple[str, str]]
 
         return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
@@ -520,7 +537,7 @@ class Study(BaseStudy):
 
         try:
             result = func(trial)
-        except structs.TrialPruned as e:
+        except exceptions.TrialPruned as e:
             message = 'Setting status of trial#{} as {}. {}'.format(trial_number,
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
@@ -541,7 +558,7 @@ class Study(BaseStudy):
             # The following line mitigates memory problems that can be occurred in some
             # environments (e.g., services that use computing containers such as CircleCI).
             # Please refer to the following PR for further details:
-            # https://github.com/pfnet/optuna/pull/325.
+            # https://github.com/optuna/optuna/pull/325.
             if gc_after_trial:
                 gc.collect()
 
@@ -596,6 +613,19 @@ def create_study(
         storage:
             Database URL. If this argument is set to None, in-memory storage is used, and the
             :class:`~optuna.study.Study` will not be persistent.
+
+            .. note::
+                When a database URL is passed, Optuna internally uses `SQLAlchemy`_ to handle
+                the database. Please refer to `SQLAlchemy's document`_ for further details.
+                If you want to specify non-default options to `SQLAlchemy Engine`_, you can
+                instantiate :class:`~optuna.storages.RDBStorage` with your desired options and
+                pass it to the ``storage`` argument instead of a URL.
+
+             .. _SQLAlchemy: https://www.sqlalchemy.org/
+             .. _SQLAlchemy's document:
+                 https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
+             .. _SQLAlchemy Engine: https://docs.sqlalchemy.org/en/latest/core/engines.html
+
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
@@ -612,7 +642,7 @@ def create_study(
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
-            a :class:`~optuna.structs.DuplicatedStudyError` is raised if ``load_if_exists`` is
+            a :class:`~optuna.exceptions.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
 
@@ -624,7 +654,7 @@ def create_study(
     storage = storages.get_storage(storage)
     try:
         study_id = storage.create_new_study(study_name)
-    except structs.DuplicatedStudyError:
+    except exceptions.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
 
@@ -667,10 +697,8 @@ def load_study(
         study_name:
             Study's name. Each study has a unique name as an identifier.
         storage:
-            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
-            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
-            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
-            further details.
+            Database URL such as ``sqlite:///example.db``. Please see also the documentation of
+            :func:`~optuna.study.create_study` for further details.
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
@@ -696,10 +724,8 @@ def delete_study(
         study_name:
             Study's name.
         storage:
-            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
-            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
-            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
-            further details.
+            Database URL such as ``sqlite:///example.db``. Please see also the documentation of
+            :func:`~optuna.study.create_study` for further details.
 
     """
 
@@ -714,7 +740,8 @@ def get_all_study_summaries(storage):
 
     Args:
         storage:
-            Database URL.
+            Database URL such as ``sqlite:///example.db``. Please see also the documentation of
+            :func:`~optuna.study.create_study` for further details.
 
     Returns:
         List of study history summarized as :class:`~optuna.structs.StudySummary` objects.
