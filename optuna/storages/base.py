@@ -177,17 +177,18 @@ class BaseStorage(object):
 
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def get_best_value_trial(self, study_id):
-        # type: (int) -> structs.FrozenTrial
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def get_best_trial(self, study_id):
         # type: (int) -> structs.FrozenTrial
 
-        raise NotImplementedError
+        all_trials = self.get_all_trials(study_id)
+        all_trials = [t for t in all_trials if t.state is structs.TrialState.COMPLETE]
+
+        if len(all_trials) == 0:
+            raise ValueError('No trials are completed yet.')
+
+        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+            return max(all_trials, key=lambda t: t.value)
+        return min(all_trials, key=lambda t: t.value)
 
     def get_trial_params(self, trial_id):
         # type: (int) -> Dict[str, Any]
