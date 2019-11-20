@@ -41,12 +41,12 @@ def test_chainer_pruning_extension_trigger():
     trial = create_running_trial(study, 1.0)
 
     extension = ChainerPruningExtension(trial, 'main/loss', (1, 'epoch'))
-    assert isinstance(extension.pruner_trigger, triggers.IntervalTrigger)
+    assert isinstance(extension._pruner_trigger, triggers.IntervalTrigger)
     extension = ChainerPruningExtension(trial, 'main/loss', triggers.IntervalTrigger(1, 'epoch'))
-    assert isinstance(extension.pruner_trigger, triggers.IntervalTrigger)
+    assert isinstance(extension._pruner_trigger, triggers.IntervalTrigger)
     extension = ChainerPruningExtension(trial, 'main/loss',
                                         triggers.ManualScheduleTrigger(1, 'epoch'))
-    assert isinstance(extension.pruner_trigger, triggers.ManualScheduleTrigger)
+    assert isinstance(extension._pruner_trigger, triggers.ManualScheduleTrigger)
 
     with pytest.raises(TypeError):
         ChainerPruningExtension(trial, 'main/loss', triggers.TimeTrigger(1.))

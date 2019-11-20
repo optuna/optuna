@@ -62,12 +62,12 @@ class ChainerPruningExtension(Extension):
 
         _check_chainer_availability()
 
-        self.trial = trial
-        self.observation_key = observation_key
-        self.pruner_trigger = chainer.training.get_trigger(pruner_trigger)
-        if not (isinstance(self.pruner_trigger, triggers.IntervalTrigger)
-                or isinstance(self.pruner_trigger, triggers.ManualScheduleTrigger)):
-            pruner_type = type(self.pruner_trigger)
+        self._trial = trial
+        self._observation_key = observation_key
+        self._pruner_trigger = chainer.training.get_trigger(pruner_trigger)
+        if not (isinstance(self._pruner_trigger, triggers.IntervalTrigger)
+                or isinstance(self._pruner_trigger, triggers.ManualScheduleTrigger)):
+            pruner_type = type(self._pruner_trigger)
             raise TypeError("Invalid trigger class: " + str(pruner_type) + "\n"
                             "Pruner trigger is supposed to be an instance of "
                             "IntervalTrigger or ManualScheduleTrigger.")
@@ -93,7 +93,7 @@ class ChainerPruningExtension(Extension):
     def _observation_exists(self, trainer):
         # type: (chainer.training.Trainer) -> bool
 
-        return self.pruner_trigger(trainer) and self.observation_key in trainer.observation
+        return self._pruner_trigger(trainer) and self._observation_key in trainer.observation
 
     def __call__(self, trainer):
         # type: (chainer.training.Trainer) -> None
@@ -101,11 +101,11 @@ class ChainerPruningExtension(Extension):
         if not self._observation_exists(trainer):
             return
 
-        current_score = self._get_float_value(trainer.observation[self.observation_key])
-        current_step = getattr(trainer.updater, self.pruner_trigger.unit)
-        self.trial.report(current_score, step=current_step)
-        if self.trial.should_prune():
-            message = "Trial was pruned at {} {}.".format(self.pruner_trigger.unit, current_step)
+        current_score = self._get_float_value(trainer.observation[self._observation_key])
+        current_step = getattr(trainer.updater, self._pruner_trigger.unit)
+        self._trial.report(current_score, step=current_step)
+        if self._trial.should_prune():
+            message = "Trial was pruned at {} {}.".format(self._pruner_trigger.unit, current_step)
             raise optuna.exceptions.TrialPruned(message)
 
 

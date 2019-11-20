@@ -175,9 +175,9 @@ class _Dashboard(_BaseCommand):
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
 
         if parsed_args.out is None:
-            optuna.dashboard.serve(study, parsed_args.bokeh_allow_websocket_origins)
+            optuna.dashboard._serve(study, parsed_args.bokeh_allow_websocket_origins)
         else:
-            optuna.dashboard.write(study, parsed_args.out)
+            optuna.dashboard._write(study, parsed_args.out)
             self.logger.info('Report successfully written to: {}'.format(parsed_args.out))
 
 
