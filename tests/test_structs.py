@@ -172,7 +172,8 @@ def test_study_summary_eq_ne():
 
 
 # TODO(Yanase): Remove version check after Python 2.7 is retired.
-@pytest.mark.skipif('sys.version_info < (3, 5)')
+@pytest.mark.skipif('sys.version_info < (3, 5)',
+                    reason='NotImplemented does not raise TypeError in Python 2.7.')
 def test_study_summary_lt():
     # type: () -> None
 
