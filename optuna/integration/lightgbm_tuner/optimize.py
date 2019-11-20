@@ -32,6 +32,17 @@ if type_checking.TYPE_CHECKING:
 # EPS is used to ensure that a sampled parameter value is in pre-defined value range.
 EPS = 1e-12
 
+# Default parameter values described in the official webpage.
+DEFAULT_LIGHTGBM_PARAMETERS = {
+    'lambda_l1': 0.0,
+    'lambda_l2': 0.0,
+    'num_leaves': 31,
+    'feature_fraction': 1.0,
+    'bagging_fraction': 1.0,
+    'bagging_freq': 0,
+    'min_child_samples': 20,
+}
+
 
 class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
 
@@ -303,15 +314,7 @@ class LightGBMTuner(BaseTuner):
         self.tuning_history = [] if tuning_history is None else tuning_history
 
         # Set default parameters as best.
-        self.best_params.update({
-            'lambda_l1': 0.0,
-            'lambda_l2': 0.0,
-            'num_leaves': 31,
-            'feature_fraction': 1.0,
-            'bagging_fraction': 1.0,
-            'bagging_freq': 0,
-            'min_child_samples': 20,
-        })
+        self.best_params.update(DEFAULT_LIGHTGBM_PARAMETERS)
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")

@@ -295,12 +295,10 @@ class TestLightGBMTuner(object):
                 best_params=best_params,
             ))
             assert len(tuning_history) == 0
-            assert len(best_params) == 0
             runner.tune_feature_fraction()
 
             assert runner.lgbm_params['feature_fraction'] != unexpected_value
             assert len(tuning_history) == 7
-            assert len(best_params) == 1
 
     def test_tune_num_leaves(self):
         # type: () -> None
@@ -465,6 +463,6 @@ class TestLightGBMTuner(object):
 
             fake_study.optimize.assert_called()
 
-        # `num_leaves` should not be included since default is better.
-        assert 'num_leaves' not in tuner.best_params
+        # `num_leaves` should not be same as default.
+        assert tuner.best_params['num_leaves'] == 31
         assert tuner.best_score == 0.9
