@@ -1,6 +1,7 @@
 import copy
 import datetime
 import pytest
+import warnings
 
 import optuna
 from optuna.distributions import LogUniformDistribution
@@ -147,7 +148,10 @@ def test_study_summary_study_id():
 
     summary = summaries[0]
 
-    assert summary.study_id == summary._study_id
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        assert summary.study_id == summary._study_id
+
     with pytest.warns(DeprecationWarning):
         summary.study_id
 

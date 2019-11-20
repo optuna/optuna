@@ -9,6 +9,7 @@ import pytest
 import threading
 import time
 import uuid
+import warnings
 
 import optuna
 from optuna.testing.storage import StorageSupplier
@@ -735,7 +736,10 @@ def test_study_id():
     # type: () -> None
 
     study = optuna.create_study()
-    assert study.study_id == study._study_id
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        assert study.study_id == study._study_id
 
     with pytest.warns(DeprecationWarning):
         study.study_id
