@@ -152,7 +152,7 @@ def test_study_summary_study_id():
         summary.study_id
 
 
-def test_study_summary_eq_ne_lt():
+def test_study_summary_eq_ne():
     # type: () -> None
 
     storage = optuna.storages.RDBStorage('sqlite:///:memory:')
