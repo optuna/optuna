@@ -3,6 +3,7 @@ from mock import Mock
 from mock import patch
 import numpy as np
 import pytest
+import warnings
 
 from optuna import distributions
 from optuna import samplers
@@ -431,3 +432,17 @@ def test_trial_report():
 
     with pytest.raises(ValueError):
         trial.report(1.23, -1)
+
+
+def test_study_id():
+    # type: () -> None
+
+    study = create_study()
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        assert trial.study_id == trial.study._study_id
+
+    with pytest.warns(DeprecationWarning):
+        trial.study_id
