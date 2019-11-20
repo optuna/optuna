@@ -195,7 +195,6 @@ class InMemoryStorage(base.BaseStorage):
             if state == structs.TrialState.RUNNING and trial.state != structs.TrialState.WAITING:
                 return False
 
-            self.trials[trial_id] = self.trials[trial_id]._replace(state=state)
             trial.state = state
             if state.is_finished():
                 trial.datetime_complete = datetime.now()
