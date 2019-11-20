@@ -174,7 +174,7 @@ def test_study_summary_eq_ne():
 # TODO(Yanase): Remove version check after Python 2.7 is retired.
 @pytest.mark.skipif('sys.version_info < (3, 5)',
                     reason='NotImplemented does not raise TypeError in Python 2.7.')
-def test_study_summary_lt():
+def test_study_summary_lt_le():
     # type: () -> None
 
     storage = optuna.storages.RDBStorage('sqlite:///:memory:')
@@ -193,6 +193,14 @@ def test_study_summary_lt():
 
     with pytest.raises(TypeError):
         summary_0 < 1
+
+    # Skip type checking as mypy does not support functools.total_ordering.
+    # See https://github.com/python/mypy/issues/4610.
+    assert summary_0 <= summary_0  # type: ignore
+    assert not summary_1 <= summary_0  # type: ignore
+
+    with pytest.raises(TypeError):
+        summary_0 <= 1  # type: ignore
 
     # A list of StudySummaries is sortable.
     summaries.reverse()

@@ -1,6 +1,6 @@
 import enum
+from functools import total_ordering
 import warnings
-
 
 from optuna import exceptions
 from optuna import logging
@@ -235,6 +235,7 @@ class FrozenTrial(object):
             return max(self.intermediate_values.keys())
 
 
+@total_ordering
 class StudySummary(object):
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
 
