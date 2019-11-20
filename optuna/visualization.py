@@ -51,7 +51,7 @@ def is_available():
 
 
 def plot_intermediate_values(study):
-    # type: (Study) -> Figure
+    # type: (Study) -> go.Figure
     """Plot intermediate values of all trials in a study.
 
     Example:
@@ -77,7 +77,7 @@ def plot_intermediate_values(study):
             values.
 
     Returns:
-        A :class:`plotly.graph_objs._figure.Figure` object.
+        A :class:`plotly.graph_objs.Figure` object.
     """
 
     _check_plotly_availability()
@@ -151,7 +151,7 @@ def plot_optimization_history(study):
             values.
 
     Returns:
-        A :class:`plotly.graph_objs._figure.Figure` object.
+        A :class:`plotly.graph_objs.Figure` object.
     """
 
     _check_plotly_availability()
@@ -228,7 +228,7 @@ def plot_contour(study, params=None):
             Parameter list to visualize. The default is all parameters.
 
     Returns:
-        A :class:`plotly.graph_objs._figure.Figure` object.
+        A :class:`plotly.graph_objs.Figure` object.
     """
 
     _check_plotly_availability()
@@ -406,7 +406,7 @@ def plot_parallel_coordinate(study, params=None):
             Parameter list to visualize. The default is all parameters.
 
     Returns:
-        A :class:`plotly.graph_objs._figure.Figure` object.
+        A :class:`plotly.graph_objs.Figure` object.
     """
 
     _check_plotly_availability()
@@ -512,7 +512,7 @@ def plot_slice(study, params=None):
             Parameter list to visualize. The default is all parameters.
 
     Returns:
-        A :class:`plotly.graph_objs._figure.Figure` object.
+        A :class:`plotly.graph_objs.Figure` object.
     """
 
     _check_plotly_availability()
