@@ -23,7 +23,6 @@ if type_checking.TYPE_CHECKING:
 try:
     import plotly
     import plotly.graph_objs as go
-    from plotly.graph_objs._figure import Figure  # NOQA
     from plotly.subplots import make_subplots
     _available = True
 except ImportError as e:
@@ -85,7 +84,7 @@ def plot_intermediate_values(study):
 
 
 def _get_intermediate_plot(study):
-    # type: (Study) -> Figure
+    # type: (Study) -> go.Figure
 
     layout = go.Layout(
         title='Intermediate Values Plot',
@@ -126,7 +125,7 @@ def _get_intermediate_plot(study):
 
 
 def plot_optimization_history(study):
-    # type: (Study) -> Figure
+    # type: (Study) -> go.Figure
     """Plot optimization history of all trials in a study.
 
     Example:
@@ -159,7 +158,7 @@ def plot_optimization_history(study):
 
 
 def _get_optimization_history_plot(study):
-    # type: (Study) -> Figure
+    # type: (Study) -> go.Figure
 
     layout = go.Layout(
         title='Optimization History Plot',
@@ -198,7 +197,7 @@ def _get_optimization_history_plot(study):
 
 
 def plot_contour(study, params=None):
-    # type: (Study, Optional[List[str]]) -> Figure
+    # type: (Study, Optional[List[str]]) -> go.Figure
     """Plot the parameter relationship as contour plot in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -236,7 +235,7 @@ def plot_contour(study, params=None):
 
 
 def _get_contour_plot(study, params=None):
-    # type: (Study, Optional[List[str]]) -> Figure
+    # type: (Study, Optional[List[str]]) -> go.Figure
 
     layout = go.Layout(
         title='Contour Plot',
@@ -376,7 +375,7 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
 
 
 def plot_parallel_coordinate(study, params=None):
-    # type: (Study, Optional[List[str]]) -> Figure
+    # type: (Study, Optional[List[str]]) -> go.Figure
     """Plot the high-dimentional parameter relationships in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -414,7 +413,7 @@ def plot_parallel_coordinate(study, params=None):
 
 
 def _get_parallel_coordinate_plot(study, params=None):
-    # type: (Study, Optional[List[str]]) -> Figure
+    # type: (Study, Optional[List[str]]) -> go.Figure
 
     layout = go.Layout(
         title='Parallel Coordinate Plot',
@@ -482,7 +481,7 @@ def _get_parallel_coordinate_plot(study, params=None):
 
 
 def plot_slice(study, params=None):
-    # type: (Study, Optional[List[str]]) -> Figure
+    # type: (Study, Optional[List[str]]) -> go.Figure
     """Plot the parameter relationship as slice plot in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -520,7 +519,7 @@ def plot_slice(study, params=None):
 
 
 def _get_slice_plot(study, params=None):
-    # type: (Study, Optional[List[str]]) -> Figure
+    # type: (Study, Optional[List[str]]) -> go.Figure
 
     layout = go.Layout(
         title='Slice Plot',
