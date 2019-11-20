@@ -585,7 +585,11 @@ def _generate_slice_subplot(study, trials, param):
             },
             'color': [t.number for t in trials if param in t.params],
             'colorscale': 'Blues',
-            'colorbar': {'title': '#Trials'}
+            'colorbar': {
+                'title': '#Trials',
+                'x': 1.0,  # Offset the colorbar position with a fixed width `xpad`.
+                'xpad': 40,
+            }
         },
         showlegend=False,
     )
