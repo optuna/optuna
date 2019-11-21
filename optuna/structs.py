@@ -1,5 +1,4 @@
 import enum
-from functools import total_ordering
 import warnings
 
 from optuna import exceptions
@@ -235,7 +234,6 @@ class FrozenTrial(object):
             return max(self.intermediate_values.keys())
 
 
-@total_ordering
 class StudySummary(object):
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
 
@@ -301,6 +299,14 @@ class StudySummary(object):
             return NotImplemented
 
         return self._study_id < other._study_id
+
+    def __le__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, StudySummary):
+            return NotImplemented
+
+        return self._study_id <= other._study_id
 
     @property
     def study_id(self):

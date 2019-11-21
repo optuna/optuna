@@ -194,13 +194,11 @@ def test_study_summary_lt_le():
     with pytest.raises(TypeError):
         summary_0 < 1
 
-    # Skip type checking as mypy does not support functools.total_ordering.
-    # See https://github.com/python/mypy/issues/4610.
-    assert summary_0 <= summary_0  # type: ignore
-    assert not summary_1 <= summary_0  # type: ignore
+    assert summary_0 <= summary_0
+    assert not summary_1 <= summary_0
 
     with pytest.raises(TypeError):
-        summary_0 <= 1  # type: ignore
+        summary_0 <= 1
 
     # A list of StudySummaries is sortable.
     summaries.reverse()
