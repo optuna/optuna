@@ -1,6 +1,5 @@
 import abc
 import json
-import six
 
 from optuna import type_checking
 
@@ -11,8 +10,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseDistribution(object):
+class BaseDistribution(object, metaclass=abc.ABCMeta):
     """Base class for distributions.
 
     Note that distribution classes are not supposed to be called by library users.

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import colorlog
 import logging
 from logging import CRITICAL  # NOQA

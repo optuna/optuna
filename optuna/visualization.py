@@ -540,7 +540,9 @@ def _get_slice_plot(study, params=None):
                 raise ValueError('Parameter {} does not exist in your study.'.format(input_p_name))
         sorted_params = sorted(list(set(params)))
 
-    if len(sorted_params) == 1:
+    n_params = len(sorted_params)
+
+    if n_params == 1:
         figure = go.Figure(
             data=[_generate_slice_subplot(study, trials, sorted_params[0])],
             layout=layout
@@ -564,6 +566,9 @@ def _get_slice_plot(study, params=None):
                 figure.update_yaxes(title_text='Objective Value', row=1, col=1)
             if _is_log_scale(trials, param):
                 figure.update_xaxes(type='log', row=1, col=i + 1)
+        if n_params > 3:
+            # Ensure that each subplot has a minimum width without relying on autosizing.
+            figure.update_layout(width=300 * n_params)
 
     return figure
 
@@ -589,7 +594,11 @@ def _generate_slice_subplot(study, trials, param):
             },
             'color': [t.number for t in trials if param in t.params],
             'colorscale': 'Blues',
-            'colorbar': {'title': '#Trials'}
+            'colorbar': {
+                'title': '#Trials',
+                'x': 1.0,  # Offset the colorbar position with a fixed width `xpad`.
+                'xpad': 40,
+            }
         },
         showlegend=False,
     )

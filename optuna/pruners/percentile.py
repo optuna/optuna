@@ -1,13 +1,13 @@
+import functools
 import math
 import numpy as np
-import six
 
 from optuna.pruners import BasePruner
 from optuna import structs
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from typing import Iterator  # NOQA
+    from typing import KeysView  # NOQA
     from typing import List  # NOQA
 
     from optuna.study import Study  # NOQA
@@ -43,14 +43,14 @@ def _get_percentile_intermediate_result_over_trials(all_trials, direction, step,
 
 
 def _is_first_in_interval_step(step, intermediate_steps, n_warmup_steps, interval_steps):
-    # type: (int, Iterator[int], int, int) -> bool
+    # type: (int, KeysView[int], int, int) -> bool
 
     nearest_lower_pruning_step = (
         (step - n_warmup_steps - 1) // interval_steps * interval_steps + n_warmup_steps + 1)
     assert nearest_lower_pruning_step >= 0
 
     # `intermediate_steps` may not be sorted so we must go through all elements.
-    second_last_step = six.moves.reduce(
+    second_last_step = functools.reduce(
         lambda second_last_step, s: s if s > second_last_step and s != step
         else second_last_step, intermediate_steps, -1)
 
@@ -133,7 +133,7 @@ class PercentilePruner(BasePruner):
             return False
 
         if not _is_first_in_interval_step(
-                step, six.iterkeys(trial.intermediate_values), n_warmup_steps,
+                step, trial.intermediate_values.keys(), n_warmup_steps,
                 self._interval_steps):
             return False
 

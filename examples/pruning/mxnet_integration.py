@@ -11,7 +11,6 @@ You can run this example as follows:
 
 """
 
-from __future__ import print_function
 import logging
 
 import mxnet as mx
