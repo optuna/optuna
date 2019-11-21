@@ -39,24 +39,24 @@ class MXNetPruningCallback(object):
 
         _check_mxnet_availability()
 
-        self.trial = trial
-        self.eval_metric = eval_metric
+        self._trial = trial
+        self._eval_metric = eval_metric
 
     def __call__(self, param):
         # type: (mx.model.BatchEndParams,) -> None
 
         if param.eval_metric is not None:
             metric_names, metric_values = param.eval_metric.get()
-            if type(metric_names) == list and self.eval_metric in metric_names:
-                current_score = metric_values[metric_names.index(self.eval_metric)]
-            elif metric_names == self.eval_metric:
+            if type(metric_names) == list and self._eval_metric in metric_names:
+                current_score = metric_values[metric_names.index(self._eval_metric)]
+            elif metric_names == self._eval_metric:
                 current_score = metric_values
             else:
                 raise ValueError('The entry associated with the metric name "{}" '
                                  'is not found in the evaluation result list {}.'.format(
-                                     self.eval_metric, str(metric_names)))
-            self.trial.report(current_score, step=param.epoch)
-            if self.trial.should_prune():
+                                     self._eval_metric, str(metric_names)))
+            self._trial.report(current_score, step=param.epoch)
+            if self._trial.should_prune():
                 message = "Trial was pruned at epoch {}.".format(param.epoch)
                 raise optuna.exceptions.TrialPruned(message)
 
