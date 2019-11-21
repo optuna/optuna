@@ -4,17 +4,11 @@ from setuptools import find_packages
 from setuptools import setup
 import sys
 
-try:
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
+from typing import Dict  # NOQA
+from typing import List  # NOQA
+from typing import Optional  # NOQA
 
-    from pkg_resources import Distribution  # NOQA
-except ImportError:
-    # Built-in `typing` module is only available in Python 3.5 or newer.
-    # The above imports are only used by `mypy`, so we simply ignore them
-    # if they are unavailable in the execution environment.
-    pass
+from pkg_resources import Distribution  # NOQA
 
 
 def get_version():
@@ -43,16 +37,11 @@ def get_install_requires():
         'alembic', 'cliff', 'colorlog', 'numpy', 'scipy', 'six',
         'sqlalchemy>=1.1.0', 'tqdm', 'typing',
     ]
-    if sys.version_info[0] == 2:
-        install_requires.extend(['enum34'])
     return install_requires
 
 
 def get_extras_require():
     # type: () -> Dict[str, List[str]]
-
-    _major, _sub = sys.version_info[:2]
-    _fastai_available = (_major == 3) and (_sub > 5)
 
     testing_requirements = [
         'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
@@ -70,19 +59,18 @@ def get_extras_require():
         # See https://github.com/optuna/optuna/issues/565 for further details.
         'tensorflow<2.0.0',
     ]
-    if _fastai_available:
+
+    if sys.version_info[:2] > (3, 5,):
         testing_requirements.append("fastai<2")
         example_requirements.append("fastai<2")
 
     extras_require = {
-        'checking': ['autopep8', 'hacking'],
+        'checking': ['autopep8', 'hacking', 'mypy'],
         'testing': testing_requirements,
         'example': example_requirements,
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],
     }
-    if sys.version_info >= (3, 5):  # mypy does not support Python 2.x.
-        extras_require['checking'].append('mypy')
     return extras_require
 
 
