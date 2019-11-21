@@ -84,9 +84,8 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
     def __eq__(self, other):
         # type: (Any) -> bool
 
-        if not isinstance(other, type(self)):
-            return False
-
+        if not isinstance(other, BaseDistribution):
+            return NotImplemented
         return self.__dict__ == other.__dict__
 
     def __ne__(self, other):
