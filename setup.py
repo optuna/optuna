@@ -2,6 +2,7 @@ import os
 import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
+import sys
 
 from typing import Dict  # NOQA
 from typing import List  # NOQA
@@ -46,18 +47,22 @@ def get_extras_require():
         'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
         'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
         'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0',
-        'torch', 'torchvision', 'pytorch-ignite', 'pytorch-lightning', "fastai<2",
+        'torch', 'torchvision', 'pytorch-ignite', 'pytorch-lightning',
     ]
 
     example_requirements = [
         'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
         'mxnet', 'xgboost', 'torch', 'torchvision', 'pytorch-ignite',
-        'dask-ml', 'dask[dataframe]', 'pytorch-lightning', "fastai<2",
+        'dask-ml', 'dask[dataframe]', 'pytorch-lightning',
 
         # TODO(Yanase): Update examples to support TensorFlow 2.0.
         # See https://github.com/optuna/optuna/issues/565 for further details.
         'tensorflow<2.0.0',
     ]
+
+    if sys.version_info[:2] > (3, 5,):
+        testing_requirements.append("fastai<2")
+        example_requirements.append("fastai<2")
 
     extras_require = {
         'checking': ['autopep8', 'hacking', 'mypy'],
