@@ -283,9 +283,10 @@ class StudySummary(object):
     def __eq__(self, other):
         # type: (Any) -> bool
 
-        if isinstance(other, type(self)):
-            return other.__dict__ == self.__dict__
-        return False
+        if not isinstance(other, StudySummary):
+            return NotImplemented
+
+        return other.__dict__ == self.__dict__
 
     def __ne__(self, other):
         # type: (Any) -> bool
