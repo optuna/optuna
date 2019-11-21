@@ -143,6 +143,14 @@ class FrozenTrial(object):
 
         return self.number < other.number
 
+    def __le__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, FrozenTrial):
+            return NotImplemented
+
+        return self.number <= other.number
+
     def __hash__(self):
         # type: () -> int
 
