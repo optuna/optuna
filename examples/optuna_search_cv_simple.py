@@ -4,16 +4,10 @@ Optuna example that optimizes a classifier configuration using OptunaSearchCV.
 In this example, we optimize a classifier configuration for Iris dataset using OptunaSearchCV.
 Classifier is from scikit-learn.
 
-We have the following two ways to execute this example:
+We have the following a way to execute this example:
 
 (1) Execute this code directly.
     $ python optuna_search_cv_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize optuna_search_cv_simple.py objective --n-trials=100 --study \
-      $STUDY_NAME --storage sqlite:///example.db
 
 """
 
@@ -25,16 +19,23 @@ if __name__ == '__main__':
     clf = SVC(gamma='auto')
 
     param_distributions = {
-        'C': optuna.distributions.LogUniformDistribution(1e-10, 1e+10)
+        'C': optuna.distributions.LogUniformDistribution(1e-10, 1e+10),
+        'degree': optuna.distributions.IntUniformDistribution(1, 5),
     }
 
     optuna_search = optuna.integration.OptunaSearchCV(
         clf,
         param_distributions,
+        n_trials=100,
+        timeout=600,
         verbose=2,
     )
 
     X, y = load_iris(return_X_y=True)
     optuna_search.fit(X, y)
-    print(optuna_search.study_.best_params)
-    y_pred = optuna_search.predict(X)
+
+    trial = optuna_search.study_.best_trial
+    print('  Value: ', trial.value)
+    print('  Params: ')
+    for key, value in trial.params.items():
+        print('    {}: {}'.format(key, value))
