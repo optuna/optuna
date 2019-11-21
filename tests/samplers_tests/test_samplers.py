@@ -40,12 +40,12 @@ def test_pickle_random_sampler(seed):
     # type: (Optional[int]) -> None
     sampler = optuna.samplers.RandomSampler(seed)
     restored_sampler = pickle.loads(pickle.dumps(sampler))
-    assert sampler.seed == restored_sampler.seed
-    assert sampler.rng != restored_sampler.rng
+    assert sampler._seed == restored_sampler._seed
+    assert sampler._rng != restored_sampler._rng
     if seed is None:
-        assert sampler.rng.bytes(10) != restored_sampler.rng.bytes(10)
+        assert sampler._rng.bytes(10) != restored_sampler._rng.bytes(10)
     else:
-        assert sampler.rng.bytes(10) == restored_sampler.rng.bytes(10)
+        assert sampler._rng.bytes(10) == restored_sampler._rng.bytes(10)
 
 
 @parametrize_sampler
