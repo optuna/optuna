@@ -2,19 +2,12 @@ import os
 import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
-import sys
 
-try:
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
+from typing import Dict  # NOQA
+from typing import List  # NOQA
+from typing import Optional  # NOQA
 
-    from pkg_resources import Distribution  # NOQA
-except ImportError:
-    # Built-in `typing` module is only available in Python 3.5 or newer.
-    # The above imports are only used by `mypy`, so we simply ignore them
-    # if they are unavailable in the execution environment.
-    pass
+from pkg_resources import Distribution  # NOQA
 
 
 def get_version():
@@ -43,46 +36,36 @@ def get_install_requires():
         'alembic', 'cliff', 'colorlog', 'numpy', 'scipy', 'six',
         'sqlalchemy>=1.1.0', 'tqdm', 'typing',
     ]
-    if sys.version_info[0] == 2:
-        install_requires.extend(['enum34'])
     return install_requires
 
 
 def get_extras_require():
     # type: () -> Dict[str, List[str]]
 
-    _major, _sub = sys.version_info[:2]
-    _fastai_available = (_major == 3) and (_sub > 5)
-
     testing_requirements = [
         'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
         'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
         'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0',
-        'torch', 'torchvision', 'pytorch-ignite', 'pytorch-lightning',
+        'torch', 'torchvision', 'pytorch-ignite', 'pytorch-lightning', "fastai<2",
     ]
 
     example_requirements = [
         'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
         'mxnet', 'xgboost', 'torch', 'torchvision', 'pytorch-ignite',
-        'dask-ml', 'dask[dataframe]', 'pytorch-lightning',
+        'dask-ml', 'dask[dataframe]', 'pytorch-lightning', "fastai<2",
 
         # TODO(Yanase): Update examples to support TensorFlow 2.0.
         # See https://github.com/optuna/optuna/issues/565 for further details.
         'tensorflow<2.0.0',
     ]
-    if _fastai_available:
-        testing_requirements.append("fastai<2")
-        example_requirements.append("fastai<2")
 
     extras_require = {
-        'checking': ['autopep8', 'hacking'],
+        'checking': ['autopep8', 'hacking', 'mypy'],
         'testing': testing_requirements,
         'example': example_requirements,
         'document': ['sphinx', 'sphinx_rtd_theme'],
         'codecov': ['pytest-cov', 'codecov'],
     }
-    if sys.version_info >= (3, 5):  # mypy does not support Python 2.x.
-        extras_require['checking'].append('mypy')
     return extras_require
 
 
