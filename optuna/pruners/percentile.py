@@ -105,10 +105,10 @@ class PercentilePruner(BasePruner):
             raise ValueError(
                 'Pruning interval steps must be at least 1 but got {}.'.format(interval_steps))
 
-        self.percentile = percentile
-        self.n_startup_trials = n_startup_trials
-        self.n_warmup_steps = n_warmup_steps
-        self.interval_steps = interval_steps
+        self._percentile = percentile
+        self._n_startup_trials = n_startup_trials
+        self._n_warmup_steps = n_warmup_steps
+        self._interval_steps = interval_steps
 
     def prune(self, study, trial):
         # type: (Study, structs.FrozenTrial) -> bool
@@ -121,20 +121,20 @@ class PercentilePruner(BasePruner):
         if n_trials == 0:
             return False
 
-        if n_trials < self.n_startup_trials:
+        if n_trials < self._n_startup_trials:
             return False
 
         step = trial.last_step
         if step is None:
             return False
 
-        n_warmup_steps = self.n_warmup_steps
+        n_warmup_steps = self._n_warmup_steps
         if step <= n_warmup_steps:
             return False
 
         if not _is_first_in_interval_step(
                 step, six.iterkeys(trial.intermediate_values), n_warmup_steps,
-                self.interval_steps):
+                self._interval_steps):
             return False
 
         direction = study.direction
@@ -143,7 +143,7 @@ class PercentilePruner(BasePruner):
             return True
 
         p = _get_percentile_intermediate_result_over_trials(
-            all_trials, direction, step, self.percentile)
+            all_trials, direction, step, self._percentile)
         if math.isnan(p):
             return False
 

@@ -46,23 +46,23 @@ class TFKerasPruningCallback(Callback):
 
         _check_tensorflow_availability()
 
-        self.trial = trial
-        self.monitor = monitor
+        self._trial = trial
+        self._monitor = monitor
 
     def on_epoch_end(self, epoch, logs=None):
         # type: (int, Dict[str, Any]) -> None
 
         logs = logs or {}
-        current_score = logs.get(self.monitor)
+        current_score = logs.get(self._monitor)
 
         if current_score is None:
             return
 
         # Report current score and epoch to Optuna's trial.
-        self.trial.report(float(current_score), step=epoch)
+        self._trial.report(float(current_score), step=epoch)
 
         # Prune trial if needed
-        if self.trial.should_prune():
+        if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.exceptions.TrialPruned(message)
 

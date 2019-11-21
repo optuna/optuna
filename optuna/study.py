@@ -558,7 +558,7 @@ class Study(BaseStudy):
             # The following line mitigates memory problems that can be occurred in some
             # environments (e.g., services that use computing containers such as CircleCI).
             # Please refer to the following PR for further details:
-            # https://github.com/pfnet/optuna/pull/325.
+            # https://github.com/optuna/optuna/pull/325.
             if gc_after_trial:
                 gc.collect()
 
