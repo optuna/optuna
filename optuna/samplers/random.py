@@ -33,19 +33,21 @@ class RandomSampler(BaseSampler):
 
     def __init__(self, seed=None):
         # type: (Optional[int]) -> None
-        self._seed = seed
-        self._rng = numpy.random.RandomState(self._seed)
+        self._rng = numpy.random.RandomState(seed)
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
         state = self.__dict__.copy()
+        uii32 = numpy.iinfo(numpy.uint32)
+        state['seed'] = self._rng.randint(uii32.max)
         del state['_rng']
         return state
 
     def __setstate__(self, state):
         # type: (Dict[Any, Any]) -> None
+        seed = state.pop("seed")
         self.__dict__.update(state)
-        self._rng = numpy.random.RandomState(self._seed)
+        self._rng = numpy.random.RandomState(seed)
 
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
