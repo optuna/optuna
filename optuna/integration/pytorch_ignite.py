@@ -46,16 +46,16 @@ class PyTorchIgnitePruningHandler(object):
     def __init__(self, trial, metric, trainer):
         # type: (Trial, str, Engine) -> None
 
-        self.trial = trial
-        self.metric = metric
-        self.trainer = trainer
+        self._trial = trial
+        self._metric = metric
+        self._trainer = trainer
 
     def __call__(self, engine):
         # type: (Engine) -> None
 
-        score = engine.state.metrics[self.metric]
-        self.trial.report(score, engine.state.epoch)
-        if self.trial.should_prune():
+        score = engine.state.metrics[self._metric]
+        self._trial.report(score, engine.state.epoch)
+        if self._trial.should_prune():
             message = "Trial was pruned at {} epoch.".format(engine.state.epoch)
             raise optuna.exceptions.TrialPruned(message)
 
