@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import optuna
 from optuna import type_checking
 

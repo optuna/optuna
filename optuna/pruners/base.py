@@ -1,5 +1,4 @@
 import abc
-import six
 
 from optuna.type_checking import TYPE_CHECKING
 
@@ -8,8 +7,7 @@ if TYPE_CHECKING:
     from optuna.study import Study  # NOQA
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BasePruner(object):
+class BasePruner(object, metaclass=abc.ABCMeta):
     """Base class for pruners."""
 
     @abc.abstractmethod

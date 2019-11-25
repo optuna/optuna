@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import optuna
 
 if optuna.type_checking.TYPE_CHECKING:

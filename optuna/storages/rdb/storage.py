@@ -8,7 +8,6 @@ from datetime import datetime
 import json
 import logging
 import os
-import six
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
@@ -837,9 +836,7 @@ class RDBStorage(BaseStorage):
                 'This typically happens due to invalid data in the commit, ' \
                 'e.g. exceeding max length. ' \
                 '(The actual exception is as follows: {})'.format(repr(e))
-            six.reraise(optuna.exceptions.StorageInternalError,
-                        optuna.exceptions.StorageInternalError(message),
-                        sys.exc_info()[2])
+            raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
 
     def remove_session(self):
         # type: () -> None
