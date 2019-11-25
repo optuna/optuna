@@ -1,7 +1,6 @@
 import abc
 from datetime import datetime
 import decimal
-import six
 import warnings
 
 from optuna import distributions
@@ -21,8 +20,7 @@ if type_checking.TYPE_CHECKING:
     T = TypeVar('T', float, str)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseTrial(object):
+class BaseTrial(object, metaclass=abc.ABCMeta):
     """Base class for trials.
 
     Note that this class is not supposed to be directly accessed by library users.

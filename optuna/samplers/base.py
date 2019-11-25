@@ -1,5 +1,4 @@
 import abc
-import six
 
 from optuna import type_checking
 
@@ -12,8 +11,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseSampler(object):
+class BaseSampler(object, metaclass=abc.ABCMeta):
     """Base class for samplers.
 
     Optuna combines two types of sampling strategies, which are called *relative sampling* and
