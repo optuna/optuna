@@ -144,7 +144,7 @@ def test_categorical(sampler_class, choices):
 def _create_new_trial(study):
     # type: (Study) -> FrozenTrial
 
-    trial_id = study._storage.create_new_trial(study.study_id)
+    trial_id = study._storage.create_new_trial(study._study_id)
     return study._storage.get_trial(trial_id)
 
 

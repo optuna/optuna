@@ -9,6 +9,7 @@ import pytest
 import threading
 import time
 import uuid
+import warnings
 
 import optuna
 from optuna.testing.storage import StorageSupplier
@@ -336,7 +337,7 @@ def test_get_all_study_summaries(storage_mode, cache_mode):
         study.optimize(Func(), n_trials=5)
 
         summaries = optuna.get_all_study_summaries(study._storage)
-        summary = [s for s in summaries if s.study_id == study.study_id][0]
+        summary = [s for s in summaries if s._study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 5
@@ -351,7 +352,7 @@ def test_get_all_study_summaries_with_no_trials(storage_mode, cache_mode):
         study = optuna.create_study(storage=storage)
 
         summaries = optuna.get_all_study_summaries(study._storage)
-        summary = [s for s in summaries if s.study_id == study.study_id][0]
+        summary = [s for s in summaries if s._study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 0
@@ -590,7 +591,7 @@ def test_load_study(storage_mode, cache_mode):
 
         # Test loading an existing study.
         loaded_study = optuna.study.load_study(study_name=study_name, storage=storage)
-        assert created_study.study_id == loaded_study.study_id
+        assert created_study._study_id == loaded_study._study_id
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -729,3 +730,16 @@ def test_callbacks(n_jobs):
             study.optimize(lambda t: 1/0, callbacks=callbacks,
                            n_trials=10, n_jobs=n_jobs, catch=())
         assert states == []
+
+
+def test_study_id():
+    # type: () -> None
+
+    study = optuna.create_study()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        assert study.study_id == study._study_id
+
+    with pytest.warns(DeprecationWarning):
+        study.study_id

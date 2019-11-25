@@ -3,6 +3,7 @@ from mock import Mock
 from mock import patch
 import numpy as np
 import pytest
+import warnings
 
 from optuna import distributions
 from optuna import samplers
@@ -33,7 +34,7 @@ def test_suggest_uniform(storage_init_func):
 
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study._storage.create_new_trial(study.study_id))
+        trial = Trial(study, study._storage.create_new_trial(study._study_id))
         distribution = distributions.UniformDistribution(low=0., high=3.)
 
         assert trial._suggest('x', distribution) == 1.  # Test suggesting a param.
@@ -53,7 +54,7 @@ def test_suggest_discrete_uniform(storage_init_func):
 
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study._storage.create_new_trial(study.study_id))
+        trial = Trial(study, study._storage.create_new_trial(study._study_id))
         distribution = distributions.DiscreteUniformDistribution(low=0., high=3., q=1.)
 
         assert trial._suggest('x', distribution) == 1.  # Test suggesting a param.
@@ -68,7 +69,7 @@ def test_suggest_low_equals_high(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
 
     study = create_study(storage_init_func(), sampler=samplers.TPESampler(n_startup_trials=0))
-    trial = Trial(study, study._storage.create_new_trial(study.study_id))
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
     # Parameter values are determined without suggestion when low == high.
     with patch.object(trial, '_suggest', wraps=trial._suggest) as mock_object:
@@ -145,7 +146,7 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
     mock.side_effect = lambda study, trial, param_name, distribution: distribution.high
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study._storage.create_new_trial(study.study_id))
+        trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
         x = trial.suggest_discrete_uniform('x', range_config['low'], range_config['high'],
                                            range_config['q'])
@@ -157,7 +158,7 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
     mock.side_effect = lambda study, trial, param_name, distribution: distribution.low
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study._storage.create_new_trial(study.study_id))
+        trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
         x = trial.suggest_discrete_uniform('x', range_config['low'], range_config['high'],
                                            range_config['q'])
@@ -175,7 +176,7 @@ def test_suggest_int(storage_init_func):
 
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study._storage.create_new_trial(study.study_id))
+        trial = Trial(study, study._storage.create_new_trial(study._study_id))
         distribution = distributions.IntUniformDistribution(low=0, high=3)
 
         assert trial._suggest('x', distribution) == 1  # Test suggesting a param.
@@ -217,7 +218,7 @@ def test_trial_should_prune():
 
     pruner = DeterministicPruner(True)
     study = create_study(pruner=pruner)
-    trial = Trial(study, study._storage.create_new_trial(study.study_id))
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
     trial.report(1, 1)
     assert trial.should_prune()
 
@@ -352,7 +353,7 @@ def test_relative_parameters(storage_init_func):
     def create_trial():
         # type: () -> Trial
 
-        return Trial(study, study._storage.create_new_trial(study.study_id))
+        return Trial(study, study._storage.create_new_trial(study._study_id))
 
     # Suggested from `relative_params`.
     trial0 = create_trial()
@@ -404,7 +405,7 @@ def test_trial_report():
     # type: () -> None
 
     study = create_study()
-    trial = Trial(study, study._storage.create_new_trial(study.study_id))
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
     # Report values that can be cast to `float` (OK).
     trial.report(1.23)
@@ -429,3 +430,17 @@ def test_trial_report():
 
     with pytest.raises(ValueError):
         trial.report(1.23, -1)
+
+
+def test_study_id():
+    # type: () -> None
+
+    study = create_study()
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        assert trial.study_id == trial.study._study_id
+
+    with pytest.warns(DeprecationWarning):
+        trial.study_id
