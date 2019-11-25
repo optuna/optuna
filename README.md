@@ -79,7 +79,7 @@ To install Optuna, use `pip` as follows:
 $ pip install optuna
 ```
 
-Optuna supports Python 2.7 and Python 3.5 or newer.
+Optuna supports Python 3.5 or newer.
 
 
 ## Contribution

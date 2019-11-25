@@ -19,8 +19,6 @@ We have following two ways to execute this example:
 
 """
 
-from __future__ import division
-
 import numpy as np
 import sklearn.datasets
 import sklearn.metrics
