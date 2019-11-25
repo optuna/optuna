@@ -200,11 +200,19 @@ def test_eq_ne_hash():
     d0 = distributions.UniformDistribution(low=1, high=2)
     d1 = distributions.UniformDistribution(low=1, high=3)
     assert d0 != d1
+    assert not d0 == d1
     assert hash(d0) != hash(d1)
 
-    # Different classes.
+    # Different distribution classes.
     d2 = distributions.IntUniformDistribution(low=1, high=2)
     assert d0 != d2
+    assert not d0 == d2
+
+    # Different types.
+    assert d0 != 1
+    assert not d0 == 1
+    assert d0 != 'foo'
+    assert not d0 == 'foo'
 
     # In the implementation of `__hash__`, only attributes are considered.
     assert hash(d0) == hash(d2)
