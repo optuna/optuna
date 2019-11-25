@@ -291,6 +291,9 @@ class StudySummary(object):
     def __ne__(self, other):
         # type: (Any) -> bool
 
+        if not isinstance(other, StudySummary):
+            return NotImplemented
+
         return not self.__eq__(other)
 
     def __lt__(self, other):

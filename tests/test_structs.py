@@ -170,6 +170,9 @@ def test_study_summary_eq_ne():
     assert summaries[0] == copy.deepcopy(summaries[0])
     assert summaries[0] != summaries[1]
 
+    assert not summaries[0] == 1
+    assert summaries[0] != 1
+
 
 # TODO(Yanase): Remove version check after Python 2.7 is retired.
 @pytest.mark.skipif('sys.version_info < (3, 5)',
