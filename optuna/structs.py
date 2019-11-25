@@ -133,6 +133,8 @@ class FrozenTrial(object):
     def __ne__(self, other):
         # type: (Any) -> bool
 
+        if not isinstance(other, FrozenTrial):
+            return NotImplemented
         return not self.__eq__(other)
 
     def __hash__(self):
