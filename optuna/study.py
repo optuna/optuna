@@ -310,14 +310,14 @@ class Study(BaseStudy):
                 import pandas
 
                 def objective(trial):
-                    x = trial.suggest_uniform('x', -10, 10)
-                    y = trial.suggest_categorical('y', [-1, 0, 1])
-                    return x ** 2 + y
+                    x = trial.suggest_uniform('x', -1, 1)
+                    return x ** 2
 
                 study = optuna.create_study()
                 study.optimize(objective, n_trials=3)
-                df = study.trials_dataframe()
 
+                # Create a dataframe from the study.
+                df = study.trials_dataframe()
                 assert isinstance(df, pandas.DataFrame)
                 assert df.shape[0] == 3  # n_trials.
 
