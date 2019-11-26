@@ -1,6 +1,5 @@
 import abc
 import copy
-import six
 
 from optuna import structs
 from optuna import type_checking
