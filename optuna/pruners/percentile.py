@@ -114,7 +114,7 @@ class PercentilePruner(BasePruner):
         # type: (Study, structs.FrozenTrial) -> bool
         """Please consult the documentation for :func:`BasePruner.prune`."""
 
-        all_trials = study.trials
+        all_trials = study.get_trials(deepcopy=False)
         n_trials = len([t for t in all_trials
                         if t.state == structs.TrialState.COMPLETE])
 
