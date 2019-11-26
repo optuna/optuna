@@ -400,7 +400,7 @@ class TestLightGBMTuner(object):
             assert runner.lgbm_params['min_child_samples'] != unexpected_value
             assert len(tuning_history) == 5
 
-    def test_when_tuning_num_leaves_doesnt_improve_best_score(self):
+    def test_when_a_step_does_not_improve_best_score(self):
         # type: () -> None
 
         params = {}  # type: Dict
