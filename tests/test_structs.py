@@ -120,8 +120,8 @@ def test_frozen_trial_lt():
     # A list of FrozenTrials is sortable.
     trials = [trial_other, trial]
     trials.sort()
-    assert trials[0] == trial
-    assert trials[1] == trial_other
+    assert trials[0] is trial
+    assert trials[1] is trial_other
 
 
 def _create_frozen_trial():
