@@ -130,13 +130,6 @@ class FrozenTrial(object):
             return NotImplemented
         return other.__dict__ == self.__dict__
 
-    def __ne__(self, other):
-        # type: (Any) -> bool
-
-        if not isinstance(other, FrozenTrial):
-            return NotImplemented
-        return not self.__eq__(other)
-
     def __hash__(self):
         # type: () -> int
 
