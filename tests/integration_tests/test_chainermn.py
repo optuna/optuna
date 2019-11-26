@@ -4,12 +4,12 @@ import pytest
 
 from optuna import create_study
 from optuna import distributions
+from optuna.exceptions import TrialPruned
 from optuna import integration
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.structs import TrialPruned
 from optuna.structs import TrialState
 from optuna import Study
 from optuna.testing.integration import DeterministicPruner
@@ -526,7 +526,7 @@ def _create_new_chainermn_trial(study, comm):
     # type: (Study, CommunicatorBase) -> integration.chainermn.ChainerMNTrial
 
     if comm.rank == 0:
-        trial_id = study._storage.create_new_trial(study.study_id)
+        trial_id = study._storage.create_new_trial(study._study_id)
         trial = Trial(study, trial_id)
         mn_trial = integration.chainermn.ChainerMNTrial(trial, comm)
     else:

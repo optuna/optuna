@@ -5,7 +5,6 @@ from optuna.distributions import LogUniformDistribution
 from optuna.logging import get_logger
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
-from optuna.study import Study  # NOQA
 from optuna import type_checking
 
 logger = get_logger(__name__)
@@ -19,11 +18,11 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
 
     from optuna.structs import FrozenTrial  # NOQA
+    from optuna.study import Study  # NOQA
 
 try:
     import plotly
     import plotly.graph_objs as go
-    from plotly.graph_objs._figure import Figure  # NOQA
     from plotly.subplots import make_subplots
     _available = True
 except ImportError as e:
@@ -51,7 +50,7 @@ def is_available():
 
 
 def plot_intermediate_values(study):
-    # type: (Study) -> None
+    # type: (Study) -> go.Figure
     """Plot intermediate values of all trials in a study.
 
     Example:
@@ -75,15 +74,17 @@ def plot_intermediate_values(study):
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their intermediate
             values.
+
+    Returns:
+        A :class:`plotly.graph_objs.Figure` object.
     """
 
     _check_plotly_availability()
-    figure = _get_intermediate_plot(study)
-    figure.show()
+    return _get_intermediate_plot(study)
 
 
 def _get_intermediate_plot(study):
-    # type: (Study) -> Figure
+    # type: (Study) -> go.Figure
 
     layout = go.Layout(
         title='Intermediate Values Plot',
@@ -124,7 +125,7 @@ def _get_intermediate_plot(study):
 
 
 def plot_optimization_history(study):
-    # type: (Study) -> None
+    # type: (Study) -> go.Figure
     """Plot optimization history of all trials in a study.
 
     Example:
@@ -147,15 +148,17 @@ def plot_optimization_history(study):
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
             values.
+
+    Returns:
+        A :class:`plotly.graph_objs.Figure` object.
     """
 
     _check_plotly_availability()
-    figure = _get_optimization_history_plot(study)
-    figure.show()
+    return _get_optimization_history_plot(study)
 
 
 def _get_optimization_history_plot(study):
-    # type: (Study) -> Figure
+    # type: (Study) -> go.Figure
 
     layout = go.Layout(
         title='Optimization History Plot',
@@ -194,7 +197,7 @@ def _get_optimization_history_plot(study):
 
 
 def plot_contour(study, params=None):
-    # type: (Study, Optional[List[str]]) -> None
+    # type: (Study, Optional[List[str]]) -> go.Figure
     """Plot the parameter relationship as contour plot in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -222,15 +225,17 @@ def plot_contour(study, params=None):
             values.
         params:
             Parameter list to visualize. The default is all parameters.
+
+    Returns:
+        A :class:`plotly.graph_objs.Figure` object.
     """
 
     _check_plotly_availability()
-    figure = _get_contour_plot(study, params)
-    figure.show()
+    return _get_contour_plot(study, params)
 
 
 def _get_contour_plot(study, params=None):
-    # type: (Study, Optional[List[str]]) -> Figure
+    # type: (Study, Optional[List[str]]) -> go.Figure
 
     layout = go.Layout(
         title='Contour Plot',
@@ -342,7 +347,7 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
 
     # TODO(Yanase): Use reversescale argument to reverse colorscale if Plotly's bug is fixed.
     # If contours_coloring='heatmap' is specified, reversesecale argument of go.Contour does not
-    # work correctly. See https://github.com/pfnet/optuna/issues/606.
+    # work correctly. See https://github.com/optuna/optuna/issues/606.
     colorscale = plotly.colors.PLOTLY_SCALES['Blues']
     if direction == StudyDirection.MINIMIZE:
         colorscale = [[1 - t[0], t[1]] for t in colorscale]
@@ -370,7 +375,7 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
 
 
 def plot_parallel_coordinate(study, params=None):
-    # type: (Study, Optional[List[str]]) -> None
+    # type: (Study, Optional[List[str]]) -> go.Figure
     """Plot the high-dimentional parameter relationships in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -398,15 +403,17 @@ def plot_parallel_coordinate(study, params=None):
             values.
         params:
             Parameter list to visualize. The default is all parameters.
+
+    Returns:
+        A :class:`plotly.graph_objs.Figure` object.
     """
 
     _check_plotly_availability()
-    figure = _get_parallel_coordinate_plot(study, params)
-    figure.show()
+    return _get_parallel_coordinate_plot(study, params)
 
 
 def _get_parallel_coordinate_plot(study, params=None):
-    # type: (Study, Optional[List[str]]) -> Figure
+    # type: (Study, Optional[List[str]]) -> go.Figure
 
     layout = go.Layout(
         title='Parallel Coordinate Plot',
@@ -474,7 +481,7 @@ def _get_parallel_coordinate_plot(study, params=None):
 
 
 def plot_slice(study, params=None):
-    # type: (Study, Optional[List[str]]) -> None
+    # type: (Study, Optional[List[str]]) -> go.Figure
     """Plot the parameter relationship as slice plot in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -502,15 +509,17 @@ def plot_slice(study, params=None):
             values.
         params:
             Parameter list to visualize. The default is all parameters.
+
+    Returns:
+        A :class:`plotly.graph_objs.Figure` object.
     """
 
     _check_plotly_availability()
-    figure = _get_slice_plot(study, params)
-    figure.show()
+    return _get_slice_plot(study, params)
 
 
 def _get_slice_plot(study, params=None):
-    # type: (Study, Optional[List[str]]) -> Figure
+    # type: (Study, Optional[List[str]]) -> go.Figure
 
     layout = go.Layout(
         title='Slice Plot',
@@ -531,7 +540,9 @@ def _get_slice_plot(study, params=None):
                 raise ValueError('Parameter {} does not exist in your study.'.format(input_p_name))
         sorted_params = sorted(list(set(params)))
 
-    if len(sorted_params) == 1:
+    n_params = len(sorted_params)
+
+    if n_params == 1:
         figure = go.Figure(
             data=[_generate_slice_subplot(study, trials, sorted_params[0])],
             layout=layout
@@ -555,6 +566,9 @@ def _get_slice_plot(study, params=None):
                 figure.update_yaxes(title_text='Objective Value', row=1, col=1)
             if _is_log_scale(trials, param):
                 figure.update_xaxes(type='log', row=1, col=i + 1)
+        if n_params > 3:
+            # Ensure that each subplot has a minimum width without relying on autosizing.
+            figure.update_layout(width=300 * n_params)
 
     return figure
 
@@ -580,7 +594,11 @@ def _generate_slice_subplot(study, trials, param):
             },
             'color': [t.number for t in trials if param in t.params],
             'colorscale': 'Blues',
-            'colorbar': {'title': '#Trials'}
+            'colorbar': {
+                'title': '#Trials',
+                'x': 1.0,  # Offset the colorbar position with a fixed width `xpad`.
+                'xpad': 40,
+            }
         },
         showlegend=False,
     )

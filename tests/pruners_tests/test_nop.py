@@ -5,7 +5,7 @@ def test_nop_pruner():
     # type: () -> None
 
     study = optuna.study.create_study()
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.report(1, 1)
     pruner = optuna.pruners.NopPruner()
 

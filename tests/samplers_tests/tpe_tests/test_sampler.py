@@ -1,8 +1,8 @@
 import optuna
 
+from optuna.exceptions import TrialPruned
 from optuna.samplers import tpe
 from optuna.samplers import TPESampler
-from optuna.structs import TrialPruned
 
 if optuna.type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
@@ -40,7 +40,7 @@ def test_get_observation_pairs():
     # direction=minimize.
     study = optuna.create_study(direction='minimize')
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
-    study._storage.create_new_trial(study.study_id)  # Create a running trial.
+    study._storage.create_new_trial(study._study_id)  # Create a running trial.
 
     assert tpe.sampler._get_observation_pairs(study, 'x') == (
         [5.0, 5.0, 5.0, 5.0],
@@ -55,7 +55,7 @@ def test_get_observation_pairs():
     # direction=maximize.
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=4)
-    study._storage.create_new_trial(study.study_id)  # Create a running trial.
+    study._storage.create_new_trial(study._study_id)  # Create a running trial.
 
     assert tpe.sampler._get_observation_pairs(study, 'x') == (
         [5.0, 5.0, 5.0, 5.0],

@@ -6,14 +6,14 @@ import tempfile
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import json_to_distribution
 from optuna.distributions import UniformDistribution
+from optuna.exceptions import DuplicatedStudyError
+from optuna.exceptions import StorageInternalError
 from optuna.storages.rdb.models import SCHEMA_VERSION
 from optuna.storages.rdb.models import StudyModel
 from optuna.storages.rdb.models import TrialModel
 from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
-from optuna.structs import DuplicatedStudyError
-from optuna.structs import StorageInternalError
 from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
 from optuna.structs import TrialState
@@ -174,7 +174,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     study_id_3 = storage.create_new_study()
 
     summaries = storage.get_all_study_summaries()
-    summaries = sorted(summaries, key=lambda x: x.study_id)
+    summaries = sorted(summaries)
 
     expected_summary_1 = StudySummary(
         study_id=study_id_1,

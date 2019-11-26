@@ -1,7 +1,6 @@
 import abc
 from datetime import datetime
 import decimal
-import six
 import warnings
 
 from optuna import distributions
@@ -21,8 +20,7 @@ if type_checking.TYPE_CHECKING:
     T = TypeVar('T', float, str)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseTrial(object):
+class BaseTrial(object, metaclass=abc.ABCMeta):
     """Base class for trials.
 
     Note that this class is not supposed to be directly accessed by library users.
@@ -133,7 +131,8 @@ class Trial(BaseTrial):
         self.study = study
         self._trial_id = trial_id
 
-        self.study_id = self.study.study_id
+        # TODO(Yanase): Remove _study_id attribute, and use study._study_id instead.
+        self._study_id = self.study._study_id
         self.storage = self.study._storage
         self.logger = logging.get_logger(__name__)
 
@@ -388,6 +387,9 @@ class Trial(BaseTrial):
                 type(value).__name__)
             raise TypeError(message)
 
+        if step is not None and step < 0:
+            raise ValueError('The `step` argument is {} but cannot be negative.'.format(step))
+
         self.storage.set_trial_value(self._trial_id, value)
         if step is not None:
             self.storage.set_trial_intermediate_value(self._trial_id, step, value)
@@ -598,6 +600,26 @@ class Trial(BaseTrial):
             Datetime where the :class:`~optuna.trial.Trial` started.
         """
         return self.storage.get_trial(self._trial_id).datetime_start
+
+    @property
+    def study_id(self):
+        # type: () -> int
+        """Return the study ID.
+
+        .. deprecated:: 0.20.0
+            The direct use of this attribute is deprecated and it is recommended that you use
+            :attr:`~optuna.trial.Trial.study` instead.
+
+        Returns:
+            The study ID.
+        """
+
+        message = 'The use of `Trial.study_id` is deprecated. ' \
+                  'Please use `Trial.study` instead.'
+        warnings.warn(message, DeprecationWarning)
+        self.logger.warning(message)
+
+        return self.study._study_id
 
 
 class FixedTrial(BaseTrial):

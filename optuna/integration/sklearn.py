@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from logging import DEBUG
 from logging import INFO
 from logging import WARNING
@@ -32,6 +30,7 @@ except ImportError as e:
     _available = False
 
 from optuna import distributions
+from optuna import exceptions
 from optuna import logging
 from optuna import samplers  # NOQA
 from optuna import structs
@@ -54,7 +53,7 @@ if type_checking.TYPE_CHECKING:
     TwoDimArrayLikeType = \
         Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
 
-logger = logging.get_logger(__name__)
+_logger = logging.get_logger(__name__)
 
 
 def _check_sklearn_availability():
@@ -70,7 +69,7 @@ def _check_sklearn_availability():
         )
 
 
-def safe_indexing(
+def _safe_indexing(
     X,  # type: Union[OneDimArrayLikeType, TwoDimArrayLikeType]
     indices  # type: OneDimArrayLikeType
 ):
@@ -247,7 +246,7 @@ class _Objective(object):
             if trial.should_prune():
                 self._store_scores(trial, scores)
 
-                raise structs.TrialPruned(
+                raise exceptions.TrialPruned(
                     'trial was pruned at iteration {}.'.format(step)
                 )
 
@@ -760,9 +759,9 @@ class OptunaSearchCV(BaseEstimator):
         try:
             self.best_estimator_.set_params(**self.study_.best_params)
         except ValueError as e:
-            logger.exception(e)
+            _logger.exception(e)
 
-        logger.info(
+        _logger.info(
             'Refitting the estimator using {} samples...'.format(n_samples)
         )
 
@@ -772,7 +771,7 @@ class OptunaSearchCV(BaseEstimator):
 
         self.refit_time_ = time() - start_time
 
-        logger.info(
+        _logger.info(
             'Finished refitting! '
             '(elapsed time: {:.3f} sec.)'.format(self.refit_time_)
         )
@@ -813,14 +812,14 @@ class OptunaSearchCV(BaseEstimator):
         random_state = check_random_state(self.random_state)
         max_samples = self.subsample
         n_samples = _num_samples(X)
-        old_level = logger.getEffectiveLevel()
+        old_level = _logger.getEffectiveLevel()
 
         if self.verbose > 1:
-            logger.setLevel(DEBUG)
+            _logger.setLevel(DEBUG)
         elif self.verbose > 0:
-            logger.setLevel(INFO)
+            _logger.setLevel(INFO)
         else:
-            logger.setLevel(WARNING)
+            _logger.setLevel(WARNING)
 
         self.sample_indices_ = np.arange(n_samples)
 
@@ -836,9 +835,9 @@ class OptunaSearchCV(BaseEstimator):
 
             self.sample_indices_.sort()
 
-        X_res = safe_indexing(X, self.sample_indices_)
-        y_res = safe_indexing(y, self.sample_indices_)
-        groups_res = safe_indexing(groups, self.sample_indices_)
+        X_res = _safe_indexing(X, self.sample_indices_)
+        y_res = _safe_indexing(y, self.sample_indices_)
+        groups_res = _safe_indexing(groups, self.sample_indices_)
         fit_params_res = fit_params
 
         if fit_params_res is not None:
@@ -883,7 +882,7 @@ class OptunaSearchCV(BaseEstimator):
             self.scorer_
         )
 
-        logger.info(
+        _logger.info(
             'Searching the best hyperparameters using {} '
             'samples...'.format(_num_samples(self.sample_indices_))
         )
@@ -895,12 +894,12 @@ class OptunaSearchCV(BaseEstimator):
             timeout=self.timeout
         )
 
-        logger.info('Finished hyperparemeter search!')
+        _logger.info('Finished hyperparemeter search!')
 
         if self.refit:
             self._refit(X, y, **fit_params)
 
-        logger.setLevel(old_level)
+        _logger.setLevel(old_level)
 
         return self
 

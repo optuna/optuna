@@ -1,12 +1,12 @@
-<div align="center"><img src="https://raw.githubusercontent.com/pfnet/optuna/master/docs/image/optuna-logo.png" width="800"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/optuna/optuna/master/docs/image/optuna-logo.png" width="800"/></div>
 
 # Optuna: A hyperparameter optimization framework
 
 [![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/pfnet/optuna)
-[![CircleCI](https://circleci.com/gh/pfnet/optuna.svg?style=svg)](https://circleci.com/gh/pfnet/optuna)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/optuna/optuna)
+[![CircleCI](https://circleci.com/gh/optuna/optuna.svg?style=svg)](https://circleci.com/gh/optuna/optuna)
 [![Read the Docs](https://readthedocs.org/projects/optuna/badge/?version=stable)](https://optuna.readthedocs.io/en/stable/)
-[![Codecov](https://codecov.io/gh/pfnet/optuna/branch/master/graph/badge.svg)](https://codecov.io/gh/pfnet/optuna/branch/master)
+[![Codecov](https://codecov.io/gh/optuna/optuna/branch/master/graph/badge.svg)](https://codecov.io/gh/optuna/optuna/branch/master)
 
 [**Website**](https://optuna.org/)
 | [**Docs**](https://optuna.readthedocs.io/en/stable/)
@@ -79,7 +79,7 @@ To install Optuna, use `pip` as follows:
 $ pip install optuna
 ```
 
-Optuna supports Python 2.7 and Python 3.5 or newer.
+Optuna supports Python 3.5 or newer.
 
 
 ## Contribution

@@ -16,8 +16,7 @@ if type_checking.TYPE_CHECKING:
 DEFAULT_STUDY_NAME_PREFIX = 'no-name-'
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseStorage(object):
+class BaseStorage(object, metaclass=abc.ABCMeta):
     """Base class for storages.
 
     This class is not supposed to be directly accessed by library users.

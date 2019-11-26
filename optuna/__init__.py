@@ -1,5 +1,6 @@
 from optuna import dashboard  # NOQA
 from optuna import distributions  # NOQA
+from optuna import exceptions  # NOQA
 from optuna import integration  # NOQA
 from optuna import logging  # NOQA
 from optuna import pruners  # NOQA

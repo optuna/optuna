@@ -13,8 +13,6 @@ as follows:
 
 """
 
-from __future__ import print_function
-
 import chainer
 import chainer.functions as F
 import chainer.links as L
