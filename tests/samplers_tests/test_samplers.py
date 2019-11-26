@@ -42,13 +42,6 @@ def test_pickle_random_sampler(seed):
     restored_sampler = pickle.loads(pickle.dumps(sampler))
     assert sampler._rng != restored_sampler._rng
     assert sampler._rng.bytes(10) != restored_sampler._rng.bytes(10)
-    if seed:
-        # We have to create a new random number generator
-        # because the one from `sampler` was already used
-        rng = np.random.RandomState(seed)
-        next_rng = np.random.RandomState(rng.randint(2**32-1))
-        next_rng.bytes(10)
-        assert next_rng.bytes(10) == restored_sampler._rng.bytes(10)
 
 
 @parametrize_sampler
