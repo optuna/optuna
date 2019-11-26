@@ -466,8 +466,9 @@ def test_study_trials_dataframe_with_no_trials():
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('cache_mode', CACHE_MODES)
 @pytest.mark.parametrize('include_internal_fields', [True, False])
-def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
-    # type: (str, bool, bool) -> None
+@pytest.mark.parametrize('multi_index', [True, False])
+def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields, multi_index):
+    # type: (str, bool, bool, bool) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
@@ -480,9 +481,13 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
     with StorageSupplier(storage_mode, cache_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
-        df = study.trials_dataframe(include_internal_fields=include_internal_fields)
+        df = study.trials_dataframe(
+            include_internal_fields=include_internal_fields, multi_index=multi_index)
         # Change index to access rows via trial number.
-        df.set_index(('number', ''), inplace=True, drop=False)
+        keys = 'number'
+        if multi_index:
+            keys = (keys, '')
+        df.set_index(keys, inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
         # non-nested: 5, params: 2, user_attrs: 1, system_attrs: 1 and 9 in total.
@@ -498,16 +503,31 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
             assert df.value[i] == 3.5
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
-            assert df.params.x[i] == 1
-            assert df.params.y[i] == 2.5
-            assert df.user_attrs.train_loss[i] == 3
-            assert df.system_attrs._number[i] == i
-            if include_internal_fields:
-                assert ('distributions', 'x') in df.columns
-                assert ('distributions', 'y') in df.columns
-                assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
-                assert ('distributions', 'x') in df.columns
-                assert ('distributions', 'y') in df.columns
+
+            if multi_index:
+                if include_internal_fields:
+                    assert ('distributions', 'x') in df.columns
+                    assert ('distributions', 'y') in df.columns
+                    assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
+                    assert ('distributions', 'x') in df.columns
+                    assert ('distributions', 'y') in df.columns
+
+                assert df.params.x[i] == 1
+                assert df.params.y[i] == 2.5
+                assert df.user_attrs.train_loss[i] == 3
+                assert df.system_attrs._number[i] == i
+            else:
+                if include_internal_fields:
+                    assert 'distributions_x' in df.columns
+                    assert 'distributions_y' in df.columns
+                    assert 'trial_id' in df.columns  # trial_id depends on other tests.
+                    assert 'distributions_x' in df.columns
+                    assert 'distributions_y' in df.columns
+
+                assert df.params_x[i] == 1
+                assert df.params_y[i] == 2.5
+                assert df.user_attrs_train_loss[i] == 3
+                assert df.system_attrs__number[i] == i
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
