@@ -193,8 +193,10 @@ def test_eq_ne_hash():
 
     # Two instances of a class are regarded as equivalent if the fields have the same values.
     for d in EXAMPLE_DISTRIBUTIONS.values():
-        assert d == copy.deepcopy(d)
-        assert hash(d) == hash(copy.deepcopy(d))
+        d_copy = copy.deepcopy(d)
+        assert d == d_copy
+        assert not d != d_copy
+        assert hash(d) == hash(d_copy)
 
     # Different field values.
     d0 = distributions.UniformDistribution(low=1, high=2)
@@ -208,14 +210,14 @@ def test_eq_ne_hash():
     assert d0 != d2
     assert not d0 == d2
 
+    # In the implementation of `__hash__`, only attributes are considered.
+    assert hash(d0) != hash(d2)
+
     # Different types.
     assert d0 != 1
     assert not d0 == 1
     assert d0 != 'foo'
     assert not d0 == 'foo'
-
-    # In the implementation of `__hash__`, only attributes are considered.
-    assert hash(d0) == hash(d2)
 
 
 def test_repr():
