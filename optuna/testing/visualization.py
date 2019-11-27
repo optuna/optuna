@@ -1,13 +1,14 @@
-from optuna import type_checking
 from optuna.distributions import UniformDistribution
 from optuna.study import create_study
+
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from optuna import Study  # NOQA
 
 
 def prepare_study_with_trials(no_trials=False, less_than_two=False, with_c_d=True):
-    # (bool, bool, bool) -> Study
+    # type: (bool, bool, bool) -> Study
     """Prepare a study for tests.
 
     Args:

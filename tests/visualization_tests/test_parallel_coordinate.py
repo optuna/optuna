@@ -2,16 +2,17 @@ import pytest
 
 from optuna.distributions import CategoricalDistribution
 from optuna.study import create_study
-from optuna import type_checking
-from optuna.visualization.parallel_coordinate import _get_parallel_coordinate_plot
 from optuna.testing.visualization import prepare_study_with_trials
+from optuna.visualization.parallel_coordinate import _get_parallel_coordinate_plot
+
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
 def test_get_parallel_coordinate_plot():
-    # () -> None
+    # type: () -> None
 
     # Test with no trial.
     study = create_study()
@@ -49,12 +50,12 @@ def test_get_parallel_coordinate_plot():
 
     # Ignore failed trials.
     def fail_objective(_):
-        # (Trial) -> float
+        # type: (Trial) -> float
 
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
     figure = _get_parallel_coordinate_plot(study)
     assert len(figure.data) == 0
 

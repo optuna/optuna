@@ -1,17 +1,19 @@
 import pytest
 
-from optuna.distributions import LogUniformDistribution, UniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna.study import create_study
-from optuna import type_checking
-from optuna.visualization.slice import _get_slice_plot
 from optuna.testing.visualization import prepare_study_with_trials
+from optuna.visualization.slice import _get_slice_plot
+
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
 def test_get_slice_plot():
-    # () -> None
+    # type: () -> None
 
     # Test with no trial.
     study = prepare_study_with_trials(no_trials=True)
@@ -40,17 +42,19 @@ def test_get_slice_plot():
 
     # Ignore failed trials.
     def fail_objective(_):
-        # (Trial) -> float
+        # type: (Trial) -> float
 
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
     figure = _get_slice_plot(study)
     assert len(figure.data) == 0
 
 
-def test_get_slice_plot_log_scale() -> None:
+def test_get_slice_plot_log_scale():
+    # type: () -> None
+
     study = create_study()
     study._append_trial(
         value=0.0,

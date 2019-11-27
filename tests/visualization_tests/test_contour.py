@@ -1,11 +1,13 @@
 import pytest
 
 from optuna.distributions import LogUniformDistribution
-from optuna.study import create_study
-from optuna import type_checking
-from optuna.visualization.contour import _get_contour_plot, _generate_contour_subplot
 from optuna.structs import StudyDirection
+from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
+from optuna.visualization.contour import _generate_contour_subplot
+from optuna.visualization.contour import _get_contour_plot
+
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import List, Optional  # NOQA
@@ -13,17 +15,18 @@ if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
-@pytest.mark.parametrize('params',
-                         [
-                             [],
-                             ['param_a'],
-                             ['param_a', 'param_b'],
-                             ['param_a', 'param_b', 'param_c'],
-                             ['param_a', 'param_b', 'param_c', 'param_d'],
-                             None,
-                         ])
+@pytest.mark.parametrize(
+    'params', [
+        [],
+        ['param_a'],
+        ['param_a', 'param_b'],
+        ['param_a', 'param_b', 'param_c'],
+        ['param_a', 'param_b', 'param_c', 'param_d'],
+        None,
+    ]
+)
 def test_get_contour_plot(params):
-    # (Optional[List[str]]) -> None
+    # type: (Optional[List[str]]) -> None
 
     # Test with no trial.
     study_without_trials = prepare_study_with_trials(no_trials=True)
@@ -33,12 +36,12 @@ def test_get_contour_plot(params):
     # Test whether trials with `ValueError`s are ignored.
 
     def fail_objective(_):
-        # (Trial) -> float
+        # type: (Trial) -> float
 
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
     figure = _get_contour_plot(study, params=params)
     assert len(figure.data) == 0
 
@@ -63,7 +66,7 @@ def test_get_contour_plot(params):
     else:
         # TODO(crcrpar): Add more checks. Currently this only checks the number of data.
         n_params = len(params) if params is not None else 4
-        assert len(figure.data) == n_params ** 2 + n_params * (n_params - 1)
+        assert len(figure.data) == n_params**2 + n_params * (n_params - 1)
 
 
 def test_generate_contour_plot_for_few_observations():
@@ -75,13 +78,15 @@ def test_generate_contour_plot_for_few_observations():
     # `x_axis` has one observation.
     params = ['param_a', 'param_b']
     contour, scatter = _generate_contour_subplot(
-        trials, params[0], params[1], StudyDirection.MINIMIZE)
+        trials, params[0], params[1], StudyDirection.MINIMIZE
+    )
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
     # `y_axis` has one observation.
     params = ['param_b', 'param_a']
     contour, scatter = _generate_contour_subplot(
-        trials, params[0], params[1], StudyDirection.MINIMIZE)
+        trials, params[0], params[1], StudyDirection.MINIMIZE
+    )
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
 
