@@ -1,3 +1,24 @@
+"""
+Optuna example that optimizes a configuration for Olivetti faces dataset using
+skimage.
+
+In this example, we optimize a classifier configuration for Olivetti faces dataset.
+We optimize paraterers of local_binary_pattern function in skimage and the
+choice of distance metric classes.
+
+We have following two ways to execute this example:
+
+(1) Execute this code directly.
+    $ python skimage_lbp_simple.py
+
+
+(2) Execute through CLI.
+    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
+    $ optuna study optimize skimage_lbp_simple.py objective --n-trials=100 --study \
+      $STUDY_NAME --storage sqlite:///example.db
+
+"""
+
 import numpy as np
 import skimage.feature as ft
 from sklearn.datasets import fetch_olivetti_faces
@@ -19,7 +40,7 @@ def load_data():
     return x_ref, x_test, y_ref, y_test
 
 
-def getLocalBinaryPatternhist(img, P, R, method):
+def get_lbp_hist(img, P, R, method):
     lbp = ft.local_binary_pattern(img, P, R, method)
     if method == 'uniform':
         hist, _ = np.histogram(lbp.ravel(), density=True,
@@ -32,8 +53,8 @@ def getLocalBinaryPatternhist(img, P, R, method):
     return hist
 
 
-def gethists(imgs, P, R, method):
-    hists = [getLocalBinaryPatternhist(img, P, R, method) for img in imgs]
+def img2hist(imgs, P, R, method):
+    hists = [get_lbp_hist(img, P, R, method) for img in imgs]
     return np.array(hists)
 
 
@@ -60,25 +81,31 @@ def calc_cos_dist(p, q):
     return dist
 
 
-def calc_dist(p, q, measure):
-    if measure == 'kl':
+def calc_dist(p, q, metric):
+    if metric == 'kl':
         dist = calc_kl_dist(p, q)
-    elif measure == 'cos':
+    elif metric == 'cos':
         dist = calc_cos_dist(p, q)
-    elif measure == 'euc':
+    elif metric == 'euc':
         dist = calc_euc_dist(p, q)
     return dist
 
 
 def objective(trial):
+    # Get Olivetti faces dataset.
+    x_ref, x_test, y_ref, y_test = load_data()
+
+    # We optimzie paraterers of local_binary_pattern function in skimage
+    # and the choice of distance metric classes.
     P = trial.suggest_int('P', 1, 15)
     R = trial.suggest_uniform('R', 1, 10)
     method = trial.suggest_categorical('method', ['default', 'uniform'])
-    measure = trial.suggest_categorical('measure', ['kl', 'cos', 'euc'])
-    x_ref, x_test, y_ref, y_test = load_data()
-    x_ref_hist = gethists(x_ref, P, R, method)
-    x_test_hist = gethists(x_test, P, R, method)
-    dist = calc_dist(x_ref_hist, x_test_hist, measure)
+    metric = trial.suggest_categorical('metric', ['kl', 'cos', 'euc'])
+
+    x_ref_hist = img2hist(x_ref, P, R, method)
+    x_test_hist = img2hist(x_test, P, R, method)
+    dist = calc_dist(x_ref_hist, x_test_hist, metric)
+
     y_pred = np.argmin(dist, axis=1)
     accuracy = sklearn.metrics.accuracy_score(y_test, y_pred)
     return accuracy
