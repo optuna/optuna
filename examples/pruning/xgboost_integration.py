@@ -10,8 +10,6 @@ You can run this example as follows:
 
 """
 
-from __future__ import division
-
 import numpy as np
 import sklearn.datasets
 import sklearn.metrics

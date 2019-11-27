@@ -174,7 +174,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     study_id_3 = storage.create_new_study()
 
     summaries = storage.get_all_study_summaries()
-    summaries = sorted(summaries, key=lambda x: x.study_id)
+    summaries = sorted(summaries)
 
     expected_summary_1 = StudySummary(
         study_id=study_id_1,

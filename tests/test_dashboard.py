@@ -27,7 +27,7 @@ def test_write():
     study = _create_some_study()
 
     with tempfile.NamedTemporaryFile('r') as tf:
-        optuna.dashboard.write(study, tf.name)
+        optuna.dashboard._write(study, tf.name)
 
         html = tf.read()
         assert '<body>' in html

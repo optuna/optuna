@@ -18,9 +18,6 @@ We have the following two ways to execute this example:
       --study $STUDY_NAME --storage sqlite:///example.db
 """
 
-from __future__ import division
-from __future__ import print_function
-
 import argparse
 from ignite.engine import create_supervised_evaluator
 from ignite.engine import create_supervised_trainer

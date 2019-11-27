@@ -65,7 +65,7 @@ def test_percentile_pruner_with_one_trial():
     # type: () -> None
 
     study = optuna.study.create_study()
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.report(1, 1)
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
 
@@ -86,11 +86,11 @@ def test_25_percentile_pruner_intermediate_values(direction_value):
     study = optuna.study.create_study(direction=direction)
 
     for v in intermediate_values:
-        trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
+        trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
         trial.report(v, 1)
         study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
 
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     # A pruner is not activated if a trial has no intermediate values.
     assert not pruner.prune(
         study=study, trial=study._storage.get_trial(trial._trial_id))
@@ -107,21 +107,21 @@ def test_25_percentile_pruner_intermediate_values_nan():
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
     study = optuna.study.create_study()
 
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.report(float('nan'), 1)
     # A pruner is not activated if the study does not have any previous trials.
     assert not pruner.prune(
         study=study, trial=study._storage.get_trial(trial._trial_id))
     study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
 
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.report(float('nan'), 1)
     # A pruner is activated if the best intermediate value of this trial is NaN.
     assert pruner.prune(
         study=study, trial=study._storage.get_trial(trial._trial_id))
     study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
 
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study.study_id))
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.report(1, 1)
     # A pruner is not activated if the 25 percentile intermediate value is NaN.
     assert not pruner.prune(
@@ -141,14 +141,14 @@ def test_get_best_intermediate_result_over_steps(direction_expected):
         study = optuna.study.create_study(direction="maximize")
 
     # FrozenTrial.intermediate_values has no elements.
-    trial_id_empty = study._storage.create_new_trial(study.study_id)
+    trial_id_empty = study._storage.create_new_trial(study._study_id)
     trial_empty = study._storage.get_trial(trial_id_empty)
 
     with pytest.raises(ValueError):
         percentile._get_best_intermediate_result_over_steps(trial_empty, direction)
 
     # Input value has no NaNs but float values.
-    trial_id_float = study._storage.create_new_trial(study.study_id)
+    trial_id_float = study._storage.create_new_trial(study._study_id)
     trial_float = optuna.trial.Trial(study, trial_id_float)
     trial_float.report(0.1, step=0)
     trial_float.report(0.2, step=1)
@@ -157,7 +157,7 @@ def test_get_best_intermediate_result_over_steps(direction_expected):
         frozen_trial_float, direction)
 
     # Input value has a float value and a NaN.
-    trial_id_float_nan = study._storage.create_new_trial(study.study_id)
+    trial_id_float_nan = study._storage.create_new_trial(study._study_id)
     trial_float_nan = optuna.trial.Trial(study, trial_id_float_nan)
     trial_float_nan.report(0.3, step=0)
     trial_float_nan.report(float('nan'), step=1)
@@ -166,7 +166,7 @@ def test_get_best_intermediate_result_over_steps(direction_expected):
         frozen_trial_float_nan, direction)
 
     # Input value has a NaN only.
-    trial_id_nan = study._storage.create_new_trial(study.study_id)
+    trial_id_nan = study._storage.create_new_trial(study._study_id)
     trial_nan = optuna.trial.Trial(study, trial_id_nan)
     trial_nan.report(float('nan'), step=0)
     frozen_trial_nan = study._storage.get_trial(trial_id_nan)
@@ -182,13 +182,13 @@ def test_get_percentile_intermediate_result_over_trials():
 
         _study = optuna.study.create_study(direction="minimize")
         trial_ids = [_study._storage.create_new_trial(
-            _study.study_id) for _ in range(trial_num)]
+            _study._study_id) for _ in range(trial_num)]
 
         for step, values in enumerate(_intermediate_values):
             # Study does not have any trials.
             with pytest.raises(ValueError):
-                _all_trials = _study._storage.get_all_trials(_study.study_id)
-                _direction = _study._storage.get_study_direction(_study.study_id)
+                _all_trials = _study._storage.get_all_trials(_study._study_id)
+                _direction = _study._storage.get_study_direction(_study._study_id)
                 percentile._get_percentile_intermediate_result_over_trials(
                     _all_trials, _direction, step, 25)
 
@@ -206,8 +206,8 @@ def test_get_percentile_intermediate_result_over_trials():
     # Input value has no NaNs but float values (step=0).
     intermediate_values = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]]
     study = setup_study(9, intermediate_values)
-    all_trials = study._storage.get_all_trials(study.study_id)
-    direction = study._storage.get_study_direction(study.study_id)
+    all_trials = study._storage.get_all_trials(study._study_id)
+    direction = study._storage.get_study_direction(study._study_id)
     assert 0.3 == percentile._get_percentile_intermediate_result_over_trials(
         all_trials, direction, 0, 25.0)
 
@@ -216,8 +216,8 @@ def test_get_percentile_intermediate_result_over_trials():
         0.1, 0.2, 0.3, 0.4, 0.5,
         float('nan'), float('nan'), float('nan'), float('nan')])
     study = setup_study(9, intermediate_values)
-    all_trials = study._storage.get_all_trials(study.study_id)
-    direction = study._storage.get_study_direction(study.study_id)
+    all_trials = study._storage.get_all_trials(study._study_id)
+    direction = study._storage.get_study_direction(study._study_id)
     assert 0.2 == percentile._get_percentile_intermediate_result_over_trials(
         all_trials, direction, 1, 25.0)
 
@@ -226,7 +226,7 @@ def test_get_percentile_intermediate_result_over_trials():
         float('nan'), float('nan'), float('nan'), float('nan'), float('nan'),
         float('nan'), float('nan'), float('nan'), float('nan')])
     study = setup_study(9, intermediate_values)
-    all_trials = study._storage.get_all_trials(study.study_id)
-    direction = study._storage.get_study_direction(study.study_id)
+    all_trials = study._storage.get_all_trials(study._study_id)
+    direction = study._storage.get_study_direction(study._study_id)
     assert math.isnan(percentile._get_percentile_intermediate_result_over_trials(
         all_trials, direction, 2, 75))

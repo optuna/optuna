@@ -85,7 +85,7 @@ $ pip install optuna
 $ conda install -c conda-forge optuna
 ```
 
-Optuna supports Python 2.7 and Python 3.5 or newer.
+Optuna supports Python 3.5 or newer.
 
 
 ## Contribution

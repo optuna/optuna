@@ -8,7 +8,6 @@ from datetime import datetime
 import json
 import logging
 import os
-import six
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
@@ -364,14 +363,14 @@ class RDBStorage(BaseStorage):
             # Consolidate StudySummary.
             study_sumarries.append(
                 structs.StudySummary(
-                    study_id=study_model.study_id,
                     study_name=study_model.study_name,
                     direction=self.get_study_direction(study_model.study_id),
                     best_trial=best_trial,
                     user_attrs=self.get_study_user_attrs(study_model.study_id),
                     system_attrs=system_attrs,
                     n_trials=len(study_trial_models),
-                    datetime_start=datetime_start))
+                    datetime_start=datetime_start,
+                    study_id=study_model.study_id))
 
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
@@ -837,9 +836,7 @@ class RDBStorage(BaseStorage):
                 'This typically happens due to invalid data in the commit, ' \
                 'e.g. exceeding max length. ' \
                 '(The actual exception is as follows: {})'.format(repr(e))
-            six.reraise(optuna.exceptions.StorageInternalError,
-                        optuna.exceptions.StorageInternalError(message),
-                        sys.exc_info()[2])
+            raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
 
     def remove_session(self):
         # type: () -> None

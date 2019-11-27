@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import gc
 
 from optuna.exceptions import TrialPruned
