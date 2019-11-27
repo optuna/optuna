@@ -14,3 +14,9 @@ You can also install the development version of Optuna from master branch of Git
 .. code-block:: bash
 
     $ pip install git+https://github.com/optuna/optuna.git
+
+You can also install Optuna via conda:
+
+.. code-block:: bash
+
+    $ conda install -c conda-forge optuna
