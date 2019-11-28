@@ -211,7 +211,7 @@ def test_eq_ne_hash():
     assert not d0 == d2
 
     # In the implementation of `__hash__`, only attributes are considered.
-    assert hash(d0) != hash(d2)
+    assert hash(d0) == hash(d2)
 
     # Different types.
     assert d0 != 1
