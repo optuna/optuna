@@ -7,13 +7,13 @@ First Optimization
 Quadratic Function Example
 --------------------------
 
-Let us try very simple optimization in IPython shell.
+Usually, Optuna is used as a hyper-parameter optimizer, but as an example, let us try a direct optimization in IPython shell.
 
 .. code-block:: python
 
     In [1]: import optuna
 
-Here, we use a very simple quadratic function as an example of objective function.
+Here, we use a simple quadratic function as an example of objective function.
 
 .. code-block:: python
 
@@ -22,11 +22,11 @@ Here, we use a very simple quadratic function as an example of objective functio
        ...:     return (x - 2) ** 2
        ...:
 
-Our goal is to find out ``x`` that minimizes the output of ``objective`` function, which we refer to as "optimization." During the optimization, Optuna repeatedly invokes and evaluates the objective function with different values of ``x``.
+This function returns the value of (x - 2) squared. Our goal is to find the value of ``x`` that minimizes the output of the ``objective`` function. This is the "optimization."  During the optimization, Optuna repeatedly calls and evaluates the objective function with different values of ``x``.
 
 A :class:`~optuna.trial.Trial` object corresponds to a single execution of the objective function and is internally instantiated upon each invocation of the function.
 
-The `suggest` APIs (e.g., :func:`~optuna.trial.Trial.suggest_uniform`) are called inside the objective function to obtain parameters for a trial.
+The `suggest` APIs (for example, :func:`~optuna.trial.Trial.suggest_uniform`) are called inside the objective function to obtain parameters for a trial. :func:`~optuna.trial.Trial.suggest_uniform` selects parameters uniformly within the range provided. In our example, from -10 to 10.
 
 To start the optimization, we create a study object and pass the objective function to method :func:`~optuna.study.Study.optimize` as follows.
 
@@ -49,19 +49,19 @@ To start the optimization, we create a study object and pass the objective funct
 We can see that Optuna found the best ``x`` value ``1.9487825780924659``, which is close to the optimal value of ``2``.
 
 .. note::
-    In practice, it is expected that training of machine learning algorithms is invoked in objective functions, and metrics such as loss or error are reported.
+    When used to search for hyper-parameters in machine learning, usually the objective function would return the loss or accuracy of the model.
 
 Study Object
 ------------
 
-Let us clarify the terminology in Optuna as follows.
+Let us clarify the terminology in Optuna as follows:
 
-* **Trial**: A single call of the objective function.
-* **Study**: An optimization session, i.e., a set of trials.
-* **Parameter**: A variable whose value is to be optimized, e.g., ``x`` in the above example.
+* **Trial**: A single call of the objective function
+* **Study**: An optimization session, which is a set of trials
+* **Parameter**: A variable whose value is to be optimized, such as ``x`` in the above example
 
-In Optuna, we use study object to manage optimization. Method :func:`~optuna.study.create_study` returns a study object.
-A study object has useful properties to analyze the optimization outcome.
+In Optuna, we use the study object to manage optimization. Method :func:`~optuna.study.create_study` returns a study object.
+A study object has useful properties for analyzing the optimization outcome.
 
 .. code-block:: python
 
