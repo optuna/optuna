@@ -1,4 +1,5 @@
 import os
+import sys
 
 import pkg_resources
 from setuptools import find_packages
@@ -75,7 +76,6 @@ def get_extras_require():
             'chainer',
             'dask[dataframe]',
             'dask-ml',
-            'fastai<2',
             'keras',
             'lightgbm',
             'mxnet',
@@ -88,12 +88,11 @@ def get_extras_require():
             'torch',
             'torchvision',
             'xgboost',
-        ],
+        ] + ['fastai<2'] if sys.version_info[:2] > (3, 5) else [],
         'testing': [
             'bokeh',
             'chainer>=5.0.0',
             'cma',
-            'fastai<2',
             'keras',
             'lightgbm',
             'mock',
@@ -111,7 +110,7 @@ def get_extras_require():
             'torch',
             'torchvision',
             'xgboost',
-        ],
+        ] + ['fastai<2'] if sys.version_info[:2] > (3, 5) else [],
     }
 
 
