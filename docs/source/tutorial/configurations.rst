@@ -6,7 +6,7 @@ Advanced Configurations
 Defining Parameter Spaces
 -------------------------
 
-Currently, we support five kinds of parameters.
+Optuna supports five kinds of parameters.
 
 .. code-block:: python
 
@@ -31,7 +31,7 @@ Currently, we support five kinds of parameters.
 Branches and Loops
 ------------------
 
-You can use branches or loops depending on parameter values.
+You can use branches or loops depending on the parameter values.
 
 .. code-block:: python
 
@@ -66,16 +66,15 @@ Please also refer to `examples <https://github.com/optuna/optuna/tree/master/exa
 Note on the Number of Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The difficulty of optimization increases roughly exponentially with regard to the number of parameters. That is, the number of necessary trials increases exponentially when you increase the number of parameters.
-We recommend not to add unimportant parameters.
+The difficulty of optimization increases roughly exponentially with regard to the number of parameters. That is, the number of necessary trials increases exponentially when you increase the number of parameters, so it is recommended to not add unimportant parameters.
 
 
 Arguments for `Study.optimize`
 --------------------------------
 
-Method :func:`~optuna.study.Study.optimize` (and ``optuna study optimize`` CLI command as well)
+The method :func:`~optuna.study.Study.optimize` (and ``optuna study optimize`` CLI command as well)
 has several useful options such as ``timeout``.
-Please refer to its docstring.
+For details, please refer to the API reference for :func:`~optuna.study.Study.optimize`.
 
 **FYI**: If you give neither ``n_trials`` nor ``timeout`` options, the optimization continues until it receives a termination signal such as Ctrl+C or SIGTERM.
-This feature is useful for certain use cases, e.g., when it is hard to estimate computational costs required to optimize your objective function.
+This is useful for use cases such as when it is hard to estimate the computational costs required to optimize your objective function.
