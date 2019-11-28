@@ -88,7 +88,7 @@ def get_extras_require():
             'torch',
             'torchvision',
             'xgboost',
-        ] + ['fastai<2'] if sys.version_info[:2] > (3, 5) else [],
+        ] + (['fastai<2'] if sys.version_info[:2] > (3, 5) else []),
         'testing': [
             'bokeh',
             'chainer>=5.0.0',
@@ -110,7 +110,7 @@ def get_extras_require():
             'torch',
             'torchvision',
             'xgboost',
-        ] + ['fastai<2'] if sys.version_info[:2] > (3, 5) else [],
+        ] + (['fastai<2'] if sys.version_info[:2] > (3, 5) else []),
     }
 
 
