@@ -39,7 +39,7 @@ def objective(trial):
 
         # Handle pruning based on the intermediate value.
         if trial.should_prune():
-            raise optuna.structs.TrialPruned()
+            raise optuna.exceptions.TrialPruned()
 
     return clf.score(test_x, test_y)
 

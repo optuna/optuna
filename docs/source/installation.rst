@@ -1,7 +1,7 @@
 Installation
 ============
 
-Optuna supports Python 2.7 and Python 3.5 or newer.
+Optuna supports Python 3.5 or newer.
 
 We recommend to install Optuna via pip:
 
@@ -13,4 +13,10 @@ You can also install the development version of Optuna from master branch of Git
 
 .. code-block:: bash
 
-    $ pip install git+https://github.com/pfnet/optuna.git
+    $ pip install git+https://github.com/optuna/optuna.git
+
+You can also install Optuna via conda:
+
+.. code-block:: bash
+
+    $ conda install -c conda-forge optuna

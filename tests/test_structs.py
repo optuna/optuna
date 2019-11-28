@@ -1,6 +1,7 @@
 import copy
 import datetime
 import pytest
+import warnings
 
 import optuna
 from optuna.distributions import LogUniformDistribution
@@ -21,17 +22,7 @@ def test_frozen_trial_validate():
     # type: () -> None
 
     # Valid.
-    valid_trial = FrozenTrial(number=0,
-                              trial_id=0,
-                              state=TrialState.COMPLETE,
-                              value=0.2,
-                              datetime_start=datetime.datetime.now(),
-                              datetime_complete=datetime.datetime.now(),
-                              params={'x': 10},
-                              distributions={'x': UniformDistribution(5, 12)},
-                              user_attrs={},
-                              system_attrs={},
-                              intermediate_values={})
+    valid_trial = _create_frozen_trial()
     valid_trial._validate()
 
     # Invalid: `datetime_start` is not set.
@@ -97,17 +88,7 @@ def test_frozen_trial_validate():
 def test_frozen_trial_eq_ne():
     # type: () -> None
 
-    trial = FrozenTrial(number=0,
-                        trial_id=0,
-                        state=TrialState.COMPLETE,
-                        value=0.2,
-                        datetime_start=datetime.datetime.now(),
-                        datetime_complete=datetime.datetime.now(),
-                        params={'x': 10},
-                        distributions={'x': UniformDistribution(5, 12)},
-                        user_attrs={},
-                        system_attrs={},
-                        intermediate_values={})
+    trial = _create_frozen_trial()
 
     trial_other = copy.copy(trial)
     assert trial == trial_other
@@ -116,10 +97,50 @@ def test_frozen_trial_eq_ne():
     assert trial != trial_other
 
 
-# TODO(hvy): Remove version check after Python 2.7 is retired.
-@pytest.mark.skipif(
-    'sys.version_info < (3, 5)',
-    reason='Cannot eval/reconstruct namedtuple distributions in Python 2.7.')
+def test_frozen_trial_lt():
+    # type: () -> None
+
+    trial = _create_frozen_trial()
+
+    trial_other = copy.copy(trial)
+    assert not trial < trial_other
+
+    trial_other.number = trial.number + 1
+    assert trial < trial_other
+    assert not trial_other < trial
+
+    with pytest.raises(TypeError):
+        trial < 1
+
+    assert trial <= trial_other
+    assert not trial_other <= trial
+
+    with pytest.raises(TypeError):
+        trial <= 1
+
+    # A list of FrozenTrials is sortable.
+    trials = [trial_other, trial]
+    trials.sort()
+    assert trials[0] is trial
+    assert trials[1] is trial_other
+
+
+def _create_frozen_trial():
+    # type: () -> FrozenTrial
+
+    return FrozenTrial(number=0,
+                       trial_id=0,
+                       state=TrialState.COMPLETE,
+                       value=0.2,
+                       datetime_start=datetime.datetime.now(),
+                       datetime_complete=datetime.datetime.now(),
+                       params={'x': 10},
+                       distributions={'x': UniformDistribution(5, 12)},
+                       user_attrs={},
+                       system_attrs={},
+                       intermediate_values={})
+
+
 def test_frozen_trial_repr():
     # type: () -> None
 
@@ -136,3 +157,71 @@ def test_frozen_trial_repr():
                         intermediate_values={})
 
     assert trial == eval(repr(trial))
+
+
+def test_study_summary_study_id():
+    # type: () -> None
+
+    study = optuna.create_study()
+    summaries = study._storage.get_all_study_summaries()
+    assert len(summaries) == 1
+
+    summary = summaries[0]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        assert summary.study_id == summary._study_id
+
+    with pytest.warns(DeprecationWarning):
+        summary.study_id
+
+
+def test_study_summary_eq_ne():
+    # type: () -> None
+
+    storage = optuna.storages.RDBStorage('sqlite:///:memory:')
+
+    optuna.create_study(storage=storage)
+    study = optuna.create_study(storage=storage)
+
+    summaries = study._storage.get_all_study_summaries()
+    assert len(summaries) == 2
+
+    assert summaries[0] == copy.deepcopy(summaries[0])
+    assert summaries[0] != summaries[1]
+
+    assert not summaries[0] == 1
+    assert summaries[0] != 1
+
+
+def test_study_summary_lt_le():
+    # type: () -> None
+
+    storage = optuna.storages.RDBStorage('sqlite:///:memory:')
+
+    optuna.create_study(storage=storage)
+    study = optuna.create_study(storage=storage)
+
+    summaries = study._storage.get_all_study_summaries()
+    assert len(summaries) == 2
+
+    summary_0 = summaries[0]
+    summary_1 = summaries[1]
+
+    assert summary_0 < summary_1
+    assert not summary_1 < summary_0
+
+    with pytest.raises(TypeError):
+        summary_0 < 1
+
+    assert summary_0 <= summary_0
+    assert not summary_1 <= summary_0
+
+    with pytest.raises(TypeError):
+        summary_0 <= 1
+
+    # A list of StudySummaries is sortable.
+    summaries.reverse()
+    summaries.sort()
+    assert summaries[0] == summary_0
+    assert summaries[1] == summary_1

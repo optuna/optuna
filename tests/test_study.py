@@ -9,6 +9,7 @@ import pytest
 import threading
 import time
 import uuid
+import warnings
 
 import optuna
 from optuna.testing.storage import StorageSupplier
@@ -16,6 +17,7 @@ from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
+    from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
@@ -335,7 +337,7 @@ def test_get_all_study_summaries(storage_mode, cache_mode):
         study.optimize(Func(), n_trials=5)
 
         summaries = optuna.get_all_study_summaries(study._storage)
-        summary = [s for s in summaries if s.study_id == study.study_id][0]
+        summary = [s for s in summaries if s._study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 5
@@ -350,7 +352,7 @@ def test_get_all_study_summaries_with_no_trials(storage_mode, cache_mode):
         study = optuna.create_study(storage=storage)
 
         summaries = optuna.get_all_study_summaries(study._storage)
-        summary = [s for s in summaries if s.study_id == study.study_id][0]
+        summary = [s for s in summaries if s._study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 0
@@ -415,6 +417,24 @@ def test_run_trial(storage_mode, cache_mode):
                            'function returned nan.'
         assert frozen_trial.state == optuna.structs.TrialState.FAIL
         assert frozen_trial.system_attrs['fail_reason'] == expected_message
+
+
+# TODO(Yanase): Remove this test function after removing `optuna.structs.TrialPruned`.
+@pytest.mark.parametrize('trial_pruned_class', [optuna.exceptions.TrialPruned,
+                                                optuna.structs.TrialPruned])
+def test_run_trial_with_trial_pruned(trial_pruned_class):
+    # type: (Callable[[], optuna.exceptions.TrialPruned]) -> None
+
+    study = optuna.create_study()
+
+    def func_with_trial_pruned(_):
+        # type: (optuna.trial.Trial) -> float
+
+        raise trial_pruned_class()
+
+    trial = study._run_trial(func_with_trial_pruned, catch=(), gc_after_trial=True)
+    frozen_trial = study._storage.get_trial(trial._trial_id)
+    assert frozen_trial.state == optuna.structs.TrialState.PRUNED
 
 
 def test_study_pickle():
@@ -544,7 +564,7 @@ def test_create_study(storage_mode, cache_mode):
             optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=False)
         else:
             # Test `load_if_exists=False` with existing study.
-            with pytest.raises(optuna.structs.DuplicatedStudyError):
+            with pytest.raises(optuna.exceptions.DuplicatedStudyError):
                 optuna.create_study(study_name=study.study_name,
                                     storage=storage,
                                     load_if_exists=False)
@@ -571,7 +591,7 @@ def test_load_study(storage_mode, cache_mode):
 
         # Test loading an existing study.
         loaded_study = optuna.study.load_study(study_name=study_name, storage=storage)
-        assert created_study.study_id == loaded_study.study_id
+        assert created_study._study_id == loaded_study._study_id
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -697,7 +717,7 @@ def test_callbacks(n_jobs):
     # NOTE: Because `Study.optimize` blocks forever if `n_jobs` is more than `1` and
     #       an uncaught exception is raised during an optimization,
     #       we test the following scenario only when `n_jobs==1`.
-    #       For the details of this problem, please see https://github.com/pfnet/optuna/issues/538.
+    #       For further details, please see https://github.com/optuna/optuna/issues/538.
     #
     # TODO(ohta): Fix `Study.optimize`
 
@@ -710,3 +730,16 @@ def test_callbacks(n_jobs):
             study.optimize(lambda t: 1/0, callbacks=callbacks,
                            n_trials=10, n_jobs=n_jobs, catch=())
         assert states == []
+
+
+def test_study_id():
+    # type: () -> None
+
+    study = optuna.create_study()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        assert study.study_id == study._study_id
+
+    with pytest.warns(DeprecationWarning):
+        study.study_id

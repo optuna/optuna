@@ -144,7 +144,7 @@ def test_categorical(sampler_class, choices):
 def _create_new_trial(study):
     # type: (Study) -> FrozenTrial
 
-    trial_id = study._storage.create_new_trial(study.study_id)
+    trial_id = study._storage.create_new_trial(study._study_id)
     return study._storage.get_trial(trial_id)
 
 
@@ -238,7 +238,7 @@ def test_intersection_search_space():
         raise exception
 
     study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
-    study.optimize(lambda t: objective(t, optuna.structs.TrialPruned()), n_trials=1)
+    study.optimize(lambda t: objective(t, optuna.exceptions.TrialPruned()), n_trials=1)
     assert optuna.samplers.intersection_search_space(study) == {
         'y': UniformDistribution(low=-3, high=3)
     }
@@ -278,7 +278,7 @@ def test_product_search_space():
         raise exception
 
     study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
-    study.optimize(lambda t: objective(t, optuna.structs.TrialPruned()), n_trials=1)
+    study.optimize(lambda t: objective(t, optuna.exceptions.TrialPruned()), n_trials=1)
     assert optuna.samplers.product_search_space(study) == {
         'y': UniformDistribution(low=-3, high=3)
     }

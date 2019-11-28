@@ -6,10 +6,10 @@ workflows:
     jobs:
       - checks
       - document
+      - doctest
       - tests-python37
       - tests-python36
       - tests-python35
-      - tests-python27
       - codecov
   daily-build:
     triggers:
@@ -25,11 +25,9 @@ workflows:
       - tests-python37-full
       - tests-python36-full
       - tests-python35-full
-      - tests-python27-full
       - examples-python37
       - examples-python36
       - examples-python35
-      - examples-python27
 
 jobs:
 
@@ -66,7 +64,6 @@ jobs:
           command: |
             . venv/bin/activate
             mypy --disallow-untyped-defs --ignore-missing-imports .
-            mypy --py2 --disallow-untyped-defs --ignore-missing-imports .
 
   document:
     docker:
@@ -89,6 +86,26 @@ jobs:
             cd docs
             make html
 
+  doctest:
+    docker:
+      - image: readthedocs/build:latest
+    steps:
+      - checkout
+
+      - run:
+          name: install
+          command: |
+            python -m venv venv || virtualenv venv --python=python3
+            . venv/bin/activate
+            pip install -U pip
+            pip install --progress-bar off .[doctest,document]
+
+      - run:
+          name: build
+          command: |
+            . venv/bin/activate
+            cd docs
+            make doctest
 
   # Unit tests
 
@@ -154,22 +171,6 @@ jobs:
 
       - run: *tests-mn
 
-  tests-python27:
-    docker:
-      - image: circleci/python:2.7
-    steps:
-      - checkout
-
-      - run: *install
-
-      - run:
-          <<: *tests
-          command: |
-            . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py --ignore tests/integration_tests/test_fastai.py
-
-      - run: *tests-mn
-
   tests-python37-full:
     docker:
       - image: circleci/python:3.7
@@ -211,22 +212,6 @@ jobs:
           command: |
             . venv/bin/activate
             pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_fastai.py
-
-      - run: *tests-mn-full
-
-  tests-python27-full:
-    docker:
-      - image: circleci/python:2.7
-    steps:
-      - checkout
-
-      - run: *install
-
-      - run:
-          <<: *tests-full
-          command: |
-            . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_xgboost.py --ignore tests/integration_tests/test_fastai.py
 
       - run: *tests-mn-full
 
@@ -320,23 +305,5 @@ jobs:
           environment:
             OMP_NUM_THREADS: 1
             IGNORES: chainermn_.*|pytorch_lightning.*
-
-      - run: *examples-mn
-
-  examples-python27:
-    docker:
-      - image: circleci/python:2.7
-    steps:
-      - checkout
-
-      - run: *install
-
-      - run: *install-examples
-
-      - run:
-          <<: *examples
-          environment:
-            OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|pytorch_lightning.*|xgboost_.*|dask_ml_.*
 
       - run: *examples-mn

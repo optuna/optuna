@@ -13,11 +13,12 @@ except ImportError as e:
     # trials_dataframe is disabled because pandas is not available.
     _pandas_available = False
 
-from six.moves import queue
+import queue
 import threading
 import time
 import warnings
 
+from optuna import exceptions
 from optuna import logging
 from optuna import pruners
 from optuna import samplers
@@ -47,7 +48,7 @@ class BaseStudy(object):
     def __init__(self, study_id, storage):
         # type: (int, storages.BaseStorage) -> None
 
-        self.study_id = study_id
+        self._study_id = study_id
         self._storage = storage
 
     @property
@@ -84,7 +85,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.FrozenTrial` object of the best trial.
         """
 
-        return self._storage.get_best_trial(self.study_id)
+        return self._storage.get_best_trial(self._study_id)
 
     @property
     def direction(self):
@@ -95,7 +96,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.StudyDirection` object.
         """
 
-        return self._storage.get_study_direction(self.study_id)
+        return self._storage.get_study_direction(self._study_id)
 
     @property
     def trials(self):
@@ -108,7 +109,7 @@ class BaseStudy(object):
             A list of :class:`~optuna.structs.FrozenTrial` objects.
         """
 
-        return self._storage.get_all_trials(self.study_id)
+        return self._storage.get_all_trials(self._study_id)
 
     @property
     def storage(self):
@@ -186,6 +187,26 @@ class Study(BaseStudy):
         self._optimize_lock = threading.Lock()
 
     @property
+    def study_id(self):
+        # type: () -> int
+        """Return the study ID.
+
+        .. deprecated:: 0.20.0
+            The direct use of this attribute is deprecated and it is recommended that you use
+            :attr:`~optuna.study.Study.study_name` instead.
+
+        Returns:
+            The study ID.
+        """
+
+        message = 'The use of `Study.study_id` is deprecated. ' \
+                  'Please use `Study.study_name` instead.'
+        warnings.warn(message, DeprecationWarning)
+        self.logger.warning(message)
+
+        return self._study_id
+
+    @property
     def user_attrs(self):
         # type: () -> Dict[str, Any]
         """Return user attributes.
@@ -194,7 +215,7 @@ class Study(BaseStudy):
             A dictionary containing all user attributes.
         """
 
-        return self._storage.get_study_user_attrs(self.study_id)
+        return self._storage.get_study_user_attrs(self._study_id)
 
     @property
     def system_attrs(self):
@@ -205,7 +226,7 @@ class Study(BaseStudy):
             A dictionary containing all system attributes.
         """
 
-        return self._storage.get_study_system_attrs(self.study_id)
+        return self._storage.get_study_system_attrs(self._study_id)
 
     def optimize(
             self,
@@ -239,7 +260,7 @@ class Study(BaseStudy):
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
-                exception except for :class:`~structs.TrialPruned`.
+                exception except for :class:`~optuna.exceptions.TrialPruned`.
             callbacks:
                 List of callback functions that are invoked at the end of each trial.
             gc_after_trial:
@@ -274,7 +295,7 @@ class Study(BaseStudy):
 
         """
 
-        self._storage.set_study_user_attr(self.study_id, key, value)
+        self._storage.set_study_user_attr(self._study_id, key, value)
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
@@ -289,7 +310,7 @@ class Study(BaseStudy):
 
         """
 
-        self._storage.set_study_system_attr(self.study_id, key, value)
+        self._storage.set_study_system_attr(self._study_id, key, value)
 
     def trials_dataframe(self, include_internal_fields=False):
         # type: (bool) -> pd.DataFrame
@@ -303,14 +324,22 @@ class Study(BaseStudy):
 
         Example:
 
-            Get an objective value and a value of parameter ``x`` in the first row.
+            .. testcode::
 
-            >>> df = study.trials_dataframe()
-            >>> df
-            >>> df.value[0]
-            0.0
-            >>> df.params.x[0]
-            1.0
+                import optuna
+                import pandas
+
+                def objective(trial):
+                    x = trial.suggest_uniform('x', -1, 1)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
+                # Create a dataframe from the study.
+                df = study.trials_dataframe()
+                assert isinstance(df, pandas.DataFrame)
+                assert df.shape[0] == 3  # n_trials.
 
         Args:
             include_internal_fields:
@@ -413,7 +442,7 @@ class Study(BaseStudy):
 
         trial._validate()
 
-        self.storage.create_new_trial(self.study_id, template_trial=trial)
+        self.storage.create_new_trial(self._study_id, template_trial=trial)
 
     def _optimize_sequential(
             self,
@@ -530,13 +559,13 @@ class Study(BaseStudy):
     ):
         # type: (...) -> trial_module.Trial
 
-        trial_id = self._storage.create_new_trial(self.study_id)
+        trial_id = self._storage.create_new_trial(self._study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
         try:
             result = func(trial)
-        except structs.TrialPruned as e:
+        except exceptions.TrialPruned as e:
             message = 'Setting status of trial#{} as {}. {}'.format(trial_number,
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
@@ -557,7 +586,7 @@ class Study(BaseStudy):
             # The following line mitigates memory problems that can be occurred in some
             # environments (e.g., services that use computing containers such as CircleCI).
             # Please refer to the following PR for further details:
-            # https://github.com/pfnet/optuna/pull/325.
+            # https://github.com/optuna/optuna/pull/325.
             if gc_after_trial:
                 gc.collect()
 
@@ -612,6 +641,19 @@ def create_study(
         storage:
             Database URL. If this argument is set to None, in-memory storage is used, and the
             :class:`~optuna.study.Study` will not be persistent.
+
+            .. note::
+                When a database URL is passed, Optuna internally uses `SQLAlchemy`_ to handle
+                the database. Please refer to `SQLAlchemy's document`_ for further details.
+                If you want to specify non-default options to `SQLAlchemy Engine`_, you can
+                instantiate :class:`~optuna.storages.RDBStorage` with your desired options and
+                pass it to the ``storage`` argument instead of a URL.
+
+             .. _SQLAlchemy: https://www.sqlalchemy.org/
+             .. _SQLAlchemy's document:
+                 https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
+             .. _SQLAlchemy Engine: https://docs.sqlalchemy.org/en/latest/core/engines.html
+
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
@@ -628,7 +670,7 @@ def create_study(
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
-            a :class:`~optuna.structs.DuplicatedStudyError` is raised if ``load_if_exists`` is
+            a :class:`~optuna.exceptions.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
 
@@ -640,7 +682,7 @@ def create_study(
     storage = storages.get_storage(storage)
     try:
         study_id = storage.create_new_study(study_name)
-    except structs.DuplicatedStudyError:
+    except exceptions.DuplicatedStudyError:
         if load_if_exists:
             assert study_name is not None
 
@@ -683,10 +725,8 @@ def load_study(
         study_name:
             Study's name. Each study has a unique name as an identifier.
         storage:
-            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
-            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
-            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
-            further details.
+            Database URL such as ``sqlite:///example.db``. Please see also the documentation of
+            :func:`~optuna.study.create_study` for further details.
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
@@ -712,10 +752,8 @@ def delete_study(
         study_name:
             Study's name.
         storage:
-            Database URL such as ``sqlite:///example.db``. Optuna internally uses `SQLAlchemy
-            <https://www.sqlalchemy.org/>`_ to handle databases. Please refer to `SQLAlchemy's
-            document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for
-            further details.
+            Database URL such as ``sqlite:///example.db``. Please see also the documentation of
+            :func:`~optuna.study.create_study` for further details.
 
     """
 
@@ -730,7 +768,8 @@ def get_all_study_summaries(storage):
 
     Args:
         storage:
-            Database URL.
+            Database URL such as ``sqlite:///example.db``. Please see also the documentation of
+            :func:`~optuna.study.create_study` for further details.
 
     Returns:
         List of study history summarized as :class:`~optuna.structs.StudySummary` objects.
