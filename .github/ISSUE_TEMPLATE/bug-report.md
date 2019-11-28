@@ -7,11 +7,11 @@ assignees: ''
 
 ---
 
-Please write a clear and concise description of what the bug is.
+<!-- Please write a clear and concise description of what the bug is. -->
 
 ## Expected behavior
 
-Please write a clear and concise description of what you expected to happen.
+<!-- Please write a clear and concise description of what you expected to happen. -->
 
 ## Environment
 
@@ -40,4 +40,4 @@ Please write a clear and concise description of what you expected to happen.
 
 ## Additional context (optional)
 
-Please add any other context or screenshots about the problem here.
+<!-- Please add any other context or screenshots about the problem here. -->
