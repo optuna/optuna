@@ -73,10 +73,16 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 
 ## Installation
 
-To install Optuna, use `pip` as follows:
+Optuna is available at [the Python Package Index](https://pypi.org/project/optuna/) and on [Anaconda Cloud](https://anaconda.org/conda-forge/optuna).
 
 ```
+# PyPI
 $ pip install optuna
+```
+
+```
+# Anaconda Cloud
+$ conda install -c conda-forge optuna
 ```
 
 Optuna supports Python 3.5 or newer.
