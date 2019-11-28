@@ -22,7 +22,7 @@ The objective function is what will be optimized.
        ...:     return (x - 2) ** 2
        ...:
 
-This function returns the value of (x - 2) squared. Our goal is to find the value of ``x`` that minimizes the output of the ``objective`` function. This is the "optimization."  During the optimization, Optuna repeatedly calls and evaluates the objective function with different values of ``x``.
+This function returns the value of :math:`(x - 2)^2`. Our goal is to find the value of ``x`` that minimizes the output of the ``objective`` function. This is the "optimization."  During the optimization, Optuna repeatedly calls and evaluates the objective function with different values of ``x``.
 
 A :class:`~optuna.trial.Trial` object corresponds to a single execution of the objective function and is internally instantiated upon each invocation of the function.
 
