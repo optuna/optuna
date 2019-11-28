@@ -52,12 +52,7 @@ In addition, integration modules are available for the following libraries, prov
 
 ### Examples of Visualization
 
-* [Visualizing learning curves](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_intermediate_values.ipynb)
-* [Visualizing optimization history](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_optimization_history.ipynb)
-* [Visualizing relationship between a parameter and objective value (slice plot)](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_slice.ipynb)
-* [Visualizing relationship between two parameters (contour plot)](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_contour.ipynb)
-* [Visualizing parallel coordinates](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_parallel_coordinate.ipynb)
-
+* [Visualizing study](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
 
 ### Examples of Distributed Optimization
 
