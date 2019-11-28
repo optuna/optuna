@@ -58,6 +58,37 @@ def get_extras_require():
             'hacking',
             'mypy',
         ],
+        'codecov': [
+            'codecov',
+            'pytest-cov',
+        ],
+        'doctest': [
+            'pandas',
+            'scikit-learn>=0.19.0',
+        ],
+        'document': [
+            'sphinx',
+            'sphinx_rtd_theme',
+        ],
+        'example': [
+            'catboost',
+            'chainer',
+            'dask[dataframe]',
+            'dask-ml',
+            'fastai<2',
+            'keras',
+            'lightgbm',
+            'mxnet',
+            'pytorch-ignite',
+            'pytorch-lightning',
+            'scikit-learn',
+            # TODO(Yanase): Update examples to support TensorFlow 2.0.
+            # See https://github.com/optuna/optuna/issues/565 for further details.
+            'tensorflow<2.0.0',
+            'torch',
+            'torchvision',
+            'xgboost',
+        ],
         'testing': [
             'bokeh',
             'chainer>=5.0.0',
@@ -80,33 +111,6 @@ def get_extras_require():
             'torch',
             'torchvision',
             'xgboost',
-        ],
-        'example': [
-            'catboost',
-            'chainer',
-            'dask[dataframe]',
-            'dask-ml',
-            'fastai<2',
-            'keras',
-            'lightgbm',
-            'mxnet',
-            'pytorch-ignite',
-            'pytorch-lightning',
-            'scikit-learn',
-            # TODO(Yanase): Update examples to support TensorFlow 2.0.
-            # See https://github.com/optuna/optuna/issues/565 for further details.
-            'tensorflow<2.0.0',
-            'torch',
-            'torchvision',
-            'xgboost',
-        ],
-        'document': [
-            'sphinx',
-            'sphinx_rtd_theme',
-        ],
-        'codecov': [
-            'codecov',
-            'pytest-cov',
         ],
     }
 

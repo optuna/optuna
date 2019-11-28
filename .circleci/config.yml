@@ -6,6 +6,7 @@ workflows:
     jobs:
       - checks
       - document
+      - doctest
       - tests-python37
       - tests-python36
       - tests-python35
@@ -85,6 +86,26 @@ jobs:
             cd docs
             make html
 
+  doctest:
+    docker:
+      - image: readthedocs/build:latest
+    steps:
+      - checkout
+
+      - run:
+          name: install
+          command: |
+            python -m venv venv || virtualenv venv --python=python3
+            . venv/bin/activate
+            pip install -U pip
+            pip install --progress-bar off .[doctest,document]
+
+      - run:
+          name: build
+          command: |
+            . venv/bin/activate
+            cd docs
+            make doctest
 
   # Unit tests
 

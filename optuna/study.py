@@ -324,14 +324,22 @@ class Study(BaseStudy):
 
         Example:
 
-            Get an objective value and a value of parameter ``x`` in the first row.
+            .. testcode::
 
-            >>> df = study.trials_dataframe()
-            >>> df
-            >>> df.value[0]
-            0.0
-            >>> df.params.x[0]
-            1.0
+                import optuna
+                import pandas
+
+                def objective(trial):
+                    x = trial.suggest_uniform('x', -1, 1)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
+                # Create a dataframe from the study.
+                df = study.trials_dataframe()
+                assert isinstance(df, pandas.DataFrame)
+                assert df.shape[0] == 3  # n_trials.
 
         Args:
             include_internal_fields:
