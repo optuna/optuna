@@ -125,14 +125,9 @@ class FrozenTrial(object):
     def __eq__(self, other):
         # type: (Any) -> bool
 
-        if isinstance(other, type(self)):
-            return other.__dict__ == self.__dict__
-        return False
-
-    def __ne__(self, other):
-        # type: (Any) -> bool
-
-        return not self.__eq__(other)
+        if not isinstance(other, FrozenTrial):
+            return NotImplemented
+        return other.__dict__ == self.__dict__
 
     def __lt__(self, other):
         # type: (Any) -> bool
