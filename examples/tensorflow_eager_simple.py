@@ -21,6 +21,8 @@ We have the following two ways to execute this example:
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist
 
+import optuna
+
 N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
@@ -123,8 +125,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    import optuna
-
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)
 
