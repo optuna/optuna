@@ -7,13 +7,13 @@ First Optimization
 Quadratic Function Example
 --------------------------
 
-Usually, Optuna is used as a hyper-parameter optimizer, but as an example, let us try a direct optimization in IPython shell.
+Usually, Optuna is used to optimize hyper-parameter, but as an example, let us directly optimize a quadratic function in an IPython shell.
 
 .. code-block:: python
 
     In [1]: import optuna
 
-Here, we use a simple quadratic function as an example of objective function.
+The objective function is what will be optimized.
 
 .. code-block:: python
 
