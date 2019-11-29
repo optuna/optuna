@@ -409,7 +409,8 @@ class Study(BaseStudy):
             # Flatten the `MultiIndex` columns where names are concatenated with underscores.
             # Filtering is required to omit non-nested columns avoiding unwanted trailing
             # underscores.
-            df.columns = ['_'.join(filter(lambda c: c, col)) for col in columns]
+            df.columns = [
+                '_'.join(map(lambda c: str(c), filter(lambda c: c, col))) for col in columns]
 
         return df
 
