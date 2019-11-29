@@ -7,6 +7,7 @@
 [![CircleCI](https://circleci.com/gh/optuna/optuna.svg?style=svg)](https://circleci.com/gh/optuna/optuna)
 [![Read the Docs](https://readthedocs.org/projects/optuna/badge/?version=stable)](https://optuna.readthedocs.io/en/stable/)
 [![Codecov](https://codecov.io/gh/optuna/optuna/branch/master/graph/badge.svg)](https://codecov.io/gh/optuna/optuna/branch/master)
+[![Gitter chat](https://badges.gitter.im/optuna/gitter.png)](https://gitter.im/optuna/optuna)
 
 [**Website**](https://optuna.org/)
 | [**Docs**](https://optuna.readthedocs.io/en/stable/)
