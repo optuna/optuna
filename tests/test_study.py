@@ -484,10 +484,10 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields, mul
         df = study.trials_dataframe(
             include_internal_fields=include_internal_fields, multi_index=multi_index)
         # Change index to access rows via trial number.
-        keys = 'number'
         if multi_index:
-            keys = (keys, '')
-        df.set_index(keys, inplace=True, drop=False)
+            df.set_index(('number', ''), inplace=True, drop=False)
+        else:
+            df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
         # non-nested: 5, params: 2, user_attrs: 1, system_attrs: 1 and 9 in total.
