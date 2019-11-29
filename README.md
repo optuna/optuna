@@ -91,7 +91,7 @@ Optuna supports Python 3.5 or newer.
 
 ## Communication
 
-- [Github Issues] for bug reports, feature requests, questions, and etc.
+- [Github Issues] for bug reports, feature requests and questions.
 - [Gitter] for interactive chat with developers.
 - [Stack Overflow] for questions.
 
