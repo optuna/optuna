@@ -16,6 +16,8 @@ import sklearn.ensemble
 import sklearn.model_selection
 import sklearn.svm
 
+import optuna
+
 
 class Objective(object):
     def __init__(self, iris):
@@ -39,8 +41,6 @@ class Objective(object):
 
 
 if __name__ == '__main__':
-    import optuna
-
     # Load the dataset in advance for reusing it each trial execution.
     iris = sklearn.datasets.load_iris()
     objective = Objective(iris)

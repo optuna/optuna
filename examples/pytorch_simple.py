@@ -28,6 +28,8 @@ import torch.utils.data
 from torchvision import datasets
 from torchvision import transforms
 
+import optuna
+
 DEVICE = torch.device('cpu')
 BATCHSIZE = 128
 CLASSES = 10
@@ -143,7 +145,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    import optuna
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)
 

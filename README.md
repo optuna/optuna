@@ -40,6 +40,7 @@ hyperparameter values (e.g., `classifier` and `svm_c`) through multiple *trials*
 `n_trials=100`). Optuna is a framework designed for the automation and the acceleration of the
 optimization *studies*.
 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/optuna/optuna/blob/master/examples/quickstart.ipynb)
 
 ```python
 import ...
@@ -73,10 +74,16 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 
 ## Installation
 
-To install Optuna, use `pip` as follows:
+Optuna is available at [the Python Package Index](https://pypi.org/project/optuna/) and on [Anaconda Cloud](https://anaconda.org/conda-forge/optuna).
 
 ```
+# PyPI
 $ pip install optuna
+```
+
+```
+# Anaconda Cloud
+$ conda install -c conda-forge optuna
 ```
 
 Optuna supports Python 3.5 or newer.
