@@ -89,6 +89,17 @@ $ conda install -c conda-forge optuna
 Optuna supports Python 3.5 or newer.
 
 
+## Communication
+
+- [Github Issues] for bug reports, feature requests, questions, and etc.
+- [Gitter] for interactive chat with developers.
+- [Stack Overflow] for questions.
+
+[GitHub issues]: https://github.com/optuna/optuna/issues
+[Gitter]: https://gitter.im/optuna/optuna
+[Stack Overflow]: https://stackoverflow.com/questions/tagged/optuna
+
+
 ## Contribution
 
 Any contributions to Optuna are welcome! When you send a pull request, please follow the
