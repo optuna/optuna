@@ -312,7 +312,7 @@ class Study(BaseStudy):
 
         self._storage.set_study_system_attr(self._study_id, key, value)
 
-    def trials_dataframe(self, include_internal_fields=False, multi_index=True):
+    def trials_dataframe(self, include_internal_fields=False, multi_index=False):
         # type: (bool, bool) -> pd.DataFrame
         """Export trials as a pandas DataFrame_.
 

@@ -549,7 +549,7 @@ def test_trials_dataframe_with_failure(storage_mode, cache_mode):
         study.optimize(f, n_trials=3, catch=(ValueError,))
         df = study.trials_dataframe()
         # Change index to access rows via trial number.
-        df.set_index(('number', ''), inplace=True, drop=False)
+        df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
         # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 2
@@ -560,11 +560,11 @@ def test_trials_dataframe_with_failure(storage_mode, cache_mode):
             assert df.value[i] is None
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
-            assert df.params.x[i] == 1
-            assert df.params.y[i] == 2.5
-            assert df.user_attrs.train_loss[i] == 3
-            assert df.system_attrs._number[i] == i
-            assert ('system_attrs', 'fail_reason') in df.columns
+            assert df.params_x[i] == 1
+            assert df.params_y[i] == 2.5
+            assert df.user_attrs_train_loss[i] == 3
+            assert df.system_attrs__number[i] == i
+            assert 'system_attrs_fail_reason' in df.columns
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
