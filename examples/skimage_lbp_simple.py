@@ -24,17 +24,22 @@ import skimage.feature as ft
 from sklearn.datasets import fetch_olivetti_faces
 import sklearn.metrics
 
+import optuna
+
 
 def load_data():
     rng = np.random.RandomState(0)
     dataset = fetch_olivetti_faces(shuffle=True, random_state=rng)
     faces = dataset.images
     target = dataset.target
-    classes = sorted(list(set(target)))
-    ref_index = [(np.min(np.where(target == index))) for index in classes]
+    classes = np.unique(target)
+    classes.sort()
+
+    ref_index = np.argmax(target == classes[:, None], axis=1)
+    test_index = np.delete(np.arange(len(faces)), ref_index)
+
     x_ref = faces[ref_index]
     y_ref = target[ref_index]
-    test_index = [index for index in range(len(faces)) if index not in ref_index]
     x_test = faces[test_index]
     y_test = target[test_index]
     return x_ref, x_test, y_ref, y_test
@@ -43,13 +48,14 @@ def load_data():
 def get_lbp_hist(img, P, R, method):
     lbp = ft.local_binary_pattern(img, P, R, method)
     if method == 'uniform':
-        hist, _ = np.histogram(lbp.ravel(), density=True,
-                               bins=np.arange(0, P + 3),
-                               range=(0, P + 2))
+        bin_max = P + 3
+        range_max = P + 2
     elif method == 'default':
-        hist, _ = np.histogram(lbp.ravel(), density=True,
-                               bins=np.arange(0, 2**P),
-                               range=(0, 2**P-1))
+        bin_max = 2**P
+        range_max = 2**P - 1
+    hist, _ = np.histogram(lbp.ravel(), density=True,
+                           bins=np.arange(0, bin_max),
+                           range=(0, range_max))
     return hist
 
 
@@ -112,7 +118,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    import optuna
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=50)
     print(study.best_trial)
