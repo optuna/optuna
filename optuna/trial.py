@@ -333,7 +333,8 @@ class Trial(BaseTrial):
             name:
                 A parameter name.
             choices:
-                Candidates of parameter values.
+                Candidates of parameter values. Candidates must be :class:`float`, :class:`str` and
+                castable to :class:`float`.
 
         Returns:
             A suggested value.
