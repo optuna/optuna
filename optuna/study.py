@@ -410,7 +410,7 @@ class Study(BaseStudy):
             # Filtering is required to omit non-nested columns avoiding unwanted trailing
             # underscores.
             df.columns = [
-                '_'.join(map(lambda c: str(c), filter(lambda c: c, col))) for col in columns]
+                '_'.join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns]
 
         return df
 

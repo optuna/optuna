@@ -476,7 +476,12 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields, mul
         x = trial.suggest_int('x', 1, 1)
         y = trial.suggest_categorical('y', (2.5, ))
         trial.set_user_attr('train_loss', 3)
-        return x + y  # 3.5
+        value = x + y  # 3.5
+
+        # Test reported intermediate values, although it in practice is not "intermediate".
+        trial.report(value, step=0)
+
+        return value
 
     with StorageSupplier(storage_mode, cache_mode) as storage:
         study = optuna.create_study(storage=storage)
@@ -490,12 +495,18 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields, mul
             df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-        # non-nested: 5, params: 2, user_attrs: 1, system_attrs: 1 and 9 in total.
+        # Number expected columns are as follows (total of 10):
+        #   non-nested: 5
+        #   params: 2
+        #   user_attrs: 1
+        #   system_attrs: 1
+        #   intermediate_values: 1
+        expected_n_columns = 10
         if include_internal_fields:
-            # distributions:2, trial_id: 1
-            assert len(df.columns) == 7 + 5
-        else:
-            assert len(df.columns) == 9
+            # distributions: 2
+            # trial_id: 1
+            expected_n_columns += 3
+        assert len(df.columns) == expected_n_columns
 
         for i in range(3):
             assert df.number[i] == i
