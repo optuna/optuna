@@ -9,6 +9,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
+    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
@@ -66,15 +67,16 @@ class GridSampler(BaseSampler):
             of values, respectively.
     """
 
-    def __init__(self, grid):
-        # type: (Dict[str, List[Any]]) -> None
+    def __init__(self, search_space):
+        # type: (Dict[str, List[Union[str, float, None]]]) -> None
 
-        # todo(g-votte): detect non-identical girds and raise an error in case.
+        for param_name, param_values in search_space.items():
+            search_space[param_name] = [self._cast_value(param_name, value) for value in param_values]
 
-        self._grid = collections.OrderedDict(sorted(grid.items(), key=lambda x: x[0]))
-        self._grid_product = list(itertools.product(*self._grid.values()))
-        self._param_names = sorted(grid.keys())
-        self._n_min_trials = len(self._grid_product)
+        self._search_space = collections.OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
+        self._all_grids = list(itertools.product(*self._search_space.values()))
+        self._param_names = sorted(search_space.keys())
+        self._n_min_trials = len(self._all_grids)
 
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
@@ -88,6 +90,7 @@ class GridSampler(BaseSampler):
         # and the values are returned from `sample_independent`. This is because the distribution
         # object is hard to get at the beginning of trial, while we need the access to the object
         # to validate the sampled value.
+
         unvisited_grids = self._get_unvisited_grid_ids(study)
 
         if len(unvisited_grids) == 0:
@@ -98,6 +101,8 @@ class GridSampler(BaseSampler):
         # In distributed optimization, multiple workers may simultaneously pick up the same grid.
         # To make the conflict less frequent, the grid is chosen randomly.
         grid_id = random.choice(unvisited_grids)
+
+        study._storage.set_trial_system_attr(trial._trial_id, 'search_space', self._search_space)
         study._storage.set_trial_system_attr(trial._trial_id, 'grid_id', grid_id)
 
         return {}
@@ -105,26 +110,64 @@ class GridSampler(BaseSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
 
-        if param_name not in self._grid:
+        if param_name not in self._search_space:
             message = 'The parameter name, {}, is not found in the given grid.'.format(param_name)
             raise ValueError(message)
 
         grid_id = trial.system_attrs['grid_id']
-        param_value = self._grid_product[grid_id][self._param_names.index(param_name)]
+        param_value = self._all_grids[grid_id][self._param_names.index(param_name)]
         contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))
         if not contains:
             raise ValueError()  # todo(g-votte): fill in the error message.
 
         return param_value
 
+    @staticmethod
+    def _cast_value(param_name, param_value):
+        # type: (str, Any) -> Union[str, float, None]
+
+        if param_value is None:
+            return None
+        elif isinstance(param_value, str):
+            return param_value
+        else:
+            try:
+                param_value = float(param_value)
+                return param_value
+            except (TypeError, ValueError):
+                pass
+
+        raise ValueError('{} contains a value with the type of {}, which is not supported'
+                         ' by `GridSampler`. Please make sure values are str or castable'
+                         'to float.'.format(param_name, type(param_value)))
+
     def _get_unvisited_grid_ids(self, study):
         # type: (Study) -> List[int]
 
+        # List up all finished trials in the same search space.
         trials = study.trials
-        trials = [t for t in trials if t.state.is_finished]
+        trials = [t for t in trials if t.state.is_finished()]
         trials = [t for t in trials if 'grid_id' in t.system_attrs]
+        trials = [t for t in trials if self._same_search_space(t.system_attrs['search_space'])]
 
+        # List up unvisited trials based on already finished ones.
         visited_grids = [t.system_attrs['grid_id'] for t in trials]
         unvisited_grids = set(range(self._n_min_trials)) - set(visited_grids)
 
         return list(unvisited_grids)
+
+    def _same_search_space(self, search_space):
+        # type: (Dict[str, List[Union[str, float, None]]]) -> bool
+
+        if set(search_space.keys()) != set(self._search_space.keys()):
+            return False
+
+        for param_name in search_space.keys():
+            if len(search_space[param_name]) != len(self._search_space[param_name]):
+                return False
+
+            for i, param_value in enumerate(search_space[param_name]):
+                if self._cast_value(param_name, param_value) != self._search_space[param_name][i]:
+                    return False
+
+        return True
