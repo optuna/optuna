@@ -17,4 +17,3 @@ you may refer to the [optuna/optuna chat] on Gitter.
 
 [Stack Overflow]: https://stackoverflow.com/questions/tagged/optuna
 [optuna/optuna chat]: https://gitter.im/optuna/optuna
-[optuna/optuna-jp chat]: https://gitter.im/optuna/optuna-jp
