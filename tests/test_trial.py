@@ -277,6 +277,11 @@ def test_fixed_trial_suggest_categorical():
     trial = FixedTrial({'x': 'baz'})
     assert trial.suggest_categorical('x', ['foo', 'bar', 'baz']) == 'baz'
 
+    # Dict category.
+    with pytest.raises(TypeError):
+        trial.suggest_categorical('x', [{'foo': 'bar'}])
+
+    # Unknown parameter.
     with pytest.raises(ValueError):
         trial.suggest_categorical('y', ['foo', 'bar', 'baz'])
 

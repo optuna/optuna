@@ -269,7 +269,8 @@ class CategoricalDistribution(BaseDistribution):
 
     Attributes:
         choices:
-            Candidates of parameter values.
+            Candidates of parameter values. Candidates must be :class:`float`, :class:`str` and
+            castable to :class:`float`.
     """
 
     def __init__(self, choices):
@@ -277,8 +278,7 @@ class CategoricalDistribution(BaseDistribution):
 
         if len(choices) == 0:
             raise ValueError("The `choices` must contains one or more elements.")
-
-        self.choices = choices
+        self.choices = tuple(map(lambda c: self._to_valid_choice(c), choices))
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> Union[float, str]
@@ -300,6 +300,20 @@ class CategoricalDistribution(BaseDistribution):
 
         index = int(param_value_in_internal_repr)
         return 0 <= index and index < len(self.choices)
+
+    @staticmethod
+    def _to_valid_choice(choice):
+        # type: (Union[float, str]) -> Union[float, str]
+
+        if isinstance(choice, (float, str)):
+            return choice
+        try:
+            return float(choice)
+        except TypeError:
+            raise TypeError(
+                "Choices to the categorical distribution must be a tuple of float, str "
+                f"and castable to float but contains {choice} which is of type "
+                f"{type(choice).__name__}.")
 
 
 DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, DiscreteUniformDistribution,

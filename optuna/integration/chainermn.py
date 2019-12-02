@@ -17,14 +17,11 @@ if type_checking.TYPE_CHECKING:
     from typing import Sequence  # NOQA
     from typing import Tuple  # NOQA
     from typing import Type  # NOQA
-    from typing import TypeVar  # NOQA
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
-
-    T = TypeVar('T', float, str)
 
 try:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
@@ -233,10 +230,10 @@ class ChainerMNTrial(BaseTrial):
         return self._call_with_mpi(func)
 
     def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[T]) -> T
+        # type: (str, Tuple[Union[float, str], ...]) -> Union[float, str]
 
         def func():
-            # type: () -> T
+            # type: () -> Union[float, str]
 
             assert self.delegate is not None
             return self.delegate.suggest_categorical(name, choices)
