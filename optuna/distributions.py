@@ -311,9 +311,9 @@ class CategoricalDistribution(BaseDistribution):
             return float(choice)
         except TypeError:
             raise TypeError(
-                "Choices to the categorical distribution must be a tuple of float, str "
-                f"and castable to float but contains {choice} which is of type "
-                f"{type(choice).__name__}.")
+                "Choices to the categorical distribution must be a tuple of float, str and "
+                "castable to float but contains {} which is of type {}.".format(
+                    choice, type(choice).__name__))
 
 
 DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, DiscreteUniformDistribution,
