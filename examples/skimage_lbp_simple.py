@@ -3,7 +3,7 @@ Optuna example that optimizes a configuration for Olivetti faces dataset using
 skimage.
 
 In this example, we optimize a classifier configuration for Olivetti faces dataset.
-We optimize paraterers of local_binary_pattern function in skimage and the
+We optimize paramerers of local_binary_pattern function in skimage and the
 choice of distance metric classes.
 
 We have following two ways to execute this example:
@@ -101,7 +101,7 @@ def objective(trial):
     # Get Olivetti faces dataset.
     x_ref, x_test, y_ref, y_test = load_data()
 
-    # We optimzie paraterers of local_binary_pattern function in skimage
+    # We optimzie paramerers of local_binary_pattern function in skimage
     # and the choice of distance metric classes.
     P = trial.suggest_int('P', 1, 15)
     R = trial.suggest_uniform('R', 1, 10)
