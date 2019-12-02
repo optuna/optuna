@@ -347,7 +347,7 @@ class Study(BaseStudy):
             multi_index:
                 Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that
                 are hierarchical by nature such as ``(params, x)`` will be flattened to
-                ``params_x`` when set to ``False``.
+                ``params_x`` when set to :obj:`False`.
 
         Returns:
             A pandas DataFrame_ of trials in the :class:`~optuna.study.Study`.
