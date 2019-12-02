@@ -158,31 +158,7 @@ jobs:
     steps:
       - checkout
 
-      # Some libraries have not provided wheel packages for Python 3.8 yet, and additional
-      # dependencies are required to build them.
-      - run: &install-python38
-          <<: *install
-          command: |
-            sudo apt-get update
-            sudo apt-get -y install openmpi-bin libopenmpi-dev
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            pip install -U pip
-            pip install --progress-bar off -U setuptools
-            python setup.py sdist
-
-            # Install minimal dependencies and confirm that `import optuna` is successful.
-            pip install --progress-bar off $(ls dist/*.tar.gz)
-            python -c 'import optuna'
-
-            # Additional dependencies for Python 3.8.
-            # cython is required by scikit-learn.
-            pip install --progress-bar off cython
-            # libhdf5.so is required by keras.
-            sudo apt-get -y install libhdf5-dev
-
-            # Install all dependencies needed for testing.
-            pip install --progress-bar off $(ls dist/*.tar.gz)[testing]
+      - run: *install
 
       - run:
           <<: *tests
@@ -247,7 +223,7 @@ jobs:
     steps:
       - checkout
 
-      - run: *install-python38
+      - run: *install
 
       - run:
           <<: *tests-full
@@ -359,7 +335,7 @@ jobs:
     steps:
       - checkout
 
-      - run: *install-python38
+      - run: *install
 
       - run: *install-examples
 

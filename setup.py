@@ -53,7 +53,7 @@ def get_tests_require():
 def get_extras_require():
     # type: () -> Dict[str, List[str]]
 
-    return {
+    requirements = {
         'checking': [
             'autopep8',
             'hacking',
@@ -90,12 +90,11 @@ def get_extras_require():
             'tensorflow<2.0.0',
             'torch',
             'torchvision'
-        ] if sys.version_info[:2] < (3, 8) else []),
+        ] if sys.version_info[:2] < (3, 8) else []) ,
         'testing': [
             'bokeh',
             'chainer>=5.0.0',
             'cma',
-            'keras',
             'lightgbm',
             'mock',
             'mpi4py',
@@ -108,6 +107,7 @@ def get_extras_require():
             'xgboost',
         ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + ([
+            'keras',
             'pytorch-ignite',
             'pytorch-lightning',
             'tensorflow',
@@ -116,6 +116,14 @@ def get_extras_require():
             'torchvision'
         ] if sys.version_info[:2] < (3, 8) else []),
     }
+
+    # TODO(Yanase): Remove cython from dependencies after wheel packages of scikit-learn are
+    # released for Python 3.8.
+    if sys.version_info[:2] == (3, 8):
+        requirements['testing'].insert(0, 'cython')
+        requirements['example'].insert(0, 'cython')
+
+    return requirements
 
 
 def find_any_distribution(pkgs):
