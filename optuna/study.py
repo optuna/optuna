@@ -269,19 +269,26 @@ class Study(BaseStudy):
                 memory is safely managed in your objective function.
         """
 
-        if not self._optimize_lock.acquire(False):
-            raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
         if not isinstance(catch, tuple):
             raise TypeError("The catch argument is of type \'{}\' but must be a tuple.".format(
                 type(catch).__name__))
 
+        if not self._optimize_lock.acquire(False):
+            raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
+
         try:
             if n_jobs == 1:
                 self._optimize_sequential(func, n_trials, timeout, catch, callbacks,
-                                          gc_after_trial)
+                                          gc_after_trial, None)
             else:
-                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch, callbacks,
-                                        gc_after_trial)
+                time_start = datetime.datetime.now()
+                with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
+                    _iter = range(n_trials) if n_trials is not None else iter(int, 0)
+                    parallel(
+                        delayed(self._optimize_sequential)
+                        (func, 1, timeout, catch, callbacks, gc_after_trial, time_start)
+                        for _ in _iter
+                    )
         finally:
             self._optimize_lock.release()
 
@@ -451,12 +458,16 @@ class Study(BaseStudy):
             timeout,  # type: Optional[float]
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            gc_after_trial  # type: bool
+            gc_after_trial,  # type: bool
+            time_start  # type: Optional[datetime.datetime]
     ):
         # type: (...) -> None
 
         i_trial = 0
-        time_start = datetime.datetime.now()
+
+        if time_start is None:
+            time_start = datetime.datetime.now()
+
         while True:
             if n_trials is not None:
                 if i_trial >= n_trials:
@@ -469,69 +480,7 @@ class Study(BaseStudy):
                     break
 
             self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
-
-    def _optimize_parallel(
-            self,
-            func,  # type: ObjectiveFuncType
-            n_trials,  # type: Optional[int]
-            timeout,  # type: Optional[float]
-            n_jobs,  # type: Optional[int]
-            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            gc_after_trial  # type: bool
-    ):
-        # type: (...) -> None
-
-        self.start_datetime = datetime.datetime.now()
-
-        if n_trials is not None:
-            # No work to be done.
-            if n_trials == 0:
-                return
-            # The number of workers (threads, processes, etc)
-            # must not be larger than the number of trials.
-            if n_jobs is not None and n_jobs > 0:
-                n_jobs = min(n_jobs, n_trials)
-
-        with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
-            # We get n_jobs from joblib to avoid
-            # redoing the necessary checks for the different backends
-            n_trials_to_enqueue_per_iteration = effective_n_jobs(n_jobs)
-            if n_trials is not None:
-                # The number of dispatched jobs must not
-                # be larger than the number of trials.
-                n_trials_to_enqueue_per_iteration = min(
-                    n_trials_to_enqueue_per_iteration, n_trials
-                )
-            n_enqueued_trials = 0
-
-            while True:
-                if timeout is not None:
-                    elapsed_timedelta = datetime.datetime.now() - self.start_datetime
-                    elapsed_seconds = elapsed_timedelta.total_seconds()
-                    if elapsed_seconds > timeout:
-                        break
-
-                if n_trials is not None:
-                    if n_enqueued_trials >= n_trials:
-                        break
-
-                    n_trials_to_enqueue_per_iteration = min(
-                        n_trials_to_enqueue_per_iteration, n_trials - n_enqueued_trials
-                    )
-
-                n_enqueued_trials += n_trials_to_enqueue_per_iteration
-
-                parallel(
-                    delayed(self._run_trial_and_callbacks)
-                    (func, catch, callbacks, gc_after_trial)
-                    for _ in range(n_trials_to_enqueue_per_iteration)
-                )
-
-            parallel(
-                delayed(self._storage.remove_session)()
-                for _ in range(effective_n_jobs(n_jobs))
-            )
+        self._storage.remove_session()
 
     def _run_trial_and_callbacks(
             self,
