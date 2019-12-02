@@ -10,6 +10,7 @@ This page contains a list of example codes written with Optuna.
 ### Examples with ML Libraries
 
 * [Scikit-learn](./sklearn_simple.py)
+* [Scikit-image](./skimage_lbp_simple.py)
 * [Chainer](./chainer_simple.py)
 * [ChainerMN](./chainermn_simple.py)
 * [Dask-ML](./dask_ml_simple.py)
