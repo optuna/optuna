@@ -90,7 +90,7 @@ def get_extras_require():
             'tensorflow<2.0.0',
             'torch',
             'torchvision'
-        ] if sys.version_info[:2] < (3, 8) else []) ,
+        ] if sys.version_info[:2] < (3, 8) else []),
         'testing': [
             'bokeh',
             'chainer>=5.0.0',
