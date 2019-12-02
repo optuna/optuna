@@ -13,7 +13,7 @@ assignees: ''
 
 If you are more comfortable with [Stack Overflow], you may consider posting your question there instead.
 Alternatively, for issues that would benefit from more of an interactive session with the developers,
-you may refer to the [optuna/optuna chat] or the [optuna/optuna-jp chat] (Japanese) on Gitter.
+you may refer to the [optuna/optuna chat] on Gitter.
 
 [Stack Overflow]: https://stackoverflow.com/questions/tagged/optuna
 [optuna/optuna chat]: https://gitter.im/optuna/optuna
