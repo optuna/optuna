@@ -509,8 +509,6 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields, mul
                     assert ('distributions', 'x') in df.columns
                     assert ('distributions', 'y') in df.columns
                     assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
-                    assert ('distributions', 'x') in df.columns
-                    assert ('distributions', 'y') in df.columns
 
                 assert df.params.x[i] == 1
                 assert df.params.y[i] == 2.5
@@ -521,8 +519,6 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields, mul
                     assert 'distributions_x' in df.columns
                     assert 'distributions_y' in df.columns
                     assert 'trial_id' in df.columns  # trial_id depends on other tests.
-                    assert 'distributions_x' in df.columns
-                    assert 'distributions_y' in df.columns
 
                 assert df.params_x[i] == 1
                 assert df.params_y[i] == 2.5
