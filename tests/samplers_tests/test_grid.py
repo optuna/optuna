@@ -78,7 +78,7 @@ def test_study_optimize_with_single_search_space():
         study.optimize(objective)
 
 
-def test_study_optimize_with_muletiple_search_spaces():
+def test_study_optimize_with_multiple_search_spaces():
     # type: () -> None
 
     def objective(trial):
@@ -89,24 +89,43 @@ def test_study_optimize_with_muletiple_search_spaces():
 
         return a * b
 
-    # Test that all combinations of the grid is sampled.
-    search_space = {
+    # Run 3 trials with a search space.
+    search_space_0 = {
         'a': [0, 50],
         'b': [-50, 0, 50]
     }
-    n_grids_first = _n_grids(search_space)
-    study = optuna.create_study(sampler=samplers.GridSampler(search_space))
-    study.optimize(objective, n_trials=n_grids_first)
+    sampler_0 = samplers.GridSampler(search_space_0)
+    study = optuna.create_study(sampler=sampler_0)
+    study.optimize(objective, n_trials=3)
 
-    assert len(study.trials) == n_grids_first
+    assert len(study.trials) == 3
+    for t in study.trials:
+        sampler_0._same_search_space(t.system_attrs['search_space'])
 
-    search_space = {**search_space, 'b': [-50]}
-    n_grids_second = _n_grids(search_space)
-    study.sampler = samplers.GridSampler(search_space)
-    study.optimize(objective, n_trials=n_grids_second)
+    # Run 2 trials with another space.
+    search_space_1 = {'a': [0, 25], 'b': [-50]}
+    sampler_1 = samplers.GridSampler(search_space_1)
+    study.sampler = sampler_1
+    study.optimize(objective, n_trials=2)
 
-    assert n_grids_second == n_grids_first / 3
-    assert len(study.trials) == n_grids_first + n_grids_second
+    assert not sampler_0._same_search_space(sampler_1._search_space)
+    assert len(study.trials) == 5
+    for t in study.trials[:3]:
+        sampler_0._same_search_space(t.system_attrs['search_space'])
+    for t in study.trials[3: 5]:
+        sampler_1._same_search_space(t.system_attrs['search_space'])
+
+    # Run 3 trials with the first search space again.
+    study.sampler = sampler_0
+    study.optimize(objective, n_trials=3)
+
+    assert len(study.trials) == 8
+    for t in study.trials[:3]:
+        sampler_0._same_search_space(t.system_attrs['search_space'])
+    for t in study.trials[3: 5]:
+        sampler_1._same_search_space(t.system_attrs['search_space'])
+    for t in study.trials[5:]:
+        sampler_0._same_search_space(t.system_attrs['search_space'])
 
 
 def test_cast_value():
