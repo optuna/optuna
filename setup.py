@@ -81,6 +81,7 @@ def get_extras_require():
             'mxnet',
             'pytorch-ignite',
             'pytorch-lightning',
+            'scikit-image',
             'scikit-learn',
             # TODO(Yanase): Update examples to support TensorFlow 2.0.
             # See https://github.com/optuna/optuna/issues/565 for further details.
