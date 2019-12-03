@@ -33,16 +33,19 @@ class RandomSampler(BaseSampler):
 
     def __init__(self, seed=None):
         # type: (Optional[int]) -> None
+
         self._rng = numpy.random.RandomState(seed)
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
+
         state = self.__dict__.copy()
         del state['_rng']
         return state
 
     def __setstate__(self, state):
         # type: (Dict[Any, Any]) -> None
+
         self.__dict__.update(state)
         self._rng = numpy.random.RandomState(None)
 

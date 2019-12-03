@@ -38,6 +38,7 @@ parametrize_sampler = pytest.mark.parametrize(
 )
 def test_pickle_random_sampler(seed):
     # type: (Optional[int]) -> None
+
     sampler = optuna.samplers.RandomSampler(seed)
     restored_sampler = pickle.loads(pickle.dumps(sampler))
     assert sampler._rng != restored_sampler._rng

@@ -108,6 +108,7 @@ class RDBStorage(BaseStorage):
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
+
         state = self.__dict__.copy()
         del state['scoped_session']
         del state['engine']
