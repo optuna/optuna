@@ -9,11 +9,13 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
-    from typing import Union  # NOQA
+    from typing import Union
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
+
+    GridValueType = Union[str, float, int, bool, None]
 
 
 class GridSampler(BaseSampler):
@@ -33,11 +35,11 @@ class GridSampler(BaseSampler):
             >>>     y = trial.suggest_int('y', -100, 100)
             >>>     return x ** 2 + y ** 2
             >>>
-            >>> grid = {
+            >>> search_space = {
             >>>     'x': [-50, 0, 50],
             >>>     'y': [-99, 0, 99]
             >>> }
-            >>> study = optuna.create_study(sampler=optuna.samplers.GridSampler(grid))
+            >>> study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space))
             >>> study.optimize(objective)
 
     Note:
@@ -57,23 +59,25 @@ class GridSampler(BaseSampler):
             >>>     return x ** 2
             >>>
             >>> # Non-int points are specified in the grid.
-            >>> grid = {'x': [-0.5, 0.5]}
-            >>> study = optuna.create_study(sampler=optuna.samplers.GridSampler(grid))
+            >>> search_space = {'x': [-0.5, 0.5]}
+            >>> study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space))
             >>> study.optimize(objective)
 
     Args:
-        grid:
+        search_space:
             A dictionary whose key and value are a parameter name and the corresponding candidates
             of values, respectively.
     """
 
     def __init__(self, search_space):
-        # type: (Dict[str, List[Union[str, float, None]]]) -> None
+        # type: (Dict[str, List[GridValueType]]) -> None
 
         for param_name, param_values in search_space.items():
-            search_space[param_name] = [self._cast_value(param_name, value) for value in param_values]
+            search_space[param_name] = [self._cast_value(
+                param_name, value) for value in param_values]
 
-        self._search_space = collections.OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
+        self._search_space = collections.OrderedDict(
+            sorted(search_space.items(), key=lambda x: x[0]))
         self._all_grids = list(itertools.product(*self._search_space.values()))
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
@@ -128,11 +132,11 @@ class GridSampler(BaseSampler):
 
     @staticmethod
     def _cast_value(param_name, param_value):
-        # type: (str, Any) -> Union[str, float, None]
+        # type: (str, Any) -> GridValueType
 
         if param_value is None:
             return None
-        elif isinstance(param_value, str):
+        elif isinstance(param_value, str) or isinstance(param_value, bool):
             return param_value
         else:
             try:
@@ -161,7 +165,7 @@ class GridSampler(BaseSampler):
         return list(unvisited_grids)
 
     def _same_search_space(self, search_space):
-        # type: (Dict[str, List[Union[str, float, None]]]) -> bool
+        # type: (Dict[str, List[GridValueType]]) -> bool
 
         if set(search_space.keys()) != set(self._search_space.keys()):
             return False
