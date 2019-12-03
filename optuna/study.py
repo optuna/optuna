@@ -312,15 +312,13 @@ class Study(BaseStudy):
 
         self._storage.set_study_system_attr(self._study_id, key, value)
 
-    def trials_dataframe(self, include_internal_fields=False):
-        # type: (bool) -> pd.DataFrame
+    def trials_dataframe(self, include_internal_fields=False, multi_index=False):
+        # type: (bool, bool) -> pd.DataFrame
         """Export trials as a pandas DataFrame_.
 
         The DataFrame_ provides various features to analyze studies. It is also useful to draw a
-        histogram of objective values and to export trials as a CSV file. Note that DataFrames
-        returned by :func:`~optuna.study.Study.trials_dataframe()` employ MultiIndex_, and columns
-        have a hierarchical structure. Please refer to the example below to access DataFrame
-        elements. If there are no trials, an empty DataFrame_ is returned.
+        histogram of objective values and to export trials as a CSV file.
+        If there are no trials, an empty DataFrame_ is returned.
 
         Example:
 
@@ -346,6 +344,10 @@ class Study(BaseStudy):
                 By default, internal fields of :class:`~optuna.structs.FrozenTrial` are excluded
                 from a DataFrame of trials. If this argument is :obj:`True`, they will be included
                 in the DataFrame.
+            multi_index:
+                Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that
+                are hierarchical by nature such as ``(params, x)`` will be flattened to
+                ``params_x`` when set to :obj:`False`.
 
         Returns:
             A pandas DataFrame_ of trials in the :class:`~optuna.study.Study`.
@@ -401,7 +403,16 @@ class Study(BaseStudy):
              for k in structs.FrozenTrial._ordered_fields if k in column_agg),
             [])  # type: List[Tuple[str, str]]
 
-        return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+        df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+
+        if not multi_index:
+            # Flatten the `MultiIndex` columns where names are concatenated with underscores.
+            # Filtering is required to omit non-nested columns avoiding unwanted trailing
+            # underscores.
+            df.columns = [
+                '_'.join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns]
+
+        return df
 
     def _append_trial(
             self,

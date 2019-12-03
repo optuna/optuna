@@ -76,6 +76,7 @@ def get_extras_require():
             'chainer',
             'lightgbm',
             'mxnet',
+            'scikit-image',
             'scikit-learn',
             'xgboost',
         ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
