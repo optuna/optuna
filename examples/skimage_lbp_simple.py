@@ -101,7 +101,7 @@ def objective(trial):
     # Get Olivetti faces dataset.
     x_ref, x_test, y_ref, y_test = load_data()
 
-    # We optimzie parameters of local_binary_pattern function in skimage
+    # We optimize parameters of local_binary_pattern function in skimage
     # and the choice of distance metric classes.
     P = trial.suggest_int('P', 1, 15)
     R = trial.suggest_uniform('R', 1, 10)
@@ -119,5 +119,5 @@ def objective(trial):
 
 if __name__ == '__main__':
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=50)
+    study.optimize(objective, n_trials=50, timeout=600)
     print(study.best_trial)
