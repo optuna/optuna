@@ -230,10 +230,10 @@ class ChainerMNTrial(BaseTrial):
         return self._call_with_mpi(func)
 
     def suggest_categorical(self, name, choices):
-        # type: (str, Tuple[Union[float, str], ...]) -> Union[float, str]
+        # type: (str, Sequence[Any]) -> Any
 
         def func():
-            # type: () -> Union[float, str]
+            # type: () -> Any
 
             assert self.delegate is not None
             return self.delegate.suggest_categorical(name, choices)

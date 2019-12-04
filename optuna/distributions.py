@@ -1,12 +1,14 @@
 import abc
 import json
+import warnings
 
+from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import Tuple  # NOQA
+    from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
 
@@ -267,26 +269,35 @@ class CategoricalDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_categorical`, and
     passed to :mod:`~optuna.samplers` in general.
 
+    Args:
+        choices:
+            Parameter value candidates.
+
+    .. note::
+
+        Not all types are guaranteed to be compatible with all storages. It is recommended to
+        restrict the types of the choices to :obj:`None`, :class:`bool`, :class:`float`,
+        :class:`str` and castable to :class:`float`.
+
     Attributes:
         choices:
-            Candidates of parameter values. Candidates must be :class:`float`, :class:`str` and
-            castable to :class:`float`.
+            Parameter value candidates.
     """
 
     def __init__(self, choices):
-        # type: (Tuple[Union[float, str], ...]) -> None
+        # type: (Sequence[Any]) -> None
 
         if len(choices) == 0:
             raise ValueError("The `choices` must contains one or more elements.")
         self.choices = tuple(map(lambda c: self._to_valid_choice(c), choices))
 
     def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> Union[float, str]
+        # type: (float) -> Any
 
         return self.choices[int(param_value_in_internal_repr)]
 
     def to_internal_repr(self, param_value_in_external_repr):
-        # type: (Union[float, str]) -> float
+        # type: (Any) -> float
 
         return self.choices.index(param_value_in_external_repr)
 
@@ -303,17 +314,23 @@ class CategoricalDistribution(BaseDistribution):
 
     @staticmethod
     def _to_valid_choice(choice):
-        # type: (Union[float, str]) -> Union[float, str]
+        # type: (Any) -> Union[None, bool, float, str]
 
-        if isinstance(choice, (float, str)):
+        if choice is None or isinstance(choice, (bool, float, str)):
             return choice
         try:
-            return float(choice)
+            choice = float(choice)
         except TypeError:
-            raise TypeError(
-                "Choices to the categorical distribution must be a tuple of float, str and "
-                "castable to float but contains {} which is of type {}.".format(
-                    choice, type(choice).__name__))
+            message = (
+                "Choices for a categorical distribution should be a tuple of None, bool, float, "
+                "str and castable to float for persistent storage but contains {} which is of "
+                "type {}.".format(choice, type(choice).__name__))
+            warnings.warn(message)
+
+            logger = logging._get_library_root_logger()
+            logger.warning(message)
+
+        return choice
 
 
 DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, DiscreteUniformDistribution,

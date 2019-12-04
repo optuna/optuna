@@ -17,7 +17,6 @@ if optuna.type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
-    from optuna.trial import T  # NOQA
     from optuna.trial import Trial  # NOQA
 
 parametrize_sampler = pytest.mark.parametrize(
@@ -119,7 +118,7 @@ def test_int(sampler_class, distribution):
 @parametrize_sampler
 @pytest.mark.parametrize('choices', [(1, 2, 3), ('a', 'b', 'c'), (1, 'a')])
 def test_categorical(sampler_class, choices):
-    # type: (typing.Callable[[], BaseSampler], typing.Tuple[T, ...]) -> None
+    # type: (typing.Callable[[], BaseSampler], typing.Tuple[Any]) -> None
 
     distribution = CategoricalDistribution(choices)
 

@@ -191,8 +191,8 @@ def test_empty_distribution():
 def test_invalid_distribution():
     # type: () -> None
 
-    with pytest.raises(TypeError):
-        distributions.CategoricalDistribution(choices=[{'foo': 'bar'}])
+    with pytest.warns(UserWarning):
+        distributions.CategoricalDistribution(choices=({'foo': 'bar'},))
 
 
 def test_eq_ne_hash():

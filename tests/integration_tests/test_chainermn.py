@@ -421,9 +421,6 @@ class TestChainerMNTrial(object):
                 x2 = mn_trial.suggest_categorical('x', choices)
                 assert x1 == x2
 
-                with pytest.raises(TypeError):
-                    mn_trial.suggest_categorical('x', [{'foo': 'bar'}])
-
                 with pytest.raises(ValueError):
                     mn_trial.suggest_uniform('x', 0., 1.)
 
