@@ -122,10 +122,10 @@ class GridSampler(BaseSampler):
         param_value = self._all_grids[grid_id][self._param_names.index(param_name)]
         contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))
         if not contains:
-            raise ValueError("The value '{}' is out of range of the parameter '{}'. Please make "
-                             "sure the search space of the GridSampler only contains values "
-                             "consistent with the distribution specified in the objective "
-                             "function. The distribution is: {}."
+            raise ValueError('The value `{}` is out of range of the parameter `{}`. Please make '
+                             'sure the search space of the `GridSampler` only contains values '
+                             'consistent with the distribution specified in the objective '
+                             'function. The distribution is: `{}`.'
                              .format(param_value, param_name, param_distribution))
 
         return param_value
