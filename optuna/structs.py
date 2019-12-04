@@ -120,7 +120,8 @@ class FrozenTrial(object):
     # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
     _ordered_fields = [
         'number', 'state', 'value', 'datetime_start', 'datetime_complete', 'params',
-        '_distributions', 'user_attrs', 'system_attrs', 'intermediate_values', '_trial_id', ]
+        '_distributions', 'user_attrs', 'system_attrs', 'intermediate_values', '_trial_id',
+        'last_step']
 
     def __eq__(self, other):
         # type: (Any) -> bool
@@ -153,11 +154,12 @@ class FrozenTrial(object):
     def __repr__(self):
         # type: () -> str
 
+        fields_for_args = self._ordered_fields[:-1]
         return ('{cls}({kwargs})'.format(
             cls=self.__class__.__name__,
             kwargs=', '.join('{field}={value}'.format(
                 field=field if not field.startswith('_') else field[1:],
-                value=repr(getattr(self, field))) for field in self._ordered_fields)))
+                value=repr(getattr(self, field))) for field in fields_for_args)))
 
     def _validate(self):
         # type: () -> None

@@ -398,6 +398,11 @@ class Study(BaseStudy):
             return record
 
         records = list([_create_record_and_aggregate_column(trial) for trial in trials])
+
+        if 'intermediate_values' not in column_agg:
+            # Remove the last_step column because all the values are None.
+            del column_agg['last_step']
+
         columns = sum(
             (sorted(column_agg[k])
              for k in structs.FrozenTrial._ordered_fields if k in column_agg),

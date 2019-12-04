@@ -495,13 +495,14 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields, mul
             df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-        # Number expected columns are as follows (total of 10):
+        # Number expected columns are as follows (total of 11):
         #   non-nested: 5
         #   params: 2
         #   user_attrs: 1
         #   system_attrs: 1
         #   intermediate_values: 1
-        expected_n_columns = 10
+        #   last_step: 1
+        expected_n_columns = 11
         if include_internal_fields:
             # distributions: 2
             # trial_id: 1
