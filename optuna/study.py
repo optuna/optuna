@@ -280,8 +280,17 @@ class Study(BaseStudy):
                                           gc_after_trial, None)
             else:
                 time_start = datetime.datetime.now()
+                
+                if n_trials is not None:
+                    _iter = range(n_trials)
+                elif timeout is not None:
+                    is_timeout = lambda: (datetime.datetime.now() - time_start).total_seconds() > timeout
+                    _iter = iter(is_timeout, True)
+                else:
+                    # The following expression makes an iterator that never ends.
+                    _iter = iter(int, 1)
+
                 with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
-                    _iter = range(n_trials) if n_trials is not None else iter(int, 0)
                     parallel(
                         delayed(self._optimize_sequential)
                         (func, 1, timeout, catch, callbacks, gc_after_trial, time_start)
