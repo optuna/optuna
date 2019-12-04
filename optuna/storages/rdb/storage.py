@@ -315,7 +315,7 @@ class RDBStorage(BaseStorage):
         trial_user_attribute_models = models.TrialUserAttributeModel.all(session)
         trial_system_attribute_models = models.TrialSystemAttributeModel.all(session)
 
-        study_sumarries = []
+        study_summaries = []
         for study_model in study_models:
             # Filter model objects by study.
             study_trial_models = [t for t in trial_models if t.study_id == study_model.study_id]
@@ -361,7 +361,7 @@ class RDBStorage(BaseStorage):
             system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
             # Consolidate StudySummary.
-            study_sumarries.append(
+            study_summaries.append(
                 structs.StudySummary(
                     study_name=study_model.study_name,
                     direction=self.get_study_direction(study_model.study_id),
@@ -375,7 +375,7 @@ class RDBStorage(BaseStorage):
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
-        return study_sumarries
+        return study_summaries
 
     def create_new_trial(self, study_id, template_trial=None):
         # type: (int, Optional[structs.FrozenTrial]) -> int
