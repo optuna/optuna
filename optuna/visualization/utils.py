@@ -1,6 +1,6 @@
 from optuna.distributions import LogUniformDistribution
 from optuna import type_checking
-from optuna.visualization import _imports
+from optuna.visualization import plotly_imports
 
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
@@ -26,7 +26,7 @@ def is_available():
         :obj:`True` if visualization is available, :obj:`False` otherwise.
     """
 
-    return _imports._available
+    return plotly_imports._available
 
 
 def _check_plotly_availability():
@@ -37,7 +37,7 @@ def _check_plotly_availability():
             'Plotly is not available. Please install plotly to use this feature. '
             'Plotly can be installed by executing `$ pip install plotly`. '
             'For further information, please refer to the installation guide of plotly. '
-            '(The actual import error is as follows: ' + str(_imports._import_error) + ')')
+            '(The actual import error is as follows: ' + str(plotly_imports._import_error) + ')')
 
     from distutils.version import StrictVersion
     from plotly import __version__ as plotly_version

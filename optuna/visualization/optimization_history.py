@@ -8,10 +8,10 @@ from optuna.visualization.utils import is_available
 
 if type_checking.TYPE_CHECKING:
     if is_available():
-        from optuna.visualization._imports import Figure  # NOQA
+        from optuna.visualization.plotly_imports import Figure  # NOQA
 
 if is_available():
-    from optuna.visualization._imports import go
+    from optuna.visualization.plotly_imports import go
 
 logger = get_logger(__name__)
 

@@ -13,12 +13,12 @@ if type_checking.TYPE_CHECKING:
     from optuna.structs import FrozenTrial  # NOQA
 
     if is_available():
-        from optuna.visualization._imports import Figure  # NOQA
-        from optuna.visualization._imports import Scatter  # NOQA
+        from optuna.visualization.plotly_imports import Figure  # NOQA
+        from optuna.visualization.plotly_imports import Scatter  # NOQA
 
 if is_available():
-    from optuna.visualization._imports import go
-    from optuna.visualization._imports import make_subplots
+    from optuna.visualization.plotly_imports import go
+    from optuna.visualization.plotly_imports import make_subplots
 
 logger = get_logger(__name__)
 
