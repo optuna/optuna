@@ -251,7 +251,7 @@ def create_test_storage(enable_cache=True, engine_kwargs=None):
 
 def test_pickle_storage():
     # type: () -> None
-    
+
     storage = create_test_storage()
     restored_storage = pickle.loads(pickle.dumps(storage))
     assert storage.url == restored_storage.url
