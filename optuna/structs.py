@@ -154,6 +154,7 @@ class FrozenTrial(object):
     def __repr__(self):
         # type: () -> str
 
+        # Remove last_step field.
         fields_for_args = self._ordered_fields[:-1]
         return ('{cls}({kwargs})'.format(
             cls=self.__class__.__name__,
