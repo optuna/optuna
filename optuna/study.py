@@ -280,12 +280,14 @@ class Study(BaseStudy):
                                           gc_after_trial, None)
             else:
                 time_start = datetime.datetime.now()
-                
+
                 if n_trials is not None:
-                    _iter = range(n_trials)
+                    _iter = iter(range(n_trials))
                 elif timeout is not None:
-                    is_timeout = lambda: (datetime.datetime.now() - time_start).total_seconds() > timeout
-                    _iter = iter(is_timeout, True)
+                    # This is needed for mypy
+                    actual_timeout = timeout  # type: float
+                    _iter = iter(lambda: (datetime.datetime.now() -
+                                          time_start).total_seconds() > actual_timeout, True)
                 else:
                     # The following expression makes an iterator that never ends.
                     _iter = iter(int, 1)
