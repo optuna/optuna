@@ -1,6 +1,5 @@
-from optuna import type_checking
-
 from optuna.distributions import LogUniformDistribution
+from optuna import type_checking
 from optuna.visualization import _imports
 
 if type_checking.TYPE_CHECKING:
