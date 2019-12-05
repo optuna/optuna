@@ -228,7 +228,7 @@ class FrozenTrial(object):
             'The use of `FrozenTrial.trial_id` is deprecated. '
             'Please use `FrozenTrial.number` instead.', DeprecationWarning)
 
-        logger = logging._get_library_root_logger()
+        logger = logging.get_logger(__name__)
         logger.warning(
             'The use of `FrozenTrial.trial_id` is deprecated. '
             'Please use `FrozenTrial.number` instead.')
@@ -332,7 +332,7 @@ class StudySummary(object):
                   'Please use `StudySummary.study_name` instead.'
         warnings.warn(message, DeprecationWarning)
 
-        logger = logging._get_library_root_logger()
+        logger = logging.get_logger(__name__)
         logger.warning(message)
 
         return self._study_id
