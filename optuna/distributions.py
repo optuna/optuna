@@ -327,7 +327,7 @@ class CategoricalDistribution(BaseDistribution):
                 "type {}.".format(choice, type(choice).__name__))
             warnings.warn(message)
 
-            logger = logging._get_library_root_logger()
+            logger = logging.get_logger(__name__)
             logger.warning(message)
 
         return choice
