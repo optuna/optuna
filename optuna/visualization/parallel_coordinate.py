@@ -14,8 +14,7 @@ if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Optional  # NOQA
 
-    if is_available():
-        from optuna.visualization.plotly_imports import Figure  # NOQA
+    from optuna.visualization.plotly_imports import Figure  # NOQA
 
 if is_available():
     from optuna.visualization.plotly_imports import go

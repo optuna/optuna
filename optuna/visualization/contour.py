@@ -15,11 +15,9 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
 
     from optuna.structs import FrozenTrial  # NOQA
-
-    if is_available():
-        from optuna.visualization.plotly_imports import Contour  # NOQA
-        from optuna.visualization.plotly_imports import Figure  # NOQA
-        from optuna.visualization.plotly_imports import Scatter  # NOQA
+    from optuna.visualization.plotly_imports import Contour  # NOQA
+    from optuna.visualization.plotly_imports import Figure  # NOQA
+    from optuna.visualization.plotly_imports import Scatter  # NOQA
 
 if is_available():
     from optuna.visualization.plotly_imports import go

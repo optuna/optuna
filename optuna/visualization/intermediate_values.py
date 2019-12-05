@@ -6,8 +6,7 @@ from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import is_available
 
 if type_checking.TYPE_CHECKING:
-    if is_available():
-        from optuna.visualization.plotly_imports import Figure  # NOQA
+    from optuna.visualization.plotly_imports import Figure  # NOQA
 
 if is_available():
     from optuna.visualization.plotly_imports import go
