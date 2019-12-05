@@ -276,8 +276,8 @@ class CategoricalDistribution(BaseDistribution):
     .. note::
 
         Not all types are guaranteed to be compatible with all storages. It is recommended to
-        restrict the types of the choices to :obj:`None`, :class:`bool`, :class:`float`,
-        :class:`str` and castable to :class:`float`.
+        restrict the types of the choices to :obj:`None`, :class:`bool`, :class"`int`,
+        :class:`float` and :class:`str`.
 
     Attributes:
         choices:
@@ -289,7 +289,18 @@ class CategoricalDistribution(BaseDistribution):
 
         if len(choices) == 0:
             raise ValueError("The `choices` must contains one or more elements.")
-        self.choices = tuple(map(lambda c: self._to_valid_choice(c), choices))
+        for choice in choices:
+            if choice is not None and not isinstance(choice, (bool, int, float, str)):
+                message = (
+                    "Choices for a categorical distribution should be a tuple of None, bool, "
+                    "int, float and str for persistent storage but contains {} which is of type "
+                    "{}.".format(choice, type(choice).__name__))
+                warnings.warn(message)
+
+                logger = logging._get_library_root_logger()
+                logger.warning(message)
+
+        self.choices = choices
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> Any
@@ -311,26 +322,6 @@ class CategoricalDistribution(BaseDistribution):
 
         index = int(param_value_in_internal_repr)
         return 0 <= index and index < len(self.choices)
-
-    @staticmethod
-    def _to_valid_choice(choice):
-        # type: (Any) -> Union[None, bool, float, str]
-
-        if choice is None or isinstance(choice, (bool, float, str)):
-            return choice
-        try:
-            choice = float(choice)
-        except TypeError:
-            message = (
-                "Choices for a categorical distribution should be a tuple of None, bool, float, "
-                "str and castable to float for persistent storage but contains {} which is of "
-                "type {}.".format(choice, type(choice).__name__))
-            warnings.warn(message)
-
-            logger = logging._get_library_root_logger()
-            logger.warning(message)
-
-        return choice
 
 
 DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, DiscreteUniformDistribution,
