@@ -36,6 +36,19 @@ class RandomSampler(BaseSampler):
 
         self._rng = numpy.random.RandomState(seed)
 
+    def __getstate__(self):
+        # type: () -> Dict[Any, Any]
+
+        state = self.__dict__.copy()
+        del state['_rng']
+        return state
+
+    def __setstate__(self, state):
+        # type: (Dict[Any, Any]) -> None
+
+        self.__dict__.update(state)
+        self._rng = numpy.random.RandomState(None)
+
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 

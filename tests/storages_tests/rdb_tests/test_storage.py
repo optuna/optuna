@@ -1,4 +1,5 @@
 from mock import patch
+import pickle
 import pytest
 import sys
 import tempfile
@@ -246,6 +247,21 @@ def create_test_storage(enable_cache=True, engine_kwargs=None):
                          enable_cache=enable_cache,
                          engine_kwargs=engine_kwargs)
     return storage
+
+
+def test_pickle_storage():
+    # type: () -> None
+
+    storage = create_test_storage()
+    restored_storage = pickle.loads(pickle.dumps(storage))
+    assert storage.url == restored_storage.url
+    assert storage.enable_cache == restored_storage.enable_cache
+    assert storage.engine_kwargs == restored_storage.engine_kwargs
+    assert storage.skip_compatibility_check == restored_storage.skip_compatibility_check
+    assert storage.engine != restored_storage.engine
+    assert storage.scoped_session != restored_storage.scoped_session
+    assert storage._version_manager != restored_storage._version_manager
+    assert storage._finished_trials_cache != restored_storage._finished_trials_cache
 
 
 def test_commit():

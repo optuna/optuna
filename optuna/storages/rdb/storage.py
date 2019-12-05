@@ -83,12 +83,13 @@ class RDBStorage(BaseStorage):
 
         self._check_python_version()
 
-        engine_kwargs = engine_kwargs or {}
-
-        url = self._fill_storage_url_template(url)
+        self.engine_kwargs = engine_kwargs or {}
+        self.url = self._fill_storage_url_template(url)
+        self.enable_cache = enable_cache
+        self.skip_compatibility_check = skip_compatibility_check
 
         try:
-            self.engine = create_engine(url, **engine_kwargs)
+            self.engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError('Failed to import DB access module for the specified storage URL. '
                               'Please install appropriate one. (The actual import error is: ' +
@@ -99,11 +100,40 @@ class RDBStorage(BaseStorage):
 
         self.logger = optuna.logging.get_logger(__name__)
 
-        self._version_manager = _VersionManager(url, self.engine, self.scoped_session)
+        self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
 
         self._finished_trials_cache = _FinishedTrialsCache(enable_cache)
+
+    def __getstate__(self):
+        # type: () -> Dict[Any, Any]
+
+        state = self.__dict__.copy()
+        del state['scoped_session']
+        del state['engine']
+        del state['logger']
+        del state['_version_manager']
+        del state['_finished_trials_cache']
+        return state
+
+    def __setstate__(self, state):
+        # type: (Dict[Any, Any]) -> None
+        self.__dict__.update(state)
+        try:
+            self.engine = create_engine(self.url, **self.engine_kwargs)
+        except ImportError as e:
+            raise ImportError('Failed to import DB access module for the specified storage URL. '
+                              'Please install appropriate one. (The actual import error is: ' +
+                              str(e) + '.)')
+
+        self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
+        models.BaseModel.metadata.create_all(self.engine)
+        self.logger = optuna.logging.get_logger(__name__)
+        self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
+        if not self.skip_compatibility_check:
+            self._version_manager.check_table_schema_compatibility()
+        self._finished_trials_cache = _FinishedTrialsCache(self.enable_cache)
 
     @staticmethod
     def _check_python_version():
@@ -115,7 +145,7 @@ class RDBStorage(BaseStorage):
         if sys.version_info.minor != 4:
             return
 
-        if 0 <= sys.version_info.micro and sys.version_info.micro < 4:
+        if 0 <= sys.version_info.micro < 4:
             raise RuntimeError('RDBStorage does not support Python 3.4.0 to 3.4.3.')
 
     def create_new_study(self, study_name=None):
