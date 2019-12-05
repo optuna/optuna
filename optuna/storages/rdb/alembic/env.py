@@ -1,5 +1,3 @@
-from __future__ import with_statement
-
 from alembic import context
 import logging
 from logging.config import fileConfig

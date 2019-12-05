@@ -1,5 +1,4 @@
 from ignite.engine import Engine
-from mock import Mock
 from mock import patch
 import pytest
 
@@ -27,7 +26,7 @@ def test_pytorch_ignite_pruning_handler():
     trial = create_running_trial(study, 1.0)
 
     handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
-    with patch.object(trainer, 'state', epoch=Mock(return_value=1), metrics={'accuracy': 1}):
+    with patch.object(trainer, 'state', epoch=1, metrics={'accuracy': 1}):
         with pytest.raises(optuna.exceptions.TrialPruned):
             handler(trainer)
 
@@ -36,5 +35,5 @@ def test_pytorch_ignite_pruning_handler():
     trial = create_running_trial(study, 1.0)
 
     handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
-    with patch.object(trainer, 'state', epoch=Mock(return_value=1), metrics={'accuracy': 1}):
+    with patch.object(trainer, 'state', epoch=1, metrics={'accuracy': 1}):
         handler(trainer)

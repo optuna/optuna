@@ -8,7 +8,6 @@ from datetime import datetime
 import json
 import logging
 import os
-import six
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
@@ -79,12 +78,13 @@ class RDBStorage(BaseStorage):
 
         self._check_python_version()
 
-        engine_kwargs = engine_kwargs or {}
-
-        url = self._fill_storage_url_template(url)
+        self.engine_kwargs = engine_kwargs or {}
+        self.url = self._fill_storage_url_template(url)
+        self.enable_cache = enable_cache
+        self.skip_compatibility_check = skip_compatibility_check
 
         try:
-            self.engine = create_engine(url, **engine_kwargs)
+            self.engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError('Failed to import DB access module for the specified storage URL. '
                               'Please install appropriate one. (The actual import error is: ' +
@@ -95,11 +95,40 @@ class RDBStorage(BaseStorage):
 
         self.logger = optuna.logging.get_logger(__name__)
 
-        self._version_manager = _VersionManager(url, self.engine, self.scoped_session)
+        self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
 
         self._finished_trials_cache = _FinishedTrialsCache()
+
+    def __getstate__(self):
+        # type: () -> Dict[Any, Any]
+
+        state = self.__dict__.copy()
+        del state['scoped_session']
+        del state['engine']
+        del state['logger']
+        del state['_version_manager']
+        del state['_finished_trials_cache']
+        return state
+
+    def __setstate__(self, state):
+        # type: (Dict[Any, Any]) -> None
+        self.__dict__.update(state)
+        try:
+            self.engine = create_engine(self.url, **self.engine_kwargs)
+        except ImportError as e:
+            raise ImportError('Failed to import DB access module for the specified storage URL. '
+                              'Please install appropriate one. (The actual import error is: ' +
+                              str(e) + '.)')
+
+        self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
+        models.BaseModel.metadata.create_all(self.engine)
+        self.logger = optuna.logging.get_logger(__name__)
+        self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
+        if not self.skip_compatibility_check:
+            self._version_manager.check_table_schema_compatibility()
+        self._finished_trials_cache = _FinishedTrialsCache(self.enable_cache)
 
     @staticmethod
     def _check_python_version():
@@ -111,7 +140,7 @@ class RDBStorage(BaseStorage):
         if sys.version_info.minor != 4:
             return
 
-        if 0 <= sys.version_info.micro and sys.version_info.micro < 4:
+        if 0 <= sys.version_info.micro < 4:
             raise RuntimeError('RDBStorage does not support Python 3.4.0 to 3.4.3.')
 
     def create_new_study(self, study_name=None):
@@ -311,7 +340,7 @@ class RDBStorage(BaseStorage):
         trial_user_attribute_models = models.TrialUserAttributeModel.all(session)
         trial_system_attribute_models = models.TrialSystemAttributeModel.all(session)
 
-        study_sumarries = []
+        study_summaries = []
         for study_model in study_models:
             # Filter model objects by study.
             study_trial_models = [t for t in trial_models if t.study_id == study_model.study_id]
@@ -357,21 +386,21 @@ class RDBStorage(BaseStorage):
             system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
             # Consolidate StudySummary.
-            study_sumarries.append(
+            study_summaries.append(
                 structs.StudySummary(
-                    study_id=study_model.study_id,
                     study_name=study_model.study_name,
                     direction=self.get_study_direction(study_model.study_id),
                     best_trial=best_trial,
                     user_attrs=self.get_study_user_attrs(study_model.study_id),
                     system_attrs=system_attrs,
                     n_trials=len(study_trial_models),
-                    datetime_start=datetime_start))
+                    datetime_start=datetime_start,
+                    study_id=study_model.study_id))
 
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
-        return study_sumarries
+        return study_summaries
 
     def create_new_trial(self, study_id, template_trial=None):
         # type: (int, Optional[structs.FrozenTrial]) -> int
@@ -790,7 +819,7 @@ class RDBStorage(BaseStorage):
             #
             # This is because `self.get_trial_number_from_id()` may call `session.commit()`
             # internally, which causes unintended changes of the states of `trials`.
-            # (see https://github.com/pfnet/optuna/pull/349#issuecomment-475086642 for details)
+            # (see https://github.com/optuna/optuna/pull/349#issuecomment-475086642 for details)
             trial_number = self.get_trial_number_from_id(temp_trial._trial_id)
             temp_trial.number = trial_number
             result.append(temp_trial)
@@ -832,9 +861,7 @@ class RDBStorage(BaseStorage):
                 'This typically happens due to invalid data in the commit, ' \
                 'e.g. exceeding max length. ' \
                 '(The actual exception is as follows: {})'.format(repr(e))
-            six.reraise(optuna.exceptions.StorageInternalError,
-                        optuna.exceptions.StorageInternalError(message),
-                        sys.exc_info()[2])
+            raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
 
     def remove_session(self):
         # type: () -> None

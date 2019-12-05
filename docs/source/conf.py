@@ -44,6 +44,8 @@ release = __version__
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
@@ -153,5 +155,7 @@ texinfo_documents = [
     (master_doc, 'Optuna', 'Optuna Documentation', author, 'Optuna',
      'One line description of project.', 'Miscellaneous'),
 ]
+
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 # -- Extension configuration -------------------------------------------------

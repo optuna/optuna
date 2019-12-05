@@ -417,7 +417,7 @@ class TestChainerMNTrial(object):
                                                             DeterministicPruner(is_pruning))
             mn_trial = _create_new_chainermn_trial(study, comm)
             mn_trial.report(1.0, 0)
-            assert mn_trial.should_prune(0) == is_pruning
+            assert mn_trial.should_prune() == is_pruning
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -501,7 +501,7 @@ def _create_new_chainermn_trial(study, comm):
     # type: (Study, CommunicatorBase) -> integration.chainermn.ChainerMNTrial
 
     if comm.rank == 0:
-        trial_id = study._storage.create_new_trial(study.study_id)
+        trial_id = study._storage.create_new_trial(study._study_id)
         trial = Trial(study, trial_id)
         mn_trial = integration.chainermn.ChainerMNTrial(trial, comm)
     else:

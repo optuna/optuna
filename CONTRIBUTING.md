@@ -26,7 +26,7 @@ Note that we use comment-style type annotation for compatibility with Python 2.
 * [PEP484](https://www.python.org/dev/peps/pep-0484/)
 * [Syntax cheat sheet](http://mypy.readthedocs.io/en/latest/cheat_sheet.html)
 
-Please see also our [Coding Style Conventions](https://github.com/pfnet/optuna/wiki/Coding-Style-Conventions).
+Please see also our [Coding Style Conventions](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 
 ## Testing
 
@@ -57,11 +57,9 @@ $ circleci build --job tests-python37
 
 You can run tests and examples for each Python version using the following jobs:
 
-- `tests-python27`
 - `tests-python35`
 - `tests-python36`
 - `tests-python37`
-- `examples-python27`
 - `examples-python35`
 - `examples-python36`
 - `examples-python37`

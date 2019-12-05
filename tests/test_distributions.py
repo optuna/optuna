@@ -176,16 +176,16 @@ def test_empty_distribution():
         distributions.UniformDistribution(low=0.0, high=-100.0)
 
     with pytest.raises(ValueError):
-        distributions.LogUniformDistribution(low=7.3, high=7.2),
+        distributions.LogUniformDistribution(low=7.3, high=7.2)
 
     with pytest.raises(ValueError):
-        distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3),
+        distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3)
 
     with pytest.raises(ValueError):
-        distributions.IntUniformDistribution(low=123, high=100),
+        distributions.IntUniformDistribution(low=123, high=100)
 
     with pytest.raises(ValueError):
-        distributions.CategoricalDistribution(choices=()),
+        distributions.CategoricalDistribution(choices=())
 
 
 def test_eq_ne_hash():
@@ -193,21 +193,29 @@ def test_eq_ne_hash():
 
     # Two instances of a class are regarded as equivalent if the fields have the same values.
     for d in EXAMPLE_DISTRIBUTIONS.values():
-        assert d == copy.deepcopy(d)
-        assert hash(d) == hash(copy.deepcopy(d))
+        d_copy = copy.deepcopy(d)
+        assert d == d_copy
+        assert not d != d_copy
+        assert hash(d) == hash(d_copy)
 
     # Different field values.
     d0 = distributions.UniformDistribution(low=1, high=2)
     d1 = distributions.UniformDistribution(low=1, high=3)
     assert d0 != d1
+    assert not d0 == d1
     assert hash(d0) != hash(d1)
 
-    # Different classes.
+    # Different distribution classes.
     d2 = distributions.IntUniformDistribution(low=1, high=2)
     assert d0 != d2
+    assert not d0 == d2
+    assert hash(d0) != hash(d2)
 
-    # In the implementation of `__hash__`, only attributes are considered.
-    assert hash(d0) == hash(d2)
+    # Different types.
+    assert d0 != 1
+    assert not d0 == 1
+    assert d0 != 'foo'
+    assert not d0 == 'foo'
 
 
 def test_repr():
