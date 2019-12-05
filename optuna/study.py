@@ -44,6 +44,9 @@ if type_checking.TYPE_CHECKING:
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
+logger = logging.get_logger(__name__)
+
+
 class BaseStudy(object):
     def __init__(self, study_id, storage):
         # type: (int, storages.BaseStorage) -> None
@@ -130,7 +133,6 @@ class BaseStudy(object):
                       "(e.g., `Study.set_user_attr`)",
                       DeprecationWarning)
 
-        logger = logging.get_logger(__name__)
         logger.warning("The direct use of storage is deprecated. "
                        "Please access to storage via study's public methods "
                        "(e.g., `Study.set_user_attr`)")
@@ -167,15 +169,12 @@ class Study(BaseStudy):
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        self.logger = logging.get_logger(__name__)
-
         self._optimize_lock = threading.Lock()
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
-        del state['logger']
         del state['_optimize_lock']
         return state
 
@@ -183,7 +182,6 @@ class Study(BaseStudy):
         # type: (Dict[Any, Any]) -> None
 
         self.__dict__.update(state)
-        self.logger = logging.get_logger(__name__)
         self._optimize_lock = threading.Lock()
 
     @property
@@ -202,7 +200,7 @@ class Study(BaseStudy):
         message = 'The use of `Study.study_id` is deprecated. ' \
                   'Please use `Study.study_name` instead.'
         warnings.warn(message, DeprecationWarning)
-        self.logger.warning(message)
+        logger.warning(message)
 
         return self._study_id
 
@@ -580,13 +578,13 @@ class Study(BaseStudy):
             message = 'Setting status of trial#{} as {}. {}'.format(trial_number,
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
-            self.logger.info(message)
+            logger.info(message)
             self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
         except Exception as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
                 .format(trial_number, structs.TrialState.FAIL, repr(e))
-            self.logger.warning(message, exc_info=True)
+            logger.warning(message, exc_info=True)
             self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
 
@@ -610,7 +608,7 @@ class Study(BaseStudy):
             message = 'Setting status of trial#{} as {} because the returned value from the ' \
                       'objective function cannot be casted to float. Returned value is: ' \
                       '{}'.format(trial_number, structs.TrialState.FAIL, repr(result))
-            self.logger.warning(message)
+            logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
@@ -618,7 +616,7 @@ class Study(BaseStudy):
         if math.isnan(result):
             message = 'Setting status of trial#{} as {} because the objective function ' \
                       'returned {}.'.format(trial_number, structs.TrialState.FAIL, result)
-            self.logger.warning(message)
+            logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
@@ -632,9 +630,9 @@ class Study(BaseStudy):
     def _log_completed_trial(self, trial_number, value):
         # type: (int, float) -> None
 
-        self.logger.info('Finished trial#{} resulted in value: {}. '
-                         'Current best value is {} with parameters: {}.'.format(
-                             trial_number, value, self.best_value, self.best_params))
+        logger.info('Finished trial#{} resulted in value: {}. '
+                    'Current best value is {} with parameters: {}.'.format(
+                        trial_number, value, self.best_value, self.best_params))
 
 
 def create_study(
@@ -697,7 +695,6 @@ def create_study(
         if load_if_exists:
             assert study_name is not None
 
-            logger = logging.get_logger(__name__)
             logger.info("Using an existing study with name '{}' instead of "
                         "creating a new one.".format(study_name))
             study_id = storage.get_study_id_from_name(study_name)
