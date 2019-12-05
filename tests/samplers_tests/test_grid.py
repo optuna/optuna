@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import itertools
 import numpy as np
 import pytest
@@ -6,6 +7,7 @@ import optuna
 from optuna import samplers
 
 if optuna.type_checking.TYPE_CHECKING:
+    from collections import ValuesView  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Union  # NOQA
@@ -39,19 +41,24 @@ def test_study_optimize_with_single_search_space():
 
     # Test that all combinations of the grid is sampled.
     search_space = {
-        'a': list(range(0, 100, 20)),
         'b': np.arange(-0.1, 0.1, 0.05),
         'c': ['x', 'y'],
         'd': [-0.5, 0.5],
-        'e': [0.1]
+        'e': [0.1],
+        'a': list(range(0, 100, 20)),
     }
     n_grids = _n_grids(search_space)
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
     study.optimize(objective, n_trials=n_grids)
 
-    grid_product = itertools.product(*search_space.values())
-    all_suggested_values = [tuple([p for p in t.params.values()]) for t in study.trials]
-    assert set(grid_product) == set(all_suggested_values)
+    def sorted_values(d):
+        # type: (Dict[str, List[GridValueType]]) -> ValuesView[List[GridValueType]]
+
+        return OrderedDict(sorted(d.items())).values()
+
+    all_grids = itertools.product(*sorted_values(search_space))
+    all_suggested_values = [tuple([p for p in sorted_values(t.params)]) for t in study.trials]
+    assert set(all_grids) == set(all_suggested_values)
 
     ids = sorted([t.system_attrs['grid_id'] for t in study.trials])
     assert ids == list(range(n_grids))

@@ -46,15 +46,15 @@ class GridSampler(BaseSampler):
 
         :class:`~optuna.samplers.GridSampler` does not take care of a parameter's quantization
         specified by discrete suggest methods but just samples one of values specified in the
-        grid. E.g., in the following code snippet, either of ``-0.5`` or ``0.5`` is sampled as
-        ``x`` instead of an integer point.
+        search space. E.g., in the following code snippet, either of ``-0.5`` or ``0.5`` is
+        sampled as ``x`` instead of an integer point.
 
         .. code::
 
             >>> import optuna
             >>>
             >>> def objective(trial):
-            >>>     # The following suggest method specifies an integer point between -5 and 5.
+            >>>     # The following suggest method specifies integer points between -5 and 5.
             >>>     x = trial.suggest_discrete_uniform('x' -5, 5, 1)
             >>>     return x ** 2
             >>>
