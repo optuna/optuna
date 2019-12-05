@@ -80,7 +80,6 @@ class RDBStorage(BaseStorage):
 
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
-        self.enable_cache = enable_cache
         self.skip_compatibility_check = skip_compatibility_check
 
         try:
@@ -128,7 +127,7 @@ class RDBStorage(BaseStorage):
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not self.skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
-        self._finished_trials_cache = _FinishedTrialsCache(self.enable_cache)
+        self._finished_trials_cache = _FinishedTrialsCache()
 
     @staticmethod
     def _check_python_version():

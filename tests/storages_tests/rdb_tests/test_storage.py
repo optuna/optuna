@@ -253,7 +253,6 @@ def test_pickle_storage():
     storage = create_test_storage()
     restored_storage = pickle.loads(pickle.dumps(storage))
     assert storage.url == restored_storage.url
-    assert storage.enable_cache == restored_storage.enable_cache
     assert storage.engine_kwargs == restored_storage.engine_kwargs
     assert storage.skip_compatibility_check == restored_storage.skip_compatibility_check
     assert storage.engine != restored_storage.engine
