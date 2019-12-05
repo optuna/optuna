@@ -20,6 +20,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
 
@@ -230,10 +231,10 @@ class ChainerMNTrial(BaseTrial):
         return self._call_with_mpi(func)
 
     def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[Any]) -> Any
+        # type: (str, Sequence[CategoricalChoiceType]) -> Any
 
         def func():
-            # type: () -> Any
+            # type: () -> CategoricalChoiceType
 
             assert self.delegate is not None
             return self.delegate.suggest_categorical(name, choices)

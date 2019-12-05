@@ -11,6 +11,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
+    CategoricalChoiceType = Union[None, bool, int, float, str]
+
 
 class BaseDistribution(object, metaclass=abc.ABCMeta):
     """Base class for distributions.
@@ -285,7 +287,7 @@ class CategoricalDistribution(BaseDistribution):
     """
 
     def __init__(self, choices):
-        # type: (Sequence[Any]) -> None
+        # type: (Sequence[CategoricalChoiceType]) -> None
 
         if len(choices) == 0:
             raise ValueError("The `choices` must contains one or more elements.")
@@ -303,12 +305,12 @@ class CategoricalDistribution(BaseDistribution):
         self.choices = choices
 
     def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> Any
+        # type: (float) -> CategoricalChoiceType
 
         return self.choices[int(param_value_in_internal_repr)]
 
     def to_internal_repr(self, param_value_in_external_repr):
-        # type: (Any) -> float
+        # type: (CategoricalChoiceType) -> float
 
         return self.choices.index(param_value_in_external_repr)
 
