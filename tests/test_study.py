@@ -510,7 +510,7 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields, mul
 
         for i in range(3):
             assert df.number[i] == i
-            assert df.state[i] == optuna.structs.TrialState.COMPLETE
+            assert df.state[i] == 'COMPLETE'
             assert df.value[i] == 3.5
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
@@ -563,7 +563,7 @@ def test_trials_dataframe_with_failure(storage_mode, cache_mode):
         assert len(df.columns) == 10
         for i in range(3):
             assert df.number[i] == i
-            assert df.state[i] == optuna.structs.TrialState.FAIL
+            assert df.state[i] == 'FAIL'
             assert df.value[i] is None
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
