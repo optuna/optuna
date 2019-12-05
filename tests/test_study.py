@@ -9,6 +9,7 @@ import pytest
 import threading
 import time
 import uuid
+import warnings
 
 import optuna
 from optuna.testing.storage import StorageSupplier
@@ -336,7 +337,7 @@ def test_get_all_study_summaries(storage_mode, cache_mode):
         study.optimize(Func(), n_trials=5)
 
         summaries = optuna.get_all_study_summaries(study._storage)
-        summary = [s for s in summaries if s.study_id == study.study_id][0]
+        summary = [s for s in summaries if s._study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 5
@@ -351,7 +352,7 @@ def test_get_all_study_summaries_with_no_trials(storage_mode, cache_mode):
         study = optuna.create_study(storage=storage)
 
         summaries = optuna.get_all_study_summaries(study._storage)
-        summary = [s for s in summaries if s.study_id == study.study_id][0]
+        summary = [s for s in summaries if s._study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 0
@@ -465,8 +466,9 @@ def test_study_trials_dataframe_with_no_trials():
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('cache_mode', CACHE_MODES)
 @pytest.mark.parametrize('include_internal_fields', [True, False])
-def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
-    # type: (str, bool, bool) -> None
+@pytest.mark.parametrize('multi_index', [True, False])
+def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields, multi_index):
+    # type: (str, bool, bool, bool) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
@@ -474,22 +476,37 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
         x = trial.suggest_int('x', 1, 1)
         y = trial.suggest_categorical('y', (2.5, ))
         trial.set_user_attr('train_loss', 3)
-        return x + y  # 3.5
+        value = x + y  # 3.5
+
+        # Test reported intermediate values, although it in practice is not "intermediate".
+        trial.report(value, step=0)
+
+        return value
 
     with StorageSupplier(storage_mode, cache_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
-        df = study.trials_dataframe(include_internal_fields=include_internal_fields)
+        df = study.trials_dataframe(
+            include_internal_fields=include_internal_fields, multi_index=multi_index)
         # Change index to access rows via trial number.
-        df.set_index(('number', ''), inplace=True, drop=False)
+        if multi_index:
+            df.set_index(('number', ''), inplace=True, drop=False)
+        else:
+            df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-        # non-nested: 5, params: 2, user_attrs: 1, system_attrs: 1 and 9 in total.
+        # Number expected columns are as follows (total of 10):
+        #   non-nested: 5
+        #   params: 2
+        #   user_attrs: 1
+        #   system_attrs: 1
+        #   intermediate_values: 1
+        expected_n_columns = 10
         if include_internal_fields:
-            # distributions:2, trial_id: 1
-            assert len(df.columns) == 7 + 5
-        else:
-            assert len(df.columns) == 9
+            # distributions: 2
+            # trial_id: 1
+            expected_n_columns += 3
+        assert len(df.columns) == expected_n_columns
 
         for i in range(3):
             assert df.number[i] == i
@@ -497,16 +514,27 @@ def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
             assert df.value[i] == 3.5
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
-            assert df.params.x[i] == 1
-            assert df.params.y[i] == 2.5
-            assert df.user_attrs.train_loss[i] == 3
-            assert df.system_attrs._number[i] == i
-            if include_internal_fields:
-                assert ('distributions', 'x') in df.columns
-                assert ('distributions', 'y') in df.columns
-                assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
-                assert ('distributions', 'x') in df.columns
-                assert ('distributions', 'y') in df.columns
+
+            if multi_index:
+                if include_internal_fields:
+                    assert ('distributions', 'x') in df.columns
+                    assert ('distributions', 'y') in df.columns
+                    assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
+
+                assert df.params.x[i] == 1
+                assert df.params.y[i] == 2.5
+                assert df.user_attrs.train_loss[i] == 3
+                assert df.system_attrs._number[i] == i
+            else:
+                if include_internal_fields:
+                    assert 'distributions_x' in df.columns
+                    assert 'distributions_y' in df.columns
+                    assert 'trial_id' in df.columns  # trial_id depends on other tests.
+
+                assert df.params_x[i] == 1
+                assert df.params_y[i] == 2.5
+                assert df.user_attrs_train_loss[i] == 3
+                assert df.system_attrs__number[i] == i
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -528,7 +556,7 @@ def test_trials_dataframe_with_failure(storage_mode, cache_mode):
         study.optimize(f, n_trials=3, catch=(ValueError,))
         df = study.trials_dataframe()
         # Change index to access rows via trial number.
-        df.set_index(('number', ''), inplace=True, drop=False)
+        df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
         # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 2
@@ -539,11 +567,11 @@ def test_trials_dataframe_with_failure(storage_mode, cache_mode):
             assert df.value[i] is None
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
-            assert df.params.x[i] == 1
-            assert df.params.y[i] == 2.5
-            assert df.user_attrs.train_loss[i] == 3
-            assert df.system_attrs._number[i] == i
-            assert ('system_attrs', 'fail_reason') in df.columns
+            assert df.params_x[i] == 1
+            assert df.params_y[i] == 2.5
+            assert df.user_attrs_train_loss[i] == 3
+            assert df.system_attrs__number[i] == i
+            assert 'system_attrs_fail_reason' in df.columns
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -590,7 +618,7 @@ def test_load_study(storage_mode, cache_mode):
 
         # Test loading an existing study.
         loaded_study = optuna.study.load_study(study_name=study_name, storage=storage)
-        assert created_study.study_id == loaded_study.study_id
+        assert created_study._study_id == loaded_study._study_id
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -758,3 +786,16 @@ def test_callbacks(n_jobs):
             study.optimize(lambda t: 1/0, callbacks=callbacks,
                            n_trials=10, n_jobs=n_jobs, catch=())
         assert states == []
+
+
+def test_study_id():
+    # type: () -> None
+
+    study = optuna.create_study()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        assert study.study_id == study._study_id
+
+    with pytest.warns(DeprecationWarning):
+        study.study_id

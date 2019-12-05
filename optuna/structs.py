@@ -1,17 +1,16 @@
-from datetime import datetime
 import enum
 import warnings
-
-from typing import Any
-from typing import Dict
-from typing import NamedTuple
-from typing import Optional
 
 from optuna import exceptions
 from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    from datetime import datetime  # NOQA
+    from typing import Any  # NOQA
+    from typing import Dict  # NOQA
+    from typing import Optional  # NOQA
+
     from optuna.distributions import BaseDistribution  # NOQA
 
 
@@ -127,14 +126,25 @@ class FrozenTrial(object):
     def __eq__(self, other):
         # type: (Any) -> bool
 
-        if isinstance(other, type(self)):
-            return other.__dict__ == self.__dict__
-        return False
+        if not isinstance(other, FrozenTrial):
+            return NotImplemented
+        return other.__dict__ == self.__dict__
 
-    def __ne__(self, other):
+    def __lt__(self, other):
         # type: (Any) -> bool
 
-        return not self.__eq__(other)
+        if not isinstance(other, FrozenTrial):
+            return NotImplemented
+
+        return self.number < other.number
+
+    def __le__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, FrozenTrial):
+            return NotImplemented
+
+        return self.number <= other.number
 
     def __hash__(self):
         # type: () -> int
@@ -219,7 +229,7 @@ class FrozenTrial(object):
             'The use of `FrozenTrial.trial_id` is deprecated. '
             'Please use `FrozenTrial.number` instead.', DeprecationWarning)
 
-        logger = logging._get_library_root_logger()
+        logger = logging.get_logger(__name__)
         logger.warning(
             'The use of `FrozenTrial.trial_id` is deprecated. '
             'Please use `FrozenTrial.number` instead.')
@@ -236,20 +246,12 @@ class FrozenTrial(object):
             return max(self.intermediate_values.keys())
 
 
-class StudySummary(
-        NamedTuple('StudySummary', [('study_id', int), ('study_name', str),
-                                    ('direction', StudyDirection),
-                                    ('best_trial', Optional[FrozenTrial]),
-                                    ('user_attrs', Dict[str, Any]),
-                                    ('system_attrs', Dict[str, Any]), ('n_trials', int),
-                                    ('datetime_start', Optional[datetime])])):
+class StudySummary(object):
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
 
     See also :func:`optuna.study.get_all_study_summaries`.
 
     Attributes:
-        study_id:
-            Identifier of the :class:`~optuna.study.Study`.
         study_name:
             Name of the :class:`~optuna.study.Study`.
         direction:
@@ -267,6 +269,74 @@ class StudySummary(
         datetime_start:
             Datetime where the :class:`~optuna.study.Study` started.
     """
+
+    def __init__(
+            self,
+            study_name,  # type: str
+            direction,  # type: StudyDirection
+            best_trial,  # type: Optional[FrozenTrial]
+            user_attrs,  # type: Dict[str, Any]
+            system_attrs,  # type: Dict[str, Any]
+            n_trials,  # type: int
+            datetime_start,  # type: Optional[datetime]
+            study_id,  # type: int
+    ):
+        # type: (...) -> None
+
+        self.study_name = study_name
+        self.direction = direction
+        self.best_trial = best_trial
+        self.user_attrs = user_attrs
+        self.system_attrs = system_attrs
+        self.n_trials = n_trials
+        self.datetime_start = datetime_start
+        self._study_id = study_id
+
+    def __eq__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, StudySummary):
+            return NotImplemented
+
+        return other.__dict__ == self.__dict__
+
+    def __lt__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, StudySummary):
+            return NotImplemented
+
+        return self._study_id < other._study_id
+
+    def __le__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, StudySummary):
+            return NotImplemented
+
+        return self._study_id <= other._study_id
+
+    @property
+    def study_id(self):
+        # type: () -> int
+        """Return the study ID.
+
+        .. deprecated:: 0.20.0
+            The direct use of this attribute is deprecated and it is recommended that you use
+            :attr:`~optuna.structs.StudySummary.study_name` instead.
+
+        Returns:
+            The study ID.
+        """
+
+        message = 'The use of `StudySummary.study_id` is deprecated. ' \
+                  'Please use `StudySummary.study_name` instead.'
+        warnings.warn(message, DeprecationWarning)
+
+        logger = logging.get_logger(__name__)
+        logger.warning(message)
+
+        return self._study_id
 
 
 class TrialPruned(exceptions.TrialPruned):

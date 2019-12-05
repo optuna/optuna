@@ -16,6 +16,8 @@ import sklearn.ensemble
 import sklearn.model_selection
 import sklearn.svm
 
+import optuna
+
 
 # FYI: Objective functions can take additional arguments
 # (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
@@ -38,7 +40,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    import optuna
     study = optuna.create_study(
         direction='maximize',
         study_name='kubernetes',

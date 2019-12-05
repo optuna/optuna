@@ -57,11 +57,9 @@ $ circleci build --job tests-python37
 
 You can run tests and examples for each Python version using the following jobs:
 
-- `tests-python27`
 - `tests-python35`
 - `tests-python36`
 - `tests-python37`
-- `examples-python27`
 - `examples-python35`
 - `examples-python36`
 - `examples-python37`

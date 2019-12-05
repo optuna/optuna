@@ -19,11 +19,11 @@ We have the following two ways to execute this example:
 
 """
 
-from __future__ import print_function
-
 import logging
 import mxnet as mx
 import numpy as np
+
+import optuna
 
 
 N_TRAIN_EXAMPLES = 3000
@@ -108,7 +108,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    import optuna
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)
 

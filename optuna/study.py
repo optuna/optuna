@@ -3,8 +3,6 @@ import copy
 import datetime
 import gc
 import math
-import multiprocessing
-import multiprocessing.pool
 
 try:
     import pandas as pd  # NOQA
@@ -14,10 +12,11 @@ except ImportError as e:
     # trials_dataframe is disabled because pandas is not available.
     _pandas_available = False
 
-from six.moves import queue
 import threading
-import time
 import warnings
+
+from joblib import delayed
+from joblib import Parallel
 
 from optuna import exceptions
 from optuna import logging
@@ -29,7 +28,6 @@ from optuna import trial as trial_module
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from multiprocessing import Queue  # NOQA
     from typing import Any  # NOQA
     from typing import Callable
     from typing import Dict  # NOQA
@@ -49,7 +47,7 @@ class BaseStudy(object):
     def __init__(self, study_id, storage):
         # type: (int, storages.BaseStorage) -> None
 
-        self.study_id = study_id
+        self._study_id = study_id
         self._storage = storage
 
     @property
@@ -86,7 +84,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.FrozenTrial` object of the best trial.
         """
 
-        return self._storage.get_best_trial(self.study_id)
+        return self._storage.get_best_trial(self._study_id)
 
     @property
     def direction(self):
@@ -97,7 +95,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.StudyDirection` object.
         """
 
-        return self._storage.get_study_direction(self.study_id)
+        return self._storage.get_study_direction(self._study_id)
 
     @property
     def trials(self):
@@ -110,7 +108,7 @@ class BaseStudy(object):
             A list of :class:`~optuna.structs.FrozenTrial` objects.
         """
 
-        return self._storage.get_all_trials(self.study_id)
+        return self._storage.get_all_trials(self._study_id)
 
     @property
     def storage(self):
@@ -188,6 +186,26 @@ class Study(BaseStudy):
         self._optimize_lock = threading.Lock()
 
     @property
+    def study_id(self):
+        # type: () -> int
+        """Return the study ID.
+
+        .. deprecated:: 0.20.0
+            The direct use of this attribute is deprecated and it is recommended that you use
+            :attr:`~optuna.study.Study.study_name` instead.
+
+        Returns:
+            The study ID.
+        """
+
+        message = 'The use of `Study.study_id` is deprecated. ' \
+                  'Please use `Study.study_name` instead.'
+        warnings.warn(message, DeprecationWarning)
+        self.logger.warning(message)
+
+        return self._study_id
+
+    @property
     def user_attrs(self):
         # type: () -> Dict[str, Any]
         """Return user attributes.
@@ -196,7 +214,7 @@ class Study(BaseStudy):
             A dictionary containing all user attributes.
         """
 
-        return self._storage.get_study_user_attrs(self.study_id)
+        return self._storage.get_study_user_attrs(self._study_id)
 
     @property
     def system_attrs(self):
@@ -207,7 +225,7 @@ class Study(BaseStudy):
             A dictionary containing all system attributes.
         """
 
-        return self._storage.get_study_system_attrs(self.study_id)
+        return self._storage.get_study_system_attrs(self._study_id)
 
     def optimize(
             self,
@@ -237,7 +255,7 @@ class Study(BaseStudy):
                 termination signal such as Ctrl+C or SIGTERM.
             n_jobs:
                 The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
-                set to CPU counts.
+                set to CPU count.
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
@@ -250,19 +268,37 @@ class Study(BaseStudy):
                 memory is safely managed in your objective function.
         """
 
-        if not self._optimize_lock.acquire(False):
-            raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
         if not isinstance(catch, tuple):
             raise TypeError("The catch argument is of type \'{}\' but must be a tuple.".format(
                 type(catch).__name__))
 
+        if not self._optimize_lock.acquire(False):
+            raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
+
         try:
             if n_jobs == 1:
                 self._optimize_sequential(func, n_trials, timeout, catch, callbacks,
-                                          gc_after_trial)
+                                          gc_after_trial, None)
             else:
-                self._optimize_parallel(func, n_trials, timeout, n_jobs, catch, callbacks,
-                                        gc_after_trial)
+                time_start = datetime.datetime.now()
+
+                if n_trials is not None:
+                    _iter = iter(range(n_trials))
+                elif timeout is not None:
+                    # This is needed for mypy
+                    actual_timeout = timeout  # type: float
+                    _iter = iter(lambda: (datetime.datetime.now() -
+                                          time_start).total_seconds() > actual_timeout, True)
+                else:
+                    # The following expression makes an iterator that never ends.
+                    _iter = iter(int, 1)
+
+                with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
+                    parallel(
+                        delayed(self._optimize_sequential)
+                        (func, 1, timeout, catch, callbacks, gc_after_trial, time_start)
+                        for _ in _iter
+                    )
         finally:
             self._optimize_lock.release()
 
@@ -276,7 +312,7 @@ class Study(BaseStudy):
 
         """
 
-        self._storage.set_study_user_attr(self.study_id, key, value)
+        self._storage.set_study_user_attr(self._study_id, key, value)
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
@@ -291,34 +327,44 @@ class Study(BaseStudy):
 
         """
 
-        self._storage.set_study_system_attr(self.study_id, key, value)
+        self._storage.set_study_system_attr(self._study_id, key, value)
 
-    def trials_dataframe(self, include_internal_fields=False):
-        # type: (bool) -> pd.DataFrame
+    def trials_dataframe(self, include_internal_fields=False, multi_index=False):
+        # type: (bool, bool) -> pd.DataFrame
         """Export trials as a pandas DataFrame_.
 
         The DataFrame_ provides various features to analyze studies. It is also useful to draw a
-        histogram of objective values and to export trials as a CSV file. Note that DataFrames
-        returned by :func:`~optuna.study.Study.trials_dataframe()` employ MultiIndex_, and columns
-        have a hierarchical structure. Please refer to the example below to access DataFrame
-        elements. If there are no trials, an empty DataFrame_ is returned.
+        histogram of objective values and to export trials as a CSV file.
+        If there are no trials, an empty DataFrame_ is returned.
 
         Example:
 
-            Get an objective value and a value of parameter ``x`` in the first row.
+            .. testcode::
 
-            >>> df = study.trials_dataframe()
-            >>> df
-            >>> df.value[0]
-            0.0
-            >>> df.params.x[0]
-            1.0
+                import optuna
+                import pandas
+
+                def objective(trial):
+                    x = trial.suggest_uniform('x', -1, 1)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
+                # Create a dataframe from the study.
+                df = study.trials_dataframe()
+                assert isinstance(df, pandas.DataFrame)
+                assert df.shape[0] == 3  # n_trials.
 
         Args:
             include_internal_fields:
                 By default, internal fields of :class:`~optuna.structs.FrozenTrial` are excluded
                 from a DataFrame of trials. If this argument is :obj:`True`, they will be included
                 in the DataFrame.
+            multi_index:
+                Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that
+                are hierarchical by nature such as ``(params, x)`` will be flattened to
+                ``params_x`` when set to :obj:`False`.
 
         Returns:
             A pandas DataFrame_ of trials in the :class:`~optuna.study.Study`.
@@ -374,7 +420,16 @@ class Study(BaseStudy):
              for k in structs.FrozenTrial._ordered_fields if k in column_agg),
             [])  # type: List[Tuple[str, str]]
 
-        return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+        df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+
+        if not multi_index:
+            # Flatten the `MultiIndex` columns where names are concatenated with underscores.
+            # Filtering is required to omit non-nested columns avoiding unwanted trailing
+            # underscores.
+            df.columns = [
+                '_'.join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns]
+
+        return df
 
     def enqueue_trial(
             self,
@@ -430,7 +485,7 @@ class Study(BaseStudy):
 
         trial._validate()
 
-        self.storage.create_new_trial(self.study_id, template_trial=trial)
+        self._storage.create_new_trial(self._study_id, template_trial=trial)
 
     def _optimize_sequential(
             self,
@@ -439,12 +494,16 @@ class Study(BaseStudy):
             timeout,  # type: Optional[float]
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            gc_after_trial  # type: bool
+            gc_after_trial,  # type: bool
+            time_start  # type: Optional[datetime.datetime]
     ):
         # type: (...) -> None
 
         i_trial = 0
-        time_start = datetime.datetime.now()
+
+        if time_start is None:
+            time_start = datetime.datetime.now()
+
         while True:
             if n_trials is not None:
                 if i_trial >= n_trials:
@@ -457,72 +516,7 @@ class Study(BaseStudy):
                     break
 
             self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
-
-    def _optimize_parallel(
-            self,
-            func,  # type: ObjectiveFuncType
-            n_trials,  # type: Optional[int]
-            timeout,  # type: Optional[float]
-            n_jobs,  # type: int
-            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            gc_after_trial  # type: bool
-    ):
-        # type: (...) -> None
-
-        self.start_datetime = datetime.datetime.now()
-
-        if n_jobs == -1:
-            n_jobs = multiprocessing.cpu_count()
-
-        if n_trials is not None:
-            # The number of threads needs not to be larger than trials.
-            n_jobs = min(n_jobs, n_trials)
-
-            if n_trials == 0:
-                return  # When n_jobs is zero, ThreadPool fails.
-
-        pool = multiprocessing.pool.ThreadPool(n_jobs)  # type: ignore
-
-        # A queue is passed to each thread. When True is received, then the thread continues
-        # the evaluation. When False is received, then it quits.
-        def func_child_thread(que):
-            # type: (Queue) -> None
-
-            while que.get():
-                self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
-            self._storage.remove_session()
-
-        que = multiprocessing.Queue(maxsize=n_jobs)  # type: ignore
-        for _ in range(n_jobs):
-            que.put(True)
-        n_enqueued_trials = n_jobs
-        imap_ite = pool.imap(func_child_thread, [que] * n_jobs, chunksize=1)
-
-        while True:
-            if timeout is not None:
-                elapsed_timedelta = datetime.datetime.now() - self.start_datetime
-                elapsed_seconds = elapsed_timedelta.total_seconds()
-                if elapsed_seconds > timeout:
-                    break
-
-            if n_trials is not None:
-                if n_enqueued_trials >= n_trials:
-                    break
-
-            try:
-                que.put_nowait(True)
-                n_enqueued_trials += 1
-            except queue.Full:
-                time.sleep(1)
-
-        for _ in range(n_jobs):
-            que.put(False)
-
-        collections.deque(imap_ite, maxlen=0)  # Consume the iterator to wait for all threads.
-        pool.terminate()
-        que.close()
-        que.join_thread()
+        self._storage.remove_session()
 
     def _pop_waiting_trial_id(self):
         # type: () -> Optional[int]
@@ -564,8 +558,7 @@ class Study(BaseStudy):
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
-            trial_id = self.storage.create_new_trial(self.study_id)
-
+            trial_id = self._storage.create_new_trial(self._study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 

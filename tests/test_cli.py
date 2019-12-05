@@ -277,7 +277,8 @@ def test_study_optimize_command():
         assert 'x' in study.best_params
 
         # Check if a default value of study_name is stored in the storage.
-        assert storage.get_study_name_from_id(study.study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
+        assert storage.get_study_name_from_id(
+            study._study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
 
 
 def test_study_optimize_command_inconsistent_args():

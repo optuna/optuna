@@ -11,12 +11,12 @@ You can run this example as follows:
 
 """
 
-from __future__ import print_function
 import logging
 
 import mxnet as mx
 import numpy as np
 
+import optuna
 from optuna.integration import MXNetPruningCallback
 
 
@@ -104,7 +104,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    import optuna
     study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
     study.optimize(objective, n_trials=100, timeout=600)
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]

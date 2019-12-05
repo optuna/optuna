@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 import pytest
 
 import optuna
@@ -13,6 +14,7 @@ if optuna.type_checking.TYPE_CHECKING:
     import typing  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
+    from typing import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
@@ -28,6 +30,19 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.integration.SkoptSampler(skopt_kwargs={'n_initial_points': 1}),
         lambda: optuna.integration.CmaEsSampler()
     ])
+
+
+@pytest.mark.parametrize(
+    'seed',
+    [None, 0, 169208]
+)
+def test_pickle_random_sampler(seed):
+    # type: (Optional[int]) -> None
+
+    sampler = optuna.samplers.RandomSampler(seed)
+    restored_sampler = pickle.loads(pickle.dumps(sampler))
+    assert sampler._rng != restored_sampler._rng
+    assert sampler._rng.bytes(10) != restored_sampler._rng.bytes(10)
 
 
 @parametrize_sampler
@@ -144,7 +159,7 @@ def test_categorical(sampler_class, choices):
 def _create_new_trial(study):
     # type: (Study) -> FrozenTrial
 
-    trial_id = study._storage.create_new_trial(study.study_id)
+    trial_id = study._storage.create_new_trial(study._study_id)
     return study._storage.get_trial(trial_id)
 
 

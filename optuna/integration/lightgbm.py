@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import sys
 
 import optuna
@@ -97,14 +96,14 @@ class LightGBMPruningCallback(object):
                 continue
 
             if is_higher_better:
-                if self._trial.storage.get_study_direction(self._trial.study_id) != \
+                if self._trial.storage.get_study_direction(self._trial.study._study_id) != \
                         optuna.structs.StudyDirection.MAXIMIZE:
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
                         "terms of study directions. Please specify a metric to be minimized for "
                         "LightGBMPruningCallback.")
             else:
-                if self._trial.storage.get_study_direction(self._trial.study_id) != \
+                if self._trial.storage.get_study_direction(self._trial.study._study_id) != \
                         optuna.structs.StudyDirection.MINIMIZE:
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
