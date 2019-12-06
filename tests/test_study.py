@@ -21,6 +21,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
+    CallbackFuncType = Callable[[optuna.study.Study, optuna.structs.FrozenTrial], None]
+
 STORAGE_MODES = [
     'none',  # We give `None` to storage argument, so InMemoryStorage is used.
     'new',  # We always create a new sqlite DB file for each experiment.
@@ -688,6 +690,19 @@ def test_optimize_without_gc(collect_mock):
 def test_callbacks(n_jobs):
     # type: (int) -> None
 
+    lock = threading.Lock()
+
+    def with_lock(f):
+        # type: (CallbackFuncType) -> CallbackFuncType
+
+        def callback(study, trial):
+            # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
+
+            with lock:
+                f(study, trial)
+
+        return callback
+
     study = optuna.create_study()
 
     def objective(trial):
@@ -700,7 +715,7 @@ def test_callbacks(n_jobs):
 
     # A callback.
     values = []
-    callbacks = [lambda study, trial: values.append(trial.value)]
+    callbacks = [with_lock(lambda study, trial: values.append(trial.value))]
     study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
     assert values == [1] * 10
 
@@ -708,8 +723,8 @@ def test_callbacks(n_jobs):
     values = []
     params = []
     callbacks = [
-        lambda study, trial: values.append(trial.value),
-        lambda study, trial: params.append(trial.params)
+        with_lock(lambda study, trial: values.append(trial.value)),
+        with_lock(lambda study, trial: params.append(trial.params))
     ]
     study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
     assert values == [1] * 10
@@ -718,7 +733,7 @@ def test_callbacks(n_jobs):
     # If a trial is failed with an exception and the exception is caught by the study,
     # callbacks are invoked.
     states = []
-    callbacks = [lambda study, trial: states.append(trial.state)]
+    callbacks = [with_lock(lambda study, trial: states.append(trial.state))]
     study.optimize(
         lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs,
         catch=(ZeroDivisionError,))
@@ -727,7 +742,7 @@ def test_callbacks(n_jobs):
     # If a trial is failed with an exception and the exception isn't caught by the study,
     # callbacks aren't invoked.
     states = []
-    callbacks = [lambda study, trial: states.append(trial.state)]
+    callbacks = [with_lock(lambda study, trial: states.append(trial.state))]
     with pytest.raises(ZeroDivisionError):
         study.optimize(lambda t: 1/0, callbacks=callbacks,
                        n_trials=10, n_jobs=n_jobs, catch=())
