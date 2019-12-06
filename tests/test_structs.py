@@ -188,6 +188,9 @@ def test_study_summary_eq_ne():
     assert len(summaries) == 2
 
     assert summaries[0] == copy.deepcopy(summaries[0])
+    assert not summaries[0] != copy.deepcopy(summaries[0])
+
+    assert not summaries[0] == summaries[1]
     assert summaries[0] != summaries[1]
 
     assert not summaries[0] == 1

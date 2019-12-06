@@ -436,7 +436,7 @@ class TestChainerMNTrial(object):
                                                             DeterministicPruner(is_pruning))
             mn_trial = _create_new_chainermn_trial(study, comm)
             mn_trial.report(1.0, 0)
-            assert mn_trial.should_prune(0) == is_pruning
+            assert mn_trial.should_prune() == is_pruning
 
     @staticmethod
     @pytest.mark.parametrize('storage_mode', STORAGE_MODES)

@@ -228,7 +228,7 @@ class FrozenTrial(object):
             'The use of `FrozenTrial.trial_id` is deprecated. '
             'Please use `FrozenTrial.number` instead.', DeprecationWarning)
 
-        logger = logging._get_library_root_logger()
+        logger = logging.get_logger(__name__)
         logger.warning(
             'The use of `FrozenTrial.trial_id` is deprecated. '
             'Please use `FrozenTrial.number` instead.')
@@ -299,14 +299,6 @@ class StudySummary(object):
 
         return other.__dict__ == self.__dict__
 
-    def __ne__(self, other):
-        # type: (Any) -> bool
-
-        if not isinstance(other, StudySummary):
-            return NotImplemented
-
-        return not self.__eq__(other)
-
     def __lt__(self, other):
         # type: (Any) -> bool
 
@@ -340,7 +332,7 @@ class StudySummary(object):
                   'Please use `StudySummary.study_name` instead.'
         warnings.warn(message, DeprecationWarning)
 
-        logger = logging._get_library_root_logger()
+        logger = logging.get_logger(__name__)
         logger.warning(message)
 
         return self._study_id
