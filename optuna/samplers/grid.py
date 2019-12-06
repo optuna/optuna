@@ -73,8 +73,9 @@ class GridSampler(BaseSampler):
         # type: (Dict[str, List[GridValueType]]) -> None
 
         for param_name, param_values in search_space.items():
-            search_space[param_name] = [self._cast_value(
-                param_name, value) for value in param_values]
+            for value in param_values:
+                self._check_value(param_name, value)
+            search_space[param_name] = param_values[:]
 
         self._search_space = collections.OrderedDict(
             sorted(search_space.items(), key=lambda x: x[0]))
@@ -131,23 +132,15 @@ class GridSampler(BaseSampler):
         return param_value
 
     @staticmethod
-    def _cast_value(param_name, param_value):
-        # type: (str, Any) -> GridValueType
+    def _check_value(param_name, param_value):
+        # type: (str, Any) -> None
 
-        if param_value is None:
-            return None
-        elif isinstance(param_value, str) or isinstance(param_value, bool):
-            return param_value
-        else:
-            try:
-                param_value = float(param_value)
-                return param_value
-            except (TypeError, ValueError):
-                pass
+        if param_value is None or isinstance(param_value, (str, int, float, bool)):
+            return
 
-        raise ValueError('{} contains a value with the type of {}, which is not supported'
-                         ' by `GridSampler`. Please make sure values are str or castable'
-                         'to float.'.format(param_name, type(param_value)))
+        raise ValueError('{} contains a value with the type of {}, which is not supported by '
+                         '`GridSampler`. Please make sure a value is `str`, `int`, `float`, `bool`'
+                         ' or `None`.'.format(param_name, type(param_value)))
 
     def _get_unvisited_grid_ids(self, study):
         # type: (Study) -> List[int]
@@ -175,7 +168,7 @@ class GridSampler(BaseSampler):
                 return False
 
             for i, param_value in enumerate(search_space[param_name]):
-                if self._cast_value(param_name, param_value) != self._search_space[param_name][i]:
+                if param_value != self._search_space[param_name][i]:
                     return False
 
         return True

@@ -139,18 +139,17 @@ def test_study_optimize_with_multiple_search_spaces():
 def test_cast_value():
     # type: () -> None
 
-    assert samplers.GridSampler._cast_value('x', None) is None
-    assert samplers.GridSampler._cast_value('x', True) is True
-    assert samplers.GridSampler._cast_value('x', False) is False
-    assert samplers.GridSampler._cast_value('x', -1) == -1
-    assert samplers.GridSampler._cast_value('x', -1.5) == -1.5
-    assert np.isnan(samplers.GridSampler._cast_value('x', float('nan')))
-    assert samplers.GridSampler._cast_value('x', 'nan') == 'nan'
-    assert samplers.GridSampler._cast_value('x', '-1') == '-1'
-    assert samplers.GridSampler._cast_value('x', '') == ''
+    samplers.GridSampler._check_value('x', None)
+    samplers.GridSampler._check_value('x', True)
+    samplers.GridSampler._check_value('x', False)
+    samplers.GridSampler._check_value('x', -1)
+    samplers.GridSampler._check_value('x', -1.5)
+    samplers.GridSampler._check_value('x', float('nan'))
+    samplers.GridSampler._check_value('x', 'foo')
+    samplers.GridSampler._check_value('x', '')
 
     with pytest.raises(ValueError):
-        samplers.GridSampler._cast_value('x', [1])
+        samplers.GridSampler._check_value('x', [1])
 
 
 def test_has_same_search_space():
