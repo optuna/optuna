@@ -1,14 +1,13 @@
 import os
+import sys
+
 import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
-import sys
 
 from typing import Dict  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
-
-from pkg_resources import Distribution  # NOQA
 
 
 def get_version():
@@ -33,47 +32,103 @@ def get_long_description():
 def get_install_requires():
     # type: () -> List[str]
 
-    install_requires = [
-        'alembic', 'cliff', 'colorlog', 'numpy', 'scipy', 'sqlalchemy>=1.1.0', 'tqdm', 'typing']
-    return install_requires
+    return [
+        'alembic',
+        'cliff',
+        'colorlog',
+        'numpy',
+        'scipy',
+        'sqlalchemy>=1.1.0',
+        'tqdm',
+        'typing',
+    ]
+
+
+def get_tests_require():
+    # type: () -> List[str]
+
+    return get_extras_require()['testing']
 
 
 def get_extras_require():
     # type: () -> Dict[str, List[str]]
 
-    testing_requirements = [
-        'bokeh', 'chainer>=5.0.0', 'cma', 'keras', 'lightgbm', 'mock',
-        'mpi4py', 'mxnet', 'pandas', 'plotly>=4.0.0', 'pytest', 'scikit-optimize',
-        'tensorflow', 'tensorflow-datasets', 'xgboost', 'scikit-learn>=0.19.0',
-        'torch', 'torchvision', 'pytorch-ignite', 'pytorch-lightning',
-    ]
-
-    example_requirements = [
-        'chainer', 'keras', 'catboost', 'lightgbm', 'scikit-learn',
-        'mxnet', 'xgboost', 'torch', 'torchvision', 'pytorch-ignite',
-        'dask-ml', 'dask[dataframe]', 'pytorch-lightning',
-
-        # TODO(Yanase): Update examples to support TensorFlow 2.0.
-        # See https://github.com/optuna/optuna/issues/565 for further details.
-        'tensorflow<2.0.0',
-    ]
-
-    if sys.version_info[:2] > (3, 5,):
-        testing_requirements.append("fastai<2")
-        example_requirements.append("fastai<2")
-
-    extras_require = {
-        'checking': ['autopep8', 'hacking', 'mypy'],
-        'testing': testing_requirements,
-        'example': example_requirements,
-        'document': ['sphinx', 'sphinx_rtd_theme'],
-        'codecov': ['pytest-cov', 'codecov'],
+    requirements = {
+        'checking': [
+            'autopep8',
+            'hacking',
+            'mypy',
+        ],
+        'codecov': [
+            'codecov',
+            'pytest-cov',
+        ],
+        'doctest': [
+            'pandas',
+            'scikit-learn>=0.19.0',
+        ],
+        'document': [
+            'sphinx',
+            'sphinx_rtd_theme',
+        ],
+        'example': [
+            'catboost',
+            'chainer',
+            'lightgbm',
+            'mxnet',
+            'scikit-image',
+            'scikit-learn',
+            'xgboost',
+        ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + ([
+            'dask[dataframe]',
+            'dask-ml',
+            'keras',
+            'pytorch-ignite',
+            'pytorch-lightning',
+            # TODO(Yanase): Update examples to support TensorFlow 2.0.
+            # See https://github.com/optuna/optuna/issues/565 for further details.
+            'tensorflow<2.0.0',
+            'torch',
+            'torchvision'
+        ] if sys.version_info[:2] < (3, 8) else []),
+        'testing': [
+            'bokeh',
+            'chainer>=5.0.0',
+            'cma',
+            'lightgbm',
+            'mock',
+            'mpi4py',
+            'mxnet',
+            'pandas',
+            'plotly>=4.0.0',
+            'pytest',
+            'scikit-learn>=0.19.0',
+            'scikit-optimize',
+            'xgboost',
+        ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + ([
+            'keras',
+            'pytorch-ignite',
+            'pytorch-lightning',
+            'tensorflow',
+            'tensorflow-datasets',
+            'torch',
+            'torchvision'
+        ] if sys.version_info[:2] < (3, 8) else []),
     }
-    return extras_require
+
+    # TODO(Yanase): Remove cython from dependencies after wheel packages of scikit-learn are
+    # released for Python 3.8.
+    if sys.version_info[:2] == (3, 8):
+        requirements['testing'].insert(0, 'cython')
+        requirements['example'].insert(0, 'cython')
+
+    return requirements
 
 
 def find_any_distribution(pkgs):
-    # type: (List[str]) -> Optional[Distribution]
+    # type: (List[str]) -> Optional[pkg_resources.Distribution]
 
     for pkg in pkgs:
         try:
@@ -109,6 +164,6 @@ setup(
         ]
     },
     install_requires=get_install_requires(),
-    tests_require=get_extras_require()['testing'],
+    tests_require=get_tests_require(),
     extras_require=get_extras_require(),
     entry_points={'console_scripts': ['optuna = optuna.cli:main']})

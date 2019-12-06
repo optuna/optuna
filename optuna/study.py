@@ -48,7 +48,7 @@ class BaseStudy(object):
     def __init__(self, study_id, storage):
         # type: (int, storages.BaseStorage) -> None
 
-        self.study_id = study_id
+        self._study_id = study_id
         self._storage = storage
 
     @property
@@ -85,7 +85,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.FrozenTrial` object of the best trial.
         """
 
-        return self._storage.get_best_trial(self.study_id)
+        return self._storage.get_best_trial(self._study_id)
 
     @property
     def direction(self):
@@ -96,7 +96,7 @@ class BaseStudy(object):
             A :class:`~optuna.structs.StudyDirection` object.
         """
 
-        return self._storage.get_study_direction(self.study_id)
+        return self._storage.get_study_direction(self._study_id)
 
     @property
     def trials(self):
@@ -109,7 +109,7 @@ class BaseStudy(object):
             A list of :class:`~optuna.structs.FrozenTrial` objects.
         """
 
-        return self._storage.get_all_trials(self.study_id)
+        return self._storage.get_all_trials(self._study_id)
 
     @property
     def storage(self):
@@ -187,6 +187,26 @@ class Study(BaseStudy):
         self._optimize_lock = threading.Lock()
 
     @property
+    def study_id(self):
+        # type: () -> int
+        """Return the study ID.
+
+        .. deprecated:: 0.20.0
+            The direct use of this attribute is deprecated and it is recommended that you use
+            :attr:`~optuna.study.Study.study_name` instead.
+
+        Returns:
+            The study ID.
+        """
+
+        message = 'The use of `Study.study_id` is deprecated. ' \
+                  'Please use `Study.study_name` instead.'
+        warnings.warn(message, DeprecationWarning)
+        self.logger.warning(message)
+
+        return self._study_id
+
+    @property
     def user_attrs(self):
         # type: () -> Dict[str, Any]
         """Return user attributes.
@@ -195,7 +215,7 @@ class Study(BaseStudy):
             A dictionary containing all user attributes.
         """
 
-        return self._storage.get_study_user_attrs(self.study_id)
+        return self._storage.get_study_user_attrs(self._study_id)
 
     @property
     def system_attrs(self):
@@ -206,7 +226,7 @@ class Study(BaseStudy):
             A dictionary containing all system attributes.
         """
 
-        return self._storage.get_study_system_attrs(self.study_id)
+        return self._storage.get_study_system_attrs(self._study_id)
 
     def optimize(
             self,
@@ -275,7 +295,7 @@ class Study(BaseStudy):
 
         """
 
-        self._storage.set_study_user_attr(self.study_id, key, value)
+        self._storage.set_study_user_attr(self._study_id, key, value)
 
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
@@ -290,34 +310,44 @@ class Study(BaseStudy):
 
         """
 
-        self._storage.set_study_system_attr(self.study_id, key, value)
+        self._storage.set_study_system_attr(self._study_id, key, value)
 
-    def trials_dataframe(self, include_internal_fields=False):
-        # type: (bool) -> pd.DataFrame
+    def trials_dataframe(self, include_internal_fields=False, multi_index=False):
+        # type: (bool, bool) -> pd.DataFrame
         """Export trials as a pandas DataFrame_.
 
         The DataFrame_ provides various features to analyze studies. It is also useful to draw a
-        histogram of objective values and to export trials as a CSV file. Note that DataFrames
-        returned by :func:`~optuna.study.Study.trials_dataframe()` employ MultiIndex_, and columns
-        have a hierarchical structure. Please refer to the example below to access DataFrame
-        elements. If there are no trials, an empty DataFrame_ is returned.
+        histogram of objective values and to export trials as a CSV file.
+        If there are no trials, an empty DataFrame_ is returned.
 
         Example:
 
-            Get an objective value and a value of parameter ``x`` in the first row.
+            .. testcode::
 
-            >>> df = study.trials_dataframe()
-            >>> df
-            >>> df.value[0]
-            0.0
-            >>> df.params.x[0]
-            1.0
+                import optuna
+                import pandas
+
+                def objective(trial):
+                    x = trial.suggest_uniform('x', -1, 1)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
+                # Create a dataframe from the study.
+                df = study.trials_dataframe()
+                assert isinstance(df, pandas.DataFrame)
+                assert df.shape[0] == 3  # n_trials.
 
         Args:
             include_internal_fields:
                 By default, internal fields of :class:`~optuna.structs.FrozenTrial` are excluded
                 from a DataFrame of trials. If this argument is :obj:`True`, they will be included
                 in the DataFrame.
+            multi_index:
+                Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that
+                are hierarchical by nature such as ``(params, x)`` will be flattened to
+                ``params_x`` when set to :obj:`False`.
 
         Returns:
             A pandas DataFrame_ of trials in the :class:`~optuna.study.Study`.
@@ -373,7 +403,16 @@ class Study(BaseStudy):
              for k in structs.FrozenTrial._ordered_fields if k in column_agg),
             [])  # type: List[Tuple[str, str]]
 
-        return pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+        df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+
+        if not multi_index:
+            # Flatten the `MultiIndex` columns where names are concatenated with underscores.
+            # Filtering is required to omit non-nested columns avoiding unwanted trailing
+            # underscores.
+            df.columns = [
+                '_'.join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns]
+
+        return df
 
     def _append_trial(
             self,
@@ -414,7 +453,7 @@ class Study(BaseStudy):
 
         trial._validate()
 
-        self.storage.create_new_trial(self.study_id, template_trial=trial)
+        self._storage.create_new_trial(self._study_id, template_trial=trial)
 
     def _optimize_sequential(
             self,
@@ -531,7 +570,7 @@ class Study(BaseStudy):
     ):
         # type: (...) -> trial_module.Trial
 
-        trial_id = self._storage.create_new_trial(self.study_id)
+        trial_id = self._storage.create_new_trial(self._study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 

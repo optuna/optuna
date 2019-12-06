@@ -7,6 +7,7 @@
 [![CircleCI](https://circleci.com/gh/optuna/optuna.svg?style=svg)](https://circleci.com/gh/optuna/optuna)
 [![Read the Docs](https://readthedocs.org/projects/optuna/badge/?version=stable)](https://optuna.readthedocs.io/en/stable/)
 [![Codecov](https://codecov.io/gh/optuna/optuna/branch/master/graph/badge.svg)](https://codecov.io/gh/optuna/optuna/branch/master)
+[![Gitter chat](https://badges.gitter.im/optuna/gitter.svg)](https://gitter.im/optuna/optuna)
 
 [**Website**](https://optuna.org/)
 | [**Docs**](https://optuna.readthedocs.io/en/stable/)
@@ -40,6 +41,7 @@ hyperparameter values (e.g., `classifier` and `svm_c`) through multiple *trials*
 `n_trials=100`). Optuna is a framework designed for the automation and the acceleration of the
 optimization *studies*.
 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/optuna/optuna/blob/master/examples/quickstart.ipynb)
 
 ```python
 import ...
@@ -73,13 +75,30 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 
 ## Installation
 
-To install Optuna, use `pip` as follows:
+Optuna is available at [the Python Package Index](https://pypi.org/project/optuna/) and on [Anaconda Cloud](https://anaconda.org/conda-forge/optuna).
 
 ```
+# PyPI
 $ pip install optuna
 ```
 
+```
+# Anaconda Cloud
+$ conda install -c conda-forge optuna
+```
+
 Optuna supports Python 3.5 or newer.
+
+
+## Communication
+
+- [Github Issues] for bug reports, feature requests and questions.
+- [Gitter] for interactive chat with developers.
+- [Stack Overflow] for questions.
+
+[GitHub issues]: https://github.com/optuna/optuna/issues
+[Gitter]: https://gitter.im/optuna/optuna
+[Stack Overflow]: https://stackoverflow.com/questions/tagged/optuna
 
 
 ## Contribution

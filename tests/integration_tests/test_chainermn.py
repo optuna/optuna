@@ -526,7 +526,7 @@ def _create_new_chainermn_trial(study, comm):
     # type: (Study, CommunicatorBase) -> integration.chainermn.ChainerMNTrial
 
     if comm.rank == 0:
-        trial_id = study._storage.create_new_trial(study.study_id)
+        trial_id = study._storage.create_new_trial(study._study_id)
         trial = Trial(study, trial_id)
         mn_trial = integration.chainermn.ChainerMNTrial(trial, comm)
     else:

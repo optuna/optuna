@@ -6,6 +6,8 @@ workflows:
     jobs:
       - checks
       - document
+      - doctest
+      - tests-python38
       - tests-python37
       - tests-python36
       - tests-python35
@@ -21,9 +23,11 @@ workflows:
     jobs:
       - checks
       - document
+      - tests-python38-full
       - tests-python37-full
       - tests-python36-full
       - tests-python35-full
+      - examples-python38
       - examples-python37
       - examples-python36
       - examples-python35
@@ -85,6 +89,26 @@ jobs:
             cd docs
             make html
 
+  doctest:
+    docker:
+      - image: readthedocs/build:latest
+    steps:
+      - checkout
+
+      - run:
+          name: install
+          command: |
+            python -m venv venv || virtualenv venv --python=python3
+            . venv/bin/activate
+            pip install -U pip
+            pip install --progress-bar off .[doctest,document]
+
+      - run:
+          name: build
+          command: |
+            . venv/bin/activate
+            cd docs
+            make doctest
 
   # Unit tests
 
@@ -127,6 +151,27 @@ jobs:
             mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
           environment:
             OMP_NUM_THREADS: 1
+
+  tests-python38:
+    docker:
+      - image: circleci/python:3.8
+    steps:
+      - checkout
+
+      - run: *install
+
+      - run:
+          <<: *tests
+          command: |
+            . venv/bin/activate
+            pytest tests --ignore tests/integration_tests/test_fastai.py \
+                --ignore tests/integration_tests/test_keras.py \
+                --ignore tests/integration_tests/test_pytorch_lightning.py \
+                --ignore tests/integration_tests/test_pytorch_ignite.py \
+                --ignore tests/integration_tests/test_tensorflow.py \
+                --ignore tests/integration_tests/test_tfkeras.py
+
+      - run: *tests-mn
 
   tests-python36:
     docker:
@@ -171,6 +216,27 @@ jobs:
           environment:
             OMP_NUM_THREADS: 1
             INCLUDE_SLOW_TESTS: 1
+
+  tests-python38-full:
+    docker:
+      - image: circleci/python:3.8
+    steps:
+      - checkout
+
+      - run: *install
+
+      - run:
+          <<: *tests-full
+          command: |
+            . venv/bin/activate
+            pytest tests --ignore tests/integration_tests/test_fastai.py \
+                --ignore tests/integration_tests/test_keras.py \
+                --ignore tests/integration_tests/test_pytorch_lightning.py \
+                --ignore tests/integration_tests/test_pytorch_ignite.py \
+                --ignore tests/integration_tests/test_tensorflow.py \
+                --ignore tests/integration_tests/test_tfkeras.py
+
+      - run: *tests-mn-full
 
   tests-python36-full:
     docker:
@@ -262,6 +328,24 @@ jobs:
             done
           environment:
             OMP_NUM_THREADS: 1
+
+  examples-python38:
+    docker:
+      - image: circleci/python:3.8
+    steps:
+      - checkout
+
+      - run: *install
+
+      - run: *install-examples
+
+      - run:
+          <<: *examples
+          environment:
+            OMP_NUM_THREADS: 1
+            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_.*|tensorflow_.*|tfkeras_.*
+
+      - run: *examples-mn
 
   examples-python36:
     docker:
