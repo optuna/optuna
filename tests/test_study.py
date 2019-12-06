@@ -20,6 +20,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
 
 STORAGE_MODES = [
     'none',  # We give `None` to storage argument, so InMemoryStorage is used.
@@ -453,9 +454,10 @@ def test_study_trials_dataframe_with_no_trials():
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('include_internal_fields', [True, False])
+@pytest.mark.parametrize('exclude_fields', [('intermediate_values', ), ()])
 @pytest.mark.parametrize('multi_index', [True, False])
-def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
-    # type: (str, bool, bool) -> None
+def test_trials_dataframe(storage_mode, include_internal_fields, exclude_fields, multi_index):
+    # type: (str, bool, Tuple[str], bool) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
@@ -474,7 +476,9 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
         df = study.trials_dataframe(
-            include_internal_fields=include_internal_fields, multi_index=multi_index)
+            include_internal_fields=include_internal_fields,
+            exclude_fields=exclude_fields,
+            multi_index=multi_index)
         # Change index to access rows via trial number.
         if multi_index:
             df.set_index(('number', ''), inplace=True, drop=False)
@@ -493,6 +497,7 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
             # distributions: 2
             # trial_id: 1
             expected_n_columns += 3
+        expected_n_columns -= len(exclude_fields)
         assert len(df.columns) == expected_n_columns
 
         for i in range(3):

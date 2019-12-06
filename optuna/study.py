@@ -326,8 +326,13 @@ class Study(BaseStudy):
 
         self._storage.set_study_system_attr(self._study_id, key, value)
 
-    def trials_dataframe(self, include_internal_fields=False, multi_index=False):
-        # type: (bool, bool) -> pd.DataFrame
+    def trials_dataframe(
+        self,
+        include_internal_fields=False,  # type: bool
+        exclude_fields=('intermediate_values', ),  # type: Tuple[str]
+        multi_index=False  # type: bool
+    ):
+        # type: (...) -> pd.DataFrame
         """Export trials as a pandas DataFrame_.
 
         The DataFrame_ provides various features to analyze studies. It is also useful to draw a
@@ -358,6 +363,11 @@ class Study(BaseStudy):
                 By default, internal fields of :class:`~optuna.structs.FrozenTrial` are excluded
                 from a DataFrame of trials. If this argument is :obj:`True`, they will be included
                 in the DataFrame.
+            exclude_fields:
+                Specifies field names of :class:`~optuna.structs.FrozenTrial` to exclude them from
+                a DataFrame of trials. By default,
+                :attr:`~optuna.structs.FrozenTrial.intermediate_values` is excluded. Please set
+                ``()`` to include it.
             multi_index:
                 Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that
                 are hierarchical by nature such as ``(params, x)`` will be flattened to
@@ -412,6 +422,11 @@ class Study(BaseStudy):
             return record
 
         records = list([_create_record_and_aggregate_column(trial) for trial in trials])
+
+        for exclude_field in exclude_fields:
+            if exclude_field in column_agg:
+                del column_agg[exclude_field]
+
         columns = sum(
             (sorted(column_agg[k])
              for k in structs.FrozenTrial._ordered_fields if k in column_agg),
