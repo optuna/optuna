@@ -1,7 +1,4 @@
-import warnings
-
 import optuna
-from optuna import logging
 from optuna.samplers.base import BaseSampler  # NOQA
 from optuna.samplers.random import RandomSampler  # NOQA
 from optuna.samplers.tpe import TPESampler  # NOQA
@@ -47,22 +44,3 @@ def intersection_search_space(study):
             del search_space[param_name]
 
     return search_space or {}
-
-
-def product_search_space(study):
-    # type: (BaseStudy) -> Dict[str, BaseDistribution]
-    """Return the product search space of the :class:`~optuna.study.BaseStudy`.
-
-    .. deprecated:: 0.14.0
-        Please use :func:`~optuna.samplers.intersection_search_space` instead.
-    """
-
-    warnings.warn(
-        '`product_search_space` function is deprecated. '
-        'Please use `intersection_search_space` function instead.', DeprecationWarning)
-
-    logger = logging.get_logger(__name__)
-    logger.warning('`product_search_space` function is deprecated. '
-                   'Please use `intersection_search_space` function instead.')
-
-    return intersection_search_space(study)
