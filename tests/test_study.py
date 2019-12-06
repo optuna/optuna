@@ -2,7 +2,6 @@ import itertools
 from mock import Mock  # NOQA
 from mock import patch
 import multiprocessing
-import os
 import pandas as pd
 import pickle
 import pytest
@@ -26,13 +25,6 @@ STORAGE_MODES = [
     'new',  # We always create a new sqlite DB file for each experiment.
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
-
-if os.getenv('INCLUDE_SLOW_TESTS') is None:
-    MAX_N_TRIALS = 20
-    N_JOBS_LIST = [1, 2]
-else:
-    MAX_N_TRIALS = 50
-    N_JOBS_LIST = [1, 2, 10, -1]
 
 
 def setup_module():
@@ -168,8 +160,8 @@ def test_optimize_with_direction():
 @pytest.mark.parametrize(
     'n_trials, n_jobs, storage_mode',
     itertools.product(
-        (0, 1, 2, MAX_N_TRIALS),  # n_trials
-        N_JOBS_LIST,  # n_jobs
+        (0, 1, 2, 20),  # n_trials
+        (1, 2),  # n_jobs
         STORAGE_MODES,  # storage_mode
     ))
 def test_optimize_parallel(n_trials, n_jobs, storage_mode):
@@ -187,8 +179,8 @@ def test_optimize_parallel(n_trials, n_jobs, storage_mode):
 @pytest.mark.parametrize(
     'n_trials, n_jobs, storage_mode',
     itertools.product(
-        (0, 1, 2, MAX_N_TRIALS, None),  # n_trials
-        N_JOBS_LIST,  # n_jobs
+        (0, 1, 2, 20, None),  # n_trials
+        (1, 2),  # n_jobs
         STORAGE_MODES,  # storage_mode
     ))
 def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
