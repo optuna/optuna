@@ -245,7 +245,8 @@ def test_intersection_search_space():
         'y': UniformDistribution(low=-3, high=3)
     }
 
-    # Failed or pruned trials are not considered in the calculation of a product search space.
+    # Failed or pruned trials are not considered in the calculation of
+    # an intersection search space.
     def objective(trial, exception):
         # type: (optuna.trial.Trial, Exception) -> float
 
