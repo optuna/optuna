@@ -160,8 +160,8 @@ def test_optimize_with_direction():
 @pytest.mark.parametrize(
     'n_trials, n_jobs, storage_mode',
     itertools.product(
-        (0, 1, 2, 20),  # n_trials
-        (1, 2),  # n_jobs
+        (0, 1, 10),  # n_trials
+        (1, 2, -1),  # n_jobs
         STORAGE_MODES,  # storage_mode
     ))
 def test_optimize_parallel(n_trials, n_jobs, storage_mode):
@@ -179,8 +179,8 @@ def test_optimize_parallel(n_trials, n_jobs, storage_mode):
 @pytest.mark.parametrize(
     'n_trials, n_jobs, storage_mode',
     itertools.product(
-        (0, 1, 2, 20, None),  # n_trials
-        (1, 2),  # n_jobs
+        (0, 1, 10, None),  # n_trials
+        (1, 2, -1),  # n_jobs
         STORAGE_MODES,  # storage_mode
     ))
 def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
