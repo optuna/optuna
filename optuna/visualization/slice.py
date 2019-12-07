@@ -1,7 +1,7 @@
+from optuna import type_checking
 from optuna.logging import get_logger
 from optuna.structs import TrialState
 from optuna.study import Study  # NOQA
-from optuna import type_checking
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import _is_log_scale
 from optuna.visualization.utils import is_available

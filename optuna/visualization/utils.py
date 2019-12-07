@@ -1,5 +1,5 @@
-from optuna.distributions import LogUniformDistribution
 from optuna import type_checking
+from optuna.distributions import LogUniformDistribution
 from optuna.visualization import plotly_imports
 
 if type_checking.TYPE_CHECKING:

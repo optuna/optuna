@@ -2,6 +2,11 @@ import collections
 import datetime
 import gc
 import math
+import threading
+import warnings
+
+from joblib import delayed
+from joblib import Parallel
 
 try:
     import pandas as pd  # NOQA
@@ -10,12 +15,6 @@ except ImportError as e:
     _pandas_import_error = e
     # trials_dataframe is disabled because pandas is not available.
     _pandas_available = False
-
-import threading
-import warnings
-
-from joblib import delayed
-from joblib import Parallel
 
 from optuna import exceptions
 from optuna import logging

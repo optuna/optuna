@@ -8,7 +8,6 @@ from optuna import type_checking
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import is_available
 
-
 if type_checking.TYPE_CHECKING:
     from typing import DefaultDict  # NOQA
     from typing import List  # NOQA

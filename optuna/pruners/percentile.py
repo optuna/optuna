@@ -1,5 +1,6 @@
 import functools
 import math
+
 import numpy as np
 
 from optuna.pruners import BasePruner

@@ -4,7 +4,6 @@ import lightgbm as lgb
 
 from optuna import type_checking
 
-
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA

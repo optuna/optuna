@@ -1,4 +1,5 @@
 import gc
+import warnings
 
 from optuna.exceptions import TrialPruned
 from optuna.logging import get_logger
@@ -6,7 +7,6 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.trial import BaseTrial
 from optuna import type_checking
-import warnings
 
 if type_checking.TYPE_CHECKING:
     from datetime import datetime  # NOQA

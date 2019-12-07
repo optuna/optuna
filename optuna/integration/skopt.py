@@ -3,10 +3,10 @@ import numpy as np
 import optuna
 from optuna import distributions
 from optuna import samplers
-from optuna.samplers import BaseSampler
 from optuna import structs
-from optuna.structs import StudyDirection
 from optuna import type_checking
+from optuna.samplers import BaseSampler
+from optuna.structs import StudyDirection
 
 try:
     import skopt
