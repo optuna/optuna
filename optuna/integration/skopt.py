@@ -8,8 +8,6 @@ from optuna import structs
 from optuna.structs import StudyDirection
 from optuna import type_checking
 
-from optuna.structs import StudyDirection
-
 try:
     import skopt
     from skopt.space import space
