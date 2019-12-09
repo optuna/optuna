@@ -402,6 +402,9 @@ class Study(BaseStudy):
             record = {}
             for field, df_column in fields_to_df_columns.items():
                 value = getattr(trial, field)
+                if isinstance(value, structs.TrialState):
+                    # Convert TrialState to str and remove the common prefix.
+                    value = str(value).split('.')[-1]
                 if isinstance(value, dict):
                     for nested_field, nested_value in value.items():
                         record[(df_column, nested_field)] = nested_value

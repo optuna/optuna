@@ -119,8 +119,8 @@ class FrozenTrial(object):
     # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
     # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
     _ordered_fields = [
-        'number', 'state', 'value', 'datetime_start', 'datetime_complete', 'params',
-        '_distributions', 'user_attrs', 'system_attrs', 'intermediate_values', '_trial_id', ]
+        'number', 'value', 'datetime_start', 'datetime_complete', 'params', '_distributions',
+        'user_attrs', 'system_attrs', 'intermediate_values', '_trial_id', 'state', ]
 
     def __eq__(self, other):
         # type: (Any) -> bool
