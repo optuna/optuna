@@ -22,6 +22,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
 
+    CallbackFuncType = Callable[[optuna.study.Study, optuna.structs.FrozenTrial], None]
+
 STORAGE_MODES = [
     'none',  # We give `None` to storage argument, so InMemoryStorage is used.
     'new',  # We always create a new sqlite DB file for each experiment.
@@ -454,10 +456,10 @@ def test_study_trials_dataframe_with_no_trials():
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('attrs', [
-    ('number', 'state', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
-     'system_attrs'),
-    ('number', 'state', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
-     'system_attrs', 'intermediate_values', '_trial_id', 'distributions')])
+    ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+     'system_attrs', 'state'),
+    ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+     'system_attrs', 'state', 'intermediate_values', '_trial_id', 'distributions')])
 @pytest.mark.parametrize('multi_index', [True, False])
 def test_trials_dataframe(storage_mode, attrs, multi_index):
     # type: (str, Tuple[str], bool) -> None
@@ -502,7 +504,7 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
 
         for i in range(3):
             assert df.number[i] == i
-            assert df.state[i] == optuna.structs.TrialState.COMPLETE
+            assert df.state[i] == 'COMPLETE'
             assert df.value[i] == 3.5
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
@@ -556,7 +558,7 @@ def test_trials_dataframe_with_failure(storage_mode):
         assert len(df.columns) == 10
         for i in range(3):
             assert df.number[i] == i
-            assert df.state[i] == optuna.structs.TrialState.FAIL
+            assert df.state[i] == 'FAIL'
             assert df.value[i] is None
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
@@ -695,6 +697,19 @@ def test_optimize_without_gc(collect_mock):
 def test_callbacks(n_jobs):
     # type: (int) -> None
 
+    lock = threading.Lock()
+
+    def with_lock(f):
+        # type: (CallbackFuncType) -> CallbackFuncType
+
+        def callback(study, trial):
+            # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
+
+            with lock:
+                f(study, trial)
+
+        return callback
+
     study = optuna.create_study()
 
     def objective(trial):
@@ -707,7 +722,7 @@ def test_callbacks(n_jobs):
 
     # A callback.
     values = []
-    callbacks = [lambda study, trial: values.append(trial.value)]
+    callbacks = [with_lock(lambda study, trial: values.append(trial.value))]
     study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
     assert values == [1] * 10
 
@@ -715,8 +730,8 @@ def test_callbacks(n_jobs):
     values = []
     params = []
     callbacks = [
-        lambda study, trial: values.append(trial.value),
-        lambda study, trial: params.append(trial.params)
+        with_lock(lambda study, trial: values.append(trial.value)),
+        with_lock(lambda study, trial: params.append(trial.params))
     ]
     study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
     assert values == [1] * 10
@@ -725,7 +740,7 @@ def test_callbacks(n_jobs):
     # If a trial is failed with an exception and the exception is caught by the study,
     # callbacks are invoked.
     states = []
-    callbacks = [lambda study, trial: states.append(trial.state)]
+    callbacks = [with_lock(lambda study, trial: states.append(trial.state))]
     study.optimize(
         lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs,
         catch=(ZeroDivisionError,))
@@ -734,7 +749,7 @@ def test_callbacks(n_jobs):
     # If a trial is failed with an exception and the exception isn't caught by the study,
     # callbacks aren't invoked.
     states = []
-    callbacks = [lambda study, trial: states.append(trial.state)]
+    callbacks = [with_lock(lambda study, trial: states.append(trial.state))]
     with pytest.raises(ZeroDivisionError):
         study.optimize(lambda t: 1/0, callbacks=callbacks,
                        n_trials=10, n_jobs=n_jobs, catch=())

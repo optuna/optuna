@@ -328,8 +328,8 @@ class Study(BaseStudy):
 
     def trials_dataframe(
         self,
-        attrs=('number', 'state', 'value', 'datetime_start', 'datetime_complete', 'params',
-               'user_attrs', 'system_attrs'),  # type: Tuple[str, ...]
+        attrs=('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+               'system_attrs', 'state'),  # type: Tuple[str, ...]
         multi_index=False  # type: bool
     ):
         # type: (...) -> pd.DataFrame
@@ -377,6 +377,7 @@ class Study(BaseStudy):
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
+
         _check_pandas_availability()
 
         trials = self.trials
@@ -407,6 +408,9 @@ class Study(BaseStudy):
             record = {}
             for attr, df_column in attrs_to_df_columns.items():
                 value = getattr(trial, attr)
+                if isinstance(value, structs.TrialState):
+                    # Convert TrialState to str and remove the common prefix.
+                    value = str(value).split('.')[-1]
                 if isinstance(value, dict):
                     for nested_attr, nested_value in value.items():
                         record[(df_column, nested_attr)] = nested_value
