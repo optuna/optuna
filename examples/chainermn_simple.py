@@ -11,13 +11,13 @@ as follows:
     $ mpirun -n 2 -- python chainermn_simple.py $STUDY_NAME $STORAGE_URL
 
 """
+import sys
 
 import chainer
 import chainer.functions as F
 import chainer.links as L
 import chainermn
 import numpy as np
-import sys
 
 import optuna
 
