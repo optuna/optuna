@@ -119,12 +119,6 @@ def get_extras_require():
         ] if sys.version_info[:2] < (3, 8) else []),
     }
 
-    # TODO(Yanase): Remove cython from dependencies after wheel packages of scikit-learn are
-    # released for Python 3.8.
-    if sys.version_info[:2] == (3, 8):
-        requirements['testing'].insert(0, 'cython')
-        requirements['example'].insert(0, 'cython')
-
     return requirements
 
 
