@@ -1,6 +1,5 @@
 import itertools
 import multiprocessing
-import os
 import pickle
 import threading
 import time
