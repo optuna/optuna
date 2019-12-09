@@ -328,8 +328,8 @@ class Study(BaseStudy):
 
     def trials_dataframe(
         self,
-        include_internal_fields=False,  # type: bool
-        exclude_fields=('intermediate_values', ),  # type: Tuple[str]
+        attrs=('number', 'state', 'value', 'datetime_start', 'datetime_complete', 'params',
+               'user_attrs', 'system_attrs'),  # type: Tuple[str, ...]
         multi_index=False  # type: bool
     ):
         # type: (...) -> pd.DataFrame
@@ -363,11 +363,9 @@ class Study(BaseStudy):
                 By default, internal fields of :class:`~optuna.structs.FrozenTrial` are excluded
                 from a DataFrame of trials. If this argument is :obj:`True`, they will be included
                 in the DataFrame.
-            exclude_fields:
-                Specifies field names of :class:`~optuna.structs.FrozenTrial` to exclude them from
-                a DataFrame of trials. By default,
-                :attr:`~optuna.structs.FrozenTrial.intermediate_values` is excluded. Please set
-                ``()`` to include it.
+            attrs:
+                Specifies field names of :class:`~optuna.structs.FrozenTrial` to include them to a
+                DataFrame of trials.
             multi_index:
                 Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that
                 are hierarchical by nature such as ``(params, x)`` will be flattened to
@@ -388,48 +386,40 @@ class Study(BaseStudy):
             return pd.DataFrame()
 
         assert all(isinstance(trial, structs.FrozenTrial) for trial in trials)
-        fields_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
-        for field in structs.FrozenTrial._ordered_fields:
-            if field.startswith('_'):
-                if not include_internal_fields:
-                    continue
-                else:
-                    # Python conventional underscores are omitted in the dataframe.
-                    df_column = field[1:]
+        attrs_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
+        for attr in attrs:
+            if attr.startswith('_'):
+                # Python conventional underscores are omitted in the dataframe.
+                df_column = attr[1:]
             else:
-                df_column = field
-            fields_to_df_columns[field] = df_column
+                df_column = attr
+            attrs_to_df_columns[attr] = df_column
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
         # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
-        non_nested_field = ''
+        non_nested_attr = ''
 
         def _create_record_and_aggregate_column(trial):
             # type: (structs.FrozenTrial) -> Dict[Tuple[str, str], Any]
 
             record = {}
-            for field, df_column in fields_to_df_columns.items():
-                value = getattr(trial, field)
+            for attr, df_column in attrs_to_df_columns.items():
+                value = getattr(trial, attr)
                 if isinstance(value, dict):
-                    for nested_field, nested_value in value.items():
-                        record[(df_column, nested_field)] = nested_value
-                        column_agg[field].add((df_column, nested_field))
+                    for nested_attr, nested_value in value.items():
+                        record[(df_column, nested_attr)] = nested_value
+                        column_agg[attr].add((df_column, nested_attr))
                 else:
-                    record[(df_column, non_nested_field)] = value
-                    column_agg[field].add((df_column, non_nested_field))
+                    record[(df_column, non_nested_attr)] = value
+                    column_agg[attr].add((df_column, non_nested_attr))
             return record
 
         records = list([_create_record_and_aggregate_column(trial) for trial in trials])
 
-        for exclude_field in exclude_fields:
-            if exclude_field in column_agg:
-                del column_agg[exclude_field]
-
         columns = sum(
-            (sorted(column_agg[k])
-             for k in structs.FrozenTrial._ordered_fields if k in column_agg),
+            (sorted(column_agg[k]) for k in attrs if k in column_agg),
             [])  # type: List[Tuple[str, str]]
 
         df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
