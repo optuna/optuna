@@ -1,8 +1,9 @@
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
-import imp
+from importlib.machinery import SourceFileLoader
 import logging
 import sys
+import types
 
 from cliff.app import App
 from cliff.command import Command
@@ -217,7 +218,10 @@ class _StudyOptimize(_BaseCommand):
         # exception stack traces by default.
         self.app.options.debug = True
 
-        target_module = imp.load_source('optuna_target_module', parsed_args.file)
+        module_name = 'optuna_target_module'
+        target_module = types.ModuleType(module_name)
+        loader = SourceFileLoader(module_name, parsed_args.file)
+        loader.exec_module(target_module)
 
         try:
             target_method = getattr(target_module, parsed_args.method)
