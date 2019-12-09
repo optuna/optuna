@@ -1,8 +1,9 @@
-import pytest
 import re
 import subprocess
 from subprocess import CalledProcessError
 import tempfile
+
+import pytest
 
 import optuna
 from optuna.cli import _Studies

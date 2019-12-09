@@ -1,8 +1,9 @@
+from collections import namedtuple
+import math
+
 import chainer
 import chainer.links as L
 from chainer.training import triggers
-from collections import namedtuple
-import math
 from mock import Mock
 from mock import patch
 import numpy as np

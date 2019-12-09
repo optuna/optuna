@@ -5,7 +5,6 @@ from optuna.distributions import UniformDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.visualization.slice import _get_slice_plot
-
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

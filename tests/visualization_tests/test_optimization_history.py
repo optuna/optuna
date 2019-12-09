@@ -2,7 +2,6 @@ import pytest
 
 from optuna.study import create_study
 from optuna.visualization.optimization_history import _get_optimization_history_plot
-
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

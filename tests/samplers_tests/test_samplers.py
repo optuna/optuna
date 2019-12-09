@@ -1,5 +1,6 @@
-import numpy as np
 import pickle
+
+import numpy as np
 import pytest
 
 import optuna

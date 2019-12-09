@@ -1,5 +1,4 @@
 import optuna
-
 from optuna.exceptions import TrialPruned
 from optuna.samplers import tpe
 from optuna.samplers import TPESampler
