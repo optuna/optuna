@@ -119,9 +119,8 @@ class FrozenTrial(object):
     # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
     # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
     _ordered_fields = [
-        'number', 'state', 'value', 'datetime_start', 'datetime_complete', 'params',
-        '_distributions', 'user_attrs', 'system_attrs', 'intermediate_values', '_trial_id',
-        'last_step']
+        'number', 'value', 'datetime_start', 'datetime_complete', 'params', '_distributions',
+        'user_attrs', 'system_attrs', 'intermediate_values', 'last_step', '_trial_id', 'state', ]
 
     def __eq__(self, other):
         # type: (Any) -> bool
@@ -154,13 +153,12 @@ class FrozenTrial(object):
     def __repr__(self):
         # type: () -> str
 
-        # Remove last_step field.
-        fields_for_args = self._ordered_fields[:-1]
         return ('{cls}({kwargs})'.format(
             cls=self.__class__.__name__,
             kwargs=', '.join('{field}={value}'.format(
                 field=field if not field.startswith('_') else field[1:],
-                value=repr(getattr(self, field))) for field in fields_for_args)))
+                value=repr(getattr(self, field))) for field in self._ordered_fields
+                if field != 'last_step')))
 
     def _validate(self):
         # type: () -> None
@@ -231,7 +229,7 @@ class FrozenTrial(object):
             'The use of `FrozenTrial.trial_id` is deprecated. '
             'Please use `FrozenTrial.number` instead.', DeprecationWarning)
 
-        logger = logging._get_library_root_logger()
+        logger = logging.get_logger(__name__)
         logger.warning(
             'The use of `FrozenTrial.trial_id` is deprecated. '
             'Please use `FrozenTrial.number` instead.')
@@ -335,7 +333,7 @@ class StudySummary(object):
                   'Please use `StudySummary.study_name` instead.'
         warnings.warn(message, DeprecationWarning)
 
-        logger = logging._get_library_root_logger()
+        logger = logging.get_logger(__name__)
         logger.warning(message)
 
         return self._study_id

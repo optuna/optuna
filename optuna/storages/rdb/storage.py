@@ -67,28 +67,23 @@ class RDBStorage(BaseStorage):
         engine_kwargs:
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
-        enable_cache:
-            Flag to control whether to enable storage layer caching.
-            If this flag is set to :obj:`True` (the default), the finished trials are
-            cached on memory and never re-fetched from the storage.
-            Otherwise, the trials are fetched from the storage whenever they are needed.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
 
     """
 
-    def __init__(self, url, engine_kwargs=None, enable_cache=True, skip_compatibility_check=False):
-        # type: (str, Optional[Dict[str, Any]], bool, bool) -> None
+    def __init__(self, url, engine_kwargs=None, skip_compatibility_check=False):
+        # type: (str, Optional[Dict[str, Any]], bool) -> None
 
         self._check_python_version()
 
-        engine_kwargs = engine_kwargs or {}
-
-        url = self._fill_storage_url_template(url)
+        self.engine_kwargs = engine_kwargs or {}
+        self.url = self._fill_storage_url_template(url)
+        self.skip_compatibility_check = skip_compatibility_check
 
         try:
-            self.engine = create_engine(url, **engine_kwargs)
+            self.engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError('Failed to import DB access module for the specified storage URL. '
                               'Please install appropriate one. (The actual import error is: ' +
@@ -99,11 +94,40 @@ class RDBStorage(BaseStorage):
 
         self.logger = optuna.logging.get_logger(__name__)
 
-        self._version_manager = _VersionManager(url, self.engine, self.scoped_session)
+        self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
 
-        self._finished_trials_cache = _FinishedTrialsCache(enable_cache)
+        self._finished_trials_cache = _FinishedTrialsCache()
+
+    def __getstate__(self):
+        # type: () -> Dict[Any, Any]
+
+        state = self.__dict__.copy()
+        del state['scoped_session']
+        del state['engine']
+        del state['logger']
+        del state['_version_manager']
+        del state['_finished_trials_cache']
+        return state
+
+    def __setstate__(self, state):
+        # type: (Dict[Any, Any]) -> None
+        self.__dict__.update(state)
+        try:
+            self.engine = create_engine(self.url, **self.engine_kwargs)
+        except ImportError as e:
+            raise ImportError('Failed to import DB access module for the specified storage URL. '
+                              'Please install appropriate one. (The actual import error is: ' +
+                              str(e) + '.)')
+
+        self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
+        models.BaseModel.metadata.create_all(self.engine)
+        self.logger = optuna.logging.get_logger(__name__)
+        self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
+        if not self.skip_compatibility_check:
+            self._version_manager.check_table_schema_compatibility()
+        self._finished_trials_cache = _FinishedTrialsCache()
 
     @staticmethod
     def _check_python_version():
@@ -115,7 +139,7 @@ class RDBStorage(BaseStorage):
         if sys.version_info.minor != 4:
             return
 
-        if 0 <= sys.version_info.micro and sys.version_info.micro < 4:
+        if 0 <= sys.version_info.micro < 4:
             raise RuntimeError('RDBStorage does not support Python 3.4.0 to 3.4.3.')
 
     def create_new_study(self, study_name=None):
@@ -315,7 +339,7 @@ class RDBStorage(BaseStorage):
         trial_user_attribute_models = models.TrialUserAttributeModel.all(session)
         trial_system_attribute_models = models.TrialSystemAttributeModel.all(session)
 
-        study_sumarries = []
+        study_summaries = []
         for study_model in study_models:
             # Filter model objects by study.
             study_trial_models = [t for t in trial_models if t.study_id == study_model.study_id]
@@ -361,7 +385,7 @@ class RDBStorage(BaseStorage):
             system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
             # Consolidate StudySummary.
-            study_sumarries.append(
+            study_summaries.append(
                 structs.StudySummary(
                     study_name=study_model.study_name,
                     direction=self.get_study_direction(study_model.study_id),
@@ -375,7 +399,7 @@ class RDBStorage(BaseStorage):
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
-        return study_sumarries
+        return study_summaries
 
     def create_new_trial(self, study_id, template_trial=None):
         # type: (int, Optional[structs.FrozenTrial]) -> int
@@ -1043,18 +1067,14 @@ class _VersionManager(object):
 
 
 class _FinishedTrialsCache(object):
-    def __init__(self, enabled):
-        # type: (bool) -> None
+    def __init__(self):
+        # type: () -> None
 
         self._finished_trials = {}  # type: Dict[int, structs.FrozenTrial]
-        self._enabled = enabled
         self._lock = threading.Lock()
 
     def is_empty(self):
         # type: () -> bool
-
-        if not self._enabled:
-            return True
 
         with self._lock:
             return len(self._finished_trials) == 0
@@ -1062,18 +1082,12 @@ class _FinishedTrialsCache(object):
     def cache_trial_if_finished(self, trial):
         # type: (structs.FrozenTrial) -> None
 
-        if not self._enabled:
-            return
-
         if trial.state.is_finished():
             with self._lock:
                 self._finished_trials[trial._trial_id] = copy.deepcopy(trial)
 
     def get_cached_trial(self, trial_id):
         # type: (int) -> Optional[structs.FrozenTrial]
-
-        if not self._enabled:
-            return None
 
         with self._lock:
             return self._finished_trials.get(trial_id)
