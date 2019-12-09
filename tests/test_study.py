@@ -1,4 +1,5 @@
 import itertools
+import joblib
 from mock import Mock  # NOQA
 from mock import patch
 import multiprocessing
@@ -260,6 +261,16 @@ def test_optimize_with_catch_invalid_type(catch):
 
     with pytest.raises(TypeError):
         study.optimize(func_value_error, n_trials=20, catch=catch)
+
+
+def test_optimize_parallel_storage_warning():
+    # type: () -> None
+
+    study = optuna.create_study()
+
+    with pytest.warns(UserWarning):
+        with joblib.parallel_backend('loky'):
+            study.optimize(lambda t: t.suggest_uniform('x', 0, 1), n_trials=20, n_jobs=2)
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
