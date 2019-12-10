@@ -20,6 +20,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
 
     CallbackFuncType = Callable[[optuna.study.Study, optuna.structs.FrozenTrial], None]
 
@@ -448,10 +449,14 @@ def test_study_trials_dataframe_with_no_trials():
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('include_internal_fields', [True, False])
+@pytest.mark.parametrize('attrs', [
+    ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+     'system_attrs', 'state'),
+    ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+     'system_attrs', 'state', 'intermediate_values', '_trial_id', 'distributions')])
 @pytest.mark.parametrize('multi_index', [True, False])
-def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
-    # type: (str, bool, bool) -> None
+def test_trials_dataframe(storage_mode, attrs, multi_index):
+    # type: (str, Tuple[str, ...], bool) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
@@ -470,8 +475,7 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
-        df = study.trials_dataframe(
-            include_internal_fields=include_internal_fields, multi_index=multi_index)
+        df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
         # Change index to access rows via trial number.
         if multi_index:
             df.set_index(('number', ''), inplace=True, drop=False)
@@ -479,17 +483,18 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
             df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-        # Number expected columns are as follows (total of 10):
-        #   non-nested: 5
+        # Number columns are as follows (total of 10):
+        #   non-nested: 5 (number, value, state, datetime_start, datetime_complete)
         #   params: 2
+        #   distributions: 2
         #   user_attrs: 1
         #   system_attrs: 1
         #   intermediate_values: 1
-        expected_n_columns = 10
-        if include_internal_fields:
-            # distributions: 2
-            # trial_id: 1
-            expected_n_columns += 3
+        expected_n_columns = len(attrs)
+        if 'params' in attrs:
+            expected_n_columns += 1
+        if 'distributions' in attrs:
+            expected_n_columns += 1
         assert len(df.columns) == expected_n_columns
 
         for i in range(3):
@@ -500,9 +505,10 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
 
             if multi_index:
-                if include_internal_fields:
+                if 'distributions' in attrs:
                     assert ('distributions', 'x') in df.columns
                     assert ('distributions', 'y') in df.columns
+                if '_trial_id' in attrs:
                     assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
 
                 assert df.params.x[i] == 1
@@ -510,9 +516,10 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
                 assert df.user_attrs.train_loss[i] == 3
                 assert df.system_attrs._number[i] == i
             else:
-                if include_internal_fields:
+                if 'distributions' in attrs:
                     assert 'distributions_x' in df.columns
                     assert 'distributions_y' in df.columns
+                if '_trial_id' in attrs:
                     assert 'trial_id' in df.columns  # trial_id depends on other tests.
 
                 assert df.params_x[i] == 1
