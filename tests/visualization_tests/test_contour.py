@@ -4,10 +4,9 @@ from optuna.distributions import LogUniformDistribution
 from optuna.structs import StudyDirection
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
+from optuna import type_checking
 from optuna.visualization.contour import _generate_contour_subplot
 from optuna.visualization.contour import _get_contour_plot
-
-from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import List, Optional  # NOQA

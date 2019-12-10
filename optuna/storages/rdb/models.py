@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import DateTime

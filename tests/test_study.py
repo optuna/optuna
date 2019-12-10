@@ -1,16 +1,16 @@
 import itertools
-import joblib
-from mock import Mock  # NOQA
-from mock import patch
 import multiprocessing
-import os
-import pandas as pd
 import pickle
-import pytest
 import threading
 import time
 import uuid
 import warnings
+
+import joblib
+from mock import Mock  # NOQA
+from mock import patch
+import pandas as pd
+import pytest
 
 import optuna
 from optuna.testing.storage import StorageSupplier
@@ -21,6 +21,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
 
     CallbackFuncType = Callable[[optuna.study.Study, optuna.structs.FrozenTrial], None]
 
@@ -29,13 +30,6 @@ STORAGE_MODES = [
     'new',  # We always create a new sqlite DB file for each experiment.
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
-
-if os.getenv('INCLUDE_SLOW_TESTS') is None:
-    MAX_N_TRIALS = 20
-    N_JOBS_LIST = [1, 2]
-else:
-    MAX_N_TRIALS = 50
-    N_JOBS_LIST = [1, 2, 10, -1]
 
 
 def setup_module():
@@ -56,6 +50,7 @@ def func(trial, x_max=1.0):
     x = trial.suggest_uniform('x', -x_max, x_max)
     y = trial.suggest_loguniform('y', 20, 30)
     z = trial.suggest_categorical('z', (-1.0, 1.0))
+    assert isinstance(z, float)
     return (x - 2)**2 + (y - 25)**2 + z
 
 
@@ -171,8 +166,8 @@ def test_optimize_with_direction():
 @pytest.mark.parametrize(
     'n_trials, n_jobs, storage_mode',
     itertools.product(
-        (0, 1, 2, MAX_N_TRIALS),  # n_trials
-        N_JOBS_LIST,  # n_jobs
+        (0, 1, 20),  # n_trials
+        (1, 2, -1),  # n_jobs
         STORAGE_MODES,  # storage_mode
     ))
 def test_optimize_parallel(n_trials, n_jobs, storage_mode):
@@ -190,8 +185,8 @@ def test_optimize_parallel(n_trials, n_jobs, storage_mode):
 @pytest.mark.parametrize(
     'n_trials, n_jobs, storage_mode',
     itertools.product(
-        (0, 1, 2, MAX_N_TRIALS, None),  # n_trials
-        N_JOBS_LIST,  # n_jobs
+        (0, 1, 20, None),  # n_trials
+        (1, 2, -1),  # n_jobs
         STORAGE_MODES,  # storage_mode
     ))
 def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
@@ -465,16 +460,21 @@ def test_study_trials_dataframe_with_no_trials():
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('include_internal_fields', [True, False])
+@pytest.mark.parametrize('attrs', [
+    ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+     'system_attrs', 'state'),
+    ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+     'system_attrs', 'state', 'intermediate_values', '_trial_id', 'distributions')])
 @pytest.mark.parametrize('multi_index', [True, False])
-def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
-    # type: (str, bool, bool) -> None
+def test_trials_dataframe(storage_mode, attrs, multi_index):
+    # type: (str, Tuple[str, ...], bool) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
 
         x = trial.suggest_int('x', 1, 1)
         y = trial.suggest_categorical('y', (2.5, ))
+        assert isinstance(y, float)
         trial.set_user_attr('train_loss', 3)
         value = x + y  # 3.5
 
@@ -486,8 +486,7 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
-        df = study.trials_dataframe(
-            include_internal_fields=include_internal_fields, multi_index=multi_index)
+        df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
         # Change index to access rows via trial number.
         if multi_index:
             df.set_index(('number', ''), inplace=True, drop=False)
@@ -495,30 +494,32 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
             df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-        # Number expected columns are as follows (total of 10):
-        #   non-nested: 5
+        # Number columns are as follows (total of 10):
+        #   non-nested: 5 (number, value, state, datetime_start, datetime_complete)
         #   params: 2
+        #   distributions: 2
         #   user_attrs: 1
         #   system_attrs: 1
         #   intermediate_values: 1
-        expected_n_columns = 10
-        if include_internal_fields:
-            # distributions: 2
-            # trial_id: 1
-            expected_n_columns += 3
+        expected_n_columns = len(attrs)
+        if 'params' in attrs:
+            expected_n_columns += 1
+        if 'distributions' in attrs:
+            expected_n_columns += 1
         assert len(df.columns) == expected_n_columns
 
         for i in range(3):
             assert df.number[i] == i
-            assert df.state[i] == optuna.structs.TrialState.COMPLETE
+            assert df.state[i] == 'COMPLETE'
             assert df.value[i] == 3.5
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
 
             if multi_index:
-                if include_internal_fields:
+                if 'distributions' in attrs:
                     assert ('distributions', 'x') in df.columns
                     assert ('distributions', 'y') in df.columns
+                if '_trial_id' in attrs:
                     assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
 
                 assert df.params.x[i] == 1
@@ -526,9 +527,10 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
                 assert df.user_attrs.train_loss[i] == 3
                 assert df.system_attrs._number[i] == i
             else:
-                if include_internal_fields:
+                if 'distributions' in attrs:
                     assert 'distributions_x' in df.columns
                     assert 'distributions_y' in df.columns
+                if '_trial_id' in attrs:
                     assert 'trial_id' in df.columns  # trial_id depends on other tests.
 
                 assert df.params_x[i] == 1
@@ -562,7 +564,7 @@ def test_trials_dataframe_with_failure(storage_mode):
         assert len(df.columns) == 10
         for i in range(3):
             assert df.number[i] == i
-            assert df.state[i] == optuna.structs.TrialState.FAIL
+            assert df.state[i] == 'FAIL'
             assert df.value[i] is None
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)

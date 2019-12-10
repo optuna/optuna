@@ -20,6 +20,7 @@ We have the following two ways to execute this example:
 """
 
 import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

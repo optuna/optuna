@@ -1,7 +1,8 @@
 import copy
 import datetime
-import pytest
 import warnings
+
+import pytest
 
 import optuna
 from optuna.distributions import LogUniformDistribution

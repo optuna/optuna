@@ -2,6 +2,12 @@ import collections
 import datetime
 import gc
 import math
+import threading
+import warnings
+
+import joblib
+from joblib import delayed
+from joblib import Parallel
 
 try:
     import pandas as pd  # NOQA
@@ -10,13 +16,6 @@ except ImportError as e:
     _pandas_import_error = e
     # trials_dataframe is disabled because pandas is not available.
     _pandas_available = False
-
-import threading
-import warnings
-
-import joblib
-from joblib import delayed
-from joblib import Parallel
 
 from optuna import exceptions
 from optuna import logging
@@ -336,8 +335,13 @@ class Study(BaseStudy):
 
         self._storage.set_study_system_attr(self._study_id, key, value)
 
-    def trials_dataframe(self, include_internal_fields=False, multi_index=False):
-        # type: (bool, bool) -> pd.DataFrame
+    def trials_dataframe(
+        self,
+        attrs=('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+               'system_attrs', 'state'),  # type: Tuple[str, ...]
+        multi_index=False  # type: bool
+    ):
+        # type: (...) -> pd.DataFrame
         """Export trials as a pandas DataFrame_.
 
         The DataFrame_ provides various features to analyze studies. It is also useful to draw a
@@ -364,10 +368,9 @@ class Study(BaseStudy):
                 assert df.shape[0] == 3  # n_trials.
 
         Args:
-            include_internal_fields:
-                By default, internal fields of :class:`~optuna.structs.FrozenTrial` are excluded
-                from a DataFrame of trials. If this argument is :obj:`True`, they will be included
-                in the DataFrame.
+            attrs:
+                Specifies field names of :class:`~optuna.structs.FrozenTrial` to include them to a
+                DataFrame of trials.
             multi_index:
                 Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that
                 are hierarchical by nature such as ``(params, x)`` will be flattened to
@@ -379,6 +382,7 @@ class Study(BaseStudy):
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
+
         _check_pandas_availability()
 
         trials = self.trials
@@ -388,43 +392,43 @@ class Study(BaseStudy):
             return pd.DataFrame()
 
         assert all(isinstance(trial, structs.FrozenTrial) for trial in trials)
-        fields_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
-        for field in structs.FrozenTrial._ordered_fields:
-            if field.startswith('_'):
-                if not include_internal_fields:
-                    continue
-                else:
-                    # Python conventional underscores are omitted in the dataframe.
-                    df_column = field[1:]
+        attrs_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
+        for attr in attrs:
+            if attr.startswith('_'):
+                # Python conventional underscores are omitted in the dataframe.
+                df_column = attr[1:]
             else:
-                df_column = field
-            fields_to_df_columns[field] = df_column
+                df_column = attr
+            attrs_to_df_columns[attr] = df_column
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
         # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
-        non_nested_field = ''
+        non_nested_attr = ''
 
         def _create_record_and_aggregate_column(trial):
             # type: (structs.FrozenTrial) -> Dict[Tuple[str, str], Any]
 
             record = {}
-            for field, df_column in fields_to_df_columns.items():
-                value = getattr(trial, field)
+            for attr, df_column in attrs_to_df_columns.items():
+                value = getattr(trial, attr)
+                if isinstance(value, structs.TrialState):
+                    # Convert TrialState to str and remove the common prefix.
+                    value = str(value).split('.')[-1]
                 if isinstance(value, dict):
-                    for nested_field, nested_value in value.items():
-                        record[(df_column, nested_field)] = nested_value
-                        column_agg[field].add((df_column, nested_field))
+                    for nested_attr, nested_value in value.items():
+                        record[(df_column, nested_attr)] = nested_value
+                        column_agg[attr].add((df_column, nested_attr))
                 else:
-                    record[(df_column, non_nested_field)] = value
-                    column_agg[field].add((df_column, non_nested_field))
+                    record[(df_column, non_nested_attr)] = value
+                    column_agg[attr].add((df_column, non_nested_attr))
             return record
 
         records = list([_create_record_and_aggregate_column(trial) for trial in trials])
+
         columns = sum(
-            (sorted(column_agg[k])
-             for k in structs.FrozenTrial._ordered_fields if k in column_agg),
+            (sorted(column_agg[k]) for k in attrs if k in column_agg),
             [])  # type: List[Tuple[str, str]]
 
         df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))

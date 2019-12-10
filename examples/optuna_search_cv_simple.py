@@ -9,9 +9,10 @@ You can run this example as follows:
 
 """
 
-import optuna
 from sklearn.datasets import load_iris
 from sklearn.svm import SVC
+
+import optuna
 
 if __name__ == '__main__':
     clf = SVC(gamma='auto')
