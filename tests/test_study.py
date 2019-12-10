@@ -48,6 +48,7 @@ def func(trial, x_max=1.0):
     x = trial.suggest_uniform('x', -x_max, x_max)
     y = trial.suggest_loguniform('y', 20, 30)
     z = trial.suggest_categorical('z', (-1.0, 1.0))
+    assert isinstance(z, float)
     return (x - 2)**2 + (y - 25)**2 + z
 
 
@@ -457,6 +458,7 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
 
         x = trial.suggest_int('x', 1, 1)
         y = trial.suggest_categorical('y', (2.5, ))
+        assert isinstance(y, float)
         trial.set_user_attr('train_loss', 3)
         value = x + y  # 3.5
 

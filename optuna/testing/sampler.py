@@ -4,7 +4,6 @@ from optuna import distributions
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
@@ -32,7 +31,7 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
         # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
 
         if isinstance(param_distribution, distributions.UniformDistribution):
-            param_value = param_distribution.low  # type: Union[float, str]
+            param_value = param_distribution.low  # type: Any
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
             param_value = param_distribution.low
         elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
