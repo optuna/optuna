@@ -462,7 +462,7 @@ def test_study_trials_dataframe_with_no_trials():
      'system_attrs', 'state', 'intermediate_values', '_trial_id', 'distributions')])
 @pytest.mark.parametrize('multi_index', [True, False])
 def test_trials_dataframe(storage_mode, attrs, multi_index):
-    # type: (str, Tuple[str], bool) -> None
+    # type: (str, Tuple[str, ...], bool) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
