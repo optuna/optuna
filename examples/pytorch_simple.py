@@ -41,7 +41,7 @@ N_TEST_EXAMPLES = BATCHSIZE * 10
 
 
 def define_model(trial):
-
+    # We optimize the number of layers, hidden untis and dropout ratio in each layer.
     n_layers = trial.suggest_int('n_layers', 1, 3)
     layers = []
 
