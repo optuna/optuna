@@ -294,8 +294,10 @@ class Study(BaseStudy):
                 with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
                     if not isinstance(parallel._backend, joblib.parallel.ThreadingBackend) and \
                        isinstance(self._storage, storages.InMemoryStorage):
-                        msg = '`InMemoryStorage` cannot be shared by multiple processes. Please' \
-                              ' use `RDBStorage` instead.'
+                        msg = 'The default storage cannot be shared by multiple processes. ' \
+                              'Please use an RDB (RDBStorage) when you use joblib for ' \
+                              'multi-processing. The usage of RDBStorage can be found in ' \
+                              'https://optuna.readthedocs.io/en/stable/tutorial/rdb.html.'
                         warnings.warn(msg, UserWarning)
                         _logger.warning(msg)
 
