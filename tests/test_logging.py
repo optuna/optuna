@@ -1,6 +1,7 @@
+import logging
+
 import _pytest.capture  # NOQA
 import _pytest.logging  # NOQA
-import logging
 
 import optuna.logging
 

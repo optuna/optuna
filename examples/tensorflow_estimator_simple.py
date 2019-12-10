@@ -19,9 +19,10 @@ We have the following two ways to execute this example:
 
 """
 
-import numpy as np
 import shutil
 import tempfile
+
+import numpy as np
 import tensorflow as tf
 
 import optuna

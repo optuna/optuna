@@ -1,8 +1,9 @@
-import numpy
-from numpy import ndarray
 from typing import Callable
 from typing import NamedTuple
 from typing import Optional
+
+import numpy
+from numpy import ndarray
 
 from optuna import type_checking
 

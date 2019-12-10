@@ -20,6 +20,7 @@ We have the following two ways to execute this example:
 """
 
 import logging
+
 import mxnet as mx
 import numpy as np
 

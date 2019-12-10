@@ -11,9 +11,10 @@ You can run this example as follows:
 
 """
 
-import numpy as np
 import shutil
 import tempfile
+
+import numpy as np
 import tensorflow as tf
 
 import optuna

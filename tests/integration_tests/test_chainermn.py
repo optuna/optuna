@@ -1,4 +1,5 @@
 import gc
+
 import pytest
 
 from optuna import create_study

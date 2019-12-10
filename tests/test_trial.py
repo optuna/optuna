@@ -1,9 +1,10 @@
 import math
+import warnings
+
 from mock import Mock
 from mock import patch
 import numpy as np
 import pytest
-import warnings
 
 from optuna import distributions
 from optuna import samplers

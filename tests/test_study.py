@@ -1,14 +1,15 @@
 import itertools
-from mock import Mock  # NOQA
-from mock import patch
 import multiprocessing
-import pandas as pd
 import pickle
-import pytest
 import threading
 import time
 import uuid
 import warnings
+
+from mock import Mock  # NOQA
+from mock import patch
+import pandas as pd
+import pytest
 
 import optuna
 from optuna.testing.storage import StorageSupplier

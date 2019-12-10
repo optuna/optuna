@@ -1,13 +1,14 @@
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
-from cliff.app import App
-from cliff.command import Command
-from cliff.commandmanager import CommandManager
-from cliff.lister import Lister
 from importlib.machinery import SourceFileLoader
 import logging
 import sys
 import types
+
+from cliff.app import App
+from cliff.command import Command
+from cliff.commandmanager import CommandManager
+from cliff.lister import Lister
 
 import optuna
 from optuna.exceptions import CLIUsageError

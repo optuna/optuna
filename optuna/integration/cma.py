@@ -1,6 +1,7 @@
 import math
-import numpy
 import random
+
+import numpy
 
 import optuna
 from optuna import distributions
