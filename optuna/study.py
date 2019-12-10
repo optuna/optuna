@@ -359,10 +359,6 @@ class Study(BaseStudy):
                 assert df.shape[0] == 3  # n_trials.
 
         Args:
-            include_internal_fields:
-                By default, internal fields of :class:`~optuna.structs.FrozenTrial` are excluded
-                from a DataFrame of trials. If this argument is :obj:`True`, they will be included
-                in the DataFrame.
             attrs:
                 Specifies field names of :class:`~optuna.structs.FrozenTrial` to include them to a
                 DataFrame of trials.
