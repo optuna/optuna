@@ -1,6 +1,5 @@
 from optuna.logging import get_logger
 from optuna.structs import TrialState
-from optuna.study import Study  # NOQA
 from optuna import type_checking
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import _is_log_scale
@@ -11,7 +10,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
     from optuna.structs import FrozenTrial  # NOQA
-    from optuna.visualization.plotly_imports import Figure  # NOQA
+    from optuna.study import Study  # NOQA
     from optuna.visualization.plotly_imports import Scatter  # NOQA
 
 if is_available():
@@ -22,7 +21,7 @@ logger = get_logger(__name__)
 
 
 def plot_slice(study, params=None):
-    # type: (Study, Optional[List[str]]) -> None
+    # type: (Study, Optional[List[str]]) -> go.Figure
     """Plot the parameter relationship as slice plot in a study.
 
         Note that, If a parameter contains missing values, a trial with missing values is not
@@ -50,15 +49,17 @@ def plot_slice(study, params=None):
             values.
         params:
             Parameter list to visualize. The default is all parameters.
+
+    Returns:
+        A :class:`plotly.graph_objs.Figure` object.
     """
 
     _check_plotly_availability()
-    figure = _get_slice_plot(study, params)
-    figure.show()
+    return _get_slice_plot(study, params)
 
 
 def _get_slice_plot(study, params=None):
-    # type: (Study, Optional[List[str]]) -> Figure
+    # type: (Study, Optional[List[str]]) -> go.Figure
 
     layout = go.Layout(
         title='Slice Plot',
