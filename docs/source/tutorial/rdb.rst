@@ -61,14 +61,13 @@ The method :func:`~optuna.study.Study.trials_dataframe` returns a pandas datafra
 
 .. code-block:: bash
 
-    number                state       value             datetime_start          datetime_complete    params system_attrs
-                                                                                                          x      _number
-         0  TrialState.COMPLETE   25.301959 2019-03-14 10:57:27.716141 2019-03-14 10:57:27.746354 -3.030105            0
-         1  TrialState.COMPLETE    1.406223 2019-03-14 10:57:27.774461 2019-03-14 10:57:27.835520  0.814157            1
-         2  TrialState.COMPLETE   44.010366 2019-03-14 10:57:27.871365 2019-03-14 10:57:27.926247 -4.634031            2
-         3  TrialState.COMPLETE   55.872181 2019-03-14 10:59:00.845565 2019-03-14 10:59:00.899305  9.474770            3
-         4  TrialState.COMPLETE  113.039223 2019-03-14 10:59:00.921534 2019-03-14 10:59:00.947233 -8.631991            4
-         5  TrialState.COMPLETE   57.319570 2019-03-14 10:59:00.985909 2019-03-14 10:59:01.028819  9.570969            5
+    number       value             datetime_start          datetime_complete  params_x system_attrs__number     state
+         0   25.301959 2019-03-14 10:57:27.716141 2019-03-14 10:57:27.746354 -3.030105                    0  COMPLETE
+         1    1.406223 2019-03-14 10:57:27.774461 2019-03-14 10:57:27.835520  0.814157                    1  COMPLETE
+         2   44.010366 2019-03-14 10:57:27.871365 2019-03-14 10:57:27.926247 -4.634031                    2  COMPLETE
+         3   55.872181 2019-03-14 10:59:00.845565 2019-03-14 10:59:00.899305  9.474770                    3  COMPLETE
+         4  113.039223 2019-03-14 10:59:00.921534 2019-03-14 10:59:00.947233 -8.631991                    4  COMPLETE
+         5   57.319570 2019-03-14 10:59:00.985909 2019-03-14 10:59:01.028819  9.570969                    5  COMPLETE
 
 A :class:`~optuna.study.Study` object also provides properties such as :attr:`~optuna.study.Study.trials`, :attr:`~optuna.study.Study.best_value`, :attr:`~optuna.study.Study.best_params` (see also :ref:`firstopt`).
 
