@@ -61,7 +61,6 @@ class RandomSampler(BaseSampler):
 
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (Study, FrozenTrial, str, distributions.BaseDistribution) -> Any
-        """Please consult the documentation for :func:`BaseSampler.sample_independent`."""
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._rng.uniform(param_distribution.low, param_distribution.high)
