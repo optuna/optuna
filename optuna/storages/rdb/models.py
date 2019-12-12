@@ -1,7 +1,9 @@
 from datetime import datetime
+from sqlalchemy import asc
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import DateTime
+from sqlalchemy import desc
 from sqlalchemy import Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Float
@@ -11,8 +13,6 @@ from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
-from sqlalchemy import desc
-from sqlalchemy import asc
 
 from optuna import distributions
 from optuna.structs import StudyDirection
