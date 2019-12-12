@@ -658,7 +658,7 @@ class RDBStorage(BaseStorage):
         frozen_trial = self._merge_trials_orm([trial], params, values, user_attributes,
                                               system_attributes)[0]
 
-        self._finished_trials_cache.cache_trial_if_finished(frozen_trial, deepcopy)
+        self._finished_trials_cache.cache_trial_if_finished(frozen_trial)
 
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
@@ -671,7 +671,7 @@ class RDBStorage(BaseStorage):
         if self._finished_trials_cache.is_empty():
             trials = self._get_all_trials_without_cache(study_id)
             for trial in trials:
-                self._finished_trials_cache.cache_trial_if_finished(trial, deepcopy)
+                self._finished_trials_cache.cache_trial_if_finished(trial)
 
             return trials
 
