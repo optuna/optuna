@@ -680,20 +680,7 @@ class RDBStorage(BaseStorage):
         else:
             trial = models.TrialModel.find_min_value_trial(study_id, session)
 
-        params = models.TrialParamModel.where_trial(trial, session)
-        values = models.TrialValueModel.where_trial(trial, session)
-        user_attributes = models.TrialUserAttributeModel.where_trial(trial, session)
-        system_attributes = models.TrialSystemAttributeModel.where_trial(trial, session)
-
-        frozen_trial = self._merge_trials_orm([trial], params, values, user_attributes,
-                                              system_attributes)[0]
-
-        self._finished_trials_cache.cache_trial_if_finished(frozen_trial)
-
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
-
-        return frozen_trial
+        return self.get_trial(trial.trial_id)
 
     def _get_all_trial_ids(self, study_id):
         # type: (int) -> List[int]
