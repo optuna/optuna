@@ -753,11 +753,10 @@ def test_callbacks(n_jobs):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_get_trials(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_get_trials(storage_mode):
+    # type: (str) -> None
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         storage = optuna.storages.get_storage(storage=storage)
 
         study = optuna.create_study(storage=storage)
