@@ -7,6 +7,7 @@ import time
 import uuid
 import warnings
 
+import joblib
 from mock import Mock  # NOQA
 from mock import patch
 import pandas as pd
@@ -22,6 +23,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
+
+    from _pytest.recwarn import WarningsRecorder  # NOQA
 
     CallbackFuncType = Callable[[optuna.study.Study, optuna.structs.FrozenTrial], None]
 
@@ -256,6 +259,20 @@ def test_optimize_with_catch_invalid_type(catch):
 
     with pytest.raises(TypeError):
         study.optimize(func_value_error, n_trials=20, catch=catch)
+
+
+def test_optimize_parallel_storage_warning(recwarn):
+    # type: (WarningsRecorder) -> None
+
+    study = optuna.create_study()
+
+    # Default joblib backend is threading and no warnings will be captured.
+    study.optimize(lambda t: t.suggest_uniform('x', 0, 1), n_trials=20, n_jobs=2)
+    assert len(recwarn) == 0
+
+    with pytest.warns(UserWarning):
+        with joblib.parallel_backend('loky'):
+            study.optimize(lambda t: t.suggest_uniform('x', 0, 1), n_trials=20, n_jobs=2)
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)

@@ -5,6 +5,7 @@ import math
 import threading
 import warnings
 
+import joblib
 from joblib import delayed
 from joblib import Parallel
 
@@ -314,6 +315,15 @@ class Study(BaseStudy):
                     _iter = iter(int, 1)
 
                 with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
+                    if not isinstance(parallel._backend, joblib.parallel.ThreadingBackend) and \
+                       isinstance(self._storage, storages.InMemoryStorage):
+                        msg = 'The default storage cannot be shared by multiple processes. ' \
+                              'Please use an RDB (RDBStorage) when you use joblib for ' \
+                              'multi-processing. The usage of RDBStorage can be found in ' \
+                              'https://optuna.readthedocs.io/en/stable/tutorial/rdb.html.'
+                        warnings.warn(msg, UserWarning)
+                        _logger.warning(msg)
+
                     parallel(
                         delayed(self._optimize_sequential)
                         (func, 1, timeout, catch, callbacks, gc_after_trial, time_start)
