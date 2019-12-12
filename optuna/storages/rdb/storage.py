@@ -1067,17 +1067,14 @@ class _FinishedTrialsCache(object):
         with self._lock:
             return len(self._finished_trials) == 0
 
-    def cache_trial_if_finished(self, trial, deepcopy):
-        # type: (structs.FrozenTrial, bool) -> None
+    def cache_trial_if_finished(self, trial):
+        # type: (structs.FrozenTrial) -> None
 
         if not self._enabled:
             return
 
         if trial.state.is_finished():
             with self._lock:
-                if deepcopy:
-                    trial = copy.deepcopy(trial)
-
                 self._finished_trials[trial._trial_id] = trial
 
     def get_cached_trial(self, trial_id):
