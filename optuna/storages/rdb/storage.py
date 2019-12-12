@@ -660,9 +660,17 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
 
+        return self._get_and_cache_trial(trial_id)
+
+    def _get_and_cache_trial(self, trial_id, deepcopy=True):
+        # type: (int, bool) -> structs.FrozenTrial
+
         cached_trial = self._finished_trials_cache.get_cached_trial(trial_id)
         if cached_trial is not None:
-            return copy.deepcopy(cached_trial)
+            if deepcopy:
+                return copy.deepcopy(cached_trial)
+            else:
+                return cached_trial
 
         session = self.scoped_session()
 
@@ -682,8 +690,8 @@ class RDBStorage(BaseStorage):
 
         return frozen_trial
 
-    def get_all_trials(self, study_id):
-        # type: (int) -> List[structs.FrozenTrial]
+    def get_all_trials(self, study_id, deepcopy=True):
+        # type: (int, bool) -> List[structs.FrozenTrial]
 
         if self._finished_trials_cache.is_empty():
             trials = self._get_all_trials_without_cache(study_id)
@@ -693,7 +701,7 @@ class RDBStorage(BaseStorage):
             return trials
 
         trial_ids = self._get_all_trial_ids(study_id)
-        trials = [self.get_trial(trial_id) for trial_id in trial_ids]
+        trials = [self._get_and_cache_trial(trial_id, deepcopy) for trial_id in trial_ids]
         return trials
 
     def _get_all_trial_ids(self, study_id):
@@ -1085,7 +1093,7 @@ class _FinishedTrialsCache(object):
 
         if trial.state.is_finished():
             with self._lock:
-                self._finished_trials[trial._trial_id] = copy.deepcopy(trial)
+                self._finished_trials[trial._trial_id] = trial
 
     def get_cached_trial(self, trial_id):
         # type: (int) -> Optional[structs.FrozenTrial]
