@@ -1,7 +1,9 @@
-from mock import patch
-import pytest
+import pickle
 import sys
 import tempfile
+
+from mock import patch
+import pytest
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import json_to_distribution
@@ -174,7 +176,7 @@ def test_get_all_study_summaries_with_multiple_studies():
     study_id_3 = storage.create_new_study()
 
     summaries = storage.get_all_study_summaries()
-    summaries = sorted(summaries, key=lambda x: x.study_id)
+    summaries = sorted(summaries)
 
     expected_summary_1 = StudySummary(
         study_id=study_id_1,
@@ -239,13 +241,25 @@ def test_check_table_schema_compatibility():
     #     storage._check_table_schema_compatibility()
 
 
-def create_test_storage(enable_cache=True, engine_kwargs=None):
-    # type: (bool, Optional[Dict[str, Any]]) -> RDBStorage
+def create_test_storage(engine_kwargs=None):
+    # type: (Optional[Dict[str, Any]]) -> RDBStorage
 
-    storage = RDBStorage('sqlite:///:memory:',
-                         enable_cache=enable_cache,
-                         engine_kwargs=engine_kwargs)
+    storage = RDBStorage('sqlite:///:memory:', engine_kwargs=engine_kwargs)
     return storage
+
+
+def test_pickle_storage():
+    # type: () -> None
+
+    storage = create_test_storage()
+    restored_storage = pickle.loads(pickle.dumps(storage))
+    assert storage.url == restored_storage.url
+    assert storage.engine_kwargs == restored_storage.engine_kwargs
+    assert storage.skip_compatibility_check == restored_storage.skip_compatibility_check
+    assert storage.engine != restored_storage.engine
+    assert storage.scoped_session != restored_storage.scoped_session
+    assert storage._version_manager != restored_storage._version_manager
+    assert storage._finished_trials_cache != restored_storage._finished_trials_cache
 
 
 def test_commit():
@@ -338,24 +352,7 @@ def test_storage_cache():
 
         return trials
 
-    # Storage cache is disabled.
-    storage = create_test_storage(enable_cache=False)
-    study_id = storage.create_new_study()
-    trials = setup_trials(storage, study_id)
-
-    with patch.object(
-            TrialModel, 'find_or_raise_by_id',
-            wraps=TrialModel.find_or_raise_by_id) as mock_object:
-        for trial in trials:
-            assert storage.get_trial(trial._trial_id) == trial
-        assert mock_object.call_count == 4
-
-    with patch.object(TrialModel, 'where_study', wraps=TrialModel.where_study) as mock_object:
-        assert storage.get_all_trials(study_id) == trials
-        assert mock_object.call_count == 1
-
-    # Storage cache is enabled.
-    storage = create_test_storage(enable_cache=True)
+    storage = create_test_storage()
     study_id = storage.create_new_study()
     trials = setup_trials(storage, study_id)
 
@@ -366,7 +363,7 @@ def test_storage_cache():
             assert storage.get_trial(trial._trial_id) == trial
         assert mock_object.call_count == 1  # Only a running trial was fetched from the storage.
 
-    # If cache is enabled, running trials are fetched from the storage individually.
+    # Running trials are fetched from the storage individually.
     with patch.object(TrialModel, 'where_study', wraps=TrialModel.where_study) as mock_object:
         assert storage.get_all_trials(study_id) == trials
         assert mock_object.call_count == 0  # `TrialModel.where_study` has not been called.

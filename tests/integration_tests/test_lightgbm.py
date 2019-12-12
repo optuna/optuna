@@ -1,4 +1,5 @@
 from functools import partial
+
 import lightgbm as lgb
 import pytest
 

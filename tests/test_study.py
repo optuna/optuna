@@ -1,14 +1,17 @@
+import copy
 import itertools
-from mock import Mock  # NOQA
-from mock import patch
 import multiprocessing
-import os
-import pandas as pd
 import pickle
-import pytest
 import threading
 import time
 import uuid
+import warnings
+
+import joblib
+from mock import Mock  # NOQA
+from mock import patch
+import pandas as pd
+import pytest
 
 import optuna
 from optuna.testing.storage import StorageSupplier
@@ -19,21 +22,17 @@ if type_checking.TYPE_CHECKING:
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
+
+    from _pytest.recwarn import WarningsRecorder  # NOQA
+
+    CallbackFuncType = Callable[[optuna.study.Study, optuna.structs.FrozenTrial], None]
 
 STORAGE_MODES = [
     'none',  # We give `None` to storage argument, so InMemoryStorage is used.
     'new',  # We always create a new sqlite DB file for each experiment.
     'common',  # We use a sqlite DB file for the whole experiments.
 ]
-
-if os.getenv('INCLUDE_SLOW_TESTS') is None:
-    MAX_N_TRIALS = 20
-    N_JOBS_LIST = [1, 2]
-    CACHE_MODES = [True]
-else:
-    MAX_N_TRIALS = 50
-    N_JOBS_LIST = [1, 2, 10, -1]
-    CACHE_MODES = [True, False]
 
 
 def setup_module():
@@ -54,6 +53,7 @@ def func(trial, x_max=1.0):
     x = trial.suggest_uniform('x', -x_max, x_max)
     y = trial.suggest_loguniform('y', 20, 30)
     z = trial.suggest_categorical('z', (-1.0, 1.0))
+    assert isinstance(z, float)
     return (x - 2)**2 + (y - 25)**2 + z
 
 
@@ -167,19 +167,18 @@ def test_optimize_with_direction():
 
 
 @pytest.mark.parametrize(
-    'n_trials, n_jobs, storage_mode, cache_mode',
+    'n_trials, n_jobs, storage_mode',
     itertools.product(
-        (0, 1, 2, MAX_N_TRIALS),  # n_trials
-        N_JOBS_LIST,  # n_jobs
+        (0, 1, 20),  # n_trials
+        (1, 2, -1),  # n_jobs
         STORAGE_MODES,  # storage_mode
-        CACHE_MODES,  # cache_mode
     ))
-def test_optimize_parallel(n_trials, n_jobs, storage_mode, cache_mode):
-    # type: (int, int, str, bool)-> None
+def test_optimize_parallel(n_trials, n_jobs, storage_mode):
+    # type: (int, int, str)-> None
 
     f = Func()
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=n_trials, n_jobs=n_jobs)
         assert f.n_calls == len(study.trials) == n_trials
@@ -187,21 +186,20 @@ def test_optimize_parallel(n_trials, n_jobs, storage_mode, cache_mode):
 
 
 @pytest.mark.parametrize(
-    'n_trials, n_jobs, storage_mode, cache_mode',
+    'n_trials, n_jobs, storage_mode',
     itertools.product(
-        (0, 1, 2, MAX_N_TRIALS, None),  # n_trials
-        N_JOBS_LIST,  # n_jobs
+        (0, 1, 20, None),  # n_trials
+        (1, 2, -1),  # n_jobs
         STORAGE_MODES,  # storage_mode
-        CACHE_MODES,  # cache_mode
     ))
-def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode, cache_mode):
-    # type: (int, int, str, bool) -> None
+def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
+    # type: (int, int, str) -> None
 
     sleep_sec = 0.1
     timeout_sec = 1.0
     f = Func(sleep_sec=sleep_sec)
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=n_trials, n_jobs=n_jobs, timeout=timeout_sec)
 
@@ -219,11 +217,10 @@ def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode, cache_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_optimize_with_catch(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_optimize_with_catch(storage_mode):
+    # type: (str) -> None
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
 
         def func_value_error(_):
@@ -264,12 +261,25 @@ def test_optimize_with_catch_invalid_type(catch):
         study.optimize(func_value_error, n_trials=20, catch=catch)
 
 
-@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_study_set_and_get_user_attrs(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_optimize_parallel_storage_warning(recwarn):
+    # type: (WarningsRecorder) -> None
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    study = optuna.create_study()
+
+    # Default joblib backend is threading and no warnings will be captured.
+    study.optimize(lambda t: t.suggest_uniform('x', 0, 1), n_trials=20, n_jobs=2)
+    assert len(recwarn) == 0
+
+    with pytest.warns(UserWarning):
+        with joblib.parallel_backend('loky'):
+            study.optimize(lambda t: t.suggest_uniform('x', 0, 1), n_trials=20, n_jobs=2)
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_study_set_and_get_user_attrs(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
 
         study.set_user_attr('dataset', 'MNIST')
@@ -277,11 +287,10 @@ def test_study_set_and_get_user_attrs(storage_mode, cache_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_study_set_and_get_system_attrs(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_study_set_and_get_system_attrs(storage_mode):
+    # type: (str) -> None
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
 
         study.set_system_attr('system_message', 'test')
@@ -289,9 +298,8 @@ def test_study_set_and_get_system_attrs(storage_mode, cache_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_trial_set_and_get_user_attrs(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_trial_set_and_get_user_attrs(storage_mode):
+    # type: (str) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
@@ -300,7 +308,7 @@ def test_trial_set_and_get_user_attrs(storage_mode, cache_mode):
         assert trial.user_attrs['train_accuracy'] == 1
         return 0.0
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=1)
         frozen_trial = study.trials[0]
@@ -308,9 +316,8 @@ def test_trial_set_and_get_user_attrs(storage_mode, cache_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_trial_set_and_get_system_attrs(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_trial_set_and_get_system_attrs(storage_mode):
+    # type: (str) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
@@ -319,7 +326,7 @@ def test_trial_set_and_get_system_attrs(storage_mode, cache_mode):
         assert trial.system_attrs['system_message'] == 'test'
         return 0.0
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=1)
         frozen_trial = study.trials[0]
@@ -327,31 +334,29 @@ def test_trial_set_and_get_system_attrs(storage_mode, cache_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_get_all_study_summaries(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_get_all_study_summaries(storage_mode):
+    # type: (str) -> None
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(Func(), n_trials=5)
 
         summaries = optuna.get_all_study_summaries(study._storage)
-        summary = [s for s in summaries if s.study_id == study.study_id][0]
+        summary = [s for s in summaries if s._study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 5
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_get_all_study_summaries_with_no_trials(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_get_all_study_summaries_with_no_trials(storage_mode):
+    # type: (str) -> None
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
 
         summaries = optuna.get_all_study_summaries(study._storage)
-        summary = [s for s in summaries if s.study_id == study.study_id][0]
+        summary = [s for s in summaries if s._study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 0
@@ -359,11 +364,10 @@ def test_get_all_study_summaries_with_no_trials(storage_mode, cache_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_run_trial(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_run_trial(storage_mode):
+    # type: (str) -> None
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
 
         # Test trial without exception.
@@ -463,56 +467,88 @@ def test_study_trials_dataframe_with_no_trials():
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-@pytest.mark.parametrize('include_internal_fields', [True, False])
-def test_trials_dataframe(storage_mode, cache_mode, include_internal_fields):
-    # type: (str, bool, bool) -> None
+@pytest.mark.parametrize('attrs', [
+    ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+     'system_attrs', 'state'),
+    ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+     'system_attrs', 'state', 'intermediate_values', '_trial_id', 'distributions')])
+@pytest.mark.parametrize('multi_index', [True, False])
+def test_trials_dataframe(storage_mode, attrs, multi_index):
+    # type: (str, Tuple[str, ...], bool) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
 
         x = trial.suggest_int('x', 1, 1)
         y = trial.suggest_categorical('y', (2.5, ))
+        assert isinstance(y, float)
         trial.set_user_attr('train_loss', 3)
-        return x + y  # 3.5
+        value = x + y  # 3.5
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+        # Test reported intermediate values, although it in practice is not "intermediate".
+        trial.report(value, step=0)
+
+        return value
+
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
-        df = study.trials_dataframe(include_internal_fields=include_internal_fields)
+        df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
         # Change index to access rows via trial number.
-        df.set_index(('number', ''), inplace=True, drop=False)
+        if multi_index:
+            df.set_index(('number', ''), inplace=True, drop=False)
+        else:
+            df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-        # non-nested: 5, params: 2, user_attrs: 1, system_attrs: 1 and 9 in total.
-        if include_internal_fields:
-            # distributions:2, trial_id: 1
-            assert len(df.columns) == 7 + 5
-        else:
-            assert len(df.columns) == 9
+        # Number columns are as follows (total of 10):
+        #   non-nested: 5 (number, value, state, datetime_start, datetime_complete)
+        #   params: 2
+        #   distributions: 2
+        #   user_attrs: 1
+        #   system_attrs: 1
+        #   intermediate_values: 1
+        expected_n_columns = len(attrs)
+        if 'params' in attrs:
+            expected_n_columns += 1
+        if 'distributions' in attrs:
+            expected_n_columns += 1
+        assert len(df.columns) == expected_n_columns
 
         for i in range(3):
             assert df.number[i] == i
-            assert df.state[i] == optuna.structs.TrialState.COMPLETE
+            assert df.state[i] == 'COMPLETE'
             assert df.value[i] == 3.5
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
-            assert df.params.x[i] == 1
-            assert df.params.y[i] == 2.5
-            assert df.user_attrs.train_loss[i] == 3
-            assert df.system_attrs._number[i] == i
-            if include_internal_fields:
-                assert ('distributions', 'x') in df.columns
-                assert ('distributions', 'y') in df.columns
-                assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
-                assert ('distributions', 'x') in df.columns
-                assert ('distributions', 'y') in df.columns
+
+            if multi_index:
+                if 'distributions' in attrs:
+                    assert ('distributions', 'x') in df.columns
+                    assert ('distributions', 'y') in df.columns
+                if '_trial_id' in attrs:
+                    assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
+
+                assert df.params.x[i] == 1
+                assert df.params.y[i] == 2.5
+                assert df.user_attrs.train_loss[i] == 3
+                assert df.system_attrs._number[i] == i
+            else:
+                if 'distributions' in attrs:
+                    assert 'distributions_x' in df.columns
+                    assert 'distributions_y' in df.columns
+                if '_trial_id' in attrs:
+                    assert 'trial_id' in df.columns  # trial_id depends on other tests.
+
+                assert df.params_x[i] == 1
+                assert df.params_y[i] == 2.5
+                assert df.user_attrs_train_loss[i] == 3
+                assert df.system_attrs__number[i] == i
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_trials_dataframe_with_failure(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_trials_dataframe_with_failure(storage_mode):
+    # type: (str) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
@@ -523,35 +559,34 @@ def test_trials_dataframe_with_failure(storage_mode, cache_mode):
         raise ValueError()
         return x + y  # 3.5
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3, catch=(ValueError,))
         df = study.trials_dataframe()
         # Change index to access rows via trial number.
-        df.set_index(('number', ''), inplace=True, drop=False)
+        df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
         # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 2
         assert len(df.columns) == 10
         for i in range(3):
             assert df.number[i] == i
-            assert df.state[i] == optuna.structs.TrialState.FAIL
+            assert df.state[i] == 'FAIL'
             assert df.value[i] is None
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
-            assert df.params.x[i] == 1
-            assert df.params.y[i] == 2.5
-            assert df.user_attrs.train_loss[i] == 3
-            assert df.system_attrs._number[i] == i
-            assert ('system_attrs', 'fail_reason') in df.columns
+            assert df.params_x[i] == 1
+            assert df.params_y[i] == 2.5
+            assert df.user_attrs_train_loss[i] == 3
+            assert df.system_attrs__number[i] == i
+            assert 'system_attrs_fail_reason' in df.columns
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_create_study(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_create_study(storage_mode):
+    # type: (str) -> None
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         # Test creating a new study.
         study = optuna.create_study(storage=storage, load_if_exists=False)
 
@@ -570,11 +605,10 @@ def test_create_study(storage_mode, cache_mode):
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_load_study(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_load_study(storage_mode):
+    # type: (str) -> None
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         if storage is None:
             # `InMemoryStorage` can not be used with `load_study` function.
             return
@@ -590,15 +624,14 @@ def test_load_study(storage_mode, cache_mode):
 
         # Test loading an existing study.
         loaded_study = optuna.study.load_study(study_name=study_name, storage=storage)
-        assert created_study.study_id == loaded_study.study_id
+        assert created_study._study_id == loaded_study._study_id
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('cache_mode', CACHE_MODES)
-def test_delete_study(storage_mode, cache_mode):
-    # type: (str, bool) -> None
+def test_delete_study(storage_mode):
+    # type: (str) -> None
 
-    with StorageSupplier(storage_mode, cache_mode) as storage:
+    with StorageSupplier(storage_mode) as storage:
         # Get storage object because delete_study does not accept None.
         storage = optuna.storages.get_storage(storage=storage)
         assert storage is not None
@@ -677,6 +710,19 @@ def test_optimize_without_gc(collect_mock):
 def test_callbacks(n_jobs):
     # type: (int) -> None
 
+    lock = threading.Lock()
+
+    def with_lock(f):
+        # type: (CallbackFuncType) -> CallbackFuncType
+
+        def callback(study, trial):
+            # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
+
+            with lock:
+                f(study, trial)
+
+        return callback
+
     study = optuna.create_study()
 
     def objective(trial):
@@ -689,7 +735,7 @@ def test_callbacks(n_jobs):
 
     # A callback.
     values = []
-    callbacks = [lambda study, trial: values.append(trial.value)]
+    callbacks = [with_lock(lambda study, trial: values.append(trial.value))]
     study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
     assert values == [1] * 10
 
@@ -697,8 +743,8 @@ def test_callbacks(n_jobs):
     values = []
     params = []
     callbacks = [
-        lambda study, trial: values.append(trial.value),
-        lambda study, trial: params.append(trial.params)
+        with_lock(lambda study, trial: values.append(trial.value)),
+        with_lock(lambda study, trial: params.append(trial.params))
     ]
     study.optimize(objective, callbacks=callbacks, n_trials=10, n_jobs=n_jobs)
     assert values == [1] * 10
@@ -707,25 +753,56 @@ def test_callbacks(n_jobs):
     # If a trial is failed with an exception and the exception is caught by the study,
     # callbacks are invoked.
     states = []
-    callbacks = [lambda study, trial: states.append(trial.state)]
+    callbacks = [with_lock(lambda study, trial: states.append(trial.state))]
     study.optimize(
         lambda t: 1/0, callbacks=callbacks, n_trials=10, n_jobs=n_jobs,
         catch=(ZeroDivisionError,))
     assert states == [optuna.structs.TrialState.FAIL] * 10
 
-    # NOTE: Because `Study.optimize` blocks forever if `n_jobs` is more than `1` and
-    #       an uncaught exception is raised during an optimization,
-    #       we test the following scenario only when `n_jobs==1`.
-    #       For further details, please see https://github.com/optuna/optuna/issues/538.
-    #
-    # TODO(ohta): Fix `Study.optimize`
+    # If a trial is failed with an exception and the exception isn't caught by the study,
+    # callbacks aren't invoked.
+    states = []
+    callbacks = [with_lock(lambda study, trial: states.append(trial.state))]
+    with pytest.raises(ZeroDivisionError):
+        study.optimize(lambda t: 1/0, callbacks=callbacks,
+                       n_trials=10, n_jobs=n_jobs, catch=())
+    assert states == []
 
-    if n_jobs == 1:
-        # If a trial is failed with an exception and the exception isn't caught by the study,
-        # callbacks aren't invoked.
-        states = []
-        callbacks = [lambda study, trial: states.append(trial.state)]
-        with pytest.raises(ZeroDivisionError):
-            study.optimize(lambda t: 1/0, callbacks=callbacks,
-                           n_trials=10, n_jobs=n_jobs, catch=())
-        assert states == []
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_trials(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        storage = optuna.storages.get_storage(storage=storage)
+
+        study = optuna.create_study(storage=storage)
+        study.optimize(lambda t: t.suggest_int('x', 1, 5), n_trials=5)
+
+        with patch('copy.deepcopy', wraps=copy.deepcopy) as mock_object:
+            trials0 = study.get_trials(deepcopy=False)
+            assert mock_object.call_count == 0
+            assert len(trials0) == 5
+
+            trials1 = study.get_trials(deepcopy=True)
+            assert mock_object.call_count > 0
+            assert trials0 == trials1
+
+            # `study.trials` is equivalent to `study.get_trials(deepcopy=True)`.
+            old_count = mock_object.call_count
+            trials2 = study.trials
+            assert mock_object.call_count > old_count
+            assert trials0 == trials2
+
+
+def test_study_id():
+    # type: () -> None
+
+    study = optuna.create_study()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        assert study.study_id == study._study_id
+
+    with pytest.warns(DeprecationWarning):
+        study.study_id

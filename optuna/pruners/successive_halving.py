@@ -115,7 +115,7 @@ class SuccessiveHalvingPruner(BasePruner):
                 return True
 
             if all_trials is None:
-                all_trials = study.trials
+                all_trials = study.get_trials(deepcopy=False)
 
             study._storage.set_trial_system_attr(trial._trial_id, _completed_rung_key(rung), value)
             direction = study.direction

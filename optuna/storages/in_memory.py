@@ -139,14 +139,15 @@ class InMemoryStorage(base.BaseStorage):
 
         return [
             structs.StudySummary(
-                study_id=IN_MEMORY_STORAGE_STUDY_ID,
                 study_name=self.study_name,
                 direction=self.direction,
                 best_trial=best_trial,
                 user_attrs=copy.deepcopy(self.study_user_attrs),
                 system_attrs=copy.deepcopy(self.study_system_attrs),
                 n_trials=len(self.trials),
-                datetime_start=datetime_start)
+                datetime_start=datetime_start,
+                study_id=IN_MEMORY_STORAGE_STUDY_ID
+            )
         ]
 
     def create_new_trial(self, study_id, template_trial=None):
@@ -311,12 +312,15 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             return copy.deepcopy(self.trials[trial_id])
 
-    def get_all_trials(self, study_id):
-        # type: (int) -> List[structs.FrozenTrial]
+    def get_all_trials(self, study_id, deepcopy=True):
+        # type: (int, bool) -> List[structs.FrozenTrial]
 
         self._check_study_id(study_id)
         with self._lock:
-            return copy.deepcopy(self.trials)
+            if deepcopy:
+                return copy.deepcopy(self.trials)
+            else:
+                return self.trials
 
     def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[structs.TrialState]) -> int

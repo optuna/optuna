@@ -10,6 +10,7 @@ This page contains a list of example codes written with Optuna.
 ### Examples with ML Libraries
 
 * [Scikit-learn](./sklearn_simple.py)
+* [Scikit-image](./skimage_lbp_simple.py)
 * [Chainer](./chainer_simple.py)
 * [ChainerMN](./chainermn_simple.py)
 * [Dask-ML](./dask_ml_simple.py)
@@ -52,12 +53,7 @@ In addition, integration modules are available for the following libraries, prov
 
 ### Examples of Visualization
 
-* [Visualizing learning curves](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_intermediate_values.ipynb)
-* [Visualizing optimization history](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_optimization_history.ipynb)
-* [Visualizing relationship between a parameter and objective value (slice plot)](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_slice.ipynb)
-* [Visualizing relationship between two parameters (contour plot)](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_contour.ipynb)
-* [Visualizing parallel coordinates](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_parallel_coordinate.ipynb)
-
+* [Visualizing study](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
 
 ### Examples of Distributed Optimization
 

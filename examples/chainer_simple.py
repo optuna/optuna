@@ -25,6 +25,9 @@ import chainer.links as L
 import numpy as np
 import pkg_resources
 
+import optuna
+from optuna.integration import ChainerPruningExtension
+
 if pkg_resources.parse_version(chainer.__version__) < pkg_resources.parse_version('4.0.0'):
     raise RuntimeError('Chainer>=4.0.0 is required for this example.')
 
@@ -108,8 +111,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    import optuna
-    from optuna.integration import ChainerPruningExtension
     # This verbosity change is just to simplify the script output.
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 

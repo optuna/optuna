@@ -12,12 +12,10 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
-    from typing import TypeVar  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
-
-    T = TypeVar('T', float, str)
 
 
 class BaseTrial(object, metaclass=abc.ABCMeta):
@@ -47,7 +45,7 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[T]) -> T
+        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
 
         raise NotImplementedError
 
@@ -131,7 +129,8 @@ class Trial(BaseTrial):
         self.study = study
         self._trial_id = trial_id
 
-        self.study_id = self.study.study_id
+        # TODO(Yanase): Remove _study_id attribute, and use study._study_id instead.
+        self._study_id = self.study._study_id
         self.storage = self.study._storage
         self.logger = logging.get_logger(__name__)
 
@@ -311,7 +310,7 @@ class Trial(BaseTrial):
         return int(self._suggest(name, distribution))
 
     def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[T]) -> T
+        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
         """Suggest a value for the categorical parameter.
 
         The value is sampled from ``choices``.
@@ -333,7 +332,10 @@ class Trial(BaseTrial):
             name:
                 A parameter name.
             choices:
-                Candidates of parameter values.
+                Parameter value candidates.
+
+        .. seealso::
+            :class:`~optuna.distributions.CategoricalDistribution`.
 
         Returns:
             A suggested value.
@@ -600,6 +602,26 @@ class Trial(BaseTrial):
         """
         return self.storage.get_trial(self._trial_id).datetime_start
 
+    @property
+    def study_id(self):
+        # type: () -> int
+        """Return the study ID.
+
+        .. deprecated:: 0.20.0
+            The direct use of this attribute is deprecated and it is recommended that you use
+            :attr:`~optuna.trial.Trial.study` instead.
+
+        Returns:
+            The study ID.
+        """
+
+        message = 'The use of `Trial.study_id` is deprecated. ' \
+                  'Please use `Trial.study` instead.'
+        warnings.warn(message, DeprecationWarning)
+        self.logger.warning(message)
+
+        return self.study._study_id
+
 
 class FixedTrial(BaseTrial):
     """A trial class which suggests a fixed value for each parameter.
@@ -666,7 +688,7 @@ class FixedTrial(BaseTrial):
         return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
 
     def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[T]) -> T
+        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
 
         choices = tuple(choices)
         return self._suggest(name, distributions.CategoricalDistribution(choices=choices))

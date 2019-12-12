@@ -1,13 +1,17 @@
 import abc
 import json
+import warnings
 
+from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import Tuple  # NOQA
+    from typing import Sequence  # NOQA
     from typing import Union  # NOQA
+
+    CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
 class BaseDistribution(object, metaclass=abc.ABCMeta):
@@ -84,20 +88,16 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
     def __eq__(self, other):
         # type: (Any) -> bool
 
-        if not isinstance(other, type(self)):
+        if not isinstance(other, BaseDistribution):
+            return NotImplemented
+        if not type(self) is type(other):
             return False
-
         return self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        # type: (Any) -> bool
-
-        return not self.__eq__(other)
 
     def __hash__(self):
         # type: () -> int
 
-        return hash(tuple(sorted(self.__dict__.items())))
+        return hash((self.__class__,) + tuple(sorted(self.__dict__.items())))
 
     def __repr__(self):
         # type: () -> str
@@ -271,26 +271,46 @@ class CategoricalDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_categorical`, and
     passed to :mod:`~optuna.samplers` in general.
 
+    Args:
+        choices:
+            Parameter value candidates.
+
+    .. note::
+
+        Not all types are guaranteed to be compatible with all storages. It is recommended to
+        restrict the types of the choices to :obj:`None`, :class:`bool`, :class"`int`,
+        :class:`float` and :class:`str`.
+
     Attributes:
         choices:
-            Candidates of parameter values.
+            Parameter value candidates.
     """
 
     def __init__(self, choices):
-        # type: (Tuple[Union[float, str], ...]) -> None
+        # type: (Sequence[CategoricalChoiceType]) -> None
 
         if len(choices) == 0:
             raise ValueError("The `choices` must contains one or more elements.")
+        for choice in choices:
+            if choice is not None and not isinstance(choice, (bool, int, float, str)):
+                message = (
+                    "Choices for a categorical distribution should be a tuple of None, bool, "
+                    "int, float and str for persistent storage but contains {} which is of type "
+                    "{}.".format(choice, type(choice).__name__))
+                warnings.warn(message)
+
+                logger = logging._get_library_root_logger()
+                logger.warning(message)
 
         self.choices = choices
 
     def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> Union[float, str]
+        # type: (float) -> CategoricalChoiceType
 
         return self.choices[int(param_value_in_internal_repr)]
 
     def to_internal_repr(self, param_value_in_external_repr):
-        # type: (Union[float, str]) -> float
+        # type: (CategoricalChoiceType) -> float
 
         return self.choices.index(param_value_in_external_repr)
 

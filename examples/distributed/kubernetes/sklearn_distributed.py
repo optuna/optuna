@@ -11,10 +11,13 @@ in order to avoid errors when the code is run from multiple workers.
 
 """
 import os
+
 import sklearn.datasets
 import sklearn.ensemble
 import sklearn.model_selection
 import sklearn.svm
+
+import optuna
 
 
 # FYI: Objective functions can take additional arguments
@@ -38,7 +41,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    import optuna
     study = optuna.create_study(
         direction='maximize',
         study_name='kubernetes',

@@ -1,4 +1,5 @@
 import math
+
 import numpy as np
 import scipy.special
 
@@ -535,7 +536,7 @@ def _get_observation_pairs(study, param_name):
 
     values = []
     scores = []
-    for trial in study.trials:
+    for trial in study.get_trials(deepcopy=False):
         if param_name not in trial.params:
             continue
 

@@ -10,7 +10,6 @@ import optuna
 from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
 from optuna import type_checking
 
-
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
@@ -31,6 +30,17 @@ if type_checking.TYPE_CHECKING:
 
 # EPS is used to ensure that a sampled parameter value is in pre-defined value range.
 EPS = 1e-12
+
+# Default parameter values described in the official webpage.
+DEFAULT_LIGHTGBM_PARAMETERS = {
+    'lambda_l1': 0.0,
+    'lambda_l2': 0.0,
+    'num_leaves': 31,
+    'feature_fraction': 1.0,
+    'bagging_fraction': 1.0,
+    'bagging_freq': 0,
+    'min_child_samples': 20,
+}
 
 
 class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
@@ -302,8 +312,9 @@ class LightGBMTuner(BaseTuner):
         self.best_params = {} if best_params is None else best_params
         self.tuning_history = [] if tuning_history is None else tuning_history
 
-        if early_stopping_rounds is None:
-            self._suggest_early_stopping_rounds()
+        # Set default parameters as best.
+        self.best_params.update(DEFAULT_LIGHTGBM_PARAMETERS)
+
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
 
@@ -338,17 +349,6 @@ class LightGBMTuner(BaseTuner):
         self.train_subset = None  # Use for sampling.
         self.lgbm_kwargs = kwargs
 
-        # Keep original kwargs.
-        self.original_lgbm_kwargs = kwargs.copy()
-        self.original_lgbm_params = self.lgbm_params.copy()
-
-    def _suggest_early_stopping_rounds(self):
-        # type: () -> int
-
-        num_boost_round = self.lgbm_kwargs.get('num_boost_round', 1000)
-        early_stopping_rounds = min(int(num_boost_round * 0.05), 50)
-        return early_stopping_rounds
-
     def run(self):
         # type: () -> lgb.Booster
         """Perform the hyperparameter-tuning with given parameters.
@@ -378,35 +378,28 @@ class LightGBMTuner(BaseTuner):
         with _timer() as t:
             self.tune_feature_fraction()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_num_leaves()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_bagging()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_feature_fraction_stage2()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_regularization_factors()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
             self.tune_min_data_in_leaf()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                self.best_params.update(self._get_params())
                 return self.best_booster
 
-        self.best_params.update(self._get_params())
         return self.best_booster
 
     def sample_train_set(self):
@@ -499,10 +492,10 @@ class LightGBMTuner(BaseTuner):
         # Add tuning history.
         self.tuning_history += objective.report
 
-        updated_params = {p: study.best_trial.params[p] for p in target_param_names}
-        self.lgbm_params.update(updated_params)
-        self.best_params.update(updated_params)
-
         if self.compare_validation_metrics(study.best_value, self.best_score):
             self.best_score = study.best_value
             self.best_booster = objective.best_booster
+
+            updated_params = {p: study.best_trial.params[p] for p in target_param_names}
+            self.lgbm_params.update(updated_params)
+            self.best_params.update(updated_params)
