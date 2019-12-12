@@ -11,7 +11,8 @@ from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
-from sqlalchemy import desc, asc
+from sqlalchemy import desc
+from sqlalchemy import asc
 
 from optuna import distributions
 from optuna.structs import StudyDirection
