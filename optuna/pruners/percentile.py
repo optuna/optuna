@@ -113,7 +113,6 @@ class PercentilePruner(BasePruner):
 
     def prune(self, study, trial):
         # type: (Study, structs.FrozenTrial) -> bool
-        """Please consult the documentation for :func:`BasePruner.prune`."""
 
         all_trials = study.get_trials(deepcopy=False)
         n_trials = len([t for t in all_trials

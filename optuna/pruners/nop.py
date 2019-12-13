@@ -25,6 +25,5 @@ class NopPruner(BasePruner):
 
     def prune(self, study, trial):
         # type: (Study, structs.FrozenTrial) -> bool
-        """Please consult the documentation for :func:`BasePruner.prune`."""
 
         return False
