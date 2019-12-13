@@ -704,6 +704,17 @@ class RDBStorage(BaseStorage):
         trials = [self._get_and_cache_trial(trial_id, deepcopy) for trial_id in trial_ids]
         return trials
 
+    def get_best_trial(self, study_id):
+        # type: (int) -> structs.FrozenTrial
+
+        session = self.scoped_session()
+        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+            trial = models.TrialModel.find_max_value_trial(study_id, session)
+        else:
+            trial = models.TrialModel.find_min_value_trial(study_id, session)
+
+        return self.get_trial(trial.trial_id)
+
     def _get_all_trial_ids(self, study_id):
         # type: (int) -> List[int]
 
