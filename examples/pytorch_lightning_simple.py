@@ -7,17 +7,17 @@ consuming to use the whole MNIST dataset, we here use a small subset of it.
 
 We have the following two ways to execute this example:
 
-(1) Execute this code directly.
-    $ python pytorch_lightning_simple.py
+(1) Execute this code directly. Pruning can be turned on and off with the `--pruning` argument.
+    $ python pytorch_lightning_simple.py [--pruning]
 
 
-(2) Execute through CLI.
+(2) Execute through CLI. Pruning is enabled automatically.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
     $ optuna study optimize pytorch_lightning_simple.py objective --n-trials=100 --study \
       $STUDY_NAME --storage sqlite:///example.db
-
 """
 
+import argparse
 import os
 import shutil
 
@@ -165,7 +165,15 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize')
+    parser = argparse.ArgumentParser(description='PyTorch Lightning example.')
+    parser.add_argument('--pruning', '-p', action='store_true',
+                        help='Activate the pruning feature. `MedianPruner` stops unpromising '
+                             'trials at the early stages of training.')
+    args = parser.parse_args()
+    args.pruning = True
+    pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
+
+    study = optuna.create_study(direction='maximize', pruner=pruner)
     study.optimize(objective, n_trials=100, timeout=600)
 
     print('Number of finished trials: {}'.format(len(study.trials)))
