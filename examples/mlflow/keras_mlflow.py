@@ -1,6 +1,6 @@
 """
-Optuna example that optimizes a neural network regressor configuration for the
-wine quality dataset using Keras and records hyperparamters and metrics using MLflow
+Optuna example that optimizes a neural network regressor for the
+wine quality dataset using Keras and records hyperparamters and metrics using MLflow.
 
 In this example, we optimize the learning rate and momentum of
 stochastic gradient descent optimizer to minimize the validation mean squared error
@@ -51,8 +51,7 @@ def create_model(num_features, trial):
     optimizer = SGD(lr=trial.suggest_loguniform('lr', 1e-5, 1e-1),
                     momentum=trial.suggest_uniform('momentum', 0.0, 1.0))
     model.compile(loss='mean_squared_error',
-                  optimizer=optimizer,
-                  metrics=['accuracy'])
+                  optimizer=optimizer)
     return model
 
 
@@ -72,18 +71,17 @@ def objective(trial):
               epochs=EPOCHS,
               verbose=False)
 
-    scores = model.evaluate(X_test, y_test, verbose=0)
-    metrics = dict(zip(model.metrics_names, scores))
+    score = model.evaluate(X_test, y_test, verbose=0)
 
     with mlflow.start_run() as run:
         mlflow.log_params(trial.params)
-        mlflow.log_metrics(metrics)
+        mlflow.log_metrics({'mean_squared_error': score})
 
-    return scores[1]
+    return score
 
 
 if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize')
+    study = optuna.create_study(direction='minimize')
     study.optimize(objective, n_trials=100, timeout=600)
 
     print('Number of finished trials: {}'.format(len(study.trials)))
