@@ -6,7 +6,7 @@ from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna import type_checking
 from optuna.visualization.contour import _generate_contour_subplot
-from optuna.visualization.contour import _get_contour_plot
+from optuna.visualization.contour import plot_contour
 
 if type_checking.TYPE_CHECKING:
     from typing import List, Optional  # NOQA
@@ -24,12 +24,12 @@ if type_checking.TYPE_CHECKING:
         None,
     ]
 )
-def test_get_contour_plot(params):
+def test_plot_contour(params):
     # type: (Optional[List[str]]) -> None
 
     # Test with no trial.
     study_without_trials = prepare_study_with_trials(no_trials=True)
-    figure = _get_contour_plot(study_without_trials, params=params)
+    figure = plot_contour(study_without_trials, params=params)
     assert len(figure.data) == 0
 
     # Test whether trials with `ValueError`s are ignored.
@@ -41,7 +41,7 @@ def test_get_contour_plot(params):
 
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
-    figure = _get_contour_plot(study, params=params)
+    figure = plot_contour(study, params=params)
     assert len(figure.data) == 0
 
     # Test with some trials.
@@ -49,9 +49,9 @@ def test_get_contour_plot(params):
 
     # Test ValueError due to wrong params.
     with pytest.raises(ValueError):
-        _get_contour_plot(study, ['optuna', 'Optuna'])
+        plot_contour(study, ['optuna', 'Optuna'])
 
-    figure = _get_contour_plot(study, params=params)
+    figure = plot_contour(study, params=params)
     if params is not None and len(params) < 3:
         if len(params) <= 1:
             assert not figure.data
@@ -89,10 +89,10 @@ def test_generate_contour_plot_for_few_observations():
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
 
-def test_get_contour_plot_log_scale():
+def test_plot_contour_log_scale():
     # type: () -> None
 
-    # If the search space has two parameters, _get_contour_plot generates a single plot.
+    # If the search space has two parameters, plot_contour generates a single plot.
     study = create_study()
     study._append_trial(
         value=0.0,
@@ -117,13 +117,13 @@ def test_get_contour_plot_log_scale():
         }
     )
 
-    figure = _get_contour_plot(study)
+    figure = plot_contour(study)
     assert figure.layout['xaxis']['range'] == (-6, -5)
     assert figure.layout['yaxis']['range'] == (-4, -3)
     assert figure.layout['xaxis_type'] == 'log'
     assert figure.layout['yaxis_type'] == 'log'
 
-    # If the search space has three parameters, _get_contour_plot generates nine plots.
+    # If the search space has three parameters, plot_contour generates nine plots.
     study = create_study()
     study._append_trial(
         value=0.0,
@@ -152,7 +152,7 @@ def test_get_contour_plot_log_scale():
         }
     )
 
-    figure = _get_contour_plot(study)
+    figure = plot_contour(study)
     param_a_range = (-6, -5)
     param_b_range = (-4, -3)
     param_c_range = (-2, -1)

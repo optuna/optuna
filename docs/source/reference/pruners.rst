@@ -3,6 +3,9 @@
 Pruners
 =======
 
+.. autoclass:: BasePruner
+    :members:
+
 .. autoclass:: MedianPruner
     :members:
     :exclude-members: prune

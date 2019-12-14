@@ -278,8 +278,14 @@ def test_fixed_trial_suggest_categorical():
     trial = FixedTrial({'x': 'baz'})
     assert trial.suggest_categorical('x', ['foo', 'bar', 'baz']) == 'baz'
 
+    # Unknown parameter.
     with pytest.raises(ValueError):
         trial.suggest_categorical('y', ['foo', 'bar', 'baz'])
+
+    # Unkown parameter and bad category type.
+    with pytest.warns(UserWarning):
+        with pytest.raises(ValueError):  # Must come after `pytest.warns` to catch failures.
+            trial.suggest_categorical('x', [{'foo': 'bar'}])  # type: ignore
 
 
 def test_fixed_trial_user_attrs():

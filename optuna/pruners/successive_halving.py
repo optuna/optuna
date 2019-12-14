@@ -96,7 +96,6 @@ class SuccessiveHalvingPruner(BasePruner):
 
     def prune(self, study, trial):
         # type: (Study, FrozenTrial) -> bool
-        """Please consult the documentation for :func:`BasePruner.prune`."""
 
         step = trial.last_step
         if step is None:
@@ -115,7 +114,7 @@ class SuccessiveHalvingPruner(BasePruner):
                 return True
 
             if all_trials is None:
-                all_trials = study.trials
+                all_trials = study.get_trials(deepcopy=False)
 
             study._storage.set_trial_system_attr(trial._trial_id, _completed_rung_key(rung), value)
             direction = study.direction

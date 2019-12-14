@@ -1,3 +1,4 @@
+import copy
 import itertools
 import multiprocessing
 import pickle
@@ -6,6 +7,7 @@ import time
 import uuid
 import warnings
 
+import joblib
 from mock import Mock  # NOQA
 from mock import patch
 import pandas as pd
@@ -20,6 +22,9 @@ if type_checking.TYPE_CHECKING:
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
+
+    from _pytest.recwarn import WarningsRecorder  # NOQA
 
     CallbackFuncType = Callable[[optuna.study.Study, optuna.structs.FrozenTrial], None]
 
@@ -48,6 +53,7 @@ def func(trial, x_max=1.0):
     x = trial.suggest_uniform('x', -x_max, x_max)
     y = trial.suggest_loguniform('y', 20, 30)
     z = trial.suggest_categorical('z', (-1.0, 1.0))
+    assert isinstance(z, float)
     return (x - 2)**2 + (y - 25)**2 + z
 
 
@@ -255,6 +261,20 @@ def test_optimize_with_catch_invalid_type(catch):
         study.optimize(func_value_error, n_trials=20, catch=catch)
 
 
+def test_optimize_parallel_storage_warning(recwarn):
+    # type: (WarningsRecorder) -> None
+
+    study = optuna.create_study()
+
+    # Default joblib backend is threading and no warnings will be captured.
+    study.optimize(lambda t: t.suggest_uniform('x', 0, 1), n_trials=20, n_jobs=2)
+    assert len(recwarn) == 0
+
+    with pytest.warns(UserWarning):
+        with joblib.parallel_backend('loky'):
+            study.optimize(lambda t: t.suggest_uniform('x', 0, 1), n_trials=20, n_jobs=2)
+
+
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 def test_study_set_and_get_user_attrs(storage_mode):
     # type: (str) -> None
@@ -447,16 +467,21 @@ def test_study_trials_dataframe_with_no_trials():
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-@pytest.mark.parametrize('include_internal_fields', [True, False])
+@pytest.mark.parametrize('attrs', [
+    ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+     'system_attrs', 'state'),
+    ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+     'system_attrs', 'state', 'intermediate_values', '_trial_id', 'distributions')])
 @pytest.mark.parametrize('multi_index', [True, False])
-def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
-    # type: (str, bool, bool) -> None
+def test_trials_dataframe(storage_mode, attrs, multi_index):
+    # type: (str, Tuple[str, ...], bool) -> None
 
     def f(trial):
         # type: (optuna.trial.Trial) -> float
 
         x = trial.suggest_int('x', 1, 1)
         y = trial.suggest_categorical('y', (2.5, ))
+        assert isinstance(y, float)
         trial.set_user_attr('train_loss', 3)
         value = x + y  # 3.5
 
@@ -468,8 +493,7 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         study.optimize(f, n_trials=3)
-        df = study.trials_dataframe(
-            include_internal_fields=include_internal_fields, multi_index=multi_index)
+        df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
         # Change index to access rows via trial number.
         if multi_index:
             df.set_index(('number', ''), inplace=True, drop=False)
@@ -477,17 +501,18 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
             df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-        # Number expected columns are as follows (total of 10):
-        #   non-nested: 5
+        # Number columns are as follows (total of 10):
+        #   non-nested: 5 (number, value, state, datetime_start, datetime_complete)
         #   params: 2
+        #   distributions: 2
         #   user_attrs: 1
         #   system_attrs: 1
         #   intermediate_values: 1
-        expected_n_columns = 10
-        if include_internal_fields:
-            # distributions: 2
-            # trial_id: 1
-            expected_n_columns += 3
+        expected_n_columns = len(attrs)
+        if 'params' in attrs:
+            expected_n_columns += 1
+        if 'distributions' in attrs:
+            expected_n_columns += 1
         assert len(df.columns) == expected_n_columns
 
         for i in range(3):
@@ -498,9 +523,10 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
 
             if multi_index:
-                if include_internal_fields:
+                if 'distributions' in attrs:
                     assert ('distributions', 'x') in df.columns
                     assert ('distributions', 'y') in df.columns
+                if '_trial_id' in attrs:
                     assert ('trial_id', '') in df.columns  # trial_id depends on other tests.
 
                 assert df.params.x[i] == 1
@@ -508,9 +534,10 @@ def test_trials_dataframe(storage_mode, include_internal_fields, multi_index):
                 assert df.user_attrs.train_loss[i] == 3
                 assert df.system_attrs._number[i] == i
             else:
-                if include_internal_fields:
+                if 'distributions' in attrs:
                     assert 'distributions_x' in df.columns
                     assert 'distributions_y' in df.columns
+                if '_trial_id' in attrs:
                     assert 'trial_id' in df.columns  # trial_id depends on other tests.
 
                 assert df.params_x[i] == 1
@@ -740,6 +767,32 @@ def test_callbacks(n_jobs):
         study.optimize(lambda t: 1/0, callbacks=callbacks,
                        n_trials=10, n_jobs=n_jobs, catch=())
     assert states == []
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_get_trials(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        storage = optuna.storages.get_storage(storage=storage)
+
+        study = optuna.create_study(storage=storage)
+        study.optimize(lambda t: t.suggest_int('x', 1, 5), n_trials=5)
+
+        with patch('copy.deepcopy', wraps=copy.deepcopy) as mock_object:
+            trials0 = study.get_trials(deepcopy=False)
+            assert mock_object.call_count == 0
+            assert len(trials0) == 5
+
+            trials1 = study.get_trials(deepcopy=True)
+            assert mock_object.call_count > 0
+            assert trials0 == trials1
+
+            # `study.trials` is equivalent to `study.get_trials(deepcopy=True)`.
+            old_count = mock_object.call_count
+            trials2 = study.trials
+            assert mock_object.call_count > old_count
+            assert trials0 == trials2
 
 
 def test_study_id():
