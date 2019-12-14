@@ -7,7 +7,7 @@ stochastic gradient descent optimizer to minimize the validation mean squared er
 for the wine quality regression.
 
 You can run this example as follows:
-    $ python keras_simple.py
+    $ python keras_mlflow.py
 
 """
 
