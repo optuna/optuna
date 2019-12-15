@@ -19,17 +19,16 @@ We have the following two ways to execute this example:
 
 """
 
-from sklearn.datasets import load_wine
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 from keras.backend import clear_session
-from keras.models import Sequential
 from keras.layers import Dense
+from keras.models import Sequential
 from keras.optimizers import SGD
+import mlflow
+from sklearn.datasets import load_wine
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 import optuna
-import mlflow
-
 
 TEST_SIZE = 0.25
 BATCHSIZE = 16
