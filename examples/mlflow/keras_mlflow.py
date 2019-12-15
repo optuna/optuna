@@ -81,7 +81,7 @@ def objective(trial):
 
     score = model.evaluate(X_test, y_test, verbose=0)
 
-    with mlflow.start_run() as run:
+    with mlflow.start_run():
         mlflow.log_params(trial.params)
         mlflow.log_metrics({'mean_squared_error': score})
 
