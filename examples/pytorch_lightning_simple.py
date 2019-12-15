@@ -170,7 +170,7 @@ if __name__ == '__main__':
                         help='Activate the pruning feature. `MedianPruner` stops unpromising '
                              'trials at the early stages of training.')
     args = parser.parse_args()
-    args.pruning = True
+
     pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
 
     study = optuna.create_study(direction='maximize', pruner=pruner)
