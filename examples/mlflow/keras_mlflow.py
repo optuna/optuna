@@ -17,6 +17,11 @@ We have the following two ways to execute this example:
     $ optuna study optimize keras_mlflow.py objective --n-trials=100 \
       --study $STUDY_NAME --storage sqlite:///example.db
 
+
+After the script finishes, run the MLflow UI:
+    $ mlflow ui
+
+and view the optimization results at http://127.0.0.1:5000.
 """
 
 from keras.backend import clear_session
