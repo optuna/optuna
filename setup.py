@@ -76,6 +76,7 @@ def get_extras_require():
             'catboost',
             'chainer',
             'lightgbm',
+            'mlflow',
             'mxnet',
             'scikit-image',
             'scikit-learn',
