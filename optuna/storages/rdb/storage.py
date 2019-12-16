@@ -713,6 +713,9 @@ class RDBStorage(BaseStorage):
         else:
             trial = models.TrialModel.find_min_value_trial(study_id, session)
 
+        # Terminate transaction explicitly to avoid connection timeout during transaction.
+        self._commit(session)
+
         return self.get_trial(trial.trial_id)
 
     def _get_all_trial_ids(self, study_id):
