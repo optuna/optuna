@@ -56,6 +56,10 @@ In addition, integration modules are available for the following libraries, prov
 
 * [Visualizing study](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
 
+### Examples of MLflow
+
+* [Tracking optimization process with MLflow](./mlflow/keras_mlflow.py)
+
 ### Examples of Distributed Optimization
 
 * [Optimizing on Kubernetes](./distributed/kubernetes/README.md)
