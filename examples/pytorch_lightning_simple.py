@@ -31,6 +31,7 @@ from torchvision import datasets
 from torchvision import transforms
 
 import optuna
+from optuna.integration import PyTorchLightningPruningCallback
 
 PERCENT_TRAIN_EXAMPLES = 0.1
 PERCENT_TEST_EXAMPLES = 0.1
@@ -156,6 +157,7 @@ def objective(trial):
         checkpoint_callback=checkpoint_callback,
         max_nb_epochs=EPOCHS,
         gpus=0 if torch.cuda.is_available() else None,
+        early_stop_callback=PyTorchLightningPruningCallback(trial, monitor='accuracy')
     )
 
     model = LightningNet(trial)
