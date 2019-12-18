@@ -103,45 +103,30 @@ class SuccessiveHalvingPruner(BasePruner):
 
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
-        all_trials = None
+        trials = None
+
         while True:
-            promotion_step = self._min_resource * \
+            rung_promotion_step = self._min_resource * \
                 (self._reduction_factor ** (self._min_early_stopping_rate + rung))
-            if step < promotion_step:
+            if step < rung_promotion_step:
                 return False
 
             if math.isnan(value):
                 return True
 
-            if all_trials is None:
-                all_trials = study.get_trials(deepcopy=False)
+            if trials is None:
+                trials = study.get_trials(deepcopy=False)
 
-            study._storage.set_trial_system_attr(trial._trial_id, _completed_rung_key(rung), value)
-            direction = study.direction
-            if not self._is_promotable(rung, value, all_trials, direction):
+            rung_key = _completed_rung_key(rung)
+
+            study._storage.set_trial_system_attr(trial._trial_id, rung_key, value)
+
+            if not _is_value_promotable_to_next_rung(
+                    value, _get_competing_values(trials, value, rung_key),
+                    self._reduction_factor, study.direction):
                 return True
 
             rung += 1
-
-    def _is_promotable(self, rung, value, all_trials, study_direction):
-        # type: (int, float, List[FrozenTrial], StudyDirection) -> bool
-
-        key = _completed_rung_key(rung)
-        competing_values = [t.system_attrs[key] for t in all_trials if key in t.system_attrs]
-        competing_values.append(value)
-        competing_values.sort()
-
-        promotable_idx = (len(competing_values) // self._reduction_factor) - 1
-        if promotable_idx == -1:
-            # Optuna does not support to suspend/resume ongoing trials.
-            #
-            # For the first `eta - 1` trials, this implementation promotes a trial if its
-            # intermediate value is the smallest one among the trials that have completed the rung.
-            promotable_idx = 0
-
-        if study_direction == StudyDirection.MAXIMIZE:
-            return value >= competing_values[-(promotable_idx + 1)]
-        return value <= competing_values[promotable_idx]
 
 
 def _get_current_rung(trial):
@@ -158,3 +143,29 @@ def _completed_rung_key(rung):
     # type: (int) -> str
 
     return 'completed_rung_{}'.format(rung)
+
+
+def _get_competing_values(trials, value, rung_key):
+    # type: (List[FrozenTrial], float, str) -> List[float]
+
+    competing_values = [t.system_attrs[rung_key] for t in trials if rung_key in t.system_attrs]
+    competing_values.append(value)
+    competing_values.sort()
+    return competing_values
+
+
+def _is_value_promotable_to_next_rung(value, competing_values, reduction_factor, study_direction):
+    # type: (float, List[float], int, StudyDirection) -> bool
+
+    promotable_idx = (len(competing_values) // reduction_factor) - 1
+
+    if promotable_idx == -1:
+        # Optuna does not support to suspend/resume ongoing trials.
+        #
+        # For the first `eta - 1` trials, this implementation promotes a trial if its
+        # intermediate value is the smallest one among the trials that have completed the rung.
+        promotable_idx = 0
+
+    if study_direction == StudyDirection.MAXIMIZE:
+        return value >= competing_values[-(promotable_idx + 1)]
+    return value <= competing_values[promotable_idx]
