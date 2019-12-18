@@ -10,11 +10,13 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
+    from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
+    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
 
 
@@ -136,6 +138,8 @@ class Trial(BaseTrial):
 
         self._init_relative_params()
 
+        self._friend_trials = None  # type: Optional[List[FrozenTrial]]
+
     def _init_relative_params(self):
         # type: () -> None
 
@@ -145,6 +149,22 @@ class Trial(BaseTrial):
             self.study, trial)
         self.relative_params = self.study.sampler.sample_relative(self.study, trial,
                                                                   self.relative_search_space)
+
+    def _set_friend_trials(self, friend_trials):
+        # type: (List[FrozenTrial]) -> None
+
+        self._friend_trials = friend_trials
+
+    def _clear_friend_trials(self):
+        # type: () -> None
+
+        self._friend_trials = None
+
+    @property
+    def friend_trials(self):
+        # type: () -> Optional[List[FrozenTrial]]
+
+        return self._friend_trials
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -483,7 +503,7 @@ class Trial(BaseTrial):
         else:
             trial = self.storage.get_trial(self._trial_id)
             param_value = self.study.sampler.sample_independent(
-                self.study, trial, name, distribution)
+                self.study, trial, name, distribution, self.friend_trials)
 
         return self._set_new_param_or_get_existing(name, param_value, distribution)
 

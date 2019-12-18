@@ -565,6 +565,9 @@ class Study(BaseStudy):
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
+        trials = self.trials
+        trial._set_friend_trials(trials)
+
         try:
             result = func(trial)
         except exceptions.TrialPruned as e:
@@ -585,6 +588,8 @@ class Study(BaseStudy):
                 return trial
             raise
         finally:
+            trial._clear_friend_trials()
+            del trials
             # The following line mitigates memory problems that can be occurred in some
             # environments (e.g., services that use computing containers such as CircleCI).
             # Please refer to the following PR for further details:
