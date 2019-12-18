@@ -72,10 +72,19 @@ class SuccessiveHalvingPruner(BasePruner):
             A parameter for specifying the minimum early-stopping rate
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
             referred to as :math:`s`).
+        rung_key_prefix:
+            Used mainly for :class:`~optuyna.study.Study` with
+            :class:`~optuna.pruners.HyperbandPruner`.
     """
 
-    def __init__(self, min_resource=1, reduction_factor=4, min_early_stopping_rate=0):
-        # type: (int, int, int) -> None
+    def __init__(
+            self,
+            min_resource=1,
+            reduction_factor=4,
+            min_early_stopping_rate=0,
+            rung_key_prefix=''
+    ):
+        # type: (int, int, int, str) -> None
 
         if min_resource < 1:
             raise ValueError('The value of `min_resource` is {}, '
@@ -112,7 +121,7 @@ class SuccessiveHalvingPruner(BasePruner):
         if step is None:
             return False
 
-        rung = _get_current_rung(trial)
+        rung = self._get_current_rung(trial)
         value = trial.intermediate_values[step]
         all_trials = None
         while True:
@@ -127,7 +136,8 @@ class SuccessiveHalvingPruner(BasePruner):
             if all_trials is None:
                 all_trials = study.get_trials(deepcopy=False)
 
-            study._storage.set_trial_system_attr(trial._trial_id, _completed_rung_key(rung), value)
+            study._storage.set_trial_system_attr(
+                trial._trial_id, self._completed_rung_key(rung), value)
             direction = study.direction
             if not self._is_promotable(rung, value, all_trials, direction):
                 return True
@@ -137,7 +147,7 @@ class SuccessiveHalvingPruner(BasePruner):
     def _is_promotable(self, rung, value, all_trials, study_direction):
         # type: (int, float, List[FrozenTrial], StudyDirection) -> bool
 
-        key = _completed_rung_key(rung)
+        key = self._completed_rung_key(rung)
         competing_values = [t.system_attrs[key] for t in all_trials if key in t.system_attrs]
         competing_values.append(value)
         competing_values.sort()
@@ -156,18 +166,16 @@ class SuccessiveHalvingPruner(BasePruner):
 
         return value <= competing_values[promotable_idx]
 
+    def _get_current_rung(self, trial):
+        # type: (FrozenTrial) -> int
 
-def _get_current_rung(trial):
-    # type: (FrozenTrial) -> int
+        # The following loop takes `O(log step)` iterations.
+        rung = 0
+        while self._completed_rung_key(rung) in trial.system_attrs:
+            rung += 1
+        return rung
 
-    # The following loop takes `O(log step)` iterations.
-    rung = 0
-    while _completed_rung_key(rung) in trial.system_attrs:
-        rung += 1
-    return rung
+    def _completed_rung_key(self, rung):
+        # type: (int) -> str
 
-
-def _completed_rung_key(rung):
-    # type: (int) -> str
-
-    return 'completed_rung_{}'.format(rung)
+        return '{}completed_rung_{}'.format(self._rung_key_prefix, rung)

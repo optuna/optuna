@@ -190,6 +190,7 @@ class Study(BaseStudy):
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
+        self._should_filter_trials = self.pruner.should_filter_trials()
 
         self._optimize_lock = threading.Lock()
 
@@ -563,9 +564,20 @@ class Study(BaseStudy):
 
         trial_id = self._storage.create_new_trial(self._study_id)
         trial = trial_module.Trial(self, trial_id)
+        trial_pruner_metadata = self.pruner.__class__.__name__
+        pruner_auxiliary_data = self.pruner.get_trial_pruner_auxiliary_data(
+            self.study_name, trial.number)
+        if pruner_auxiliary_data:
+            trial_pruner_metadata += pruner_auxiliary_data
+        trial.set_user_attr('pruner_metadata', trial_pruner_metadata)
+
         trial_number = trial.number
 
         trials = self.trials
+        if self._should_filter_trials:
+            trials = [
+                t for t in trials if t.user_attrs['pruner_metadata'] == trial_pruner_metadata
+            ]
         trial._set_friend_trials(trials)
 
         try:

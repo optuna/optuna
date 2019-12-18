@@ -42,6 +42,7 @@ class BasePruner(object, metaclass=abc.ABCMeta):
     def should_filter_trials(self):
         # type: () -> bool
         """Returns whether the sampler can use all of :func:`~optuna.study.Study.trials`.
+
         This method tells :class:`~optuna.study.Study` whether it needs to filters out trials
         that have different ``pruner_metadata`` of :func:`optuna.trial.Trial.user_attrs`.
         One use-case of this method is :class:`~optuna.pruners.HyperbandPruner` that runs and
