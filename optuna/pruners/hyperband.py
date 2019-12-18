@@ -23,6 +23,7 @@ class HyperbandPruner(BasePruner):
     by trying different :math:`n` values for a fixed budget.
     Note that this implementation does not take as inputs the maximum amount of resource to
     a single SHA noted as :math:`R` in the paper.
+
     Args:
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial noted as :math:`r`
@@ -79,7 +80,7 @@ class HyperbandPruner(BasePruner):
     def prune(self, study, trial):
         # type: (Study, FrozenTrial) -> bool
 
-        i = self.get_bracket_id(study.study_id, trial.number)
+        i = self.get_bracket_id(study.study_name, trial.number)
         _logger.debug('{}th bracket is selected'.format(i))
         return self._pruners[i].prune(study, trial)
 
@@ -105,6 +106,7 @@ class HyperbandPruner(BasePruner):
     def get_bracket_id(self, study_name, trial_number):
         # type: (str, int) -> int
         """Computes the index of bracket for a trial of ``trial_number``.
+
         The index of a bracket is noted as :math:`s` in
         `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
         """
@@ -121,6 +123,7 @@ class HyperbandPruner(BasePruner):
     def resource_budget(self):
         # type: () -> int
         """The total amount of resource.
+
         This value is a proxy for :math:`B` in the
         `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
         """
@@ -131,6 +134,7 @@ class HyperbandPruner(BasePruner):
     def n_pruners(self):
         # type: () -> int
         """The number of pruners.
+
         The number of pruners is calculated by the following equation:
         :math:`
         \\mathsf{min}\\_\\mathsf{early}\\_\\mathsf{stopping}\\_\\mathsf{rate}\\_\\mathsf{high} -
