@@ -37,7 +37,9 @@ def get_install_requires():
         'cliff',
         'colorlog',
         'numpy',
-        'scipy',
+        # TODO(Yanase): Remove the version constraint when the CI error is solved by new versions.
+        # See https://github.com/optuna/optuna/issues/800 for further details.
+        'scipy<1.4.0',
         'sqlalchemy>=1.1.0',
         'tqdm',
         'typing',
