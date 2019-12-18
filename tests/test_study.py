@@ -505,10 +505,10 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
         #   non-nested: 5 (number, value, state, datetime_start, datetime_complete)
         #   params: 2
         #   distributions: 2
-        #   user_attrs: 1
+        #   user_attrs: 2
         #   system_attrs: 1
         #   intermediate_values: 1
-        expected_n_columns = len(attrs)
+        expected_n_columns = len(attrs) + 1
         if 'params' in attrs:
             expected_n_columns += 1
         if 'distributions' in attrs:
@@ -568,7 +568,7 @@ def test_trials_dataframe_with_failure(storage_mode):
         assert len(df) == 3
         # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
         # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 2
-        assert len(df.columns) == 10
+        assert len(df.columns) == 11
         for i in range(3):
             assert df.number[i] == i
             assert df.state[i] == 'FAIL'
