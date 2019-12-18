@@ -83,6 +83,8 @@ class RDBStorage(BaseStorage):
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
 
+        self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
+
         try:
             self.engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
@@ -847,6 +849,20 @@ class RDBStorage(BaseStorage):
             result.append(temp_trial)
 
         return result
+
+    @staticmethod
+    def _set_default_engine_kwargs_for_mysql(url, engine_kwargs):
+        # type: (str, Dict[str, Any]) -> None
+
+        # Skip if RDB is not MySQL.
+        if not url.startswith('mysql'):
+            return
+
+        # Do not overwrite value.
+        if 'pool_pre_ping' in engine_kwargs:
+            return
+
+        engine_kwargs['pool_pre_ping'] = True
 
     @staticmethod
     def _fill_storage_url_template(template):
