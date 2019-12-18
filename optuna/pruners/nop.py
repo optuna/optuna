@@ -27,3 +27,13 @@ class NopPruner(BasePruner):
         # type: (Study, structs.FrozenTrial) -> bool
 
         return False
+
+    def get_trial_pruner_auxiliary_data(self, study_name, trial_number):
+        # type: (str, int) -> str
+
+        return ''
+
+    def should_filter_trials(self):
+        # type: () -> bool
+
+        return False

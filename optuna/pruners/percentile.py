@@ -150,3 +150,13 @@ class PercentilePruner(BasePruner):
         if direction == structs.StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p
+
+    def get_trial_pruner_auxiliary_data(self, study_name, trial_number):
+        # type: (str, int) -> str
+
+        return ''
+
+    def should_filter_trials(self):
+        # type: () -> bool
+
+        return False

@@ -93,6 +93,17 @@ class SuccessiveHalvingPruner(BasePruner):
         self._min_resource = min_resource
         self._reduction_factor = reduction_factor
         self._min_early_stopping_rate = min_early_stopping_rate
+        self._rung_key_prefix = rung_key_prefix
+
+    def get_trial_pruner_auxiliary_data(self, study_name, trial_number):
+        # type: (str, int) -> str
+
+        return ''
+
+    def should_filter_trials(self):
+        # type: () -> bool
+
+        return False
 
     def prune(self, study, trial):
         # type: (Study, FrozenTrial) -> bool

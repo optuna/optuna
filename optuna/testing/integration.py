@@ -12,6 +12,16 @@ class DeterministicPruner(optuna.pruners.BasePruner):
 
         return self.is_pruning
 
+    def get_trial_pruner_auxiliary_data(self, study_name, trial_number):
+        # type: (str, int) -> str
+
+        return ''
+
+    def should_filter_trials(self):
+        # type: () -> bool
+
+        return False
+
 
 def create_running_trial(study, value):
     # type: (optuna.study.Study, float) -> optuna.trial.Trial

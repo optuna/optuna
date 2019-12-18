@@ -30,3 +30,25 @@ class BasePruner(object, metaclass=abc.ABCMeta):
         """
 
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_trial_pruner_auxiliary_data(self, study_name, trial_number):
+        # type: (str, int) -> str
+        """Return appropriate pruner's metadata for a trial."""
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def should_filter_trials(self):
+        # type: () -> bool
+        """Returns whether the sampler can use all of :func:`~optuna.study.Study.trials`.
+        This method tells :class:`~optuna.study.Study` whether it needs to filters out trials
+        that have different ``pruner_metadata`` of :func:`optuna.trial.Trial.user_attrs`.
+        One use-case of this method is :class:`~optuna.pruners.HyperbandPruner` that runs and
+        manages multiple :class:`~optuna.pruners.SuccessiveHalvingPruner`\\s called ``bracket``\\s
+        by indexing its brackets.
+        Therefore, the sampler of the study should use the history of trials that is monitored by
+        the pruner of the same index.
+        """
+
+        raise NotImplementedError
