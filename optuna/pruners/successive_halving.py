@@ -140,9 +140,7 @@ class SuccessiveHalvingPruner(BasePruner):
             promotable_idx = 0
 
         if study_direction == StudyDirection.MAXIMIZE:
-            competing_values.reverse()
-            return value >= competing_values[promotable_idx]
-
+            return value >= competing_values[len(competing_values) - 1 - promotable_idx]
         return value <= competing_values[promotable_idx]
 
 
