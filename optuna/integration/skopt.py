@@ -110,8 +110,14 @@ class SkoptSampler(BaseSampler):
 
         return search_space
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def sample_relative(
+            self,
+            study,  # type: Study
+            trial,  # type: FrozenTrial
+            search_space,  # type: Dict[str, BaseDistribution]
+            trials=None  # type: Optional[List[FrozenTrial]]
+    ):
+        # type: (...) -> Dict[str, Any]
 
         if len(search_space) == 0:
             return {}
@@ -120,8 +126,8 @@ class SkoptSampler(BaseSampler):
         optimizer.tell(study)
         return optimizer.ask()
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
+    def sample_independent(self, study, trial, param_name, param_distribution, trials=None):
+        # type: (Study, FrozenTrial, str, BaseDistribution, Optional[List[FrozenTrial]]) -> Any
 
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]

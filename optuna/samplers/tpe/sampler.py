@@ -116,13 +116,26 @@ class TPESampler(base.BaseSampler):
 
         return {}
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def sample_relative(
+            self,
+            study,  # type: Study
+            trial,  # type: FrozenTrial
+            search_space,  # type: Dict[str, BaseDistribution]
+            trials=None  # type: Optional[List[FrozenTrial]]
+    ):
+        # type: (...) -> Dict[str, Any]
 
         return {}
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
+    def sample_independent(
+            self,
+            study,  # type: Study
+            trial,  # type: FrozenTrial
+            param_name,  # type: str
+            param_distribution,  # type: BaseDistribution
+            trials=None  # type: Optional[List[FrozenTrial]]
+    ):
+        # type: (...) -> Any
 
         values, scores = _get_observation_pairs(study, param_name)
 

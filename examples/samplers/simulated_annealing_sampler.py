@@ -33,13 +33,13 @@ class SimulatedAnnealingSampler(BaseSampler):
     def infer_relative_search_space(self, study, trial):
         return optuna.samplers.intersection_search_space(study)
 
-    def sample_relative(self, study, trial, search_space):
+    def sample_relative(self, study, trial, search_space, trials):
         if search_space == {}:
             # The relative search space is empty (it means this is the first trial of a study).
             return {}
 
         # The rest of this method is an implementation of Simulated Annealing (SA) algorithm.
-        prev_trial = self._get_last_complete_trial(study)
+        prev_trial = self._get_last_complete_trial(study, trials)
 
         # Update the current state of SA if the transition is accepted.
         if self._rng.uniform(0, 1) <= self._transition_probability(study, prev_trial):
@@ -93,15 +93,17 @@ class SimulatedAnnealingSampler(BaseSampler):
         return np.exp(-abs(current_value - prev_value) / self._temperature)
 
     @staticmethod
-    def _get_last_complete_trial(study):
-        complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
+    def _get_last_complete_trial(study, trials=None):
+        if trials is None:
+            trials = study.trials
+        complete_trials = [t for t in trials if t.state == structs.TrialState.COMPLETE]
         return complete_trials[-1]
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
+    def sample_independent(self, study, trial, param_name, param_distribution, trials):
         # In this example, this method is invoked only in the first trial of a study.
         # The parameters of the trial are sampled by using `RandomSampler` as follows.
-        return self._independent_sampler.sample_independent(study, trial, param_name,
-                                                            param_distribution)
+        return self._independent_sampler.sample_independent(
+            study, trial, param_name, param_distribution, trials)
 
 
 # Define a simple 2-dimensional objective function whose minimum value is -1 when (x, y) = (0, -1).

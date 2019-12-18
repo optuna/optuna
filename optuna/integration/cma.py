@@ -162,19 +162,34 @@ class CmaEsSampler(BaseSampler):
 
         return search_space
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> float
+    def sample_independent(
+            self,
+            study,  # type: Study
+            trial,  # type: FrozenTrial
+            param_name,  # type: str
+            param_distribution,  # type: BaseDistribution
+            trials=None  # type: Optional[List[FrozenTrial]]
+    ):
+        # type: (...) -> float
 
         if self._warn_independent_sampling:
-            complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+            if trials is None:
+                trials = study.trials
+            complete_trials = [t for t in trials if t.state == TrialState.COMPLETE]
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
-        return self._independent_sampler.sample_independent(study, trial, param_name,
-                                                            param_distribution)
+        return self._independent_sampler.sample_independent(
+            study, trial, param_name, param_distribution, trials)
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+    def sample_relative(
+            self,
+            study,  # type: Study
+            trial,  # type: FrozenTrial
+            search_space,  # type: Dict[str, BaseDistribution]
+            trials=None  # type: Optional[List[FrozenTrial]]
+    ):
+        # type: (...) -> Dict[str, float]
 
         if len(search_space) == 0:
             return {}
@@ -186,7 +201,9 @@ class CmaEsSampler(BaseSampler):
             self._warn_independent_sampling = False
             return {}
 
-        complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+        if trials is None:
+            trials = study.trials
+        complete_trials = [t for t in trials if t.state == TrialState.COMPLETE]
         if len(complete_trials) < self._n_startup_trials:
             return {}
 
@@ -199,9 +216,7 @@ class CmaEsSampler(BaseSampler):
             sigma0 = self._sigma0
         sigma0 = max(sigma0, _MIN_SIGMA0)
 
-        optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds,
-                               self._cma_opts)
-        trials = study.trials
+        optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds, self._cma_opts)
         last_told_trial_number = optimizer.tell(trials, study.direction)
         return optimizer.ask(trials, last_told_trial_number)
 

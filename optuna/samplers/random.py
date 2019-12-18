@@ -7,6 +7,7 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
+    from typing import List  # NOQA
     from typing import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
@@ -54,13 +55,26 @@ class RandomSampler(BaseSampler):
 
         return {}
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def sample_relative(
+            self,
+            study,  # type: Study
+            trial,  # type: FrozenTrial
+            search_space,  # type: Dict[str, BaseDistribution]
+            trials=None  # type: Optional[List[FrozenTrial]]
+    ):
+        # type: (...) -> Dict[str, Any]
 
         return {}
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, distributions.BaseDistribution) -> Any
+    def sample_independent(
+            self,
+            study,  # type: Study
+            trial,  # type: FrozenTrial
+            param_name,  # type: str
+            param_distribution,  # type: BaseDistribution
+            trials=None  # type: Optional[List[FrozenTrial]]
+    ):
+        # type: (...) -> Any
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._rng.uniform(param_distribution.low, param_distribution.high)

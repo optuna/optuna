@@ -5,6 +5,8 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
@@ -70,8 +72,14 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def sample_relative(
+            self,
+            study,  # type: Study
+            trial,  # type: FrozenTrial
+            search_space,  # type: Dict[str, BaseDistribution]
+            trials=None  # type: Optional[List[FrozenTrial]]
+    ):
+        # type: (...) -> Dict[str, Any]
         """Sample parameters in a given search space.
 
         This method is called once at the beginning of each trial, i.e., right before the
@@ -86,6 +94,9 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
             search_space:
                 The search space returned by
                 :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
+            trials:
+                The list of trials that have the same value for the key of `pruner_metadata`
+                in `user_attrs` as the given `trial`.
 
         Returns:
             A dictionary containing the parameter names and the values.
@@ -95,8 +106,15 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
+    def sample_independent(
+            self,
+            study,  # type: Study
+            trial,  # type: FrozenTrial
+            param_name,  # type: str
+            param_distribution,  # type: BaseDistribution
+            trials=None  # type: Optional[List[FrozenTrial]]
+    ):
+        # type: (...) -> Any
         """Sample a parameter for a given distribution.
 
         This method is called only for the parameters not contained in the search space returned
@@ -113,6 +131,9 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
                 Name of the sampled parameter.
             param_distribution:
                 Distribution object that specifies a prior and/or scale of the sampling algorithm.
+            trials:
+                The list of trials that have the same value for the key of `pruner_metadata`
+                in `user_attrs` as the given `trial`.
 
         Returns:
             A parameter value.

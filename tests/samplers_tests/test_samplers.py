@@ -15,6 +15,7 @@ if optuna.type_checking.TYPE_CHECKING:
     import typing  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
+    from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
 
@@ -178,13 +179,19 @@ class FixedSampler(BaseSampler):
 
         return self.relative_search_space
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def sample_relative(
+            self,
+            study,  # type: Study
+            trial,  # type: FrozenTrial
+            search_space,  # type: Dict[str, BaseDistribution]
+            trials=None  # type: Optional[List[FrozenTrial]]
+    ):
+        # type: (...) -> Dict[str, Any]
 
         return self.relative_params
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
+    def sample_independent(self, study, trial, param_name, param_distribution, trials=None):
+        # type: (Study, FrozenTrial, str, BaseDistribution, Optional[List[FrozenTrial]]) -> Any
 
         return self.unknown_param_value
 
