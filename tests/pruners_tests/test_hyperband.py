@@ -40,10 +40,3 @@ def test_hyperband_pruner_intermediate_values():
 
     trials = study.trials
     assert len(trials) == n_pruners * EXPECTED_N_TRIALS_PER_BRACKET
-
-
-def test_warn_on_TPESampler():
-    # type: () -> None
-
-    with pytest.warns(UserWarning):
-        optuna.study.create_study(pruner=optuna.pruners.HyperbandPruner())
