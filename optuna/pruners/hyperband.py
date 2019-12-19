@@ -1,7 +1,7 @@
 from optuna import logging
 from optuna.pruners.base import BasePruner
-from optuna import Study
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
+from optuna import Study
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
