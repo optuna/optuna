@@ -150,7 +150,6 @@ def _get_competing_values(trials, value, rung_key):
 
     competing_values = [t.system_attrs[rung_key] for t in trials if rung_key in t.system_attrs]
     competing_values.append(value)
-    competing_values.sort()
     return competing_values
 
 
@@ -165,6 +164,7 @@ def _is_trial_promotable_to_next_rung(value, competing_values, reduction_factor,
         # smallest one among the competing values.
         promotable_idx = 0
 
+    competing_values.sort()
     if study_direction == StudyDirection.MAXIMIZE:
         return value >= competing_values[-(promotable_idx + 1)]
     return value <= competing_values[promotable_idx]
