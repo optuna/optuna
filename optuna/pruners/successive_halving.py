@@ -121,7 +121,7 @@ class SuccessiveHalvingPruner(BasePruner):
 
             study._storage.set_trial_system_attr(trial._trial_id, rung_key, value)
 
-            if not _is_value_promotable_to_next_rung(
+            if not _is_trial_promotable_to_next_rung(
                     value, _get_competing_values(trials, value, rung_key),
                     self._reduction_factor, study.direction):
                 return True
@@ -154,16 +154,15 @@ def _get_competing_values(trials, value, rung_key):
     return competing_values
 
 
-def _is_value_promotable_to_next_rung(value, competing_values, reduction_factor, study_direction):
+def _is_trial_promotable_to_next_rung(value, competing_values, reduction_factor, study_direction):
     # type: (float, List[float], int, StudyDirection) -> bool
 
     promotable_idx = (len(competing_values) // reduction_factor) - 1
 
     if promotable_idx == -1:
-        # Optuna does not support to suspend/resume ongoing trials.
-        #
-        # For the first `eta - 1` trials, this implementation promotes a trial if its
-        # intermediate value is the smallest one among the trials that have completed the rung.
+        # Optuna does not support suspending or resuming ongoing trials. Therefore, for the first
+        # `eta - 1` trials, this implementation instead promotes the trial if its value is the
+        # smallest one among the competing values.
         promotable_idx = 0
 
     if study_direction == StudyDirection.MAXIMIZE:
