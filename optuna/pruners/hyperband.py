@@ -8,6 +8,7 @@ if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
     from optuna.structs import FrozenTrial  # NOQA
+    from optuna.trial import Trial  # NOQA
 
 _logger = logging.get_logger(__name__)
 
@@ -47,6 +48,7 @@ class HyperbandPruner(BasePruner):
             min_early_stopping_rate_high=4
     ):
         # type: (int, int, int, int) -> None
+
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
         self._reduction_factor = reduction_factor
         self._resource_budget = 0
@@ -106,30 +108,6 @@ class HyperbandPruner(BasePruner):
                 return i
 
         raise RuntimeError
-
-    @property
-    def resource_budget(self):
-        # type: () -> int
-        """The total amount of resource.
-
-        This value is a proxy for :math:`B` in the
-        `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
-        """
-
-        return self._resource_budget
-
-    @property
-    def n_pruners(self):
-        # type: () -> int
-        """The number of pruners.
-
-        The number of pruners is calculated by the following equation:
-        :math:`
-        \\mathsf{min}\\_\\mathsf{early}\\_\\mathsf{stopping}\\_\\mathsf{rate}\\_\\mathsf{high} -
-        \\mathsf{min}\\_\\mathsf{early}\\_\\mathsf{stopping}\\_\\mathsf{rate}\\_\\mathsf{low} + 1`
-        """
-
-        return self._n_pruners
 
 
 class _BracketStudy(Study):

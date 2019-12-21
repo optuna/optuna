@@ -1,5 +1,3 @@
-import pytest
-
 import optuna
 from optuna import type_checking
 
@@ -23,8 +21,8 @@ def test_hyperband_pruner_intermediate_values():
         min_early_stopping_rate_low=EARLY_STOPPING_RATE_LOW,
         min_early_stopping_rate_high=EARLY_STOPPING_RATE_HIGH
     )
-    assert pruner.n_pruners == EARLY_STOPPING_RATE_HIGH - EARLY_STOPPING_RATE_LOW + 1
-    n_pruners = pruner.n_pruners
+    assert pruner._n_pruners == EARLY_STOPPING_RATE_HIGH - EARLY_STOPPING_RATE_LOW + 1
+    n_pruners = pruner._n_pruners
 
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
 
