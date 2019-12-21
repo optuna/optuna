@@ -110,7 +110,12 @@ class HyperbandPruner(BasePruner):
         raise RuntimeError
 
 
+# N.B. This class is assumed to be passed to `SuccessiveHalvingPruner.prune` in which `get_trials`,
+# `direction`, and `storage` are used.
+# But for safety, prohibit the other attributes explicitly.
 class _BracketStudy(Study):
+
+    _VALID_ATTRS = ('get_trials', 'direction', '_storage')
 
     def __init__(self, study, bracket_id) -> None:
         # type: (Study, int) -> None
@@ -129,6 +134,12 @@ class _BracketStudy(Study):
         trials = super().get_trials(deepcopy=deepcopy)
         trials = [
             t for t in trials
-            if self.pruner.get_bracket_id(self.study_name, t.number) == self._bracket_id
+            if self.pruner._get_bracket_id(self.study_name, t.number) == self._bracket_id
         ]
         return trials
+
+    def __getattribute__(self, attr_name):
+        if attr_name not in _BracketStudy._VALID_ATTRS:
+            raise NotImplementedError
+        else:
+            return getattr(self, attr_name)
