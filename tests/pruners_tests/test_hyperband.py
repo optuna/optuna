@@ -51,8 +51,8 @@ def test_bracket_study():
         min_early_stopping_rate_low=EARLY_STOPPING_RATE_LOW,
         min_early_stopping_rate_high=EARLY_STOPPING_RATE_HIGH
     )
-    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
-    bracket_study = study.pruner._create_bracket_study(study, 0)
+    study = optuna.study.create_study(pruner=pruner)
+    bracket_study = pruner._create_bracket_study(study, 0)
 
     with pytest.raises(Exception):
-        bracket_study.optimize(objective=lambda *args: 1.0)
+        bracket_study.optimize(lambda *args: 1.0)
