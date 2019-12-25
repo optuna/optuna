@@ -7,7 +7,6 @@ if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
     from optuna import structs  # NOQA
-    from optuna.trial import Trial  # NOQA
     from optuna.study import Study  # NOQA
 
 _logger = logging.get_logger(__name__)
@@ -34,32 +33,34 @@ class HyperbandPruner(BasePruner):
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper. See the details for
             :class:`~optuna.pruners.SuccessiveHalvingPruner`.
+        n_brackets:
+            The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\s (brackets).
         min_early_stopping_rate_low:
-            The start point of the minimum early stopping rate for ``SuccessiveHalvingPruner``.
-        min_early_stopping_rate_high:
-            The end point of the minimum early stopping rate for ``SuccessiveHalvingPruner``.
+            A parameter for specifying the minimum early-stopping rate.
+            This parameter is related to a parameter that is referred to as :math:`r` and used in
+            `Asynchronous SuccessiveHalving paper <http://arxiv.org/abs/1810.05934>`_.
+            The minimum early stopping rate for ``i``th bracket is :math:`i + s`.
     """
 
     def __init__(
             self,
             min_resource=1,
             reduction_factor=3,
-            min_early_stopping_rate_low=0,
-            min_early_stopping_rate_high=4
+            n_brackets=4,
+            min_early_stopping_rate_low=0
     ):
         # type: (int, int, int, int) -> None
 
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
         self._reduction_factor = reduction_factor
         self._resource_budget = 0
-        n_pruners = min_early_stopping_rate_high - min_early_stopping_rate_low + 1
-        self._n_pruners = n_pruners
+        self._n_brackets = n_brackets
         self._bracket_resource_budgets = []  # type: List[int]
 
-        _logger.debug('Hyperband has {} brackets'.format(self._n_pruners))
+        _logger.debug('Hyperband has {} brackets'.format(self._n_brackets))
 
-        for i in range(n_pruners):
-            bracket_resource_budget = self._calc_bracket_resource_budget(i, n_pruners)
+        for i in range(n_brackets):
+            bracket_resource_budget = self._calc_bracket_resource_budget(i, n_brackets)
             self._resource_budget += bracket_resource_budget
             self._bracket_resource_budgets.append(bracket_resource_budget)
 
@@ -85,11 +86,11 @@ class HyperbandPruner(BasePruner):
         bracket_study = self._create_bracket_study(study, i)
         return self._pruners[i].prune(bracket_study, trial)
 
-    def _calc_bracket_resource_budget(self, pruner_index, n_pruners):
+    def _calc_bracket_resource_budget(self, pruner_index, n_brackets):
         # type: (int, int) -> int
-        n = self._reduction_factor ** (n_pruners - 1)
+        n = self._reduction_factor ** (n_brackets - 1)
         budget = n
-        for i in range(pruner_index, n_pruners - 1):
+        for i in range(pruner_index, n_brackets - 1):
             budget += n / 2
         return budget
 
@@ -102,7 +103,7 @@ class HyperbandPruner(BasePruner):
         """
 
         n = hash('{}_{}'.format(study.study_name, trial.number)) % self._resource_budget
-        for i in range(self._n_pruners):
+        for i in range(self._n_brackets):
             n -= self._bracket_resource_budgets[i]
             if n < 0:
                 return i
