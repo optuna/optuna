@@ -6,7 +6,7 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
-    from optuna.structs import FrozenTrial  # NOQA
+    from optuna import structs  # NOQA
     from optuna.trial import Trial  # NOQA
     from optuna.study import Study  # NOQA
 
@@ -78,7 +78,7 @@ class HyperbandPruner(BasePruner):
             self._pruners.append(pruner)
 
     def prune(self, study, trial):
-        # type: (Study, FrozenTrial) -> bool
+        # type: (Study, structs.FrozenTrial) -> bool
 
         i = self._get_bracket_id(study, trial)
         _logger.debug('{}th bracket is selected'.format(i))
@@ -94,7 +94,7 @@ class HyperbandPruner(BasePruner):
         return budget
 
     def _get_bracket_id(self, study, trial):
-        # type: (Study, FrozenTrial) -> int
+        # type: (Study, structs.FrozenTrial) -> int
         """Computes the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
@@ -102,7 +102,7 @@ class HyperbandPruner(BasePruner):
         """
 
         n = hash('{}_{}'.format(study.study_name, trial.number)) % self._resource_budget
-        for i in range(self.n_pruners):
+        for i in range(self._n_pruners):
             n -= self._bracket_resource_budgets[i]
             if n < 0:
                 return i
@@ -110,7 +110,7 @@ class HyperbandPruner(BasePruner):
         assert False
 
     def _create_bracket_study(self, study, bracket_index):
-        # type: (Study, int) -> bool
+        # type: (Study, int) -> Study
 
         from optuna.study import Study
 
@@ -122,7 +122,7 @@ class HyperbandPruner(BasePruner):
 
             _VALID_ATTRS = ('get_trials', 'direction', '_storage')
 
-            def __init__(self, study, bracket_id) -> None:
+            def __init__(self, study, bracket_id):
                 # type: (Study, int) -> None
 
                 super().__init__(
@@ -133,24 +133,21 @@ class HyperbandPruner(BasePruner):
                 )
                 self._bracket_id = bracket_id
 
-            def get_trials(self, deepcopy):
-                # type: (bool) -> List[FrozenTrial]
+            def get_trials(self, deepcopy=True):
+                # type: (bool) -> List[structs.FrozenTrial]
 
                 trials = super().get_trials(deepcopy=deepcopy)
+                pruner = self.pruner
+                assert isinstance(pruner, HyperbandPruner)
                 return [
                     t for t in trials
-                    if self.pruner._get_bracket_id(self.study_name, t.number) == self._bracket_id
+                    if pruner._get_bracket_id(self, t) == self._bracket_id
                 ]
 
-            def __getattribute__(self, attr_name):
+            def __getattribute__(self, attr_name):  # type: ignore
                 if attr_name not in _BracketStudy._VALID_ATTRS:
                     raise NotImplementedError
                 else:
                     return getattr(self, attr_name)
-
-                i = self._get_bracket_id(study, trial)
-                _logger.debug('{}th bracket is selected'.format(i))
-                bracket_study = _BracketStudy(study, i)
-                return self._pruners[i].prune(bracket_study, trial)
 
         return _BracketStudy(study, bracket_index)
