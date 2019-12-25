@@ -88,6 +88,7 @@ class HyperbandPruner(BasePruner):
 
     def _calc_bracket_resource_budget(self, pruner_index, n_brackets):
         # type: (int, int) -> int
+
         n = self._reduction_factor ** (n_brackets - 1)
         budget = n
         for i in range(pruner_index, n_brackets - 1):
