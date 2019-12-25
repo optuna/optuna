@@ -80,7 +80,7 @@ class HyperbandPruner(BasePruner):
     def prune(self, study, trial):
         # type: (Study, FrozenTrial) -> bool
 
-        i = self.get_bracket_id(study.study_name, trial.number)
+        i = self._get_bracket_id(study, trial)
         _logger.debug('{}th bracket is selected'.format(i))
         bracket_study = _BracketStudy(study, i)
         return self._pruners[i].prune(bracket_study, trial)
@@ -93,21 +93,21 @@ class HyperbandPruner(BasePruner):
             budget += n / 2
         return budget
 
-    def get_bracket_id(self, study_name, trial_number):
-        # type: (str, int) -> int
+    def _get_bracket_id(self, study, trial):
+        # type: (Study, FrozenTrial) -> int
         """Computes the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
         `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
         """
 
-        n = hash('{}_{}'.format(study_name, trial_number)) % self._resource_budget
+        n = hash('{}_{}'.format(study.study_name, trial.number)) % self._resource_budget
         for i in range(self.n_pruners):
             n -= self._bracket_resource_budgets[i]
             if n < 0:
                 return i
 
-        raise RuntimeError
+        assert False
 
 
 # N.B. This class is assumed to be passed to `SuccessiveHalvingPruner.prune` in which `get_trials`,
