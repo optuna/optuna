@@ -80,8 +80,8 @@ class SuccessiveHalvingPruner(BasePruner):
             referred to as :math:`s`).
     """
 
-    def __init__(self, min_resource=1, reduction_factor=4, min_early_stopping_rate=0):
-        # type: (int, int, int) -> None
+    def __init__(self, min_resource='auto', reduction_factor=4, min_early_stopping_rate=0):
+        # type: (Union[str, int], int, int) -> None
 
         if min_resource != 'auto' and min_resource < 1:
             raise ValueError('The value of `min_resource` is {}, '
@@ -161,7 +161,9 @@ class SuccessiveHalvingPruner(BasePruner):
         complete_trial = complete_trials[0]  # type: FrozenTrial
         last_step = complete_trial.last_step
         if last_step is not None:
-            self._min_resource = last_step // 100
+            hundredth = last_step // 100
+            self._min_resource = hundredth if hundredth > 0 else 1
+            assert self._min_resource > 0
 
 
 def _get_current_rung(trial):
