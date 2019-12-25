@@ -83,7 +83,7 @@ class SuccessiveHalvingPruner(BasePruner):
     def __init__(self, min_resource=1, reduction_factor=4, min_early_stopping_rate=0):
         # type: (int, int, int) -> None
 
-        if min_resource != 'auto' or min_resource < 1:
+        if min_resource != 'auto' and min_resource < 1:
             raise ValueError('The value of `min_resource` is {}, '
                              "but must be either `min_resource >= 1` or 'auto'".format(
                                  min_resource))
@@ -92,10 +92,10 @@ class SuccessiveHalvingPruner(BasePruner):
             raise ValueError('The value of `reduction_factor` is {}, '
                              'but must be `reduction_factor >= 2`'.format(reduction_factor))
 
-        if min_early_stopping_rate != 'auto' or min_early_stopping_rate < 0:
+        if min_early_stopping_rate < 0:
             raise ValueError(
                 'The value of `min_early_stopping_rate` is {}, '
-                "but must be `min_early_stopping_rate >= 0` or 'auto'".format(
+                "but must be `min_early_stopping_rate >= 0`".format(
                     min_early_stopping_rate))
 
         self._auto_min_resource = min_resource == 'auto'
