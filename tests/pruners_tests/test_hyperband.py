@@ -2,7 +2,6 @@ import pytest
 
 import optuna
 from optuna import type_checking
-from optuna.pruners.hyperband import _BracketStudy
 
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
@@ -53,7 +52,7 @@ def test_bracket_study():
         min_early_stopping_rate_high=EARLY_STOPPING_RATE_HIGH
     )
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
-    bracket_study = _BracketStudy(study, 0)
+    bracket_study = study.pruner._create_bracket_study(study, 0)
 
     with pytest.raises(Exception):
         bracket_study.optimize(objective=lambda *args: 1.0)

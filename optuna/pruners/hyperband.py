@@ -1,7 +1,6 @@
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
-from optuna import Study
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -9,6 +8,7 @@ if type_checking.TYPE_CHECKING:
 
     from optuna.structs import FrozenTrial  # NOQA
     from optuna.trial import Trial  # NOQA
+    from optuna.study import Study  # NOQA
 
 _logger = logging.get_logger(__name__)
 
@@ -56,7 +56,7 @@ class HyperbandPruner(BasePruner):
         self._n_pruners = n_pruners
         self._bracket_resource_budgets = []  # type: List[int]
 
-        _logger.debug('Hyperband has {} brackets'.format(self.n_pruners))
+        _logger.debug('Hyperband has {} brackets'.format(self._n_pruners))
 
         for i in range(n_pruners):
             bracket_resource_budget = self._calc_bracket_resource_budget(i, n_pruners)
@@ -82,7 +82,7 @@ class HyperbandPruner(BasePruner):
 
         i = self._get_bracket_id(study, trial)
         _logger.debug('{}th bracket is selected'.format(i))
-        bracket_study = _BracketStudy(study, i)
+        bracket_study = self._create_bracket_study(study, i)
         return self._pruners[i].prune(bracket_study, trial)
 
     def _calc_bracket_resource_budget(self, pruner_index, n_pruners):
@@ -109,37 +109,48 @@ class HyperbandPruner(BasePruner):
 
         assert False
 
+    def _create_bracket_study(self, study, bracket_index):
+        # type: (Study, int) -> bool
 
-# N.B. This class is assumed to be passed to `SuccessiveHalvingPruner.prune` in which `get_trials`,
-# `direction`, and `storage` are used.
-# But for safety, prohibit the other attributes explicitly.
-class _BracketStudy(Study):
+        from optuna.study import Study
 
-    _VALID_ATTRS = ('get_trials', 'direction', '_storage')
+        # N.B. This class is assumed to be passed to
+        # `SuccessiveHalvingPruner.prune` in which `get_trials`,
+        # `direction`, and `storage` are used.
+        # But for safety, prohibit the other attributes explicitly.
+        class _BracketStudy(Study):
 
-    def __init__(self, study, bracket_id) -> None:
-        # type: (Study, int) -> None
+            _VALID_ATTRS = ('get_trials', 'direction', '_storage')
 
-        super().__init__(
-            study_name=study.study_name,
-            storage=study.storage,
-            sampler=study.sampler,
-            pruner=study.pruner
-        )
-        self._bracket_id = bracket_id
+            def __init__(self, study, bracket_id) -> None:
+                # type: (Study, int) -> None
 
-    def get_trials(self, deepcopy):
-        # type: (bool) -> List[FrozenTrial]
+                super().__init__(
+                    study_name=study.study_name,
+                    storage=study.storage,
+                    sampler=study.sampler,
+                    pruner=study.pruner
+                )
+                self._bracket_id = bracket_id
 
-        trials = super().get_trials(deepcopy=deepcopy)
-        trials = [
-            t for t in trials
-            if self.pruner._get_bracket_id(self.study_name, t.number) == self._bracket_id
-        ]
-        return trials
+            def get_trials(self, deepcopy):
+                # type: (bool) -> List[FrozenTrial]
 
-    def __getattribute__(self, attr_name):
-        if attr_name not in _BracketStudy._VALID_ATTRS:
-            raise NotImplementedError
-        else:
-            return getattr(self, attr_name)
+                trials = super().get_trials(deepcopy=deepcopy)
+                return [
+                    t for t in trials
+                    if self.pruner._get_bracket_id(self.study_name, t.number) == self._bracket_id
+                ]
+
+            def __getattribute__(self, attr_name):
+                if attr_name not in _BracketStudy._VALID_ATTRS:
+                    raise NotImplementedError
+                else:
+                    return getattr(self, attr_name)
+
+                i = self._get_bracket_id(study, trial)
+                _logger.debug('{}th bracket is selected'.format(i))
+                bracket_study = _BracketStudy(study, i)
+                return self._pruners[i].prune(bracket_study, trial)
+
+        return _BracketStudy(study, bracket_index)
