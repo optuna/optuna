@@ -13,7 +13,7 @@ class BasePruner(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def prune(self, study, trial):
         # type: (Study, FrozenTrial) -> bool
-        """Judge whether the trial should be pruned at the given step.
+        """Judge whether the trial should be pruned based on the reported values.
 
         Note that this method is not supposed to be called by library users. Instead,
         :func:`optuna.trial.Trial.report` and :func:`optuna.trial.Trial.should_prune` provide
