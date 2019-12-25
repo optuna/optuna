@@ -2,10 +2,13 @@ import math
 
 from optuna.pruners.base import BasePruner
 from optuna.structs import StudyDirection
+from optuna.structs import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Union  # NOQA
 
     from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
@@ -46,6 +49,9 @@ class SuccessiveHalvingPruner(BasePruner):
             A parameter for specifying the minimum resource allocated to a trial
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
             referred to as :math:`r`).
+            This parameter defaults to ``'auto'`` that means this pruner estimates an appropriate
+            minimum resource by the required number of a ``COMPLETE``
+            :class:`~optuna.structs.FrozenTrial`'s steps.
 
             A trial is never pruned until it executes
             :math:`\\mathsf{min}\\_\\mathsf{resource} \\times
@@ -77,20 +83,25 @@ class SuccessiveHalvingPruner(BasePruner):
     def __init__(self, min_resource=1, reduction_factor=4, min_early_stopping_rate=0):
         # type: (int, int, int) -> None
 
-        if min_resource < 1:
+        if min_resource != 'auto' or min_resource < 1:
             raise ValueError('The value of `min_resource` is {}, '
-                             'but must be `min_resource >= 1`'.format(min_resource))
+                             "but must be either `min_resource >= 1` or 'auto'".format(
+                                 min_resource))
 
         if reduction_factor < 2:
             raise ValueError('The value of `reduction_factor` is {}, '
                              'but must be `reduction_factor >= 2`'.format(reduction_factor))
 
-        if min_early_stopping_rate < 0:
+        if min_early_stopping_rate != 'auto' or min_early_stopping_rate < 0:
             raise ValueError(
                 'The value of `min_early_stopping_rate` is {}, '
-                'but must be `min_early_stopping_rate >= 0`'.format(min_early_stopping_rate))
+                "but must be `min_early_stopping_rate >= 0` or 'auto'".format(
+                    min_early_stopping_rate))
 
-        self._min_resource = min_resource
+        self._auto_min_resource = min_resource == 'auto'
+        self._min_resource = None  # type: Optional[int]
+        if not self._auto_min_resource:
+            self._min_resource = min_resource
         self._reduction_factor = reduction_factor
         self._min_early_stopping_rate = min_early_stopping_rate
 
@@ -103,9 +114,16 @@ class SuccessiveHalvingPruner(BasePruner):
 
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
-        trials = None
+        trials = None  # type: Optional[List[FrozenTrial]]
 
         while True:
+            if self._auto_min_resource:
+                self._estimate_min_resource(trials)
+
+                if self._min_resource is None:
+                    return False
+
+            assert self._min_resource is not None
             rung_promotion_step = self._min_resource * \
                 (self._reduction_factor ** (self._min_early_stopping_rate + rung))
             if step < rung_promotion_step:
@@ -127,6 +145,21 @@ class SuccessiveHalvingPruner(BasePruner):
                 return True
 
             rung += 1
+
+    def _estimate_min_resource(self, trials):
+        # type: (Optional[List[FrozenTrial]]) -> None
+
+        if trials is None:
+            return
+
+        complete_trials = [t for t in trials if t.state == TrialState.COMPLETE]
+
+        if not complete_trials:
+            return
+
+        # get the number of steps and divide it by 100.
+        complete_trial = complete_trials[0]  # type: FrozenTrial
+        self._min_resource = complete_trial.last_step // 100
 
 
 def _get_current_rung(trial):
