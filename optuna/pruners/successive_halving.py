@@ -159,7 +159,9 @@ class SuccessiveHalvingPruner(BasePruner):
 
         # get the number of steps and divide it by 100.
         complete_trial = complete_trials[0]  # type: FrozenTrial
-        self._min_resource = complete_trial.last_step // 100
+        last_step = complete_trial.last_step
+        if last_step is not None:
+            self._min_resource = last_step // 100
 
 
 def _get_current_rung(trial):
