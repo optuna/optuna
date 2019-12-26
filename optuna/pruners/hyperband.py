@@ -114,6 +114,10 @@ class HyperbandPruner(BasePruner):
     def _create_bracket_study(self, study, bracket_index):
         # type: (Study, int) -> Study
 
+        # NOTE(crcrpar): The below import is workaround.
+        # The below import violates PEP8 (https://www.python.org/dev/peps/pep-0008/#imports),
+        # however, if we follow that here, ImportError occurs.
+
         from optuna.study import Study
 
         # N.B. This class is assumed to be passed to
