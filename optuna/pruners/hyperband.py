@@ -109,7 +109,7 @@ class HyperbandPruner(BasePruner):
             if n < 0:
                 return i
 
-        assert False
+        assert False, 'This line should be unreachable.'
 
     def _create_bracket_study(self, study, bracket_index):
         # type: (Study, int) -> Study
