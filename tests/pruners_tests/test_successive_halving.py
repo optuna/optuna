@@ -111,23 +111,30 @@ def test_successive_halving_pruner_with_nan():
 def test_successive_halving_pruner_with_auto_min_resource():
     # type: () -> None
 
-    pruner = optuna.pruners.SuccessiveHalvingPruner('auto')
+    pruner = optuna.pruners.SuccessiveHalvingPruner(min_resource='auto')
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
 
     assert pruner._min_resource is None
 
     def objective(trial):
-        tmp = trial.suggest_uniform('sample', 0, 1)
+        # type: (optuna.trial.Trial) -> float
+
         for i in range(3):
-            trial.report(tmp / (i + 1))
+            trial.report(1.0 / (i + 1))
             if trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
-        return 1.0 - tmp
+        return 1.0
 
     study.optimize(objective, n_trials=3)
-    # FIXME(crcrpar): No intermediate_values available
-    # trials = study.trials
-    # assert pruner._min_resource is not None and pruner._min_resource == max(1, 3 // 100), trials
+    # FIXME (crcrpar)
+    # assert pruner._min_resource is not None and pruner._min_resource > 0
+
+
+def test_successive_halving_pruner_with_invalid_str_to_min_resource():
+    # type: () -> None
+
+    with pytest.raises(ValueError):
+        optuna.pruners.SuccessiveHalvingPruner(min_resource='fixed')
 
 
 def test_successive_halving_pruner_min_resource_parameter():
