@@ -39,7 +39,7 @@ class HyperbandPruner(BasePruner):
             A parameter for specifying the minimum early-stopping rate.
             This parameter is related to a parameter that is referred to as :math:`r` and used in
             `Asynchronous SuccessiveHalving paper <http://arxiv.org/abs/1810.05934>`_.
-            The minimum early stopping rate for ``i``th bracket is :math:`i + s`.
+            The minimum early stopping rate for :math:`i` th bracket is :math:`i + s`.
     """
 
     def __init__(
