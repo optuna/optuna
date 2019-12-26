@@ -51,5 +51,27 @@ def test_bracket_study():
     study = optuna.study.create_study(pruner=pruner)
     bracket_study = pruner._create_bracket_study(study, 0)
 
-    with pytest.raises(Exception):
+    with pytest.raises(NotImplementedError):
         bracket_study.optimize(lambda *args: 1.0)
+
+    for attr in ('set_user_attr', 'set_system_attr'):
+        with pytest.raises(NotImplementedError):
+            getattr(bracket_study, attr)('abc', 100)
+
+    for attr in ('user_attrs', 'system_attrs'):
+        with pytest.raises(NotImplementedError):
+            getattr(bracket_study, attr)
+
+    with pytest.raises(Exception):
+        bracket_study.trials_dataframe()
+
+    bracket_study.get_trials()
+    bracket_study.direction
+    bracket_study._storage
+    bracket_study._study_id
+    bracket_study.pruner
+    bracket_study.study_name
+    # As `_BracketStudy` is defined inside `HyperbandPruner`,
+    # we cannot do `assert isinstance(bracket_study, _BracketStudy)`.
+    # This is why the below line is ignored by mypy checks.
+    bracket_study._bracket_id  # type: ignore

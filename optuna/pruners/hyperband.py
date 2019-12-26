@@ -122,7 +122,10 @@ class HyperbandPruner(BasePruner):
         # But for safety, prohibit the other attributes explicitly.
         class _BracketStudy(Study):
 
-            _VALID_ATTRS = ('get_trials', 'direction', '_storage')
+            _VALID_ATTRS = (
+                'get_trials', 'direction', '_storage', '_study_id',
+                'pruner', 'study_name', '_bracket_id'
+            )
 
             def __init__(self, study, bracket_id):
                 # type: (Study, int) -> None
@@ -150,6 +153,6 @@ class HyperbandPruner(BasePruner):
                 if attr_name not in _BracketStudy._VALID_ATTRS:
                     raise NotImplementedError
                 else:
-                    return getattr(self, attr_name)
+                    return object.__getattribute__(self, attr_name)
 
         return _BracketStudy(study, bracket_index)
