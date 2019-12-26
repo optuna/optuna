@@ -83,10 +83,16 @@ class SuccessiveHalvingPruner(BasePruner):
     def __init__(self, min_resource='auto', reduction_factor=4, min_early_stopping_rate=0):
         # type: (Union[str, int], int, int) -> None
 
-        if min_resource != 'auto' and min_resource < 1:
-            raise ValueError('The value of `min_resource` is {}, '
-                             "but must be either `min_resource >= 1` or 'auto'".format(
-                                 min_resource))
+        if isinstance(min_resource, str) and min_resource != 'auto':
+            raise ValueError(
+                "The value of `min_resource` is {}"
+                "but must be either `min_resource` >= 1 or 'auto'".format(min_resource)
+            )
+
+        if isinstance(min_resource, int) and min_resource < 1:
+            raise ValueError(
+                'The value of `min_resource` is {}, '
+                "but must be either `min_resource >= 1` or 'auto'".format(min_resource))
 
         if reduction_factor < 2:
             raise ValueError('The value of `reduction_factor` is {}, '
@@ -98,9 +104,8 @@ class SuccessiveHalvingPruner(BasePruner):
                 "but must be `min_early_stopping_rate >= 0`".format(
                     min_early_stopping_rate))
 
-        self._auto_min_resource = min_resource == 'auto'
         self._min_resource = None  # type: Optional[int]
-        if not self._auto_min_resource:
+        if isinstance(min_resource, int):
             self._min_resource = min_resource
         self._reduction_factor = reduction_factor
         self._min_early_stopping_rate = min_early_stopping_rate
@@ -117,9 +122,8 @@ class SuccessiveHalvingPruner(BasePruner):
         trials = None  # type: Optional[List[FrozenTrial]]
 
         while True:
-            if self._auto_min_resource:
+            if self._min_resource is None:
                 self._estimate_min_resource(trials)
-
                 if self._min_resource is None:
                     return False
 
@@ -152,18 +156,17 @@ class SuccessiveHalvingPruner(BasePruner):
         if trials is None:
             return
 
-        complete_trials = [t for t in trials if t.state == TrialState.COMPLETE]
+        n_steps = [
+            t.last_step for t in trials
+            if t == TrialState.COMPLETE and t.last_step is not None
+        ]
 
-        if not complete_trials:
+        if not n_steps:
             return
 
-        # get the number of steps and divide it by 100.
-        complete_trial = complete_trials[0]  # type: FrozenTrial
-        last_step = complete_trial.last_step
-        if last_step is not None:
-            hundredth = last_step // 100
-            self._min_resource = hundredth if hundredth > 0 else 1
-            assert self._min_resource > 0
+        # Get the maximum number of steps and divide it by 100.
+        last_step = max(n_steps)
+        self._min_resource = max(int(last_step / 100), 1)
 
 
 def _get_current_rung(trial):
