@@ -132,7 +132,7 @@ class HyperbandPruner(BasePruner):
 
                 super().__init__(
                     study_name=study.study_name,
-                    storage=study.storage,
+                    storage=study._storage,
                     sampler=study.sampler,
                     pruner=study.pruner
                 )
