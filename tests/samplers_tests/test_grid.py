@@ -120,7 +120,7 @@ def test_study_optimize_with_multiple_search_spaces():
     assert len(study.trials) == 5
     for t in study.trials[:3]:
         sampler_0._same_search_space(t.system_attrs['search_space'])
-    for t in study.trials[3: 5]:
+    for t in study.trials[3:5]:
         sampler_1._same_search_space(t.system_attrs['search_space'])
 
     # Run 3 trials with the first search space again.
@@ -130,7 +130,7 @@ def test_study_optimize_with_multiple_search_spaces():
     assert len(study.trials) == 8
     for t in study.trials[:3]:
         sampler_0._same_search_space(t.system_attrs['search_space'])
-    for t in study.trials[3: 5]:
+    for t in study.trials[3:5]:
         sampler_1._same_search_space(t.system_attrs['search_space'])
     for t in study.trials[5:]:
         sampler_0._same_search_space(t.system_attrs['search_space'])
