@@ -78,7 +78,6 @@ class GridSampler(BaseSampler):
         for param_name, param_values in search_space.items():
             for value in param_values:
                 self._check_value(param_name, value)
-            search_space[param_name] = param_values[:]
 
         self._search_space = collections.OrderedDict(
             sorted(search_space.items(), key=lambda x: x[0]))
