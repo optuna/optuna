@@ -75,3 +75,10 @@ def test_bracket_study():
     # we cannot do `assert isinstance(bracket_study, _BracketStudy)`.
     # This is why the below line is ignored by mypy checks.
     bracket_study._bracket_id  # type: ignore
+
+
+def test_warn_on_TPESampler():
+    # type: () -> None
+
+    with pytest.warns(UserWarning):
+        optuna.study.create_study(pruner=optuna.pruners.HyperbandPruner())
