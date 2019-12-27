@@ -15,6 +15,13 @@ N_REPORTS = 10
 EXPECTED_N_TRIALS_PER_BRACKET = 10
 
 
+def test_warn_on_TPESampler():
+    # type: () -> None
+
+    with pytest.warns(UserWarning):
+        optuna.study.create_study(pruner=optuna.pruners.HyperbandPruner())
+
+
 def test_hyperband_pruner_intermediate_values():
     # type: () -> None
 
@@ -24,7 +31,7 @@ def test_hyperband_pruner_intermediate_values():
         n_brackets=N_BRACKETS
     )
 
-    study = optuna.study.create_study(pruner=pruner)
+    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
 
     def objective(trial):
         # type: (Trial) -> float
@@ -48,21 +55,21 @@ def test_bracket_study():
         reduction_factor=REDUCTION_FACTOR,
         n_brackets=N_BRACKETS
     )
-    study = optuna.study.create_study(pruner=pruner)
+    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
     bracket_study = pruner._create_bracket_study(study, 0)
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(AttributeError):
         bracket_study.optimize(lambda *args: 1.0)
 
     for attr in ('set_user_attr', 'set_system_attr'):
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(AttributeError):
             getattr(bracket_study, attr)('abc', 100)
 
     for attr in ('user_attrs', 'system_attrs'):
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(AttributeError):
             getattr(bracket_study, attr)
 
-    with pytest.raises(Exception):
+    with pytest.raises(AttributeError):
         bracket_study.trials_dataframe()
 
     bracket_study.get_trials()
@@ -75,10 +82,3 @@ def test_bracket_study():
     # we cannot do `assert isinstance(bracket_study, _BracketStudy)`.
     # This is why the below line is ignored by mypy checks.
     bracket_study._bracket_id  # type: ignore
-
-
-def test_warn_on_TPESampler():
-    # type: () -> None
-
-    with pytest.warns(UserWarning):
-        optuna.study.create_study(pruner=optuna.pruners.HyperbandPruner())

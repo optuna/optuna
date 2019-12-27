@@ -128,7 +128,7 @@ class HyperbandPruner(BasePruner):
 
             _VALID_ATTRS = (
                 'get_trials', 'direction', '_storage', '_study_id',
-                'pruner', 'study_name', '_bracket_id'
+                'pruner', 'study_name', '_bracket_id', 'sampler'
             )
 
             def __init__(self, study, bracket_id):
@@ -155,7 +155,8 @@ class HyperbandPruner(BasePruner):
 
             def __getattribute__(self, attr_name):  # type: ignore
                 if attr_name not in _BracketStudy._VALID_ATTRS:
-                    raise NotImplementedError
+                    raise AttributeError(
+                        "_BracketStudy does not have attribute of '{}'".format(attr_name))
                 else:
                     return object.__getattribute__(self, attr_name)
 
