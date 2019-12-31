@@ -123,6 +123,8 @@ class SuccessiveHalvingPruner(BasePruner):
 
         while True:
             if self._min_resource is None:
+                if trials is None:
+                    trials = study.get_trials(deepcopy=False)
                 self._estimate_min_resource(trials)
                 if self._min_resource is None:
                     return False
