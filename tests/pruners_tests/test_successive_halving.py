@@ -120,14 +120,13 @@ def test_successive_halving_pruner_with_auto_min_resource():
         # type: (optuna.trial.Trial) -> float
 
         for i in range(3):
-            trial.report(1.0 / (i + 1))
+            trial.report(1.0 / (i + 1), i)
             if trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
         return 1.0
 
     study.optimize(objective, n_trials=3)
-    # FIXME (crcrpar)
-    # assert pruner._min_resource is not None and pruner._min_resource > 0
+    assert pruner._min_resource is not None and pruner._min_resource > 0
 
 
 def test_successive_halving_pruner_with_invalid_str_to_min_resource():
