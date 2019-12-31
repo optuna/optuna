@@ -160,7 +160,7 @@ class SuccessiveHalvingPruner(BasePruner):
 
         n_steps = [
             t.last_step for t in trials
-            if t == TrialState.COMPLETE and t.last_step is not None
+            if t.state == TrialState.COMPLETE and t.last_step is not None
         ]
 
         if not n_steps:
