@@ -78,14 +78,14 @@ def get_extras_require():
             'sphinx_rtd_theme',
         ],
         'example': [
-            # TODO(Yanase): Remove pillow from dependencies after torchvision includes the
-            # following change: https://github.com/pytorch/vision/pull/1501.
-            'pillow<7',
             'catboost',
             'chainer',
             'lightgbm',
             'mlflow',
             'mxnet',
+            # TODO(Yanase): Remove pillow from dependencies after torchvision includes the
+            # following change: https://github.com/pytorch/vision/pull/1501.
+            'pillow<7',
             'scikit-image',
             # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
             # See https://github.com/optuna/optuna/issues/825 for further details.
@@ -105,9 +105,6 @@ def get_extras_require():
             'torchvision'
         ] if sys.version_info[:2] < (3, 8) else []),
         'testing': [
-            # TODO(Yanase): Remove pillow from dependencies after torchvision includes the
-            # following change: https://github.com/pytorch/vision/pull/1501.
-            'pillow<7',
             'bokeh',
             'chainer>=5.0.0',
             'cma',
@@ -116,6 +113,9 @@ def get_extras_require():
             'mpi4py',
             'mxnet',
             'pandas',
+            # TODO(Yanase): Remove pillow from dependencies after torchvision includes the
+            # following change: https://github.com/pytorch/vision/pull/1501.
+            'pillow<7',
             'plotly>=4.0.0',
             'pytest',
             # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
