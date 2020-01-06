@@ -78,6 +78,9 @@ def get_extras_require():
             'sphinx_rtd_theme',
         ],
         'example': [
+            # TODO(Yanase): Remove pillow from dependencies after torchvision includes the
+            # following change: https://github.com/pytorch/vision/pull/1501.
+            'pillow<7',
             'catboost',
             'chainer',
             'lightgbm',
@@ -102,6 +105,9 @@ def get_extras_require():
             'torchvision'
         ] if sys.version_info[:2] < (3, 8) else []),
         'testing': [
+            # TODO(Yanase): Remove pillow from dependencies after torchvision includes the
+            # following change: https://github.com/pytorch/vision/pull/1501.
+            'pillow<7',
             'bokeh',
             'chainer>=5.0.0',
             'cma',
