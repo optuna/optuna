@@ -83,6 +83,9 @@ def get_extras_require():
             'lightgbm',
             'mlflow',
             'mxnet',
+            # TODO(Yanase): Remove pillow from dependencies after torchvision includes the
+            # following change: https://github.com/pytorch/vision/pull/1501.
+            'pillow<7',
             'scikit-image',
             # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
             # See https://github.com/optuna/optuna/issues/825 for further details.
@@ -110,6 +113,9 @@ def get_extras_require():
             'mpi4py',
             'mxnet',
             'pandas',
+            # TODO(Yanase): Remove pillow from dependencies after torchvision includes the
+            # following change: https://github.com/pytorch/vision/pull/1501.
+            'pillow<7',
             'plotly>=4.0.0',
             'pytest',
             # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
