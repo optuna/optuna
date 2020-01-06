@@ -90,10 +90,7 @@ class HyperbandPruner(BasePruner):
         # type: (int, int) -> int
 
         n = self._reduction_factor ** (n_brackets - 1)
-        budget = n
-        for i in range(pruner_index, n_brackets - 1):
-            budget += n / 2
-        return budget
+        return n + (n / 2) * (n_brackets - 1 - pruner_index)
 
     def _get_bracket_id(self, study, trial):
         # type: (Study, structs.FrozenTrial) -> int
@@ -114,13 +111,13 @@ class HyperbandPruner(BasePruner):
     def _create_bracket_study(self, study, bracket_index):
         # type: (Study, int) -> Study
 
-        # NOTE(crcrpar): The below import is workaround.
+        # NOTE(crcrpar): The below import is workaround (optuna/optuna#809).
         # The below import violates PEP8 (https://www.python.org/dev/peps/pep-0008/#imports),
         # however, if we follow that here, ImportError occurs.
 
         from optuna.study import Study
 
-        # N.B. This class is assumed to be passed to
+        # This class is assumed to be passed to
         # `SuccessiveHalvingPruner.prune` in which `get_trials`,
         # `direction`, and `storage` are used.
         # But for safety, prohibit the other attributes explicitly.
