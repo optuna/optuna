@@ -68,7 +68,9 @@ def get_extras_require():
         ],
         'doctest': [
             'pandas',
-            'scikit-learn>=0.19.0',
+            # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
+            # See https://github.com/optuna/optuna/issues/825 for further details.
+            'scikit-learn>=0.19.0,<=0.22.0',
         ],
         'document': [
             'lightgbm',
@@ -82,7 +84,9 @@ def get_extras_require():
             'mlflow',
             'mxnet',
             'scikit-image',
-            'scikit-learn',
+            # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
+            # See https://github.com/optuna/optuna/issues/825 for further details.
+            'scikit-learn<=0.22.0',
             'xgboost',
         ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + ([
@@ -108,7 +112,9 @@ def get_extras_require():
             'pandas',
             'plotly>=4.0.0',
             'pytest',
-            'scikit-learn>=0.19.0',
+            # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
+            # See https://github.com/optuna/optuna/issues/825 for further details.
+            'scikit-learn>=0.19.0,<=0.22.0',
             'scikit-optimize',
             'xgboost',
         ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
