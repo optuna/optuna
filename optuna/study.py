@@ -196,8 +196,8 @@ class Study(BaseStudy):
                 isinstance(self.pruner, pruners.HyperbandPruner)):
             msg = (
                 "The algorithm of TPESampler and HyperbandPruner might behave in a different way "
-                "from the paper because the sampler uses all the trials including ones of "
-                "brackets other than that of currently running trial")
+                "from the paper of Hyperband because the sampler uses all the trials including "
+                "ones of brackets other than that of currently running trial")
             warnings.warn(msg, UserWarning)
 
         self._optimize_lock = threading.Lock()
