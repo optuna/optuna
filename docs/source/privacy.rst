@@ -1,3 +1,5 @@
+:orphan:
+
 Privacy Policy
 ==============
 

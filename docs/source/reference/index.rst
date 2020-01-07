@@ -1,5 +1,3 @@
-.. module:: optuna
-
 API Reference
 =============
 
