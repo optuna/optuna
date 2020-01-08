@@ -124,7 +124,7 @@ class SuccessiveHalvingPruner(BasePruner):
             if self._min_resource is None:
                 if trials is None:
                     trials = study.get_trials(deepcopy=False)
-                self._estimate_min_resource(trials)
+                self._min_resource = _estimate_min_resource(trials)
                 if self._min_resource is None:
                     return False
 
@@ -151,23 +151,21 @@ class SuccessiveHalvingPruner(BasePruner):
 
             rung += 1
 
-    def _estimate_min_resource(self, trials):
-        # type: (Optional[List[FrozenTrial]]) -> None
 
-        if trials is None:
-            return
+def _estimate_min_resource(trials):
+    # type: (List[FrozenTrial]) -> Optional[int]
 
-        n_steps = [
-            t.last_step for t in trials
-            if t.state == TrialState.COMPLETE and t.last_step is not None
-        ]
+    n_steps = [
+        t.last_step for t in trials
+        if t.state == TrialState.COMPLETE and t.last_step is not None
+    ]
 
-        if not n_steps:
-            return
+    if not n_steps:
+        return None
 
-        # Get the maximum number of steps and divide it by 100.
-        last_step = max(n_steps)
-        self._min_resource = max(last_step // 100, 1)
+    # Get the maximum number of steps and divide it by 100.
+    last_step = max(n_steps)
+    return max(last_step // 100, 1)
 
 
 def _get_current_rung(trial):
