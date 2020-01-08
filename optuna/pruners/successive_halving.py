@@ -168,7 +168,7 @@ class SuccessiveHalvingPruner(BasePruner):
 
         # Get the maximum number of steps and divide it by 100.
         last_step = max(n_steps)
-        self._min_resource = max(int(last_step / 100), 1)
+        self._min_resource = max(last_step // 100, 1)
 
 
 def _get_current_rung(trial):
