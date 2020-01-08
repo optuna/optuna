@@ -4,6 +4,7 @@ import numpy as np
 import scipy.special
 
 from optuna import distributions
+from optuna.pruners import HyperbandPruner
 from optuna.samplers import base
 from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import _ParzenEstimator
@@ -124,7 +125,7 @@ class TPESampler(base.BaseSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
 
-        values, scores = _get_observation_pairs(study, param_name)
+        values, scores = _get_observation_pairs(study, param_name, trial)
 
         n = len(values)
 
@@ -510,8 +511,8 @@ class TPESampler(base.BaseSampler):
         }
 
 
-def _get_observation_pairs(study, param_name):
-    # type: (Study, str) -> Tuple[List[float], List[Tuple[float, float]]]
+def _get_observation_pairs(study, param_name, trial):
+    # type: (Study, str, FrozenTrial) -> Tuple[List[float], List[Tuple[float, float]]]
     """Get observation pairs from the study.
 
        This function collects observation pairs from the complete or pruned trials of the study.
@@ -534,9 +535,15 @@ def _get_observation_pairs(study, param_name):
     if study.direction == StudyDirection.MAXIMIZE:
         sign = -1
 
+    _study = study
+    if isinstance(study.pruner, HyperbandPruner):
+        # Create `_BracketStudy` to use trials that have the same bracket id.
+        pruner = study.pruner  # type: HyperbandPruner
+        _study = pruner._create_bracket_study(study, pruner._get_bracket_id(study, trial))
+
     values = []
     scores = []
-    for trial in study.get_trials(deepcopy=False):
+    for trial in _study.get_trials(deepcopy=False):
         if param_name not in trial.params:
             continue
 
