@@ -49,9 +49,8 @@ class SuccessiveHalvingPruner(BasePruner):
             A parameter for specifying the minimum resource allocated to a trial
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
             referred to as :math:`r`).
-            This parameter defaults to ``'auto'`` that means this pruner estimates an appropriate
-            minimum resource by the required number of a ``COMPLETE``
-            :class:`~optuna.structs.FrozenTrial`'s steps.
+            This parameter defaults to 'auto' where the value is determined based on a heuristic
+            that looks at the number of required steps for the first trial to complete.
 
             A trial is never pruned until it executes
             :math:`\\mathsf{min}\\_\\mathsf{resource} \\times
