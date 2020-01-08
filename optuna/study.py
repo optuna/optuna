@@ -199,6 +199,7 @@ class Study(BaseStudy):
                 "from the paper of Hyperband because the sampler uses all the trials including "
                 "ones of brackets other than that of currently running trial")
             warnings.warn(msg, UserWarning)
+            _logger.warning(msg)
 
         self._optimize_lock = threading.Lock()
 
