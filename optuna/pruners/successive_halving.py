@@ -85,7 +85,7 @@ class SuccessiveHalvingPruner(BasePruner):
 
         if isinstance(min_resource, str) and min_resource != 'auto':
             raise ValueError(
-                "The value of `min_resource` is {}"
+                "The value of `min_resource` is {}, "
                 "but must be either `min_resource` >= 1 or 'auto'".format(min_resource)
             )
 
