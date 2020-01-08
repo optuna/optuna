@@ -33,7 +33,6 @@ from torchvision import transforms
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 
-PERCENT_TRAIN_EXAMPLES = 0.1
 PERCENT_TEST_EXAMPLES = 0.1
 BATCHSIZE = 128
 CLASSES = 10
@@ -152,7 +151,6 @@ def objective(trial):
 
     trainer = pl.Trainer(
         logger=logger,
-        train_percent_check=PERCENT_TRAIN_EXAMPLES,
         val_percent_check=PERCENT_TEST_EXAMPLES,
         checkpoint_callback=checkpoint_callback,
         max_nb_epochs=EPOCHS,
