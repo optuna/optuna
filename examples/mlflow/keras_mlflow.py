@@ -67,6 +67,12 @@ def create_model(num_features, trial):
     return model
 
 
+def mlflow_callback(study, trial):
+    with mlflow.start_run(run_name=study.study_name):
+        mlflow.log_params(trial.params)
+        mlflow.log_metrics({'mean_squared_error': trial.value})
+
+
 def objective(trial):
     # Clear clutter from previous Keras session graphs.
     clear_session()
@@ -83,18 +89,12 @@ def objective(trial):
               epochs=EPOCHS,
               verbose=False)
 
-    score = model.evaluate(X_test, y_test, verbose=0)
-
-    with mlflow.start_run():
-        mlflow.log_params(trial.params)
-        mlflow.log_metrics({'mean_squared_error': score})
-
-    return score
+    return model.evaluate(X_test, y_test, verbose=0)
 
 
 if __name__ == '__main__':
-    study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=100, timeout=600)
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=100, timeout=600, callbacks=[mlflow_callback])
 
     print('Number of finished trials: {}'.format(len(study.trials)))
 
