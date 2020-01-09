@@ -1,3 +1,4 @@
+import optuna
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
@@ -7,7 +8,6 @@ if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
     from optuna import structs  # NOQA
-    from optuna.study import Study  # NOQA
 
 _logger = logging.get_logger(__name__)
 
@@ -79,7 +79,7 @@ class HyperbandPruner(BasePruner):
             self._pruners.append(pruner)
 
     def prune(self, study, trial):
-        # type: (Study, structs.FrozenTrial) -> bool
+        # type: (optuna.study.Study, structs.FrozenTrial) -> bool
 
         i = self._get_bracket_id(study, trial)
         _logger.debug('{}th bracket is selected'.format(i))
@@ -93,7 +93,7 @@ class HyperbandPruner(BasePruner):
         return n + (n / 2) * (n_brackets - 1 - pruner_index)
 
     def _get_bracket_id(self, study, trial):
-        # type: (Study, structs.FrozenTrial) -> int
+        # type: (optuna.study.Study, structs.FrozenTrial) -> int
         """Computes the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
@@ -109,19 +109,13 @@ class HyperbandPruner(BasePruner):
         assert False, 'This line should be unreachable.'
 
     def _create_bracket_study(self, study, bracket_index):
-        # type: (Study, int) -> Study
-
-        # NOTE(crcrpar): The below import is workaround (optuna/optuna#809).
-        # The below import violates PEP8 (https://www.python.org/dev/peps/pep-0008/#imports),
-        # however, if we follow that here, ImportError occurs.
-
-        from optuna.study import Study
+        # type: (optuna.study.Study, int) -> optuna.study.Study
 
         # This class is assumed to be passed to
         # `SuccessiveHalvingPruner.prune` in which `get_trials`,
         # `direction`, and `storage` are used.
         # But for safety, prohibit the other attributes explicitly.
-        class _BracketStudy(Study):
+        class _BracketStudy(optuna.study.Study):
 
             _VALID_ATTRS = (
                 'get_trials', 'direction', '_storage', '_study_id',
@@ -129,7 +123,7 @@ class HyperbandPruner(BasePruner):
             )
 
             def __init__(self, study, bracket_id):
-                # type: (Study, int) -> None
+                # type: (optuna.study.Study, int) -> None
 
                 super().__init__(
                     study_name=study.study_name,
