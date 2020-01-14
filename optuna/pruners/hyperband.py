@@ -86,6 +86,7 @@ class HyperbandPruner(BasePruner):
         bracket_study = self._create_bracket_study(study, i)
         return self._pruners[i].prune(bracket_study, trial)
 
+    # TODO(crcrpar): Improve resource computation/allocation algorithm.
     def _calc_bracket_resource_budget(self, pruner_index, n_brackets):
         # type: (int, int) -> int
 
