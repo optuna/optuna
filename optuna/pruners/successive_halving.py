@@ -2,10 +2,13 @@ import math
 
 from optuna.pruners.base import BasePruner
 from optuna.structs import StudyDirection
+from optuna.structs import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Union  # NOQA
 
     from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
@@ -46,6 +49,8 @@ class SuccessiveHalvingPruner(BasePruner):
             A parameter for specifying the minimum resource allocated to a trial
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
             referred to as :math:`r`).
+            This parameter defaults to 'auto' where the value is determined based on a heuristic
+            that looks at the number of required steps for the first trial to complete.
 
             A trial is never pruned until it executes
             :math:`\\mathsf{min}\\_\\mathsf{resource} \\times
@@ -74,12 +79,19 @@ class SuccessiveHalvingPruner(BasePruner):
             referred to as :math:`s`).
     """
 
-    def __init__(self, min_resource=1, reduction_factor=4, min_early_stopping_rate=0):
-        # type: (int, int, int) -> None
+    def __init__(self, min_resource='auto', reduction_factor=4, min_early_stopping_rate=0):
+        # type: (Union[str, int], int, int) -> None
 
-        if min_resource < 1:
-            raise ValueError('The value of `min_resource` is {}, '
-                             'but must be `min_resource >= 1`'.format(min_resource))
+        if isinstance(min_resource, str) and min_resource != 'auto':
+            raise ValueError(
+                "The value of `min_resource` is {}, "
+                "but must be either `min_resource` >= 1 or 'auto'".format(min_resource)
+            )
+
+        if isinstance(min_resource, int) and min_resource < 1:
+            raise ValueError(
+                'The value of `min_resource` is {}, '
+                "but must be either `min_resource >= 1` or 'auto'".format(min_resource))
 
         if reduction_factor < 2:
             raise ValueError('The value of `reduction_factor` is {}, '
@@ -88,9 +100,12 @@ class SuccessiveHalvingPruner(BasePruner):
         if min_early_stopping_rate < 0:
             raise ValueError(
                 'The value of `min_early_stopping_rate` is {}, '
-                'but must be `min_early_stopping_rate >= 0`'.format(min_early_stopping_rate))
+                "but must be `min_early_stopping_rate >= 0`".format(
+                    min_early_stopping_rate))
 
-        self._min_resource = min_resource
+        self._min_resource = None  # type: Optional[int]
+        if isinstance(min_resource, int):
+            self._min_resource = min_resource
         self._reduction_factor = reduction_factor
         self._min_early_stopping_rate = min_early_stopping_rate
 
@@ -103,9 +118,17 @@ class SuccessiveHalvingPruner(BasePruner):
 
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
-        trials = None
+        trials = None  # type: Optional[List[FrozenTrial]]
 
         while True:
+            if self._min_resource is None:
+                if trials is None:
+                    trials = study.get_trials(deepcopy=False)
+                self._min_resource = _estimate_min_resource(trials)
+                if self._min_resource is None:
+                    return False
+
+            assert self._min_resource is not None
             rung_promotion_step = self._min_resource * \
                 (self._reduction_factor ** (self._min_early_stopping_rate + rung))
             if step < rung_promotion_step:
@@ -127,6 +150,22 @@ class SuccessiveHalvingPruner(BasePruner):
                 return True
 
             rung += 1
+
+
+def _estimate_min_resource(trials):
+    # type: (List[FrozenTrial]) -> Optional[int]
+
+    n_steps = [
+        t.last_step for t in trials
+        if t.state == TrialState.COMPLETE and t.last_step is not None
+    ]
+
+    if not n_steps:
+        return None
+
+    # Get the maximum number of steps and divide it by 100.
+    last_step = max(n_steps)
+    return max(last_step // 100, 1)
 
 
 def _get_current_rung(trial):
