@@ -46,6 +46,7 @@ In addition, integration modules are available for the following libraries, prov
 * [Pruning with Keras integration module](./pruning/keras_integration.py)
 * [Pruning with MXNet integration module](./pruning/mxnet_integration.py)
 * [Pruning with PyTorch Ignite integration module](./pytorch_ignite_simple.py)
+* [Pruning with PyTorch Lightning integration module](./pytorch_lightning_simple.py)
 
 ### Examples of User-Defined Sampler
 
