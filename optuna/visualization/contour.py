@@ -30,8 +30,7 @@ def plot_contour(study, params=None):
     # type: (Study, Optional[List[str]]) -> go.Figure
     """Plot the parameter relationship as contour plot in a study.
 
-    Note that, If a parameter contains missing values, a trial with missing values is not
-    plotted.
+    Note that, If a parameter contains missing values, a trial with missing values is not plotted.
 
     Example:
 
