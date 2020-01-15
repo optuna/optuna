@@ -1,3 +1,5 @@
+import pytest
+
 import optuna
 from optuna.exceptions import TrialPruned
 from optuna.samplers import tpe
@@ -7,11 +9,13 @@ if optuna.type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
-def test_hyperopt_parameters():
-    # type: () -> None
+@pytest.mark.parametrize('use_hyperband', [False, True])
+def test_hyperopt_parameters(use_hyperband):
+    # type: (bool) -> None
 
     sampler = TPESampler(**TPESampler.hyperopt_parameters())
-    study = optuna.create_study(sampler=sampler)
+    study = optuna.create_study(
+        sampler=sampler, pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None)
     study.optimize(lambda t: t.suggest_uniform('x', 10, 20), n_trials=50)
 
 
