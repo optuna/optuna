@@ -10,6 +10,8 @@ from logging import WARN  # NOQA
 from logging import WARNING  # NOQA
 import threading
 
+from tqdm.auto import tqdm
+
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -17,6 +19,20 @@ if type_checking.TYPE_CHECKING:
 
 _lock = threading.Lock()
 _default_handler = None  # type: Optional[logging.Handler]
+
+
+# Copy from https://stackoverflow.com/questions/14897756/python-progress-bar-through-logging-module/38895482#38895482  # NOQA
+class TqdmHandler(logging.StreamHandler):
+    def __init__(self):
+        # type: () -> None
+
+        logging.StreamHandler.__init__(self)
+
+    def emit(self, record):
+        # type: (Any) -> None
+
+        msg = self.format(record)
+        tqdm.write(msg)
 
 
 def create_default_formatter():
@@ -51,7 +67,7 @@ def _configure_library_root_logger():
         if _default_handler:
             # This library has already configured the library root logger.
             return
-        _default_handler = logging.StreamHandler()
+        _default_handler = TqdmHandler()
         _default_handler.setFormatter(create_default_formatter())
 
         # Apply our default configuration to the library root logger.
