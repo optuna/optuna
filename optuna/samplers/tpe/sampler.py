@@ -535,15 +535,14 @@ def _get_observation_pairs(study, param_name, trial):
     if study.direction == StudyDirection.MAXIMIZE:
         sign = -1
 
-    _study = study
     if isinstance(study.pruner, HyperbandPruner):
         # Create `_BracketStudy` to use trials that have the same bracket id.
         pruner = study.pruner  # type: HyperbandPruner
-        _study = pruner._create_bracket_study(study, pruner._get_bracket_id(study, trial))
+        study = pruner._create_bracket_study(study, pruner._get_bracket_id(study, trial))
 
     values = []
     scores = []
-    for trial in _study.get_trials(deepcopy=False):
+    for trial in study.get_trials(deepcopy=False):
         if param_name not in trial.params:
             continue
 
