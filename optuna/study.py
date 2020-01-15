@@ -8,6 +8,7 @@ import warnings
 import joblib
 from joblib import delayed
 from joblib import Parallel
+from tqdm.auto import tqdm
 
 try:
     import pandas as pd  # NOQA
@@ -521,21 +522,28 @@ class Study(BaseStudy):
 
         i_trial = 0
 
+        elapsed_seconds = None
         if time_start is None:
             time_start = datetime.datetime.now()
 
-        while True:
-            if n_trials is not None:
-                if i_trial >= n_trials:
-                    break
-                i_trial += 1
+        with tqdm(range(n_trials) if n_trials is not None else None) as progress_bar:
+            while True:
+                if n_trials is not None:
+                    if i_trial >= n_trials:
+                        break
+                    i_trial += 1
 
-            if timeout is not None:
-                elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
-                if elapsed_seconds >= timeout:
-                    break
+                if timeout is not None:
+                    elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
+                    if elapsed_seconds >= timeout:
+                        break
 
-            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
+                self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
+
+                progress_bar.update(1)
+                if elapsed_seconds is not None:
+                    progress_bar.set_description(
+                        '{} / {} seconds passed'.format(elapsed_seconds, timeout))
         self._storage.remove_session()
 
     def _run_trial_and_callbacks(
