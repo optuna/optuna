@@ -37,7 +37,7 @@ def get_install_requires():
         'cliff',
         'colorlog',
         'numpy',
-        'scipy<1.4.0,>=1.4.1',
+        'scipy!=1.4.0',
         'sqlalchemy>=1.1.0',
         'tqdm',
         'typing',
