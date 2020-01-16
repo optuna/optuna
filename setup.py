@@ -42,7 +42,6 @@ def get_install_requires():
         'scipy<1.4.0',
         'sqlalchemy>=1.1.0',
         'tqdm',
-        'typing',
         'joblib',
     ]
 
