@@ -2,6 +2,7 @@ import collections
 import datetime
 import gc
 import math
+from multiprocessing import Value
 import threading
 import warnings
 
@@ -257,7 +258,8 @@ class Study(BaseStudy):
             n_jobs=1,  # type: int
             catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            gc_after_trial=True  # type: bool
+            gc_after_trial=True,  # type: bool
+            show_progress_bar=True  # type: bool
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -298,9 +300,12 @@ class Study(BaseStudy):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
         try:
+            progress_bar = None
+            if show_progress_bar:
+                progress_bar = _ProcessSafeTqdm(range(n_trials) if n_trials is not None else None)
             if n_jobs == 1:
-                self._optimize_sequential(func, n_trials, timeout, catch, callbacks,
-                                          gc_after_trial, None)
+                self._optimize_sequential(
+                    func, n_trials, timeout, catch, callbacks, gc_after_trial, None, progress_bar)
             else:
                 time_start = datetime.datetime.now()
 
@@ -327,11 +332,16 @@ class Study(BaseStudy):
 
                     parallel(
                         delayed(self._optimize_sequential)
-                        (func, 1, timeout, catch, callbacks, gc_after_trial, time_start)
+                        (
+                            func, 1, timeout, catch, callbacks, gc_after_trial,
+                            time_start, progress_bar
+                        )
                         for _ in _iter
                     )
         finally:
             self._optimize_lock.release()
+            if progress_bar is not None:
+                progress_bar.close()
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -516,7 +526,8 @@ class Study(BaseStudy):
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial,  # type: bool
-            time_start  # type: Optional[datetime.datetime]
+            time_start,  # type: Optional[datetime.datetime]
+            progress_bar  # type: Optional[tqdm]
     ):
         # type: (...) -> None
 
@@ -526,20 +537,20 @@ class Study(BaseStudy):
         if time_start is None:
             time_start = datetime.datetime.now()
 
-        with tqdm(range(n_trials) if n_trials is not None else None) as progress_bar:
-            while True:
-                if n_trials is not None:
-                    if i_trial >= n_trials:
-                        break
-                    i_trial += 1
+        while True:
+            if n_trials is not None:
+                if i_trial >= n_trials:
+                    break
+                i_trial += 1
 
-                if timeout is not None:
-                    elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
-                    if elapsed_seconds >= timeout:
-                        break
+            if timeout is not None:
+                elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
+                if elapsed_seconds >= timeout:
+                    break
 
-                self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
+            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
 
+            if progress_bar is not None:
                 progress_bar.update(1)
                 if elapsed_seconds is not None:
                     progress_bar.set_description(
@@ -798,3 +809,24 @@ def _check_pandas_availability():
             'pandas can be installed by executing `$ pip install pandas`. '
             'For further information, please refer to the installation guide of pandas. '
             '(The actual import error is as follows: ' + str(_pandas_import_error) + ')')
+
+
+# Based on https://daily.belltail.jp/?p=2389
+class _ProcessSafeTqdm(tqdm):
+
+    def __init__(self, *args, **kwargs):
+        # type: (Any, Any) -> None
+
+        super(_ProcessSafeTqdm, self).__init__(*args, **kwargs)
+
+        self.correct_count = Value('i', 0)
+
+    def update(self, n=1):
+        with self.correct_count.get_lock():
+            self.n = self.correct_count.value
+            super(_ProcessSafeTqdm, self).update(n)
+            self.correct_count.value += n
+
+    def close(self):
+        self.n = self.correct_count.value
+        super(_ProcessSafeTqdm, self).close()
