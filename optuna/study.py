@@ -3,6 +3,7 @@ import datetime
 import gc
 import math
 from multiprocessing import Value
+import os
 import threading
 import warnings
 
@@ -259,7 +260,7 @@ class Study(BaseStudy):
             catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial=True,  # type: bool
-            show_progress_bar=True  # type: bool
+            show_progress_bar=False  # type: bool
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -290,6 +291,11 @@ class Study(BaseStudy):
                 Flag to execute garbage collection at the end of each trial. By default, garbage
                 collection is enabled, just in case. You can turn it off with this argument if
                 memory is safely managed in your objective function.
+            show_progress_bar:
+                Flag to show progress bars or not. To disable progress bar, set this ``False`` or
+                environment variable ``'NO_PBAR'`` to 1. Note that if the log message that have
+                the information of the latest trial and the best trial so far is longer than
+                the width of window, the message will be truncated.
         """
 
         if not isinstance(catch, tuple):
@@ -299,13 +305,22 @@ class Study(BaseStudy):
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
+        progress_bars = None
         try:
-            progress_bar = None
-            if show_progress_bar:
-                progress_bar = _ProcessSafeTqdm(range(n_trials) if n_trials is not None else None)
+            if show_progress_bar or os.getenv('NO_PBAR') == '0':
+                _progress_bar = _ProcessSafeTqdm(
+                    range(n_trials) if n_trials is not None else None, position=1)
+
+                # Truncate if the message is longer than `ncols` that is the width of window
+                # computed by `tqdm`.
+                str_ncols = str(_progress_bar.ncols)
+                _log_bar = tqdm(
+                    total=0, position=0,
+                    bar_format='{desc:' + str_ncols + '.' + str_ncols + 's}')
+                progress_bars = (_progress_bar, _log_bar)
             if n_jobs == 1:
                 self._optimize_sequential(
-                    func, n_trials, timeout, catch, callbacks, gc_after_trial, None, progress_bar)
+                    func, n_trials, timeout, catch, callbacks, gc_after_trial, None, progress_bars)
             else:
                 time_start = datetime.datetime.now()
 
@@ -334,14 +349,15 @@ class Study(BaseStudy):
                         delayed(self._optimize_sequential)
                         (
                             func, 1, timeout, catch, callbacks, gc_after_trial,
-                            time_start, progress_bar
+                            time_start, progress_bars
                         )
                         for _ in _iter
                     )
         finally:
             self._optimize_lock.release()
-            if progress_bar is not None:
-                progress_bar.close()
+            if progress_bars is not None:
+                progress_bars[1].close()
+                progress_bars[0].close()
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -527,7 +543,7 @@ class Study(BaseStudy):
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial,  # type: bool
             time_start,  # type: Optional[datetime.datetime]
-            progress_bar  # type: Optional[tqdm]
+            progress_bars=None  # type: Optional[Tuple[tqdm, tqdm]]
     ):
         # type: (...) -> None
 
@@ -548,13 +564,13 @@ class Study(BaseStudy):
                 if elapsed_seconds >= timeout:
                     break
 
-            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
+            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial, progress_bars)
 
-            if progress_bar is not None:
-                progress_bar.update(1)
+            if progress_bars is not None:
+                progress_bars[0].update(1)
                 if elapsed_seconds is not None:
-                    progress_bar.set_description(
-                        '{} / {} seconds passed'.format(elapsed_seconds, timeout))
+                    progress_bars[0].set_postfix_str(
+                        '{:.02f}/{} seconds'.format(elapsed_seconds, timeout))
         self._storage.remove_session()
 
     def _run_trial_and_callbacks(
@@ -562,11 +578,12 @@ class Study(BaseStudy):
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            gc_after_trial  # type: bool
+            gc_after_trial,  # type: bool
+            progress_bars=None  # type: Optional[Tuple[tqdm, tqdm]]
     ):
         # type: (...) -> None
 
-        trial = self._run_trial(func, catch, gc_after_trial)
+        trial = self._run_trial(func, catch, gc_after_trial, progress_bars)
         if callbacks is not None:
             frozen_trial = self._storage.get_trial(trial._trial_id)
             for callback in callbacks:
@@ -576,7 +593,8 @@ class Study(BaseStudy):
             self,
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            gc_after_trial  # type: bool
+            gc_after_trial,  # type: bool
+            progress_bars=None  # type: Optional[Tuple[tqdm, tqdm]]
     ):
         # type: (...) -> trial_module.Trial
 
@@ -635,16 +653,21 @@ class Study(BaseStudy):
 
         trial.report(result)
         self._storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
-        self._log_completed_trial(trial_number, result)
+        self._log_completed_trial(trial_number, result, progress_bars)
 
         return trial
 
-    def _log_completed_trial(self, trial_number, value):
-        # type: (int, float) -> None
+    def _log_completed_trial(self, trial_number, value, progress_bars):
+        # type: (int, float, Optional[Tuple[tqdm, tqdm]]) -> None
 
-        _logger.info('Finished trial#{} resulted in value: {}. '
-                     'Current best value is {} with parameters: {}.'.format(
-                         trial_number, value, self.best_value, self.best_params))
+        msg = (
+            'Finished trial#{} resulted in value: {:.03f}. '
+            'Current best value is {:.03f} with parameters: {}.'.format(
+                trial_number, value, self.best_value, self.best_params))
+        if progress_bars is None:
+            _logger.info(msg)
+        else:
+            progress_bars[1].set_description_str(msg)
 
 
 def create_study(
@@ -821,12 +844,12 @@ class _ProcessSafeTqdm(tqdm):
 
         self.correct_count = Value('i', 0)
 
-    def update(self, n=1):
+    def update(self, n: int = 1) -> None:
         with self.correct_count.get_lock():
             self.n = self.correct_count.value
             super(_ProcessSafeTqdm, self).update(n)
             self.correct_count.value += n
 
-    def close(self):
+    def close(self) -> None:
         self.n = self.correct_count.value
         super(_ProcessSafeTqdm, self).close()
