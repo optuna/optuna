@@ -21,3 +21,7 @@ Pruners
 .. autoclass:: SuccessiveHalvingPruner
     :members:
     :exclude-members: prune
+
+.. autoclass:: HyperbandPruner
+    :members:
+    :exclude-members: prune

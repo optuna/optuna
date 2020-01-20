@@ -24,7 +24,7 @@ class KerasPruningCallback(Callback):
 
         .. code::
 
-            model.fit(X, y, callbacks=KerasPruningCallback(trial, 'val_loss'))
+            model.fit(X, y, callbacks=[KerasPruningCallback(trial, 'val_loss')])
 
     Args:
         trial:

@@ -38,6 +38,16 @@ jobs:
     steps:
       - checkout
 
+      - run: &checkout-merge-master
+          name: checkout-merge-master
+          command: |
+            set -ex
+            if [[ -n "${CIRCLE_PR_NUMBER}" ]]; then
+                FETCH_REFS="${FETCH_REFS} +refs/pull/${CIRCLE_PR_NUMBER}/merge:pr/${CIRCLE_PR_NUMBER}/merge"
+                git fetch -u origin ${FETCH_REFS}
+                git checkout "pr/${CIRCLE_PR_NUMBER}/merge"
+            fi
+
       - run:
           name: install
           command: |
@@ -70,6 +80,8 @@ jobs:
     steps:
       - checkout
 
+      - run: *checkout-merge-master
+
       - run:
           name: install
           command: |
@@ -90,6 +102,8 @@ jobs:
       - image: readthedocs/build:latest
     steps:
       - checkout
+
+      - run: *checkout-merge-master
 
       - run:
           name: install
@@ -113,6 +127,8 @@ jobs:
       - image: circleci/python:3.7
     steps:
       - checkout
+
+      - run: *checkout-merge-master
 
       - run: &install
           name: install
@@ -154,6 +170,8 @@ jobs:
     steps:
       - checkout
 
+      - run: *checkout-merge-master
+
       - run: *install
 
       - run:
@@ -173,13 +191,15 @@ jobs:
     docker:
       - image: circleci/python:3.6
     steps:
-      [checkout, run: *install, run: *tests, run: *tests-mn]
+      [checkout, run: *checkout-merge-master, run: *install, run: *tests, run: *tests-mn]
 
   tests-python35:
     docker:
       - image: circleci/python:3.5
     steps:
       - checkout
+
+      - run: *checkout-merge-master
 
       - run: *install
 
@@ -196,6 +216,8 @@ jobs:
       - image: circleci/python:3.7
     steps:
       - checkout
+
+      - run: *checkout-merge-master
 
       - run: *install
 
@@ -222,6 +244,8 @@ jobs:
       - image: circleci/python:3.7
     steps:
       - checkout
+
+      - run: *checkout-merge-master
 
       - run: *install
 
@@ -266,6 +290,8 @@ jobs:
     steps:
       - checkout
 
+      - run: *checkout-merge-master
+
       - run: *install
 
       - run: *install-examples
@@ -282,13 +308,15 @@ jobs:
     docker:
       - image: circleci/python:3.6
     steps:
-      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
+      [checkout, run: *checkout-merge-master, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
 
   examples-python35:
     docker:
       - image: circleci/python:3.5
     steps:
       - checkout
+
+      - run: *checkout-merge-master
 
       - run: *install
 
