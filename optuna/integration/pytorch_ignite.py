@@ -56,7 +56,7 @@ class PyTorchIgnitePruningHandler(object):
         score = engine.state.metrics[self._metric]
         self._trial.report(score, self._trainer.state.epoch)
         if self._trial.should_prune():
-            message = "Trial was pruned at {} epoch.".format(engine.state.epoch)
+            message = "Trial was pruned at {} epoch.".format(self._trainer.state.epoch)
             raise optuna.exceptions.TrialPruned(message)
 
 
