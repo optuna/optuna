@@ -20,17 +20,17 @@ def test_pytorch_ignite_pruning_handler():
         pass
 
     trainer = Engine(update)
-    pruning_evaluator = Engine(update)
+    evaluator = Engine(update)
 
     # The pruner is activated.
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)
 
     handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
-    with patch.object(trainer, 'state', epoch=3, metrics={}):
-        with patch.object(pruning_evaluator, 'state', epoch=1, metrics={'accuracy': 1}):
+    with patch.object(trainer, 'state', epoch=3):
+        with patch.object(evaluator, 'state', metrics={'accuracy': 1}):
             with pytest.raises(optuna.exceptions.TrialPruned):
-                handler(pruning_evaluator)
+                handler(evaluator)
             assert study.trials[0].intermediate_values == {3: 1}
 
     # The pruner is not activated.
@@ -38,7 +38,7 @@ def test_pytorch_ignite_pruning_handler():
     trial = create_running_trial(study, 1.0)
 
     handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
-    with patch.object(trainer, 'state', epoch=5, metrics={}):
-        with patch.object(pruning_evaluator, 'state', epoch=1, metrics={'accuracy': 2}):
-            handler(pruning_evaluator)
+    with patch.object(trainer, 'state', epoch=5):
+        with patch.object(evaluator, 'state', metrics={'accuracy': 2}):
+            handler(evaluator)
             assert study.trials[0].intermediate_values == {5: 2}
