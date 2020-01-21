@@ -2,7 +2,6 @@ import collections
 import datetime
 import gc
 import math
-from multiprocessing import Value
 import os
 import threading
 import warnings
@@ -10,7 +9,6 @@ import warnings
 import joblib
 from joblib import delayed
 from joblib import Parallel
-from tqdm.auto import tqdm
 
 try:
     import pandas as pd  # NOQA
@@ -22,9 +20,9 @@ except ImportError as e:
 
 from optuna import exceptions
 from optuna import logging
+from optuna import progress_bar as pbar_module
 from optuna import pruners
 from optuna import samplers
-from optuna import progress_bar as pbar_module
 from optuna import storages
 from optuna import structs
 from optuna import trial as trial_module
@@ -542,7 +540,7 @@ class Study(BaseStudy):
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial,  # type: bool
             time_start,  # type: Optional[datetime.datetime]
-            progress_bar=None  # type: Optional[pbar_module.ProgressBar]
+            progress_bar  # type: pbar_module.ProgressBar
     ):
         # type: (...) -> None
 
@@ -574,7 +572,7 @@ class Study(BaseStudy):
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial,  # type: bool
-            progress_bar=None  # type: Optional[pbar_module.ProgressBar]
+            progress_bar  # type: pbar_module.ProgressBar
     ):
         # type: (...) -> None
 
@@ -589,7 +587,7 @@ class Study(BaseStudy):
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             gc_after_trial,  # type: bool
-            progress_bar=None  # type: Optional[pbar_module.ProgressBar]
+            progress_bar  # type: pbar_module.ProgressBar
     ):
         # type: (...) -> trial_module.Trial
 

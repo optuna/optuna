@@ -32,7 +32,7 @@ class ProgressBar(object):
                 total=0, position=0,
                 bar_format='{desc:' + str_ncols + '.' + str_ncols + 's}')
 
-    def update(self, elapsed_seconds: Optional[int]) -> None:
+    def update(self, elapsed_seconds: Optional[float]) -> None:
         """Update the progress bars if ``is_valid`` is ``True``.
 
         Args:
@@ -45,7 +45,7 @@ class ProgressBar(object):
                 self._progress_bar.set_postfix_str(
                     '{:.02f}/{} seconds'.format(elapsed_seconds, self._timeout))
 
-    def set_description_str(self, msg: str) -> None:
+    def set_description_str(self, msg: Optional[str]) -> None:
         """Update the best value message.
 
         Args:
