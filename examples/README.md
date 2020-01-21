@@ -24,6 +24,7 @@ This page contains a list of example codes written with Optuna.
 * [Tensorflow](./tensorflow_estimator_simple.py)
 * [Tensorflow(eager)](./tensorflow_eager_simple.py)
 * [Keras](./keras_simple.py)
+* [FastAI](./fastai_simple.py)
 
 ### An example where an objective function uses additional arguments
 
@@ -47,6 +48,7 @@ In addition, integration modules are available for the following libraries, prov
 * [Pruning with MXNet integration module](./pruning/mxnet_integration.py)
 * [Pruning with PyTorch Ignite integration module](./pytorch_ignite_simple.py)
 * [Pruning with PyTorch Lightning integration module](./pytorch_lightning_simple.py)
+* [Pruning with FastAI integration module](./fastai_simple.py)
 
 ### Examples of User-Defined Sampler
 
