@@ -15,9 +15,9 @@ from functools import partial
 
 from fastai.vision import ImageDataBunch
 from fastai.vision import Learner
-from fastai.vision import URLs
 from fastai.vision import simple_cnn
 from fastai.vision import untar_data
+from fastai.vision import URLs
 import optuna
 from optuna.integration import FastAIPruningCallback
 
