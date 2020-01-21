@@ -24,6 +24,21 @@ class HyperbandPruner(BasePruner):
     Note that this implementation does not take as inputs the maximum amount of resource to
     a single SHA noted as :math:`R` in the paper.
 
+    .. note::
+        If you use ``HyperbandPruner`` with :class:`~optuna.samplers.TPESampler`,
+        it's recommended to consider to set larger ``n_trials`` or ``timeout`` to make full use of
+        the characteristics of :class:`~optuna.samplers.TPESampler`
+        because :class:`~optuna.samplers.TPESampler` uses some (by default, :math:`10`)
+        :class:`~optuna.trial.Trial`s for its startup.
+
+        As Hyperband runs multiple :class:`~optuna.pruners.SuccessiveHalvingPruner` and collect
+        trials based on the current :class:`~optuna.trial.Trial`'s bracket ID, each bracket
+        needs to observe more than :math:`10` :class:`~optuna.trial.Trial`s
+        for :class:`~optuna.samplers.TPESampler` to adapt its search space.
+
+        Thus, for example, if ``HyperbandPruner`` has :math:`4` pruners in it,
+        at least :math:`4 \times 10` pruners are consumed for startup.
+
     Args:
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial noted as :math:`r`
