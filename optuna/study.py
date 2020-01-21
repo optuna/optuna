@@ -24,6 +24,7 @@ from optuna import exceptions
 from optuna import logging
 from optuna import pruners
 from optuna import samplers
+from optuna import progress_bar as pbar_module
 from optuna import storages
 from optuna import structs
 from optuna import trial as trial_module
@@ -295,7 +296,8 @@ class Study(BaseStudy):
                 Flag to show progress bars or not. To disable progress bar, set this ``False`` or
                 environment variable ``'NO_PBAR'`` to 1. Note that if the log message that have
                 the information of the latest trial and the best trial so far is longer than
-                the width of window, the message will be truncated.
+                the width of window, the message will be truncated. Note that the current
+                progress bar does not work well with joblib of multiprocessing backend.
         """
 
         if not isinstance(catch, tuple):
@@ -305,22 +307,12 @@ class Study(BaseStudy):
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
-        progress_bars = None
+        progress_bar = pbar_module.ProgressBar(
+            show_progress_bar or os.getenv('NO_PBAR') == 0, n_trials, timeout)
         try:
-            if show_progress_bar or os.getenv('NO_PBAR') == '0':
-                _progress_bar = _ProcessSafeTqdm(
-                    range(n_trials) if n_trials is not None else None, position=1)
-
-                # Truncate if the message is longer than `ncols` that is the width of window
-                # computed by `tqdm`.
-                str_ncols = str(_progress_bar.ncols)
-                _log_bar = tqdm(
-                    total=0, position=0,
-                    bar_format='{desc:' + str_ncols + '.' + str_ncols + 's}')
-                progress_bars = (_progress_bar, _log_bar)
             if n_jobs == 1:
                 self._optimize_sequential(
-                    func, n_trials, timeout, catch, callbacks, gc_after_trial, None, progress_bars)
+                    func, n_trials, timeout, catch, callbacks, gc_after_trial, None, progress_bar)
             else:
                 time_start = datetime.datetime.now()
 
@@ -337,6 +329,15 @@ class Study(BaseStudy):
 
                 with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
                     if not isinstance(parallel._backend, joblib.parallel.ThreadingBackend) and \
+                       show_progress_bar:
+                        msg = (
+                            'Current progress bar does not work well with joblib for '
+                            'multi-processing'
+                        )
+                        warnings.warn(msg, UserWarning)
+                        _logger.warning(msg)
+
+                    if not isinstance(parallel._backend, joblib.parallel.ThreadingBackend) and \
                        isinstance(self._storage, storages.InMemoryStorage):
                         msg = 'The default storage cannot be shared by multiple processes. ' \
                               'Please use an RDB (RDBStorage) when you use joblib for ' \
@@ -349,15 +350,13 @@ class Study(BaseStudy):
                         delayed(self._optimize_sequential)
                         (
                             func, 1, timeout, catch, callbacks, gc_after_trial,
-                            time_start, progress_bars
+                            time_start, progress_bar
                         )
                         for _ in _iter
                     )
         finally:
             self._optimize_lock.release()
-            if progress_bars is not None:
-                progress_bars[1].close()
-                progress_bars[0].close()
+            progress_bar.close()
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -543,7 +542,7 @@ class Study(BaseStudy):
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial,  # type: bool
             time_start,  # type: Optional[datetime.datetime]
-            progress_bars=None  # type: Optional[Tuple[tqdm, tqdm]]
+            progress_bar=None  # type: Optional[pbar_module.ProgressBar]
     ):
         # type: (...) -> None
 
@@ -564,13 +563,9 @@ class Study(BaseStudy):
                 if elapsed_seconds >= timeout:
                     break
 
-            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial, progress_bars)
+            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial, progress_bar)
 
-            if progress_bars is not None:
-                progress_bars[0].update(1)
-                if elapsed_seconds is not None:
-                    progress_bars[0].set_postfix_str(
-                        '{:.02f}/{} seconds'.format(elapsed_seconds, timeout))
+            progress_bar.update(elapsed_seconds)
         self._storage.remove_session()
 
     def _run_trial_and_callbacks(
@@ -579,11 +574,11 @@ class Study(BaseStudy):
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial,  # type: bool
-            progress_bars=None  # type: Optional[Tuple[tqdm, tqdm]]
+            progress_bar=None  # type: Optional[pbar_module.ProgressBar]
     ):
         # type: (...) -> None
 
-        trial = self._run_trial(func, catch, gc_after_trial, progress_bars)
+        trial = self._run_trial(func, catch, gc_after_trial, progress_bar)
         if callbacks is not None:
             frozen_trial = self._storage.get_trial(trial._trial_id)
             for callback in callbacks:
@@ -594,7 +589,7 @@ class Study(BaseStudy):
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             gc_after_trial,  # type: bool
-            progress_bars=None  # type: Optional[Tuple[tqdm, tqdm]]
+            progress_bar=None  # type: Optional[pbar_module.ProgressBar]
     ):
         # type: (...) -> trial_module.Trial
 
@@ -653,21 +648,21 @@ class Study(BaseStudy):
 
         trial.report(result)
         self._storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
-        self._log_completed_trial(trial_number, result, progress_bars)
+        self._log_completed_trial(trial_number, result, progress_bar)
 
         return trial
 
-    def _log_completed_trial(self, trial_number, value, progress_bars):
-        # type: (int, float, Optional[Tuple[tqdm, tqdm]]) -> None
+    def _log_completed_trial(self, trial_number, value, progress_bar):
+        # type: (int, float, Optional[pbar_module.ProgressBar]) -> None
 
         msg = (
             'Finished trial#{} resulted in value: {:.03f}. '
             'Current best value is {:.03f} with parameters: {}.'.format(
                 trial_number, value, self.best_value, self.best_params))
-        if progress_bars is None:
+        if progress_bar is None:
             _logger.info(msg)
         else:
-            progress_bars[1].set_description_str(msg)
+            progress_bar.set_description_str(msg)
 
 
 def create_study(
@@ -832,24 +827,3 @@ def _check_pandas_availability():
             'pandas can be installed by executing `$ pip install pandas`. '
             'For further information, please refer to the installation guide of pandas. '
             '(The actual import error is as follows: ' + str(_pandas_import_error) + ')')
-
-
-# Based on https://daily.belltail.jp/?p=2389
-class _ProcessSafeTqdm(tqdm):
-
-    def __init__(self, *args, **kwargs):
-        # type: (Any, Any) -> None
-
-        super(_ProcessSafeTqdm, self).__init__(*args, **kwargs)
-
-        self.correct_count = Value('i', 0)
-
-    def update(self, n: int = 1) -> None:
-        with self.correct_count.get_lock():
-            self.n = self.correct_count.value
-            super(_ProcessSafeTqdm, self).update(n)
-            self.correct_count.value += n
-
-    def close(self) -> None:
-        self.n = self.correct_count.value
-        super(_ProcessSafeTqdm, self).close()
