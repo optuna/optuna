@@ -1,6 +1,5 @@
 import colorlog
 import logging
-import os
 from logging import CRITICAL  # NOQA
 from logging import DEBUG  # NOQA
 from logging import ERROR  # NOQA
@@ -10,8 +9,6 @@ from logging import INFO  # NOQA
 from logging import WARN  # NOQA
 from logging import WARNING  # NOQA
 import threading
-
-from tqdm.auto import tqdm
 
 from optuna import type_checking
 
@@ -55,7 +52,8 @@ def _configure_library_root_logger():
         if _default_handler:
             # This library has already configured the library root logger.
             return
-        _default_handler.setFormatter(logging.StreamHandler())
+        _default_handler = logging.StreamHandler()
+        _default_handler.setFormatter(create_default_formatter())
 
         # Apply our default configuration to the library root logger.
         library_root_logger = _get_library_root_logger()
