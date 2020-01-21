@@ -23,20 +23,6 @@ _lock = threading.Lock()
 _default_handler = None  # type: Optional[logging.Handler]
 
 
-# Copy from https://stackoverflow.com/questions/14897756/python-progress-bar-through-logging-module/38895482#38895482  # NOQA
-class TqdmHandler(logging.StreamHandler):
-    def __init__(self):
-        # type: () -> None
-
-        logging.StreamHandler.__init__(self)
-
-    def emit(self, record):
-        # type: (Any) -> None
-
-        msg = self.format(record)
-        tqdm.write(msg)
-
-
 def create_default_formatter():
     # type: () -> colorlog.ColoredFormatter
     """Create a default formatter of log messages.
@@ -69,10 +55,7 @@ def _configure_library_root_logger():
         if _default_handler:
             # This library has already configured the library root logger.
             return
-        _default_handler = logging.StreamHandler()
-        if os.getenv('NO_PBAR') == '0':
-            _default_handler = TqdmHandler()
-        _default_handler.setFormatter(create_default_formatter())
+        _default_handler.setFormatter(logging.StreamHandler())
 
         # Apply our default configuration to the library root logger.
         library_root_logger = _get_library_root_logger()
