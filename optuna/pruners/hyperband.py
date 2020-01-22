@@ -37,7 +37,7 @@ class HyperbandPruner(BasePruner):
         for :class:`~optuna.samplers.TPESampler` to adapt its search space.
 
         Thus, for example, if ``HyperbandPruner`` has :math:`4` pruners in it,
-        at least :math:`4 \times 10` pruners are consumed for startup.
+        at least :math:`4 \\times 10` pruners are consumed for startup.
 
     Args:
         min_resource:
