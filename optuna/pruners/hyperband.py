@@ -29,7 +29,7 @@ class HyperbandPruner(BasePruner):
         it's recommended to consider to set larger ``n_trials`` or ``timeout`` to make full use of
         the characteristics of :class:`~optuna.samplers.TPESampler`
         because :class:`~optuna.samplers.TPESampler` uses some (by default, :math:`10`)
-        :class:`~optuna.trial.Trial`s for its startup.
+        :class:`~optuna.trial.Trial`\s for its startup.
 
         As Hyperband runs multiple :class:`~optuna.pruners.SuccessiveHalvingPruner` and collect
         trials based on the current :class:`~optuna.trial.Trial`'s bracket ID, each bracket
