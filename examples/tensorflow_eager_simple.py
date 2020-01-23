@@ -28,7 +28,6 @@ N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 1
-tf.enable_eager_execution()
 
 
 def create_model(trial):
@@ -51,7 +50,7 @@ def create_model(trial):
 def create_optimizer(trial):
     # We optimize the choice of optimizers as well as their parameters.
     kwargs = {}
-    optimizer_options = ['RMSPropOptimizer', 'AdamOptimizer', 'MomentumOptimizer']
+    optimizer_options = ['RMSprop', 'Adam', 'SGD']
     optimizer_selected = trial.suggest_categorical('optimizer', optimizer_options)
     if optimizer_selected == 'RMSPropOptimizer':
         kwargs['learning_rate'] = trial.suggest_loguniform('rmsprop_learning_rate', 1e-5, 1e-1)
@@ -64,12 +63,12 @@ def create_optimizer(trial):
                                                            1e-1)
         kwargs['momentum'] = trial.suggest_loguniform('momentum_opt_momentum', 1e-5, 1e-1)
 
-    optimizer = getattr(tf.train, optimizer_selected)(**kwargs)
+    optimizer = getattr(tf.optimizers, optimizer_selected)(**kwargs)
     return optimizer
 
 
 def learn(model, optimizer, dataset, mode='eval'):
-    accuracy = tf.contrib.eager.metrics.Accuracy('accuracy', dtype=tf.float32)
+    accuracy = tf.metrics.Accuracy('accuracy', dtype=tf.float32)
 
     for batch, (images, labels) in enumerate(dataset):
         with tf.GradientTape() as tape:
