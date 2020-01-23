@@ -22,6 +22,7 @@ import os
 import shutil
 
 import pytorch_lightning as pl
+from pytorch_lightning.logging import LightningLoggerBase
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -41,7 +42,7 @@ DIR = os.getcwd()
 MODEL_DIR = os.path.join(DIR, 'result')
 
 
-class DictLogger(pl.logging.LightningLoggerBase):
+class DictLogger(LightningLoggerBase):
     """PyTorch Lightning `dict` logger."""
 
     def __init__(self, version):
@@ -49,7 +50,7 @@ class DictLogger(pl.logging.LightningLoggerBase):
         self.metrics = []
         self._version = version
 
-    def log_metrics(self, metric, step_num=None):
+    def log_metrics(self, metric, step=None):
         self.metrics.append(metric)
 
     @property
@@ -141,7 +142,7 @@ def objective(trial):
     # PyTorch Lightning will try to restore model parameters from previous trials if checkpoint
     # filenames match. Therefore, the filenames for each trial must be made unique.
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        os.path.join(MODEL_DIR, 'trial_{}'.format(trial.number)), save_best_only=False)
+        os.path.join(MODEL_DIR, 'trial_{}'.format(trial.number)), monitor='accuracy')
 
     # The default logger in PyTorch Lightning writes to event files to be consumed by
     # TensorBoard. We create a simple logger instead that holds the log in memory so that the
@@ -153,7 +154,7 @@ def objective(trial):
         logger=logger,
         val_percent_check=PERCENT_TEST_EXAMPLES,
         checkpoint_callback=checkpoint_callback,
-        max_nb_epochs=EPOCHS,
+        max_epochs=EPOCHS,
         gpus=0 if torch.cuda.is_available() else None,
         early_stop_callback=PyTorchLightningPruningCallback(trial, monitor='accuracy')
     )
