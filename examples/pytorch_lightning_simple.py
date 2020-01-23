@@ -19,6 +19,7 @@ We have the following two ways to execute this example:
 
 import argparse
 import os
+import pkg_resources
 import shutil
 
 import pytorch_lightning as pl
@@ -33,6 +34,9 @@ from torchvision import transforms
 
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
+
+if pkg_resources.parse_version(pl.__version__) < pkg_resources.parse_version('0.6.0'):
+    raise RuntimeError('PyTorch Lightning>=0.6.0 is required for this example.')
 
 PERCENT_TEST_EXAMPLES = 0.1
 BATCHSIZE = 128
