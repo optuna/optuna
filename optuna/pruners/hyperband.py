@@ -29,11 +29,11 @@ class HyperbandPruner(BasePruner):
         it's recommended to consider to set larger ``n_trials`` or ``timeout`` to make full use of
         the characteristics of :class:`~optuna.samplers.TPESampler`
         because :class:`~optuna.samplers.TPESampler` uses some (by default, :math:`10`)
-        :class:`~optuna.trial.Trial`\s for its startup.
+        :class:`~optuna.trial.Trial`\\ s for its startup.
 
         As Hyperband runs multiple :class:`~optuna.pruners.SuccessiveHalvingPruner` and collect
-        trials based on the current :class:`~optuna.trial.Trial`'s bracket ID, each bracket
-        needs to observe more than :math:`10` :class:`~optuna.trial.Trial`s
+        trials based on the current :class:`~optuna.trial.Trial`\\ 's bracket ID, each bracket
+        needs to observe more than :math:`10` :class:`~optuna.trial.Trial`\\ s
         for :class:`~optuna.samplers.TPESampler` to adapt its search space.
 
         Thus, for example, if ``HyperbandPruner`` has :math:`4` pruners in it,
@@ -49,7 +49,7 @@ class HyperbandPruner(BasePruner):
             :math:`\\eta` in the paper. See the details for
             :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         n_brackets:
-            The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\s (brackets).
+            The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
         min_early_stopping_rate_low:
             A parameter for specifying the minimum early-stopping rate.
             This parameter is related to a parameter that is referred to as :math:`r` and used in
