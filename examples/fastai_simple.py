@@ -16,12 +16,7 @@ argument.
 import argparse
 from functools import partial
 
-from fastai.vision import ImageDataBunch
-from fastai.vision import Learner
-from fastai.vision import URLs
-from fastai.vision import accuracy
-from fastai.vision import simple_cnn
-from fastai.vision import untar_data
+from fastai import vision
 
 import optuna
 from optuna.integration import FastAIPruningCallback
@@ -31,8 +26,8 @@ BATCHSIZE = 128
 EPOCHS = 10
 
 
-path = untar_data(URLs.MNIST_SAMPLE)
-data = ImageDataBunch.from_folder(path, bs=BATCHSIZE)
+path = vision.untar_data(vision.URLs.MNIST_SAMPLE)
+data = vision.ImageDataBunch.from_folder(path, bs=BATCHSIZE)
 
 
 def objective(trial):
@@ -44,10 +39,10 @@ def objective(trial):
         n_channels.append(out_channels)
     n_channels.append(2)
 
-    model = simple_cnn(n_channels)
+    model = vision.simple_cnn(n_channels)
 
-    learn = Learner(
-        data, model, silent=True, metrics=[accuracy],
+    learn = vision.Learner(
+        data, model, silent=True, metrics=[vision.accuracy],
         callback_fns=[partial(FastAIPruningCallback, trial=trial, monitor='valid_loss')])
     learn.fit(EPOCHS)
 
