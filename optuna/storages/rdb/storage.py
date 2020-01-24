@@ -12,6 +12,7 @@ import alembic.command
 import alembic.config
 import alembic.migration
 import alembic.script
+import sqlalchemy
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
@@ -74,14 +75,21 @@ class RDBStorage(BaseStorage):
 
     """
 
-    def __init__(self, url, engine_kwargs=None, skip_compatibility_check=False):
-        # type: (str, Optional[Dict[str, Any]], bool) -> None
+    def __init__(
+        self,
+        url,  # type: str
+        engine_kwargs=None,  # type: Optional[Dict[str, Any]]
+        skip_compatibility_check=False,  # type: bool
+        mysql_wait_timeout=None  # type: Optional[int]
+    ):
+        # type: (...) -> None
 
         self._check_python_version()
 
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
+        self._mysql_wait_timeout = mysql_wait_timeout
 
         try:
             self.engine = create_engine(self.url, **self.engine_kwargs)
@@ -90,6 +98,7 @@ class RDBStorage(BaseStorage):
                               'Please install appropriate one. (The actual import error is: ' +
                               str(e) + '.)')
 
+        self._set_mysql_wait_timeout(self.engine, self._mysql_wait_timeout)
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
 
@@ -122,6 +131,7 @@ class RDBStorage(BaseStorage):
                               'Please install appropriate one. (The actual import error is: ' +
                               str(e) + '.)')
 
+        self._set_mysql_wait_timeout(self.engine, self._mysql_wait_timeout)
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
         self.logger = optuna.logging.get_logger(__name__)
@@ -847,6 +857,26 @@ class RDBStorage(BaseStorage):
             result.append(temp_trial)
 
         return result
+
+    @staticmethod
+    def _set_mysql_wait_timeout(engine, timeout):
+        # type: (Engine, Optional[int]) -> None
+
+        if timeout is None:
+            return
+
+        # Skip if RDB is not MySQL.
+        if not engine.url.drivername.startswith('mysql'):
+            return
+
+        @sqlalchemy.event.listens_for(engine, "connect")
+        def _set_session_wait_timeout(dbapi_connection, connection_record):  # type: ignore
+
+            # Skip type checking because the type of dbapi_connection depends on the MySQL client.
+            cursor = dbapi_connection.cursor()
+            cursor.execute("SET session wait_timeout = {};".format(timeout))
+            cursor.execute("COMMIT")
+            cursor.close()
 
     @staticmethod
     def _fill_storage_url_template(template):

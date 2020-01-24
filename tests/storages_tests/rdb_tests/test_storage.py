@@ -4,6 +4,7 @@ import tempfile
 
 from mock import patch
 import pytest
+import sqlalchemy
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import json_to_distribution
@@ -403,3 +404,19 @@ def test_check_python_version():
             v_info.minor = ver["minor"]
             v_info.micro = ver["micro"]
             RDBStorage._check_python_version()
+
+
+def test_set_mysql_wait_timeout():
+    # type: () -> None
+
+    engine = sqlalchemy.create_engine('mysql+pymysql://localhost')
+
+    with patch('sqlalchemy.event.listens_for') as my_mock:
+        RDBStorage._set_mysql_wait_timeout(engine, None)
+    assert not my_mock.called
+
+    engine = sqlalchemy.create_engine('mysql+pymysql://localhost')
+
+    with patch('sqlalchemy.event.listens_for') as my_mock:
+        RDBStorage._set_mysql_wait_timeout(engine, 3600)
+    assert my_mock.called

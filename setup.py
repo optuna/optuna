@@ -108,6 +108,7 @@ def get_extras_require():
             'mxnet',
             'pandas',
             'plotly>=4.0.0',
+            'PyMySQL',
             'pytest',
             # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
             # See https://github.com/optuna/optuna/issues/825 for further details.
