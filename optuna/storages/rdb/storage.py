@@ -862,6 +862,10 @@ class RDBStorage(BaseStorage):
         if 'pool_pre_ping' in engine_kwargs:
             return
 
+        # If True, the connection pool checks liveness of connections at every checkout.
+        # Without this option, trials that take longer than `wait_timeout` may cause connection
+        # errors. For further details, please refer to the following document:
+        # https://docs.sqlalchemy.org/en/13/core/pooling.html#pool-disconnects-pessimistic
         engine_kwargs['pool_pre_ping'] = True
 
     @staticmethod
