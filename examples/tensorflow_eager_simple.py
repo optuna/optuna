@@ -20,8 +20,12 @@ We have the following two ways to execute this example:
 
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist
+import pkg_resources
 
 import optuna
+
+if pkg_resources.parse_version(tf.__version__) < pkg_resources.parse_version('2.0.0'):
+    raise RuntimeError('tensorflow>=2.0.0 is required for this example.')
 
 N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
