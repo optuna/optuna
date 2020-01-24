@@ -35,7 +35,7 @@ path = untar_data(URLs.MNIST_SAMPLE)
 data = ImageDataBunch.from_folder(path, bs=BATCHSIZE)
 
 
-def objective(trial: optuna.trial.Trial) -> float:
+def objective(trial):
     n_layers = trial.suggest_int('n_layers', 2, 5)
 
     n_channels = [3]
