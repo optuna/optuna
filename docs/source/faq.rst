@@ -1,15 +1,8 @@
 FAQ
 ===
 
-- :ref:`Can I use Optuna with X? (where X is your favorite ML library)`
-- :ref:`How to define objective functions that have own arguments?`
-- :ref:`Can I use Optuna without remote RDB servers?`
-- :ref:`How to suppress log messages of Optuna?`
-- :ref:`How to save machine learning models trained in objective functions?`
-- :ref:`How can I obtain reproducible optimization results?`
-- :ref:`How does Optuna handle NaNs and exceptions reported by the objective function?`
-- :ref:`How can I use two GPUs for evaluating two trials simultaneously?`
-- :ref:`How can I test my objective functions?`
+.. contents::
+    :local:
 
 Can I use Optuna with X? (where X is your favorite ML library)
 --------------------------------------------------------------
