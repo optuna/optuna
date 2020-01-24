@@ -15,13 +15,6 @@ N_REPORTS = 10
 EXPECTED_N_TRIALS_PER_BRACKET = 10
 
 
-def test_warn_on_TPESampler():
-    # type: () -> None
-
-    with pytest.warns(UserWarning):
-        optuna.study.create_study(pruner=optuna.pruners.HyperbandPruner())
-
-
 def test_hyperband_pruner_intermediate_values():
     # type: () -> None
 
