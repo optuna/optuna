@@ -18,9 +18,9 @@ We have the following two ways to execute this example:
 
 """
 
+import pkg_resources
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist
-import pkg_resources
 
 import optuna
 
@@ -56,16 +56,16 @@ def create_optimizer(trial):
     kwargs = {}
     optimizer_options = ['RMSprop', 'Adam', 'SGD']
     optimizer_selected = trial.suggest_categorical('optimizer', optimizer_options)
-    if optimizer_selected == 'RMSPropOptimizer':
+    if optimizer_selected == 'RMSprop':
         kwargs['learning_rate'] = trial.suggest_loguniform('rmsprop_learning_rate', 1e-5, 1e-1)
         kwargs['decay'] = trial.suggest_uniform('rmsprop_decay', 0.85, 0.99)
         kwargs['momentum'] = trial.suggest_loguniform('rmsprop_momentum', 1e-5, 1e-1)
-    elif optimizer_selected == 'AdamOptimizer':
+    elif optimizer_selected == 'Adam':
         kwargs['learning_rate'] = trial.suggest_loguniform('adam_learning_rate', 1e-5, 1e-1)
-    elif optimizer_selected == 'MomentumOptimizer':
-        kwargs['learning_rate'] = trial.suggest_loguniform('momentum_opt_learning_rate', 1e-5,
+    elif optimizer_selected == 'SGD':
+        kwargs['learning_rate'] = trial.suggest_loguniform('sgd_opt_learning_rate', 1e-5,
                                                            1e-1)
-        kwargs['momentum'] = trial.suggest_loguniform('momentum_opt_momentum', 1e-5, 1e-1)
+        kwargs['momentum'] = trial.suggest_loguniform('sgd_opt_momentum', 1e-5, 1e-1)
 
     optimizer = getattr(tf.optimizers, optimizer_selected)(**kwargs)
     return optimizer
