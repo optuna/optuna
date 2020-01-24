@@ -194,7 +194,7 @@ What happens when I dynamically alter a search space?
 -----------------------------------------------------
 
 Since parameters search spaces are specified in each call to the suggestion API, e.g.
-:func:`~optuna.trial.Trial.suggest_uniform` and :func:`~optuna.trial.Trial.suggest_categorical`,
+:func:`~optuna.trial.Trial.suggest_uniform` and :func:`~optuna.trial.Trial.suggest_int`,
 it is possible to in a single study alter the range by sampling parameters from different search
 spaces in different trials.
 The behavior when altered is defined by each sampler individually.
