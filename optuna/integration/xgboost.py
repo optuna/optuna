@@ -9,6 +9,38 @@ except ImportError as e:
     _available = False
 
 
+def _get_callback_context(env):
+    # type: (xgb.core.CallbackEnv) -> str
+    """return whether the current callback context is cv or train
+
+    Note:
+        `Reference
+        <https://github.com/dmlc/xgboost/blob/master/python-package/xgboost/callback.py>`_.
+    """
+    # if env.model is not None and env.cvfolds is None:
+    #     context = 'train'
+    if env.model is None and env.cvfolds is not None:
+        context = 'cv'
+    else:
+        context = 'train'
+    return context
+
+
+def _remove_std_from_evaluation_result_list(xgb_callback_env):
+    # type: (xgb.core.CallbackEnv) -> None
+    """Custom XGBoost callback adapter to fix compatibility with Optuna pruner.
+
+    The Optuna pruner is expecting only two elements in each tuple of the evaluation_result_list.
+    It expects the observation_key and the evaluation metric only, but XGBoost is also providing
+    a third element: the stddev of the metric across the cross-valdation folds.
+    """
+    # drop the 3rd element (stddev) from each evaluation_result_list item.
+    erl_orig = xgb_callback_env.evaluation_result_list
+    erl_no_std = [(key, metric) for key, metric, std in erl_orig]
+    erl_orig.clear()
+    erl_orig.extend(erl_no_std)
+
+
 class XGBoostPruningCallback(object):
     """Callback for XGBoost to prune unpromising trials.
 
@@ -44,7 +76,10 @@ class XGBoostPruningCallback(object):
 
     def __call__(self, env):
         # type: (xgb.core.CallbackEnv) -> None
-
+        context = _get_callback_context(env)
+        if context == 'cv':
+            _remove_std_from_evaluation_result_list(env)
+        print(env.evaluation_result_list)
         current_score = dict(env.evaluation_result_list)[self._observation_key]
         self._trial.report(current_score, step=env.iteration)
         if self._trial.should_prune():
