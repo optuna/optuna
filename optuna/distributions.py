@@ -368,7 +368,7 @@ def distribution_to_json(dist):
     return json.dumps({'name': dist.__class__.__name__, 'attributes': dist._asdict()})
 
 
-def check_distribution_compatibility(dist_old, dist_new):
+def check_distribution_compatibility(dist_old, dist_new, param_name):
     # type: (BaseDistribution, BaseDistribution) -> None
     """A function to check compatibility of two distributions.
 
@@ -384,6 +384,14 @@ def check_distribution_compatibility(dist_old, dist_new):
 
     if dist_old.__class__ != dist_new.__class__:
         raise ValueError('Cannot set different distribution kind to the same parameter name.')
+
+    if (dist_old.high != dist_new.high) or (dist_old.low != dist_new.low):
+        warnings.warn('Inconsistent min and max values for parameter {}! '
+                      'This might be a configuration mistake. '
+                      'current min: {} old min: {} current max: {} old max: {}'
+                      .format(param_name, dist_new.low, dist_old.low,
+                              dist_new.high, dist_old.high),
+                      RuntimeWarning)
 
     if not isinstance(dist_old, CategoricalDistribution):
         return

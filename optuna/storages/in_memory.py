@@ -207,7 +207,7 @@ class InMemoryStorage(base.BaseStorage):
             # Check param distribution compatibility with previous trial(s).
             if param_name in self.param_distribution:
                 distributions.check_distribution_compatibility(self.param_distribution[param_name],
-                                                               distribution)
+                                                               distribution, param_name)
 
             # Check param has not been set; otherwise, return False.
             if param_name in self.trials[trial_id].params:

@@ -510,7 +510,7 @@ class Trial(BaseTrial):
                              "but it is not contained in the relative search space.".format(name))
 
         relative_distribution = self.relative_search_space[name]
-        distributions.check_distribution_compatibility(relative_distribution, distribution)
+        distributions.check_distribution_compatibility(relative_distribution, distribution, name)
 
         param_value = self.relative_params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
@@ -707,7 +707,7 @@ class FixedTrial(BaseTrial):
                              "the range of the distribution {}.".format(value, name, distribution))
 
         if name in self._distributions:
-            distributions.check_distribution_compatibility(self._distributions[name], distribution)
+            distributions.check_distribution_compatibility(self._distributions[name], distribution, name)
 
         self._suggested_params[name] = value
         self._distributions[name] = distribution
