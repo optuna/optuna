@@ -15,6 +15,7 @@ This page contains a list of example codes written with Optuna.
 * [ChainerMN](./chainermn_simple.py)
 * [Dask-ML](./dask_ml_simple.py)
 * [LightGBM](./lightgbm_simple.py)
+* [LightGBM Tuner](./lightgbm_tuner_simple.py)
 * [CatBoost](./catboost_simple.py)
 * [MXNet](./mxnet_simple.py)
 * [PyTorch](./pytorch_simple.py)
