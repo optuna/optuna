@@ -82,7 +82,8 @@ def model_fn(trial, features, labels, mode):
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
     eval_metric_ops = {
-        "accuracy": tf.compat.v1.metrics.accuracy(labels=labels, predictions=predictions["classes"])
+        "accuracy": tf.compat.v1.metrics.accuracy(labels=labels,
+                                                  predictions=predictions["classes"])
     }
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
