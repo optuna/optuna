@@ -89,7 +89,21 @@ def test_engine_kwargs():
         create_test_storage(engine_kwargs={'wrong_key': 'wrong_value'})
 
 
-def test_set_default_engine_kwargs_for_mysql():
+@pytest.mark.parametrize('url,engine_kwargs,expected', [
+    ('mysql://localhost', {'pool_pre_ping': False}, False),
+    ('mysql://localhost', {'pool_pre_ping': True}, True),
+    ('mysql://localhost', {}, True),
+    ('mysql+pymysql://localhost', {}, True),
+    ('mysql://localhost', {'pool_size': 5}, True),
+])
+def test_set_default_engine_kwargs_for_mysql(url, engine_kwargs, expected):
+    # type: (str, Dict[str, Any], bool)-> None
+
+    RDBStorage._set_default_engine_kwargs_for_mysql(url, engine_kwargs)
+    assert engine_kwargs['pool_pre_ping'] is expected
+
+
+def test_set_default_engine_kwargs_for_mysql_with_other_rdb():
     # type: ()-> None
 
     # Do not change engine_kwargs if database is not MySQL.
@@ -98,27 +112,6 @@ def test_set_default_engine_kwargs_for_mysql():
     assert 'pool_pre_ping' not in engine_kwargs
     RDBStorage._set_default_engine_kwargs_for_mysql('postgres:///example.db', engine_kwargs)
     assert 'pool_pre_ping' not in engine_kwargs
-
-    # Do not overwrite value if pool_pre_ping is specified.
-    engine_kwargs = {'pool_pre_ping': False}
-    RDBStorage._set_default_engine_kwargs_for_mysql('mysql://localhost', engine_kwargs)
-    assert not engine_kwargs['pool_pre_ping']
-    engine_kwargs = {'pool_pre_ping': True}
-    RDBStorage._set_default_engine_kwargs_for_mysql('mysql://localhost', engine_kwargs)
-    assert engine_kwargs['pool_pre_ping']
-
-    # Set pool_pre_ping to True.
-    engine_kwargs = {}
-    RDBStorage._set_default_engine_kwargs_for_mysql('mysql://localhost', engine_kwargs)
-    assert engine_kwargs['pool_pre_ping']
-
-    engine_kwargs = {}
-    RDBStorage._set_default_engine_kwargs_for_mysql('mysql+pymysql://localhost', engine_kwargs)
-    assert engine_kwargs['pool_pre_ping']
-
-    engine_kwargs = {'pool_size': 5}
-    RDBStorage._set_default_engine_kwargs_for_mysql('mysql://localhost', engine_kwargs)
-    assert engine_kwargs['pool_pre_ping']
 
 
 def test_create_new_study_multiple_studies():
