@@ -77,7 +77,7 @@ class XGBoostPruningCallback(object):
         context = _get_callback_context(env)
         if context == 'cv':
             _remove_std_from_evaluation_result_list(env)
-        print(env.evaluation_result_list)
+
         current_score = dict(env.evaluation_result_list)[self._observation_key]
         self._trial.report(current_score, step=env.iteration)
         if self._trial.should_prune():
