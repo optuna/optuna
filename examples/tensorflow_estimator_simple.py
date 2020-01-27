@@ -40,7 +40,8 @@ def create_network(trial, features):
     n_layers = trial.suggest_int('n_layers', 1, 3)
     for i in range(n_layers):
         n_units = trial.suggest_int('n_units_l{}'.format(i), 1, 128)
-        prev_layer = tf.compat.v1.layers.dense(inputs=prev_layer, units=n_units, activation=tf.nn.relu)
+        prev_layer = tf.compat.v1.layers.dense(
+            inputs=prev_layer, units=n_units, activation=tf.nn.relu)
 
     logits = tf.compat.v1.layers.dense(inputs=prev_layer, units=10)
     return logits
@@ -56,7 +57,8 @@ def create_optimizer(trial):
     else:
         sgd_lr = trial.suggest_loguniform('sgd_lr', 1e-5, 1e-1)
         sgd_momentum = trial.suggest_loguniform('sgd_momentum', 1e-5, 1e-1)
-        optimizer = tf.compat.v1.train.MomentumOptimizer(learning_rate=sgd_lr, momentum=sgd_momentum)
+        optimizer = tf.compat.v1.train.MomentumOptimizer(
+            learning_rate=sgd_lr, momentum=sgd_momentum)
 
     return optimizer
 
