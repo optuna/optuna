@@ -14,15 +14,14 @@ import sklearn.datasets
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-import lightgbm as lgb_original
 import optuna.integration.lightgbm as lgb
 
 
 if __name__ == '__main__':
     data, target = sklearn.datasets.load_breast_cancer(return_X_y=True)
     train_x, val_x, train_y, val_y = train_test_split(data, target, test_size=0.25)
-    dtrain = lgb_original.Dataset(train_x, label=train_y)
-    dval = lgb_original.Dataset(val_x, label=val_y)
+    dtrain = lgb.Dataset(train_x, label=train_y)
+    dval = lgb.Dataset(val_x, label=val_y)
 
     params = {
         'objective': 'binary',
