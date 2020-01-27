@@ -68,9 +68,10 @@ def create_model(num_features, trial):
 
 
 def mlflow_callback(study, trial):
+    trial_value = trial.value if trial.value is not None else float('nan')
     with mlflow.start_run(run_name=study.study_name):
         mlflow.log_params(trial.params)
-        mlflow.log_metrics({'mean_squared_error': trial.value})
+        mlflow.log_metrics({'mean_squared_error': trial_value})
 
 
 def objective(trial):
