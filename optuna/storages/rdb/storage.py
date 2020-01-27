@@ -72,6 +72,15 @@ class RDBStorage(BaseStorage):
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
 
+    .. note::
+        If you use MySQL, `pool_pre_ping`_ will be set to :obj:`True` by default to prevent
+        connection timeout. You can turn it off with ``engine_kwargs['pool_pre_ping']=False``, but
+        it is recommended to keep the setting if execution time of your objective function is
+        longer than the `wait_timeout` of your MySQL configuration.
+
+    .. _pool_pre_ping:
+        https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.create_engine.params.
+        pool_pre_ping
     """
 
     def __init__(self, url, engine_kwargs=None, skip_compatibility_check=False):
@@ -82,6 +91,8 @@ class RDBStorage(BaseStorage):
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
+
+        self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
         try:
             self.engine = create_engine(self.url, **self.engine_kwargs)
@@ -847,6 +858,26 @@ class RDBStorage(BaseStorage):
             result.append(temp_trial)
 
         return result
+
+    @staticmethod
+    def _set_default_engine_kwargs_for_mysql(url, engine_kwargs):
+        # type: (str, Dict[str, Any]) -> None
+
+        # Skip if RDB is not MySQL.
+        if not url.startswith('mysql'):
+            return
+
+        # Do not overwrite value.
+        if 'pool_pre_ping' in engine_kwargs:
+            return
+
+        # If True, the connection pool checks liveness of connections at every checkout.
+        # Without this option, trials that take longer than `wait_timeout` may cause connection
+        # errors. For further details, please refer to the following document:
+        # https://docs.sqlalchemy.org/en/13/core/pooling.html#pool-disconnects-pessimistic
+        engine_kwargs['pool_pre_ping'] = True
+        logger = optuna.logging.get_logger(__name__)
+        logger.debug('pool_pre_ping=True was set to engine_kwargs to prevent connection timeout.')
 
     @staticmethod
     def _fill_storage_url_template(template):

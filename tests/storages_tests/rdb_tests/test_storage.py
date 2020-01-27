@@ -89,6 +89,31 @@ def test_engine_kwargs():
         create_test_storage(engine_kwargs={'wrong_key': 'wrong_value'})
 
 
+@pytest.mark.parametrize('url,engine_kwargs,expected', [
+    ('mysql://localhost', {'pool_pre_ping': False}, False),
+    ('mysql://localhost', {'pool_pre_ping': True}, True),
+    ('mysql://localhost', {}, True),
+    ('mysql+pymysql://localhost', {}, True),
+    ('mysql://localhost', {'pool_size': 5}, True),
+])
+def test_set_default_engine_kwargs_for_mysql(url, engine_kwargs, expected):
+    # type: (str, Dict[str, Any], bool)-> None
+
+    RDBStorage._set_default_engine_kwargs_for_mysql(url, engine_kwargs)
+    assert engine_kwargs['pool_pre_ping'] is expected
+
+
+def test_set_default_engine_kwargs_for_mysql_with_other_rdb():
+    # type: ()-> None
+
+    # Do not change engine_kwargs if database is not MySQL.
+    engine_kwargs = {}  # type: Dict[str, Any]
+    RDBStorage._set_default_engine_kwargs_for_mysql('sqlite:///example.db', engine_kwargs)
+    assert 'pool_pre_ping' not in engine_kwargs
+    RDBStorage._set_default_engine_kwargs_for_mysql('postgres:///example.db', engine_kwargs)
+    assert 'pool_pre_ping' not in engine_kwargs
+
+
 def test_create_new_study_multiple_studies():
     # type: () -> None
 
