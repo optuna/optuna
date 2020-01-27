@@ -377,6 +377,7 @@ def check_distribution_compatibility(dist_old, dist_new, param_name):
     Args:
         dist_old: A distribution previously recorded in storage.
         dist_new: A distribution newly added to storage.
+        param_name: The parameter name.
 
     Returns:
         True denotes given distributions are compatible. Otherwise, they are not.
