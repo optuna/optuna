@@ -17,8 +17,6 @@ def _get_callback_context(env):
         `Reference
         <https://github.com/dmlc/xgboost/blob/master/python-package/xgboost/callback.py>`_.
     """
-    # if env.model is not None and env.cvfolds is None:
-    #     context = 'train'
     if env.model is None and env.cvfolds is not None:
         context = 'cv'
     else:
