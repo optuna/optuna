@@ -1,8 +1,7 @@
 """
 Optuna example that optimizes a classifier configuration for cancer dataset using LightGBM tuner.
 
-In this example, we optimize the validation accuracy of cancer detection.
-We optimize both the choice of booster model and their hyperparameters.
+In this example, we optimize the validation log loss of cancer detection.
 
 You can execute this code directly.
     $ python lightgbm_tuner_simple.py
