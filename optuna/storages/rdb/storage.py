@@ -74,7 +74,7 @@ class RDBStorage(BaseStorage):
 
     .. note::
         If you use MySQL, `pool_pre_ping`_ will be set to :obj:`True` by default to prevent
-        connection timeout. You can turn it off with ``engine_kwargs['pool_pre_ping']=True``, but
+        connection timeout. You can turn it off with ``engine_kwargs['pool_pre_ping']=False``, but
         it is recommended to keep the setting if execution time of your objective function is
         longer than the `wait_timeout` of your MySQL configuration.
 
