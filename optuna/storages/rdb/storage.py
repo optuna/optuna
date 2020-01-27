@@ -72,6 +72,15 @@ class RDBStorage(BaseStorage):
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
 
+    .. note::
+        If you use MySQL, `pool_pre_ping`_ will be set to :obj:`True` by default to prevent
+        connection timeout. You can turn it off with ``engine_kwargs['pool_pre_ping']=True``, but
+        it is recommended to keep the setting if execution time of your objective function is
+        longer than `wait_timeout` of MySQL configuration.
+
+    .. _pool_pre_ping:
+        https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.create_engine.params.
+        pool_pre_ping
     """
 
     def __init__(self, url, engine_kwargs=None, skip_compatibility_check=False):
@@ -867,6 +876,8 @@ class RDBStorage(BaseStorage):
         # errors. For further details, please refer to the following document:
         # https://docs.sqlalchemy.org/en/13/core/pooling.html#pool-disconnects-pessimistic
         engine_kwargs['pool_pre_ping'] = True
+        logger = optuna.logging.get_logger(__name__)
+        logger.debug('pool_pre_ping=True was set to engine_kwargs to prevent connection timeout.')
 
     @staticmethod
     def _fill_storage_url_template(template):
