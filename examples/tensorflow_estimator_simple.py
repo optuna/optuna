@@ -56,8 +56,7 @@ def create_optimizer(trial):
     else:
         sgd_lr = trial.suggest_loguniform('sgd_lr', 1e-5, 1e-1)
         sgd_momentum = trial.suggest_loguniform('sgd_momentum', 1e-5, 1e-1)
-        optimizer = tf.compat.v1.train.MomentumOptimizer(
-            learning_rate=sgd_lr, momentum=sgd_momentum)
+        optimizer = tf.compat.v1.train.MomentumOptimizer(learning_rate=sgd_lr, momentum=sgd_momentum)
 
     return optimizer
 
