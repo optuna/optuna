@@ -40,10 +40,10 @@ def create_network(trial, features):
     n_layers = trial.suggest_int('n_layers', 1, 3)
     for i in range(n_layers):
         n_units = trial.suggest_int('n_units_l{}'.format(i), 1, 128)
-        prev_layer = tf.compat.v1.layers.dense(
-            inputs=prev_layer, units=n_units, activation=tf.nn.relu)
+        prev_layer = tf.keras.layers.Dense(
+            units=n_units, activation=tf.nn.relu)(prev_layer)
 
-    logits = tf.compat.v1.layers.dense(inputs=prev_layer, units=10)
+    logits = tf.keras.layers.Dense(units=10)(prev_layer)
     return logits
 
 
