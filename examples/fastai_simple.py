@@ -1,8 +1,9 @@
 """
-Optuna example that demonstrates a pruner for fastai.
+Optuna example that optimizes convolutional neural network and data augmentation using FastAI.
 
-In this example, we optimize the hyperparameters of a convolutional neural network for hand-written
-digit recognition in terms of validation accuracy. The network is implemented by fastai and
+In this example, we optimize the hyperparameters of a convolutional neural network and
+data augmentation for hand-written digit recognition in terms of validation accuracy.
+The network is implemented by fastai and
 evaluated on MNIST dataset. Throughout the training of neural networks, a pruner observes
 intermediate results and stops unpromising trials.
 Note that this example will take longer than the other examples
