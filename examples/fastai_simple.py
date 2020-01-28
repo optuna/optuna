@@ -27,10 +27,24 @@ EPOCHS = 10
 
 
 path = vision.untar_data(vision.URLs.MNIST_SAMPLE)
-data = vision.ImageDataBunch.from_folder(path, bs=BATCHSIZE)
 
 
 def objective(trial):
+    # Data Augmentation
+    apply_tfms = trial.suggest_categorical('apply_tfms', [True, False])
+    if apply_tfms:
+        # MNIST is a hand-written digit dataset. Thus horizontal and vertical flipping are
+        # disabled. However, the two flipping will be important when the dataset is CIFAR or
+        # ImageNet.
+        tfms = vision.get_transforms(
+            do_flip=False, flip_vert=False,
+            max_rotate=trial.suggest_int('max_rotate', -45, 45),
+            max_zoom=trial.suggest_uniform('max_zoom', 1, 2),
+            p_affine=trial.suggest_discrete_uniform('p_affine', 0.1, 1.0, 0.1)
+        )
+    data = vision.ImageDataBunch.from_folder(
+        path, bs=BATCHSIZE, ds_tfms=tfms if apply_tfms else None)
+
     n_layers = trial.suggest_int('n_layers', 2, 5)
 
     n_channels = [3]
