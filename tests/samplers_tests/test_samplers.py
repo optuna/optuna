@@ -1,5 +1,6 @@
-import numpy as np
 import pickle
+
+import numpy as np
 import pytest
 
 import optuna
@@ -15,11 +16,12 @@ if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+    from typing import Sequence  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
-    from optuna.trial import T  # NOQA
     from optuna.trial import Trial  # NOQA
 
 parametrize_sampler = pytest.mark.parametrize(
@@ -134,7 +136,7 @@ def test_int(sampler_class, distribution):
 @parametrize_sampler
 @pytest.mark.parametrize('choices', [(1, 2, 3), ('a', 'b', 'c'), (1, 'a')])
 def test_categorical(sampler_class, choices):
-    # type: (typing.Callable[[], BaseSampler], typing.Tuple[T, ...]) -> None
+    # type: (typing.Callable[[], BaseSampler], Sequence[CategoricalChoiceType]) -> None
 
     distribution = CategoricalDistribution(choices)
 
@@ -245,7 +247,8 @@ def test_intersection_search_space():
         'y': UniformDistribution(low=-3, high=3)
     }
 
-    # Failed or pruned trials are not considered in the calculation of a product search space.
+    # Failed or pruned trials are not considered in the calculation of
+    # an intersection search space.
     def objective(trial, exception):
         # type: (optuna.trial.Trial, Exception) -> float
 
@@ -262,46 +265,6 @@ def test_intersection_search_space():
     # those are regarded as different trials.
     study.optimize(lambda t: t.suggest_uniform('y', -1, 1), n_trials=1)
     assert optuna.samplers.intersection_search_space(study) == {}
-
-
-def test_product_search_space():
-    # type: () -> None
-
-    study = optuna.create_study()
-
-    # No trial.
-    assert optuna.samplers.product_search_space(study) == {}
-
-    # First trial.
-    study.optimize(lambda t: t.suggest_int('x', 0, 10) + t.suggest_uniform('y', -3, 3), n_trials=1)
-    assert optuna.samplers.product_search_space(study) == {
-        'x': IntUniformDistribution(low=0, high=10),
-        'y': UniformDistribution(low=-3, high=3)
-    }
-
-    # Second trial (only 'y' parameter is suggested in this trial).
-    study.optimize(lambda t: t.suggest_uniform('y', -3, 3), n_trials=1)
-    assert optuna.samplers.product_search_space(study) == {
-        'y': UniformDistribution(low=-3, high=3)
-    }
-
-    # Failed or pruned trials are not considered in the calculation of a product search space.
-    def objective(trial, exception):
-        # type: (optuna.trial.Trial, Exception) -> float
-
-        trial.suggest_uniform('z', 0, 1)
-        raise exception
-
-    study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
-    study.optimize(lambda t: objective(t, optuna.exceptions.TrialPruned()), n_trials=1)
-    assert optuna.samplers.product_search_space(study) == {
-        'y': UniformDistribution(low=-3, high=3)
-    }
-
-    # If two parameters have the same name but different distributions,
-    # those are regarded as different trials.
-    study.optimize(lambda t: t.suggest_uniform('y', -1, 1), n_trials=1)
-    assert optuna.samplers.product_search_space(study) == {}
 
 
 @parametrize_sampler

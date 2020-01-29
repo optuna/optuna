@@ -10,7 +10,6 @@ import optuna
 from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
 from optuna import type_checking
 
-
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA

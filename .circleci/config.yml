@@ -23,10 +23,6 @@ workflows:
     jobs:
       - checks
       - document
-      - tests-python38-full
-      - tests-python37-full
-      - tests-python36-full
-      - tests-python35-full
       - examples-python38
       - examples-python37
       - examples-python36
@@ -42,12 +38,23 @@ jobs:
     steps:
       - checkout
 
+      - run: &checkout-merge-master
+          name: checkout-merge-master
+          command: |
+            set -ex
+            if [[ -n "${CIRCLE_PR_NUMBER}" ]]; then
+                FETCH_REFS="${FETCH_REFS} +refs/pull/${CIRCLE_PR_NUMBER}/merge:pr/${CIRCLE_PR_NUMBER}/merge"
+                git fetch -u origin ${FETCH_REFS}
+                git checkout "pr/${CIRCLE_PR_NUMBER}/merge"
+            fi
+
       - run:
           name: install
           command: |
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            pip install -U pip
+            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
+            pip install -U 'pip<20'
             pip install --progress-bar off .[checking]
 
       - run:
@@ -74,12 +81,15 @@ jobs:
     steps:
       - checkout
 
+      - run: *checkout-merge-master
+
       - run:
           name: install
           command: |
             python -m venv venv || virtualenv venv --python=python3
             . venv/bin/activate
-            pip install -U pip
+            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
+            pip install -U 'pip<20'
             pip install --progress-bar off .[document]
 
       - run:
@@ -95,12 +105,15 @@ jobs:
     steps:
       - checkout
 
+      - run: *checkout-merge-master
+
       - run:
           name: install
           command: |
             python -m venv venv || virtualenv venv --python=python3
             . venv/bin/activate
-            pip install -U pip
+            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
+            pip install -U 'pip<20'
             pip install --progress-bar off .[doctest,document]
 
       - run:
@@ -118,6 +131,8 @@ jobs:
     steps:
       - checkout
 
+      - run: *checkout-merge-master
+
       - run: &install
           name: install
           command: |
@@ -125,7 +140,8 @@ jobs:
             sudo apt-get -y install openmpi-bin libopenmpi-dev
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            pip install -U pip
+            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
+            pip install -U 'pip<20'
             pip install --progress-bar off -U setuptools
             python setup.py sdist
 
@@ -158,6 +174,8 @@ jobs:
     steps:
       - checkout
 
+      - run: *checkout-merge-master
+
       - run: *install
 
       - run:
@@ -177,13 +195,15 @@ jobs:
     docker:
       - image: circleci/python:3.6
     steps:
-      [checkout, run: *install, run: *tests, run: *tests-mn]
+      [checkout, run: *checkout-merge-master, run: *install, run: *tests, run: *tests-mn]
 
   tests-python35:
     docker:
       - image: circleci/python:3.5
     steps:
       - checkout
+
+      - run: *checkout-merge-master
 
       - run: *install
 
@@ -195,76 +215,13 @@ jobs:
 
       - run: *tests-mn
 
-  tests-python37-full:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
-
-      - run: *install
-
-      - run: &tests-full
-          <<: *tests
-          name: tests-full
-          environment:
-            OMP_NUM_THREADS: 1
-            INCLUDE_SLOW_TESTS: 1
-
-      - run: &tests-mn-full
-          <<: *tests-mn
-          name: tests-mn-full
-          environment:
-            OMP_NUM_THREADS: 1
-            INCLUDE_SLOW_TESTS: 1
-
-  tests-python38-full:
-    docker:
-      - image: circleci/python:3.8
-    steps:
-      - checkout
-
-      - run: *install
-
-      - run:
-          <<: *tests-full
-          command: |
-            . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_fastai.py \
-                --ignore tests/integration_tests/test_keras.py \
-                --ignore tests/integration_tests/test_pytorch_lightning.py \
-                --ignore tests/integration_tests/test_pytorch_ignite.py \
-                --ignore tests/integration_tests/test_tensorflow.py \
-                --ignore tests/integration_tests/test_tfkeras.py
-
-      - run: *tests-mn-full
-
-  tests-python36-full:
-    docker:
-      - image: circleci/python:3.6
-    steps:
-      [checkout, run: *install, run: *tests-full, run: *tests-mn-full]
-
-  tests-python35-full:
-    docker:
-      - image: circleci/python:3.5
-    steps:
-      - checkout
-
-      - run: *install
-
-      - run:
-          <<: *tests-full
-          command: |
-            . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_fastai.py
-
-      - run: *tests-mn-full
-
   codecov:
     docker:
       - image: circleci/python:3.7
     steps:
       - checkout
+
+      - run: *checkout-merge-master
 
       - run: *install
 
@@ -272,7 +229,6 @@ jobs:
           name: install-codecov
           command: |
             . venv/bin/activate
-            pip install -U pip
             pip install --progress-bar off .[codecov]
 
       - run:
@@ -292,13 +248,14 @@ jobs:
     steps:
       - checkout
 
+      - run: *checkout-merge-master
+
       - run: *install
 
       - run: &install-examples
           name: install-examples
           command: |
             . venv/bin/activate
-            pip install -U pip
             pip install --progress-bar off $(ls dist/*.tar.gz)[example]
 
       - run: &examples
@@ -335,6 +292,8 @@ jobs:
     steps:
       - checkout
 
+      - run: *checkout-merge-master
+
       - run: *install
 
       - run: *install-examples
@@ -343,7 +302,7 @@ jobs:
           <<: *examples
           environment:
             OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_.*|tensorflow_.*|tfkeras_.*
+            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_.*|tensorflow_.*|tfkeras_.*|fastai_.*
 
       - run: *examples-mn
 
@@ -351,13 +310,15 @@ jobs:
     docker:
       - image: circleci/python:3.6
     steps:
-      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
+      [checkout, run: *checkout-merge-master, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
 
   examples-python35:
     docker:
       - image: circleci/python:3.5
     steps:
       - checkout
+
+      - run: *checkout-merge-master
 
       - run: *install
 
@@ -367,6 +328,6 @@ jobs:
           <<: *examples
           environment:
             OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|pytorch_lightning.*
+            IGNORES: chainermn_.*|pytorch_lightning.*|fastai_.*
 
       - run: *examples-mn

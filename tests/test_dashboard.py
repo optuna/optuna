@@ -12,7 +12,8 @@ def _create_some_study():
 
         x = trial.suggest_uniform('x', -10, 10)
         y = trial.suggest_loguniform('y', 10, 20)
-        z = trial.suggest_categorical('z', (10, 20.5, 30))
+        z = trial.suggest_categorical('z', (10.0, 20.5, 30.0))
+        assert isinstance(z, float)
 
         return x**2 + y**2 + z
 

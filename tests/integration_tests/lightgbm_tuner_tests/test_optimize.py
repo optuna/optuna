@@ -15,7 +15,6 @@ from optuna.study import Study
 from optuna.trial import Trial
 from optuna import type_checking
 
-
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA

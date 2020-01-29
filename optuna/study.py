@@ -3,6 +3,12 @@ import copy
 import datetime
 import gc
 import math
+import threading
+import warnings
+
+import joblib
+from joblib import delayed
+from joblib import Parallel
 
 try:
     import pandas as pd  # NOQA
@@ -11,12 +17,6 @@ except ImportError as e:
     _pandas_import_error = e
     # trials_dataframe is disabled because pandas is not available.
     _pandas_available = False
-
-import threading
-import warnings
-
-from joblib import delayed
-from joblib import Parallel
 
 from optuna import exceptions
 from optuna import logging
@@ -41,6 +41,9 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
+
+
+_logger = logging.get_logger(__name__)
 
 
 class BaseStudy(object):
@@ -104,11 +107,35 @@ class BaseStudy(object):
 
         The returned trials are ordered by trial number.
 
+        This is a short form of ``self.get_trials(deepcopy=True)``.
+
         Returns:
             A list of :class:`~optuna.structs.FrozenTrial` objects.
         """
 
-        return self._storage.get_all_trials(self._study_id)
+        return self.get_trials()
+
+    def get_trials(self, deepcopy=True):
+        # type: (bool) -> List[structs.FrozenTrial]
+        """Return all trials in the study.
+
+        The returned trials are ordered by trial number.
+
+        For library users, it's recommended to use more handy
+        :attr:`~optuna.study.Study.trials` property to get the trials instead.
+
+        Args:
+            deepcopy:
+                Flag to control whether to apply ``copy.deepcopy()`` to the trials.
+                Note that if you set the flag to :obj:`False`, you shouldn't mutate
+                any fields of the returned trial. Otherwise the internal state of
+                the study may corrupt and unexpected behavior may happen.
+
+        Returns:
+            A list of :class:`~optuna.structs.FrozenTrial` objects.
+        """
+
+        return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
 
     @property
     def storage(self):
@@ -129,10 +156,9 @@ class BaseStudy(object):
                       "(e.g., `Study.set_user_attr`)",
                       DeprecationWarning)
 
-        logger = logging.get_logger(__name__)
-        logger.warning("The direct use of storage is deprecated. "
-                       "Please access to storage via study's public methods "
-                       "(e.g., `Study.set_user_attr`)")
+        _logger.warning("The direct use of storage is deprecated. "
+                        "Please access to storage via study's public methods "
+                        "(e.g., `Study.set_user_attr`)")
 
         return self._storage
 
@@ -166,15 +192,12 @@ class Study(BaseStudy):
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
-        self.logger = logging.get_logger(__name__)
-
         self._optimize_lock = threading.Lock()
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
-        del state['logger']
         del state['_optimize_lock']
         return state
 
@@ -182,7 +205,6 @@ class Study(BaseStudy):
         # type: (Dict[Any, Any]) -> None
 
         self.__dict__.update(state)
-        self.logger = logging.get_logger(__name__)
         self._optimize_lock = threading.Lock()
 
     @property
@@ -201,7 +223,7 @@ class Study(BaseStudy):
         message = 'The use of `Study.study_id` is deprecated. ' \
                   'Please use `Study.study_name` instead.'
         warnings.warn(message, DeprecationWarning)
-        self.logger.warning(message)
+        _logger.warning(message)
 
         return self._study_id
 
@@ -294,6 +316,15 @@ class Study(BaseStudy):
                     _iter = iter(int, 1)
 
                 with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
+                    if not isinstance(parallel._backend, joblib.parallel.ThreadingBackend) and \
+                       isinstance(self._storage, storages.InMemoryStorage):
+                        msg = 'The default storage cannot be shared by multiple processes. ' \
+                              'Please use an RDB (RDBStorage) when you use joblib for ' \
+                              'multi-processing. The usage of RDBStorage can be found in ' \
+                              'https://optuna.readthedocs.io/en/stable/tutorial/rdb.html.'
+                        warnings.warn(msg, UserWarning)
+                        _logger.warning(msg)
+
                     parallel(
                         delayed(self._optimize_sequential)
                         (func, 1, timeout, catch, callbacks, gc_after_trial, time_start)
@@ -329,8 +360,13 @@ class Study(BaseStudy):
 
         self._storage.set_study_system_attr(self._study_id, key, value)
 
-    def trials_dataframe(self, include_internal_fields=False, multi_index=False):
-        # type: (bool, bool) -> pd.DataFrame
+    def trials_dataframe(
+        self,
+        attrs=('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
+               'system_attrs', 'state'),  # type: Tuple[str, ...]
+        multi_index=False  # type: bool
+    ):
+        # type: (...) -> pd.DataFrame
         """Export trials as a pandas DataFrame_.
 
         The DataFrame_ provides various features to analyze studies. It is also useful to draw a
@@ -357,10 +393,9 @@ class Study(BaseStudy):
                 assert df.shape[0] == 3  # n_trials.
 
         Args:
-            include_internal_fields:
-                By default, internal fields of :class:`~optuna.structs.FrozenTrial` are excluded
-                from a DataFrame of trials. If this argument is :obj:`True`, they will be included
-                in the DataFrame.
+            attrs:
+                Specifies field names of :class:`~optuna.structs.FrozenTrial` to include them to a
+                DataFrame of trials.
             multi_index:
                 Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that
                 are hierarchical by nature such as ``(params, x)`` will be flattened to
@@ -372,6 +407,7 @@ class Study(BaseStudy):
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
+
         _check_pandas_availability()
 
         trials = self.trials
@@ -381,43 +417,43 @@ class Study(BaseStudy):
             return pd.DataFrame()
 
         assert all(isinstance(trial, structs.FrozenTrial) for trial in trials)
-        fields_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
-        for field in structs.FrozenTrial._ordered_fields:
-            if field.startswith('_'):
-                if not include_internal_fields:
-                    continue
-                else:
-                    # Python conventional underscores are omitted in the dataframe.
-                    df_column = field[1:]
+        attrs_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
+        for attr in attrs:
+            if attr.startswith('_'):
+                # Python conventional underscores are omitted in the dataframe.
+                df_column = attr[1:]
             else:
-                df_column = field
-            fields_to_df_columns[field] = df_column
+                df_column = attr
+            attrs_to_df_columns[attr] = df_column
 
         # column_agg is an aggregator of column names.
         # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
         # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
-        non_nested_field = ''
+        non_nested_attr = ''
 
         def _create_record_and_aggregate_column(trial):
             # type: (structs.FrozenTrial) -> Dict[Tuple[str, str], Any]
 
             record = {}
-            for field, df_column in fields_to_df_columns.items():
-                value = getattr(trial, field)
+            for attr, df_column in attrs_to_df_columns.items():
+                value = getattr(trial, attr)
+                if isinstance(value, structs.TrialState):
+                    # Convert TrialState to str and remove the common prefix.
+                    value = str(value).split('.')[-1]
                 if isinstance(value, dict):
-                    for nested_field, nested_value in value.items():
-                        record[(df_column, nested_field)] = nested_value
-                        column_agg[field].add((df_column, nested_field))
+                    for nested_attr, nested_value in value.items():
+                        record[(df_column, nested_attr)] = nested_value
+                        column_agg[attr].add((df_column, nested_attr))
                 else:
-                    record[(df_column, non_nested_field)] = value
-                    column_agg[field].add((df_column, non_nested_field))
+                    record[(df_column, non_nested_attr)] = value
+                    column_agg[attr].add((df_column, non_nested_attr))
             return record
 
         records = list([_create_record_and_aggregate_column(trial) for trial in trials])
+
         columns = sum(
-            (sorted(column_agg[k])
-             for k in structs.FrozenTrial._ordered_fields if k in column_agg),
+            (sorted(column_agg[k]) for k in attrs if k in column_agg),
             [])  # type: List[Tuple[str, str]]
 
         df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
@@ -568,13 +604,13 @@ class Study(BaseStudy):
             message = 'Setting status of trial#{} as {}. {}'.format(trial_number,
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
-            self.logger.info(message)
+            _logger.info(message)
             self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
         except Exception as e:
             message = 'Setting status of trial#{} as {} because of the following error: {}'\
                 .format(trial_number, structs.TrialState.FAIL, repr(e))
-            self.logger.warning(message, exc_info=True)
+            _logger.warning(message, exc_info=True)
             self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
 
@@ -598,7 +634,7 @@ class Study(BaseStudy):
             message = 'Setting status of trial#{} as {} because the returned value from the ' \
                       'objective function cannot be casted to float. Returned value is: ' \
                       '{}'.format(trial_number, structs.TrialState.FAIL, repr(result))
-            self.logger.warning(message)
+            _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
@@ -606,7 +642,7 @@ class Study(BaseStudy):
         if math.isnan(result):
             message = 'Setting status of trial#{} as {} because the objective function ' \
                       'returned {}.'.format(trial_number, structs.TrialState.FAIL, result)
-            self.logger.warning(message)
+            _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
@@ -620,9 +656,9 @@ class Study(BaseStudy):
     def _log_completed_trial(self, trial_number, value):
         # type: (int, float) -> None
 
-        self.logger.info('Finished trial#{} resulted in value: {}. '
-                         'Current best value is {} with parameters: {}.'.format(
-                             trial_number, value, self.best_value, self.best_params))
+        _logger.info('Finished trial#{} resulted in value: {}. '
+                     'Current best value is {} with parameters: {}.'.format(
+                         trial_number, value, self.best_value, self.best_params))
 
 
 def create_study(
@@ -685,9 +721,8 @@ def create_study(
         if load_if_exists:
             assert study_name is not None
 
-            logger = logging.get_logger(__name__)
-            logger.info("Using an existing study with name '{}' instead of "
-                        "creating a new one.".format(study_name))
+            _logger.info("Using an existing study with name '{}' instead of "
+                         "creating a new one.".format(study_name))
             study_id = storage.get_study_id_from_name(study_name)
         else:
             raise

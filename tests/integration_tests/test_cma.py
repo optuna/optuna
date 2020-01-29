@@ -1,5 +1,6 @@
-import cma
 import math
+
+import cma
 from mock import call
 from mock import patch
 import pytest

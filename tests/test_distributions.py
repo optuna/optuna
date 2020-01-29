@@ -1,5 +1,6 @@
 import copy
 import json
+
 import pytest
 
 from optuna import distributions
@@ -186,6 +187,13 @@ def test_empty_distribution():
 
     with pytest.raises(ValueError):
         distributions.CategoricalDistribution(choices=())
+
+
+def test_invalid_distribution():
+    # type: () -> None
+
+    with pytest.warns(UserWarning):
+        distributions.CategoricalDistribution(choices=({'foo': 'bar'},))  # type: ignore
 
 
 def test_eq_ne_hash():

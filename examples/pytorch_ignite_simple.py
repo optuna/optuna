@@ -19,6 +19,7 @@ We have the following two ways to execute this example:
 """
 
 import argparse
+
 from ignite.engine import create_supervised_evaluator
 from ignite.engine import create_supervised_trainer
 from ignite.engine import Events

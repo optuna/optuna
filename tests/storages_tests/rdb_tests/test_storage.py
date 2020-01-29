@@ -1,8 +1,9 @@
-from mock import patch
 import pickle
-import pytest
 import sys
 import tempfile
+
+from mock import patch
+import pytest
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import json_to_distribution
@@ -86,6 +87,31 @@ def test_engine_kwargs():
 
     with pytest.raises(TypeError):
         create_test_storage(engine_kwargs={'wrong_key': 'wrong_value'})
+
+
+@pytest.mark.parametrize('url,engine_kwargs,expected', [
+    ('mysql://localhost', {'pool_pre_ping': False}, False),
+    ('mysql://localhost', {'pool_pre_ping': True}, True),
+    ('mysql://localhost', {}, True),
+    ('mysql+pymysql://localhost', {}, True),
+    ('mysql://localhost', {'pool_size': 5}, True),
+])
+def test_set_default_engine_kwargs_for_mysql(url, engine_kwargs, expected):
+    # type: (str, Dict[str, Any], bool)-> None
+
+    RDBStorage._set_default_engine_kwargs_for_mysql(url, engine_kwargs)
+    assert engine_kwargs['pool_pre_ping'] is expected
+
+
+def test_set_default_engine_kwargs_for_mysql_with_other_rdb():
+    # type: ()-> None
+
+    # Do not change engine_kwargs if database is not MySQL.
+    engine_kwargs = {}  # type: Dict[str, Any]
+    RDBStorage._set_default_engine_kwargs_for_mysql('sqlite:///example.db', engine_kwargs)
+    assert 'pool_pre_ping' not in engine_kwargs
+    RDBStorage._set_default_engine_kwargs_for_mysql('postgres:///example.db', engine_kwargs)
+    assert 'pool_pre_ping' not in engine_kwargs
 
 
 def test_create_new_study_multiple_studies():
@@ -240,12 +266,10 @@ def test_check_table_schema_compatibility():
     #     storage._check_table_schema_compatibility()
 
 
-def create_test_storage(enable_cache=True, engine_kwargs=None):
-    # type: (bool, Optional[Dict[str, Any]]) -> RDBStorage
+def create_test_storage(engine_kwargs=None):
+    # type: (Optional[Dict[str, Any]]) -> RDBStorage
 
-    storage = RDBStorage('sqlite:///:memory:',
-                         enable_cache=enable_cache,
-                         engine_kwargs=engine_kwargs)
+    storage = RDBStorage('sqlite:///:memory:', engine_kwargs=engine_kwargs)
     return storage
 
 
@@ -255,7 +279,6 @@ def test_pickle_storage():
     storage = create_test_storage()
     restored_storage = pickle.loads(pickle.dumps(storage))
     assert storage.url == restored_storage.url
-    assert storage.enable_cache == restored_storage.enable_cache
     assert storage.engine_kwargs == restored_storage.engine_kwargs
     assert storage.skip_compatibility_check == restored_storage.skip_compatibility_check
     assert storage.engine != restored_storage.engine
@@ -354,24 +377,7 @@ def test_storage_cache():
 
         return trials
 
-    # Storage cache is disabled.
-    storage = create_test_storage(enable_cache=False)
-    study_id = storage.create_new_study()
-    trials = setup_trials(storage, study_id)
-
-    with patch.object(
-            TrialModel, 'find_or_raise_by_id',
-            wraps=TrialModel.find_or_raise_by_id) as mock_object:
-        for trial in trials:
-            assert storage.get_trial(trial._trial_id) == trial
-        assert mock_object.call_count == 4
-
-    with patch.object(TrialModel, 'where_study', wraps=TrialModel.where_study) as mock_object:
-        assert storage.get_all_trials(study_id) == trials
-        assert mock_object.call_count == 1
-
-    # Storage cache is enabled.
-    storage = create_test_storage(enable_cache=True)
+    storage = create_test_storage()
     study_id = storage.create_new_study()
     trials = setup_trials(storage, study_id)
 
@@ -382,7 +388,7 @@ def test_storage_cache():
             assert storage.get_trial(trial._trial_id) == trial
         assert mock_object.call_count == 1  # Only a running trial was fetched from the storage.
 
-    # If cache is enabled, running trials are fetched from the storage individually.
+    # Running trials are fetched from the storage individually.
     with patch.object(TrialModel, 'where_study', wraps=TrialModel.where_study) as mock_object:
         assert storage.get_all_trials(study_id) == trials
         assert mock_object.call_count == 0  # `TrialModel.where_study` has not been called.

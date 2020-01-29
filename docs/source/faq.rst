@@ -1,6 +1,9 @@
 FAQ
 ===
 
+.. contents::
+    :local:
+
 Can I use Optuna with X? (where X is your favorite ML library)
 --------------------------------------------------------------
 
@@ -188,6 +191,20 @@ You can also find the failed trials by checking the trial states as follows:
     number,state,value,...,params,system_attrs
     0,TrialState.FAIL,,...,0,Setting status of trial#0 as TrialState.FAIL because of the following error: ValueError('A test error in objective.')
     1,TrialState.COMPLETE,1269,...,1,
+
+
+What happens when I dynamically alter a search space?
+-----------------------------------------------------
+
+Since parameters search spaces are specified in each call to the suggestion API, e.g.
+:func:`~optuna.trial.Trial.suggest_uniform` and :func:`~optuna.trial.Trial.suggest_int`,
+it is possible to in a single study alter the range by sampling parameters from different search
+spaces in different trials.
+The behavior when altered is defined by each sampler individually.
+
+.. note::
+
+    Discussion about the TPE sampler. https://github.com/optuna/optuna/issues/822
 
 
 How can I use two GPUs for evaluating two trials simultaneously?

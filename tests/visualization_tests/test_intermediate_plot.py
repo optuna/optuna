@@ -1,19 +1,18 @@
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
-from optuna.visualization.intermediate_values import _get_intermediate_plot
-
 from optuna import type_checking
+from optuna.visualization.intermediate_values import plot_intermediate_values
 
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
-def test_get_intermediate_plot():
+def test_plot_intermediate_values():
     # type: () -> None
 
     # Test with no trials.
     study = prepare_study_with_trials(no_trials=True)
-    figure = _get_intermediate_plot(study)
+    figure = plot_intermediate_values(study)
     assert not figure.data
 
     def objective(trial, report_intermediate_values):
@@ -27,7 +26,7 @@ def test_get_intermediate_plot():
     # Test with a trial with intermediate values.
     study = create_study()
     study.optimize(lambda t: objective(t, True), n_trials=1)
-    figure = _get_intermediate_plot(study)
+    figure = plot_intermediate_values(study)
     assert len(figure.data) == 1
     assert figure.data[0].x == (0, 1)
     assert figure.data[0].y == (1.0, 2.0)
@@ -37,7 +36,7 @@ def test_get_intermediate_plot():
     # Expect the trial with no intermediate values to be ignored.
     study.optimize(lambda t: objective(t, False), n_trials=1)
     assert len(study.trials) == 2
-    figure = _get_intermediate_plot(study)
+    figure = plot_intermediate_values(study)
     assert len(figure.data) == 1
     assert figure.data[0].x == (0, 1)
     assert figure.data[0].y == (1.0, 2.0)
@@ -45,7 +44,7 @@ def test_get_intermediate_plot():
     # Test a study of only one trial that has no intermediate values.
     study = create_study()
     study.optimize(lambda t: objective(t, False), n_trials=1)
-    figure = _get_intermediate_plot(study)
+    figure = plot_intermediate_values(study)
     assert not figure.data
 
     # Ignore failed trials.
@@ -56,5 +55,5 @@ def test_get_intermediate_plot():
 
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
-    figure = _get_intermediate_plot(study)
+    figure = plot_intermediate_values(study)
     assert not figure.data

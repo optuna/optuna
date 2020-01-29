@@ -12,12 +12,10 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
-    from typing import TypeVar  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
-
-    T = TypeVar('T', float, str)
 
 
 class BaseTrial(object, metaclass=abc.ABCMeta):
@@ -47,7 +45,7 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[T]) -> T
+        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
 
         raise NotImplementedError
 
@@ -312,7 +310,7 @@ class Trial(BaseTrial):
         return int(self._suggest(name, distribution))
 
     def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[T]) -> T
+        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
         """Suggest a value for the categorical parameter.
 
         The value is sampled from ``choices``.
@@ -334,7 +332,10 @@ class Trial(BaseTrial):
             name:
                 A parameter name.
             choices:
-                Candidates of parameter values.
+                Parameter value candidates.
+
+        .. seealso::
+            :class:`~optuna.distributions.CategoricalDistribution`.
 
         Returns:
             A suggested value.
@@ -707,7 +708,7 @@ class FixedTrial(BaseTrial):
         return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
 
     def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[T]) -> T
+        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
 
         choices = tuple(choices)
         return self._suggest(name, distributions.CategoricalDistribution(choices=choices))

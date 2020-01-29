@@ -1,21 +1,20 @@
 import pytest
 
 from optuna.study import create_study
-from optuna.visualization.optimization_history import _get_optimization_history_plot
-
 from optuna import type_checking
+from optuna.visualization.optimization_history import plot_optimization_history
 
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
 @pytest.mark.parametrize('direction', ['minimize', 'maximize'])
-def test_get_optimization_history_plot(direction):
+def test_plot_optimization_history(direction):
     # type: (str) -> None
 
     # Test with no trial.
     study = create_study(direction=direction)
-    figure = _get_optimization_history_plot(study)
+    figure = plot_optimization_history(study)
     assert len(figure.data) == 0
 
     def objective(trial):
@@ -32,7 +31,7 @@ def test_get_optimization_history_plot(direction):
     # Test with a trial.
     study = create_study(direction=direction)
     study.optimize(objective, n_trials=3)
-    figure = _get_optimization_history_plot(study)
+    figure = plot_optimization_history(study)
     assert len(figure.data) == 2
     assert figure.data[0].x == (0, 1, 2)
     assert figure.data[0].y == (1.0, 2.0, 0.0)
@@ -51,5 +50,5 @@ def test_get_optimization_history_plot(direction):
     study = create_study(direction=direction)
     study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
 
-    figure = _get_optimization_history_plot(study)
+    figure = plot_optimization_history(study)
     assert len(figure.data) == 0
