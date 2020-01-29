@@ -53,6 +53,8 @@ class HyperbandPruner(BasePruner):
             :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         n_brackets:
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
+            For those who are curious why this defaults to :math`4`, see
+            https://github.com/optuna/optuna/pull/809#discussion_r361363897.
         min_early_stopping_rate_low:
             A parameter for specifying the minimum early-stopping rate.
             This parameter is related to a parameter that is referred to as :math:`r` and used in
