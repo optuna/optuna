@@ -2,6 +2,7 @@ import optuna
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
+from optuna import experimental_warning
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -65,6 +66,8 @@ class HyperbandPruner(BasePruner):
             min_early_stopping_rate_low=0
     ):
         # type: (int, int, int, int) -> None
+
+        experimental_warning.experimental('optuna.pruners.HyperbandPruner')
 
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
         self._reduction_factor = reduction_factor
