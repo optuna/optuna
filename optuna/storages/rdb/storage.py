@@ -69,9 +69,14 @@ class RDBStorage(BaseStorage):
         engine_kwargs:
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
+        mysql_wait_timeout:
+            `wait_timeout`_ value of the MySQL session. If the value is set to :obj:`None`,
+            the global `wait_timeout` value will be used.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
+    .. _wait_timeout:
+        https://dev.mysql.com/doc/refman/5.6/en/server-system-variables.html#sysvar_wait_timeout
 
     .. note::
         If you use MySQL, `pool_pre_ping`_ will be set to :obj:`True` by default to prevent
