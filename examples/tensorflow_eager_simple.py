@@ -18,17 +18,20 @@ We have the following two ways to execute this example:
 
 """
 
+import pkg_resources
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist
 
 import optuna
+
+if pkg_resources.parse_version(tf.__version__) < pkg_resources.parse_version('2.0.0'):
+    raise RuntimeError('tensorflow>=2.0.0 is required for this example.')
 
 N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 1
-tf.enable_eager_execution()
 
 
 def create_model(trial):
@@ -51,25 +54,25 @@ def create_model(trial):
 def create_optimizer(trial):
     # We optimize the choice of optimizers as well as their parameters.
     kwargs = {}
-    optimizer_options = ['RMSPropOptimizer', 'AdamOptimizer', 'MomentumOptimizer']
+    optimizer_options = ['RMSprop', 'Adam', 'SGD']
     optimizer_selected = trial.suggest_categorical('optimizer', optimizer_options)
-    if optimizer_selected == 'RMSPropOptimizer':
+    if optimizer_selected == 'RMSprop':
         kwargs['learning_rate'] = trial.suggest_loguniform('rmsprop_learning_rate', 1e-5, 1e-1)
         kwargs['decay'] = trial.suggest_uniform('rmsprop_decay', 0.85, 0.99)
         kwargs['momentum'] = trial.suggest_loguniform('rmsprop_momentum', 1e-5, 1e-1)
-    elif optimizer_selected == 'AdamOptimizer':
+    elif optimizer_selected == 'Adam':
         kwargs['learning_rate'] = trial.suggest_loguniform('adam_learning_rate', 1e-5, 1e-1)
-    elif optimizer_selected == 'MomentumOptimizer':
-        kwargs['learning_rate'] = trial.suggest_loguniform('momentum_opt_learning_rate', 1e-5,
+    elif optimizer_selected == 'SGD':
+        kwargs['learning_rate'] = trial.suggest_loguniform('sgd_opt_learning_rate', 1e-5,
                                                            1e-1)
-        kwargs['momentum'] = trial.suggest_loguniform('momentum_opt_momentum', 1e-5, 1e-1)
+        kwargs['momentum'] = trial.suggest_loguniform('sgd_opt_momentum', 1e-5, 1e-1)
 
-    optimizer = getattr(tf.train, optimizer_selected)(**kwargs)
+    optimizer = getattr(tf.optimizers, optimizer_selected)(**kwargs)
     return optimizer
 
 
 def learn(model, optimizer, dataset, mode='eval'):
-    accuracy = tf.contrib.eager.metrics.Accuracy('accuracy', dtype=tf.float32)
+    accuracy = tf.metrics.Accuracy('accuracy', dtype=tf.float32)
 
     for batch, (images, labels) in enumerate(dataset):
         with tf.GradientTape() as tape:
