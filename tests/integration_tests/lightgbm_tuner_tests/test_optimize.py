@@ -319,6 +319,28 @@ class TestLightGBMTuner(object):
             assert runner.lgbm_params['num_leaves'] != unexpected_value
             assert len(tuning_history) == 20
 
+    def test_tune_num_leaves_negative_max_depth(self):
+        # type: () -> None
+
+        params = {
+            'metric': 'binary_logloss',
+            'max_depth': -1,
+        }  # type: Dict[str, Any]
+        X_trn = np.random.uniform(10, size=50).reshape((10, 5))
+        y_trn = np.random.randint(2, size=10)
+        train_dataset = lgb.Dataset(X_trn, label=y_trn)
+        valid_dataset = lgb.Dataset(X_trn, label=y_trn)
+
+        tuning_history = []  # type: List[Dict[str, float]]
+        runner = lgb.LightGBMTuner(params,
+                                   train_dataset,
+                                   num_boost_round=3,
+                                   early_stopping_rounds=2,
+                                   valid_sets=valid_dataset,
+                                   tuning_history=tuning_history)
+        runner.tune_num_leaves()
+        assert len(tuning_history) == 20
+
     def test_tune_bagging(self):
         # type: () -> None
 

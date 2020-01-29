@@ -31,6 +31,9 @@ if type_checking.TYPE_CHECKING:
 # EPS is used to ensure that a sampled parameter value is in pre-defined value range.
 EPS = 1e-12
 
+# Default value of tree_depth, used for upper bound of num_leaves
+DEFAULT_TUNER_TREE_DEPTH = 8
+
 # Default parameter values described in the official webpage.
 DEFAULT_LIGHTGBM_PARAMETERS = {
     'lambda_l1': 0.0,
@@ -213,9 +216,10 @@ class OptunaObjective(BaseTuner):
         if 'lambda_l2' in self.target_param_names:
             self.lgbm_params['lambda_l2'] = trial.suggest_loguniform('lambda_l2', 1e-8, 10.0)
         if 'num_leaves' in self.target_param_names:
-            max_depth = self.lgbm_params.get('max_depth', 8)
+            tree_depth = self.lgbm_params.get('max_depth', DEFAULT_TUNER_TREE_DEPTH)
+            max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** DEFAULT_TUNER_TREE_DEPTH
             self.lgbm_params['num_leaves'] = trial.suggest_int(
-                'num_leaves', 2, 2 ** max_depth)
+                'num_leaves', 2, max_num_leaves)
         if 'feature_fraction' in self.target_param_names:
             # `_GridSamplerUniform1D` is used for sampling feature_fraction value.
             # The value 1.0 for the hyperparameter is always sampled.
