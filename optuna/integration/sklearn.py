@@ -11,7 +11,6 @@ try:
     from sklearn.base import clone
     from sklearn.base import is_classifier
     from sklearn.metrics.scorer import check_scoring
-    from sklearn.model_selection._validation import _index_param_value
     from sklearn.model_selection import BaseCrossValidator  # NOQA
     from sklearn.model_selection import check_cv
     from sklearn.model_selection import cross_validate
@@ -67,6 +66,22 @@ def _check_sklearn_availability():
             'please refer to the installation guide of scikit-learn. (The '
             'actual import error is as follows: ' + str(_import_error) + ')'
         )
+
+
+def _is_arraylike(x):
+    # type: (Any) -> bool
+    return hasattr(x, '__len__')
+
+
+def _index_param_value(
+    X,  # type: TwoDimArrayLikeType
+    v,  # type: Any
+    indices  # type: OneDimArrayLikeType
+):
+    # type: (...) -> Union[OneDimArrayLikeType, TwoDimArrayLikeType]
+    if not _is_arraylike(v) or _num_samples(v) != _num_samples(X):
+        return v
+    return _safe_indexing(v, indices)
 
 
 def _safe_indexing(
