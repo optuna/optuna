@@ -11,5 +11,5 @@ RUN apt-get update \
 WORKDIR /workspaces
 COPY . .
 
-RUN pip install --no-cache-dir -e '.[checking,doctest,document,testing]' \
+RUN pip install --no-cache-dir -e '.[checking, doctest, document, example, testing]' \
     && pip install jupyter notebook
