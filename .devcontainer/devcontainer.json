@@ -7,11 +7,11 @@
 	"context": "..",
 
 	// Uncomment if you are OK to pulling docker images available on dockerhub Optuna account.
-	"image": "crcrpar/gh-actions-optuna:py3.8"
+	// "image": "optuna/optuna:py3.7"
 
 	// Uncomment this if you want to build docker image locally.
 	// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
-	// "dockerFile": "../Dockerfile",
+	"dockerFile": "../Dockerfile",
 
 	// Uncomment the next line to have VS Code connect as an existing non-root user in the container.
 	// On Linux, by default, the container user's UID/GID will be updated to match your local user. See
