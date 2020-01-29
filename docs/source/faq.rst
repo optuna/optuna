@@ -1,6 +1,9 @@
 FAQ
 ===
 
+.. contents::
+    :local:
+
 Can I use Optuna with X? (where X is your favorite ML library)
 --------------------------------------------------------------
 
