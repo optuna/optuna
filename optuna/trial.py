@@ -707,7 +707,8 @@ class FixedTrial(BaseTrial):
                              "the range of the distribution {}.".format(value, name, distribution))
 
         if name in self._distributions:
-            distributions.check_distribution_compatibility(self._distributions[name], distribution, name)
+            distributions.check_distribution_compatibility(self._distributions[name], distribution,
+                                                           name)
 
         self._suggested_params[name] = value
         self._distributions[name] = distribution
