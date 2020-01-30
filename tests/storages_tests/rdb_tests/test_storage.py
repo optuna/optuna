@@ -431,17 +431,16 @@ def test_check_python_version():
             RDBStorage._check_python_version()
 
 
-def test_set_mysql_wait_timeout():
-    # type: () -> None
+@pytest.mark.parametrize('url,mysql_wait_timeout,expected', [
+    ('mysql+pymysql://localhost', None, False),
+    ('mysql+pymysql://localhost', 3600, True),
+    ('sqlite:///tmp.db', 1, False),
+])
+def test_set_mysql_wait_timeout(url, mysql_wait_timeout, expected):
+    # type: (str, Optional[int], bool) -> None
 
-    engine = sqlalchemy.create_engine('mysql+pymysql://localhost')
+    engine = sqlalchemy.create_engine(url)
 
     with patch('sqlalchemy.event.listens_for') as my_mock:
-        RDBStorage._set_mysql_wait_timeout(engine, None)
-    assert not my_mock.called
-
-    engine = sqlalchemy.create_engine('mysql+pymysql://localhost')
-
-    with patch('sqlalchemy.event.listens_for') as my_mock:
-        RDBStorage._set_mysql_wait_timeout(engine, 3600)
-    assert my_mock.called
+        RDBStorage._set_mysql_wait_timeout(engine, mysql_wait_timeout)
+    assert my_mock.called is expected
