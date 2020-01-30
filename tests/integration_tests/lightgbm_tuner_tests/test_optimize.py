@@ -326,7 +326,7 @@ class TestLightGBMTuner(object):
             'metric': 'binary_logloss',
             'max_depth': -1,
         }  # type: Dict[str, Any]
-        X_trn = np.random.uniform(10, size=50).reshape((10, 5))
+        X_trn = np.random.uniform(10, size=(10, 5))
         y_trn = np.random.randint(2, size=10)
         train_dataset = lgb.Dataset(X_trn, label=y_trn)
         valid_dataset = lgb.Dataset(X_trn, label=y_trn)
