@@ -217,7 +217,7 @@ class OptunaObjective(BaseTuner):
             self.lgbm_params['lambda_l2'] = trial.suggest_loguniform('lambda_l2', 1e-8, 10.0)
         if 'num_leaves' in self.target_param_names:
             tree_depth = self.lgbm_params.get('max_depth', DEFAULT_TUNER_TREE_DEPTH)
-            max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** DEFAULT_TUNER_TREE_DEPTH
+            max_num_leaves = 2**tree_depth if tree_depth > 0 else 2**DEFAULT_TUNER_TREE_DEPTH
             self.lgbm_params['num_leaves'] = trial.suggest_int(
                 'num_leaves', 2, max_num_leaves)
         if 'feature_fraction' in self.target_param_names:
