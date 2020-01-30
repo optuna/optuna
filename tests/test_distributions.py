@@ -80,6 +80,13 @@ def test_check_distribution_compatibility():
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS['iu'], distributions.IntUniformDistribution(low=-1, high=1))
 
+    # test for warning Inconsistent min and max values
+    with pytest.warns(RuntimeWarning):
+        distributions.check_distribution_compatibility(
+            EXAMPLE_DISTRIBUTIONS['u'],
+            distributions.UniformDistribution(low=-3.0, high=-2.0),
+            'u'
+            )
 
 def test_contains():
     # type: () -> None
