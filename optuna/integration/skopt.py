@@ -219,7 +219,8 @@ class _Optimizer(object):
             if name not in trial.params:
                 return False
 
-            distributions.check_distribution_compatibility(distribution, trial.distributions[name])
+            distributions.check_distribution_compatibility(distribution, trial.distributions[name],
+                                                           name)
             param_value = trial.params[name]
             param_internal_value = distribution.to_internal_repr(param_value)
             if not distribution._contains(param_internal_value):
