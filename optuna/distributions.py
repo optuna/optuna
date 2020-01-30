@@ -369,7 +369,7 @@ def distribution_to_json(dist):
 
 
 def check_distribution_compatibility(dist_old, dist_new, param_name=None):
-    # type: (BaseDistribution, BaseDistribution) -> None
+    # type: (BaseDistribution, BaseDistribution, str) -> None
     """A function to check compatibility of two distributions.
 
     Note that this method is not supposed to be called by library users.
