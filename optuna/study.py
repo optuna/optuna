@@ -305,8 +305,7 @@ class Study(BaseStudy):
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
-        progress_bar = pbar_module.ProgressBar(
-            show_progress_bar or os.getenv('NO_PBAR') == 0, n_trials, timeout)
+        progress_bar = pbar_module._ProgressBar(show_progress_bar, n_trials, timeout, n_jobs)
         try:
             if n_jobs == 1:
                 self._optimize_sequential(
@@ -658,10 +657,7 @@ class Study(BaseStudy):
             'Finished trial#{} resulted in value: {:.03f}. '
             'Current best value is {:.03f} with parameters: {}.'.format(
                 trial_number, value, self.best_value, self.best_params))
-        if progress_bar is None:
-            _logger.info(msg)
-        else:
-            progress_bar.set_description_str(msg)
+        _logger.info(msg)
 
 
 def create_study(
