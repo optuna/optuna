@@ -330,6 +330,27 @@ DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, DiscreteUni
                         IntUniformDistribution, CategoricalDistribution)
 
 
+def dict_to_distribution(json_dict):
+    # type: (Dict[str, Any]) -> BaseDistribution
+    """Deserialize a distribution from Python dictionary object.
+
+    Args:
+        json_dict: A Python dictionary object.
+
+    Returns:
+        A deserialized distribution.
+    """
+
+    if json_dict['name'] == CategoricalDistribution.__name__:
+        json_dict['attributes']['choices'] = tuple(json_dict['attributes']['choices'])
+
+    for cls in DISTRIBUTION_CLASSES:
+        if json_dict['name'] == cls.__name__:
+            return cls(**json_dict['attributes'])
+
+    raise ValueError('Unknown distribution class: {}'.format(json_dict['name']))
+
+
 def json_to_distribution(json_str):
     # type: (str) -> BaseDistribution
     """Deserialize a distribution in JSON format.
@@ -342,15 +363,7 @@ def json_to_distribution(json_str):
     """
 
     json_dict = json.loads(json_str)
-
-    if json_dict['name'] == CategoricalDistribution.__name__:
-        json_dict['attributes']['choices'] = tuple(json_dict['attributes']['choices'])
-
-    for cls in DISTRIBUTION_CLASSES:
-        if json_dict['name'] == cls.__name__:
-            return cls(**json_dict['attributes'])
-
-    raise ValueError('Unknown distribution class: {}'.format(json_dict['name']))
+    return dict_to_distribution(json_dict)
 
 
 def distribution_to_json(dist):
