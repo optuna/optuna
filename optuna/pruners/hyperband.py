@@ -24,9 +24,12 @@ class HyperbandPruner(BasePruner):
     Note that this implementation does not take as inputs the maximum amount of resource to
     a single SHA noted as :math:`R` in the paper.
 
-    This implementation works with :class:`~optuna.samplers.TPESampler`, the default sampler
-    and this combination seems to work well.
-    See: https://github.com/optuna/optuna/pull/828#issuecomment-575457360
+    .. note::
+        * In Hyperband paper, the counterpart of :class:`~optuna.samplers.RandomSampler` is used.
+        * Optuna uses :class:`~optuna.samplers.TPESampler` by default.
+        * `The benchmark result
+          <https://github.com/optuna/optuna/pull/828#issuecomment-575457360>`_
+          shows that :class:`optuna.pruners.HyperbandPruner` supports both samplers.
 
     .. note::
         If you use ``HyperbandPruner`` with :class:`~optuna.samplers.TPESampler`,
