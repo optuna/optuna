@@ -18,6 +18,7 @@ try:
     from sklearn.utils.metaestimators import _safe_split
     from sklearn.utils import safe_indexing as sklearn_safe_indexing
     from sklearn.utils.validation import _num_samples
+    from sklearn.utils.validation import _check_fit_params
     from sklearn.utils.validation import check_is_fitted
 
     _available = True
@@ -66,22 +67,6 @@ def _check_sklearn_availability():
             'please refer to the installation guide of scikit-learn. (The '
             'actual import error is as follows: ' + str(_import_error) + ')'
         )
-
-
-def _is_arraylike(x):
-    # type: (Any) -> bool
-    return hasattr(x, '__len__')
-
-
-def _index_param_value(
-    X,  # type: TwoDimArrayLikeType
-    v,  # type: Any
-    indices  # type: OneDimArrayLikeType
-):
-    # type: (...) -> Union[OneDimArrayLikeType, TwoDimArrayLikeType]
-    if not _is_arraylike(v) or _num_samples(v) != _num_samples(X):
-        return v
-    return _safe_indexing(v, indices)
 
 
 def _safe_indexing(
@@ -856,13 +841,7 @@ class OptunaSearchCV(BaseEstimator):
         fit_params_res = fit_params
 
         if fit_params_res is not None:
-            fit_params_res = {
-                key: _index_param_value(
-                    X,
-                    value,
-                    self.sample_indices_
-                ) for key, value in fit_params.items()
-            }
+            fit_params_res = _check_fit_params(X, fit_params, self.sample_indices_)
 
         classifier = is_classifier(self.estimator)
         cv = check_cv(self.cv, y_res, classifier)
