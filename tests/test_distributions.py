@@ -86,7 +86,8 @@ def test_check_distribution_compatibility():
             EXAMPLE_DISTRIBUTIONS['u'],
             distributions.UniformDistribution(low=-3.0, high=-2.0),
             'u'
-            )
+        )
+
 
 def test_contains():
     # type: () -> None
