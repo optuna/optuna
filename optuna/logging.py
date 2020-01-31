@@ -13,7 +13,6 @@ import threading
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
     from typing import Optional  # NOQA
 
 _lock = threading.Lock()

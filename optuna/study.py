@@ -329,11 +329,12 @@ class Study(BaseStudy):
                     if not isinstance(parallel._backend, joblib.parallel.ThreadingBackend) and \
                        show_progress_bar:
                         msg = (
-                            'Current progress bar does not work well with joblib for '
-                            'multi-processing'
+                            'Because current progress bar does not work well with joblib for '
+                            'multi-processing, progress bar will not be used.'
                         )
                         warnings.warn(msg, UserWarning)
                         _logger.warning(msg)
+                        progress_bar = progress_bar._ProgressBar(False)
 
                     if not isinstance(parallel._backend, joblib.parallel.ThreadingBackend) and \
                        isinstance(self._storage, storages.InMemoryStorage):
@@ -540,7 +541,7 @@ class Study(BaseStudy):
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial,  # type: bool
             time_start,  # type: Optional[datetime.datetime]
-            progress_bar  # type: pbar_module.ProgressBar
+            progress_bar  # type: pbar_module._ProgressBar
     ):
         # type: (...) -> None
 
@@ -572,7 +573,7 @@ class Study(BaseStudy):
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial,  # type: bool
-            progress_bar  # type: pbar_module.ProgressBar
+            progress_bar  # type: pbar_module._ProgressBar
     ):
         # type: (...) -> None
 
@@ -587,7 +588,7 @@ class Study(BaseStudy):
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             gc_after_trial,  # type: bool
-            progress_bar  # type: pbar_module.ProgressBar
+            progress_bar  # type: pbar_module._ProgressBar
     ):
         # type: (...) -> trial_module.Trial
 
@@ -651,7 +652,7 @@ class Study(BaseStudy):
         return trial
 
     def _log_completed_trial(self, trial_number, value, progress_bar):
-        # type: (int, float, Optional[pbar_module.ProgressBar]) -> None
+        # type: (int, float, Optional[pbar_module._ProgressBar]) -> None
 
         msg = (
             'Finished trial#{} resulted in value: {:.03f}. '

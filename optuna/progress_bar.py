@@ -1,9 +1,26 @@
+import logging
 from typing import Optional
 
 from tqdm.auto import tqdm
 
+from optuna import logging as optuna_logging
 
-class ProgressBar(object):
+
+# Reference: https://gist.github.com/hvy/8b80c2cedf02b15c24f85d1fa17ebe02
+class TqdmLoggingHandler(logging.StreamHandler):
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            tqdm.write(msg)
+            self.flush()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            self.handleError(record)
+
+
+class _ProgressBar(object):
     """Progress Bar implementation for `Study.optimize` on the top of `tqdm`.
 
     Args:
