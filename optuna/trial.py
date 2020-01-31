@@ -156,14 +156,19 @@ class Trial(BaseTrial):
 
         Example:
 
-            Suggest a dropout rate for neural network training.
+            .. testcode::
 
-            .. code::
+                import optuna
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     dropout_rate = trial.suggest_uniform('dropout_rate', 0, 1.0)
-                >>>     ...
+                def objective(trial):
+                    dropout_rate = trial.suggest_uniform('dropout_rate', 0, 1.0)
+                    assert 0.0 <= dropout_rate < 1.0
+
+                    return dropout_rate
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
 
         Args:
             name:
@@ -194,16 +199,28 @@ class Trial(BaseTrial):
 
         Example:
 
-            Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/
-            generated/sklearn.svm.SVC.html>`_.
+            .. testcode::
 
-            .. code::
+                import optuna
+                import numpy as np
+                from sklearn.svm import SVC
+                from sklearn.model_selection import train_test_split
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     c = trial.suggest_loguniform('c', 1e-5, 1e2)
-                >>>     clf = sklearn.svm.SVC(C=c)
-                >>>     ...
+                def objective(trial):
+                    c = trial.suggest_loguniform('c', 1e-5, 1e2)
+                    assert 1e-5 <= c < 1e2
+
+                    np.random.seed(seed=0)
+                    X = np.random.randn(50).reshape(-1, 1)
+                    y = np.random.randint(0, 2, 50)
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+                    clf = SVC(C=c, gamma='scale', random_state=0)
+                    clf.fit(X_train, y_train)
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
 
         Args:
             name:
@@ -239,17 +256,28 @@ class Trial(BaseTrial):
 
         Example:
 
-            Suggest a fraction of samples used for fitting the individual learners of
-            `GradientBoostingClassifier <https://scikit-learn.org/stable/modules/generated/
-            sklearn.ensemble.GradientBoostingClassifier.html>`_.
+            .. testcode::
 
-            .. code::
+                import optuna
+                import numpy as np
+                from sklearn.ensemble import GradientBoostingClassifier
+                from sklearn.model_selection import train_test_split
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
-                >>>     clf = sklearn.ensemble.GradientBoostingClassifier(subsample=subsample)
-                >>>     ...
+                def objective(trial):
+                    subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
+                    assert 0.1 <= subsample <= 1.0
+
+                    np.random.seed(seed=0)
+                    X = np.random.randn(50).reshape(-1, 1)
+                    y = np.random.randint(0, 2, 50)
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+                    clf = GradientBoostingClassifier(subsample=subsample, random_state=0)
+                    clf.fit(X_train, y_train)
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
 
         Args:
             name:
@@ -280,16 +308,29 @@ class Trial(BaseTrial):
 
         Example:
 
-            Suggest the number of trees in `RandomForestClassifier <https://scikit-learn.org/
-            stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
+            .. testcode::
 
-            .. code::
+                import optuna
+                import numpy as np
+                from sklearn.ensemble import RandomForestClassifier
+                from sklearn.model_selection import train_test_split
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     n_estimators = trial.suggest_int('n_estimators', 50, 400)
-                >>>     clf = sklearn.ensemble.RandomForestClassifier(n_estimators=n_estimators)
-                >>>     ...
+                def objective(trial):
+                    n_estimators = trial.suggest_int('n_estimators', 50, 400)
+                    assert 50 <= n_estimators <= 400
+
+                    np.random.seed(seed=0)
+                    X = np.random.randn(50).reshape(-1, 1)
+                    y = np.random.randint(0, 2, 50)
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+                    clf = RandomForestClassifier(n_estimators=n_estimators, random_state=0)
+                    clf.fit(X_train, y_train)
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
 
         Args:
             name:
@@ -317,16 +358,29 @@ class Trial(BaseTrial):
 
         Example:
 
-            Suggest a kernel function of `SVC <https://scikit-learn.org/stable/modules/generated/
-            sklearn.svm.SVC.html>`_.
+            .. testcode::
 
-            .. code::
+                import optuna
+                import numpy as np
+                from sklearn.svm import SVC
+                from sklearn.model_selection import train_test_split
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     kernel = trial.suggest_categorical('kernel', ['linear', 'poly', 'rbf'])
-                >>>     clf = sklearn.svm.SVC(kernel=kernel)
-                >>>     ...
+                def objective(trial):
+                    kernel = trial.suggest_categorical('kernel', ['linear', 'poly', 'rbf'])
+                    assert kernel in ['linear', 'poly', 'rbf']
+
+                    np.random.seed(seed=0)
+                    X = np.random.randn(50).reshape(-1, 1)
+                    y = np.random.randint(0, 2, 50)
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+                    clf = SVC(kernel=kernel, gamma='scale', random_state=0)
+                    clf.fit(X_train, y_train)
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
 
         Args:
             name:
@@ -357,21 +411,32 @@ class Trial(BaseTrial):
 
         Example:
 
-            Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
-            generated/sklearn.linear_model.SGDClassifier.html>`_ training
+            .. testcode::
 
-            .. code::
+                import optuna
+                import numpy as np
+                from sklearn.linear_model import SGDClassifier
+                from sklearn.model_selection import train_test_split
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     clf = sklearn.linear_model.SGDClassifier()
-                >>>     for step in range(100):
-                >>>         clf.partial_fit(x_train , y_train , classes)
-                >>>         intermediate_value = clf.score(x_val , y_val)
-                >>>         trial.report(intermediate_value , step=step)
-                >>>         if trial.should_prune():
-                >>>             raise TrialPruned()
-                >>>     ...
+                def objective(trial):
+                    np.random.seed(seed=0)
+                    X = np.random.randn(50).reshape(-1, 1)
+                    y = np.random.randint(0, 2, 50)
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+                    clf = SGDClassifier(random_state=0)
+                    for step in range(100):
+                        clf.partial_fit(X_train, y_train, np.unique(y))
+                        intermediate_value = clf.score(X_test, y_test)
+                        trial.report(intermediate_value, step=step)
+                        if trial.should_prune():
+                            raise TrialPruned()
+
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
 
         Args:
             value:
@@ -437,16 +502,20 @@ class Trial(BaseTrial):
 
         Example:
 
-            Save fixed hyperparameters of neural network training:
+            .. testcode::
 
-            .. code::
+                import optuna
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     trial.set_user_attr('BATCHSIZE', 128)
-                >>>
-                >>> study.best_trial.user_attrs
-                {'BATCHSIZE': 128}
+                def objective(trial):
+                    trial.set_user_attr('BATCHSIZE', 128)
+                    x = trial.suggest_uniform('x', 0, 1.0)
+
+                    return x
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+                assert 'BATCHSIZE' in study.best_trial.user_attrs.keys()
+                assert study.best_trial.user_attrs['BATCHSIZE'] == 128
 
 
         Args:
@@ -634,17 +703,17 @@ class FixedTrial(BaseTrial):
 
     Example:
 
-        Evaluate an objective function with parameter values given by a user:
+        .. testcode::
 
-        .. code::
+            import optuna
 
-            >>> def objective(trial):
-            >>>     x = trial.suggest_uniform('x', -100, 100)
-            >>>     y = trial.suggest_categorical('y', [-1, 0, 1])
-            >>>     return x ** 2 + y
-            >>>
-            >>> objective(FixedTrial({'x': 1, 'y': 0}))
-            1
+            def objective(trial):
+                x = trial.suggest_uniform('x', -100, 100)
+                y = trial.suggest_categorical('y', [-1, 0, 1])
+                return x ** 2 + y
+
+            assert objective(optuna.trial.FixedTrial({'x': 1, 'y': 0})) == 1
+
 
     .. note::
         Please refer to :class:`~optuna.trial.Trial` for details of methods and properties.
