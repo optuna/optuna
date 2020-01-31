@@ -25,7 +25,7 @@ class HyperbandPruner(BasePruner):
     a single SHA noted as :math:`R` in the paper.
 
     .. note::
-        * In Hyperband paper, the counterpart of :class:`~optuna.samplers.RandomSampler` is used.
+        * In the Hyperband paper, the counterpart of :class:`~optuna.samplers.RandomSampler` is used.
         * Optuna uses :class:`~optuna.samplers.TPESampler` by default.
         * `The benchmark result
           <https://github.com/optuna/optuna/pull/828#issuecomment-575457360>`_
