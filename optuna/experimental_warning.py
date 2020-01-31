@@ -1,6 +1,7 @@
 import warnings
 
 
+# Reference: https://github.com/cupy/cupy/blob/8d923719ced31fdff4a42702d395ec87a7e98045/cupy/util.pyx#L89  # NOQA
 def experimental(api_name: str) -> None:
     """Declares that user is using an experimental feature.
 
