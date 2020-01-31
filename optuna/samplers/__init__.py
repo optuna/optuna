@@ -1,12 +1,13 @@
+import copy
 import optuna
-from optuna.samplers.base import BaseSampler  # NOQA
-from optuna.samplers.random import RandomSampler  # NOQA
-from optuna.samplers.tpe import TPESampler  # NOQA
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.samplers.base import BaseSampler  # NOQA
+    from optuna.samplers.random import RandomSampler  # NOQA
+    from optuna.samplers.tpe import TPESampler  # NOQA
     from optuna.study import BaseStudy  # NOQA
 
 
@@ -25,12 +26,12 @@ def intersection_search_space(study):
     """
 
     search_space = None
-    for trial in study.trials:
+    for trial in study.get_trials(deepcopy=False):
         if trial.state != optuna.structs.TrialState.COMPLETE:
             continue
 
         if search_space is None:
-            search_space = trial.distributions
+            search_space = copy.deepcopy(trial.distributions)
             continue
 
         delete_list = []
