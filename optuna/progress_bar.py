@@ -1,22 +1,25 @@
 import logging
+from typing import Any
 from typing import Optional
 
 from tqdm.auto import tqdm
 
 from optuna import logging as optuna_logging
 
+_tqdm_handler = None  # type: Optional[TqdmLoggingHandler]
+
 
 # Reference: https://gist.github.com/hvy/8b80c2cedf02b15c24f85d1fa17ebe02
 class TqdmLoggingHandler(logging.StreamHandler):
 
-    def emit(self, record):
+    def emit(self, record: Any) -> None:
         try:
             msg = self.format(record)
             tqdm.write(msg)
             self.flush()
         except (KeyboardInterrupt, SystemExit):
             raise
-        except:
+        except Exception:
             self.handleError(record)
 
 
@@ -32,7 +35,12 @@ class _ProgressBar(object):
             Stop study after the given number of second(s).
     """
 
-    def __init__(self, is_valid: bool, n_trials: Optional[int], timeout: Optional[float]) -> None:
+    def __init__(
+        self,
+        is_valid: bool,
+        n_trials: Optional[int] = None,
+        timeout: Optional[float] = None,
+    ) -> None:
         self._is_valid = is_valid
         self._n_trials = n_trials
         self._timeout = timeout
@@ -40,14 +48,15 @@ class _ProgressBar(object):
         if self._is_valid:
             self._progress_bar = tqdm(
                 range(n_trials) if n_trials is not None else None,
-                position=1
+                # position=1
             )
-            # Truncate if the message is longer than `ncols` that is the width of window
-            # computed by `tqdm`.
-            str_ncols = str(self._progress_bar.ncols)
-            self._log_bar = tqdm(
-                total=0, position=0,
-                bar_format='{desc:' + str_ncols + '.' + str_ncols + 's}')
+            global _tqdm_handler
+
+            tqdm_handler = TqdmLoggingHandler()
+            tqdm_handler.setLevel(logging.NOTSET)
+            tqdm_handler.setFormatter(optuna_logging.create_default_formatter())
+            optuna_logging.disable_default_handler()
+            optuna_logging._get_library_root_logger().addHandler(tqdm_handler)
 
     def update(self, elapsed_seconds: Optional[float]) -> None:
         """Update the progress bars if ``is_valid`` is ``True``.
@@ -69,11 +78,13 @@ class _ProgressBar(object):
             msg:
                 The description of the latest best values.
         """
-        if self._is_valid:
-            self._log_bar.set_description_str(msg)
+        # if self._is_valid:
+        #     self._log_bar.set_description_str(msg)
+        pass
 
     def close(self) -> None:
         """Close progress bars."""
         if self._is_valid:
-            self._log_bar.close()
             self._progress_bar.close()
+            optuna_logging._get_library_root_logger().removeHandler(_tqdm_handler)
+            optuna_logging.enable_default_handler()
