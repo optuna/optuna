@@ -15,7 +15,7 @@ import numpy as np
 @pytest.mark.parametrize('fit_params', [None, 'sample_weight'])
 @pytest.mark.filterwarnings('ignore::UserWarning')
 def test_optuna_search(enable_pruning, fit_params):
-    # type: (bool, Optional[Dict]) -> None
+    # type: (bool, Optional[str]) -> None
 
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
