@@ -18,8 +18,9 @@ try:
     from sklearn.utils.metaestimators import _safe_split
     from sklearn.utils import safe_indexing as sklearn_safe_indexing
     from sklearn.utils.validation import _num_samples
-    from sklearn.utils.validation import _check_fit_params
     from sklearn.utils.validation import check_is_fitted
+    from sklearn.utils import validation
+    from sklearn import __version__ as _sklearn_version
 
     _available = True
 
@@ -54,6 +55,24 @@ if type_checking.TYPE_CHECKING:
         Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
 
 _logger = logging.get_logger(__name__)
+
+
+def check_fit_params(
+    X,  # type: TwoDimArrayLikeType
+    fit_params,  # type: Dict
+    indices  # type: OneDimArrayLikeType
+):
+    assert _available
+    if _sklearn_version >= '0.22.1':
+        return validation._check_fit_params(X, fit_params, indices)
+    else:  # '_sklearn_version < 0.22.1'
+        return {
+            key: validation._index_param_value(
+                X,
+                value,
+                indices
+            ) for key, value in fit_params.items()
+        }
 
 
 def _check_sklearn_availability():
@@ -841,7 +860,7 @@ class OptunaSearchCV(BaseEstimator):
         fit_params_res = fit_params
 
         if fit_params_res is not None:
-            fit_params_res = _check_fit_params(X, fit_params, self.sample_indices_)
+            fit_params_res = check_fit_params(X, fit_params, self.sample_indices_)
 
         classifier = is_classifier(self.estimator)
         cv = check_cv(self.cv, y_res, classifier)
