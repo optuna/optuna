@@ -7,6 +7,7 @@ from time import time
 import numpy as np
 
 try:
+    from sklearn import __version__ as _sklearn_version
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
     from sklearn.base import is_classifier
@@ -17,10 +18,9 @@ try:
     from sklearn.utils import check_random_state
     from sklearn.utils.metaestimators import _safe_split
     from sklearn.utils import safe_indexing as sklearn_safe_indexing
+    from sklearn.utils import validation
     from sklearn.utils.validation import _num_samples
     from sklearn.utils.validation import check_is_fitted
-    from sklearn.utils import validation
-    from sklearn import __version__ as _sklearn_version
 
     _available = True
 
