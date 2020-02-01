@@ -30,7 +30,7 @@ def intersection_search_space(study, trial_id=None):
     """
 
     search_space = None
-    for trial in study.get_trials(deepcopy=False):
+    for trial in reversed(study.get_trials(deepcopy=False)):
         if trial.state != optuna.structs.TrialState.COMPLETE:
             continue
 
