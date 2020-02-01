@@ -2,7 +2,6 @@ import pytest
 from sklearn.datasets import make_blobs
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import SGDClassifier
-from typing import Dict
 from typing import Optional
 
 from optuna import distributions
