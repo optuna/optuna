@@ -17,6 +17,7 @@ def _get_callback_context(env):
         `Reference
         <https://github.com/dmlc/xgboost/blob/master/python-package/xgboost/callback.py>`_.
     """
+
     if env.model is None and env.cvfolds is not None:
         context = 'cv'
     else:
@@ -32,7 +33,7 @@ def _remove_std_from_evaluation_result_list(xgb_callback_env):
     It expects the observation_key and the evaluation metric only, but XGBoost is also providing
     a third element: the stddev of the metric across the cross-valdation folds.
     """
-    # drop the 3rd element (stddev) from each evaluation_result_list item.
+
     erl_orig = xgb_callback_env.evaluation_result_list
     erl_no_std = [(key, metric) for key, metric, std in erl_orig]
     erl_orig.clear()
