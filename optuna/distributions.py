@@ -366,6 +366,21 @@ def json_to_distribution(json_str):
     return dict_to_distribution(json_dict)
 
 
+def distribution_to_dict(dist):
+    # type: (BaseDistribution) -> Dict[str, Any]
+    """Serialize a distribution to Python dictionary object.
+
+    Args:
+        dist: A distribution to be serialized.
+
+    Returns:
+        A dictionary object of a given distribution.
+
+    """
+
+    return {'name': dist.__class__.__name__, 'attributes': dist._asdict()}
+
+
 def distribution_to_json(dist):
     # type: (BaseDistribution) -> str
     """Serialize a distribution to JSON format.
@@ -378,7 +393,7 @@ def distribution_to_json(dist):
 
     """
 
-    return json.dumps({'name': dist.__class__.__name__, 'attributes': dist._asdict()})
+    return json.dumps(distribution_to_dict(dist))
 
 
 def check_distribution_compatibility(dist_old, dist_new):

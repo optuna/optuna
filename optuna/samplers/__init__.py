@@ -3,6 +3,7 @@ import json
 
 import optuna
 from optuna.distributions import dict_to_distribution
+from optuna.distributions import distribution_to_dict
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
@@ -68,12 +69,12 @@ def intersection_search_space(study, trial_id=None):
         for param_name in delete_list:
             del search_space[param_name]
 
-        json_str = json.dumps({
-            name: search_space[name]._asdict() for name in search_space or {}
-        })
-        study._storage.set_trial_system_attr(
-            trial_id, "intersection_search_space", json_str,
-        )
         break
 
+    json_str = json.dumps({
+        name: distribution_to_dict(search_space[name]) for name in search_space or {}
+    })
+    study._storage.set_trial_system_attr(
+        trial_id, "intersection_search_space", json_str,
+    )
     return search_space or {}
