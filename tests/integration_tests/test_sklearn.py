@@ -2,7 +2,6 @@ import pytest
 from sklearn.datasets import make_blobs
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import SGDClassifier
-from typing import Optional
 
 from optuna import distributions
 from optuna import integration
@@ -11,10 +10,10 @@ import numpy as np
 
 
 @pytest.mark.parametrize('enable_pruning', [True, False])
-@pytest.mark.parametrize('fit_params', [None, 'sample_weight'])
+@pytest.mark.parametrize('fit_params', ['', 'sample_weight'])
 @pytest.mark.filterwarnings('ignore::UserWarning')
 def test_optuna_search(enable_pruning, fit_params):
-    # type: (bool, Optional[str]) -> None
+    # type: (bool, str) -> None
 
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
