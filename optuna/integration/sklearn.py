@@ -57,7 +57,7 @@ if type_checking.TYPE_CHECKING:
 _logger = logging.get_logger(__name__)
 
 
-def check_fit_params(
+def _check_fit_params(
     X,  # type: TwoDimArrayLikeType
     fit_params,  # type: Dict
     indices  # type: OneDimArrayLikeType
@@ -860,7 +860,7 @@ class OptunaSearchCV(BaseEstimator):
         fit_params_res = fit_params
 
         if fit_params_res is not None:
-            fit_params_res = check_fit_params(X, fit_params, self.sample_indices_)
+            fit_params_res = _check_fit_params(X, fit_params, self.sample_indices_)
 
         classifier = is_classifier(self.estimator)
         cv = check_cv(self.cv, y_res, classifier)
