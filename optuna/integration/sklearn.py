@@ -62,6 +62,8 @@ def _check_fit_params(
     fit_params,  # type: Dict
     indices  # type: OneDimArrayLikeType
 ):
+    # type: (...) -> Dict
+
     if _sklearn_version >= '0.22.1':
         return validation._check_fit_params(X, fit_params, indices)
     else:  # '_sklearn_version < 0.22.1'
