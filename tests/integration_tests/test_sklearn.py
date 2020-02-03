@@ -10,7 +10,7 @@ import numpy as np
 
 
 @pytest.mark.parametrize('enable_pruning', [True, False])
-@pytest.mark.parametrize('fit_params', ['', 'sample_weight'])
+@pytest.mark.parametrize('fit_params', ['', 'coef_init'])
 @pytest.mark.filterwarnings('ignore::UserWarning')
 def test_optuna_search(enable_pruning, fit_params):
     # type: (bool, str) -> None
@@ -32,9 +32,8 @@ def test_optuna_search(enable_pruning, fit_params):
     with pytest.raises(NotFittedError):
         optuna_search._check_is_fitted()
 
-    if fit_params == 'sample_weight':
-        sample_weight = np.ones_like(y)
-        optuna_search.fit(X, y, sample_weight=sample_weight)
+    if fit_params == 'coef_init' and not enable_pruning:
+        optuna_search.fit(X, y, coef_init=np.ones((3, 2), dtype=np.float64))
     else:
         optuna_search.fit(X, y)
 
