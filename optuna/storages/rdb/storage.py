@@ -2,6 +2,7 @@ from collections import defaultdict
 import copy
 from datetime import datetime
 import json
+import logging
 import os
 import sys
 import threading
@@ -19,7 +20,6 @@ from sqlalchemy import orm
 
 import optuna
 from optuna import distributions
-from optuna import logging
 from optuna.storages.base import BaseStorage
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.rdb import models
@@ -33,7 +33,7 @@ if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Optional  # NOQA
 
-_logger = logging.get_logger(__name__)
+_logger = optuna.logging.get_logger(__name__)
 
 
 class RDBStorage(BaseStorage):
@@ -995,7 +995,7 @@ class _VersionManager(object):
     def _init_alembic(self):
         # type: () -> None
 
-        logging.get_logger('alembic').setLevel(logging.WARN)
+        logging.getLogger('alembic').setLevel(logging.WARN)
 
         context = alembic.migration.MigrationContext.configure(self.engine.connect())
         is_initialized = context.get_current_revision() is not None
