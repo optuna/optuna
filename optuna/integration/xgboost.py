@@ -11,9 +11,9 @@ except ImportError as e:
 
 def _get_callback_context(env):
     # type: (xgb.core.CallbackEnv) -> str
-    """return whether the current callback context is cv or train
+    """Return whether the current callback context is cv or train.
 
-    Note:
+    .. note::
         `Reference
         <https://github.com/dmlc/xgboost/blob/master/python-package/xgboost/callback.py>`_.
     """
@@ -75,6 +75,7 @@ class XGBoostPruningCallback(object):
 
     def __call__(self, env):
         # type: (xgb.core.CallbackEnv) -> None
+
         context = _get_callback_context(env)
         if context == 'cv':
             _remove_std_from_evaluation_result_list(env)
