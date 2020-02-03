@@ -191,7 +191,7 @@ You can also find the failed trials by checking the trial states as follows:
 
 .. seealso::
 
-    The ``catch`` arcument in :func:`~optuna.study.Study.optimize`.
+    The ``catch`` argument in :func:`~optuna.study.Study.optimize`.
 
 
 How are NaNs returned by trials handled?
