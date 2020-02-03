@@ -18,7 +18,6 @@ try:
     from sklearn.utils import check_random_state
     from sklearn.utils.metaestimators import _safe_split
     from sklearn.utils import safe_indexing as sklearn_safe_indexing
-    from sklearn.utils import validation
     from sklearn.utils.validation import _num_samples
     from sklearn.utils.validation import check_is_fitted
 
@@ -29,6 +28,12 @@ except ImportError as e:
 
     _import_error = e
     _available = False
+
+if _available:
+    if _sklearn_version >= '0.22.1':
+        from sklearn.utils.validation import _check_fit_params as _sklearn_check_fit_params  # NOQA
+    else:
+        from sklearn.utils.validation import _index_param_value as _sklearn_index_param_value  # NOQA
 
 from optuna import distributions
 from optuna import exceptions
@@ -65,10 +70,10 @@ def _check_fit_params(
     # type: (...) -> Dict
 
     if _sklearn_version >= '0.22.1':
-        return validation._check_fit_params(X, fit_params, indices)
+        return _sklearn_check_fit_params(X, fit_params, indices)
     else:  # '_sklearn_version < 0.22.1'
         return {
-            key: validation._index_param_value(
+            key: _sklearn_index_param_value(
                 X,
                 value,
                 indices
