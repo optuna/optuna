@@ -447,7 +447,8 @@ class TrialValueModel(BaseModel):
         # type: (StudyModel, orm.Session) -> List[TrialValueModel]
 
         trial_values = session.query(cls).join(TrialModel). \
-            filter(TrialModel.study_id == study.study_id).all()
+            filter(TrialModel.study_id == study.study_id). \
+            order_by(cls.trial_value_id).all()
 
         return trial_values
 
@@ -455,7 +456,8 @@ class TrialValueModel(BaseModel):
     def where_trial(cls, trial, session):
         # type: (TrialModel, orm.Session) -> List[TrialValueModel]
 
-        trial_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+        trial_values = session.query(cls).filter(cls.trial_id == trial.trial_id). \
+            order_by(cls.trial_value_id).all()
 
         return trial_values
 
@@ -463,7 +465,7 @@ class TrialValueModel(BaseModel):
     def all(cls, session):
         # type: (orm.Session) -> List[TrialValueModel]
 
-        return session.query(cls).all()
+        return session.query(cls).order_by(cls.trial_value_id).all()
 
 
 class VersionInfoModel(BaseModel):

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections import OrderedDict
 import copy
 from datetime import datetime
 import json
@@ -812,7 +813,7 @@ class RDBStorage(BaseStorage):
                 params[param.param_name] = distribution.to_external_repr(param.param_value)
                 param_distributions[param.param_name] = distribution
 
-            intermediate_values = {}
+            intermediate_values = OrderedDict()
             for value in id_to_values[trial_id]:
                 intermediate_values[value.step] = value.value
 

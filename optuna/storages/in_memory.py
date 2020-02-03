@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import copy
 from datetime import datetime
 import threading
@@ -182,7 +183,7 @@ class InMemoryStorage(base.BaseStorage):
             user_attrs={},
             system_attrs={},
             value=None,
-            intermediate_values={},
+            intermediate_values=OrderedDict(),
             datetime_start=datetime.now(),
             datetime_complete=None)
 
