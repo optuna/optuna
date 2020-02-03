@@ -391,11 +391,11 @@ def check_distribution_compatibility(dist_old, dist_new, param_name=None):
             (hasattr(dist_old, 'high') and hasattr(dist_old, 'low'))):
         if ((dist_old.high != dist_new.high) or (dist_old.low != dist_new.low)):
             warnings.warn('Inconsistent min and max values for parameter {}! '
-                        'This might be a configuration mistake. '
-                        'current min: {} old min: {} current max: {} old max: {}'
-                        .format(param_name, dist_new.low, dist_old.low,
-                                dist_new.high, dist_old.high),
-                        RuntimeWarning)
+                          'This might be a configuration mistake. '
+                          'current min: {} old min: {} current max: {} old max: {}'
+                          .format(param_name, dist_new.low, dist_old.low,
+                                  dist_new.high, dist_old.high),
+                          RuntimeWarning)
 
     if not isinstance(dist_old, CategoricalDistribution):
         return
