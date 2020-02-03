@@ -1,3 +1,10 @@
+from optuna import distributions
+from optuna import exceptions
+from optuna import logging
+from optuna import structs
+from optuna import study as study_module
+from optuna import type_checking
+
 from logging import DEBUG
 from logging import INFO
 from logging import WARNING
@@ -35,14 +42,8 @@ if _available:
     else:
         from sklearn.utils.validation import _index_param_value as _sklearn_index_param_value  # NOQA
 
-from optuna import distributions
-from optuna import exceptions
-from optuna import logging
 from optuna import samplers  # NOQA
-from optuna import structs
-from optuna import study as study_module
 from optuna import trial as trial_module  # NOQA
-from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     import pandas as pd  # NOQA
