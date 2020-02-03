@@ -389,7 +389,9 @@ def check_distribution_compatibility(dist_old, dist_new, param_name=None):
     if ((param_name is not None) and
             (not isinstance(dist_old, CategoricalDistribution)) and
             (not isinstance(dist_new, CategoricalDistribution)) and
-            ((dist_old.high != dist_new.high) or (dist_old.low != dist_new.low))):
+            ((dist_old.high != dist_new.high) or (dist_old.low != dist_new.low)) and
+            (hasattr(dist_new, 'high') and hasattr(dist_new, 'low')) and
+            (hasattr(dist_old, 'high') and hasattr(dist_old, 'low'))):
         warnings.warn('Inconsistent min and max values for parameter {}! '
                       'This might be a configuration mistake. '
                       'current min: {} old min: {} current max: {} old max: {}'
