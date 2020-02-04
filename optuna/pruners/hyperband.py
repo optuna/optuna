@@ -1,9 +1,9 @@
 import optuna
-from optuna import experimental_warning
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
 from optuna import type_checking
+from optuna.warning_decorators import experimental_class
 
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
@@ -13,7 +13,7 @@ if type_checking.TYPE_CHECKING:
 _logger = logging.get_logger(__name__)
 
 
-@experimental_warning.experimental_class_version("1.1")
+@experimental_class("1.1.0")
 class HyperbandPruner(BasePruner):
     """Pruner using Hyperband.
 
