@@ -1,5 +1,5 @@
-import inspect
 from typing import Any
+
 import pytest
 
 from optuna import warning_decorators

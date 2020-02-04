@@ -18,7 +18,7 @@ EXPECTED_N_TRIALS_PER_BRACKET = 10
 def test_hyperband_experimental_warning() -> None:
 
     with pytest.warns(optuna.warning_decorators.ExperimentalWarning):
-        pruner = optuna.pruners.HyperbandPruner(
+        optuna.pruners.HyperbandPruner(
             min_resource=MIN_RESOURCE,
             reduction_factor=REDUCTION_FACTOR,
             n_brackets=N_BRACKETS
