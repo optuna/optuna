@@ -31,9 +31,9 @@ except ImportError as e:
 
 if _available:
     if _sklearn_version >= '0.22.1':
-        from sklearn.utils.validation import _check_fit_params as _sklearn_check_fit_params  # NOQA
+        from sklearn.utils.validation import _check_fit_params as _sklearn_check_fit_params
     else:
-        from sklearn.utils.validation import _index_param_value as _sklearn_index_param_value  # NOQA
+        from sklearn.utils.validation import _index_param_value as _sklearn_index_param_value
 
 from optuna import distributions  # NOQA
 from optuna import exceptions  # NOQA
