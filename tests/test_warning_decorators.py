@@ -33,7 +33,7 @@ def test_experimental_decorator(version: str) -> None:
         assert decorated_sample_func.__name__ == '_sample_func'
         assert (
             decorated_sample_func.__doc__ ==
-            warning_decorators._DOCSTRING_TEMPLATE.format(version, version)
+            warning_decorators._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(version, version)
         )
 
 
@@ -54,7 +54,7 @@ def test_experimental_class_decorator(version: str) -> None:
         assert decorated_sample.__name__ == '_Sample'
         assert (
             decorated_sample.__doc__ ==
-            warning_decorators._DOCSTRING_TEMPLATE.format(version, version)
+            warning_decorators._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(version, version)
         )
 
         with pytest.warns(ExperimentalWarning):

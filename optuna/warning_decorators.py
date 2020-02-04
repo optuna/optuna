@@ -4,11 +4,11 @@ from typing import Callable
 import warnings
 
 
-_DOCSTRING_TEMPLATE = """
+_EXPERIMENTAL_DOCSTRING_TEMPLATE = """
 
 .. note::
     Added in v{} as experimental feature. The interface can change in the future.
-    See the details in https://github.com/optuna/optuna/releases/tag/v{}
+    See the details in https://github.com/optuna/optuna/releases/tag/v{}.
 """
 
 
@@ -41,7 +41,7 @@ def experimental(version: str) -> Any:
 
     def _experimental(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
 
-        docstring = _DOCSTRING_TEMPLATE.format(version, version)
+        docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(version, version)
         if func.__doc__ is None:
             func.__doc__ = ''
         func.__doc__ += docstring
@@ -96,7 +96,7 @@ def experimental_class(version: str) -> Any:
 
         if cls.__doc__ is None:
             cls.__doc__ = ''
-        cls.__doc__ += _DOCSTRING_TEMPLATE.format(version, version)
+        cls.__doc__ += _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(version, version)
         return cls
 
     return _experimental_class

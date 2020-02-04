@@ -15,7 +15,9 @@ _logger = logging.get_logger(__name__)
 
 @experimental_class("1.1.0")
 class HyperbandPruner(BasePruner):
-    """Pruner using Hyperband.
+    """__init__(self, min_resource=1, reduction_factor=3, n_brackets=4, min_early_stopping_rate=0)
+
+    Pruner using Hyperband.
 
     As SuccessiveHalving (SHA) requires the number of configurations
     :math:`n` as its hyperparameter.  For a given finite budget :math:`B`,
