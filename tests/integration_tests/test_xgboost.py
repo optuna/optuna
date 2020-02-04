@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import xgboost as xgb
 
@@ -52,6 +53,37 @@ def test_xgboost_pruning_callback():
             evals=[(dtest, 'validation')],
             verbose_eval=False,
             callbacks=[pruning_callback])
+        return 1.0
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    study.optimize(objective, n_trials=1)
+    assert study.trials[0].state == optuna.structs.TrialState.PRUNED
+
+    study = optuna.create_study(pruner=DeterministicPruner(False))
+    study.optimize(objective, n_trials=1)
+    assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
+    assert study.trials[0].value == 1.
+
+
+def test_xgboost_pruning_callback_cv():
+    # type: () -> None
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        dtrain = xgb.DMatrix(np.ones((2, 1)), label=[1., 1.])
+        params = {
+            'silent': 1,
+            'objective': 'binary:logistic',
+        }
+
+        pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'test-error')
+        xgb.cv(
+            params,
+            dtrain,
+            callbacks=[pruning_callback],
+            nfold=2
+        )
         return 1.0
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
