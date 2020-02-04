@@ -700,12 +700,45 @@ def test_enqueue_trial_properly_sets_param_values(storage_mode):
         study = optuna.create_study(storage=storage)
         assert len(study.trials) == 0
 
-        study.enqueue_trial(params={'x': -1, 'y': 1})
-        trial_id = study._pop_waiting_trial_id()
-        assert trial_id is not None
-        trial = optuna.Trial(study, trial_id)
-        assert trial.suggest_int('x', low=-10, high=10) == -1
-        assert trial.suggest_int('y', low=-10, high=10) == 1
+        study.enqueue_trial(params={'x': -5, 'y': 5})
+        study.enqueue_trial(params={'x': -1, 'y': 0})
+
+        def objective(trial):
+            # type: (optuna.trial.Trial) -> float
+            x = trial.suggest_int('x', -10, 10)
+            y = trial.suggest_int('y', -10, 10)
+            return x ** 2 + y ** 2
+
+        study.optimize(objective, n_trials=2)
+        t0 = study.trials[0]
+        assert t0.params['x'] == -5
+        assert t0.params['y'] == 5
+
+        t1 = study.trials[1]
+        assert t1.params['x'] == -1
+        assert t1.params['y'] == 0
+
+
+@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+def test_enqueue_trial_with_unfixed_parameters(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.enqueue_trial(params={'x': -5})
+
+        def objective(trial):
+            # type: (optuna.trial.Trial) -> float
+            x = trial.suggest_int('x', -10, 10)
+            y = trial.suggest_int('y', -10, 10)
+            return x ** 2 + y ** 2
+
+        study.optimize(objective, n_trials=1)
+        t = study.trials[0]
+        assert t.params['x'] == -5
+        assert -10 <= t.params['y'] <= 10
 
 
 def test_storage_property():
