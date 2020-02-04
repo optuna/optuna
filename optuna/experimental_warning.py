@@ -1,12 +1,14 @@
 import functools
 from typing import Any
+from typing import Callable
 import warnings
 
 
 def experimental_version(version: str) -> Any:
 
-    def experimental(func):
+    def experimental(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
 
+        # TODO(crcrpar): Annotate this correctly.
         @functools.wraps(func)
         def new_func(*args: Any, **kwargs: Any) -> Any:
             """Wrapped function."""
@@ -17,11 +19,12 @@ def experimental_version(version: str) -> Any:
                 "The interface can change in the future".format(func.__name__, version))
 
             # TODO(crcrpar): Make this works
-            func.__doc__ += """
+            if func.__doc__ is not None:
+                func.__doc__ += """
 .. note::
     Added in version {} as experimental feature. The interface can change in the future.
 """.format(version)
-            return func(*args, **kwargs)
+            return func(*args, **kwargs)  # type: ignore
 
         return new_func
 
