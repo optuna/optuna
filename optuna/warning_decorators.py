@@ -82,7 +82,7 @@ def experimental_class(version: str) -> Any:
 
         _original_init = cls.__init__
 
-        def wrapped_init(*args: Any, **kwargs: Any) -> None:
+        def wrapped_init(self, *args: Any, **kwargs: Any) -> None:
             warnings.simplefilter('always', UserWarning)
             warnings.warn(
                 "{} is experimental (supported from v{}). "
@@ -90,7 +90,7 @@ def experimental_class(version: str) -> Any:
                 ExperimentalWarning
             )
 
-            _original_init(*args, **kwargs)
+            _original_init(self, *args, **kwargs)
 
         cls.__init__ = wrapped_init
 
