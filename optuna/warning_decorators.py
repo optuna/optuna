@@ -1,4 +1,5 @@
 import functools
+import inspect
 from typing import Any
 from typing import Callable
 import warnings
@@ -20,6 +21,32 @@ class ExperimentalWarning(UserWarning):
     """
 
     pass
+
+
+def _make_func_spec_str(func: Callable[..., Any]) -> str:
+
+    name = func.__name__
+    argspec = inspect.getfullargspec(func)
+
+    n_defaults = len(argspec.defaults) if argspec.defaults is not None else 0
+
+    if n_defaults > 0:
+        args = ', '.join(argspec.args[:-n_defaults])
+        with_default_values = ', '.join(
+            [
+                '{}={}'.format(a, d)
+                for a, d in zip(argspec.args[-n_defaults:], argspec.defaults)  # type: ignore
+            ]
+        )
+    else:
+        args = ', '.join(argspec.args)
+        with_default_values = ''
+
+    if len(args) > 0 and len(with_default_values) > 0:
+        args += ', '
+
+    str_args_description = '(' + args + with_default_values + ')\n\n'
+    return name + str_args_description
 
 
 def _validate_version(version: str) -> None:
@@ -44,7 +71,7 @@ def experimental(version: str) -> Any:
         docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(version, version)
         if func.__doc__ is None:
             func.__doc__ = ''
-        func.__doc__ += docstring
+        func.__doc__ = _make_func_spec_str(func) + func.__doc__ + docstring
 
         # TODO(crcrpar): Annotate this correctly.
         @functools.wraps(func)
@@ -82,7 +109,7 @@ def experimental_class(version: str) -> Any:
 
         _original_init = cls.__init__
 
-        def wrapped_init(self, *args: Any, **kwargs: Any) -> None:
+        def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
             warnings.simplefilter('always', UserWarning)
             warnings.warn(
                 "{} is experimental (supported from v{}). "
@@ -96,7 +123,11 @@ def experimental_class(version: str) -> Any:
 
         if cls.__doc__ is None:
             cls.__doc__ = ''
-        cls.__doc__ += _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(version, version)
+        cls.__doc__ = (
+            _make_func_spec_str(_original_init) +
+            cls.__doc__ +
+            _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(version, version)
+        )
         return cls
 
     return _experimental_class
