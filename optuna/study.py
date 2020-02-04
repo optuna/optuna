@@ -291,11 +291,9 @@ class Study(BaseStudy):
                 collection is enabled, just in case. You can turn it off with this argument if
                 memory is safely managed in your objective function.
             show_progress_bar:
-                Flag to show progress bars or not. To disable progress bar, set this ``False`` or
-                environment variable ``'NO_PBAR'`` to 1. Note that if the log message that have
-                the information of the latest trial and the best trial so far is longer than
-                the width of window, the message will be truncated. Note that the current
-                progress bar does not work well with joblib of multiprocessing backend.
+                Flag to show progress bars or not. To disable progress bar, set this ``False``.
+                Currently, progress bar is experimental feature and disabled
+                when ``n_jobs`` :math:`\\ne 1`.
         """
 
         if not isinstance(catch, tuple):
@@ -305,11 +303,13 @@ class Study(BaseStudy):
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
-        progress_bar = pbar_module._ProgressBar(show_progress_bar, n_trials, timeout, n_jobs)
+        # TODO(crcrpar): Make progress bar work when n_jobs != 1.
+        progress_bar = pbar_module._ProgressBar(
+            show_progress_bar and n_jobs == 1, n_trials, timeout, n_jobs)
         try:
             if n_jobs == 1:
                 self._optimize_sequential(
-                    func, n_trials, timeout, catch, callbacks, gc_after_trial, None, progress_bar)
+                    func, n_trials, timeout, catch, callbacks, gc_after_trial, None)
             else:
                 time_start = datetime.datetime.now()
 
@@ -347,8 +347,7 @@ class Study(BaseStudy):
                     parallel(
                         delayed(self._optimize_sequential)
                         (
-                            func, 1, timeout, catch, callbacks, gc_after_trial,
-                            time_start, progress_bar
+                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start
                         )
                         for _ in _iter
                     )
