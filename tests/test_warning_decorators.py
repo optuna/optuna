@@ -36,6 +36,9 @@ def test_experimental_decorator(version: str) -> None:
             warning_decorators._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(version, version)
         )
 
+        with pytest.warns(ExperimentalWarning):
+            decorated_sample_func(None)
+
 
 @pytest.mark.parametrize('version', ['1.1.0', '1.1', 100, None])
 def test_experimental_class_decorator(version: str) -> None:
