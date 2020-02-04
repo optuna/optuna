@@ -68,8 +68,6 @@ class HyperbandPruner(BasePruner):
     ):
         # type: (int, int, int, int) -> None
 
-        experimental_warning.experimental('optuna.pruners.HyperbandPruner')
-
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
         self._reduction_factor = reduction_factor
         self._resource_budget = 0
