@@ -564,7 +564,7 @@ class Study(BaseStudy):
             if not self.storage.set_trial_state(trial.trial_id, structs.TrialState.RUNNING):
                 continue
 
-            self.logger.debug("Trial#{} is popped from the trial queue.".format(trial.number))
+            _logger.debug("Trial#{} is popped from the trial queue.".format(trial.number))
             return trial.trial_id
 
         return None
