@@ -13,6 +13,7 @@ if type_checking.TYPE_CHECKING:
 _logger = logging.get_logger(__name__)
 
 
+@experimental_warning.experimental_class_version("1.1")
 class HyperbandPruner(BasePruner):
     """Pruner using Hyperband.
 
