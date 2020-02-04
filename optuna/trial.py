@@ -515,8 +515,8 @@ class Trial(BaseTrial):
 
         contained = distribution._contains(param_value_in_internal_repr)
         if not contained:
-            warnings.warn("The parameter '{}' is the out of range value "
-                          "for '{}' distribution".format(param_value, name))
+            warnings.warn("Fixed parameter '{}' with value {} is out of range "
+                          "for distribution {}.".format(name, param_value, distribution))
         return contained
 
     def _is_relative_param(self, name, distribution):

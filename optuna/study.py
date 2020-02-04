@@ -474,6 +474,20 @@ class Study(BaseStudy):
             system_attrs=None  # type: Optional[Dict[str, Any]]
     ):
         # type: (...) -> None
+        """Enqueue a trial with given parameter values, user_attrs, and system_attrs.
+
+        You can fix the next sampling parameters which will be evaluated in your
+        objective function.
+
+        Args:
+            params:
+                Parameter values to pass your objective function.
+                If None, parameters are sampled by the sampler as usual.
+            user_attrs:
+                A dictionary containing user attributes for the trial.
+            system_attrs:
+                A dictionary containing system attributes for the trial.
+        """
 
         params = params or {}
         user_attrs = user_attrs or {}
@@ -557,15 +571,16 @@ class Study(BaseStudy):
     def _pop_waiting_trial_id(self):
         # type: () -> Optional[int]
 
+        # TODO(c-bata): Reduce database query counts for extracting waiting trials.
         for trial in self.trials:
             if trial.state != structs.TrialState.WAITING:
                 continue
 
-            if not self.storage.set_trial_state(trial.trial_id, structs.TrialState.RUNNING):
+            if not self._storage.set_trial_state(trial._trial_id, structs.TrialState.RUNNING):
                 continue
 
             _logger.debug("Trial#{} is popped from the trial queue.".format(trial.number))
-            return trial.trial_id
+            return trial._trial_id
 
         return None
 
