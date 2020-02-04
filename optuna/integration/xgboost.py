@@ -25,21 +25,6 @@ def _get_callback_context(env):
     return context
 
 
-def _remove_std_from_evaluation_result_list(xgb_callback_env):
-    # type: (xgb.core.CallbackEnv) -> None
-    """Custom XGBoost callback adapter to fix compatibility with Optuna pruner.
-
-    The Optuna pruner is expecting only two elements in each tuple of the evaluation_result_list.
-    It expects the observation_key and the evaluation metric only, but XGBoost is also providing
-    a third element: the stddev of the metric across the cross-valdation folds.
-    """
-
-    erl_orig = xgb_callback_env.evaluation_result_list
-    erl_no_std = [(key, metric) for key, metric, std in erl_orig]
-    erl_orig.clear()
-    erl_orig.extend(erl_no_std)
-
-
 class XGBoostPruningCallback(object):
     """Callback for XGBoost to prune unpromising trials.
 
@@ -77,10 +62,13 @@ class XGBoostPruningCallback(object):
         # type: (xgb.core.CallbackEnv) -> None
 
         context = _get_callback_context(env)
+        evaluation_result_list = env.evaluation_result_list
         if context == 'cv':
-            _remove_std_from_evaluation_result_list(env)
-
-        current_score = dict(env.evaluation_result_list)[self._observation_key]
+            # Remove a third element: the stddev of the metric across the cross-valdation folds.
+            evaluation_result_list = [
+                (key, metric) for key, metric, _ in evaluation_result_list
+            ]
+        current_score = dict(evaluation_result_list)[self._observation_key]
         self._trial.report(current_score, step=env.iteration)
         if self._trial.should_prune():
             message = "Trial was pruned at iteration {}.".format(env.iteration)
