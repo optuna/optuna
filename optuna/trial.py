@@ -156,6 +156,8 @@ class Trial(BaseTrial):
 
         Example:
 
+            Suggest a dropout rate for neural network training.
+
             .. testcode::
 
                 import optuna
@@ -198,6 +200,9 @@ class Trial(BaseTrial):
         :math:`\\mathsf{low}` will be returned.
 
         Example:
+
+            Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/
+            generated/sklearn.svm.SVC.html>`_.
 
             .. testcode::
 
@@ -256,6 +261,10 @@ class Trial(BaseTrial):
 
         Example:
 
+            Suggest a fraction of samples used for fitting the individual learners of
+            `GradientBoostingClassifier <https://scikit-learn.org/stable/modules/generated/
+            sklearn.ensemble.GradientBoostingClassifier.html>`_.
+
             .. testcode::
 
                 import optuna
@@ -308,6 +317,9 @@ class Trial(BaseTrial):
 
         Example:
 
+            Suggest the number of trees in `RandomForestClassifier <https://scikit-learn.org/
+            stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
+
             .. testcode::
 
                 import optuna
@@ -357,6 +369,9 @@ class Trial(BaseTrial):
         The value is sampled from ``choices``.
 
         Example:
+
+            Suggest a kernel function of `SVC <https://scikit-learn.org/stable/modules/generated/
+            sklearn.svm.SVC.html>`_.
 
             .. testcode::
 
@@ -411,18 +426,24 @@ class Trial(BaseTrial):
 
         Example:
 
-            .. testcode::
+            Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
+            generated/sklearn.linear_model.SGDClassifier.html>`_ training.
+
+            .. testsetup::
 
                 import optuna
                 import numpy as np
                 from sklearn.linear_model import SGDClassifier
                 from sklearn.model_selection import train_test_split
 
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+            .. testcode::
+
                 def objective(trial):
-                    np.random.seed(seed=0)
-                    X = np.random.randn(50).reshape(-1, 1)
-                    y = np.random.randint(0, 2, 50)
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
                     clf = SGDClassifier(random_state=0)
                     for step in range(100):
@@ -501,6 +522,8 @@ class Trial(BaseTrial):
         The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
 
         Example:
+
+            Save fixed hyperparameters of neural network training.
 
             .. testcode::
 
@@ -702,6 +725,8 @@ class FixedTrial(BaseTrial):
     useful for deploying optimization results.
 
     Example:
+
+        Evaluate an objective function with parameter values given by a user.
 
         .. testcode::
 
