@@ -92,9 +92,7 @@ def get_extras_require():
             'keras',
             'pytorch-ignite',
             'pytorch-lightning',
-            # TODO(Yanase): Update examples to support TensorFlow 2.0.
-            # See https://github.com/optuna/optuna/issues/565 for further details.
-            'tensorflow<2.0.0',
+            'tensorflow>=2.0.0',
             'torch',
             'torchvision>=0.5.0'
         ] if sys.version_info[:2] < (3, 8) else []),
