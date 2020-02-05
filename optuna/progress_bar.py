@@ -46,14 +46,11 @@ class _ProgressBar(object):
         self._timeout = timeout
 
         if self._is_valid:
-            self._progress_bar = tqdm(
-                range(n_trials) if n_trials is not None else None,
-                # position=1
-            )
+            self._progress_bar = tqdm(range(n_trials) if n_trials is not None else None)
             global _tqdm_handler
 
             tqdm_handler = TqdmLoggingHandler()
-            tqdm_handler.setLevel(logging.NOTSET)
+            tqdm_handler.setLevel(logging.INFO)
             tqdm_handler.setFormatter(optuna_logging.create_default_formatter())
             optuna_logging.disable_default_handler()
             optuna_logging._get_library_root_logger().addHandler(tqdm_handler)
@@ -86,5 +83,6 @@ class _ProgressBar(object):
         """Close progress bars."""
         if self._is_valid:
             self._progress_bar.close()
+            assert _tqdm_handler is not None
             optuna_logging._get_library_root_logger().removeHandler(_tqdm_handler)
             optuna_logging.enable_default_handler()

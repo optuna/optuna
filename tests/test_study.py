@@ -367,14 +367,11 @@ def test_get_all_study_summaries_with_no_trials(storage_mode):
 def test_run_trial(storage_mode):
     # type: (str) -> None
 
-    pbar = optuna.progress_bar.ProgressBar(False, None, None)
-
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
 
         # Test trial without exception.
-        study._run_trial(
-            func, catch=(Exception, ), gc_after_trial=True, progress_bar=pbar)
+        study._run_trial(func, catch=(Exception, ), gc_after_trial=True)
         check_study(study)
 
         # Test trial with acceptable exception.
@@ -383,8 +380,7 @@ def test_run_trial(storage_mode):
 
             raise ValueError
 
-        trial = study._run_trial(
-            func_value_error, catch=(ValueError, ), gc_after_trial=True, progress_bar=pbar)
+        trial = study._run_trial(func_value_error, catch=(ValueError, ), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#1 as TrialState.FAIL because of the ' \
@@ -394,10 +390,7 @@ def test_run_trial(storage_mode):
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
-            study._run_trial(
-                func_value_error, catch=(ArithmeticError, ), gc_after_trial=True,
-                progress_bar=pbar
-            )
+            study._run_trial(func_value_error, catch=(ArithmeticError, ), gc_after_trial=True)
 
         # Test trial with invalid objective value: None
         def func_none(_):
@@ -405,8 +398,7 @@ def test_run_trial(storage_mode):
 
             return None  # type: ignore
 
-        trial = study._run_trial(
-            func_none, catch=(Exception, ), gc_after_trial=True, progress_bar=pbar)
+        trial = study._run_trial(func_none, catch=(Exception, ), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#3 as TrialState.FAIL because the returned ' \
@@ -421,8 +413,7 @@ def test_run_trial(storage_mode):
 
             return float('nan')
 
-        trial = study._run_trial(
-            func_nan, catch=(Exception, ), gc_after_trial=True, progress_bar=pbar)
+        trial = study._run_trial(func_nan, catch=(Exception, ), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = 'Setting status of trial#4 as TrialState.FAIL because the objective ' \
@@ -438,15 +429,13 @@ def test_run_trial_with_trial_pruned(trial_pruned_class):
     # type: (Callable[[], optuna.exceptions.TrialPruned]) -> None
 
     study = optuna.create_study()
-    pbar = optuna.progress_bar.ProgressBar(False, None, None)
 
     def func_with_trial_pruned(_):
         # type: (optuna.trial.Trial) -> float
 
         raise trial_pruned_class()
 
-    trial = study._run_trial(
-        func_with_trial_pruned, catch=(), gc_after_trial=True, progress_bar=pbar)
+    trial = study._run_trial(func_with_trial_pruned, catch=(), gc_after_trial=True)
     frozen_trial = study._storage.get_trial(trial._trial_id)
     assert frozen_trial.state == optuna.structs.TrialState.PRUNED
 

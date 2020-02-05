@@ -2,7 +2,6 @@ import collections
 import datetime
 import gc
 import math
-import os
 import threading
 import warnings
 
@@ -304,13 +303,18 @@ class Study(BaseStudy):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
         # TODO(crcrpar): Make progress bar work when n_jobs != 1.
-        progress_bar = pbar_module._ProgressBar(
-            show_progress_bar and n_jobs == 1, n_trials, timeout, n_jobs)
+        self._progress_bar = pbar_module._ProgressBar(
+            show_progress_bar and n_jobs == 1, n_trials, timeout)
         try:
             if n_jobs == 1:
                 self._optimize_sequential(
                     func, n_trials, timeout, catch, callbacks, gc_after_trial, None)
             else:
+                if show_progress_bar:
+                    msg = 'Progress bar only supports serial execution (`n_jobs=1`).'
+                    warnings.warn(msg)
+                    _logger.warning(msg)
+
                 time_start = datetime.datetime.now()
 
                 if n_trials is not None:
@@ -326,16 +330,6 @@ class Study(BaseStudy):
 
                 with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
                     if not isinstance(parallel._backend, joblib.parallel.ThreadingBackend) and \
-                       show_progress_bar:
-                        msg = (
-                            'Because current progress bar does not work well with joblib for '
-                            'multi-processing, progress bar will not be used.'
-                        )
-                        warnings.warn(msg, UserWarning)
-                        _logger.warning(msg)
-                        progress_bar = progress_bar._ProgressBar(False)
-
-                    if not isinstance(parallel._backend, joblib.parallel.ThreadingBackend) and \
                        isinstance(self._storage, storages.InMemoryStorage):
                         msg = 'The default storage cannot be shared by multiple processes. ' \
                               'Please use an RDB (RDBStorage) when you use joblib for ' \
@@ -346,14 +340,13 @@ class Study(BaseStudy):
 
                     parallel(
                         delayed(self._optimize_sequential)
-                        (
-                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start
-                        )
+                        (func, 1, timeout, catch, callbacks, gc_after_trial, time_start)
                         for _ in _iter
                     )
         finally:
             self._optimize_lock.release()
-            progress_bar.close()
+            self._progress_bar.close()
+            del self._progress_bar
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -538,8 +531,7 @@ class Study(BaseStudy):
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial,  # type: bool
-            time_start,  # type: Optional[datetime.datetime]
-            progress_bar  # type: pbar_module._ProgressBar
+            time_start  # type: Optional[datetime.datetime]
     ):
         # type: (...) -> None
 
@@ -560,9 +552,9 @@ class Study(BaseStudy):
                 if elapsed_seconds >= timeout:
                     break
 
-            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial, progress_bar)
+            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
 
-            progress_bar.update(elapsed_seconds)
+            self._progress_bar.update(elapsed_seconds)
         self._storage.remove_session()
 
     def _run_trial_and_callbacks(
@@ -571,11 +563,10 @@ class Study(BaseStudy):
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
             gc_after_trial,  # type: bool
-            progress_bar  # type: pbar_module._ProgressBar
     ):
         # type: (...) -> None
 
-        trial = self._run_trial(func, catch, gc_after_trial, progress_bar)
+        trial = self._run_trial(func, catch, gc_after_trial)
         if callbacks is not None:
             frozen_trial = self._storage.get_trial(trial._trial_id)
             for callback in callbacks:
@@ -586,7 +577,6 @@ class Study(BaseStudy):
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             gc_after_trial,  # type: bool
-            progress_bar  # type: pbar_module._ProgressBar
     ):
         # type: (...) -> trial_module.Trial
 
@@ -645,12 +635,12 @@ class Study(BaseStudy):
 
         trial.report(result)
         self._storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
-        self._log_completed_trial(trial_number, result, progress_bar)
+        self._log_completed_trial(trial_number, result)
 
         return trial
 
-    def _log_completed_trial(self, trial_number, value, progress_bar):
-        # type: (int, float, Optional[pbar_module._ProgressBar]) -> None
+    def _log_completed_trial(self, trial_number, value):
+        # type: (int, float) -> None
 
         msg = (
             'Finished trial#{} resulted in value: {:.03f}. '
