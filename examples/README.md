@@ -70,3 +70,4 @@ In addition, integration modules are available for the following libraries, prov
 ### External libraries using Optuna
 
 * [Analyzing optimization results using Neptune](https://neptune-contrib.readthedocs.io/user_guide/monitoring/optuna.html)
+* [A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)
