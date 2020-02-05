@@ -7,6 +7,9 @@ import warnings
 from optuna.exceptions import ExperimentalWarning
 
 
+# White spaces of each line are necessary to beautifully rendered documentation.
+# NOTE(crcrpar): When `experimental` decorator is applied to member methods, these lines require
+# another four spaces.
 _EXPERIMENTAL_DOCSTRING_TEMPLATE = """
 
     .. note::
@@ -21,9 +24,10 @@ def _make_func_spec_str(func: Callable[..., Any]) -> str:
     argspec = inspect.getfullargspec(func)
 
     n_defaults = len(argspec.defaults) if argspec.defaults is not None else 0
+    offset = int(len(argspec.args) > 0 and argspec.args[0] == 'self')
 
     if n_defaults > 0:
-        args = ', '.join(argspec.args[1:-n_defaults])
+        args = ', '.join(argspec.args[offset:-n_defaults])
         with_default_values = ', '.join(
             [
                 '{}={}'.format(a, d)
@@ -31,12 +35,14 @@ def _make_func_spec_str(func: Callable[..., Any]) -> str:
             ]
         )
     else:
-        args = ', '.join(argspec.args[1:])
+        args = ', '.join(argspec.args[offset:])
         with_default_values = ''
 
     if len(args) > 0 and len(with_default_values) > 0:
         args += ', '
 
+    # NOTE(crcrpar): The four spaces are necessary to correctly render documentation.
+    # Different classes or methods require more spaces.
     str_args_description = '(' + args + with_default_values + ')\n\n    '
     return name + str_args_description
 
@@ -52,14 +58,16 @@ def _validate_version(version: str) -> None:
 def experimental(version: str) -> Any:
     """Decorate class or function as experimental.
 
+    Args:
+        version: The first version that supports the target feature.
     """
 
     _validate_version(version)
 
-    def util(f: Any) -> Any:
+    def _experimental_wrapper(f: Any) -> Any:
         # f is either func or class.
 
-        def _experimental(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        def _experimental_func(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
 
             docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
             if func.__doc__ is None:
@@ -109,6 +117,6 @@ def experimental(version: str) -> Any:
             )
             return cls
 
-        return _experimental_class(f) if inspect.isclass(f) else _experimental(f)
+        return _experimental_class(f) if inspect.isclass(f) else _experimental_func(f)
 
-    return util
+    return _experimental_wrapper
