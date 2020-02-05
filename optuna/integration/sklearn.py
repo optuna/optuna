@@ -29,7 +29,6 @@ except ImportError as e:
     _import_error = e
     _available = False
 
-from optuna._experimental import experimental
 from optuna import distributions
 from optuna import exceptions
 from optuna import logging
@@ -329,9 +328,12 @@ class _Objective(object):
             trial.set_user_attr('std_{}'.format(name), np.nanstd(array))
 
 
-@experimental("0.17.0")
 class OptunaSearchCV(BaseEstimator):
     """Hyperparameter search with cross-validation.
+
+    .. warning::
+
+        This feature is experimental. The interface may be changed in the future.
 
     Args:
         estimator:
@@ -459,7 +461,7 @@ class OptunaSearchCV(BaseEstimator):
         >>> optuna_search = optuna.integration.OptunaSearchCV(
         ...     clf,
         ...     param_distributions
-        ... ) # doctest: +ELLIPSIS
+        ... )
         >>> X, y = load_iris(return_X_y=True)
         >>> optuna_search.fit(X, y) # doctest: +ELLIPSIS
         OptunaSearchCV(...)

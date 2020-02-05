@@ -4,7 +4,6 @@ from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import SGDClassifier
 
 from optuna import distributions
-from optuna import exceptions
 from optuna import integration
 
 
@@ -16,17 +15,16 @@ def test_optuna_search(enable_pruning):
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
     param_dist = {'alpha': distributions.LogUniformDistribution(1e-04, 1e+03)}
-    with pytest.warns(exceptions.ExperimentalWarning):
-        optuna_search = integration.OptunaSearchCV(
-            est,
-            param_dist,
-            cv=3,
-            enable_pruning=enable_pruning,
-            error_score='raise',
-            max_iter=5,
-            random_state=0,
-            return_train_score=True
-        )
+    optuna_search = integration.OptunaSearchCV(
+        est,
+        param_dist,
+        cv=3,
+        enable_pruning=enable_pruning,
+        error_score='raise',
+        max_iter=5,
+        random_state=0,
+        return_train_score=True
+    )
 
     with pytest.raises(NotFittedError):
         optuna_search._check_is_fitted()
