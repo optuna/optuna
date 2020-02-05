@@ -81,7 +81,6 @@ def get_extras_require():
             'mlflow',
             'mxnet',
             'pytorch-ignite',
-            'pytorch-lightning',
             'scikit-image',
             # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
             # See https://github.com/optuna/optuna/issues/825 for further details.
@@ -94,6 +93,7 @@ def get_extras_require():
             'dask[dataframe]',
             'dask-ml',
             'keras',
+            'pytorch-lightning',
             'tensorflow>=2.0.0',
         ] if sys.version_info[:2] < (3, 8) else []),
         'testing': [
@@ -108,7 +108,6 @@ def get_extras_require():
             'plotly>=4.0.0',
             'pytest',
             'pytorch-ignite',
-            'pytorch-lightning',
             # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
             # See https://github.com/optuna/optuna/issues/825 for further details.
             'scikit-learn>=0.19.0,<=0.22.0',
@@ -119,6 +118,7 @@ def get_extras_require():
         ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + ([
             'keras',
+            'pytorch-lightning',
             'tensorflow',
             'tensorflow-datasets',
         ] if sys.version_info[:2] < (3, 8) else []),
