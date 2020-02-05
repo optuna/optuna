@@ -8,7 +8,7 @@ import warnings
 _EXPERIMENTAL_DOCSTRING_TEMPLATE = """
 
 .. note::
-    Added in v{} as experimental feature. The interface can change in the future.
+    Added in v{} as an experimental feature. The interface may change in newer versions without prior notice.
     See the details in https://github.com/optuna/optuna/releases/tag/v{}.
 """
 
