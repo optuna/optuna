@@ -37,6 +37,7 @@ from optuna import structs
 from optuna import study as study_module
 from optuna import trial as trial_module  # NOQA
 from optuna import type_checking
+from optuna._experimental import experimental
 
 if type_checking.TYPE_CHECKING:
     import pandas as pd  # NOQA
@@ -328,12 +329,9 @@ class _Objective(object):
             trial.set_user_attr('std_{}'.format(name), np.nanstd(array))
 
 
+@experimental("0.17.0")
 class OptunaSearchCV(BaseEstimator):
     """Hyperparameter search with cross-validation.
-
-    .. warning::
-
-        This feature is experimental. The interface may be changed in the future.
 
     Args:
         estimator:
