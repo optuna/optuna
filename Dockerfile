@@ -1,4 +1,5 @@
 ARG PYTHON_VERSION=3.7
+ARG BUILD_TYPE=''
 
 FROM python:${PYTHON_VERSION}
 
@@ -11,5 +12,8 @@ RUN apt-get update \
 WORKDIR /workspaces
 COPY . .
 
-RUN pip install --no-cache-dir -e '.[checking, doctest, document, example, testing]' \
-    && pip install jupyter notebook
+RUN if [ "${BUILD_TYPE}" = "dev" ]; then \
+        pip install --no-cache-dir -e '.[checking, doctest, document, example, testing]'; pip install jupyter notebook; \
+    else \
+        pip install --no-cache-dir -e .; pip install jupyter notebook; \
+    fi

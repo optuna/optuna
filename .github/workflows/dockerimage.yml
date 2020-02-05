@@ -24,6 +24,7 @@ jobs:
     strategy:
       matrix:
         python_version: ['3.5', '3.6', '3.7', '3.8']
+        build_type: ['', 'dev']  # empty string represents the normal optuna environment.
 
     steps:
     - uses: actions/checkout@v1
@@ -31,9 +32,13 @@ jobs:
     - name: Set ENV
       run: |
         if [ "${{ github.event_name }}" = 'release' ]; then
-            export TAG_NAME="py${{ matrix.python_version }}-${{ github.event.release.tag_name }}"
+            export TAG_NAME="py${{ matrix.python_version }}-v${{ github.event.release.tag_name }}"
         else
+          if [ "${matrix.build_type}" = 'dev' ]; then
+            export TAG_NAME="py${{ matrix.python_version }}-dev"
+          else
             export TAG_NAME="py${{ matrix.python_version }}"
+          fi
         fi
         echo "::set-env name=PKG_TAG::${DOCKER_BASE_NAME}:${TAG_NAME}"
         echo "::set-env name=HUB_TAG::${DOCKER_HUB_BASE_NAME}:${TAG_NAME}"
@@ -48,7 +53,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "${GITHUB_TOKEN}" | docker login docker.pkg.github.com -u crcrpar --password-stdin
+        echo "${GITHUB_TOKEN}" | docker login docker.pkg.github.com -u optuna --password-stdin
         docker push "${PKG_TAG}"
 
     - name: Login & Push to Docker Hub
@@ -56,5 +61,5 @@ jobs:
       env:
         DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
       run: |
-        echo "${DOCKER_HUB_TOKEN}" | docker login -u crcrpar --password-stdin
+        echo "${DOCKER_HUB_TOKEN}" | docker login -u optuna --password-stdin
         docker push "${HUB_TAG}"
