@@ -1,9 +1,9 @@
 import optuna
+from optuna._experimental import experimental
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
 from optuna import type_checking
-from optuna._experimental import experimental
 
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA

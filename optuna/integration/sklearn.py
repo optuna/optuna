@@ -29,6 +29,7 @@ except ImportError as e:
     _import_error = e
     _available = False
 
+from optuna._experimental import experimental
 from optuna import distributions
 from optuna import exceptions
 from optuna import logging
@@ -37,7 +38,6 @@ from optuna import structs
 from optuna import study as study_module
 from optuna import trial as trial_module  # NOQA
 from optuna import type_checking
-from optuna._experimental import experimental
 
 if type_checking.TYPE_CHECKING:
     import pandas as pd  # NOQA
@@ -459,7 +459,7 @@ class OptunaSearchCV(BaseEstimator):
         >>> optuna_search = optuna.integration.OptunaSearchCV(
         ...     clf,
         ...     param_distributions
-        ... )
+        ... ) # doctest: +ELLIPSIS
         >>> X, y = load_iris(return_X_y=True)
         >>> optuna_search.fit(X, y) # doctest: +ELLIPSIS
         OptunaSearchCV(...)
