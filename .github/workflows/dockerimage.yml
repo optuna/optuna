@@ -12,8 +12,8 @@ on:
 
 env:
   DOCKER_BASE_NAME: docker.pkg.github.com/${{ github.repository }}/optuna
-  # TODO: (crcrpar): Update below before uncommnet.
-  # DOCKER_HUB_BASE_NAME: crcrpar/gh-actions-optuna
+  # TODO: (crcrpar): Prepare dockerhub account.
+  # DOCKER_HUB_BASE_NAME: optuna/optuna
 
 jobs:
 
