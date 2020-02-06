@@ -1,6 +1,18 @@
-name: Docker Image CI
+name: Build Docker Image
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
+  release:
+    types: [published]
+  pull_request:
+    branches:
+      - master
+
+env:
+  DOCKER_BASE_NAME: docker.pkg.github.com/${{ github.repository }}/optuna
+  DOCKER_HUB_BASE_NAME: optuna/optuna
 
 jobs:
 
@@ -8,7 +20,44 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        python_version: ['3.5', '3.6', '3.7', '3.8']
+        build_type: ['', 'dev']  # empty string represents the normal optuna environment.
+
     steps:
     - uses: actions/checkout@v2
+
+    - name: Set ENV
+      run: |
+        export TAG_NAME="py${{ matrix.python_version }}"
+        if [ "${{ github.event_name }}" = 'release' ]; then
+          export TAG_NAME="${{ github.event.release.tag_name }}-${TAG_NAME}"
+        fi
+        if [ "${{matrix.build_type}}" = 'dev' ]; then
+          export TAG_NAME="${TAG_NAME}-dev"
+        fi
+        echo "::set-env name=PKG_TAG::${DOCKER_BASE_NAME}:${TAG_NAME}"
+        echo "::set-env name=HUB_TAG::${DOCKER_HUB_BASE_NAME}:${TAG_NAME}"
+
+
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      run: |
+        docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --file Dockerfile --tag "${PKG_TAG}"
+        docker tag "${PKG_TAG}" "${HUB_TAG}"
+
+    - name: Login & Push to GitHub Packages
+      # if: github.event_name != 'pull_request'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "${GITHUB_TOKEN}" | docker login docker.pkg.github.com -u optuna --password-stdin
+        docker push "${PKG_TAG}"
+
+    - name: Login & Push to Docker Hub
+      # if: github.event_name != 'pull_request'
+      env:
+        DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      run: |
+        echo "${DOCKER_HUB_TOKEN}" | docker login -u optuna --password-stdin
+        docker push "${HUB_TAG}"
