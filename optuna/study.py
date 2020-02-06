@@ -537,7 +537,6 @@ class Study(BaseStudy):
 
         i_trial = 0
 
-        elapsed_seconds = None
         if time_start is None:
             time_start = datetime.datetime.now()
 
@@ -554,7 +553,7 @@ class Study(BaseStudy):
 
             self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
 
-            self._progress_bar.update(elapsed_seconds)
+            self._progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
         self._storage.remove_session()
 
     def _run_trial_and_callbacks(

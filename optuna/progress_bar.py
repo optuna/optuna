@@ -64,7 +64,7 @@ class _ProgressBar(object):
         """
         if self._is_valid:
             self._progress_bar.update(1)
-            if elapsed_seconds is not None:
+            if self._timeout is not None and elapsed_seconds is not None:
                 self._progress_bar.set_postfix_str(
                     '{:.02f}/{} seconds'.format(elapsed_seconds, self._timeout))
 
@@ -83,6 +83,6 @@ class _ProgressBar(object):
         """Close progress bars."""
         if self._is_valid:
             self._progress_bar.close()
-            assert _tqdm_handler is not None
-            optuna_logging._get_library_root_logger().removeHandler(_tqdm_handler)
-            optuna_logging.enable_default_handler()
+            if self._is_valid and _tqdm_handler is not None:
+                optuna_logging._get_library_root_logger().removeHandler(_tqdm_handler)
+                optuna_logging.enable_default_handler()
