@@ -641,11 +641,9 @@ class Study(BaseStudy):
     def _log_completed_trial(self, trial_number, value):
         # type: (int, float) -> None
 
-        msg = (
-            'Finished trial#{} resulted in value: {:.03f}. '
-            'Current best value is {:.03f} with parameters: {}.'.format(
-                trial_number, value, self.best_value, self.best_params))
-        _logger.info(msg)
+        _logger.info('Finished trial#{} resulted in value: {}. '
+                     'Current best value is {} with parameters: {}.'.format(
+                         trial_number, value, self.best_value, self.best_params))
 
 
 def create_study(
