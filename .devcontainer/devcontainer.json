@@ -6,8 +6,8 @@
 	// Sets the run context to one level up instead of the .devcontainer folder.
 	"context": "..",
 
-	// Uncomment if you are OK to pulling docker images available on dockerhub Optuna account.
-	// "image": "optuna/optuna:py3.7"
+	// Uncomment if you are OK to pull docker images available on Optuna's dockerhub.
+	// "image": "optuna/optuna:py3.7-dev"
 
 	// Uncomment this if you want to build docker image locally.
 	// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.

@@ -11,7 +11,7 @@ RUN apt-get update \
 WORKDIR /workspaces
 COPY . .
 
-ARG BUILD_TYPE=''
+ARG BUILD_TYPE='dev'
 
 RUN if [ "${BUILD_TYPE}" = "dev" ]; then \
         pip install --no-cache-dir -e '.[checking, doctest, document, example, testing]'; \
