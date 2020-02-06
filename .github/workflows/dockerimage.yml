@@ -58,6 +58,7 @@ jobs:
       # if: github.event_name != 'pull_request'
       env:
         DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+        DOCKER_HUB_USER: ${{ secrets.DOCKER_HUB_USER }}
       run: |
-        echo "${DOCKER_HUB_TOKEN}" | docker login -u optuna --password-stdin
+        echo "${DOCKER_HUB_TOKEN}" | docker login -u "${DOCKER_HUB_USER}" --password-stdin
         docker push "${HUB_TAG}"
