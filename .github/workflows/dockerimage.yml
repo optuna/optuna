@@ -47,7 +47,7 @@ jobs:
         docker tag "${PKG_TAG}" "${HUB_TAG}"
 
     - name: Login & Push to GitHub Packages
-      if: github.event_name != 'pull_request'
+      # if: github.event_name != 'pull_request'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -55,7 +55,7 @@ jobs:
         docker push "${PKG_TAG}"
 
     - name: Login & Push to Docker Hub
-      if: github.event_name != 'pull_request'
+      # if: github.event_name != 'pull_request'
       env:
         DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
       run: |
