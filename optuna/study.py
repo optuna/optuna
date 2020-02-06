@@ -307,8 +307,8 @@ class Study(BaseStudy):
             show_progress_bar and n_jobs == 1, n_trials, timeout)
         try:
             if n_jobs == 1:
-                self._optimize_sequential(
-                    func, n_trials, timeout, catch, callbacks, gc_after_trial, None)
+                self._optimize_sequential(func, n_trials, timeout, catch, callbacks,
+                                          gc_after_trial, None)
             else:
                 if show_progress_bar:
                     msg = 'Progress bar only supports serial execution (`n_jobs=1`).'
@@ -561,7 +561,7 @@ class Study(BaseStudy):
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            gc_after_trial,  # type: bool
+            gc_after_trial  # type: bool
     ):
         # type: (...) -> None
 
@@ -575,7 +575,7 @@ class Study(BaseStudy):
             self,
             func,  # type: ObjectiveFuncType
             catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            gc_after_trial,  # type: bool
+            gc_after_trial  # type: bool
     ):
         # type: (...) -> trial_module.Trial
 
