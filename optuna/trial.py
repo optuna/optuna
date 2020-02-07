@@ -49,8 +49,8 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
-    def report(self, value, step=None):
-        # type: (float, Optional[int]) -> None
+    def report(self, value, step):
+        # type: (float, int) -> None
 
         raise NotImplementedError
 
@@ -344,16 +344,20 @@ class Trial(BaseTrial):
         choices = tuple(choices)
         return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
 
-    def report(self, value, step=None):
-        # type: (float, Optional[int]) -> None
-        """Report an objective function value.
+    def report(self, value, step):
+        # type: (float, int) -> None
+        """Report an objective function value for a given step.
 
-        If step is set to :obj:`None`, the value is stored as a final value of the trial.
-        Otherwise, it is saved as an intermediate value.
+        The reported values are used by the pruners to determine whether this trial should be
+        pruned.
 
-        Note that the reported value is converted to ``float`` type by applying ``float()``
-        function internally. Thus, it accepts all float-like types (e.g., ``numpy.float32``).
-        If the conversion fails, a ``TypeError`` is raised.
+        .. seealso::
+            Please refer to :class:`~optuna.pruners.BasePruner`.
+
+        .. note::
+            The reported value is converted to ``float`` type by applying ``float()``
+            function internally. Thus, it accepts all float-like types (e.g., ``numpy.float32``).
+            If the conversion fails, a ``TypeError`` is raised.
 
         Example:
 
@@ -388,12 +392,10 @@ class Trial(BaseTrial):
                 type(value).__name__)
             raise TypeError(message)
 
-        if step is not None and step < 0:
+        if step < 0:
             raise ValueError('The `step` argument is {} but cannot be negative.'.format(step))
 
-        self.storage.set_trial_value(self._trial_id, value)
-        if step is not None:
-            self.storage.set_trial_intermediate_value(self._trial_id, step, value)
+        self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
     def should_prune(self, step=None):
         # type: (Optional[int]) -> bool
@@ -714,8 +716,8 @@ class FixedTrial(BaseTrial):
 
         return value
 
-    def report(self, value, step=None):
-        # type: (float, Optional[int]) -> None
+    def report(self, value, step):
+        # type: (float, int) -> None
 
         pass
 

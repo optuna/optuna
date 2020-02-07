@@ -40,7 +40,7 @@ def test_hyperband_pruner_intermediate_values():
         # type: (Trial) -> float
 
         for i in range(N_REPORTS):
-            trial.report(i)
+            trial.report(i, step=i)
 
         return 1.0
 

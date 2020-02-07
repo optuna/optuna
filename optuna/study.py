@@ -572,6 +572,14 @@ class Study(BaseStudy):
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
             _logger.info(message)
+
+            # Register the last intermediate value if present as the value of the trial.
+            # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
+            frozen_trial = self._storage.get_trial(trial_id)
+            last_step = frozen_trial.last_step
+            if last_step is not None:
+                self._storage.set_trial_value(
+                    trial_id, frozen_trial.intermediate_values[last_step])
             self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
         except Exception as e:
@@ -614,7 +622,7 @@ class Study(BaseStudy):
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
-        trial.report(result)
+        self._storage.set_trial_value(trial_id, result)
         self._storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
         self._log_completed_trial(trial_number, result)
 
