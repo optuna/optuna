@@ -79,8 +79,10 @@ class GridSampler(BaseSampler):
             for value in param_values:
                 self._check_value(param_name, value)
 
-        self._search_space = collections.OrderedDict(
-            sorted(search_space.items(), key=lambda x: x[0]))
+        self._search_space = collections.OrderedDict()
+        for param_name, param_values in sorted(search_space.items(), key=lambda x: x[0]):
+            self._search_space[param_name] = sorted(param_values)
+
         self._all_grids = list(itertools.product(*self._search_space.values()))
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
@@ -169,7 +171,7 @@ class GridSampler(BaseSampler):
             if len(search_space[param_name]) != len(self._search_space[param_name]):
                 return False
 
-            for i, param_value in enumerate(search_space[param_name]):
+            for i, param_value in enumerate(sorted(search_space[param_name])):
                 if param_value != self._search_space[param_name][i]:
                     return False
 

@@ -159,7 +159,7 @@ def test_has_same_search_space():
     sampler = samplers.GridSampler(search_space)
     assert sampler._same_search_space(search_space)
     assert sampler._same_search_space({'x': np.array([3, 2, 1]), 'y': ['a', 'b', 'c']})
+    assert sampler._same_search_space({'y': ['c', 'a', 'b'], 'x': [1, 2, 3]})
 
-    assert not sampler._same_search_space({'x': [1, 2, 3], 'y': ['a', 'b', 'c']})
     assert not sampler._same_search_space({'x': [3, 2, 1, 0], 'y': ['a', 'b', 'c']})
     assert not sampler._same_search_space({'x': [3, 2], 'y': ['a', 'b', 'c']})
