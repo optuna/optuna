@@ -15,6 +15,7 @@ This page contains a list of example codes written with Optuna.
 * [ChainerMN](./chainermn_simple.py)
 * [Dask-ML](./dask_ml_simple.py)
 * [LightGBM](./lightgbm_simple.py)
+* [LightGBM Tuner](./lightgbm_tuner_simple.py)
 * [CatBoost](./catboost_simple.py)
 * [MXNet](./mxnet_simple.py)
 * [PyTorch](./pytorch_simple.py)
@@ -24,6 +25,7 @@ This page contains a list of example codes written with Optuna.
 * [Tensorflow](./tensorflow_estimator_simple.py)
 * [Tensorflow(eager)](./tensorflow_eager_simple.py)
 * [Keras](./keras_simple.py)
+* [FastAI](./fastai_simple.py)
 
 ### An example where an objective function uses additional arguments
 
@@ -46,6 +48,8 @@ In addition, integration modules are available for the following libraries, prov
 * [Pruning with Keras integration module](./pruning/keras_integration.py)
 * [Pruning with MXNet integration module](./pruning/mxnet_integration.py)
 * [Pruning with PyTorch Ignite integration module](./pytorch_ignite_simple.py)
+* [Pruning with PyTorch Lightning integration module](./pytorch_lightning_simple.py)
+* [Pruning with FastAI integration module](./fastai_simple.py)
 
 ### Examples of User-Defined Sampler
 
@@ -55,6 +59,15 @@ In addition, integration modules are available for the following libraries, prov
 
 * [Visualizing study](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
 
+### Examples of MLflow
+
+* [Tracking optimization process with MLflow](./mlflow/keras_mlflow.py)
+
 ### Examples of Distributed Optimization
 
 * [Optimizing on Kubernetes](./distributed/kubernetes/README.md)
+
+### External libraries using Optuna
+
+* [Analyzing optimization results using Neptune](https://neptune-contrib.readthedocs.io/user_guide/monitoring/optuna.html)
+* [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)

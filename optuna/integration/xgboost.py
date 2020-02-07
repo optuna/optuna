@@ -9,6 +9,22 @@ except ImportError as e:
     _available = False
 
 
+def _get_callback_context(env):
+    # type: (xgb.core.CallbackEnv) -> str
+    """Return whether the current callback context is cv or train.
+
+    .. note::
+        `Reference
+        <https://github.com/dmlc/xgboost/blob/master/python-package/xgboost/callback.py>`_.
+    """
+
+    if env.model is None and env.cvfolds is not None:
+        context = 'cv'
+    else:
+        context = 'train'
+    return context
+
+
 class XGBoostPruningCallback(object):
     """Callback for XGBoost to prune unpromising trials.
 
@@ -45,7 +61,14 @@ class XGBoostPruningCallback(object):
     def __call__(self, env):
         # type: (xgb.core.CallbackEnv) -> None
 
-        current_score = dict(env.evaluation_result_list)[self._observation_key]
+        context = _get_callback_context(env)
+        evaluation_result_list = env.evaluation_result_list
+        if context == 'cv':
+            # Remove a third element: the stddev of the metric across the cross-valdation folds.
+            evaluation_result_list = [
+                (key, metric) for key, metric, _ in evaluation_result_list
+            ]
+        current_score = dict(evaluation_result_list)[self._observation_key]
         self._trial.report(current_score, step=env.iteration)
         if self._trial.should_prune():
             message = "Trial was pruned at iteration {}.".format(env.iteration)

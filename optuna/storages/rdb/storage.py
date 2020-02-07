@@ -1,21 +1,22 @@
-import alembic.command
-import alembic.config
-import alembic.migration
-import alembic.script
 from collections import defaultdict
 import copy
 from datetime import datetime
 import json
 import logging
 import os
+import sys
+import threading
+import uuid
+
+import alembic.command
+import alembic.config
+import alembic.migration
+import alembic.script
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
-import sys
-import threading
-import uuid
 
 import optuna
 from optuna import distributions
@@ -31,6 +32,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
+
+_logger = optuna.logging.get_logger(__name__)
 
 
 class RDBStorage(BaseStorage):
@@ -67,28 +70,34 @@ class RDBStorage(BaseStorage):
         engine_kwargs:
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
-        enable_cache:
-            Flag to control whether to enable storage layer caching.
-            If this flag is set to :obj:`True` (the default), the finished trials are
-            cached on memory and never re-fetched from the storage.
-            Otherwise, the trials are fetched from the storage whenever they are needed.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
 
+    .. note::
+        If you use MySQL, `pool_pre_ping`_ will be set to :obj:`True` by default to prevent
+        connection timeout. You can turn it off with ``engine_kwargs['pool_pre_ping']=False``, but
+        it is recommended to keep the setting if execution time of your objective function is
+        longer than the `wait_timeout` of your MySQL configuration.
+
+    .. _pool_pre_ping:
+        https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.create_engine.params.
+        pool_pre_ping
     """
 
-    def __init__(self, url, engine_kwargs=None, enable_cache=True, skip_compatibility_check=False):
-        # type: (str, Optional[Dict[str, Any]], bool, bool) -> None
+    def __init__(self, url, engine_kwargs=None, skip_compatibility_check=False):
+        # type: (str, Optional[Dict[str, Any]], bool) -> None
 
         self._check_python_version()
 
-        engine_kwargs = engine_kwargs or {}
+        self.engine_kwargs = engine_kwargs or {}
+        self.url = self._fill_storage_url_template(url)
+        self.skip_compatibility_check = skip_compatibility_check
 
-        url = self._fill_storage_url_template(url)
+        self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
         try:
-            self.engine = create_engine(url, **engine_kwargs)
+            self.engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError('Failed to import DB access module for the specified storage URL. '
                               'Please install appropriate one. (The actual import error is: ' +
@@ -97,13 +106,38 @@ class RDBStorage(BaseStorage):
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
 
-        self.logger = optuna.logging.get_logger(__name__)
-
-        self._version_manager = _VersionManager(url, self.engine, self.scoped_session)
+        self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
 
-        self._finished_trials_cache = _FinishedTrialsCache(enable_cache)
+        self._finished_trials_cache = _FinishedTrialsCache()
+
+    def __getstate__(self):
+        # type: () -> Dict[Any, Any]
+
+        state = self.__dict__.copy()
+        del state['scoped_session']
+        del state['engine']
+        del state['_version_manager']
+        del state['_finished_trials_cache']
+        return state
+
+    def __setstate__(self, state):
+        # type: (Dict[Any, Any]) -> None
+        self.__dict__.update(state)
+        try:
+            self.engine = create_engine(self.url, **self.engine_kwargs)
+        except ImportError as e:
+            raise ImportError('Failed to import DB access module for the specified storage URL. '
+                              'Please install appropriate one. (The actual import error is: ' +
+                              str(e) + '.)')
+
+        self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
+        models.BaseModel.metadata.create_all(self.engine)
+        self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
+        if not self.skip_compatibility_check:
+            self._version_manager.check_table_schema_compatibility()
+        self._finished_trials_cache = _FinishedTrialsCache()
 
     @staticmethod
     def _check_python_version():
@@ -115,7 +149,7 @@ class RDBStorage(BaseStorage):
         if sys.version_info.minor != 4:
             return
 
-        if 0 <= sys.version_info.micro and sys.version_info.micro < 4:
+        if 0 <= sys.version_info.micro < 4:
             raise RuntimeError('RDBStorage does not support Python 3.4.0 to 3.4.3.')
 
     def create_new_study(self, study_name=None):
@@ -135,7 +169,7 @@ class RDBStorage(BaseStorage):
                 "by setting `load_if_exists` (for Python API) or "
                 "`--skip-if-exists` flag (for CLI).".format(study_name))
 
-        self.logger.info('A new study created with name: {}'.format(study.study_name))
+        _logger.info('A new study created with name: {}'.format(study.study_name))
 
         return study.study_id
 
@@ -315,7 +349,7 @@ class RDBStorage(BaseStorage):
         trial_user_attribute_models = models.TrialUserAttributeModel.all(session)
         trial_system_attribute_models = models.TrialSystemAttributeModel.all(session)
 
-        study_sumarries = []
+        study_summaries = []
         for study_model in study_models:
             # Filter model objects by study.
             study_trial_models = [t for t in trial_models if t.study_id == study_model.study_id]
@@ -361,7 +395,7 @@ class RDBStorage(BaseStorage):
             system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
             # Consolidate StudySummary.
-            study_sumarries.append(
+            study_summaries.append(
                 structs.StudySummary(
                     study_name=study_model.study_name,
                     direction=self.get_study_direction(study_model.study_id),
@@ -375,7 +409,7 @@ class RDBStorage(BaseStorage):
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
-        return study_sumarries
+        return study_summaries
 
     def create_new_trial(self, study_id, template_trial=None):
         # type: (int, Optional[structs.FrozenTrial]) -> int
@@ -635,9 +669,17 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
 
+        return self._get_and_cache_trial(trial_id)
+
+    def _get_and_cache_trial(self, trial_id, deepcopy=True):
+        # type: (int, bool) -> structs.FrozenTrial
+
         cached_trial = self._finished_trials_cache.get_cached_trial(trial_id)
         if cached_trial is not None:
-            return copy.deepcopy(cached_trial)
+            if deepcopy:
+                return copy.deepcopy(cached_trial)
+            else:
+                return cached_trial
 
         session = self.scoped_session()
 
@@ -657,8 +699,8 @@ class RDBStorage(BaseStorage):
 
         return frozen_trial
 
-    def get_all_trials(self, study_id):
-        # type: (int) -> List[structs.FrozenTrial]
+    def get_all_trials(self, study_id, deepcopy=True):
+        # type: (int, bool) -> List[structs.FrozenTrial]
 
         if self._finished_trials_cache.is_empty():
             trials = self._get_all_trials_without_cache(study_id)
@@ -668,8 +710,22 @@ class RDBStorage(BaseStorage):
             return trials
 
         trial_ids = self._get_all_trial_ids(study_id)
-        trials = [self.get_trial(trial_id) for trial_id in trial_ids]
+        trials = [self._get_and_cache_trial(trial_id, deepcopy) for trial_id in trial_ids]
         return trials
+
+    def get_best_trial(self, study_id):
+        # type: (int) -> structs.FrozenTrial
+
+        session = self.scoped_session()
+        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+            trial = models.TrialModel.find_max_value_trial(study_id, session)
+        else:
+            trial = models.TrialModel.find_min_value_trial(study_id, session)
+
+        # Terminate transaction explicitly to avoid connection timeout during transaction.
+        self._commit(session)
+
+        return self.get_trial(trial.trial_id)
 
     def _get_all_trial_ids(self, study_id):
         # type: (int) -> List[int]
@@ -802,6 +858,25 @@ class RDBStorage(BaseStorage):
         return result
 
     @staticmethod
+    def _set_default_engine_kwargs_for_mysql(url, engine_kwargs):
+        # type: (str, Dict[str, Any]) -> None
+
+        # Skip if RDB is not MySQL.
+        if not url.startswith('mysql'):
+            return
+
+        # Do not overwrite value.
+        if 'pool_pre_ping' in engine_kwargs:
+            return
+
+        # If True, the connection pool checks liveness of connections at every checkout.
+        # Without this option, trials that take longer than `wait_timeout` may cause connection
+        # errors. For further details, please refer to the following document:
+        # https://docs.sqlalchemy.org/en/13/core/pooling.html#pool-disconnects-pessimistic
+        engine_kwargs['pool_pre_ping'] = True
+        _logger.debug('pool_pre_ping=True was set to engine_kwargs to prevent connection timeout.')
+
+    @staticmethod
     def _fill_storage_url_template(template):
         # type: (str) -> str
 
@@ -814,8 +889,7 @@ class RDBStorage(BaseStorage):
         try:
             session.commit()
         except IntegrityError as e:
-            logger = optuna.logging.get_logger(__name__)
-            logger.debug(
+            _logger.debug(
                 'Ignoring {}. This happens due to a timing issue among threads/processes/nodes. '
                 'Another one might have committed a record with the same key(s).'.format(repr(e)))
             session.rollback()
@@ -1043,18 +1117,14 @@ class _VersionManager(object):
 
 
 class _FinishedTrialsCache(object):
-    def __init__(self, enabled):
-        # type: (bool) -> None
+    def __init__(self):
+        # type: () -> None
 
         self._finished_trials = {}  # type: Dict[int, structs.FrozenTrial]
-        self._enabled = enabled
         self._lock = threading.Lock()
 
     def is_empty(self):
         # type: () -> bool
-
-        if not self._enabled:
-            return True
 
         with self._lock:
             return len(self._finished_trials) == 0
@@ -1062,18 +1132,12 @@ class _FinishedTrialsCache(object):
     def cache_trial_if_finished(self, trial):
         # type: (structs.FrozenTrial) -> None
 
-        if not self._enabled:
-            return
-
         if trial.state.is_finished():
             with self._lock:
-                self._finished_trials[trial._trial_id] = copy.deepcopy(trial)
+                self._finished_trials[trial._trial_id] = trial
 
     def get_cached_trial(self, trial_id):
         # type: (int) -> Optional[structs.FrozenTrial]
-
-        if not self._enabled:
-            return None
 
         with self._lock:
             return self._finished_trials.get(trial_id)

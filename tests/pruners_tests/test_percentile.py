@@ -1,4 +1,5 @@
 import math
+
 import pytest
 
 import optuna

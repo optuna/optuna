@@ -143,6 +143,7 @@ def _objective(trial):
     p7 = trial.suggest_discrete_uniform('p7', 0.1, 1.0, 0.1)
     p8 = trial.suggest_discrete_uniform('p8', 2.2, 2.2, 0.5)
     p9 = trial.suggest_categorical('p9', ['9', '3', '0', '8'])
+    assert isinstance(p9, str)
 
     return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + int(p9)
 

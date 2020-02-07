@@ -1,7 +1,10 @@
 from datetime import datetime
+
+from sqlalchemy import asc
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import DateTime
+from sqlalchemy import desc
 from sqlalchemy import Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Float
@@ -159,6 +162,30 @@ class TrialModel(BaseModel):
 
         trial = session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
 
+        return trial
+
+    @classmethod
+    def find_max_value_trial(cls, study_id, session):
+        # type: (int, orm.Session) -> TrialModel
+
+        trial = session.query(cls) \
+            .filter(cls.study_id == study_id)\
+            .filter(cls.state == TrialState.COMPLETE) \
+            .order_by(desc(cls.value)).limit(1).one_or_none()
+        if trial is None:
+            raise ValueError(NOT_FOUND_MSG)
+        return trial
+
+    @classmethod
+    def find_min_value_trial(cls, study_id, session):
+        # type: (int, orm.Session) -> TrialModel
+
+        trial = session.query(cls) \
+            .filter(cls.study_id == study_id) \
+            .filter(cls.state == TrialState.COMPLETE) \
+            .order_by(asc(cls.value)).limit(1).one_or_none()
+        if trial is None:
+            raise ValueError(NOT_FOUND_MSG)
         return trial
 
     @classmethod

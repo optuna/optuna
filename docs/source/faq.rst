@@ -1,6 +1,9 @@
 FAQ
 ===
 
+.. contents::
+    :local:
+
 Can I use Optuna with X? (where X is your favorite ML library)
 --------------------------------------------------------------
 
@@ -156,26 +159,23 @@ Second, if your objective function behaves in a non-deterministic way (i.e., it 
 To deal with this problem, please set an option (e.g., random seed) to make the behavior deterministic if your optimization target (e.g., an ML library) provides it.
 
 
-How does Optuna handle NaNs and exceptions reported by the objective function?
-------------------------------------------------------------------------------
+How are exceptions from trials handled?
+---------------------------------------
 
-Optuna treats such trials as failures (i.e., :obj:`~optuna.structs.TrialState.FAIL`) and continues the study.
-The Optuna's system process will not be crashed by any objective values or exceptions raised in objective functions.
+Trials that raise exceptions without catching them will be treated as failures, i.e. with the :obj:`~optuna.structs.TrialState.FAIL` status.
+
+By default, all exceptions except :class:`~optuna.exceptions.TrialPruned` raised in objective functions are propagated to the caller of :func:`~optuna.study.Study.optimize`.
+In other words, studies are aborted when such exceptions are raised.
+It might be desirable to continue a study with the remaining trials.
+To do so, you can specify in :func:`~optuna.study.Study.optimize` which exception types to catch using the ``catch`` argument.
+Exceptions of these types are caught inside the study and will not propagate further.
 
 You can find the failed trials in log messages.
-Errors raised in objective functions are shown as follows:
 
 .. code-block:: sh
 
     [W 2018-12-07 16:38:36,889] Setting status of trial#0 as TrialState.FAIL because of \
     the following error: ValueError('A sample error in objective.')
-
-And trials which returned :obj:`NaN` are shown as follows:
-
-.. code-block:: sh
-
-    [W 2018-12-07 16:41:59,000] Setting status of trial#2 as TrialState.FAIL because the \
-    objective function returned nan.
 
 You can also find the failed trials by checking the trial states as follows:
 
@@ -188,6 +188,37 @@ You can also find the failed trials by checking the trial states as follows:
     number,state,value,...,params,system_attrs
     0,TrialState.FAIL,,...,0,Setting status of trial#0 as TrialState.FAIL because of the following error: ValueError('A test error in objective.')
     1,TrialState.COMPLETE,1269,...,1,
+
+.. seealso::
+
+    The ``catch`` argument in :func:`~optuna.study.Study.optimize`.
+
+
+How are NaNs returned by trials handled?
+----------------------------------------
+
+Trials that return :obj:`NaN` (``float('nan')``) are treated as failures, but they will not abort studies.
+
+Trials which return :obj:`NaN` are shown as follows:
+
+.. code-block:: sh
+
+    [W 2018-12-07 16:41:59,000] Setting status of trial#2 as TrialState.FAIL because the \
+    objective function returned nan.
+
+
+What happens when I dynamically alter a search space?
+-----------------------------------------------------
+
+Since parameters search spaces are specified in each call to the suggestion API, e.g.
+:func:`~optuna.trial.Trial.suggest_uniform` and :func:`~optuna.trial.Trial.suggest_int`,
+it is possible to in a single study alter the range by sampling parameters from different search
+spaces in different trials.
+The behavior when altered is defined by each sampler individually.
+
+.. note::
+
+    Discussion about the TPE sampler. https://github.com/optuna/optuna/issues/822
 
 
 How can I use two GPUs for evaluating two trials simultaneously?

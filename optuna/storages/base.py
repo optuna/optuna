@@ -1,4 +1,5 @@
 import abc
+import copy
 
 from optuna import structs
 from optuna import type_checking
@@ -164,8 +165,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_all_trials(self, study_id):
-        # type: (int) -> List[structs.FrozenTrial]
+    def get_all_trials(self, study_id, deepcopy=True):
+        # type: (int, bool) -> List[structs.FrozenTrial]
 
         raise NotImplementedError
 
@@ -178,15 +179,18 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     def get_best_trial(self, study_id):
         # type: (int) -> structs.FrozenTrial
 
-        all_trials = self.get_all_trials(study_id)
+        all_trials = self.get_all_trials(study_id, deepcopy=False)
         all_trials = [t for t in all_trials if t.state is structs.TrialState.COMPLETE]
 
         if len(all_trials) == 0:
             raise ValueError('No trials are completed yet.')
 
         if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
-            return max(all_trials, key=lambda t: t.value)
-        return min(all_trials, key=lambda t: t.value)
+            best_trial = max(all_trials, key=lambda t: t.value)
+        else:
+            best_trial = min(all_trials, key=lambda t: t.value)
+
+        return copy.deepcopy(best_trial)
 
     def get_trial_params(self, trial_id):
         # type: (int) -> Dict[str, Any]

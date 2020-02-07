@@ -2,7 +2,9 @@
 
 # Optuna: A hyperparameter optimization framework
 
+[![Python](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
+[![conda](https://img.shields.io/conda/vn/conda-forge/optuna.svg)](https://anaconda.org/conda-forge/optuna)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/optuna/optuna)
 [![CircleCI](https://circleci.com/gh/optuna/optuna.svg?style=svg)](https://circleci.com/gh/optuna/optuna)
 [![Read the Docs](https://readthedocs.org/projects/optuna/badge/?version=stable)](https://optuna.readthedocs.io/en/stable/)
@@ -72,6 +74,21 @@ study = optuna.create_study()  # Create a new study.
 study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
 ```
 
+
+## Integrations
+
+[Integrations modules](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html), which allow pruning, or early stopping, of unpromising trials are available for the following libraries:
+
+* [XGBoost](./examples/pruning/xgboost_integration.py)
+* [LightGBM](./examples/pruning/lightgbm_integration.py)
+* [Chainer](./examples/pruning/chainer_integration.py)
+* [Keras](./examples/pruning/keras_integration.py)
+* [TensorFlow](./examples/pruning/tensorflow_estimator_integration.py)
+* [tf.keras](./examples/pruning/tfkeras_integration.py)
+* [MXNet](./examples/pruning/mxnet_integration.py)
+* [PyTorch Ignite](./examples/pytorch_ignite_simple.py)
+* [PyTorch Lightning](./examples/pytorch_lightning_simple.py)
+* [FastAI](./examples/fastai_simple.py)
 
 ## Installation
 

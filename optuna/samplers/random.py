@@ -36,6 +36,19 @@ class RandomSampler(BaseSampler):
 
         self._rng = numpy.random.RandomState(seed)
 
+    def __getstate__(self):
+        # type: () -> Dict[Any, Any]
+
+        state = self.__dict__.copy()
+        del state['_rng']
+        return state
+
+    def __setstate__(self, state):
+        # type: (Dict[Any, Any]) -> None
+
+        self.__dict__.update(state)
+        self._rng = numpy.random.RandomState(None)
+
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
@@ -48,7 +61,6 @@ class RandomSampler(BaseSampler):
 
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (Study, FrozenTrial, str, distributions.BaseDistribution) -> Any
-        """Please consult the documentation for :func:`BaseSampler.sample_independent`."""
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._rng.uniform(param_distribution.low, param_distribution.high)

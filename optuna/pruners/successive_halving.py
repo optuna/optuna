@@ -2,10 +2,13 @@ import math
 
 from optuna.pruners.base import BasePruner
 from optuna.structs import StudyDirection
+from optuna.structs import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Union  # NOQA
 
     from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
@@ -46,6 +49,8 @@ class SuccessiveHalvingPruner(BasePruner):
             A parameter for specifying the minimum resource allocated to a trial
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
             referred to as :math:`r`).
+            This parameter defaults to 'auto' where the value is determined based on a heuristic
+            that looks at the number of required steps for the first trial to complete.
 
             A trial is never pruned until it executes
             :math:`\\mathsf{min}\\_\\mathsf{resource} \\times
@@ -74,12 +79,19 @@ class SuccessiveHalvingPruner(BasePruner):
             referred to as :math:`s`).
     """
 
-    def __init__(self, min_resource=1, reduction_factor=4, min_early_stopping_rate=0):
-        # type: (int, int, int) -> None
+    def __init__(self, min_resource='auto', reduction_factor=4, min_early_stopping_rate=0):
+        # type: (Union[str, int], int, int) -> None
 
-        if min_resource < 1:
-            raise ValueError('The value of `min_resource` is {}, '
-                             'but must be `min_resource >= 1`'.format(min_resource))
+        if isinstance(min_resource, str) and min_resource != 'auto':
+            raise ValueError(
+                "The value of `min_resource` is {}, "
+                "but must be either `min_resource` >= 1 or 'auto'".format(min_resource)
+            )
+
+        if isinstance(min_resource, int) and min_resource < 1:
+            raise ValueError(
+                'The value of `min_resource` is {}, '
+                "but must be either `min_resource >= 1` or 'auto'".format(min_resource))
 
         if reduction_factor < 2:
             raise ValueError('The value of `reduction_factor` is {}, '
@@ -88,15 +100,17 @@ class SuccessiveHalvingPruner(BasePruner):
         if min_early_stopping_rate < 0:
             raise ValueError(
                 'The value of `min_early_stopping_rate` is {}, '
-                'but must be `min_early_stopping_rate >= 0`'.format(min_early_stopping_rate))
+                "but must be `min_early_stopping_rate >= 0`".format(
+                    min_early_stopping_rate))
 
-        self._min_resource = min_resource
+        self._min_resource = None  # type: Optional[int]
+        if isinstance(min_resource, int):
+            self._min_resource = min_resource
         self._reduction_factor = reduction_factor
         self._min_early_stopping_rate = min_early_stopping_rate
 
     def prune(self, study, trial):
         # type: (Study, FrozenTrial) -> bool
-        """Please consult the documentation for :func:`BasePruner.prune`."""
 
         step = trial.last_step
         if step is None:
@@ -104,47 +118,54 @@ class SuccessiveHalvingPruner(BasePruner):
 
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
-        all_trials = None
+        trials = None  # type: Optional[List[FrozenTrial]]
+
         while True:
-            promotion_step = self._min_resource * \
+            if self._min_resource is None:
+                if trials is None:
+                    trials = study.get_trials(deepcopy=False)
+                self._min_resource = _estimate_min_resource(trials)
+                if self._min_resource is None:
+                    return False
+
+            assert self._min_resource is not None
+            rung_promotion_step = self._min_resource * \
                 (self._reduction_factor ** (self._min_early_stopping_rate + rung))
-            if step < promotion_step:
+            if step < rung_promotion_step:
                 return False
 
             if math.isnan(value):
                 return True
 
-            if all_trials is None:
-                all_trials = study.trials
+            if trials is None:
+                trials = study.get_trials(deepcopy=False)
 
-            study._storage.set_trial_system_attr(trial._trial_id, _completed_rung_key(rung), value)
-            direction = study.direction
-            if not self._is_promotable(rung, value, all_trials, direction):
+            rung_key = _completed_rung_key(rung)
+
+            study._storage.set_trial_system_attr(trial._trial_id, rung_key, value)
+
+            if not _is_trial_promotable_to_next_rung(
+                    value, _get_competing_values(trials, value, rung_key),
+                    self._reduction_factor, study.direction):
                 return True
 
             rung += 1
 
-    def _is_promotable(self, rung, value, all_trials, study_direction):
-        # type: (int, float, List[FrozenTrial], StudyDirection) -> bool
 
-        key = _completed_rung_key(rung)
-        competing_values = [t.system_attrs[key] for t in all_trials if key in t.system_attrs]
-        competing_values.append(value)
-        competing_values.sort()
+def _estimate_min_resource(trials):
+    # type: (List[FrozenTrial]) -> Optional[int]
 
-        promotable_idx = (len(competing_values) // self._reduction_factor) - 1
-        if promotable_idx == -1:
-            # Optuna does not support to suspend/resume ongoing trials.
-            #
-            # For the first `eta - 1` trials, this implementation promotes a trial if its
-            # intermediate value is the smallest one among the trials that have completed the rung.
-            promotable_idx = 0
+    n_steps = [
+        t.last_step for t in trials
+        if t.state == TrialState.COMPLETE and t.last_step is not None
+    ]
 
-        if study_direction == StudyDirection.MAXIMIZE:
-            competing_values.reverse()
-            return value >= competing_values[promotable_idx]
+    if not n_steps:
+        return None
 
-        return value <= competing_values[promotable_idx]
+    # Get the maximum number of steps and divide it by 100.
+    last_step = max(n_steps)
+    return max(last_step // 100, 1)
 
 
 def _get_current_rung(trial):
@@ -161,3 +182,28 @@ def _completed_rung_key(rung):
     # type: (int) -> str
 
     return 'completed_rung_{}'.format(rung)
+
+
+def _get_competing_values(trials, value, rung_key):
+    # type: (List[FrozenTrial], float, str) -> List[float]
+
+    competing_values = [t.system_attrs[rung_key] for t in trials if rung_key in t.system_attrs]
+    competing_values.append(value)
+    return competing_values
+
+
+def _is_trial_promotable_to_next_rung(value, competing_values, reduction_factor, study_direction):
+    # type: (float, List[float], int, StudyDirection) -> bool
+
+    promotable_idx = (len(competing_values) // reduction_factor) - 1
+
+    if promotable_idx == -1:
+        # Optuna does not support suspending or resuming ongoing trials. Therefore, for the first
+        # `eta - 1` trials, this implementation instead promotes the trial if its value is the
+        # smallest one among the competing values.
+        promotable_idx = 0
+
+    competing_values.sort()
+    if study_direction == StudyDirection.MAXIMIZE:
+        return value >= competing_values[-(promotable_idx + 1)]
+    return value <= competing_values[promotable_idx]

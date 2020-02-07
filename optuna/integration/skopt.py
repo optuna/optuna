@@ -213,7 +213,7 @@ class _Optimizer(object):
         # the parameters of complete trials are always compatible with the search space.
         #
         # However, in distributed optimization, incompatible trials may complete on a worker
-        # just after a product search space is calculated on another worker.
+        # just after an intersection search space is calculated on another worker.
 
         for name, distribution in self._search_space.items():
             if name not in trial.params:

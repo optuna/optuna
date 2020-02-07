@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import math
+
 from mock import patch
 import numpy as np
 import pytest
