@@ -6,11 +6,11 @@ from tqdm.auto import tqdm
 
 from optuna import logging as optuna_logging
 
-_tqdm_handler = None  # type: Optional[TqdmLoggingHandler]
+_tqdm_handler = None  # type: Optional[_TqdmLoggingHandler]
 
 
 # Reference: https://gist.github.com/hvy/8b80c2cedf02b15c24f85d1fa17ebe02
-class TqdmLoggingHandler(logging.StreamHandler):
+class _TqdmLoggingHandler(logging.StreamHandler):
 
     def emit(self, record: Any) -> None:
         try:
@@ -23,7 +23,7 @@ class TqdmLoggingHandler(logging.StreamHandler):
             self.handleError(record)
 
 
-class _ProgressBar(object):
+class _ProgressBar:
     """Progress Bar implementation for `Study.optimize` on the top of `tqdm`.
 
     Args:
@@ -49,11 +49,11 @@ class _ProgressBar(object):
             self._progress_bar = tqdm(range(n_trials) if n_trials is not None else None)
             global _tqdm_handler
 
-            tqdm_handler = TqdmLoggingHandler()
-            tqdm_handler.setLevel(logging.INFO)
-            tqdm_handler.setFormatter(optuna_logging.create_default_formatter())
+            _tqdm_handler = _TqdmLoggingHandler()
+            _tqdm_handler.setLevel(logging.INFO)
+            _tqdm_handler.setFormatter(optuna_logging.create_default_formatter())
             optuna_logging.disable_default_handler()
-            optuna_logging._get_library_root_logger().addHandler(tqdm_handler)
+            optuna_logging._get_library_root_logger().addHandler(_tqdm_handler)
 
     def update(self, elapsed_seconds: Optional[float]) -> None:
         """Update the progress bars if ``is_valid`` is ``True``.
@@ -68,21 +68,9 @@ class _ProgressBar(object):
                 self._progress_bar.set_postfix_str(
                     '{:.02f}/{} seconds'.format(elapsed_seconds, self._timeout))
 
-    def set_description_str(self, msg: Optional[str]) -> None:
-        """Update the best value message.
-
-        Args:
-            msg:
-                The description of the latest best values.
-        """
-        # if self._is_valid:
-        #     self._log_bar.set_description_str(msg)
-        pass
-
     def close(self) -> None:
         """Close progress bars."""
         if self._is_valid:
             self._progress_bar.close()
-            if self._is_valid and _tqdm_handler is not None:
-                optuna_logging._get_library_root_logger().removeHandler(_tqdm_handler)
-                optuna_logging.enable_default_handler()
+            optuna_logging._get_library_root_logger().removeHandler(_tqdm_handler)
+            optuna_logging.enable_default_handler()
