@@ -530,7 +530,7 @@ class Trial(BaseTrial):
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
         return distribution._contains(param_value_in_internal_repr)
 
-    def _check_distribution(self, low=None, high=None, q=None, choices=None, name=None):
+    def _check_distribution(self, low=None, high=None, q=None, name=None):
         dist_dict = {}
         if low is not None:
             dist_dict['low'] = low
@@ -538,8 +538,6 @@ class Trial(BaseTrial):
             dist_dict['high'] = high
         if q is not None:
             dist_dict['q'] = q
-        if choices is not None:
-            dist_dict['choices'] = choices
 
         old_distribution_in_trial = self.distributions_in_trial.get(name, None)
 
