@@ -38,7 +38,47 @@ def test_check_distribution_suggest_uniform(storage_init_func):
     with pytest.warns(RuntimeWarning):
         trial.suggest_uniform('x', 10, 30)
 
-# TODO: more tests for _check_distribution
+
+@parametrize_storage
+def test_check_distribution_suggest_loguniform(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    trial.suggest_loguniform('x', 10, 20)
+
+    with pytest.warns(RuntimeWarning):
+        trial.suggest_loguniform('x', 10, 30)
+
+
+@parametrize_storage
+def test_check_distribution_suggest_discrete_uniform(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    trial.suggest_discrete_uniform('x', 10, 20, 2)
+
+    with pytest.warns(RuntimeWarning):
+       trial.suggest_discrete_uniform('x', 10, 22, 2)
+
+
+@parametrize_storage
+def test_check_distribution_suggest_int(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    trial.suggest_int('x', 10, 20)
+
+    with pytest.warns(RuntimeWarning):
+       trial.suggest_int('x', 10, 22)
 
 
 @parametrize_storage
