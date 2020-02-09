@@ -542,7 +542,7 @@ class Trial(BaseTrial):
 
         old_distribution_in_trial = self.distributions_in_trial.get(name, None)
 
-        if old_distribution_in_trial == None:
+        if old_distribution_in_trial is None:
             self.distributions_in_trial[name] = dist_dict
         elif old_distribution_in_trial != dist_dict:
             warnings.warn('Inconsistent parameter values for distribution {}! '
