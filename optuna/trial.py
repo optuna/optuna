@@ -547,7 +547,7 @@ class Trial(BaseTrial):
         elif old_distribution_in_trial != dist_dict:
                 warnings.warn('Inconsistent parameter values for distribution {}! '
                               'This might be a configuration mistake.'
-                              .format(name))
+                              .format(name), RuntimeWarning)
 
     @property
     def number(self):
