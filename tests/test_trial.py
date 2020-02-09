@@ -24,6 +24,7 @@ parametrize_storage = pytest.mark.parametrize(
     'storage_init_func',
     [storages.InMemoryStorage, lambda: storages.RDBStorage('sqlite:///:memory:')])
 
+
 @parametrize_storage
 def test_check_distribution_suggest_uniform(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
@@ -38,6 +39,7 @@ def test_check_distribution_suggest_uniform(storage_init_func):
         trial.suggest_uniform('x', 10, 30)
 
 # TODO: more tests for _check_distribution
+
 
 @parametrize_storage
 def test_suggest_uniform(storage_init_func):

@@ -545,9 +545,9 @@ class Trial(BaseTrial):
         if old_distribution_in_trial == None:
             self.distributions_in_trial[name] = dist_dict
         elif old_distribution_in_trial != dist_dict:
-                warnings.warn('Inconsistent parameter values for distribution {}! '
-                              'This might be a configuration mistake.'
-                              .format(name), RuntimeWarning)
+            warnings.warn('Inconsistent parameter values for distribution {}! '
+                          'This might be a configuration mistake.'
+                          .format(name), RuntimeWarning)
 
     @property
     def number(self):
