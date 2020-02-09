@@ -64,7 +64,7 @@ def test_check_distribution_suggest_discrete_uniform(storage_init_func):
     trial.suggest_discrete_uniform('x', 10, 20, 2)
 
     with pytest.warns(RuntimeWarning):
-       trial.suggest_discrete_uniform('x', 10, 22, 2)
+        trial.suggest_discrete_uniform('x', 10, 22, 2)
 
 
 @parametrize_storage
@@ -78,7 +78,7 @@ def test_check_distribution_suggest_int(storage_init_func):
     trial.suggest_int('x', 10, 20)
 
     with pytest.warns(RuntimeWarning):
-       trial.suggest_int('x', 10, 22)
+        trial.suggest_int('x', 10, 22)
 
 
 @parametrize_storage
