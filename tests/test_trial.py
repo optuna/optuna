@@ -24,6 +24,20 @@ parametrize_storage = pytest.mark.parametrize(
     'storage_init_func',
     [storages.InMemoryStorage, lambda: storages.RDBStorage('sqlite:///:memory:')])
 
+@parametrize_storage
+def test_check_distribution_suggest_uniform(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    trial.suggest_uniform('x', 10, 20)
+
+    with pytest.warns(RuntimeWarning):
+        trial.suggest_uniform('x', 10, 30)
+
+# TODO: more tests for _check_distribution
 
 @parametrize_storage
 def test_suggest_uniform(storage_init_func):
