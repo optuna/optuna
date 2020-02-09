@@ -136,7 +136,7 @@ class Trial(BaseTrial):
 
         self._init_relative_params()
 
-        self.distributions_in_trial = {} # type: Dict[str, Any]
+        self.distributions_in_trial = {}  # type: Dict[str, Any]
 
     def _init_relative_params(self):
         # type: () -> None
