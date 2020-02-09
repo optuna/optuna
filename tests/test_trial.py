@@ -33,10 +33,13 @@ def test_check_distribution_suggest_uniform(storage_init_func):
     study = create_study(storage_init_func(), sampler=sampler)
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-    trial.suggest_uniform('x', 10, 20)
-
-    with pytest.warns(RuntimeWarning):
+    with pytest.warns(None) as record:
+        trial.suggest_uniform('x', 10, 20)
+        trial.suggest_uniform('x', 10, 20)
         trial.suggest_uniform('x', 10, 30)
+
+    # we expect exactly one warning
+    assert len(record) == 1
 
 
 @parametrize_storage
@@ -47,10 +50,13 @@ def test_check_distribution_suggest_loguniform(storage_init_func):
     study = create_study(storage_init_func(), sampler=sampler)
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-    trial.suggest_loguniform('x', 10, 20)
-
-    with pytest.warns(RuntimeWarning):
+    with pytest.warns(None) as record:
+        trial.suggest_loguniform('x', 10, 20)
+        trial.suggest_loguniform('x', 10, 20)
         trial.suggest_loguniform('x', 10, 30)
+
+    # we expect exactly one warning
+    assert len(record) == 1
 
 
 @parametrize_storage
@@ -61,10 +67,13 @@ def test_check_distribution_suggest_discrete_uniform(storage_init_func):
     study = create_study(storage_init_func(), sampler=sampler)
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-    trial.suggest_discrete_uniform('x', 10, 20, 2)
-
-    with pytest.warns(RuntimeWarning):
+    with pytest.warns(None) as record:
+        trial.suggest_discrete_uniform('x', 10, 20, 2)
+        trial.suggest_discrete_uniform('x', 10, 20, 2)
         trial.suggest_discrete_uniform('x', 10, 22, 2)
+
+    # we expect exactly one warning
+    assert len(record) == 1
 
 
 @parametrize_storage
@@ -75,10 +84,13 @@ def test_check_distribution_suggest_int(storage_init_func):
     study = create_study(storage_init_func(), sampler=sampler)
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-    trial.suggest_int('x', 10, 20)
-
-    with pytest.warns(RuntimeWarning):
+    with pytest.warns(None) as record:
+        trial.suggest_int('x', 10, 20)
+        trial.suggest_int('x', 10, 20)
         trial.suggest_int('x', 10, 22)
+
+    # we expect exactly one warning
+    assert len(record) == 1
 
 
 @parametrize_storage
