@@ -531,6 +531,8 @@ class Trial(BaseTrial):
         return distribution._contains(param_value_in_internal_repr)
 
     def _check_distribution(self, low=None, high=None, q=None, name=None):
+        # type: (Any, Any, Optional[float], str) -> None
+
         dist_dict = {}
         if low is not None:
             dist_dict['low'] = low
