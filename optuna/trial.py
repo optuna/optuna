@@ -353,7 +353,8 @@ class Trial(BaseTrial):
 
         choices = tuple(choices)
 
-        self._check_distribution(choices=choices, name=name)
+        # no deed to call self._check_distribution because
+        # CategoricalDistribution does not support dynamic value space
 
         return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
 
