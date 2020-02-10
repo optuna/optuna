@@ -22,6 +22,13 @@ def _n_grids(search_space):
     return int(np.prod([len(v) for v in search_space.values()]))
 
 
+def test_grid_sampler_experimental_warning():
+    # type: () -> None
+
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.samplers.GridSampler({'some_param': [0, 1]})
+
+
 def test_study_optimize_with_single_search_space():
     # type: () -> None
 
