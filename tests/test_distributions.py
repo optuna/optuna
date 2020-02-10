@@ -113,6 +113,16 @@ def test_contains():
     assert iu._contains(10.1)
     assert not iu._contains(11)
 
+    iu = distributions.IntUniformDistribution(low=1, high=10, q=2)
+    assert not iu._contains(0.9)
+    assert iu._contains(1)
+    assert iu._contains(3.5)
+    assert iu._contains(6)
+    assert iu._contains(10)
+    assert iu._contains(10.1)
+    assert not iu._contains(11)
+
+
     c = distributions.CategoricalDistribution(choices=('Roppongi', 'Azabu'))
     assert not c._contains(-1)
     assert c._contains(0)
