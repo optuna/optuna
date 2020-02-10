@@ -219,7 +219,7 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def suggest_int(self, name, low, high, q):
+    def suggest_int(self, name, low, high, q=1):
         # type: (str, int, int, int) -> int
 
         def func():

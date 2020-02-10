@@ -272,7 +272,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high, q):
+    def suggest_int(self, name, low, high, q=1):
         # type: (str, int, int, int) -> int
         """Suggest a value for the integer parameter.
 
@@ -298,6 +298,8 @@ class Trial(BaseTrial):
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
+            q: 
+                A step of discretization.
 
         Returns:
             A suggested integer value.
@@ -682,7 +684,7 @@ class FixedTrial(BaseTrial):
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
-    def suggest_int(self, name, low, high, q):
+    def suggest_int(self, name, low, high, q=1):
         # type: (str, int, int, int) -> int
         sample = self._suggest(name, distributions.IntUniformDistribution(low=low, high=high, q=q))
         return int(sample)
