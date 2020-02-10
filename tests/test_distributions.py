@@ -122,7 +122,6 @@ def test_contains():
     assert iu._contains(10.1)
     assert not iu._contains(11)
 
-
     c = distributions.CategoricalDistribution(choices=('Roppongi', 'Azabu'))
     assert not c._contains(-1)
     assert c._contains(0)
