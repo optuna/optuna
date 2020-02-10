@@ -231,7 +231,7 @@ class IntUniformDistribution(BaseDistribution):
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
-        q: 
+        q:
             A step of discretization.
     """
 

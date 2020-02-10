@@ -298,7 +298,7 @@ class Trial(BaseTrial):
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
-            q: 
+            q:
                 A step of discretization.
 
         Returns:
