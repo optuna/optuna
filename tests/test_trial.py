@@ -83,8 +83,8 @@ def test_suggest_low_equals_high(storage_init_func):
         assert trial.suggest_discrete_uniform('c', 1., 1., 1.) == 1.  # Suggesting a param.
         assert trial.suggest_discrete_uniform('c', 1., 1., 1.) == 1.  # Suggesting the same param.
         assert mock_object.call_count == 0
-        assert trial.suggest_int('d', 1, 1) == 1  # Suggesting a param.
-        assert trial.suggest_int('d', 1, 1) == 1  # Suggesting the same param.
+        assert trial.suggest_int('d', 1, 1, 1) == 1  # Suggesting a param.
+        assert trial.suggest_int('d', 1, 1, 1) == 1  # Suggesting the same param.
         assert mock_object.call_count == 0
 
 
@@ -178,7 +178,7 @@ def test_suggest_int(storage_init_func):
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = distributions.IntUniformDistribution(low=0, high=3)
+        distribution = distributions.IntUniformDistribution(low=0, high=3, q=1)
 
         assert trial._suggest('x', distribution) == 1  # Test suggesting a param.
         assert trial._suggest('x', distribution) == 1  # Test suggesting the same param.
@@ -197,7 +197,7 @@ def test_distributions(storage_init_func):
         trial.suggest_uniform('a', 0, 10)
         trial.suggest_loguniform('b', 0.1, 10)
         trial.suggest_discrete_uniform('c', 0, 10, 1)
-        trial.suggest_int('d', 0, 10)
+        trial.suggest_int('d', 0, 10, 1)
         trial.suggest_categorical('e', ['foo', 'bar', 'baz'])
 
         return 1.0
@@ -209,7 +209,7 @@ def test_distributions(storage_init_func):
         'a': distributions.UniformDistribution(low=0, high=10),
         'b': distributions.LogUniformDistribution(low=0.1, high=10),
         'c': distributions.DiscreteUniformDistribution(low=0, high=10, q=1),
-        'd': distributions.IntUniformDistribution(low=0, high=10),
+        'd': distributions.IntUniformDistribution(low=0, high=10, q=1),
         'e': distributions.CategoricalDistribution(choices=('foo', 'bar', 'baz'))
     }
 
@@ -258,10 +258,10 @@ def test_fixed_trial_suggest_int():
     # type: () -> None
 
     trial = FixedTrial({'x': 1})
-    assert trial.suggest_int('x', 0, 10) == 1
+    assert trial.suggest_int('x', 0, 10, 1) == 1
 
     with pytest.raises(ValueError):
-        trial.suggest_int('y', 0, 10)
+        trial.suggest_int('y', 0, 10, 1)
 
 
 def test_fixed_trial_suggest_categorical():
@@ -379,7 +379,7 @@ def test_relative_parameters(storage_init_func):
 
     # Error (due to incompatible distribution class).
     trial3 = create_trial()
-    distribution3 = distributions.IntUniformDistribution(low=1, high=100)
+    distribution3 = distributions.IntUniformDistribution(low=1, high=100, q=1)
     with pytest.raises(ValueError):
         trial3._suggest('y', distribution3)
 

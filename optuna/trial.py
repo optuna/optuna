@@ -39,8 +39,8 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
+    def suggest_int(self, name, low, high, q):
+        # type: (str, int, int, int) -> int
 
         raise NotImplementedError
 
@@ -272,8 +272,8 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
+    def suggest_int(self, name, low, high, q):
+        # type: (str, int, int, int) -> int
         """Suggest a value for the integer parameter.
 
         The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
@@ -303,7 +303,7 @@ class Trial(BaseTrial):
             A suggested integer value.
         """
 
-        distribution = distributions.IntUniformDistribution(low=low, high=high)
+        distribution = distributions.IntUniformDistribution(low=low, high=high, q=q)
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
 
@@ -682,10 +682,10 @@ class FixedTrial(BaseTrial):
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
-
-        return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
+    def suggest_int(self, name, low, high, q):
+        # type: (str, int, int, int) -> int
+        sample = self._suggest(name, distributions.IntUniformDistribution(low=low, high=high, q=q))
+        return int(sample)
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType

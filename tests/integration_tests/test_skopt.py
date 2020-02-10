@@ -33,10 +33,10 @@ def test_conversion_from_distribution_to_dimenstion():
             # Original: trial.suggest_loguniform('p3', 1.1, 1.1)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
 
-            # Original: trial.suggest_int('p4', -100, 8)
+            # Original: trial.suggest_int('p4', -100, 8, 1)
             space.Integer(-100, 8),
 
-            # Original: trial.suggest_int('p5', -20, -20)
+            # Original: trial.suggest_int('p5', -20, -20, 1)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
 
             # Original: trial.suggest_discrete_uniform('p6', 10, 20, 2)
@@ -61,7 +61,7 @@ def test_skopt_kwargs():
     study = optuna.create_study(sampler=sampler)
 
     with patch('skopt.Optimizer') as mock_object:
-        study.optimize(lambda t: t.suggest_int('x', -10, 10), n_trials=2)
+        study.optimize(lambda t: t.suggest_int('x', -10, 10, 1), n_trials=2)
 
         dimensions = [space.Integer(-10, 10)]
         assert mock_object.mock_calls[0] == call(dimensions, base_estimator="GBRT")
@@ -75,7 +75,7 @@ def test_skopt_kwargs_dimenstions():
     study = optuna.create_study(sampler=sampler)
 
     with patch('skopt.Optimizer') as mock_object:
-        study.optimize(lambda t: t.suggest_int('x', -10, 10), n_trials=2)
+        study.optimize(lambda t: t.suggest_int('x', -10, 10, 1), n_trials=2)
 
         expected_dimensions = [space.Integer(-10, 10)]
         assert mock_object.mock_calls[0] == call(expected_dimensions)
@@ -125,7 +125,7 @@ def test_is_compatible():
 
     # Error (different distribution class).
     trial = _create_frozen_trial({'p0': 5},
-                                 {'p0': distributions.IntUniformDistribution(low=0, high=10)})
+                                 {'p0': distributions.IntUniformDistribution(low=0, high=10, q=1)})
     with pytest.raises(ValueError):
         optimizer._is_compatible(trial)
 
@@ -137,8 +137,8 @@ def _objective(trial):
     p1 = trial.suggest_uniform('p1', 2.0, 2.0)
     p2 = trial.suggest_loguniform('p2', 0.0001, 0.3)
     p3 = trial.suggest_loguniform('p3', 1.1, 1.1)
-    p4 = trial.suggest_int('p4', -100, 8)
-    p5 = trial.suggest_int('p5', -20, -20)
+    p4 = trial.suggest_int('p4', -100, 8, 1)
+    p5 = trial.suggest_int('p5', -20, -20, 1)
     p6 = trial.suggest_discrete_uniform('p6', 10, 20, 2)
     p7 = trial.suggest_discrete_uniform('p7', 0.1, 1.0, 0.1)
     p8 = trial.suggest_discrete_uniform('p8', 2.2, 2.2, 0.5)

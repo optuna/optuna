@@ -15,7 +15,7 @@ EXAMPLE_DISTRIBUTIONS = {
     'u': distributions.UniformDistribution(low=1., high=2.),
     'l': distributions.LogUniformDistribution(low=0.001, high=100),
     'du': distributions.DiscreteUniformDistribution(low=1., high=10., q=2.),
-    'iu': distributions.IntUniformDistribution(low=1, high=10),
+    'iu': distributions.IntUniformDistribution(low=1, high=10, q=1),
     'c1': distributions.CategoricalDistribution(choices=(2.71, -float('inf'))),
     'c2': distributions.CategoricalDistribution(choices=('Roppongi', 'Azabu'))
 }  # type: Dict[str, Any]
@@ -78,7 +78,7 @@ def test_check_distribution_compatibility():
         EXAMPLE_DISTRIBUTIONS['du'],
         distributions.DiscreteUniformDistribution(low=-1.0, high=10.0, q=3.))
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['iu'], distributions.IntUniformDistribution(low=-1, high=1))
+        EXAMPLE_DISTRIBUTIONS['iu'], distributions.IntUniformDistribution(low=-1, high=1, q=1))
 
 
 def test_contains():
@@ -104,7 +104,7 @@ def test_contains():
     assert du._contains(10)
     assert not du._contains(10.1)
 
-    iu = distributions.IntUniformDistribution(low=1, high=10)
+    iu = distributions.IntUniformDistribution(low=1, high=10, q=1)
     assert not iu._contains(0.9)
     assert iu._contains(1)
     assert iu._contains(3.5)
@@ -139,7 +139,7 @@ def test_empty_range_contains():
     assert du._contains(1.0)
     assert not du._contains(1.1)
 
-    iu = distributions.IntUniformDistribution(low=1, high=1)
+    iu = distributions.IntUniformDistribution(low=1, high=1, q=1)
     assert not iu._contains(0)
     assert iu._contains(1)
     assert not iu._contains(2)
@@ -152,7 +152,7 @@ def test_single():
         distributions.UniformDistribution(low=1.0, high=1.0),
         distributions.LogUniformDistribution(low=7.3, high=7.3),
         distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
-        distributions.IntUniformDistribution(low=-123, high=-123),
+        distributions.IntUniformDistribution(low=-123, high=-123, q=1),
         distributions.CategoricalDistribution(choices=('foo', ))
     ]  # type: List[distributions.BaseDistribution]
     for distribution in single_distributions:
@@ -162,7 +162,7 @@ def test_single():
         distributions.UniformDistribution(low=1.0, high=1.001),
         distributions.LogUniformDistribution(low=7.3, high=10),
         distributions.DiscreteUniformDistribution(low=-30, high=-20, q=2),
-        distributions.IntUniformDistribution(low=-123, high=0),
+        distributions.IntUniformDistribution(low=-123, high=0, q=1),
         distributions.CategoricalDistribution(choices=('foo', 'bar'))
     ]  # type: List[distributions.BaseDistribution]
     for distribution in nonsingle_distributions:
@@ -183,7 +183,7 @@ def test_empty_distribution():
         distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3)
 
     with pytest.raises(ValueError):
-        distributions.IntUniformDistribution(low=123, high=100)
+        distributions.IntUniformDistribution(low=123, high=100, q=1)
 
     with pytest.raises(ValueError):
         distributions.CategoricalDistribution(choices=())
@@ -214,7 +214,7 @@ def test_eq_ne_hash():
     assert hash(d0) != hash(d1)
 
     # Different distribution classes.
-    d2 = distributions.IntUniformDistribution(low=1, high=2)
+    d2 = distributions.IntUniformDistribution(low=1, high=2, q=1)
     assert d0 != d2
     assert not d0 == d2
     assert hash(d0) != hash(d2)

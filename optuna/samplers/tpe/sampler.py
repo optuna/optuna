@@ -205,10 +205,9 @@ class TPESampler(base.BaseSampler):
     def _sample_int(self, distribution, below, above):
         # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> int
 
-        q = 1.0
-        low = distribution.low - 0.5 * q
-        high = distribution.high + 0.5 * q
-        return int(self._sample_numerical(low, high, below, above, q=q))
+        low = int(distribution.low / distribution.q)
+        high = int(distribution.high / distribution.q)
+        return int(self._sample_numerical(low, high, below, above) * distribution.q)
 
     def _sample_numerical(
             self,

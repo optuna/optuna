@@ -80,7 +80,9 @@ class RandomSampler(BaseSampler):
             return float(min(max(v, param_distribution.low), param_distribution.high))
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
             # numpy.random.randint includes low but excludes high.
-            return self._rng.randint(param_distribution.low, param_distribution.high + 1)
+            low = int(param_distribution.low / param_distribution.q)
+            high = int(param_distribution.high / param_distribution.q)
+            return int(self._rng.randint(low, high + 1) * param_distribution.q)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             choices = param_distribution.choices
             index = self._rng.randint(0, len(choices))
