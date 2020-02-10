@@ -185,7 +185,6 @@ jobs:
             pytest tests --ignore tests/integration_tests/test_fastai.py \
                 --ignore tests/integration_tests/test_keras.py \
                 --ignore tests/integration_tests/test_pytorch_lightning.py \
-                --ignore tests/integration_tests/test_pytorch_ignite.py \
                 --ignore tests/integration_tests/test_tensorflow.py \
                 --ignore tests/integration_tests/test_tfkeras.py
 
@@ -302,7 +301,7 @@ jobs:
           <<: *examples
           environment:
             OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_.*|tensorflow_.*|tfkeras_.*|fastai_.*
+            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_lightning_.*|tensorflow_.*|tfkeras_.*|fastai_.*
 
       - run: *examples-mn
 
