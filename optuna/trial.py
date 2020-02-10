@@ -530,7 +530,7 @@ class Trial(BaseTrial):
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
         return distribution._contains(param_value_in_internal_repr)
 
-    def _check_distribution(self, name=None, low=None, high=None, q=None):
+    def _check_distribution(self, name, low=None, high=None, q=None):
         # type: (str, Any, Any, Optional[float]) -> None
 
         dist_dict = {}
