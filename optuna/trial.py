@@ -136,7 +136,9 @@ class Trial(BaseTrial):
 
         self._init_relative_params()
 
-        self.distributions_in_trial = {}  # type: Dict[str, Dict[str, Any]]
+        # store all seen distributions in trial to check for consistency
+        # see: _check_distribution function
+        self._distributions_in_trial = {}  # type: Dict[str, Dict[str, Any]]
 
     def _init_relative_params(self):
         # type: () -> None
@@ -353,8 +355,8 @@ class Trial(BaseTrial):
 
         choices = tuple(choices)
 
-        # no deed to call self._check_distribution because
-        # CategoricalDistribution does not support dynamic value space
+        # There is no need to call self._check_distribution because
+        # CategoricalDistribution does not support dynamic value space.
 
         return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
 
@@ -541,10 +543,10 @@ class Trial(BaseTrial):
         if q is not None:
             dist_dict['q'] = q
 
-        old_distribution_in_trial = self.distributions_in_trial.get(name, None)
+        old_distribution_in_trial = self._distributions_in_trial.get(name, None)
 
         if old_distribution_in_trial is None:
-            self.distributions_in_trial[name] = dist_dict
+            self._distributions_in_trial[name] = dist_dict
         elif old_distribution_in_trial != dist_dict:
             warnings.warn('Inconsistent parameter values for distribution {}! '
                           'This might be a configuration mistake.'
