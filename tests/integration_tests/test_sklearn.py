@@ -6,11 +6,14 @@ from sklearn.linear_model import SGDClassifier
 from optuna import distributions
 from optuna import integration
 
+import numpy as np
+
 
 @pytest.mark.parametrize('enable_pruning', [True, False])
+@pytest.mark.parametrize('fit_params', ['', 'coef_init'])
 @pytest.mark.filterwarnings('ignore::UserWarning')
-def test_optuna_search(enable_pruning):
-    # type: (bool) -> None
+def test_optuna_search(enable_pruning, fit_params):
+    # type: (bool, str) -> None
 
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
@@ -29,7 +32,11 @@ def test_optuna_search(enable_pruning):
     with pytest.raises(NotFittedError):
         optuna_search._check_is_fitted()
 
-    optuna_search.fit(X, y)
+    if fit_params == 'coef_init' and not enable_pruning:
+        optuna_search.fit(X, y, coef_init=np.ones((3, 2), dtype=np.float64))
+    else:
+        optuna_search.fit(X, y)
+
     optuna_search.trials_dataframe()
     optuna_search.decision_function(X)
     optuna_search.predict(X)
