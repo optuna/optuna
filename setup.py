@@ -65,9 +65,7 @@ def get_extras_require():
         ],
         'doctest': [
             'pandas',
-            # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
-            # See https://github.com/optuna/optuna/issues/825 for further details.
-            'scikit-learn>=0.19.0,<=0.22.0',
+            'scikit-learn>=0.19.0',
         ],
         'document': [
             'lightgbm',
@@ -82,9 +80,7 @@ def get_extras_require():
             'mxnet',
             'pytorch-ignite',
             'scikit-image',
-            # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
-            # See https://github.com/optuna/optuna/issues/825 for further details.
-            'scikit-learn<=0.22.0',
+            'scikit-learn',
             'torch',
             'torchvision>=0.5.0',
             'xgboost',
@@ -108,9 +104,7 @@ def get_extras_require():
             'plotly>=4.0.0',
             'pytest',
             'pytorch-ignite',
-            # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
-            # See https://github.com/optuna/optuna/issues/825 for further details.
-            'scikit-learn>=0.19.0,<=0.22.0',
+            'scikit-learn>=0.19.0',
             'scikit-optimize',
             'torch',
             'torchvision>=0.5.0',
