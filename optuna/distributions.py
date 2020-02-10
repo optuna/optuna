@@ -233,14 +233,14 @@ class IntUniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
     """
 
-    def __init__(self, low, high, q):
+    def __init__(self, low, high, q=1):
         # type: (int, int, int) -> None
 
         if low > high:
             raise ValueError("The `low` value must be smaller than or equal to the `high` value "
                              "(low={}, high={}).".format(low, high))
-        if q == 0:
-            raise ValueError("The `q` value must be non zero, but q={}.".format(q))
+        if q <= 0:
+            raise ValueError("The `q` value must be non-zero positive value, but q={}.".format(q))
 
         self.low = low
         self.high = high
