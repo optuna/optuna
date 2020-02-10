@@ -282,6 +282,10 @@ def test_fixed_trial_suggest_categorical():
     with pytest.raises(ValueError):
         trial.suggest_categorical('y', ['foo', 'bar', 'baz'])
 
+    # Not in choices.
+    with pytest.raises(ValueError):
+        trial.suggest_categorical('x', ['foo', 'bar'])
+
     # Unkown parameter and bad category type.
     with pytest.warns(UserWarning):
         with pytest.raises(ValueError):  # Must come after `pytest.warns` to catch failures.
