@@ -24,9 +24,6 @@ class GridSampler(BaseSampler):
     With :class:`~optuna.samplers.GridSampler`, the trials suggest all combinations of parameters
     in the given search space during the study.
 
-    This sampler is based on *relative sampling*.
-    See also :class:`~optuna.samplers.BaseSampler` for more details of 'relative sampling'.
-
     Example:
 
         .. testcode::
