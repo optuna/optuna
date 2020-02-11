@@ -23,7 +23,7 @@ class _TqdmLoggingHandler(logging.StreamHandler):
             self.handleError(record)
 
 
-class _ProgressBar:
+class _ProgressBar(object):
     """Progress Bar implementation for `Study.optimize` on the top of `tqdm`.
 
     Args:
@@ -72,5 +72,6 @@ class _ProgressBar:
         """Close progress bars."""
         if self._is_valid:
             self._progress_bar.close()
+            assert _tqdm_handler is not None
             optuna_logging._get_library_root_logger().removeHandler(_tqdm_handler)
             optuna_logging.enable_default_handler()
