@@ -47,8 +47,9 @@ class GridSampler(BaseSampler):
     Note:
 
         :class:`~optuna.samplers.GridSampler` raises an error if all combinations in the passed
-        `search_space` has already been evaluated. Please make sure that unnecessary trials do
-        not run during optimization by properly setting `n_trials` in `study.optimize`.
+        ``search_space`` has already been evaluated. Please make sure that unnecessary trials do
+        not run during optimization by properly setting ``n_trials`` in the
+        :func:`~optuna.study.Study.optimize` method.
 
     Note:
 
