@@ -4,15 +4,15 @@ import json
 import optuna
 from optuna.distributions import dict_to_distribution
 from optuna.distributions import distribution_to_dict
+from optuna.samplers.base import BaseSampler  # NOQA
+from optuna.samplers.random import RandomSampler  # NOQA
+from optuna.samplers.tpe import TPESampler  # NOQA
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.samplers.base import BaseSampler  # NOQA
-    from optuna.samplers.random import RandomSampler  # NOQA
-    from optuna.samplers.tpe import TPESampler  # NOQA
     from optuna.study import BaseStudy  # NOQA
 
 
@@ -71,10 +71,11 @@ def intersection_search_space(study, trial_id=None):
 
         break
 
-    json_str = json.dumps({
-        name: distribution_to_dict(search_space[name]) for name in search_space or {}
-    })
-    study._storage.set_trial_system_attr(
-        trial_id, "intersection_search_space", json_str,
-    )
+    if trial_id is not None:
+        json_str = json.dumps({
+            name: distribution_to_dict(search_space[name]) for name in search_space or {}
+        })
+        study._storage.set_trial_system_attr(
+            trial_id, "intersection_search_space", json_str,
+        )
     return search_space or {}
