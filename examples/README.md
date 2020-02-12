@@ -66,3 +66,8 @@ In addition, integration modules are available for the following libraries, prov
 ### Examples of Distributed Optimization
 
 * [Optimizing on Kubernetes](./distributed/kubernetes/README.md)
+
+### External libraries using Optuna
+
+* [Analyzing optimization results using Neptune](https://neptune-contrib.readthedocs.io/user_guide/monitoring/optuna.html)
+* [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)

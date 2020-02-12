@@ -1,4 +1,5 @@
 import optuna
+from optuna._experimental import experimental
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
@@ -12,6 +13,7 @@ if type_checking.TYPE_CHECKING:
 _logger = logging.get_logger(__name__)
 
 
+@experimental("1.1.0")
 class HyperbandPruner(BasePruner):
     """Pruner using Hyperband.
 
@@ -23,6 +25,14 @@ class HyperbandPruner(BasePruner):
     by trying different :math:`n` values for a fixed budget.
     Note that this implementation does not take as inputs the maximum amount of resource to
     a single SHA noted as :math:`R` in the paper.
+
+    .. note::
+        * In the Hyperband paper, the counterpart of :class:`~optuna.samplers.RandomSampler`
+          is used.
+        * Optuna uses :class:`~optuna.samplers.TPESampler` by default.
+        * `The benchmark result
+          <https://github.com/optuna/optuna/pull/828#issuecomment-575457360>`_
+          shows that :class:`optuna.pruners.HyperbandPruner` supports both samplers.
 
     .. note::
         If you use ``HyperbandPruner`` with :class:`~optuna.samplers.TPESampler`,
@@ -50,6 +60,8 @@ class HyperbandPruner(BasePruner):
             :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         n_brackets:
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
+            Defaults to :math`4`. See
+            https://github.com/optuna/optuna/pull/809#discussion_r361363897.
         min_early_stopping_rate_low:
             A parameter for specifying the minimum early-stopping rate.
             This parameter is related to a parameter that is referred to as :math:`r` and used in

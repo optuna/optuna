@@ -67,9 +67,10 @@ def _get_intermediate_plot(study):
     traces = []
     for trial in trials:
         if trial.intermediate_values:
+            sorted_intermediate_values = sorted(trial.intermediate_values.items())
             trace = go.Scatter(
-                x=tuple(trial.intermediate_values.keys()),
-                y=tuple(trial.intermediate_values.values()),
+                x=tuple((x for x, _ in sorted_intermediate_values)),
+                y=tuple((y for _, y in sorted_intermediate_values)),
                 mode='lines+markers',
                 marker={
                     'maxdisplayed': 10

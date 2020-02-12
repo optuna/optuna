@@ -425,18 +425,23 @@ def test_run_trial(storage_mode):
 # TODO(Yanase): Remove this test function after removing `optuna.structs.TrialPruned`.
 @pytest.mark.parametrize('trial_pruned_class', [optuna.exceptions.TrialPruned,
                                                 optuna.structs.TrialPruned])
-def test_run_trial_with_trial_pruned(trial_pruned_class):
-    # type: (Callable[[], optuna.exceptions.TrialPruned]) -> None
+@pytest.mark.parametrize('report_value', [None, 1.2])
+def test_run_trial_with_trial_pruned(trial_pruned_class, report_value):
+    # type: (Callable[[], optuna.exceptions.TrialPruned], Optional[float]) -> None
 
     study = optuna.create_study()
 
-    def func_with_trial_pruned(_):
+    def func_with_trial_pruned(trial):
         # type: (optuna.trial.Trial) -> float
+
+        if report_value is not None:
+            trial.report(report_value, 1)
 
         raise trial_pruned_class()
 
     trial = study._run_trial(func_with_trial_pruned, catch=(), gc_after_trial=True)
     frozen_trial = study._storage.get_trial(trial._trial_id)
+    assert frozen_trial.value == report_value
     assert frozen_trial.state == optuna.structs.TrialState.PRUNED
 
 
