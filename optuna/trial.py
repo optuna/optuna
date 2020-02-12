@@ -204,22 +204,23 @@ class Trial(BaseTrial):
             Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/
             generated/sklearn.svm.SVC.html>`_.
 
+            .. testsetup::
+
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
             .. testcode::
 
                 import optuna
-                import numpy as np
                 from sklearn.svm import SVC
-                from sklearn.model_selection import train_test_split
 
                 def objective(trial):
                     c = trial.suggest_loguniform('c', 1e-5, 1e2)
-                    assert 1e-5 <= c < 1e2
-
-                    np.random.seed(seed=0)
-                    X = np.random.randn(50).reshape(-1, 1)
-                    y = np.random.randint(0, 2, 50)
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
                     clf = SVC(C=c, gamma='scale', random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
@@ -274,7 +275,6 @@ class Trial(BaseTrial):
 
                 def objective(trial):
                     subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
-                    assert 0.1 <= subsample <= 1.0
 
                     np.random.seed(seed=0)
                     X = np.random.randn(50).reshape(-1, 1)
@@ -320,22 +320,23 @@ class Trial(BaseTrial):
             Suggest the number of trees in `RandomForestClassifier <https://scikit-learn.org/
             stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
 
+            .. testsetup::
+
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
             .. testcode::
 
                 import optuna
-                import numpy as np
                 from sklearn.ensemble import RandomForestClassifier
-                from sklearn.model_selection import train_test_split
 
                 def objective(trial):
                     n_estimators = trial.suggest_int('n_estimators', 50, 400)
-                    assert 50 <= n_estimators <= 400
-
-                    np.random.seed(seed=0)
-                    X = np.random.randn(50).reshape(-1, 1)
-                    y = np.random.randint(0, 2, 50)
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
                     clf = RandomForestClassifier(n_estimators=n_estimators, random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
@@ -373,22 +374,23 @@ class Trial(BaseTrial):
             Suggest a kernel function of `SVC <https://scikit-learn.org/stable/modules/generated/
             sklearn.svm.SVC.html>`_.
 
+            .. testsetup::
+
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
             .. testcode::
 
                 import optuna
-                import numpy as np
                 from sklearn.svm import SVC
-                from sklearn.model_selection import train_test_split
 
                 def objective(trial):
                     kernel = trial.suggest_categorical('kernel', ['linear', 'poly', 'rbf'])
-                    assert kernel in ['linear', 'poly', 'rbf']
-
-                    np.random.seed(seed=0)
-                    X = np.random.randn(50).reshape(-1, 1)
-                    y = np.random.randint(0, 2, 50)
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
                     clf = SVC(kernel=kernel, gamma='scale', random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
@@ -431,9 +433,7 @@ class Trial(BaseTrial):
 
             .. testsetup::
 
-                import optuna
                 import numpy as np
-                from sklearn.linear_model import SGDClassifier
                 from sklearn.model_selection import train_test_split
 
                 np.random.seed(seed=0)
@@ -443,8 +443,10 @@ class Trial(BaseTrial):
 
             .. testcode::
 
-                def objective(trial):
+                import optuna
+                from sklearn.linear_model import SGDClassifier
 
+                def objective(trial):
                     clf = SGDClassifier(random_state=0)
                     for step in range(100):
                         clf.partial_fit(X_train, y_train, np.unique(y))
