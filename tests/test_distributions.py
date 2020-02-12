@@ -24,7 +24,7 @@ EXAMPLE_DICTS = {
     'u': {"name": "UniformDistribution", "attributes": {"low": 1.0, "high": 2.0}},
     'l': {"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}},
     'du': {"name": "DiscreteUniformDistribution",
-          "attributes": {"low": 1.0, "high": 10.0, "q": 2.0}},
+           "attributes": {"low": 1.0, "high": 10.0, "q": 2.0}},
     'iu': {"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10}},
     'c1': {"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -float('inf')]}},
     'c2': {"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}

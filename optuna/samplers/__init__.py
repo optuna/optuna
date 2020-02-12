@@ -30,7 +30,8 @@ def intersection_search_space(study, trial_id=None):
         A dictionary containing the parameter names and parameter's distributions.
     """
 
-    search_space = None
+    search_space = None  # type: Optional[Dict[str, BaseDistribution]]
+
     for trial in reversed(study.get_trials(deepcopy=False)):
         if trial.state != optuna.structs.TrialState.COMPLETE:
             continue
@@ -53,7 +54,7 @@ def intersection_search_space(study, trial_id=None):
         if trial_id is None:
             continue
 
-        json_str = trial.system_attrs.get("intersection_search_space", None)  # type: str
+        json_str = trial.system_attrs.get("intersection_search_space", None)  # type: Optional[str]
         if json_str is None:
             continue
         json_dict = json.loads(json_str)
@@ -71,9 +72,9 @@ def intersection_search_space(study, trial_id=None):
 
         break
 
-    if trial_id is not None:
+    if trial_id is not None and search_space is not None:
         json_str = json.dumps({
-            name: distribution_to_dict(search_space[name]) for name in search_space or {}
+            name: distribution_to_dict(search_space[name]) for name in search_space
         })
         study._storage.set_trial_system_attr(
             trial_id, "intersection_search_space", json_str,

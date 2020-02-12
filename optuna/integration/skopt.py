@@ -97,7 +97,8 @@ class SkoptSampler(BaseSampler):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         search_space = {}
-        for name, distribution in samplers.intersection_search_space(study, trial._trial_id).items():
+        for name, distribution in samplers.intersection_search_space(
+                study, trial._trial_id).items():
             if distribution.single():
                 if not isinstance(distribution, distributions.CategoricalDistribution):
                     # `skopt` cannot handle non-categorical distributions that contain just
