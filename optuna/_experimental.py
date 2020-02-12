@@ -55,11 +55,12 @@ def _validate_version(version: str) -> None:
                 version))
 
 
-def experimental(version: str) -> Any:
+def experimental(version: str, name: str = None) -> Any:
     """Decorate class or function as experimental.
 
     Args:
         version: The first version that supports the target feature.
+        name: The name of the feature. Defaults to the function or class name. Optional.
     """
 
     _validate_version(version)
@@ -81,7 +82,8 @@ def experimental(version: str) -> Any:
 
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
-                    "The interface can change in the future.".format(func.__name__, version),
+                    "The interface can change in the future.".format(
+                        name if name is not None else func.__name__, version),
                     ExperimentalWarning
                 )
 
@@ -100,7 +102,8 @@ def experimental(version: str) -> Any:
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
-                    "The interface can change in the future.".format(cls.__name__, version),
+                    "The interface can change in the future.".format(
+                        name if name is not None else cls.__name__, version),
                     ExperimentalWarning
                 )
 

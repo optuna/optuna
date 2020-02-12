@@ -4,6 +4,7 @@ from typing import Optional
 
 from tqdm.auto import tqdm
 
+from optuna._experimental import experimental
 from optuna import logging as optuna_logging
 
 _tqdm_handler = None  # type: Optional[_TqdmLoggingHandler]
@@ -23,6 +24,7 @@ class _TqdmLoggingHandler(logging.StreamHandler):
             self.handleError(record)
 
 
+@experimental('1.2.0', name='Progress bar')
 class _ProgressBar(object):
     """Progress Bar implementation for `Study.optimize` on the top of `tqdm`.
 
