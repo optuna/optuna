@@ -42,10 +42,10 @@ class TestCmaEsSampler(object):
         with patch('optuna.integration.cma._Optimizer') as mock_obj:
             mock_obj.ask.return_value = {'x': -1, 'y': -1}
             study.optimize(
-                lambda t: t.suggest_int('x', -1, 1, 1) + t.suggest_int('y', -1, 1, 1), n_trials=2)
+                lambda t: t.suggest_int('x', -1, 1) + t.suggest_int('y', -1, 1), n_trials=2)
             assert mock_obj.mock_calls[0] == call({
-                'x': IntUniformDistribution(low=-1, high=1, q=1),
-                'y': IntUniformDistribution(low=-1, high=1, q=1)
+                'x': IntUniformDistribution(low=-1, high=1),
+                'y': IntUniformDistribution(low=-1, high=1)
             }, {
                 'x': 0,
                 'y': 0
@@ -77,7 +77,7 @@ class TestCmaEsSampler(object):
         study = optuna.create_study(sampler=sampler)
 
         # The distribution has only one candidate.
-        study.optimize(lambda t: t.suggest_int('x', 1, 1, 1), n_trials=1)
+        study.optimize(lambda t: t.suggest_int('x', 1, 1), n_trials=1)
         assert sampler.infer_relative_search_space(study, study.best_trial) == {}
 
     @staticmethod
@@ -93,7 +93,7 @@ class TestCmaEsSampler(object):
                 independent_sampler,
                 'sample_independent',
                 wraps=independent_sampler.sample_independent) as mock_object:
-            study.optimize(lambda t: t.suggest_int('x', -1, 1, 1), n_trials=2)
+            study.optimize(lambda t: t.suggest_int('x', -1, 1), n_trials=2)
             assert mock_object.call_count == 2
 
     @staticmethod
@@ -115,7 +115,7 @@ class TestCmaEsSampler(object):
                 sampler,
                 'sample_relative',
                 wraps=sampler.sample_relative) as mock_relative:
-            study.optimize(lambda t: t.suggest_int('x', -1, 1, 1) + t.suggest_int('y', -1, 1, 1),
+            study.optimize(lambda t: t.suggest_int('x', -1, 1) + t.suggest_int('y', -1, 1),
                            n_trials=3)
             assert mock_independent.call_count == 4  # The objective function has two parameters.
             assert mock_relative.call_count == 3
@@ -144,7 +144,7 @@ class TestOptimizer(object):
         return {
             'c': CategoricalDistribution(('a', 'b')),
             'd': DiscreteUniformDistribution(-1, 9, 2),
-            'i': IntUniformDistribution(-1, 1, 1),
+            'i': IntUniformDistribution(-1, 1),
             'l': LogUniformDistribution(0.001, 0.1),
             'u': UniformDistribution(-2, 2),
         }
@@ -307,7 +307,7 @@ class TestOptimizer(object):
 
         # Error (different distribution class).
         trial = _create_frozen_trial(x0,
-                                     dict(search_space, u=IntUniformDistribution(-2, 2, 1)))
+                                     dict(search_space, u=IntUniformDistribution(-2, 2)))
         with pytest.raises(ValueError):
             optimizer._is_compatible(trial)
 

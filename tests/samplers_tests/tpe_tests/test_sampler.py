@@ -25,7 +25,7 @@ def test_get_observation_pairs():
     def objective(trial):
         # type: (Trial) -> float
 
-        x = trial.suggest_int('x', 5, 5, 1)
+        x = trial.suggest_int('x', 5, 5)
         if trial.number == 0:
             return x
         elif trial.number == 1:
