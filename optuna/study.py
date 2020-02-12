@@ -259,8 +259,12 @@ class Study(BaseStudy):
             gc_after_trial=True  # type: bool
     ):
         # type: (...) -> None
-        """Optimize an objective function.
-
+        """ Optimize an objective function using Bayesian Optimization which builds a surrogate 
+            model for the objective and quantifies the uncertainty in that surrogate using 
+            TPE (Tree-structured Parzen Estimator), and then uses an acquisition function defined 
+            from this surrogate to decide where to sample.
+            See also :class:`~optuna.samplers.TPESampler` for more details on 'TPE'.
+        
         Args:
             func:
                 A callable that implements objective function.
