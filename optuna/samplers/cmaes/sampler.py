@@ -1,5 +1,3 @@
-import copy
-import json
 import math
 import pickle
 import numpy as np
@@ -12,6 +10,7 @@ from typing import Optional
 from typing import Union
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
+from optuna.samplers import intersection_search_space
 from optuna.structs import FrozenTrial
 from optuna.structs import TrialState
 
@@ -48,9 +47,7 @@ class CMASampler(BaseSampler):
         if trial.number < self._n_startup_trials:
             return {}
 
-        for name, distribution in _fast_intersection_search_space(
-                study, trial._trial_id
-        ).items():
+        for name, distribution in intersection_search_space(study).items():
             if distribution.single():
                 # `cma` cannot handle distributions that contain just a single value, so we skip
                 # them. Note that the parameter values for such distributions are sampled in
@@ -269,79 +266,3 @@ def _get_search_space_bound(
                 "The distribution {} is not implemented.".format(dist)
             )
     return np.array(bounds)
-
-
-def _dict_to_distribution(json_dict: Dict[str, Any]) -> BaseDistribution:
-    if json_dict["name"] == optuna.distributions.CategoricalDistribution.__name__:
-        json_dict["attributes"]["choices"] = tuple(json_dict["attributes"]["choices"])
-
-    for cls in (
-            optuna.distributions.UniformDistribution,
-            optuna.distributions.LogUniformDistribution,
-            optuna.distributions.DiscreteUniformDistribution,
-            optuna.distributions.IntUniformDistribution,
-            optuna.distributions.CategoricalDistribution,
-    ):
-        if json_dict["name"] == cls.__name__:
-            return cls(**json_dict["attributes"])
-
-    raise ValueError("Unknown distribution class: {}".format(json_dict["name"]))
-
-
-def _distribution_to_dict(dist: BaseDistribution) -> Dict[str, Any]:
-    return {"name": dist.__class__.__name__, "attributes": dist._asdict()}
-
-
-def _fast_intersection_search_space(
-        study: optuna.Study, trial_id: int
-) -> Dict[str, BaseDistribution]:
-    search_space: Optional[Dict[str, BaseDistribution]] = None
-
-    for trial in reversed(study.get_trials(deepcopy=False)):
-        if trial.state != optuna.structs.TrialState.COMPLETE:
-            continue
-
-        if search_space is None:
-            search_space = copy.deepcopy(trial.distributions)
-            continue
-
-        delete_list = []
-        for param_name, param_distribution in search_space.items():
-            if param_name not in trial.distributions:
-                delete_list.append(param_name)
-            elif trial.distributions[param_name] != param_distribution:
-                delete_list.append(param_name)
-
-        for param_name in delete_list:
-            del search_space[param_name]
-
-        # Retrieve cache from trial_system_attrs.
-        json_str: str = trial.system_attrs.get("cma:search_space", None)
-        if json_str is None:
-            continue
-        json_dict = json.loads(json_str)
-
-        delete_list = []
-        cached_search_space = {
-            name: _dict_to_distribution(dic) for name, dic in json_dict.items()
-        }
-        for param_name in search_space:
-            if param_name not in cached_search_space:
-                delete_list.append(param_name)
-            elif cached_search_space[param_name] != search_space[param_name]:
-                delete_list.append(param_name)
-
-        for param_name in delete_list:
-            del search_space[param_name]
-        break
-
-    if search_space is None:
-        search_space = {}
-
-    json_str = json.dumps(
-        {name: _distribution_to_dict(search_space[name]) for name in search_space}
-    )
-    study._storage.set_trial_system_attr(
-        trial_id, "cma:search_space", json_str,
-    )
-    return search_space
