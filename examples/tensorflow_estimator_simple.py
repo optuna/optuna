@@ -53,11 +53,11 @@ def create_optimizer(trial):
     optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
     if optimizer_name == 'Adam':
         adam_lr = trial.suggest_loguniform('adam_lr', 1e-5, 1e-1)
-        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=adam_lr)
+        optimizer = tf.compat.v2.train.AdamOptimizer(learning_rate=adam_lr)
     else:
         sgd_lr = trial.suggest_loguniform('sgd_lr', 1e-5, 1e-1)
         sgd_momentum = trial.suggest_loguniform('sgd_momentum', 1e-5, 1e-1)
-        optimizer = tf.compat.v1.train.MomentumOptimizer(
+        optimizer = tf.compat.v2.train.MomentumOptimizer(
             learning_rate=sgd_lr, momentum=sgd_momentum)
 
     return optimizer
@@ -74,15 +74,15 @@ def model_fn(trial, features, labels, mode):
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
-    loss = tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+    loss = tf.compat.v2.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
         optimizer = create_optimizer(trial)
-        train_op = optimizer.minimize(loss, tf.compat.v1.train.get_or_create_global_step())
+        train_op = optimizer.minimize(loss, tf.compat.v2.train.get_or_create_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
     eval_metric_ops = {
-        "accuracy": tf.compat.v1.metrics.accuracy(labels=labels,
+        "accuracy": tf.compat.v2.metrics.accuracy(labels=labels,
                                                   predictions=predictions["classes"])
     }
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
@@ -102,12 +102,12 @@ def objective(trial):
         model_fn=lambda features, labels, mode: model_fn(trial, features, labels, mode),
         model_dir=model_dir)
 
-    train_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
+    train_input_fn = tf.compat.v2.estimator.inputs.numpy_input_fn(
         x={"x": train_data}, y=train_labels, batch_size=BATCH_SIZE, num_epochs=None, shuffle=True)
 
     mnist_classifier.train(input_fn=train_input_fn, steps=TRAIN_STEPS)
 
-    eval_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
+    eval_input_fn = tf.compat.v2.estimator.inputs.numpy_input_fn(
         x={"x": eval_data}, y=eval_labels, num_epochs=1, shuffle=False)
 
     eval_results = mnist_classifier.evaluate(input_fn=eval_input_fn)
@@ -133,4 +133,4 @@ def main(unused_argv):
 
 
 if __name__ == "__main__":
-    tf.compat.v1.app.run()
+    tf.compat.v2.app.run()
