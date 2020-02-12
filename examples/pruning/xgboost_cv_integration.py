@@ -48,8 +48,8 @@ def objective(trial):
         callbacks=[pruning_callback]
     )
 
-    best_auc = history['test-auc-mean'].max()
-    return best_auc
+    mean_auc = history['test-auc-mean'].values[-1]
+    return mean_auc
 
 
 if __name__ == '__main__':
