@@ -51,3 +51,14 @@ class DuplicatedStudyError(OptunaError):
     """
 
     pass
+
+
+class ExperimentalWarning(Warning):
+    """Experimental Warning class.
+
+    This implementation exists here because the policy of `FutureWarning` has been changed
+    since Python 3.7 was released. See the details in
+    https://docs.python.org/3/library/warnings.html#warning-categories.
+    """
+
+    pass

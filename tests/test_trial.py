@@ -26,6 +26,74 @@ parametrize_storage = pytest.mark.parametrize(
 
 
 @parametrize_storage
+def test_check_distribution_suggest_uniform(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    with pytest.warns(None) as record:
+        trial.suggest_uniform('x', 10, 20)
+        trial.suggest_uniform('x', 10, 20)
+        trial.suggest_uniform('x', 10, 30)
+
+    # we expect exactly one warning
+    assert len(record) == 1
+
+
+@parametrize_storage
+def test_check_distribution_suggest_loguniform(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    with pytest.warns(None) as record:
+        trial.suggest_loguniform('x', 10, 20)
+        trial.suggest_loguniform('x', 10, 20)
+        trial.suggest_loguniform('x', 10, 30)
+
+    # we expect exactly one warning
+    assert len(record) == 1
+
+
+@parametrize_storage
+def test_check_distribution_suggest_discrete_uniform(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    with pytest.warns(None) as record:
+        trial.suggest_discrete_uniform('x', 10, 20, 2)
+        trial.suggest_discrete_uniform('x', 10, 20, 2)
+        trial.suggest_discrete_uniform('x', 10, 22, 2)
+
+    # we expect exactly one warning
+    assert len(record) == 1
+
+
+@parametrize_storage
+def test_check_distribution_suggest_int(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    with pytest.warns(None) as record:
+        trial.suggest_int('x', 10, 20)
+        trial.suggest_int('x', 10, 20)
+        trial.suggest_int('x', 10, 22)
+
+    # we expect exactly one warning
+    assert len(record) == 1
+
+
+@parametrize_storage
 def test_suggest_uniform(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
 
@@ -282,6 +350,10 @@ def test_fixed_trial_suggest_categorical():
     with pytest.raises(ValueError):
         trial.suggest_categorical('y', ['foo', 'bar', 'baz'])
 
+    # Not in choices.
+    with pytest.raises(ValueError):
+        trial.suggest_categorical('x', ['foo', 'bar'])
+
     # Unkown parameter and bad category type.
     with pytest.warns(UserWarning):
         with pytest.raises(ValueError):  # Must come after `pytest.warns` to catch failures.
@@ -321,7 +393,7 @@ def test_fixed_trial_report():
     # FixedTrial ignores reported values.
     trial = FixedTrial({})
     trial.report(1.0, 1)
-    trial.report(2.0)
+    trial.report(2.0, 2)
 
 
 def test_fixed_trial_should_prune():
@@ -415,22 +487,22 @@ def test_trial_report():
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
     # Report values that can be cast to `float` (OK).
-    trial.report(1.23)
-    trial.report(float('nan'))
-    trial.report('1.23')  # type: ignore
-    trial.report('inf')  # type: ignore
-    trial.report(1)
-    trial.report(np.array([1], dtype=np.float32)[0])
+    trial.report(1.23, 1)
+    trial.report(float('nan'), 2)
+    trial.report('1.23', 3)  # type: ignore
+    trial.report('inf', 4)  # type: ignore
+    trial.report(1, 5)
+    trial.report(np.array([1], dtype=np.float32)[0], 6)
 
     # Report values that cannot be cast to `float` or steps that are negative (Error).
     with pytest.raises(TypeError):
-        trial.report(None)  # type: ignore
+        trial.report(None, 7)  # type: ignore
 
     with pytest.raises(TypeError):
-        trial.report('foo')  # type: ignore
+        trial.report('foo', 7)  # type: ignore
 
     with pytest.raises(TypeError):
-        trial.report([1, 2, 3])  # type: ignore
+        trial.report([1, 2, 3], 7)  # type: ignore
 
     with pytest.raises(TypeError):
         trial.report('foo', -1)  # type: ignore
