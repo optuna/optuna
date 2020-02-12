@@ -20,6 +20,16 @@ EXAMPLE_DISTRIBUTIONS = {
     'c2': distributions.CategoricalDistribution(choices=('Roppongi', 'Azabu'))
 }  # type: Dict[str, Any]
 
+EXAMPLE_DICTS = {
+    'u': {"name": "UniformDistribution", "attributes": {"low": 1.0, "high": 2.0}},
+    'l': {"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}},
+    'du': {"name": "DiscreteUniformDistribution",
+          "attributes": {"low": 1.0, "high": 10.0, "q": 2.0}},
+    'iu': {"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10}},
+    'c1': {"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -float('inf')]}},
+    'c2': {"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}
+}
+
 EXAMPLE_JSONS = {
     'u': '{"name": "UniformDistribution", "attributes": {"low": 1.0, "high": 2.0}}',
     'l': '{"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}}',
@@ -31,6 +41,17 @@ EXAMPLE_JSONS = {
 }
 
 
+def test_dict_to_distribution():
+    # type: () -> None
+
+    for key in EXAMPLE_DICTS.keys():
+        distribution_actual = distributions.dict_to_distribution(EXAMPLE_DICTS[key])
+        assert distribution_actual == EXAMPLE_DISTRIBUTIONS[key]
+
+    unknown_json = {"name": "UnknownDistribution", "attributes": {"low": 1.0, "high": 2.0}}
+    pytest.raises(ValueError, lambda: distributions.dict_to_distribution(unknown_json))
+
+
 def test_json_to_distribution():
     # type: () -> None
 
@@ -40,6 +61,14 @@ def test_json_to_distribution():
 
     unknown_json = '{"name": "UnknownDistribution", "attributes": {"low": 1.0, "high": 2.0}}'
     pytest.raises(ValueError, lambda: distributions.json_to_distribution(unknown_json))
+
+
+def test_distribution_to_dict():
+    # type: () -> None
+
+    for key in EXAMPLE_DICTS.keys():
+        json_actual = distributions.distribution_to_dict(EXAMPLE_DISTRIBUTIONS[key])
+        assert json_actual == EXAMPLE_DICTS[key]
 
 
 def test_distribution_to_json():
