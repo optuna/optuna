@@ -31,7 +31,8 @@ class SimulatedAnnealingSampler(BaseSampler):
         self._current_trial = None
 
     def infer_relative_search_space(self, study, trial):
-        return optuna.samplers.intersection_search_space(study)
+        return optuna.samplers.intersection_search_space(
+            study, trial_id=trial._trial_id)
 
     def sample_relative(self, study, trial, search_space):
         if search_space == {}:
