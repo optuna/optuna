@@ -53,8 +53,7 @@ jobs:
           command: |
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
-            pip install -U 'pip<20'
+            pip install -U pip
             pip install --progress-bar off .[checking]
 
       - run:
@@ -88,8 +87,7 @@ jobs:
           command: |
             python -m venv venv || virtualenv venv --python=python3
             . venv/bin/activate
-            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
-            pip install -U 'pip<20'
+            pip install -U pip
             pip install --progress-bar off .[document]
 
       - run:
@@ -112,8 +110,7 @@ jobs:
           command: |
             python -m venv venv || virtualenv venv --python=python3
             . venv/bin/activate
-            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
-            pip install -U 'pip<20'
+            pip install -U pip
             pip install --progress-bar off .[doctest,document]
 
       - run:
@@ -140,8 +137,7 @@ jobs:
             sudo apt-get -y install openmpi-bin libopenmpi-dev
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
-            pip install -U 'pip<20'
+            pip install -U pip
             pip install --progress-bar off -U setuptools
             python setup.py sdist
 
