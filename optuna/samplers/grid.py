@@ -46,6 +46,12 @@ class GridSampler(BaseSampler):
 
     Note:
 
+        :class:`~optuna.samplers.GridSampler` raises an error if all combinations in the passed
+        `search_space` has already been evaluated. Please make sure that unnecessary trials do
+        not run during optimization by properly setting `n_trials` in `study.optimize`.
+
+    Note:
+
         :class:`~optuna.samplers.GridSampler` does not take care of a parameter's quantization
         specified by discrete suggest methods but just samples one of values specified in the
         search space. E.g., in the following code snippet, either of ``-0.5`` or ``0.5`` is
@@ -148,14 +154,13 @@ class GridSampler(BaseSampler):
     def _get_unvisited_grid_ids(self, study):
         # type: (Study) -> List[int]
 
-        # List up all finished trials in the same search space.
-        trials = study.trials
-        trials = [t for t in trials if t.state.is_finished()]
-        trials = [t for t in trials if 'grid_id' in t.system_attrs]
-        trials = [t for t in trials if self._same_search_space(t.system_attrs['search_space'])]
+        # List up unvisited grids based on already finished ones.
+        visited_grids = []
+        for t in study.trials:
+            if (t.state.is_finished() and 'grid_id' in t.system_attrs
+                    and self._same_search_space(t.system_attrs['search_space'])):
+                visited_grids.append(t.system_attrs['grid_id'])
 
-        # List up unvisited trials based on already finished ones.
-        visited_grids = [t.system_attrs['grid_id'] for t in trials]
         unvisited_grids = set(range(self._n_min_trials)) - set(visited_grids)
 
         return list(unvisited_grids)
