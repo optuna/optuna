@@ -1,13 +1,21 @@
 """
-Optuna example that demonstrates a pruner for Tensorflow (Estimator API).
+Optuna example that optimizes multi-layer perceptrons using Tensorflow (Estimator API).
 
-In this example, we optimize the hyperparameters of a neural network for hand-written
-digit recognition in terms of validation accuracy. The network is implemented by Tensorflow and
-evaluated by MNIST dataset. Throughout the training of neural networks, a pruner observes
-intermediate results and stops unpromising trials.
+In this example, we optimize the validation accuracy of hand-written digit recognition using
+Tensorflow and MNIST. We optimize the neural network architecture as well as the optimizer
+configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
+subset of it.
 
-You can run this example as follows:
-    $ python tensorflow_estimator_integration.py
+We have the following two ways to execute this example:
+
+(1) Execute this code directly.
+    $ python tensorflow_estimator_simple.py
+
+
+(2) Execute through CLI.
+    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
+    $ optuna study optimize tensorflow_estimator_simple.py objective --n-trials=100 \
+      --study $STUDY_NAME --storage sqlite:///example.db
 
 """
 
@@ -22,8 +30,6 @@ import optuna
 MODEL_DIR = tempfile.mkdtemp()
 BATCH_SIZE = 128
 TRAIN_STEPS = 1000
-EVAL_STEPS = 100
-PRUNING_INTERVAL_STEPS = 50
 
 
 def create_network(trial, features):
@@ -34,10 +40,27 @@ def create_network(trial, features):
     n_layers = trial.suggest_int('n_layers', 1, 3)
     for i in range(n_layers):
         n_units = trial.suggest_int('n_units_l{}'.format(i), 1, 128)
-        prev_layer = tf.keras.layers.Dense(units=n_units, activation=tf.nn.relu)(prev_layer)
+        prev_layer = tf.keras.layers.Dense(
+            units=n_units, activation=tf.nn.relu)(prev_layer)
 
     logits = tf.keras.layers.Dense(units=10)(prev_layer)
     return logits
+
+
+def create_optimizer(trial):
+    # We optimize the choice of optimizers as well as their parameters.
+
+    optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
+    if optimizer_name == 'Adam':
+        adam_lr = trial.suggest_loguniform('adam_lr', 1e-5, 1e-1)
+        optimizer = tf.compat.v2.train.AdamOptimizer(learning_rate=adam_lr)
+    else:
+        sgd_lr = trial.suggest_loguniform('sgd_lr', 1e-5, 1e-1)
+        sgd_momentum = trial.suggest_loguniform('sgd_momentum', 1e-5, 1e-1)
+        optimizer = tf.compat.v2.train.MomentumOptimizer(
+            learning_rate=sgd_lr, momentum=sgd_momentum)
+
+    return optimizer
 
 
 def model_fn(trial, features, labels, mode):
@@ -51,17 +74,16 @@ def model_fn(trial, features, labels, mode):
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
-    loss = tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+    loss = tf.compat.v2.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=0.001)
-        train_op = optimizer.minimize(
-            loss=loss, global_step=tf.compat.v1.train.get_or_create_global_step())
+        optimizer = create_optimizer(trial)
+        train_op = optimizer.minimize(loss, tf.compat.v2.train.get_or_create_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
     eval_metric_ops = {
-        "accuracy": tf.compat.v1.metrics.accuracy(
-            labels=labels, predictions=predictions["classes"])
+        "accuracy": tf.compat.v2.metrics.accuracy(labels=labels,
+                                                  predictions=predictions["classes"])
     }
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
@@ -75,47 +97,28 @@ def objective(trial):
     eval_data = eval_data / np.float32(255)
     eval_labels = eval_labels.astype(np.int32)
 
-    config = tf.estimator.RunConfig(
-        save_summary_steps=PRUNING_INTERVAL_STEPS, save_checkpoints_steps=PRUNING_INTERVAL_STEPS)
-
     model_dir = "{}/{}".format(MODEL_DIR, trial.number)
     mnist_classifier = tf.estimator.Estimator(
         model_fn=lambda features, labels, mode: model_fn(trial, features, labels, mode),
-        model_dir=model_dir,
-        config=config)
+        model_dir=model_dir)
 
-    optuna_pruning_hook = optuna.integration.TensorFlowPruningHook(
-        trial=trial,
-        estimator=mnist_classifier,
-        metric="accuracy",
-        run_every_steps=PRUNING_INTERVAL_STEPS,
-    )
-
-    train_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
+    train_input_fn = tf.compat.v2.estimator.inputs.numpy_input_fn(
         x={"x": train_data}, y=train_labels, batch_size=BATCH_SIZE, num_epochs=None, shuffle=True)
 
-    train_spec = tf.estimator.TrainSpec(
-        input_fn=train_input_fn, max_steps=TRAIN_STEPS, hooks=[optuna_pruning_hook])
+    mnist_classifier.train(input_fn=train_input_fn, steps=TRAIN_STEPS)
 
-    eval_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
+    eval_input_fn = tf.compat.v2.estimator.inputs.numpy_input_fn(
         x={"x": eval_data}, y=eval_labels, num_epochs=1, shuffle=False)
 
-    eval_spec = tf.estimator.EvalSpec(
-        input_fn=eval_input_fn, steps=EVAL_STEPS, start_delay_secs=0, throttle_secs=0)
-
-    eval_results, _ = tf.estimator.train_and_evaluate(mnist_classifier, train_spec, eval_spec)
+    eval_results = mnist_classifier.evaluate(input_fn=eval_input_fn)
     return float(eval_results['accuracy'])
 
 
 def main(unused_argv):
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=25)
-    pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
-    complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
-    print('Study statistics: ')
-    print('  Number of finished trials: ', len(study.trials))
-    print('  Number of pruned trials: ', len(pruned_trials))
-    print('  Number of complete trials: ', len(complete_trials))
+
+    print('Number of finished trials: ', len(study.trials))
 
     print('Best trial:')
     trial = study.best_trial
@@ -130,4 +133,4 @@ def main(unused_argv):
 
 
 if __name__ == "__main__":
-    tf.compat.v1.app.run()
+    tf.compat.v2.app.run()
