@@ -1,5 +1,4 @@
 import collections
-import copy
 import datetime
 import gc
 import math
@@ -9,6 +8,8 @@ import warnings
 import joblib
 from joblib import delayed
 from joblib import Parallel
+
+from optuna._experimental import experimental
 
 try:
     import pandas as pd  # NOQA
@@ -483,6 +484,7 @@ class Study(BaseStudy):
 
         return df
 
+    @experimental('1.2.0')
     def enqueue_trial(
             self,
             params,  # type: Dict[str, Any]
