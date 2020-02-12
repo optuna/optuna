@@ -51,16 +51,16 @@ def model_fn(trial, features, labels, mode):
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
-    loss = tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+    loss = tf.compat.v2.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=0.001)
+        optimizer = tf.compat.v2.train.GradientDescentOptimizer(learning_rate=0.001)
         train_op = optimizer.minimize(
-            loss=loss, global_step=tf.compat.v1.train.get_or_create_global_step())
+            loss=loss, global_step=tf.compat.v2.train.get_or_create_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
     eval_metric_ops = {
-        "accuracy": tf.compat.v1.metrics.accuracy(
+        "accuracy": tf.compat.v2.metrics.accuracy(
             labels=labels, predictions=predictions["classes"])
     }
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
@@ -91,13 +91,13 @@ def objective(trial):
         run_every_steps=PRUNING_INTERVAL_STEPS,
     )
 
-    train_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
+    train_input_fn = tf.compat.v2.estimator.inputs.numpy_input_fn(
         x={"x": train_data}, y=train_labels, batch_size=BATCH_SIZE, num_epochs=None, shuffle=True)
 
     train_spec = tf.estimator.TrainSpec(
         input_fn=train_input_fn, max_steps=TRAIN_STEPS, hooks=[optuna_pruning_hook])
 
-    eval_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
+    eval_input_fn = tf.compat.v2.estimator.inputs.numpy_input_fn(
         x={"x": eval_data}, y=eval_labels, num_epochs=1, shuffle=False)
 
     eval_spec = tf.estimator.EvalSpec(
@@ -130,4 +130,4 @@ def main(unused_argv):
 
 
 if __name__ == "__main__":
-    tf.compat.v1.app.run()
+    tf.compat.v2.app.run()
