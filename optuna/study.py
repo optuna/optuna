@@ -469,12 +469,10 @@ class Study(BaseStudy):
 
     def enqueue_trial(
             self,
-            params=None,  # type: Optional[Dict[str, Any]]
-            user_attrs=None,  # type: Optional[Dict[str, Any]]
-            system_attrs=None  # type: Optional[Dict[str, Any]]
+            params,  # type: Dict[str, Any]
     ):
         # type: (...) -> None
-        """Enqueue a trial with given parameter values, user_attrs, and system_attrs.
+        """Enqueue a trial with given parameter values.
 
         You can fix the next sampling parameters which will be evaluated in your
         objective function.
@@ -482,19 +480,11 @@ class Study(BaseStudy):
         Args:
             params:
                 Parameter values to pass your objective function.
-                If None, parameters are sampled by the sampler as usual.
-            user_attrs:
-                A dictionary containing user attributes for the trial.
-            system_attrs:
-                A dictionary containing system attributes for the trial.
         """
 
-        params = params or {}
-        user_attrs = user_attrs or {}
-        system_attrs = copy.deepcopy(system_attrs or {})
-        system_attrs['fixed_params'] = params
+        system_attrs = {'fixed_params': params}
         self._append_trial(state=structs.TrialState.WAITING,
-                           user_attrs=user_attrs, system_attrs=system_attrs)
+                           system_attrs=system_attrs)
 
     def _append_trial(
             self,
