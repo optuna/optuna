@@ -1,8 +1,11 @@
 import sys
 
 import optuna
+from optuna._experimental import experimental
+from optuna import type_checking
 
-from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
+if type_checking.TYPE_CHECKING:
+    from typing import Any  # NOQA
 
 try:
     import lightgbm as lgb  # NOQA
@@ -12,15 +15,18 @@ except ImportError as e:
     # LightGBMPruningCallback is disabled because LightGBM is not available.
     _available = False
 
-# Attach lightgbm API.
-_names_from_tuners = ['train', 'LGBMModel', 'LGBMClassifier', 'LGBMRegressor']
 
+# Attach lightgbm API.
 if _available:
     # API from optuna integration.
     from optuna.integration import lightgbm_tuner as tuner
 
-    # Workaround for mypy.
+    # To pass mypy in tests/integration_tests/lightgbm_tuner_tests/test_optimize.py
     from lightgbm import Dataset  # NOQA
+    from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
+
+    # Attach lightgbm API.
+    _names_from_tuners = ['LGBMModel', 'LGBMClassifier', 'LGBMRegressor']
 
     # API from lightgbm.
     for api_name in lgb.__dict__['__all__']:
@@ -28,8 +34,24 @@ if _available:
             continue
         setattr(sys.modules[__name__], api_name, lgb.__dict__[api_name])
 
-for api_name in _names_from_tuners:
-    setattr(sys.modules[__name__], api_name, tuner.__dict__[api_name])
+    # API from lightgbm_tuner.
+    for api_name in _names_from_tuners:
+        setattr(sys.modules[__name__], api_name, tuner.__dict__[api_name])
+
+
+@experimental("0.18.0")
+def train(*args, **kwargs):
+    # type: (Any, Any) -> Any
+    """Wrapper of LightGBM Training API to tune hyperparameters.
+
+    It tunes important hyperparameters (e.g., `min_child_samples` and `feature_fraction`) in a
+    stepwise manner. Arguments and keyword arguments for `lightgbm.train()
+    <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
+    """
+
+    auto_booster = LightGBMTuner(*args, **kwargs)
+    booster = auto_booster.run()
+    return booster
 
 
 class LightGBMPruningCallback(object):
