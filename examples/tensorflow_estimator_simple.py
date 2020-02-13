@@ -30,6 +30,8 @@ import optuna
 MODEL_DIR = tempfile.mkdtemp()
 BATCH_SIZE = 128
 TRAIN_STEPS = 1000
+N_TRAIN_EXAMPLES = 3000
+N_TEST_EXAMPLES = 1000
 
 
 def preprocess(image, label):
@@ -40,11 +42,18 @@ def preprocess(image, label):
     return {'x': image}, label
 
 
-def input_fn():
+def train_input_fn():
     data = tfds.load(name='mnist', as_supervised=True)
-    train_data = data['train']
-    train_data = train_data.map(preprocess).shuffle(1000).batch(BATCH_SIZE)
-    return train_data
+    train_ds = data['train']
+    train_ds = train_ds.map(preprocess).shuffle(60000).batch(BATCH_SIZE).take(N_TRAIN_EXAMPLES)
+    return train_ds
+
+
+def eval_input_fn():
+    data = tfds.load(name='mnist', as_supervised=True)
+    test_ds = data['test']
+    test_ds = test_ds.map(preprocess).shuffle(10000).batch(BATCH_SIZE).take(N_TEST_EXAMPLES)
+    return test_ds
 
 
 def create_optimizer(trial):
@@ -53,14 +62,11 @@ def create_optimizer(trial):
     optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
     if optimizer_name == 'Adam':
         adam_lr = trial.suggest_loguniform('adam_lr', 1e-5, 1e-1)
-        def optimizer(): return tf.keras.optimizers.Adam(learning_rate=adam_lr)
+        return lambda: tf.keras.optimizers.Adam(learning_rate=adam_lr)
     else:
         sgd_lr = trial.suggest_loguniform('sgd_lr', 1e-5, 1e-1)
         sgd_momentum = trial.suggest_loguniform('sgd_momentum', 1e-5, 1e-1)
-        def optimizer(): return tf.keras.optimizers.SGD(learning_rate=sgd_lr,
-                                                        momentum=sgd_momentum)
-
-    return optimizer
+        return lambda: tf.keras.optimizers.SGD(learning_rate=sgd_lr, momentum=sgd_momentum)
 
 
 def create_classifier(trial):
@@ -88,9 +94,9 @@ def create_classifier(trial):
 def objective(trial):
     classifier = create_classifier(trial)
 
-    classifier.train(input_fn=input_fn, steps=TRAIN_STEPS)
+    classifier.train(input_fn=train_input_fn, steps=TRAIN_STEPS)
 
-    eval_results = classifier.evaluate(input_fn=input_fn, steps=1)
+    eval_results = classifier.evaluate(input_fn=eval_input_fn)
 
     return float(eval_results['accuracy'])
 
