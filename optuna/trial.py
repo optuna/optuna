@@ -156,21 +156,33 @@ class Trial(BaseTrial):
 
         Example:
 
-            Suggest a dropout rate for neural network training.
+            Suggest a momentum for neural network training.
+
+            .. testsetup::
+
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(200).reshape(-1, 1)
+                y = np.random.randint(0, 2, 200)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
             .. testcode::
 
                 import optuna
+                from sklearn.neural_network import MLPClassifier
 
                 def objective(trial):
-                    dropout_rate = trial.suggest_uniform('dropout_rate', 0, 1.0)
-                    assert 0.0 <= dropout_rate < 1.0
+                    momentum = trial.suggest_uniform('momentum', 0.0, 1.0)
+                    clf = MLPClassifier(hidden_layer_sizes=(100, 50), momentum=momentum,
+                                        tol=1e-3, random_state=0)
+                    clf.fit(X_train, y_train)
 
-                    return dropout_rate
+                    return clf.score(X_test, y_test)
 
                 study = optuna.create_study()
                 study.optimize(objective, n_trials=3)
-
 
         Args:
             name:
@@ -266,21 +278,23 @@ class Trial(BaseTrial):
             `GradientBoostingClassifier <https://scikit-learn.org/stable/modules/generated/
             sklearn.ensemble.GradientBoostingClassifier.html>`_.
 
+            .. testsetup::
+
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
             .. testcode::
 
                 import optuna
-                import numpy as np
                 from sklearn.ensemble import GradientBoostingClassifier
-                from sklearn.model_selection import train_test_split
 
                 def objective(trial):
                     subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
-
-                    np.random.seed(seed=0)
-                    X = np.random.randn(50).reshape(-1, 1)
-                    y = np.random.randint(0, 2, 50)
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
                     clf = GradientBoostingClassifier(subsample=subsample, random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
@@ -527,15 +541,30 @@ class Trial(BaseTrial):
 
             Save fixed hyperparameters of neural network training.
 
+            .. testsetup::
+
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
             .. testcode::
 
                 import optuna
+                from sklearn.neural_network import MLPClassifier
 
                 def objective(trial):
                     trial.set_user_attr('BATCHSIZE', 128)
-                    x = trial.suggest_uniform('x', 0, 1.0)
+                    momentum = trial.suggest_uniform('momentum', 0, 1.0)
+                    clf = MLPClassifier(hidden_layer_sizes=(100, 50),
+                                        batch_size=trial.user_attrs['BATCHSIZE'],
+                                        momentum=momentum, tol=1e-3, random_state=0)
+                    clf.fit(X_train, y_train)
 
-                    return x
+                    return clf.score(X_test, y_test)
 
                 study = optuna.create_study()
                 study.optimize(objective, n_trials=3)
