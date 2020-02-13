@@ -24,27 +24,28 @@ import tempfile
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_datasets as tfds
 
 import optuna
 
 MODEL_DIR = tempfile.mkdtemp()
-BATCH_SIZE = 128
+BATCHSIZE = 128
 TRAIN_STEPS = 1000
 
 
-def create_network(trial, features):
-    # We optimize the numbers of layers and their units.
-    input_layer = tf.reshape(features['x'], [-1, 784])
-    prev_layer = input_layer
+def preprocess(image, label):
+    image = tf.reshape(image, [-1, 28*28])
+    image = tf.cast(image, tf.float32)
+    image /= 255
+    label = tf.cast(label, tf.int32)
+    return {'x': image}, label
 
-    n_layers = trial.suggest_int('n_layers', 1, 3)
-    for i in range(n_layers):
-        n_units = trial.suggest_int('n_units_l{}'.format(i), 1, 128)
-        prev_layer = tf.keras.layers.Dense(
-            units=n_units, activation=tf.nn.relu)(prev_layer)
 
-    logits = tf.keras.layers.Dense(units=10)(prev_layer)
-    return logits
+def input_fn():
+    data = tfds.load(name='mnist', as_supervised=True)
+    train_data = data['train']
+    train_data = train_data.map(preprocess).shuffle(1000).batch(BATCHSIZE)
+    return train_data
 
 
 def create_optimizer(trial):
@@ -53,68 +54,48 @@ def create_optimizer(trial):
     optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
     if optimizer_name == 'Adam':
         adam_lr = trial.suggest_loguniform('adam_lr', 1e-5, 1e-1)
-        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=adam_lr)
+        optimizer = lambda: tf.keras.optimizers.Adam(learning_rate=adam_lr)
     else:
         sgd_lr = trial.suggest_loguniform('sgd_lr', 1e-5, 1e-1)
         sgd_momentum = trial.suggest_loguniform('sgd_momentum', 1e-5, 1e-1)
-        optimizer = tf.compat.v1.train.MomentumOptimizer(
-            learning_rate=sgd_lr, momentum=sgd_momentum)
+        optimizer = lambda: tf.keras.optimizers.SGD(learning_rate=sgd_lr, momentum=sgd_momentum)
 
     return optimizer
 
 
-def model_fn(trial, features, labels, mode):
-    logits = create_network(trial, features)
+def create_classifier(trial):
+    # We optimize the numbers of layers and their units.
 
-    predictions = {
-        "classes": tf.argmax(input=logits, axis=1),
-        "probabilities": tf.nn.softmax(logits, name="softmax_tensor")
-    }
+    n_layers = trial.suggest_int('n_layers', 1, 3)
+    hidden_units = []
+    for i in range(n_layers):
+        n_units = trial.suggest_int('n_units_l{}'.format(i), 1, 128)
+        hidden_units.append(n_units)
 
-    if mode == tf.estimator.ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+    optimizer = create_optimizer(trial)
 
-    loss = tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+    model_dir = '{}/{}'.format(MODEL_DIR, trial.number)
+    classifier = tf.estimator.DNNClassifier(
+        feature_columns=[tf.feature_column.numeric_column('x', shape=[28*28])],
+        hidden_units=hidden_units,
+        model_dir=model_dir,
+        n_classes=10,
+        optimizer=optimizer)
 
-    if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = create_optimizer(trial)
-        train_op = optimizer.minimize(loss, tf.compat.v1.train.get_or_create_global_step())
-        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
-
-    eval_metric_ops = {
-        "accuracy": tf.compat.v1.metrics.accuracy(labels=labels,
-                                                  predictions=predictions["classes"])
-    }
-    return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+    return classifier
 
 
 def objective(trial):
-    (train_data, train_labels), (eval_data, eval_labels) = tf.keras.datasets.mnist.load_data()
+    classifier = create_classifier(trial)
 
-    train_data = train_data / np.float32(255)
-    train_labels = train_labels.astype(np.int32)
+    classifier.train(input_fn=input_fn, steps=TRAIN_STEPS)
 
-    eval_data = eval_data / np.float32(255)
-    eval_labels = eval_labels.astype(np.int32)
+    eval_results = classifier.evaluate(input_fn=input_fn, steps=1)
 
-    model_dir = "{}/{}".format(MODEL_DIR, trial.number)
-    mnist_classifier = tf.estimator.Estimator(
-        model_fn=lambda features, labels, mode: model_fn(trial, features, labels, mode),
-        model_dir=model_dir)
-
-    train_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
-        x={"x": train_data}, y=train_labels, batch_size=BATCH_SIZE, num_epochs=None, shuffle=True)
-
-    mnist_classifier.train(input_fn=train_input_fn, steps=TRAIN_STEPS)
-
-    eval_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
-        x={"x": eval_data}, y=eval_labels, num_epochs=1, shuffle=False)
-
-    eval_results = mnist_classifier.evaluate(input_fn=eval_input_fn)
     return float(eval_results['accuracy'])
 
 
-def main(unused_argv):
+def main():
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=25)
 
@@ -133,4 +114,4 @@ def main(unused_argv):
 
 
 if __name__ == "__main__":
-    tf.compat.v1.app.run()
+    main()
