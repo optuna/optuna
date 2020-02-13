@@ -83,3 +83,27 @@ def test_experimental_class_decorator(version: str) -> None:
 
         with pytest.warns(ExperimentalWarning):
             decorated_sample('a', 'b', 'c')
+
+
+def test_experimental_decorator_name() -> None:
+
+    name = 'foo'
+    decorator_experimental = _experimental.experimental('1.1.0', name=name)
+    decorated_sample = decorator_experimental(_Sample)
+
+    with pytest.warns(ExperimentalWarning) as record:
+        decorated_sample('a', 'b', 'c')
+
+    assert name in record.list[0].message.args[0]
+
+
+def test_experimental_class_decorator_name() -> None:
+
+    name = 'bar'
+    decorator_experimental = _experimental.experimental('1.1.0', name=name)
+    decorated_sample_func = decorator_experimental(_sample_func)
+
+    with pytest.warns(ExperimentalWarning) as record:
+        decorated_sample_func(None)
+
+    assert name in record.list[0].message.args[0]
