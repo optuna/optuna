@@ -22,7 +22,6 @@ We have the following two ways to execute this example:
 import shutil
 import tempfile
 
-import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
@@ -58,7 +57,8 @@ def create_optimizer(trial):
     else:
         sgd_lr = trial.suggest_loguniform('sgd_lr', 1e-5, 1e-1)
         sgd_momentum = trial.suggest_loguniform('sgd_momentum', 1e-5, 1e-1)
-        def optimizer(): return tf.keras.optimizers.SGD(learning_rate=sgd_lr, momentum=sgd_momentum)
+        def optimizer(): return tf.keras.optimizers.SGD(learning_rate=sgd_lr,
+                                                        momentum=sgd_momentum)
 
     return optimizer
 
