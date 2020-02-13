@@ -29,7 +29,7 @@ import tensorflow_datasets as tfds
 import optuna
 
 MODEL_DIR = tempfile.mkdtemp()
-BATCHSIZE = 128
+BATCH_SIZE = 128
 TRAIN_STEPS = 1000
 
 
@@ -44,7 +44,7 @@ def preprocess(image, label):
 def input_fn():
     data = tfds.load(name='mnist', as_supervised=True)
     train_data = data['train']
-    train_data = train_data.map(preprocess).shuffle(1000).batch(BATCHSIZE)
+    train_data = train_data.map(preprocess).shuffle(1000).batch(BATCH_SIZE)
     return train_data
 
 
@@ -54,11 +54,11 @@ def create_optimizer(trial):
     optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'SGD'])
     if optimizer_name == 'Adam':
         adam_lr = trial.suggest_loguniform('adam_lr', 1e-5, 1e-1)
-        optimizer = lambda: tf.keras.optimizers.Adam(learning_rate=adam_lr)
+        def optimizer(): return tf.keras.optimizers.Adam(learning_rate=adam_lr)
     else:
         sgd_lr = trial.suggest_loguniform('sgd_lr', 1e-5, 1e-1)
         sgd_momentum = trial.suggest_loguniform('sgd_momentum', 1e-5, 1e-1)
-        optimizer = lambda: tf.keras.optimizers.SGD(learning_rate=sgd_lr, momentum=sgd_momentum)
+        def optimizer(): return tf.keras.optimizers.SGD(learning_rate=sgd_lr, momentum=sgd_momentum)
 
     return optimizer
 
