@@ -485,11 +485,8 @@ class Study(BaseStudy):
         return df
 
     @experimental('1.2.0')
-    def enqueue_trial(
-            self,
-            params,  # type: Dict[str, Any]
-    ):
-        # type: (...) -> None
+    def enqueue_trial(self, params):
+        # type: (Dict[str, Any]) -> None
         """Enqueue a trial with given parameter values.
 
         You can fix the next sampling parameters which will be evaluated in your

@@ -697,7 +697,7 @@ def test_enqueue_trial_properly_sets_param_values(storage_mode):
 
         def objective(trial):
             # type: (optuna.trial.Trial) -> float
-            
+
             x = trial.suggest_int('x', -10, 10)
             y = trial.suggest_int('y', -10, 10)
             return x ** 2 + y ** 2
@@ -724,7 +724,7 @@ def test_enqueue_trial_with_unfixed_parameters(storage_mode):
 
         def objective(trial):
             # type: (optuna.trial.Trial) -> float
-            
+
             x = trial.suggest_int('x', -10, 10)
             y = trial.suggest_int('y', -10, 10)
             return x ** 2 + y ** 2
