@@ -8,7 +8,7 @@ from typing import Optional
 from typing import Tuple
 
 
-class CMA:
+class _CMA:
     def __init__(
             self,
             mean: np.ndarray,

@@ -13,13 +13,13 @@ from optuna.samplers import BaseSampler
 from optuna.structs import FrozenTrial
 from optuna.structs import TrialState
 
-from .cma import CMA
+from .cma import _CMA
 
 # Minimum value of sigma0 to avoid ZeroDivisionError.
 _MIN_SIGMA0 = 1e-10
 
 
-class CMASampler(BaseSampler):
+class CmaEsSampler(BaseSampler):
     def __init__(
             self,
             x0: Optional[Dict[str, Any]] = None,
@@ -136,7 +136,7 @@ class CMASampler(BaseSampler):
             completed_trials: 'List[optuna.structs.FrozenTrial]',
             search_space: 'Dict[str, BaseDistribution]',
             ordered_keys: List[str],
-    ) -> CMA:
+    ) -> _CMA:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             serialized_optimizer = trial.system_attrs.get(
@@ -161,7 +161,7 @@ class CMASampler(BaseSampler):
         mean = np.array([self._x0[k] for k in ordered_keys])
         bounds = _get_search_space_bound(ordered_keys, search_space)
         n_dimension = len(ordered_keys)
-        return CMA(
+        return _CMA(
             mean=mean,
             sigma=sigma0,
             bounds=bounds,

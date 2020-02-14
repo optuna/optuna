@@ -1,1 +1,1 @@
-from optuna.samplers.cmaes.sampler import CMASampler  # NOQA
+from optuna.samplers.cmaes.sampler import CmaEsSampler  # NOQA
