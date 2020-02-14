@@ -45,7 +45,7 @@ class CMA:
             alpha_cov
             * (mu_eff - 2 + 1 / mu_eff)
             / ((n_dim + 2) ** 2 + alpha_cov * mu_eff / 2),
-            )
+        )
         assert c1 <= 1 - cmu, "invalid learning rate for the rank-one update"
         assert cmu <= 1 - c1, "invalid learning rate for the rank-μ update"
 
@@ -62,14 +62,14 @@ class CMA:
             weights_prime >= 0,
             1 / positive_sum * weights_prime,
             min_alpha / negative_sum * weights_prime,
-            )
+        )
         cm = 1  # (eq. 54)
 
         # learning rate for the cumulation for the step-size control (eq.55)
         c_sigma = (mu_eff + 2) / (n_dim + mu_eff + 5)
         d_sigma = 1 + 2 * max(0, math.sqrt((mu_eff - 1) / (n_dim + 1)) - 1) + c_sigma
         assert (
-                c_sigma < 1
+            c_sigma < 1
         ), "invalid learning rate for cumulation for the step-size control"
 
         # learning rate for cumulation for the rank-one update (eq.56)
@@ -90,7 +90,7 @@ class CMA:
 
         # E||N(0, I)|| (p.28)
         self._chi_n = math.sqrt(self._n_dim) * (
-                1.0 - (1.0 / (4.0 * self._n_dim)) + 1.0 / (21.0 * (self._n_dim ** 2))
+            1.0 - (1.0 / (4.0 * self._n_dim)) + 1.0 / (21.0 * (self._n_dim ** 2))
         )
 
         self._weights = weights
@@ -102,8 +102,8 @@ class CMA:
         self._mean = mean
         self._C = np.eye(n_dim)
         self._sigma = sigma
-        self._D: Optional[np.ndarray] = None
-        self._B: Optional[np.ndarray] = None
+        self._D = None  # type: Optional[np.ndarray]
+        self._B = None  # type: Optional[np.ndarray]
 
         # bounds contains low and high of each parameter.
         self._bounds = bounds  # (n_dim, 2)-dim matrix
@@ -228,7 +228,7 @@ class CMA:
             self._weights >= 0,
             1,
             self._n_dim / (np.linalg.norm(C_2.dot(y_k.T), axis=0) ** 2),
-            )
+        )
 
         delta_h_sigma = (1 - h_sigma) * self._cc * (2 - self._cc)  # (p.28)
         assert delta_h_sigma <= 1
@@ -239,15 +239,15 @@ class CMA:
             np.array([w * np.outer(y, y) for w, y in zip(w_io, y_k)]), axis=0
         )
         self._C = (
-                (
-                        1
-                        + self._c1 * delta_h_sigma
-                        - self._c1
-                        - self._cmu * np.sum(self._weights)
-                )
-                * self._C
-                + self._c1 * rank_one
-                + self._cmu * rank_mu
+            (
+                1
+                + self._c1 * delta_h_sigma
+                - self._c1
+                - self._cmu * np.sum(self._weights)
+            )
+            * self._C
+            + self._c1 * rank_one
+            + self._cmu * rank_mu
         )
         # Avoid eigendecomposition error by arithmetic overflow
         self._C += 1e-16
