@@ -84,7 +84,8 @@ def experimental(version: str, name: str = None) -> Any:
                     "{} is experimental (supported from v{}). "
                     "The interface can change in the future.".format(
                         name if name is not None else func.__name__, version),
-                    ExperimentalWarning
+                    category=ExperimentalWarning,
+                    stacklevel=2,
                 )
 
                 return func(*args, **kwargs)  # type: ignore
