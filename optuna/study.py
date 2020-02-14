@@ -9,6 +9,8 @@ import joblib
 from joblib import delayed
 from joblib import Parallel
 
+from optuna._experimental import experimental
+
 try:
     import pandas as pd  # NOQA
     _pandas_available = True
@@ -482,6 +484,23 @@ class Study(BaseStudy):
 
         return df
 
+    @experimental('1.2.0')
+    def enqueue_trial(self, params):
+        # type: (Dict[str, Any]) -> None
+        """Enqueue a trial with given parameter values.
+
+        You can fix the next sampling parameters which will be evaluated in your
+        objective function.
+
+        Args:
+            params:
+                Parameter values to pass your objective function.
+        """
+
+        system_attrs = {'fixed_params': params}
+        self._append_trial(state=structs.TrialState.WAITING,
+                           system_attrs=system_attrs)
+
     def _append_trial(
             self,
             value=None,  # type: Optional[float]
@@ -556,6 +575,22 @@ class Study(BaseStudy):
             self._progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
         self._storage.remove_session()
 
+    def _pop_waiting_trial_id(self):
+        # type: () -> Optional[int]
+
+        # TODO(c-bata): Reduce database query counts for extracting waiting trials.
+        for trial in self.trials:
+            if trial.state != structs.TrialState.WAITING:
+                continue
+
+            if not self._storage.set_trial_state(trial._trial_id, structs.TrialState.RUNNING):
+                continue
+
+            _logger.debug("Trial#{} is popped from the trial queue.".format(trial.number))
+            return trial._trial_id
+
+        return None
+
     def _run_trial_and_callbacks(
             self,
             func,  # type: ObjectiveFuncType
@@ -579,7 +614,9 @@ class Study(BaseStudy):
     ):
         # type: (...) -> trial_module.Trial
 
-        trial_id = self._storage.create_new_trial(self._study_id)
+        trial_id = self._pop_waiting_trial_id()
+        if trial_id is None:
+            trial_id = self._storage.create_new_trial(self._study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 

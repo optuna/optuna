@@ -496,7 +496,9 @@ class Trial(BaseTrial):
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
 
-        if self._is_relative_param(name, distribution):
+        if self._is_fixed_param(name, distribution):
+            param_value = self.system_attrs['fixed_params'][name]
+        elif self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
             trial = self.storage.get_trial(self._trial_id)
@@ -516,6 +518,24 @@ class Trial(BaseTrial):
             param_value = distribution.to_external_repr(param_value_in_internal_repr)
 
         return param_value
+
+    def _is_fixed_param(self, name, distribution):
+        # type: (str, BaseDistribution) -> bool
+
+        if 'fixed_params' not in self.system_attrs:
+            return False
+
+        if name not in self.system_attrs['fixed_params']:
+            return False
+
+        param_value = self.system_attrs['fixed_params'][name]
+        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+
+        contained = distribution._contains(param_value_in_internal_repr)
+        if not contained:
+            warnings.warn("Fixed parameter '{}' with value {} is out of range "
+                          "for distribution {}.".format(name, param_value, distribution))
+        return contained
 
     def _is_relative_param(self, name, distribution):
         # type: (str, BaseDistribution) -> bool
