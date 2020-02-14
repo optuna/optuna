@@ -42,6 +42,7 @@ In addition, integration modules are available for the following libraries, prov
 
 * [Pruning with Chainer integration module](./pruning/chainer_integration.py)
 * [Pruning with XGBoost integration module](./pruning/xgboost_integration.py)
+* [Pruning with XGBoost integration module (cross validation, XGBoost.cv)](./pruning/xgboost_cv_integration.py)
 * [Pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
 * [Pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
 * [Pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
