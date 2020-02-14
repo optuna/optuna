@@ -4,6 +4,7 @@ import optuna
 from optuna import distributions
 from optuna import samplers
 from optuna.samplers import BaseSampler
+from optuna.samplers.search_space import intersection_search_space
 from optuna import structs
 from optuna.structs import StudyDirection
 from optuna import type_checking
@@ -97,7 +98,7 @@ class SkoptSampler(BaseSampler):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         search_space = {}
-        for name, distribution in samplers.intersection_search_space(study).items():
+        for name, distribution in intersection_search_space(study).items():
             if distribution.single():
                 if not isinstance(distribution, distributions.CategoricalDistribution):
                     # `skopt` cannot handle non-categorical distributions that contain just

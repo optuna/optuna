@@ -11,6 +11,7 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
+from optuna.samplers.search_space import intersection_search_space
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 from optuna import type_checking
@@ -151,7 +152,7 @@ class CmaEsSampler(BaseSampler):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         search_space = {}
-        for name, distribution in optuna.samplers.intersection_search_space(study).items():
+        for name, distribution in intersection_search_space(study).items():
             if distribution.single():
                 # `cma` cannot handle distributions that contain just a single value, so we skip
                 # them. Note that the parameter values for such distributions are sampled in
