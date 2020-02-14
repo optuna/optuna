@@ -64,7 +64,7 @@ class CmaEsSampler(BaseSampler):
         x0:
             A dictionary of an initial parameter values for CMA-ES. By default, the mean of ``low``
             and ``high`` for each distribution is used.
-            Please refer to `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.e
+            Please refer to `cma.CMAEvolutionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.e
             volution_strategy.CMAEvolutionStrategy.html>`_ for further details of ``x0``.
 
         sigma0:
@@ -72,12 +72,12 @@ class CmaEsSampler(BaseSampler):
             ``min_range / 6``, where ``min_range`` denotes the minimum range of the distributions
             in the search space. If distribution is categorical, ``min_range`` is
             ``len(choices) - 1``.
-            Please refer to `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.e
+            Please refer to `cma.CMAEvolutionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.e
             volution_strategy.CMAEvolutionStrategy.html>`_ for further details of ``sigma0``.
 
         cma_stds:
             A dictionary of multipliers of sigma0 for each parameters. The default value is 1.0.
-            Please refer to `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.e
+            Please refer to `cma.CMAEvolutionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.e
             volution_strategy.CMAEvolutionStrategy.html>`_ for further details of ``cma_stds``.
 
         seed:
@@ -85,7 +85,7 @@ class CmaEsSampler(BaseSampler):
 
         cma_opts:
             Options passed to the constructor of
-            `cma.CMAEvotionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.evolution_strateg
+            `cma.CMAEvolutionStrategy <http://cma.gforge.inria.fr/apidocs-pycma/cma.evolution_strateg
             y.CMAEvolutionStrategy.html>`_ class.
 
             Note that ``BoundaryHandler``, ``bounds``, ``CMA_stds`` and ``seed`` arguments in
