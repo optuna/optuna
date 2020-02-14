@@ -393,7 +393,8 @@ class Trial(BaseTrial):
 
         self.storage.set_trial_value(self._trial_id, value)
         if step is not None:
-            self.storage.set_trial_intermediate_value(self._trial_id, step, value)
+            if not self.storage.set_trial_intermediate_value(self._trial_id, step, value):
+                self.logger.warning('test msg')
 
     def should_prune(self, step=None):
         # type: (Optional[int]) -> bool

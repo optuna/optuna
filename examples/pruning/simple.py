@@ -36,6 +36,7 @@ def objective(trial):
         # Report intermediate objective value.
         intermediate_value = clf.score(test_x, test_y)
         trial.report(intermediate_value, step)
+        trial.report(intermediate_value, step) # debug
 
         # Handle pruning based on the intermediate value.
         if trial.should_prune():
