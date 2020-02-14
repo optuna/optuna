@@ -492,6 +492,24 @@ class Study(BaseStudy):
         You can fix the next sampling parameters which will be evaluated in your
         objective function.
 
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_uniform('x', 0, 10)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.enqueue_trial({'x': 5})
+                study.enqueue_trial({'x': 0})
+                study.optimize(objective, n_trials=2)
+
+                assert study.trials[0].params == {'x': 5}
+                assert study.trials[1].params == {'x': 0}
+
         Args:
             params:
                 Parameter values to pass your objective function.
