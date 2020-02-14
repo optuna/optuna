@@ -10,7 +10,6 @@ from typing import Optional
 from typing import Union
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
-from optuna.samplers import intersection_search_space
 from optuna.structs import FrozenTrial
 from optuna.structs import TrialState
 
@@ -41,8 +40,11 @@ class CMASampler(BaseSampler):
         self._cma_rng = np.random.RandomState(seed)
 
     def infer_relative_search_space(
-            self, study: optuna.Study, trial: optuna.structs.FrozenTrial,
-    ) -> Dict[str, BaseDistribution]:
+            self, study: 'optuna.Study', trial: 'optuna.structs.FrozenTrial',
+    ) -> 'Dict[str, BaseDistribution]':
+        # Import here to avoid circular imports without breaking a backward compatibility.
+        from optuna.samplers import intersection_search_space
+
         search_space = {}
         if trial.number < self._n_startup_trials:
             return {}
@@ -71,9 +73,9 @@ class CMASampler(BaseSampler):
 
     def sample_relative(
             self,
-            study: optuna.Study,
-            trial: optuna.structs.FrozenTrial,
-            search_space: Dict[str, BaseDistribution],
+            study: 'optuna.Study',
+            trial: 'optuna.structs.FrozenTrial',
+            search_space: 'Dict[str, BaseDistribution]',
     ) -> Dict[str, Any]:
         if len(search_space) == 0:
             return {}
@@ -131,15 +133,15 @@ class CMASampler(BaseSampler):
 
     def _restore_or_init_optimizer(
             self,
-            completed_trials: List[optuna.structs.FrozenTrial],
-            search_space: Dict[str, BaseDistribution],
+            completed_trials: 'List[optuna.structs.FrozenTrial]',
+            search_space: 'Dict[str, BaseDistribution]',
             ordered_keys: List[str],
     ) -> CMA:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
-            serialized_optimizer: Union[str, bytes, None] = trial.system_attrs.get(
+            serialized_optimizer = trial.system_attrs.get(
                 "cma:optimizer", None
-            )
+            )  # type: Union[str, bytes, None]
             if serialized_optimizer is None:
                 continue
             if isinstance(serialized_optimizer, bytes):
@@ -169,10 +171,10 @@ class CMASampler(BaseSampler):
 
     def sample_independent(
             self,
-            study: optuna.Study,
-            trial: optuna.structs.FrozenTrial,
+            study: 'optuna.Study',
+            trial: 'optuna.structs.FrozenTrial',
             param_name: str,
-            param_distribution: BaseDistribution,
+            param_distribution: 'BaseDistribution',
     ) -> Any:
         if self._warn_independent_sampling:
             complete_trials = [
@@ -199,7 +201,7 @@ class CMASampler(BaseSampler):
 
 
 def _to_external_repr(
-        search_space: Dict[str, BaseDistribution], param_name: str, internal_repr: float,
+        search_space: 'Dict[str, BaseDistribution]', param_name: str, internal_repr: float,
 ) -> Any:
     dist = search_space[param_name]
     if isinstance(dist, optuna.distributions.LogUniformDistribution):
@@ -213,7 +215,7 @@ def _to_external_repr(
     return internal_repr
 
 
-def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.ndarray]:
+def _initialize_x0(search_space: 'Dict[str, BaseDistribution]') -> Dict[str, np.ndarray]:
     x0 = {}
     for name, distribution in search_space.items():
         if isinstance(distribution, optuna.distributions.UniformDistribution):
@@ -233,7 +235,7 @@ def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.nd
     return x0
 
 
-def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
+def _initialize_sigma0(search_space: 'Dict[str, BaseDistribution]') -> float:
     sigma0s = []
     for name, distribution in search_space.items():
         if isinstance(distribution, optuna.distributions.UniformDistribution):
@@ -254,7 +256,7 @@ def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
 
 
 def _get_search_space_bound(
-        keys: List[str], search_space: Dict[str, BaseDistribution],
+        keys: List[str], search_space: 'Dict[str, BaseDistribution]',
 ) -> np.ndarray:
     bounds = []
     for param_name in keys:
