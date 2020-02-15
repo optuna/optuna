@@ -68,7 +68,6 @@ def get_extras_require():
             'scikit-learn>=0.19.0',
         ],
         'document': [
-            'lightgbm',
             'sphinx',
             'sphinx_rtd_theme',
         ],
