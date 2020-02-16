@@ -570,9 +570,11 @@ class Trial(BaseTrial):
         if old_distribution_in_trial is None:
             self._distributions_in_trial[name] = dist_dict
         elif old_distribution_in_trial != dist_dict:
-            old_distribution_in_trial_values = 'low = {}, high = {}'.format(old_distribution_in_trial['low'], old_distribution_in_trial['high'])
+            old_distribution_in_trial_values = 'low = {}, high = {}'.format(
+                old_distribution_in_trial['low'], old_distribution_in_trial['high'])
             if 'q' in old_distribution_in_trial:
-                old_distribution_in_trial_values += ', q = {}'.format(old_distribution_in_trial['q'])
+                old_distribution_in_trial_values += ', q = {}'.format(
+                    old_distribution_in_trial['q'])
             warnings.warn('Inconsistent parameter values for distribution with name "{}"! '
                           'This might be a configuration mistake. '
                           'Optuna allows to call the same distribution with the same '
