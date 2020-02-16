@@ -176,7 +176,7 @@ class Trial(BaseTrial):
                 def objective(trial):
                     momentum = trial.suggest_uniform('momentum', 0.0, 1.0)
                     clf = MLPClassifier(hidden_layer_sizes=(100, 50), momentum=momentum,
-                                        tol=1e-3, random_state=0)
+                                        solver='sgd', random_state=0)
                     clf.fit(X_train, y_train)
 
                     return clf.score(X_test, y_test)
@@ -561,7 +561,7 @@ class Trial(BaseTrial):
                     momentum = trial.suggest_uniform('momentum', 0, 1.0)
                     clf = MLPClassifier(hidden_layer_sizes=(100, 50),
                                         batch_size=trial.user_attrs['BATCHSIZE'],
-                                        momentum=momentum, tol=1e-3, random_state=0)
+                                        momentum=momentum, solver='sgd', random_state=0)
                     clf.fit(X_train, y_train)
 
                     return clf.score(X_test, y_test)
