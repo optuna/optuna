@@ -559,7 +559,6 @@ class Trial(BaseTrial):
 
         old_distribution = self.distributions.get(name, distribution)
         if old_distribution != distribution:
-            old_distribution_in_trial_values = self._distribution_to_str(old_distribution)
             warnings.warn('Inconsistent parameter values for distribution with name "{}"! '
                           'This might be a configuration mistake. '
                           'Optuna allows to call the same distribution with the same '
@@ -567,14 +566,7 @@ class Trial(BaseTrial):
                           'When the parameter values are inconsistent optuna only '
                           'uses the values of the first call and ignores all following. '
                           'Using these values: {}'
-                          .format(name, old_distribution_in_trial_values), RuntimeWarning)
-
-    def _distribution_to_str(self, distribution):
-        # type: (BaseDistribution) -> str
-
-        # TODO: implement this
-        return 'dummy text'
-
+                          .format(name, str(old_distribution)), RuntimeWarning)
 
     @property
     def number(self):

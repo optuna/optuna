@@ -143,6 +143,8 @@ class UniformDistribution(BaseDistribution):
         else:
             return self.low <= value and value < self.high
 
+    def __str__(self):
+        return  'low = {}, high = {}'.format(self.low, self.high)
 
 class LogUniformDistribution(BaseDistribution):
     """A uniform distribution in the log domain.
@@ -181,6 +183,8 @@ class LogUniformDistribution(BaseDistribution):
         else:
             return self.low <= value and value < self.high
 
+    def __str__(self):
+        return  'low = {}, high = {}'.format(self.low, self.high)
 
 class DiscreteUniformDistribution(BaseDistribution):
     """A discretized uniform distribution in the linear domain.
@@ -219,6 +223,8 @@ class DiscreteUniformDistribution(BaseDistribution):
         value = param_value_in_internal_repr
         return self.low <= value and value <= self.high
 
+    def __str__(self):
+        return  'low = {}, high = {}, q = {}'.format(self.low, self.high, self.q)
 
 class IntUniformDistribution(BaseDistribution):
     """A uniform distribution on integers.
@@ -264,6 +270,8 @@ class IntUniformDistribution(BaseDistribution):
         value = int(param_value_in_internal_repr)
         return self.low <= value and value <= self.high
 
+    def __str__(self):
+        return  'low = {}, high = {}'.format(self.low, self.high)
 
 class CategoricalDistribution(BaseDistribution):
     """A categorical distribution.
