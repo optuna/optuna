@@ -1,17 +1,18 @@
 import math
-import pickle
 import numpy as np
 import optuna
+import pickle
 
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Union
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.structs import FrozenTrial
 from optuna.structs import TrialState
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 from .cma import _CMA
 
@@ -45,7 +46,7 @@ class CmaEsSampler(BaseSampler):
         # Import here to avoid circular imports without breaking a backward compatibility.
         from optuna.samplers import intersection_search_space
 
-        search_space = {}
+        search_space = {}  # type: Dict[str, BaseDistribution]
         if trial.number < self._n_startup_trials:
             return {}
 
@@ -101,11 +102,14 @@ class CmaEsSampler(BaseSampler):
             if optimizer.generation == t.system_attrs.get("cma:generation", -1)
         ]
         if len(solution_trials) >= optimizer.population_size:
-            solutions = []
+            solutions = []  # type: List[Tuple[Any, float]]
             for t in solution_trials[: optimizer.population_size]:
+                assert t.value is not None, "completed trials must have a value"
                 x = np.array([t.params[k] for k in ordered_keys])
                 solutions.append((x, t.value))
+
             optimizer.tell(solutions)
+
             pickled_optimizer = pickle.dumps(optimizer)
             if isinstance(study._storage, optuna.storages.InMemoryStorage):
                 study._storage.set_trial_system_attr(
