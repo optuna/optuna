@@ -43,6 +43,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
+    ObjectiveFuncType2 = Callable[[trial_module.Trial], Dict[str, float]]
 
 
 _logger = logging.get_logger(__name__)
@@ -871,3 +872,73 @@ def _check_pandas_availability():
             'pandas can be installed by executing `$ pip install pandas`. '
             'For further information, please refer to the installation guide of pandas. '
             '(The actual import error is as follows: ' + str(_pandas_import_error) + ')')
+
+
+class MultiMetricStudy(object):
+    def __init__(self):
+        # type: (...) -> None
+        self.metric_names = []  # type: List[str]
+        self.n_metrcis = 0  # type: int
+
+    def optimize(
+            self,
+            func,  # type: ObjectiveFuncType2
+            n_first_trials,  # type: int
+            n_next_trials=None  # type: Optional[int]
+    ):
+        # type: (...) -> None
+        if n_next_trials is None:
+            n_next_trials = n_first_trials
+
+        def new_func(trial, index):
+            # type: (trial_module.Trial, int) -> float
+            metrics = func(trial)
+            trial.set_user_attr('metrics', metrics)
+            key, value = list(metrics.items())[index]
+            return value
+
+        study = create_study()
+        study.optimize(lambda trial: new_func(trial, 0), n_first_trials)
+        self.last_study = study
+        user_attrs_metrics = study.trials[0].user_attrs['metrics']
+        self.metric_names = list(user_attrs_metrics.keys())
+        self.n_metrics = len(self.metric_names)
+
+        for index in range(1, self.n_metrics):
+            old_study = study
+            study = create_study()
+            new_metric = self.metric_names[index]
+            for trial in old_study.trials:
+                study._append_trial(
+                    value=trial.user_attrs['metrics'][new_metric],
+                    params=trial.params,
+                    distributions=trial.distributions,
+                    user_attrs=trial.user_attrs,
+                    system_attrs=trial.system_attrs,
+                    state=trial.state,
+                    datetime_start=trial.datetime_start,
+                    datetime_complete=trial.datetime_complete
+                )
+            study.optimize(lambda trial: new_func(trial, index), n_next_trials)
+        self.last_study = study
+
+    def get_study(self, metric):
+        # type: (str) -> Study
+        study = create_study()
+        for trial in self.last_study.trials:
+            study._append_trial(
+                value=trial.user_attrs['metrics'][metric],
+                params=trial.params,
+                distributions=trial.distributions,
+                user_attrs=trial.user_attrs,
+                system_attrs=trial.system_attrs,
+                state=trial.state,
+                datetime_start=trial.datetime_start,
+                datetime_complete=trial.datetime_complete
+            )
+        return study
+
+
+def create_multi_metric_study():
+    # type: () -> MultiMetricStudy
+    return MultiMetricStudy()
