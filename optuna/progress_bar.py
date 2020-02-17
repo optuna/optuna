@@ -4,6 +4,7 @@ from typing import Optional
 
 from tqdm.auto import tqdm
 
+from optuna._experimental import experimental
 from optuna import logging as optuna_logging
 
 _tqdm_handler = None  # type: Optional[_TqdmLoggingHandler]
@@ -46,14 +47,20 @@ class _ProgressBar(object):
         self._timeout = timeout
 
         if self._is_valid:
-            self._progress_bar = tqdm(range(n_trials) if n_trials is not None else None)
-            global _tqdm_handler
+            self._init_valid()
 
-            _tqdm_handler = _TqdmLoggingHandler()
-            _tqdm_handler.setLevel(logging.INFO)
-            _tqdm_handler.setFormatter(optuna_logging.create_default_formatter())
-            optuna_logging.disable_default_handler()
-            optuna_logging._get_library_root_logger().addHandler(_tqdm_handler)
+    # TODO(hvy): Remove initialization indirection via this method when the progress bar is no
+    # longer experimental.
+    @experimental('1.2.0', name='Progress bar')
+    def _init_valid(self) -> None:
+        self._progress_bar = tqdm(range(self._n_trials) if self._n_trials is not None else None)
+        global _tqdm_handler
+
+        _tqdm_handler = _TqdmLoggingHandler()
+        _tqdm_handler.setLevel(logging.INFO)
+        _tqdm_handler.setFormatter(optuna_logging.create_default_formatter())
+        optuna_logging.disable_default_handler()
+        optuna_logging._get_library_root_logger().addHandler(_tqdm_handler)
 
     def update(self, elapsed_seconds: Optional[float]) -> None:
         """Update the progress bars if ``is_valid`` is ``True``.
