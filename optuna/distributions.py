@@ -144,6 +144,7 @@ class UniformDistribution(BaseDistribution):
             return self.low <= value and value < self.high
 
     def __str__(self):
+        # type: () -> str
         return 'low = {}, high = {}'.format(self.low, self.high)
 
 
@@ -185,6 +186,7 @@ class LogUniformDistribution(BaseDistribution):
             return self.low <= value and value < self.high
 
     def __str__(self):
+        # type: () -> str
         return 'low = {}, high = {}'.format(self.low, self.high)
 
 
@@ -226,6 +228,7 @@ class DiscreteUniformDistribution(BaseDistribution):
         return self.low <= value and value <= self.high
 
     def __str__(self):
+        # type: () -> str
         return 'low = {}, high = {}, q = {}'.format(self.low, self.high, self.q)
 
 
@@ -274,6 +277,7 @@ class IntUniformDistribution(BaseDistribution):
         return self.low <= value and value <= self.high
 
     def __str__(self):
+        # type: () -> str
         return 'low = {}, high = {}'.format(self.low, self.high)
 
 
