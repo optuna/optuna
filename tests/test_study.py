@@ -479,7 +479,7 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
     def f(trial):
         # type: (optuna.trial.Trial) -> float
 
-        x = trial.suggest_int('x', 1, 1, 1)
+        x = trial.suggest_int('x', 1, 1)
         y = trial.suggest_categorical('y', (2.5, ))
         assert isinstance(y, float)
         trial.set_user_attr('train_loss', 3)
@@ -553,7 +553,7 @@ def test_trials_dataframe_with_failure(storage_mode):
     def f(trial):
         # type: (optuna.trial.Trial) -> float
 
-        x = trial.suggest_int('x', 1, 1, 1)
+        x = trial.suggest_int('x', 1, 1)
         y = trial.suggest_categorical('y', (2.5, ))
         trial.set_user_attr('train_loss', 3)
         raise ValueError()
@@ -728,7 +728,7 @@ def test_callbacks(n_jobs):
     def objective(trial):
         # type: (optuna.trial.Trial) -> float
 
-        return trial.suggest_int('x', 1, 1, 1)
+        return trial.suggest_int('x', 1, 1)
 
     # Empty callback list.
     study.optimize(objective, callbacks=[], n_trials=10, n_jobs=n_jobs)
@@ -777,7 +777,7 @@ def test_get_trials(storage_mode):
         storage = optuna.storages.get_storage(storage=storage)
 
         study = optuna.create_study(storage=storage)
-        study.optimize(lambda t: t.suggest_int('x', 1, 5, 1), n_trials=5)
+        study.optimize(lambda t: t.suggest_int('x', 1, 5), n_trials=5)
 
         with patch('copy.deepcopy', wraps=copy.deepcopy) as mock_object:
             trials0 = study.get_trials(deepcopy=False)

@@ -114,9 +114,9 @@ def test_discrete_uniform(sampler_class, distribution):
 
 @parametrize_sampler
 @pytest.mark.parametrize('distribution', [
-    IntUniformDistribution(-10, 10, 1),
-    IntUniformDistribution(0, 10, 1),
-    IntUniformDistribution(-10, 0, 1)
+    IntUniformDistribution(-10, 10),
+    IntUniformDistribution(0, 10),
+    IntUniformDistribution(-10, 0)
 ])
 def test_int(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], IntUniformDistribution) -> None
@@ -195,7 +195,7 @@ def test_sample_relative():
     relative_search_space = {
         'a': UniformDistribution(low=0, high=5),
         'b': CategoricalDistribution(choices=('foo', 'bar', 'baz')),
-        'c': IntUniformDistribution(low=20, high=50, q=1),  # Not exist in `relative_params`.
+        'c': IntUniformDistribution(low=20, high=50),  # Not exist in `relative_params`.
     }  # type: Dict[str, BaseDistribution]
     relative_params = {
         'a': 3.2,
@@ -215,7 +215,7 @@ def test_sample_relative():
         assert trial.suggest_categorical('b', ['foo', 'bar', 'baz']) == 'baz'
 
         # Other parameters are sampled by `sample_independent()` method.
-        assert trial.suggest_int('c', 20, 50, 1) == unknown_param_value
+        assert trial.suggest_int('c', 20, 50) == unknown_param_value
         assert trial.suggest_loguniform('d', 1, 100) == unknown_param_value
         assert trial.suggest_uniform('e', 20, 40) == unknown_param_value
 
@@ -235,10 +235,9 @@ def test_intersection_search_space():
     assert optuna.samplers.intersection_search_space(study) == {}
 
     # First trial.
-    study.optimize(lambda t: t.suggest_int('x', 0, 10, 1) +
-                   t.suggest_uniform('y', -3, 3), n_trials=1)
+    study.optimize(lambda t: t.suggest_int('x', 0, 10) + t.suggest_uniform('y', -3, 3), n_trials=1)
     assert optuna.samplers.intersection_search_space(study) == {
-        'x': IntUniformDistribution(low=0, high=10, q=1),
+        'x': IntUniformDistribution(low=0, high=10),
         'y': UniformDistribution(low=-3, high=3)
     }
 
