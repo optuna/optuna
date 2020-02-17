@@ -9,6 +9,10 @@ from typing import Tuple
 
 
 class _CMA(object):
+    # This class implements CMA-ES algorithm. Please refer to the paper of
+    # The CMA Evolution Strategy: A Tutorial (URL: https://arxiv.org/abs/1604.00772)
+    # for details.
+
     def __init__(
             self,
             mean: np.ndarray,

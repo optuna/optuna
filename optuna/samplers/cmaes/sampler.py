@@ -38,7 +38,9 @@ class CmaEsSampler(BaseSampler):
                 study = optuna.create_study(sampler=sampler)
                 study.optimize(objective, n_trials=100)
 
-    Note that parallel execution of trials may affect the optimization performance of CMA-ES,
+    Note that this sampler does not support CategoricalDistribution. If your search space
+    contains categorical parameters, I recommend you to use TPESampler instead.
+    Furthermore, parallel execution of trials may affect the optimization performance of CMA-ES,
     especially if the number of trials running in parallel exceeds the population size.
 
     .. seealso::
@@ -108,7 +110,7 @@ class CmaEsSampler(BaseSampler):
 
     def infer_relative_search_space(
             self, study: 'optuna.Study', trial: 'optuna.structs.FrozenTrial',
-    ) -> 'Dict[str, BaseDistribution]':
+    ) -> Dict[str, BaseDistribution]:
         # Import here to avoid circular imports without breaking a backward compatibility.
         from optuna.samplers import intersection_search_space
 
@@ -142,7 +144,7 @@ class CmaEsSampler(BaseSampler):
             self,
             study: 'optuna.Study',
             trial: 'optuna.structs.FrozenTrial',
-            search_space: 'Dict[str, BaseDistribution]',
+            search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         if len(search_space) == 0:
             return {}
@@ -204,7 +206,7 @@ class CmaEsSampler(BaseSampler):
     def _restore_or_init_optimizer(
             self,
             completed_trials: 'List[optuna.structs.FrozenTrial]',
-            search_space: 'Dict[str, BaseDistribution]',
+            search_space: Dict[str, BaseDistribution],
             ordered_keys: List[str],
     ) -> _CMA:
         # Restore a previous CMA object.
@@ -244,7 +246,7 @@ class CmaEsSampler(BaseSampler):
             study: 'optuna.Study',
             trial: 'optuna.structs.FrozenTrial',
             param_name: str,
-            param_distribution: 'BaseDistribution',
+            param_distribution: BaseDistribution,
     ) -> Any:
         if self._warn_independent_sampling:
             complete_trials = [
@@ -271,7 +273,7 @@ class CmaEsSampler(BaseSampler):
 
 
 def _to_external_repr(
-        search_space: 'Dict[str, BaseDistribution]', param_name: str, internal_repr: float,
+        search_space: Dict[str, BaseDistribution], param_name: str, internal_repr: float,
 ) -> Any:
     dist = search_space[param_name]
     if isinstance(dist, optuna.distributions.LogUniformDistribution):
@@ -285,7 +287,7 @@ def _to_external_repr(
     return internal_repr
 
 
-def _initialize_x0(search_space: 'Dict[str, BaseDistribution]') -> Dict[str, np.ndarray]:
+def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.ndarray]:
     x0 = {}
     for name, distribution in search_space.items():
         if isinstance(distribution, optuna.distributions.UniformDistribution):
@@ -305,7 +307,7 @@ def _initialize_x0(search_space: 'Dict[str, BaseDistribution]') -> Dict[str, np.
     return x0
 
 
-def _initialize_sigma0(search_space: 'Dict[str, BaseDistribution]') -> float:
+def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
     sigma0s = []
     for name, distribution in search_space.items():
         if isinstance(distribution, optuna.distributions.UniformDistribution):
@@ -326,7 +328,7 @@ def _initialize_sigma0(search_space: 'Dict[str, BaseDistribution]') -> float:
 
 
 def _get_search_space_bound(
-        keys: List[str], search_space: 'Dict[str, BaseDistribution]',
+        keys: List[str], search_space: Dict[str, BaseDistribution],
 ) -> np.ndarray:
     bounds = []
     for param_name in keys:
