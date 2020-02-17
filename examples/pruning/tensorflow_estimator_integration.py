@@ -88,7 +88,7 @@ def objective(trial):
         input_fn=train_input_fn, max_steps=TRAIN_STEPS, hooks=[optuna_pruning_hook])
 
     eval_spec = tf.estimator.EvalSpec(
-        input_fn=eval_input_fn, steps=EVAL_STEPS, start_delay_secs=0, throttle_secs=0)
+        input_fn=eval_input_fn, start_delay_secs=0, throttle_secs=0)
 
     eval_results, _ = tf.estimator.train_and_evaluate(classifier, train_spec, eval_spec)
 
