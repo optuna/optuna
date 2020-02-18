@@ -317,7 +317,12 @@ class CategoricalDistribution(BaseDistribution):
     def to_internal_repr(self, param_value_in_external_repr):
         # type: (CategoricalChoiceType) -> float
 
-        return self.choices.index(param_value_in_external_repr)
+        try:
+            return self.choices.index(param_value_in_external_repr)
+        except ValueError as e:
+            raise ValueError(
+                '\'{}\' not in {}.'.format(
+                    param_value_in_external_repr, self.choices)) from e
 
     def single(self):
         # type: () -> bool

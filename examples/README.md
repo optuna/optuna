@@ -42,6 +42,7 @@ In addition, integration modules are available for the following libraries, prov
 
 * [Pruning with Chainer integration module](./pruning/chainer_integration.py)
 * [Pruning with XGBoost integration module](./pruning/xgboost_integration.py)
+* [Pruning with XGBoost integration module (cross validation, XGBoost.cv)](./pruning/xgboost_cv_integration.py)
 * [Pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
 * [Pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
 * [Pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
@@ -66,3 +67,8 @@ In addition, integration modules are available for the following libraries, prov
 ### Examples of Distributed Optimization
 
 * [Optimizing on Kubernetes](./distributed/kubernetes/README.md)
+
+### External libraries using Optuna
+
+* [Analyzing optimization results using Neptune](https://neptune-contrib.readthedocs.io/user_guide/monitoring/optuna.html)
+* [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)

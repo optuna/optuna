@@ -199,6 +199,11 @@ class TPESampler(base.BaseSampler):
         # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
         low = 0 - 0.5 * q
         high = r + 0.5 * q
+
+        # Shift below and above to [0, r]
+        above -= distribution.low
+        below -= distribution.low
+
         best_sample = self._sample_numerical(low, high, below, above, q=q) + distribution.low
         return min(max(best_sample, distribution.low), distribution.high)
 
