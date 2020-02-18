@@ -51,6 +51,9 @@ def upgrade():
         mapping = [{'trial_id': r.trial_id, 'number': json.loads(r.value_json)}
                    for r in number_records]
         session.bulk_update_mappings(TrialModel, mapping)
+
+        session.query(TrialSystemAttributeModel.key == '_number') \
+            .delete(synchronize_session=False)
         session.commit()
     except:
         session.rollback()
@@ -60,5 +63,25 @@ def upgrade():
 
 
 def downgrade():
+    bind = op.get_bind()
+    session = orm.Session(bind=bind)
+
+    try:
+        number_attrs = []
+        trials = session.query(TrialModel).all()
+        for trial in trials:
+            number_attrs.append(TrialSystemAttributeModel(
+                trial_id=trial.trial_id,
+                key='_number',
+                value_json=json.dumps(trial.number),
+            ))
+        session.bulk_save_objects(number_attrs)
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
     with op.batch_alter_table("trials") as batch_op:
         batch_op.drop_column('number')
