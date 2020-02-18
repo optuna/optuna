@@ -593,7 +593,7 @@ class Trial(BaseTrial):
             A trial number.
         """
 
-        return self.storage.get_trial_number_from_id(self._trial_id)
+        return self.storage.get_trial(self._trial_id).number
 
     @property
     def trial_id(self):

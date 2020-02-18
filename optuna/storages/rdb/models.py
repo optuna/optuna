@@ -149,7 +149,7 @@ class TrialModel(BaseModel):
         (UniqueConstraint('study_id', 'number', name='uc_study_trial_number')),
     )  # type: Any
     trial_id = Column(Integer, primary_key=True)
-    number = Column(Integer, unique=True)
+    number = Column(Integer)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     state = Column(Enum(TrialState), nullable=False)
     value = Column(Float)

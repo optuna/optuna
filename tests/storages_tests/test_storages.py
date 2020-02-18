@@ -25,7 +25,6 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
-# TODO(Yanase): Remove _number from system_attrs after adding TrialModel.number.
 EXAMPLE_ATTRS = {
     'dataset': 'MNIST',
     'none': None,
@@ -33,7 +32,6 @@ EXAMPLE_ATTRS = {
         'baseline_score': 0.001,
         'tags': ['image', 'classification']
     },
-    '_number': 0,
 }
 
 EXAMPLE_DISTRIBUTIONS = {
@@ -41,14 +39,13 @@ EXAMPLE_DISTRIBUTIONS = {
     'y': CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
 }  # type: Dict[str, BaseDistribution]
 
-# TODO(Yanase): Remove _number from system_attrs after adding TrialModel.number.
 EXAMPLE_TRIALS = [
     FrozenTrial(
         number=0,  # dummy
         value=1.,
         state=TrialState.COMPLETE,
         user_attrs={},
-        system_attrs={'_number': 0},
+        system_attrs={},
         params={
             'x': 0.5,
             'y': 'Ginza'
@@ -70,7 +67,7 @@ EXAMPLE_TRIALS = [
             'tags': ['video', 'classification'],
             'dataset': 'YouTube-8M'
         },
-        system_attrs={'some_key': 'some_value', '_number': 0},
+        system_attrs={'some_key': 'some_value'},
         params={
             'x': 0.01,
             'y': 'Otemachi'
@@ -292,9 +289,6 @@ def test_create_new_trial(storage_init_func):
     assert trials[0].state == TrialState.RUNNING
     assert trials[0].user_attrs == {}
 
-    # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-    assert trials[0].system_attrs == {'_number': 0}
-
 
 @parametrize_storage
 def test_create_new_trial_with_template_trial(storage_init_func):
@@ -313,11 +307,10 @@ def test_create_new_trial_with_template_trial(storage_init_func):
         user_attrs={'foo': 'bar'},
         system_attrs={
             'baz': 123,
-            '_number': 55  # This entry is ignored.
         },
         intermediate_values={1: 10, 2: 100, 3: 1000},
 
-        number=-1,  # dummy value (unused).
+        number=55,
         trial_id=-1,  # dummy value (unused).
     )
 
@@ -337,10 +330,6 @@ def test_create_new_trial_with_template_trial(storage_init_func):
     assert trials[0].user_attrs == template_trial.user_attrs
     assert trials[0].intermediate_values == template_trial.intermediate_values
 
-    # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-    template_trial.system_attrs['_number'] = 0
-    assert trials[0].system_attrs == template_trial.system_attrs
-
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 def test_get_trial_number_from_id(storage_mode):
@@ -357,26 +346,6 @@ def test_get_trial_number_from_id(storage_mode):
 
         trial_id = storage.create_new_trial(study_id)
         assert storage.get_trial_number_from_id(trial_id) == 1
-
-
-# TODO(Yanase): Remove the following test case after TrialModel.number is added.
-@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_get_trial_number_from_id_with_empty_system_attrs(storage_mode):
-    # type: (str) -> None
-
-    with StorageSupplier(storage_mode) as storage:
-        storage = optuna.storages.get_storage(storage)
-        study_id = storage.create_new_study()
-        with patch.object(storage, 'get_trial_system_attrs', return_value=dict()) as _mock_attrs:
-            trial_id = storage.create_new_trial(study_id)
-            assert storage.get_trial_number_from_id(trial_id) == 0
-
-            trial_id = storage.create_new_trial(study_id)
-            assert storage.get_trial_number_from_id(trial_id) == 1
-
-            if storage_mode == 'none':
-                return
-            assert _mock_attrs.call_count == 2
 
 
 @parametrize_storage
@@ -565,8 +534,6 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     trial_id_2 = storage.create_new_trial(study_id)
     check_set_and_get(trial_id_2, 'baseline_score', 0.001)
     system_attrs = storage.get_trial(trial_id_2).system_attrs
-    # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-    assert system_attrs == {'baseline_score': 0.001, '_number': 1}
 
 
 @parametrize_storage

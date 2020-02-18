@@ -16,7 +16,6 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import func
 from sqlalchemy import orm
 
 import optuna
@@ -462,9 +461,6 @@ class RDBStorage(BaseStorage):
                 self._set_trial_user_attr_without_commit(session, trial.trial_id, key, value)
 
             for key, value in template_trial.system_attrs.items():
-                if key == '_number':
-                    continue
-
                 self._set_trial_system_attr_without_commit(session, trial.trial_id, key, value)
 
             for step, intermediate_value in template_trial.intermediate_values.items():
@@ -629,16 +625,7 @@ class RDBStorage(BaseStorage):
         # type: (orm.Session, int, str, Any) -> None
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        if key == '_number':
-            # `_number` attribute may be set even after a trial is finished.
-            # This happens if the trial was created before v0.9.0,
-            # where a trial didn't have `_number` attribute.
-            # In this case, `check_trial_is_updatable` is skipped to avoid the `RuntimeError`.
-            #
-            # TODO(ohta): Remove this workaround when `number` field is added to `TrialModel`.
-            pass
-        else:
-            self.check_trial_is_updatable(trial_id, trial.state)
+        self.check_trial_is_updatable(trial_id, trial.state)
 
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
@@ -652,7 +639,7 @@ class RDBStorage(BaseStorage):
     def get_trial_number_from_id(self, trial_id):
         # type: (int) -> int
 
-        trial_number = self.get_trial_system_attrs(trial_id).get('_number')
+        trial_number = self.get_trial(trial_id).number
         return trial_number
 
     def get_trial(self, trial_id):
@@ -790,7 +777,7 @@ class RDBStorage(BaseStorage):
         for system_attr in trial_system_attrs:
             id_to_system_attrs[system_attr.trial_id].append(system_attr)
 
-        temp_trials = []
+        result = []
         for trial_id, trial in id_to_trial.items():
             params = {}
             param_distributions = {}
@@ -811,15 +798,9 @@ class RDBStorage(BaseStorage):
             for system_attr in id_to_system_attrs[trial_id]:
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
-            # `-1` is a dummy value.
-            # It will be replaced by a proper value before returned to the caller.
-            #
-            # TODO(ohta): Use trial.number after TrialModel.number is added.
-            trial_number = -1
-
-            temp_trials.append(
+            result.append(
                 structs.FrozenTrial(
-                    number=trial_number,
+                    number=trial.number,
                     state=trial.state,
                     params=params,
                     distributions=param_distributions,
@@ -830,19 +811,6 @@ class RDBStorage(BaseStorage):
                     datetime_start=trial.datetime_start,
                     datetime_complete=trial.datetime_complete,
                     trial_id=trial_id))
-
-        result = []
-        for temp_trial in temp_trials:
-            # [NOTE]
-            # We set actual trial numbers here to avoid calling `self.get_trial_number_from_id()`
-            # within the above loop.
-            #
-            # This is because `self.get_trial_number_from_id()` may call `session.commit()`
-            # internally, which causes unintended changes of the states of `trials`.
-            # (see https://github.com/optuna/optuna/pull/349#issuecomment-475086642 for details)
-            trial_number = self.get_trial_number_from_id(temp_trial._trial_id)
-            temp_trial.number = trial_number
-            result.append(temp_trial)
 
         return result
 

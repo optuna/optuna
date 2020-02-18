@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import orm, UniqueConstraint
+from sqlalchemy import orm
 
 # revision identifiers, used by Alembic.
 revision = 'v1.2.0.b'
