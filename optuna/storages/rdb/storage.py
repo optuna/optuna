@@ -33,6 +33,8 @@ if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Optional  # NOQA
 
+_logger = optuna.logging.get_logger(__name__)
+
 
 class RDBStorage(BaseStorage):
     """Storage class for RDB backend.
@@ -104,8 +106,6 @@ class RDBStorage(BaseStorage):
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
 
-        self.logger = optuna.logging.get_logger(__name__)
-
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
@@ -118,7 +118,6 @@ class RDBStorage(BaseStorage):
         state = self.__dict__.copy()
         del state['scoped_session']
         del state['engine']
-        del state['logger']
         del state['_version_manager']
         del state['_finished_trials_cache']
         return state
@@ -135,7 +134,6 @@ class RDBStorage(BaseStorage):
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
-        self.logger = optuna.logging.get_logger(__name__)
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not self.skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
@@ -171,7 +169,7 @@ class RDBStorage(BaseStorage):
                 "by setting `load_if_exists` (for Python API) or "
                 "`--skip-if-exists` flag (for CLI).".format(study_name))
 
-        self.logger.info('A new study created with name: {}'.format(study.study_name))
+        _logger.info('A new study created with name: {}'.format(study.study_name))
 
         return study.study_id
 
@@ -488,18 +486,21 @@ class RDBStorage(BaseStorage):
         return trial_number
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, structs.TrialState) -> None
+        # type: (int, structs.TrialState) -> bool
 
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
+        if state == structs.TrialState.RUNNING and trial.state != structs.TrialState.WAITING:
+            return False
+
         trial.state = state
         if state.is_finished():
             trial.datetime_complete = datetime.now()
 
-        self._commit(session)
+        return self._commit_with_integrity_check(session)
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
         # type: (int, str, float, distributions.BaseDistribution) -> bool
@@ -876,8 +877,7 @@ class RDBStorage(BaseStorage):
         # errors. For further details, please refer to the following document:
         # https://docs.sqlalchemy.org/en/13/core/pooling.html#pool-disconnects-pessimistic
         engine_kwargs['pool_pre_ping'] = True
-        logger = optuna.logging.get_logger(__name__)
-        logger.debug('pool_pre_ping=True was set to engine_kwargs to prevent connection timeout.')
+        _logger.debug('pool_pre_ping=True was set to engine_kwargs to prevent connection timeout.')
 
     @staticmethod
     def _fill_storage_url_template(template):
@@ -892,8 +892,7 @@ class RDBStorage(BaseStorage):
         try:
             session.commit()
         except IntegrityError as e:
-            logger = optuna.logging.get_logger(__name__)
-            logger.debug(
+            _logger.debug(
                 'Ignoring {}. This happens due to a timing issue among threads/processes/nodes. '
                 'Another one might have committed a record with the same key(s).'.format(repr(e)))
             session.rollback()

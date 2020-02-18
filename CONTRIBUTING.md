@@ -84,6 +84,14 @@ To build the documentation, you need to install [Sphinx](http://www.sphinx-doc.o
 $ pip install sphinx sphinx_rtd_theme
 ```
 
+Note that docstrings (documentation comments in the source code) are collected from the installed
+Optuna module. If you modified docstrings, make sure to install the module
+before building the documentation.
+
+```
+$ pip install -e .
+```
+
 Then you can build the documentation in HTML format locally:
 
 ```
@@ -93,7 +101,3 @@ $ make html
 
 HTML files are generated under `build/html` directory. Open `index.html` with the browser and see
 if it is rendered as expected.
-
-Note that docstrings (documentation comments in the source code) are collected from the installed
-Optuna module. If you modified docstrings, make sure to install the module (e.g.,
-using `pip install -e .`) before building the documentation.

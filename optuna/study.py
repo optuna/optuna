@@ -9,6 +9,8 @@ import joblib
 from joblib import delayed
 from joblib import Parallel
 
+from optuna._experimental import experimental
+
 try:
     import pandas as pd  # NOQA
     _pandas_available = True
@@ -19,6 +21,7 @@ except ImportError as e:
 
 from optuna import exceptions
 from optuna import logging
+from optuna import progress_bar as pbar_module
 from optuna import pruners
 from optuna import samplers
 from optuna import storages
@@ -256,7 +259,8 @@ class Study(BaseStudy):
             n_jobs=1,  # type: int
             catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
             callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            gc_after_trial=True  # type: bool
+            gc_after_trial=True,  # type: bool
+            show_progress_bar=False  # type: bool
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -287,6 +291,10 @@ class Study(BaseStudy):
                 Flag to execute garbage collection at the end of each trial. By default, garbage
                 collection is enabled, just in case. You can turn it off with this argument if
                 memory is safely managed in your objective function.
+            show_progress_bar:
+                Flag to show progress bars or not. To disable progress bar, set this ``False``.
+                Currently, progress bar is experimental feature and disabled
+                when ``n_jobs`` :math:`\\ne 1`.
         """
 
         if not isinstance(catch, tuple):
@@ -296,11 +304,19 @@ class Study(BaseStudy):
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
+        # TODO(crcrpar): Make progress bar work when n_jobs != 1.
+        self._progress_bar = pbar_module._ProgressBar(
+            show_progress_bar and n_jobs == 1, n_trials, timeout)
         try:
             if n_jobs == 1:
                 self._optimize_sequential(func, n_trials, timeout, catch, callbacks,
                                           gc_after_trial, None)
             else:
+                if show_progress_bar:
+                    msg = 'Progress bar only supports serial execution (`n_jobs=1`).'
+                    warnings.warn(msg)
+                    _logger.warning(msg)
+
                 time_start = datetime.datetime.now()
 
                 if n_trials is not None:
@@ -331,6 +347,8 @@ class Study(BaseStudy):
                     )
         finally:
             self._optimize_lock.release()
+            self._progress_bar.close()
+            del self._progress_bar
 
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
@@ -466,6 +484,41 @@ class Study(BaseStudy):
 
         return df
 
+    @experimental('1.2.0')
+    def enqueue_trial(self, params):
+        # type: (Dict[str, Any]) -> None
+        """Enqueue a trial with given parameter values.
+
+        You can fix the next sampling parameters which will be evaluated in your
+        objective function.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_uniform('x', 0, 10)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.enqueue_trial({'x': 5})
+                study.enqueue_trial({'x': 0})
+                study.optimize(objective, n_trials=2)
+
+                assert study.trials[0].params == {'x': 5}
+                assert study.trials[1].params == {'x': 0}
+
+        Args:
+            params:
+                Parameter values to pass your objective function.
+        """
+
+        system_attrs = {'fixed_params': params}
+        self._append_trial(state=structs.TrialState.WAITING,
+                           system_attrs=system_attrs)
+
     def _append_trial(
             self,
             value=None,  # type: Optional[float]
@@ -536,7 +589,25 @@ class Study(BaseStudy):
                     break
 
             self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
+
+            self._progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
         self._storage.remove_session()
+
+    def _pop_waiting_trial_id(self):
+        # type: () -> Optional[int]
+
+        # TODO(c-bata): Reduce database query counts for extracting waiting trials.
+        for trial in self.trials:
+            if trial.state != structs.TrialState.WAITING:
+                continue
+
+            if not self._storage.set_trial_state(trial._trial_id, structs.TrialState.RUNNING):
+                continue
+
+            _logger.debug("Trial#{} is popped from the trial queue.".format(trial.number))
+            return trial._trial_id
+
+        return None
 
     def _run_trial_and_callbacks(
             self,
@@ -561,7 +632,9 @@ class Study(BaseStudy):
     ):
         # type: (...) -> trial_module.Trial
 
-        trial_id = self._storage.create_new_trial(self._study_id)
+        trial_id = self._pop_waiting_trial_id()
+        if trial_id is None:
+            trial_id = self._storage.create_new_trial(self._study_id)
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
@@ -572,6 +645,14 @@ class Study(BaseStudy):
                                                                     structs.TrialState.PRUNED,
                                                                     str(e))
             _logger.info(message)
+
+            # Register the last intermediate value if present as the value of the trial.
+            # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
+            frozen_trial = self._storage.get_trial(trial_id)
+            last_step = frozen_trial.last_step
+            if last_step is not None:
+                self._storage.set_trial_value(
+                    trial_id, frozen_trial.intermediate_values[last_step])
             self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
         except Exception as e:
@@ -614,7 +695,7 @@ class Study(BaseStudy):
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
-        trial.report(result)
+        self._storage.set_trial_value(trial_id, result)
         self._storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
         self._log_completed_trial(trial_number, result)
 

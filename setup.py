@@ -65,9 +65,7 @@ def get_extras_require():
         ],
         'doctest': [
             'pandas',
-            # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
-            # See https://github.com/optuna/optuna/issues/825 for further details.
-            'scikit-learn>=0.19.0,<=0.22.0',
+            'scikit-learn>=0.19.0',
         ],
         'document': [
             'lightgbm',
@@ -80,21 +78,19 @@ def get_extras_require():
             'lightgbm',
             'mlflow',
             'mxnet',
+            'pytorch-ignite',
             'scikit-image',
-            # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
-            # See https://github.com/optuna/optuna/issues/825 for further details.
-            'scikit-learn<=0.22.0',
+            'scikit-learn',
+            'torch',
+            'torchvision>=0.5.0',
             'xgboost',
         ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + ([
             'dask[dataframe]',
             'dask-ml',
             'keras',
-            'pytorch-ignite',
             'pytorch-lightning',
             'tensorflow>=2.0.0',
-            'torch',
-            'torchvision>=0.5.0'
         ] if sys.version_info[:2] < (3, 8) else []),
         'testing': [
             'bokeh',
@@ -107,20 +103,18 @@ def get_extras_require():
             'pandas',
             'plotly>=4.0.0',
             'pytest',
-            # TODO(Yanase): Update sklearn integration to support v0.22.1 or newer.
-            # See https://github.com/optuna/optuna/issues/825 for further details.
-            'scikit-learn>=0.19.0,<=0.22.0',
+            'pytorch-ignite',
+            'scikit-learn>=0.19.0',
             'scikit-optimize',
+            'torch',
+            'torchvision>=0.5.0',
             'xgboost',
         ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + ([
             'keras',
-            'pytorch-ignite',
             'pytorch-lightning',
             'tensorflow',
             'tensorflow-datasets',
-            'torch',
-            'torchvision>=0.5.0'
         ] if sys.version_info[:2] < (3, 8) else []),
     }
 

@@ -49,8 +49,8 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
-    def report(self, value, step=None):
-        # type: (float, Optional[int]) -> None
+    def report(self, value, step):
+        # type: (float, int) -> None
 
         raise NotImplementedError
 
@@ -136,6 +136,10 @@ class Trial(BaseTrial):
 
         self._init_relative_params()
 
+        # store all seen distributions in trial to check for consistency
+        # see: _check_distribution function
+        self._distributions_in_trial = {}  # type: Dict[str, Dict[str, Any]]
+
     def _init_relative_params(self):
         # type: () -> None
 
@@ -178,6 +182,8 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
+        self._check_distribution(low=low, high=high, name=name)
+
         distribution = distributions.UniformDistribution(low=low, high=high)
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
@@ -217,6 +223,8 @@ class Trial(BaseTrial):
         Returns:
             A suggested float value.
         """
+
+        self._check_distribution(low=low, high=high, name=name)
 
         distribution = distributions.LogUniformDistribution(low=low, high=high)
         if low == high:
@@ -265,6 +273,8 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
+        self._check_distribution(low=low, high=high, q=q, name=name)
+
         high = _adjust_discrete_uniform_high(name, low, high, q)
         distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         if low == high:
@@ -305,7 +315,10 @@ class Trial(BaseTrial):
             A suggested integer value.
         """
 
-        distribution = distributions.IntUniformDistribution(low=low, high=high, q=q)
+
+        self._check_distribution(low=low, high=high, name=name)
+
+        distribution = distributions.IntUniformDistribution(low=low, high=high)
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
 
@@ -344,18 +357,26 @@ class Trial(BaseTrial):
         """
 
         choices = tuple(choices)
+
+        # There is no need to call self._check_distribution because
+        # CategoricalDistribution does not support dynamic value space.
+
         return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
 
-    def report(self, value, step=None):
-        # type: (float, Optional[int]) -> None
-        """Report an objective function value.
+    def report(self, value, step):
+        # type: (float, int) -> None
+        """Report an objective function value for a given step.
 
-        If step is set to :obj:`None`, the value is stored as a final value of the trial.
-        Otherwise, it is saved as an intermediate value.
+        The reported values are used by the pruners to determine whether this trial should be
+        pruned.
 
-        Note that the reported value is converted to ``float`` type by applying ``float()``
-        function internally. Thus, it accepts all float-like types (e.g., ``numpy.float32``).
-        If the conversion fails, a ``TypeError`` is raised.
+        .. seealso::
+            Please refer to :class:`~optuna.pruners.BasePruner`.
+
+        .. note::
+            The reported value is converted to ``float`` type by applying ``float()``
+            function internally. Thus, it accepts all float-like types (e.g., ``numpy.float32``).
+            If the conversion fails, a ``TypeError`` is raised.
 
         Example:
 
@@ -390,12 +411,10 @@ class Trial(BaseTrial):
                 type(value).__name__)
             raise TypeError(message)
 
-        if step is not None and step < 0:
+        if step < 0:
             raise ValueError('The `step` argument is {} but cannot be negative.'.format(step))
 
-        self.storage.set_trial_value(self._trial_id, value)
-        if step is not None:
-            self.storage.set_trial_intermediate_value(self._trial_id, step, value)
+        self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
     def should_prune(self, step=None):
         # type: (Optional[int]) -> bool
@@ -480,7 +499,9 @@ class Trial(BaseTrial):
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
 
-        if self._is_relative_param(name, distribution):
+        if self._is_fixed_param(name, distribution):
+            param_value = self.system_attrs['fixed_params'][name]
+        elif self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
             trial = self.storage.get_trial(self._trial_id)
@@ -501,6 +522,24 @@ class Trial(BaseTrial):
 
         return param_value
 
+    def _is_fixed_param(self, name, distribution):
+        # type: (str, BaseDistribution) -> bool
+
+        if 'fixed_params' not in self.system_attrs:
+            return False
+
+        if name not in self.system_attrs['fixed_params']:
+            return False
+
+        param_value = self.system_attrs['fixed_params'][name]
+        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+
+        contained = distribution._contains(param_value_in_internal_repr)
+        if not contained:
+            warnings.warn("Fixed parameter '{}' with value {} is out of range "
+                          "for distribution {}.".format(name, param_value, distribution))
+        return contained
+
     def _is_relative_param(self, name, distribution):
         # type: (str, BaseDistribution) -> bool
 
@@ -517,6 +556,36 @@ class Trial(BaseTrial):
         param_value = self.relative_params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
         return distribution._contains(param_value_in_internal_repr)
+
+    def _check_distribution(self, name, low=None, high=None, q=None):
+        # type: (str, Any, Any, Optional[float]) -> None
+
+        dist_dict = {}
+        if low is not None:
+            dist_dict['low'] = low
+        if high is not None:
+            dist_dict['high'] = high
+        if q is not None:
+            dist_dict['q'] = q
+
+        old_distribution_in_trial = self._distributions_in_trial.get(name, None)
+
+        if old_distribution_in_trial is None:
+            self._distributions_in_trial[name] = dist_dict
+        elif old_distribution_in_trial != dist_dict:
+            old_distribution_in_trial_values = 'low = {}, high = {}'.format(
+                old_distribution_in_trial['low'], old_distribution_in_trial['high'])
+            if 'q' in old_distribution_in_trial:
+                old_distribution_in_trial_values += ', q = {}'.format(
+                    old_distribution_in_trial['q'])
+            warnings.warn('Inconsistent parameter values for distribution with name "{}"! '
+                          'This might be a configuration mistake. '
+                          'Optuna allows to call the same distribution with the same '
+                          'name more then once in a trial. '
+                          'When the parameter values are inconsistent optuna only '
+                          'uses the values of the first call and ignores all following. '
+                          'Using these values: {}'
+                          .format(name, old_distribution_in_trial_values), RuntimeWarning)
 
     @property
     def number(self):
@@ -716,8 +785,8 @@ class FixedTrial(BaseTrial):
 
         return value
 
-    def report(self, value, step=None):
-        # type: (float, Optional[int]) -> None
+    def report(self, value, step):
+        # type: (float, int) -> None
 
         pass
 

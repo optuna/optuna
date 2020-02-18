@@ -79,16 +79,16 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 
 [Integrations modules](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html), which allow pruning, or early stopping, of unpromising trials are available for the following libraries:
 
-* XGBoost
-* LightGBM
-* Chainer 
-* Keras
-* TensorFlow
-* tf.keras
-* MXNet
-* PyTorch Ignite
-* PyTorch Lightning
-* FastAI
+* [XGBoost](./examples/pruning/xgboost_integration.py)
+* [LightGBM](./examples/pruning/lightgbm_integration.py)
+* [Chainer](./examples/pruning/chainer_integration.py)
+* [Keras](./examples/pruning/keras_integration.py)
+* [TensorFlow](./examples/pruning/tensorflow_estimator_integration.py)
+* [tf.keras](./examples/pruning/tfkeras_integration.py)
+* [MXNet](./examples/pruning/mxnet_integration.py)
+* [PyTorch Ignite](./examples/pytorch_ignite_simple.py)
+* [PyTorch Lightning](./examples/pytorch_lightning_simple.py)
+* [FastAI](./examples/fastai_simple.py)
 
 ## Installation
 

@@ -53,8 +53,7 @@ jobs:
           command: |
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
-            pip install -U 'pip<20'
+            pip install -U pip
             pip install --progress-bar off .[checking]
 
       - run:
@@ -88,8 +87,7 @@ jobs:
           command: |
             python -m venv venv || virtualenv venv --python=python3
             . venv/bin/activate
-            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
-            pip install -U 'pip<20'
+            pip install -U pip
             pip install --progress-bar off .[document]
 
       - run:
@@ -112,8 +110,7 @@ jobs:
           command: |
             python -m venv venv || virtualenv venv --python=python3
             . venv/bin/activate
-            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
-            pip install -U 'pip<20'
+            pip install -U pip
             pip install --progress-bar off .[doctest,document]
 
       - run:
@@ -140,8 +137,7 @@ jobs:
             sudo apt-get -y install openmpi-bin libopenmpi-dev
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            # TODO(Yanase): Remove version constraint after lightgbm and mxnet support pip>=20.
-            pip install -U 'pip<20'
+            pip install -U pip
             pip install --progress-bar off -U setuptools
             python setup.py sdist
 
@@ -185,7 +181,6 @@ jobs:
             pytest tests --ignore tests/integration_tests/test_fastai.py \
                 --ignore tests/integration_tests/test_keras.py \
                 --ignore tests/integration_tests/test_pytorch_lightning.py \
-                --ignore tests/integration_tests/test_pytorch_ignite.py \
                 --ignore tests/integration_tests/test_tensorflow.py \
                 --ignore tests/integration_tests/test_tfkeras.py
 
@@ -302,7 +297,7 @@ jobs:
           <<: *examples
           environment:
             OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_.*|tensorflow_.*|tfkeras_.*|fastai_.*
+            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_lightning_.*|tensorflow_.*|tfkeras_.*|fastai_.*
 
       - run: *examples-mn
 

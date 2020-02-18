@@ -7,11 +7,11 @@ from time import time
 import numpy as np
 
 try:
+    from sklearn import __version__ as _sklearn_version
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
     from sklearn.base import is_classifier
     from sklearn.metrics.scorer import check_scoring
-    from sklearn.model_selection._validation import _index_param_value
     from sklearn.model_selection import BaseCrossValidator  # NOQA
     from sklearn.model_selection import check_cv
     from sklearn.model_selection import cross_validate
@@ -29,14 +29,20 @@ except ImportError as e:
     _import_error = e
     _available = False
 
-from optuna import distributions
-from optuna import exceptions
-from optuna import logging
+if _available:
+    if _sklearn_version >= '0.22.1':
+        from sklearn.utils.validation import _check_fit_params as _sklearn_check_fit_params
+    else:
+        from sklearn.utils.validation import _index_param_value as _sklearn_index_param_value
+
+from optuna import distributions  # NOQA
+from optuna import exceptions  # NOQA
+from optuna import logging  # NOQA
 from optuna import samplers  # NOQA
-from optuna import structs
-from optuna import study as study_module
+from optuna import structs  # NOQA
+from optuna import study as study_module  # NOQA
 from optuna import trial as trial_module  # NOQA
-from optuna import type_checking
+from optuna import type_checking  # NOQA
 
 if type_checking.TYPE_CHECKING:
     import pandas as pd  # NOQA
@@ -54,6 +60,25 @@ if type_checking.TYPE_CHECKING:
         Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
 
 _logger = logging.get_logger(__name__)
+
+
+def _check_fit_params(
+    X,  # type: TwoDimArrayLikeType
+    fit_params,  # type: Dict
+    indices  # type: OneDimArrayLikeType
+):
+    # type: (...) -> Dict
+
+    if _sklearn_version >= '0.22.1':
+        return _sklearn_check_fit_params(X, fit_params, indices)
+    else:  # '_sklearn_version < 0.22.1'
+        return {
+            key: _sklearn_index_param_value(
+                X,
+                value,
+                indices
+            ) for key, value in fit_params.items()
+        }
 
 
 def _check_sklearn_availability():
@@ -841,13 +866,7 @@ class OptunaSearchCV(BaseEstimator):
         fit_params_res = fit_params
 
         if fit_params_res is not None:
-            fit_params_res = {
-                key: _index_param_value(
-                    X,
-                    value,
-                    self.sample_indices_
-                ) for key, value in fit_params.items()
-            }
+            fit_params_res = _check_fit_params(X, fit_params, self.sample_indices_)
 
         classifier = is_classifier(self.estimator)
         cv = check_cv(self.cv, y_res, classifier)

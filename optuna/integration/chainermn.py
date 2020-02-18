@@ -241,8 +241,8 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def report(self, value, step=None):
-        # type: (float, Optional[int]) -> None
+    def report(self, value, step):
+        # type: (float, int) -> None
 
         if self.comm.rank == 0:
             assert self.delegate is not None
