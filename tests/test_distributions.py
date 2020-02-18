@@ -240,22 +240,22 @@ def test_repr():
 def test_str_uniform_distribution():
     # type: () -> None
 
-    assert str(EXAMPLE_DISTRIBUTIONS['u']) == 'low = 1.0, high = 2.0'
+    assert EXAMPLE_DISTRIBUTIONS['u']._asdict() == {'low': 1.0, 'high': 2.0}
 
 
 def test_str_log_uniform_distribution():
     # type: () -> None
 
-    assert str(EXAMPLE_DISTRIBUTIONS['l']) == 'low = 0.001, high = 100'
+    assert EXAMPLE_DISTRIBUTIONS['l']._asdict() == {'low': 0.001, 'high': 100}
 
 
 def test_str_discrete_uniform_distribution():
     # type: () -> None
 
-    assert str(EXAMPLE_DISTRIBUTIONS['du']) == 'low = 1.0, high = 10.0, q = 2.0'
+    assert EXAMPLE_DISTRIBUTIONS['du']._asdict() == {'low': 1.0, 'high': 10.0, 'q': 2.0}
 
 
 def test_str_int_uniform_distribution():
     # type: () -> None
 
-    assert str(EXAMPLE_DISTRIBUTIONS['iu']) == 'low = 1, high = 10'
+    assert EXAMPLE_DISTRIBUTIONS['iu']._asdict() == {'low': 1, 'high': 10}

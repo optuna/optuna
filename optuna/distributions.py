@@ -143,9 +143,13 @@ class UniformDistribution(BaseDistribution):
         else:
             return self.low <= value and value < self.high
 
-    def __str__(self):
-        # type: () -> str
-        return 'low = {}, high = {}'.format(self.low, self.high)
+    def _asdict(self):
+        # type: () -> Dict[str, Any]
+
+        result = {}
+        result['low'] = self.low
+        result['high'] = self.high
+        return result
 
 
 class LogUniformDistribution(BaseDistribution):
@@ -185,9 +189,13 @@ class LogUniformDistribution(BaseDistribution):
         else:
             return self.low <= value and value < self.high
 
-    def __str__(self):
-        # type: () -> str
-        return 'low = {}, high = {}'.format(self.low, self.high)
+    def _asdict(self):
+        # type: () -> Dict[str, Any]
+
+        result = {}
+        result['low'] = self.low
+        result['high'] = self.high
+        return result
 
 
 class DiscreteUniformDistribution(BaseDistribution):
@@ -227,9 +235,14 @@ class DiscreteUniformDistribution(BaseDistribution):
         value = param_value_in_internal_repr
         return self.low <= value and value <= self.high
 
-    def __str__(self):
-        # type: () -> str
-        return 'low = {}, high = {}, q = {}'.format(self.low, self.high, self.q)
+    def _asdict(self):
+        # type: () -> Dict[str, Any]
+
+        result = {}
+        result['low'] = self.low
+        result['high'] = self.high
+        result['q'] = self.q
+        return result
 
 
 class IntUniformDistribution(BaseDistribution):
@@ -276,9 +289,13 @@ class IntUniformDistribution(BaseDistribution):
         value = int(param_value_in_internal_repr)
         return self.low <= value and value <= self.high
 
-    def __str__(self):
-        # type: () -> str
-        return 'low = {}, high = {}'.format(self.low, self.high)
+    def _asdict(self):
+        # type: () -> Dict[str, Any]
+
+        result = {}
+        result['low'] = self.low
+        result['high'] = self.high
+        return result
 
 
 class CategoricalDistribution(BaseDistribution):

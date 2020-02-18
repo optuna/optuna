@@ -566,7 +566,7 @@ class Trial(BaseTrial):
                           'When the parameter values are inconsistent optuna only '
                           'uses the values of the first call and ignores all following. '
                           'Using these values: {}'
-                          .format(name, str(old_distribution)), RuntimeWarning)
+                          .format(name, old_distribution._asdict()), RuntimeWarning)
 
     @property
     def number(self):
