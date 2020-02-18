@@ -9,8 +9,10 @@ import json
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy import orm
+
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import orm, UniqueConstraint
 
 # revision identifiers, used by Alembic.
 revision = 'v1.2.0.b'
@@ -21,13 +23,13 @@ depends_on = None
 # Model definition
 MAX_INDEXED_STRING_LENGTH = 512
 MAX_STRING_LENGTH = 2048
-BaseModel = declarative_base()  # type: Any
+BaseModel = declarative_base()
 
 
 class TrialModel(BaseModel):
     __tablename__ = 'trials'
     trial_id = sa.Column(sa.Integer, primary_key=True)
-    number = sa.Column(sa.Integer, unique=True)
+    number = sa.Column(sa.Integer)
 
 
 class TrialSystemAttributeModel(BaseModel):
@@ -44,6 +46,7 @@ def upgrade():
 
     with op.batch_alter_table("trials") as batch_op:
         batch_op.add_column(sa.Column('number', sa.Integer(), nullable=True, default=-1))
+        batch_op.create_unique_constraint('uc_study_trial_number', ['study_id', 'number'])
 
     try:
         number_records = session.query(TrialSystemAttributeModel) \
@@ -55,9 +58,9 @@ def upgrade():
         session.query(TrialSystemAttributeModel.key == '_number') \
             .delete(synchronize_session=False)
         session.commit()
-    except:
+    except SQLAlchemyError as e:
         session.rollback()
-        raise
+        raise e
     finally:
         session.close()
 
@@ -77,11 +80,12 @@ def downgrade():
             ))
         session.bulk_save_objects(number_attrs)
         session.commit()
-    except:
+    except SQLAlchemyError as e:
         session.rollback()
-        raise
+        raise e
     finally:
         session.close()
 
     with op.batch_alter_table("trials") as batch_op:
         batch_op.drop_column('number')
+        batch_op.drop_constraint('uc_study_trial_number', type_='unique')
