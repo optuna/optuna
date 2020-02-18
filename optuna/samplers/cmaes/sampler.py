@@ -3,6 +3,7 @@ import numpy as np
 import optuna
 import pickle
 
+from cmaes import CMA
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.structs import FrozenTrial
@@ -12,9 +13,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
-
-from .cma import _CMA
 
 # Minimum value of sigma0 to avoid ZeroDivisionError.
 _MIN_SIGMA0 = 1e-10
@@ -29,14 +27,14 @@ class CmaEsSampler(BaseSampler):
 
         .. code::
 
-                def objective(trial):
-                    x = trial.suggest_uniform('x', -1, 1)
-                    y = trial.suggest_int('y', -1, 1)
-                    return x**2 + y
+            def objective(trial):
+                x = trial.suggest_uniform('x', -1, 1)
+                y = trial.suggest_int('y', -1, 1)
+                return x**2 + y
 
-                sampler = optuna.samplers.CmaEsSampler()
-                study = optuna.create_study(sampler=sampler)
-                study.optimize(objective, n_trials=100)
+            sampler = optuna.samplers.CmaEsSampler()
+            study = optuna.create_study(sampler=sampler)
+            study.optimize(objective, n_trials=100)
 
     Note that this sampler does not support CategoricalDistribution. If your search space
     contains categorical parameters, I recommend you to use TPESampler instead.
@@ -178,16 +176,10 @@ class CmaEsSampler(BaseSampler):
 
             optimizer.tell(solutions)
 
-            pickled_optimizer = pickle.dumps(optimizer)
-            if isinstance(study._storage, optuna.storages.InMemoryStorage):
-                study._storage.set_trial_system_attr(
-                    trial._trial_id, "cma:optimizer", pickled_optimizer
-                )
-            else:
-                # RDB storage does not accept bytes object.
-                study._storage.set_trial_system_attr(
-                    trial._trial_id, "cma:optimizer", pickled_optimizer.hex()
-                )
+            optimizer_str = pickle.dumps(optimizer).hex()
+            study._storage.set_trial_system_attr(
+                trial._trial_id, "cma:optimizer", optimizer_str
+            )
 
         # Caution: optimizer should update its seed value
         seed = self._cma_rng.randint(1, 2 ** 16) + trial.number
@@ -208,18 +200,15 @@ class CmaEsSampler(BaseSampler):
             completed_trials: 'List[optuna.structs.FrozenTrial]',
             search_space: Dict[str, BaseDistribution],
             ordered_keys: List[str],
-    ) -> _CMA:
+    ) -> CMA:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             serialized_optimizer = trial.system_attrs.get(
                 "cma:optimizer", None
-            )  # type: Union[str, bytes, None]
+            )  # type: Optional[str]
             if serialized_optimizer is None:
                 continue
-            if isinstance(serialized_optimizer, bytes):
-                return pickle.loads(serialized_optimizer)
-            else:
-                return pickle.loads(bytes.fromhex(serialized_optimizer))
+            return pickle.loads(bytes.fromhex(serialized_optimizer))
 
         # Init a CMA object.
         if self._x0 is None:
@@ -233,7 +222,7 @@ class CmaEsSampler(BaseSampler):
         mean = np.array([self._x0[k] for k in ordered_keys])
         bounds = _get_search_space_bound(ordered_keys, search_space)
         n_dimension = len(ordered_keys)
-        return _CMA(
+        return CMA(
             mean=mean,
             sigma=sigma0,
             bounds=bounds,
@@ -333,7 +322,12 @@ def _get_search_space_bound(
     bounds = []
     for param_name in keys:
         dist = search_space[param_name]
-        if isinstance(dist, optuna.distributions.UniformDistribution):
+        if isinstance(dist, (
+                optuna.distributions.UniformDistribution,
+                optuna.distributions.LogUniformDistribution,
+                optuna.distributions.DiscreteUniformDistribution,
+                optuna.distributions.IntUniformDistribution,
+        )):
             bounds.append([dist.low, dist.high])
         else:
             raise NotImplementedError(
