@@ -111,28 +111,6 @@ class TestTrialModel(object):
         assert 1 == TrialModel.count(session, state=TrialState.COMPLETE)
 
     @staticmethod
-    def test_count_past_trials(session):
-        # type: (Session) -> None
-
-        study_1 = StudyModel(study_id=1, study_name='test-study-1')
-        study_2 = StudyModel(study_id=2, study_name='test-study-2')
-
-        trial_1_1 = TrialModel(study_id=study_1.study_id, state=TrialState.COMPLETE)
-        session.add(trial_1_1)
-        session.commit()
-        assert 0 == trial_1_1.count_past_trials(session)
-
-        trial_1_2 = TrialModel(study_id=study_1.study_id, state=TrialState.RUNNING)
-        session.add(trial_1_2)
-        session.commit()
-        assert 1 == trial_1_2.count_past_trials(session)
-
-        trial_2_1 = TrialModel(study_id=study_2.study_id, state=TrialState.RUNNING)
-        session.add(trial_2_1)
-        session.commit()
-        assert 0 == trial_2_1.count_past_trials(session)
-
-    @staticmethod
     def test_cascade_delete_on_study(session):
         # type: (Session) -> None
 

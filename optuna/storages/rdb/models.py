@@ -221,14 +221,6 @@ class TrialModel(BaseModel):
 
         return trial_count.scalar()
 
-    def count_past_trials(self, session):
-        # type: (orm.Session) -> int
-
-        trial_count = session.query(func.count(TrialModel.trial_id))\
-            .filter(TrialModel.study_id == self.study_id,
-                    TrialModel.trial_id < self.trial_id)
-        return trial_count.scalar()
-
     @classmethod
     def all(cls, session):
         # type: (orm.Session) -> List[TrialModel]

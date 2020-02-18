@@ -16,6 +16,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func
 from sqlalchemy import orm
 
 import optuna
@@ -416,8 +417,15 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
+        trial_count = session.query(models.TrialModel). \
+            filter(models.TrialModel.study_id == study_id).count()
+
         if template_trial is None:
-            trial = models.TrialModel(study_id=study_id, state=structs.TrialState.RUNNING)
+            trial = models.TrialModel(
+                study_id=study_id,
+                number=trial_count,
+                state=structs.TrialState.RUNNING,
+            )
         else:
             # Because only `RUNNING` trials can be updated,
             # we temporarily set the state of the new trial to `RUNNING`.
@@ -427,6 +435,7 @@ class RDBStorage(BaseStorage):
 
             trial = models.TrialModel(
                 study_id=study_id,
+                number=trial_count,
                 state=temp_state,
                 value=template_trial.value,
                 datetime_start=template_trial.datetime_start,
@@ -463,27 +472,8 @@ class RDBStorage(BaseStorage):
                                                                   intermediate_value)
 
             trial.state = template_trial.state
-
         self._commit(session)
-
-        self._create_new_trial_number(trial.trial_id)
-
         return trial.trial_id
-
-    def _create_new_trial_number(self, trial_id):
-        # type: (int) -> int
-
-        session = self.scoped_session()
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-
-        trial_number = trial.count_past_trials(session)
-
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
-
-        self.set_trial_system_attr(trial.trial_id, '_number', trial_number)
-
-        return trial_number
 
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> bool
@@ -663,10 +653,6 @@ class RDBStorage(BaseStorage):
         # type: (int) -> int
 
         trial_number = self.get_trial_system_attrs(trial_id).get('_number')
-        if trial_number is None:
-            # If a study is created by optuna<=0.8.0, trial number is not found.
-            # Create new one.
-            return self._create_new_trial_number(trial_id)
         return trial_number
 
     def get_trial(self, trial_id):
