@@ -45,16 +45,18 @@ class CmaEsSampler(BaseSampler):
 
         Optimize a simple quadratic function by using :class:`~optuna.integration.CmaEsSampler`.
 
-        .. code::
+        .. testcode:: python
 
-                def objective(trial):
-                    x = trial.suggest_uniform('x', -1, 1)
-                    y = trial.suggest_int('y', -1, 1)
-                    return x**2 + y
+            import optuna
 
-                sampler = optuna.integration.CmaEsSampler()
-                study = optuna.create_study(sampler=sampler)
-                study.optimize(objective, n_trials=100)
+            def objective(trial):
+                x = trial.suggest_uniform('x', -1, 1)
+                y = trial.suggest_int('y', -1, 1)
+                return x**2 + y
+
+            sampler = optuna.integration.CmaEsSampler()
+            study = optuna.create_study(sampler=sampler)
+            study.optimize(objective, n_trials=20)
 
     Note that parallel execution of trials may affect the optimization performance of CMA-ES,
     especially if the number of trials running in parallel exceeds the population size.

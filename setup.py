@@ -65,6 +65,7 @@ def get_extras_require():
         ],
         'doctest': [
             'pandas',
+            'cma',
             'scikit-learn>=0.19.0',
         ],
         'document': [
