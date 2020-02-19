@@ -6,6 +6,7 @@ from optuna import type_checking
 try:
     from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier, LGBMModel, LGBMRegressor  # NOQA
     from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
+    _available = True
 except ImportError as e:
     _import_error = e
     # LightGBMTuner is disabled because LightGBM is not available.

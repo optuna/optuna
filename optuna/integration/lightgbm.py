@@ -31,7 +31,7 @@ if _available:
     for api_name in _names_from_tuners:
         setattr(sys.modules[__name__], api_name, tuner.__dict__[api_name])
 else:
-    # To create docstring of train
+    # To create docstring of train.
     setattr(sys.modules[__name__], 'train', tuner.__dict__['train'])
 
 
