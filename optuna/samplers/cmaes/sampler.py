@@ -136,6 +136,13 @@ class CmaEsSampler(BaseSampler):
                 continue
             search_space[name] = distribution
 
+        if len(search_space) < 2:
+            self._logger.info("`CmaEsSampler` does not support optimization of 1-D search space. "
+                              "`{}` is used instead of `CmaEsSampler`.".format(
+                                  self._independent_sampler.__class__.__name__))
+            self._warn_independent_sampling = False
+            return {}
+
         return search_space
 
     def sample_relative(
