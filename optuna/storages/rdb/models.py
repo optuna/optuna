@@ -147,7 +147,7 @@ class StudySystemAttributeModel(BaseModel):
 class TrialModel(BaseModel):
     __tablename__ = 'trials'
     __table_args__ = (
-        Index('ix_study_trial_number', 'study_id', 'number'),
+        Index('ix_study_trial_number', 'study_id', 'number', unique=True),
     )  # type: Any
     trial_id = Column(Integer, primary_key=True)
     number = Column(Integer)

@@ -288,6 +288,7 @@ def test_create_new_trial(storage_init_func):
     assert trials[0].number == 0
     assert trials[0].state == TrialState.RUNNING
     assert trials[0].user_attrs == {}
+    assert trials[0].system_attrs == {}
 
 
 @parametrize_storage
@@ -309,8 +310,7 @@ def test_create_new_trial_with_template_trial(storage_init_func):
             'baz': 123,
         },
         intermediate_values={1: 10, 2: 100, 3: 1000},
-
-        number=55,
+        number=55,  # This entry is ignored.
         trial_id=-1,  # dummy value (unused).
     )
 
@@ -329,7 +329,7 @@ def test_create_new_trial_with_template_trial(storage_init_func):
     assert trials[0].distributions == template_trial.distributions
     assert trials[0].user_attrs == template_trial.user_attrs
     assert trials[0].intermediate_values == template_trial.intermediate_values
-
+    assert trials[0].system_attrs == template_trial.system_attrs
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 def test_get_trial_number_from_id(storage_mode):
@@ -508,7 +508,7 @@ def test_set_trial_user_attr(storage_init_func):
 
 
 @parametrize_storage
-def test_set_and_get_tiral_system_attr(storage_init_func):
+def test_set_and_get_trial_system_attr(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
@@ -534,6 +534,7 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     trial_id_2 = storage.create_new_trial(study_id)
     check_set_and_get(trial_id_2, 'baseline_score', 0.001)
     system_attrs = storage.get_trial(trial_id_2).system_attrs
+    assert system_attrs == {'baseline_score': 0.001}
 
 
 @parametrize_storage
