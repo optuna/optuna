@@ -474,9 +474,9 @@ def test_study_trials_dataframe_with_no_trials():
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('attrs', [
     ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
-     'system_attrs', 'state'),
+     'state'),
     ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
-     'system_attrs', 'state', 'intermediate_values', '_trial_id', 'distributions')])
+     'state', 'intermediate_values', '_trial_id', 'distributions')])
 @pytest.mark.parametrize('multi_index', [True, False])
 def test_trials_dataframe(storage_mode, attrs, multi_index):
     # type: (str, Tuple[str, ...], bool) -> None
@@ -505,13 +505,13 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
         else:
             df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
-        # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-        # Number columns are as follows (total of 10):
+
+        # Number columns are as follows (total of 11):
         #   non-nested: 5 (number, value, state, datetime_start, datetime_complete)
         #   params: 2
         #   distributions: 2
         #   user_attrs: 1
-        #   system_attrs: 1
+        #   system_attrs: 0
         #   intermediate_values: 1
         expected_n_columns = len(attrs)
         if 'params' in attrs:
@@ -569,8 +569,8 @@ def test_trials_dataframe_with_failure(storage_mode):
         # Change index to access rows via trial number.
         df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
-        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 2
-        assert len(df.columns) == 10
+        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 1
+        assert len(df.columns) == 9
         for i in range(3):
             assert df.number[i] == i
             assert df.state[i] == 'FAIL'
