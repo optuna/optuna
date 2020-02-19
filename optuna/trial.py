@@ -570,9 +570,19 @@ class Trial(BaseTrial):
         if old_distribution_in_trial is None:
             self._distributions_in_trial[name] = dist_dict
         elif old_distribution_in_trial != dist_dict:
-            warnings.warn('Inconsistent parameter values for distribution {}! '
-                          'This might be a configuration mistake.'
-                          .format(name), RuntimeWarning)
+            old_distribution_in_trial_values = 'low = {}, high = {}'.format(
+                old_distribution_in_trial['low'], old_distribution_in_trial['high'])
+            if 'q' in old_distribution_in_trial:
+                old_distribution_in_trial_values += ', q = {}'.format(
+                    old_distribution_in_trial['q'])
+            warnings.warn('Inconsistent parameter values for distribution with name "{}"! '
+                          'This might be a configuration mistake. '
+                          'Optuna allows to call the same distribution with the same '
+                          'name more then once in a trial. '
+                          'When the parameter values are inconsistent optuna only '
+                          'uses the values of the first call and ignores all following. '
+                          'Using these values: {}'
+                          .format(name, old_distribution_in_trial_values), RuntimeWarning)
 
     @property
     def number(self):

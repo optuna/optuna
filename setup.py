@@ -70,7 +70,8 @@ def get_extras_require():
         ],
         'document': [
             'lightgbm',
-            'sphinx',
+            # TODO(yanase): Remove version constraint after sphinx works with optuna.integration.
+            'sphinx<2.4.0',
             'sphinx_rtd_theme',
         ],
         'example': [
