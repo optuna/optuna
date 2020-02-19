@@ -95,7 +95,8 @@ class CmaEsSampler(BaseSampler):
             independent_sampler: Optional[BaseSampler] = None,
             warn_independent_sampling: bool = True,
             seed: Optional[int] = None,
-    ):
+    ) -> None:
+
         self._x0 = x0
         self._sigma0 = sigma0
         self._independent_sampler = (
@@ -109,6 +110,7 @@ class CmaEsSampler(BaseSampler):
     def infer_relative_search_space(
             self, study: 'optuna.Study', trial: 'optuna.structs.FrozenTrial',
     ) -> Dict[str, BaseDistribution]:
+
         # Import here to avoid circular imports without breaking a backward compatibility.
         from optuna.samplers import intersection_search_space
 
@@ -151,6 +153,7 @@ class CmaEsSampler(BaseSampler):
             trial: 'optuna.structs.FrozenTrial',
             search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
+
         if len(search_space) == 0:
             return {}
 
@@ -208,6 +211,7 @@ class CmaEsSampler(BaseSampler):
             search_space: Dict[str, BaseDistribution],
             ordered_keys: List[str],
     ) -> CMA:
+
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             serialized_optimizer = trial.system_attrs.get(
@@ -244,6 +248,7 @@ class CmaEsSampler(BaseSampler):
             param_name: str,
             param_distribution: BaseDistribution,
     ) -> Any:
+
         if self._warn_independent_sampling:
             complete_trials = [
                 t for t in study.trials if t.state == TrialState.COMPLETE
@@ -271,6 +276,7 @@ class CmaEsSampler(BaseSampler):
 def _to_external_repr(
         search_space: Dict[str, BaseDistribution], param_name: str, internal_repr: float,
 ) -> Any:
+
     dist = search_space[param_name]
     if isinstance(dist, optuna.distributions.LogUniformDistribution):
         return math.exp(internal_repr)
@@ -284,6 +290,7 @@ def _to_external_repr(
 
 
 def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.ndarray]:
+
     x0 = {}
     for name, distribution in search_space.items():
         if isinstance(distribution, optuna.distributions.UniformDistribution):
@@ -304,6 +311,7 @@ def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.nd
 
 
 def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
+
     sigma0s = []
     for name, distribution in search_space.items():
         if isinstance(distribution, optuna.distributions.UniformDistribution):
@@ -326,6 +334,7 @@ def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
 def _get_search_space_bound(
         keys: List[str], search_space: Dict[str, BaseDistribution],
 ) -> np.ndarray:
+
     bounds = []
     for param_name in keys:
         dist = search_space[param_name]
