@@ -30,8 +30,8 @@ import optuna
 MODEL_DIR = tempfile.mkdtemp()
 BATCH_SIZE = 128
 TRAIN_STEPS = 1000
-N_TRAIN_EXAMPLES = 3000
-N_TEST_EXAMPLES = 1000
+N_TRAIN_BATCHES = 3000
+N_TEST_BATCHES = 1000
 
 
 def preprocess(image, label):
@@ -45,14 +45,14 @@ def preprocess(image, label):
 def train_input_fn():
     data = tfds.load(name='mnist', as_supervised=True)
     train_ds = data['train']
-    train_ds = train_ds.map(preprocess).shuffle(60000).batch(BATCH_SIZE).take(N_TRAIN_EXAMPLES)
+    train_ds = train_ds.map(preprocess).shuffle(60000).batch(BATCH_SIZE).take(N_TRAIN_BATCHES)
     return train_ds
 
 
 def eval_input_fn():
     data = tfds.load(name='mnist', as_supervised=True)
     test_ds = data['test']
-    test_ds = test_ds.map(preprocess).shuffle(10000).batch(BATCH_SIZE).take(N_TEST_EXAMPLES)
+    test_ds = test_ds.map(preprocess).shuffle(10000).batch(BATCH_SIZE).take(N_TEST_BATCHES)
     return test_ds
 
 
