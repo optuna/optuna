@@ -10,8 +10,7 @@ from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 
 
-def test_init_cmaes_opts():
-    # type: () -> None
+def test_init_cmaes_opts() -> None:
 
     sampler = optuna.samplers.CmaEsSampler(
         x0={'x': 0, 'y': 0},
@@ -43,8 +42,7 @@ def test_init_cmaes_opts():
         assert actual_kwargs['n_max_resampling'] == 10 * 2
 
 
-def test_infer_relative_search_space_1d():
-    # type: () -> None
+def test_infer_relative_search_space_1d() -> None:
 
     sampler = optuna.samplers.CmaEsSampler()
     study = optuna.create_study(sampler=sampler)
@@ -54,8 +52,7 @@ def test_infer_relative_search_space_1d():
     assert sampler.infer_relative_search_space(study, study.best_trial) == {}
 
 
-def test_sample_relative_1d():
-    # type: () -> None
+def test_sample_relative_1d() -> None:
 
     independent_sampler = DeterministicRelativeSampler({}, {})
     sampler = optuna.samplers.CmaEsSampler(independent_sampler=independent_sampler)
@@ -70,8 +67,7 @@ def test_sample_relative_1d():
         assert mock_object.call_count == 2
 
 
-def test_sample_relative_n_startup_trials():
-    # type: () -> None
+def test_sample_relative_n_startup_trials() -> None:
 
     independent_sampler = DeterministicRelativeSampler({}, {})
     sampler = optuna.samplers.CmaEsSampler(n_startup_trials=2,
@@ -94,15 +90,13 @@ def test_sample_relative_n_startup_trials():
         assert mock_relative.call_count == 3
 
 
-def test_initialize_x0_with_unsupported_distribution():
-    # type: () -> None
+def test_initialize_x0_with_unsupported_distribution() -> None:
 
     with pytest.raises(NotImplementedError):
         _initialize_x0({'x': UnsupportedDistribution()})
 
 
-def test_initialize_sigma0_with_unsupported_distribution():
-    # type: () -> None
+def test_initialize_sigma0_with_unsupported_distribution() -> None:
 
     with pytest.raises(NotImplementedError):
         _initialize_sigma0({'x': UnsupportedDistribution()})
