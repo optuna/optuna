@@ -1,18 +1,19 @@
 import math
-import numpy as np
-import optuna
 import pickle
-
-from cmaes import CMA
-from optuna.distributions import BaseDistribution
-from optuna.samplers import BaseSampler
-from optuna.structs import FrozenTrial
-from optuna.structs import TrialState
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+
+from cmaes import CMA
+import numpy as np
+
+import optuna
+from optuna.distributions import BaseDistribution
+from optuna.samplers import BaseSampler
+from optuna.structs import FrozenTrial
+from optuna.structs import TrialState
 
 # Minimum value of sigma0 to avoid ZeroDivisionError.
 _MIN_SIGMA0 = 1e-10
@@ -25,7 +26,9 @@ class CmaEsSampler(BaseSampler):
 
         Optimize a simple quadratic function by using :class:`~optuna.samplers.CmaEsSampler`.
 
-        .. code::
+        .. testcode::
+
+            import optuna
 
             def objective(trial):
                 x = trial.suggest_uniform('x', -1, 1)
@@ -34,7 +37,7 @@ class CmaEsSampler(BaseSampler):
 
             sampler = optuna.samplers.CmaEsSampler()
             study = optuna.create_study(sampler=sampler)
-            study.optimize(objective, n_trials=100)
+            study.optimize(objective, n_trials=20)
 
     Note that this sampler does not support CategoricalDistribution. If your search space
     contains categorical parameters, I recommend you to use TPESampler instead.
@@ -54,8 +57,7 @@ class CmaEsSampler(BaseSampler):
         sigma0:
             Initial standard deviation of CMA-ES. By default, ``sigma0`` is set to
             ``min_range / 6``, where ``min_range`` denotes the minimum range of the distributions
-            in the search space. If distribution is categorical, ``min_range`` is
-            ``len(choices) - 1``.
+            in the search space.
 
         seed:
             A random seed for CMA-ES.

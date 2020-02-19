@@ -1,9 +1,10 @@
-import numpy as np
-import optuna
-import pytest
-
 from mock import MagicMock
 from mock import patch
+
+import numpy as np
+import pytest
+
+import optuna
 from optuna.samplers.cmaes.sampler import _initialize_sigma0
 from optuna.samplers.cmaes.sampler import _initialize_x0
 from optuna.testing.distribution import UnsupportedDistribution
