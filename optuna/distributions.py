@@ -266,7 +266,7 @@ class IntUniformDistribution(BaseDistribution):
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
-        value = int(param_value_in_internal_repr)
+        value = param_value_in_internal_repr
         return self.low <= value and value <= self.high
 
 
