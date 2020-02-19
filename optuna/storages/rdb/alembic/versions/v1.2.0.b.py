@@ -46,7 +46,7 @@ def upgrade():
 
     with op.batch_alter_table("trials") as batch_op:
         batch_op.add_column(sa.Column('number', sa.Integer(), nullable=True, default=-1))
-        batch_op.create_unique_constraint('uc_study_trial_number', ['study_id', 'number'])
+        batch_op.create_index('ix_study_trial_number', ['study_id', 'number'], unique=True),
 
     try:
         number_records = session.query(TrialSystemAttributeModel) \
@@ -88,4 +88,4 @@ def downgrade():
 
     with op.batch_alter_table("trials") as batch_op:
         batch_op.drop_column('number')
-        batch_op.drop_constraint('uc_study_trial_number', type_='unique')
+        batch_op.drop_index('ix_study_trial_number')

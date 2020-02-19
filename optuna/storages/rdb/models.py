@@ -10,6 +10,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import func
+from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
@@ -146,7 +147,7 @@ class StudySystemAttributeModel(BaseModel):
 class TrialModel(BaseModel):
     __tablename__ = 'trials'
     __table_args__ = (
-        (UniqueConstraint('study_id', 'number', name='uc_study_trial_number')),
+        Index('ix_study_trial_number', 'study_id', 'number'),
     )  # type: Any
     trial_id = Column(Integer, primary_key=True)
     number = Column(Integer)
