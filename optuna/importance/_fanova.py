@@ -98,6 +98,7 @@ def _get_evaluator(study: Study) -> fANOVA:
     # TODO(hvy): Set cutoff based on minimization/maximization of study.
     # https://github.com/automl/ParameterImportance/blob/master/pimp/evaluator/fanova.py#L44
 
+    # TODO(hvy): Filter out only completed trials.
     trials = study.trials
     distributions = _get_distributions(trials)
     config_space = _get_configuration_space(distributions)
