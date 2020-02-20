@@ -143,14 +143,6 @@ class UniformDistribution(BaseDistribution):
         else:
             return self.low <= value and value < self.high
 
-    def _asdict(self):
-        # type: () -> Dict[str, Any]
-
-        result = {}
-        result['low'] = self.low
-        result['high'] = self.high
-        return result
-
 
 class LogUniformDistribution(BaseDistribution):
     """A uniform distribution in the log domain.
@@ -189,14 +181,6 @@ class LogUniformDistribution(BaseDistribution):
         else:
             return self.low <= value and value < self.high
 
-    def _asdict(self):
-        # type: () -> Dict[str, Any]
-
-        result = {}
-        result['low'] = self.low
-        result['high'] = self.high
-        return result
-
 
 class DiscreteUniformDistribution(BaseDistribution):
     """A discretized uniform distribution in the linear domain.
@@ -234,15 +218,6 @@ class DiscreteUniformDistribution(BaseDistribution):
 
         value = param_value_in_internal_repr
         return self.low <= value and value <= self.high
-
-    def _asdict(self):
-        # type: () -> Dict[str, Any]
-
-        result = {}
-        result['low'] = self.low
-        result['high'] = self.high
-        result['q'] = self.q
-        return result
 
 
 class IntUniformDistribution(BaseDistribution):
@@ -288,14 +263,6 @@ class IntUniformDistribution(BaseDistribution):
 
         value = int(param_value_in_internal_repr)
         return self.low <= value and value <= self.high
-
-    def _asdict(self):
-        # type: () -> Dict[str, Any]
-
-        result = {}
-        result['low'] = self.low
-        result['high'] = self.high
-        return result
 
 
 class CategoricalDistribution(BaseDistribution):
