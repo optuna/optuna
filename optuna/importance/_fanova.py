@@ -102,6 +102,8 @@ def _get_evaluator(study: Study) -> fANOVA:
     distributions = _get_distributions(trials)
     config_space = _get_configuration_space(distributions)
 
+    assert len(distributions) > 0
+    assert len(distributions) == len(config_space.get_hyperparameters())
     for distribution_name, hyperparameter_name in zip(
             distributions.keys(), config_space.get_hyperparameter_names()):
         assert distribution_name == hyperparameter_name
