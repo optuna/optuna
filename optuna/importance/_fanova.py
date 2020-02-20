@@ -131,6 +131,8 @@ def _get_evaluator(study: Study) -> fANOVA:
                 param = config_space.get_hyperparameter(name)._transform(param)
             params[i, j] = param
 
+        values[i] = trial.value
+
     evaluator = fANOVA(X=params, Y=values, config_space=config_space, n_trees=16, max_depth=32)
 
     return evaluator
