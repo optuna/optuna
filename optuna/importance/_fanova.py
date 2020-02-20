@@ -51,7 +51,7 @@ def _get_distributions(trials: List[FrozenTrial]) -> Dict[str, BaseDistribution]
                 # Search spaces may vary between trials.
                 pass
 
-    distributions = OrderedDict({name: distributions[name] for name in sorted(distributions)})
+    distributions = OrderedDict([(name, distributions[name]) for name in sorted(distributions)])
 
     return distributions
 
