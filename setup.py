@@ -96,6 +96,7 @@ def get_extras_require():
             'bokeh',
             'chainer>=5.0.0',
             'cma',
+            'fanova',
             'lightgbm',
             'mock',
             'mpi4py',
