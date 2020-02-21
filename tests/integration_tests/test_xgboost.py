@@ -40,8 +40,8 @@ def test_xgboost_pruning_callback():
     def objective(trial):
         # type: (optuna.trial.Trial) -> float
 
-        dtrain = xgb.DMatrix([[1.]], label=[1.])
-        dtest = xgb.DMatrix([[1.]], label=[1.])
+        dtrain = xgb.DMatrix(np.asarray([[1.]]), label=[1.])
+        dtest = xgb.DMatrix(np.asarray([[1.]]), label=[1.])
 
         pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
         xgb.train({
