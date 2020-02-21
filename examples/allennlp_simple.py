@@ -37,6 +37,8 @@ globe_file_path = (
     'allennlp/datasets/glove/glove.6B.50d.txt.gz'
 )
 
+device = -1
+
 
 def objective(trial: optuna.Trial):
     embedding = allennlp.modules.Embedding(
@@ -64,6 +66,10 @@ def objective(trial: optuna.Trial):
         vocab=vocab
     )
 
+    if device > -1:
+        print(f'send model to GPU #{device}')
+        model.cuda(device)
+
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
     iterator = allennlp.data.iterators.BasicIterator(
@@ -78,8 +84,8 @@ def objective(trial: optuna.Trial):
         train_dataset=train_dataset,
         validation_dataset=valid_dataset,
         patience=10,
-        num_epochs=10,
-        cuda_device=-1,
+        num_epochs=1000,
+        cuda_device=device,
         serialization_dir=f'/tmp/xx/{uuid.uuid1()}',
     )
     trainer.train()
@@ -87,5 +93,9 @@ def objective(trial: optuna.Trial):
 
 
 if __name__ == '__main__':
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
     study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=10)
+    study.optimize(objective, n_trials=1000)
+
+    print(study.best_params)
