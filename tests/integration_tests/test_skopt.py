@@ -13,7 +13,7 @@ if optuna.type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
 
 
-def test_conversion_from_distribution_to_dimenstion():
+def test_conversion_from_distribution_to_dimension():
     # type: () -> None
 
     sampler = optuna.integration.SkoptSampler()
@@ -68,7 +68,7 @@ def test_skopt_kwargs():
         assert mock_object.mock_calls[0] == call(dimensions, base_estimator="GBRT")
 
 
-def test_skopt_kwargs_dimenstions():
+def test_skopt_kwargs_dimensions():
     # type: () -> None
 
     # User specified `dimensions` argument will be ignored in `SkoptSampler`.
