@@ -180,8 +180,8 @@ class CmaEsSampler(BaseSampler):
             if optimizer.generation == t.system_attrs.get("cma:generation", -1)
         ]
         if len(solution_trials) >= optimizer.population_size:
-            solutions = []  # type: List[Tuple[Any, float]]
-            for t in solution_trials[: optimizer.population_size]:
+            solutions = []  # type: List[Tuple[np.ndarray, float]]
+            for t in solution_trials[:optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
                 x = np.array([t.params[k] for k in ordered_keys])
                 solutions.append((x, t.value))
