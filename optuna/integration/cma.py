@@ -45,7 +45,7 @@ class CmaEsSampler(BaseSampler):
 
         Optimize a simple quadratic function by using :class:`~optuna.integration.CmaEsSampler`.
 
-        .. testcode:: python
+        .. testcode::
 
             import optuna
 
