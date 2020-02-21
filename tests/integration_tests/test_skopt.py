@@ -6,6 +6,7 @@ from skopt.space import space
 import optuna
 from optuna import distributions
 from optuna.structs import FrozenTrial
+from optuna.testing.sampler import DeterministicRelativeSampler
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -146,6 +147,31 @@ def _objective(trial):
     assert isinstance(p9, str)
 
     return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + int(p9)
+
+
+def test_sample_relative_n_startup_trials():
+    # type: () -> None
+
+    independent_sampler = DeterministicRelativeSampler({}, {})
+    sampler = optuna.integration.SkoptSampler(n_startup_trials=2,
+                                              independent_sampler=independent_sampler)
+    study = optuna.create_study(sampler=sampler)
+
+    # The independent sampler is used for Trial#0 and Trial#1.
+    # SkoptSampler is used for Trial#2.
+    with patch.object(
+        independent_sampler,
+        'sample_independent',
+        wraps=independent_sampler.sample_independent
+    ) as mock_independent, patch.object(
+        sampler,
+        'sample_relative',
+        wraps=sampler.sample_relative
+    ) as mock_relative:
+        study.optimize(lambda t: t.suggest_int('x', -1, 1) + t.suggest_int('y', -1, 1),
+                       n_trials=3)
+        assert mock_independent.call_count == 4  # The objective function has two parameters.
+        assert mock_relative.call_count == 3
 
 
 def _create_frozen_trial(params, param_distributions):
