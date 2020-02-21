@@ -117,9 +117,6 @@ class CmaEsSampler(BaseSampler):
         from optuna.samplers import intersection_search_space
 
         search_space = {}  # type: Dict[str, BaseDistribution]
-        if trial.number < self._n_startup_trials:
-            return {}
-
         for name, distribution in intersection_search_space(study).items():
             if distribution.single():
                 # `cma` cannot handle distributions that contain just a single value, so we skip
@@ -141,8 +138,8 @@ class CmaEsSampler(BaseSampler):
             search_space[name] = distribution
 
         if len(search_space) < 2:
-            self._logger.info("`CmaEsSampler` does not support optimization of 1-D search space. "
-                              "`{}` is used instead of `CmaEsSampler`.".format(
+            self._logger.info("`CmaEsSampler` only supports two or more dimensional continuous "
+                              "search space. `{}` is used instead of `CmaEsSampler`.".format(
                                   self._independent_sampler.__class__.__name__))
             self._warn_independent_sampling = False
             return {}

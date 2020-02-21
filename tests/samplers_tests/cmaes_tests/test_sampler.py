@@ -75,20 +75,27 @@ def test_sample_relative_n_startup_trials() -> None:
                                            independent_sampler=independent_sampler)
     study = optuna.create_study(sampler=sampler)
 
-    # The independent sampler is used for Trial#0 and Trial#1.
-    # The CMA-ES is used for Trial#2.
+    def objective(t: optuna.Trial) -> float:
+
+        value = t.suggest_int('x', -1, 1) + t.suggest_int('y', -1, 1)
+        if t.number == 0:
+            raise Exception("first trial is failed")
+        return float(value)
+
+    # The independent sampler is used for Trial#0 (FAILED), Trial#1 (COMPLETE)
+    # and Trial#2 (COMPLETE). The CMA-ES is used for Trial#3 (COMPLETE).
     with patch.object(
-            independent_sampler,
-            'sample_independent',
-            wraps=independent_sampler.sample_independent) as mock_independent, \
-            patch.object(
-                sampler,
-                'sample_relative',
-                wraps=sampler.sample_relative) as mock_relative:
-        study.optimize(lambda t: t.suggest_int('x', -1, 1) + t.suggest_int('y', -1, 1),
-                       n_trials=3)
-        assert mock_independent.call_count == 4  # The objective function has two parameters.
-        assert mock_relative.call_count == 3
+        independent_sampler,
+        'sample_independent',
+        wraps=independent_sampler.sample_independent
+    ) as mock_independent, patch.object(
+        sampler,
+        'sample_relative',
+        wraps=sampler.sample_relative
+    ) as mock_relative:
+        study.optimize(objective, n_trials=4, catch=(Exception,))
+        assert mock_independent.call_count == 6  # The objective function has two parameters.
+        assert mock_relative.call_count == 4
 
 
 def test_initialize_x0_with_unsupported_distribution() -> None:
