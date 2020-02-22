@@ -164,7 +164,7 @@ class _Optimizer(object):
                 count = (distribution.high - distribution.low) // distribution.q
                 dimension = space.Integer(0, count)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
-                count = (distribution.high - distribution.low) // distribution.q
+                count = int((distribution.high - distribution.low) // distribution.q)
                 dimension = space.Integer(0, count)
             elif isinstance(distribution, distributions.CategoricalDistribution):
                 dimension = space.Categorical(distribution.choices)
