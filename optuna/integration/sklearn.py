@@ -7,7 +7,6 @@ from time import time
 import numpy as np
 
 try:
-    from sklearn import __version__ as _sklearn_version
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
     from sklearn.base import is_classifier
@@ -18,7 +17,6 @@ try:
     from sklearn.utils import check_random_state
     from sklearn.utils.metaestimators import _safe_split
     from sklearn.utils import safe_indexing as sklearn_safe_indexing
-    from sklearn.utils.validation import _num_samples
     from sklearn.utils.validation import check_is_fitted
 
     _available = True
@@ -28,12 +26,6 @@ except ImportError as e:
 
     _import_error = e
     _available = False
-
-if _available:
-    if _sklearn_version >= '0.22.1':
-        from sklearn.utils.validation import _check_fit_params as _sklearn_check_fit_params
-    else:
-        from sklearn.utils.validation import _index_param_value as _sklearn_index_param_value
 
 from optuna import distributions  # NOQA
 from optuna import exceptions  # NOQA
@@ -55,11 +47,31 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
     from typing import Union  # NOQA
 
+    ArrayLikeType = Union[List, np.ndarray, pd.Series]
     OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
     TwoDimArrayLikeType = \
         Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
 
 _logger = logging.get_logger(__name__)
+
+
+def _is_arraylike(x):
+    # type: (Any) -> bool
+
+    return (
+        hasattr(x, '__len__') or
+        hasattr(x, 'shape') or
+        hasattr(x, '__array__')
+    )
+
+
+def _num_samples(x):
+    # type: (ArrayLikeType) -> int
+
+    try:
+        return len(x)
+    except TypeError:
+        raise TypeError('Expected sequence or array-like, got %s' % type(x))
 
 
 def _check_fit_params(
@@ -69,16 +81,19 @@ def _check_fit_params(
 ):
     # type: (...) -> Dict
 
-    if _sklearn_version >= '0.22.1':
-        return _sklearn_check_fit_params(X, fit_params, indices)
-    else:  # '_sklearn_version < 0.22.1'
-        return {
-            key: _sklearn_index_param_value(
-                X,
-                value,
-                indices
-            ) for key, value in fit_params.items()
-        }
+    fit_params_validated: Dict = {}
+    for key, value in fit_params.items():
+        if (
+            not _is_arraylike(value) or
+            _num_samples(value) != _num_samples(X)
+        ):
+            fit_params_validated[key] = value
+        else:
+            fit_params_validated[key] = value
+            fit_params_validated[key] = _safe_indexing(
+                fit_params_validated[key], indices
+            )
+    return fit_params_validated
 
 
 def _check_sklearn_availability():
