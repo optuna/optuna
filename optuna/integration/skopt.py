@@ -203,7 +203,7 @@ class _Optimizer(object):
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 value = value * distribution.q + distribution.low
             if isinstance(distribution, distributions.IntUniformDistribution):
-                value = int(value * distribution.q)
+                value = value * distribution.q + distribution.low
 
             params[name] = value
 
