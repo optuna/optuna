@@ -40,8 +40,7 @@ def prepare_data():
     return train_dataset, valid_dataset, test_dataset, vocab
 
 
-def objective(trial: optuna.Trial):
-    train_dataset, valid_dataset, test_dataset, vocab = prepare_data()
+def create_model(vocab, trial: optuna.Trial):
     embedding = allennlp.modules.Embedding(
         embedding_dim=50,
         trainable=True,
@@ -70,6 +69,13 @@ def objective(trial: optuna.Trial):
         dropout=dropout,
         vocab=vocab,
     )
+
+    return model
+
+
+def objective(trial: optuna.Trial):
+    train_dataset, valid_dataset, test_dataset, vocab = prepare_data()
+    model = create_model(vocab, trial)
 
     if DEVICE > -1:
         print(f'send model to GPU #{DEVICE}')
@@ -102,15 +108,13 @@ if __name__ == '__main__':
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=10)
+    study.optimize(objective, n_trials=15)
 
     print('Number of finished trials: ', len(study.trials))
-
     print('Best trial:')
     trial = study.best_trial
 
     print('  Value: ', trial.value)
-
     print('  Params: ')
     for key, value in trial.params.items():
         print('    {}: {}'.format(key, value))
