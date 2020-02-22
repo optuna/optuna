@@ -33,12 +33,9 @@ def prepare_data():
     valid_dataset = reader.read(
         'https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl'
     )
-    test_dataset = reader.read(
-        'https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/test.jsonl'
-    )
 
     vocab = allennlp.data.Vocabulary.from_instances(train_dataset)
-    return train_dataset, valid_dataset, test_dataset, vocab
+    return train_dataset, valid_dataset, vocab
 
 
 def create_model(vocab, trial: optuna.Trial):
@@ -75,7 +72,7 @@ def create_model(vocab, trial: optuna.Trial):
 
 
 def objective(trial: optuna.Trial):
-    train_dataset, valid_dataset, test_dataset, vocab = prepare_data()
+    train_dataset, valid_dataset, vocab = prepare_data()
     model = create_model(vocab, trial)
 
     if DEVICE > -1:
