@@ -81,7 +81,7 @@ def _check_fit_params(
 ):
     # type: (...) -> Dict
 
-    fit_params_validated: Dict = {}
+    fit_params_validated = {}
     for key, value in fit_params.items():
         if (
             not _is_arraylike(value) or
