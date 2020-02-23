@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import itertools
+
 import numpy as np
 import pytest
 
@@ -115,7 +116,7 @@ def test_study_optimize_with_multiple_search_spaces():
 
     assert len(study.trials) == 3
     for t in study.trials:
-        sampler_0._same_search_space(t.system_attrs['search_space'])
+        assert sampler_0._same_search_space(t.system_attrs['search_space'])
 
     # Run 2 trials with another space.
     search_space_1 = {'a': [0, 25], 'b': [-50]}  # type: Dict[str, List[GridValueType]]
@@ -126,9 +127,9 @@ def test_study_optimize_with_multiple_search_spaces():
     assert not sampler_0._same_search_space(sampler_1._search_space)
     assert len(study.trials) == 5
     for t in study.trials[:3]:
-        sampler_0._same_search_space(t.system_attrs['search_space'])
+        assert sampler_0._same_search_space(t.system_attrs['search_space'])
     for t in study.trials[3:5]:
-        sampler_1._same_search_space(t.system_attrs['search_space'])
+        assert sampler_1._same_search_space(t.system_attrs['search_space'])
 
     # Run 3 trials with the first search space again.
     study.sampler = sampler_0
@@ -136,11 +137,11 @@ def test_study_optimize_with_multiple_search_spaces():
 
     assert len(study.trials) == 8
     for t in study.trials[:3]:
-        sampler_0._same_search_space(t.system_attrs['search_space'])
+        assert sampler_0._same_search_space(t.system_attrs['search_space'])
     for t in study.trials[3:5]:
-        sampler_1._same_search_space(t.system_attrs['search_space'])
+        assert sampler_1._same_search_space(t.system_attrs['search_space'])
     for t in study.trials[5:]:
-        sampler_0._same_search_space(t.system_attrs['search_space'])
+        assert sampler_0._same_search_space(t.system_attrs['search_space'])
 
 
 def test_cast_value():
