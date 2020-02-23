@@ -9,6 +9,18 @@ from optuna import integration
 import numpy as np
 
 
+def test__is_arraylike():
+    assert integration.sklearn._is_arraylike([])
+    assert not integration.sklearn._is_arraylike(1)
+
+
+def test__num_samples():
+    x1 = np.random.random((10, 10))
+    x2 = [1, 2, 3]
+    assert integration.sklearn._num_samples(x1) == 10
+    assert integration.sklearn._num_samples(x2) == 3
+
+
 @pytest.mark.parametrize('enable_pruning', [True, False])
 @pytest.mark.parametrize('fit_params', ['', 'coef_init'])
 @pytest.mark.filterwarnings('ignore::UserWarning')
