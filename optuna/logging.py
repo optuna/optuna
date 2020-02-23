@@ -139,7 +139,6 @@ def disable_default_handler():
         .. testcode::
 
             import optuna
-            import logging
 
             study = optuna.create_study()
 
