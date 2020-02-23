@@ -2,6 +2,8 @@ import sys
 
 import optuna
 
+from optuna.integration import lightgbm_tuner as tuner
+
 try:
     import lightgbm as lgb  # NOQA
     _available = True
@@ -13,10 +15,7 @@ except ImportError as e:
 
 # Attach lightgbm API.
 if _available:
-    # API from optuna integration.
-    from optuna.integration import lightgbm_tuner as tuner
-
-    # Workaround for mypy.
+    # To pass tests/integration_tests/lightgbm_tuner_tests/test_optimize.py.
     from lightgbm import Dataset  # NOQA
     from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
 
@@ -28,10 +27,12 @@ if _available:
             continue
         setattr(sys.modules[__name__], api_name, lgb.__dict__[api_name])
 
+    # API from lightgbm_tuner.
     for api_name in _names_from_tuners:
         setattr(sys.modules[__name__], api_name, tuner.__dict__[api_name])
 else:
-    LightGBMTuner = object  # type: ignore
+    # To create docstring of train.
+    setattr(sys.modules[__name__], 'train', tuner.__dict__['train'])
 
 
 class LightGBMPruningCallback(object):
