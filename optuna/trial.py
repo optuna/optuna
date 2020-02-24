@@ -136,10 +136,6 @@ class Trial(BaseTrial):
 
         self._init_relative_params()
 
-        # store all seen distributions in trial to check for consistency
-        # see: _check_distribution function
-        self._distributions_in_trial = {}  # type: Dict[str, Dict[str, Any]]
-
     def _init_relative_params(self):
         # type: () -> None
 
@@ -201,9 +197,10 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        self._check_distribution(low=low, high=high, name=name)
-
         distribution = distributions.UniformDistribution(low=low, high=high)
+
+        self._check_distribution(name, distribution)
+
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
 
@@ -259,9 +256,10 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        self._check_distribution(low=low, high=high, name=name)
-
         distribution = distributions.LogUniformDistribution(low=low, high=high)
+
+        self._check_distribution(name, distribution)
+
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
 
@@ -324,10 +322,11 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        self._check_distribution(low=low, high=high, q=q, name=name)
-
         high = _adjust_discrete_uniform_high(name, low, high, q)
         distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+
+        self._check_distribution(name, distribution)
+
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
 
@@ -381,9 +380,10 @@ class Trial(BaseTrial):
             A suggested integer value.
         """
 
-        self._check_distribution(low=low, high=high, name=name)
-
         distribution = distributions.IntUniformDistribution(low=low, high=high)
+
+        self._check_distribution(name, distribution)
+
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
 
@@ -677,27 +677,11 @@ class Trial(BaseTrial):
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
         return distribution._contains(param_value_in_internal_repr)
 
-    def _check_distribution(self, name, low=None, high=None, q=None):
-        # type: (str, Any, Any, Optional[float]) -> None
+    def _check_distribution(self, name, distribution):
+        # type: (str, BaseDistribution) -> None
 
-        dist_dict = {}
-        if low is not None:
-            dist_dict['low'] = low
-        if high is not None:
-            dist_dict['high'] = high
-        if q is not None:
-            dist_dict['q'] = q
-
-        old_distribution_in_trial = self._distributions_in_trial.get(name, None)
-
-        if old_distribution_in_trial is None:
-            self._distributions_in_trial[name] = dist_dict
-        elif old_distribution_in_trial != dist_dict:
-            old_distribution_in_trial_values = 'low = {}, high = {}'.format(
-                old_distribution_in_trial['low'], old_distribution_in_trial['high'])
-            if 'q' in old_distribution_in_trial:
-                old_distribution_in_trial_values += ', q = {}'.format(
-                    old_distribution_in_trial['q'])
+        old_distribution = self.distributions.get(name, distribution)
+        if old_distribution != distribution:
             warnings.warn('Inconsistent parameter values for distribution with name "{}"! '
                           'This might be a configuration mistake. '
                           'Optuna allows to call the same distribution with the same '
@@ -705,7 +689,7 @@ class Trial(BaseTrial):
                           'When the parameter values are inconsistent optuna only '
                           'uses the values of the first call and ignores all following. '
                           'Using these values: {}'
-                          .format(name, old_distribution_in_trial_values), RuntimeWarning)
+                          .format(name, old_distribution._asdict()), RuntimeWarning)
 
     @property
     def number(self):

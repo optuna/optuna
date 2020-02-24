@@ -235,3 +235,27 @@ def test_repr():
 
     for d in EXAMPLE_DISTRIBUTIONS.values():
         assert d == eval('distributions.' + repr(d))
+
+
+def test_uniform_distribution_asdict():
+    # type: () -> None
+
+    assert EXAMPLE_DISTRIBUTIONS['u']._asdict() == {'low': 1.0, 'high': 2.0}
+
+
+def test_log_uniform_distribution_asdict():
+    # type: () -> None
+
+    assert EXAMPLE_DISTRIBUTIONS['l']._asdict() == {'low': 0.001, 'high': 100}
+
+
+def test_discrete_uniform_distribution_asdict():
+    # type: () -> None
+
+    assert EXAMPLE_DISTRIBUTIONS['du']._asdict() == {'low': 1.0, 'high': 10.0, 'q': 2.0}
+
+
+def test_int_uniform_distribution_asdict():
+    # type: () -> None
+
+    assert EXAMPLE_DISTRIBUTIONS['iu']._asdict() == {'low': 1, 'high': 10}
