@@ -67,6 +67,7 @@ def get_extras_require():
             'pandas',
             'cma',
             'scikit-learn>=0.19.0',
+            'plotly>=4.0.0',
         ],
         'document': [
             'sphinx',
