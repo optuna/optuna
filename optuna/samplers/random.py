@@ -40,7 +40,7 @@ class RandomSampler(BaseSampler):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
-        del state['_rng']
+        del state["_rng"]
         return state
 
     def __setstate__(self, state):

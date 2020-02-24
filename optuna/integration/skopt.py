@@ -80,15 +80,16 @@ class SkoptSampler(BaseSampler):
 
     """
 
-    def __init__(self, independent_sampler=None, warn_independent_sampling=True,
-                 skopt_kwargs=None):
+    def __init__(
+        self, independent_sampler=None, warn_independent_sampling=True, skopt_kwargs=None
+    ):
         # type: (Optional[BaseSampler], bool, Optional[Dict[str, Any]]) -> None
 
         _check_skopt_availability()
 
         self._skopt_kwargs = skopt_kwargs or {}
-        if 'dimensions' in self._skopt_kwargs:
-            del self._skopt_kwargs['dimensions']
+        if "dimensions" in self._skopt_kwargs:
+            del self._skopt_kwargs["dimensions"]
 
         self._independent_sampler = independent_sampler or samplers.RandomSampler()
         self._warn_independent_sampling = warn_independent_sampling
@@ -128,20 +129,24 @@ class SkoptSampler(BaseSampler):
             if len(complete_trials) >= 1:
                 self._log_independent_sampling(trial, param_name)
 
-        return self._independent_sampler.sample_independent(study, trial, param_name,
-                                                            param_distribution)
+        return self._independent_sampler.sample_independent(
+            study, trial, param_name, param_distribution
+        )
 
     def _log_independent_sampling(self, trial, param_name):
         # type: (FrozenTrial, str) -> None
 
         logger = optuna.logging.get_logger(__name__)
-        logger.warning("The parameter '{}' in trial#{} is sampled independently "
-                       "by using `{}` instead of `SkoptSampler` "
-                       "(optimization performance may be degraded). "
-                       "You can suppress this warning by setting `warn_independent_sampling` "
-                       "to `False` in the constructor of `SkoptSampler`, "
-                       "if this independent sampling is intended behavior.".format(
-                           param_name, trial.number, self._independent_sampler.__class__.__name__))
+        logger.warning(
+            "The parameter '{}' in trial#{} is sampled independently "
+            "by using `{}` instead of `SkoptSampler` "
+            "(optimization performance may be degraded). "
+            "You can suppress this warning by setting `warn_independent_sampling` "
+            "to `False` in the constructor of `SkoptSampler`, "
+            "if this independent sampling is intended behavior.".format(
+                param_name, trial.number, self._independent_sampler.__class__.__name__
+            )
+        )
 
 
 class _Optimizer(object):
@@ -154,12 +159,12 @@ class _Optimizer(object):
         for name, distribution in sorted(self._search_space.items()):
             if isinstance(distribution, distributions.UniformDistribution):
                 # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
-                high = np.nextafter(distribution.high, float('-inf'))
+                high = np.nextafter(distribution.high, float("-inf"))
                 dimension = space.Real(distribution.low, high)
             elif isinstance(distribution, distributions.LogUniformDistribution):
                 # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
-                high = np.nextafter(distribution.high, float('-inf'))
-                dimension = space.Real(distribution.low, high, prior='log-uniform')
+                high = np.nextafter(distribution.high, float("-inf"))
+                dimension = space.Real(distribution.low, high, prior="log-uniform")
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 dimension = space.Integer(distribution.low, distribution.high)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
@@ -169,7 +174,8 @@ class _Optimizer(object):
                 dimension = space.Categorical(distribution.choices)
             else:
                 raise NotImplementedError(
-                    "The distribution {} is not implemented.".format(distribution))
+                    "The distribution {} is not implemented.".format(distribution)
+                )
 
             dimensions.append(dimension)
 
@@ -253,7 +259,8 @@ def _check_skopt_availability():
 
     if not _available:
         raise ImportError(
-            'Scikit-Optimize is not available. Please install it to use this feature. '
-            'Scikit-Optimize can be installed by executing `$ pip install scikit-optimize`. '
-            'For further information, please refer to the installation guide of Scikit-Optimize. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "Scikit-Optimize is not available. Please install it to use this feature. "
+            "Scikit-Optimize can be installed by executing `$ pip install scikit-optimize`. "
+            "For further information, please refer to the installation guide of Scikit-Optimize. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )
