@@ -37,15 +37,15 @@ class TrialPruned(OptunaError):
                 for step in range(n_train_iter):
                     clf.partial_fit(X_train, y_train, classes=classes)
 
-                    intermediate_value = 1.0 - clf.score(X_test, y_test)
+                    intermediate_value = clf.score(X_test, y_test)
                     trial.report(intermediate_value, step)
 
                     if trial.should_prune():
                         raise optuna.exceptions.TrialPruned()
 
-                return 1.0 - clf.score(X_test, y_test)
+                return clf.score(X_test, y_test)
 
-            study = optuna.create_study(pruner=optuna.pruners.MedianPruner())
+            study = optuna.create_study(direction='maximize')
             study.optimize(objective, n_trials=20)
     """
 

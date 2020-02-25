@@ -15,6 +15,3 @@ Structs
 
 .. autoclass:: StudySummary
     :members:
-
-.. autoclass:: TrialPruned
-    :members:
