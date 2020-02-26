@@ -13,7 +13,7 @@ DEVICE = -1  # If you want to use GPU, use DEVICE = 0
 # Run tuning with small portion of data
 # to reduce computational time.
 # https://github.com/optuna/optuna/pull/949#pullrequestreview-364110499
-MAX_DATA_SIZE = 800
+MAX_DATA_SIZE = 3000
 
 GLOVE_FILE_PATH = (
     'https://s3-us-west-2.amazonaws.com/'
@@ -61,7 +61,7 @@ def create_model(vocab, trial: optuna.Trial):
 
     output_dim = trial.suggest_int('output_dim', 80, 120)
     max_filter_size = trial.suggest_int('max_filter_size', 3, 6)
-    num_filters = trial.suggest_int('num_filters', 64, 512)
+    num_filters = trial.suggest_int('num_filters', 64, 256)
     encoder = allennlp.modules.seq2vec_encoders.CnnEncoder(
         ngram_filter_sizes=range(1, max_filter_size),
         num_filters=num_filters,
@@ -77,22 +77,22 @@ def create_model(vocab, trial: optuna.Trial):
         vocab=vocab,
     )
 
+    print(output_dim, max_filter_size, num_filters, dropout)
     return model
 
 
 def objective(trial: optuna.Trial):
-    train_dataset, valid_dataset, vocab = prepare_data()
     model = create_model(vocab, trial)
 
     if DEVICE > -1:
         print(f'send model to GPU #{DEVICE}')
         model.cuda(DEVICE)
 
-    lr = trial.suggest_loguniform('lr', 1e-4, 1e-1)
+    lr = trial.suggest_loguniform('lr', 1e-1, 1e0)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
     iterator = allennlp.data.iterators.BasicIterator(
-        batch_size=32,
+        batch_size=10,
     )
     iterator.index_with(vocab)
 
@@ -102,8 +102,8 @@ def objective(trial: optuna.Trial):
         iterator=iterator,
         train_dataset=train_dataset,
         validation_dataset=valid_dataset,
-        patience=1,
-        num_epochs=5,
+        patience=3,
+        num_epochs=7,
         cuda_device=DEVICE,
         serialization_dir=f'/tmp/xx/{uuid.uuid1()}',
     )
@@ -112,8 +112,10 @@ def objective(trial: optuna.Trial):
 
 
 if __name__ == '__main__':
+    train_dataset, valid_dataset, vocab = prepare_data()
+
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=3)
+    study.optimize(objective, n_trials=2)
 
     print('Number of finished trials: ', len(study.trials))
     print('Best trial:')
