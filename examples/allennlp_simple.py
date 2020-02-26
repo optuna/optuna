@@ -1,10 +1,11 @@
+import uuid
+
 import allennlp
 import allennlp.data
 import allennlp.models
 import allennlp.modules
 import optuna
 import torch
-import uuid
 
 
 DEVICE = -1  # If you want to use GPU, use DEVICE = 0
