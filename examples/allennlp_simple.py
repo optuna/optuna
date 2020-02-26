@@ -24,7 +24,7 @@ def prepare_data():
     )
 
     reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
-        token_indexers={'tokens': globe_indexer},
+        token_indexers={'tokens': glove_indexer},
         tokenizer=tokenizer,
     )
     train_dataset = reader.read(
