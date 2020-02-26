@@ -16,7 +16,7 @@ GLOVE_FILE_PATH = (
 
 
 def prepare_data():
-    globe_indexer = allennlp.data.token_indexers.SingleIdTokenIndexer(
+    glove_indexer = allennlp.data.token_indexers.SingleIdTokenIndexer(
         lowercase_tokens=True
     )
     tokenizer = allennlp.data.tokenizers.WordTokenizer(
