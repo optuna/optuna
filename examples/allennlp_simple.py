@@ -9,7 +9,7 @@ import uuid
 
 DEVICE = -1  # If you want to use GPU, use DEVICE = 0
 
-GLOBE_FILE_PATH = (
+GLOVE_FILE_PATH = (
     'https://s3-us-west-2.amazonaws.com/'
     'allennlp/datasets/glove/glove.6B.50d.txt.gz'
 )
