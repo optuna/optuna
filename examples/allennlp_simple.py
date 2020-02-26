@@ -42,7 +42,7 @@ def create_model(vocab, trial: optuna.Trial):
     embedding = allennlp.modules.Embedding(
         embedding_dim=50,
         trainable=True,
-        pretrained_file=GLOBE_FILE_PATH,
+        pretrained_file=GLOVE_FILE_PATH,
         num_embeddings=vocab.get_vocab_size('tokens'),
     )
 
