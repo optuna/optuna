@@ -10,6 +10,11 @@ import torch
 
 DEVICE = -1  # If you want to use GPU, use DEVICE = 0
 
+# Run tuning with small portion of data
+# to reduce computational time.
+# https://github.com/optuna/optuna/pull/949#pullrequestreview-364110499
+MAX_DATA_SIZE = 800
+
 GLOVE_FILE_PATH = (
     'https://s3-us-west-2.amazonaws.com/'
     'allennlp/datasets/glove/glove.6B.50d.txt.gz'
@@ -31,9 +36,12 @@ def prepare_data():
     train_dataset = reader.read(
         'https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/train.jsonl'
     )
+    train_dataset = train_dataset[:MAX_DATA_SIZE]
+
     valid_dataset = reader.read(
         'https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl'
     )
+    valid_dataset = valid_dataset[:MAX_DATA_SIZE]
 
     vocab = allennlp.data.Vocabulary.from_instances(train_dataset)
     return train_dataset, valid_dataset, vocab
@@ -51,7 +59,7 @@ def create_model(vocab, trial: optuna.Trial):
         {'tokens': embedding}
     )
 
-    output_dim = trial.suggest_int('output_dim', 10, 100)
+    output_dim = trial.suggest_int('output_dim', 80, 120)
     max_filter_size = trial.suggest_int('max_filter_size', 3, 6)
     num_filters = trial.suggest_int('num_filters', 64, 512)
     encoder = allennlp.modules.seq2vec_encoders.CnnEncoder(
@@ -94,8 +102,8 @@ def objective(trial: optuna.Trial):
         iterator=iterator,
         train_dataset=train_dataset,
         validation_dataset=valid_dataset,
-        patience=3,
-        num_epochs=10,
+        patience=1,
+        num_epochs=5,
         cuda_device=DEVICE,
         serialization_dir=f'/tmp/xx/{uuid.uuid1()}',
     )
@@ -104,10 +112,8 @@ def objective(trial: optuna.Trial):
 
 
 if __name__ == '__main__':
-    optuna.logging.set_verbosity(optuna.logging.WARNING)
-
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=15)
+    study.optimize(objective, n_trials=3)
 
     print('Number of finished trials: ', len(study.trials))
     print('Best trial:')
