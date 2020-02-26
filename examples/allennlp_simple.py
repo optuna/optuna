@@ -10,14 +10,14 @@ import torch
 
 DEVICE = -1  # If you want to use GPU, use DEVICE = 0
 
-GLOBE_FILE_PATH = (
+GLOVE_FILE_PATH = (
     'https://s3-us-west-2.amazonaws.com/'
     'allennlp/datasets/glove/glove.6B.50d.txt.gz'
 )
 
 
 def prepare_data():
-    globe_indexer = allennlp.data.token_indexers.SingleIdTokenIndexer(
+    glove_indexer = allennlp.data.token_indexers.SingleIdTokenIndexer(
         lowercase_tokens=True
     )
     tokenizer = allennlp.data.tokenizers.WordTokenizer(
@@ -25,7 +25,7 @@ def prepare_data():
     )
 
     reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
-        token_indexers={'tokens': globe_indexer},
+        token_indexers={'tokens': glove_indexer},
         tokenizer=tokenizer,
     )
     train_dataset = reader.read(
@@ -43,7 +43,7 @@ def create_model(vocab, trial: optuna.Trial):
     embedding = allennlp.modules.Embedding(
         embedding_dim=50,
         trainable=True,
-        pretrained_file=GLOBE_FILE_PATH,
+        pretrained_file=GLOVE_FILE_PATH,
         num_embeddings=vocab.get_vocab_size('tokens'),
     )
 
