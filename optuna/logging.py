@@ -221,9 +221,9 @@ def enable_propagation():
             logger.info("Start optimization.")
             study.optimize(objective, n_trials=10)
 
-            f = open('foo.log')
-            assert f.readline() == "Start optimization.\\n"
-            assert f.readline().startswith("Finished trial#0 resulted in value:")
+            with open('foo.log') as f:
+                assert f.readline() == "Start optimization.\\n"
+                assert f.readline().startswith("Finished trial#0 resulted in value:")
 
     """
 
