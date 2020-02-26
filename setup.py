@@ -73,6 +73,7 @@ def get_extras_require():
             'sphinx_rtd_theme',
         ],
         'example': [
+            'allennlp',
             'catboost',
             'chainer',
             'lightgbm',
