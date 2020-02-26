@@ -103,7 +103,7 @@ def objective(trial: optuna.Trial):
         train_dataset=train_dataset,
         validation_dataset=valid_dataset,
         patience=3,
-        num_epochs=7,
+        num_epochs=6,
         cuda_device=DEVICE,
         serialization_dir=f'/tmp/xx/{uuid.uuid1()}',
     )
