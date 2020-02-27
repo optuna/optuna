@@ -2,6 +2,7 @@ from logging import DEBUG
 from logging import INFO
 from logging import WARNING
 from numbers import Number
+from numbers import Integral
 from time import time
 
 import numpy as np
@@ -55,6 +56,9 @@ if type_checking.TYPE_CHECKING:
 _logger = logging.get_logger(__name__)
 
 
+# NOTE Original implementation:
+# https://github.com/scikit-learn/scikit-learn/blob/ \
+# 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L131-L135
 def _is_arraylike(x):
     # type: (Any) -> bool
 
@@ -67,6 +71,13 @@ def _is_arraylike(x):
 
 def _num_samples(x):
     # type: (ArrayLikeType) -> int
+
+    # NOTE For dask dataframes
+    # https://github.com/scikit-learn/scikit-learn/blob/ \
+    # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L155-L158
+    if hasattr(x, 'shape') and x.shape is not None:
+        if isinstance(x.shape[0], Integral):
+            return x.shape[0]
 
     try:
         return len(x)
