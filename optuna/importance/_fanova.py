@@ -69,16 +69,16 @@ def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -
     d = distribution
 
     if isinstance(d, UniformDistribution):
-        hp = UniformFloatHyperparameter(name, d.low, d.high)
+        hp = UniformFloatHyperparameter(name, lower=d.low, upper=d.high)
     elif isinstance(d, LogUniformDistribution):
-        hp = UniformFloatHyperparameter(name, d.low, d.high, log=True)
+        hp = UniformFloatHyperparameter(name, lower=d.low, upper=d.high, log=True)
     elif isinstance(d, DiscreteUniformDistribution):
-        hp = UniformFloatHyperparameter(name, d.low, d.high, q=d.q)
+        hp = UniformFloatHyperparameter(name, lower=d.low, upper=d.high, q=d.q)
     elif isinstance(d, IntUniformDistribution):
-        hp = UniformIntegerHyperparameter(name, d.low, d.high)
+        hp = UniformIntegerHyperparameter(name, lower=d.low, upper=d.high)
     elif isinstance(d, CategoricalDistribution):
         hp = CategoricalHyperparameter(
-            name, [d.to_internal_repr(c) for c in d.choices])
+            name, choices=[d.to_internal_repr(c) for c in d.choices])
     else:
         distribution_list = [
             UniformDistribution.__name__,
