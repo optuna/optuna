@@ -88,8 +88,8 @@ def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -
             IntUniformDistribution.__name__,
             CategoricalDistribution.__name__
         ]
-        raise NotImplementedError("The distribution {} is not implemented. "
-                                  "The parameter distribution should be one of the {}".format(
+        raise NotImplementedError('The distribution {} is not implemented. '
+                                  'The parameter distribution should be one of the {}'.format(
                                       d, distribution_list))
     return hp
 
@@ -128,7 +128,7 @@ def _get_evaluator(study: Study) -> fANOVA:
             # TODO(hvy): Impute missing values.
             if name not in trial_params:
                 raise RuntimeError(
-                    "Parameter '{}' was never suggested in trial number {}.".format(
+                    'Parameter \'{}\' was never suggested in trial number {}.'.format(
                         name, trial.number))
 
             param = trial_params[name]
@@ -157,8 +157,6 @@ class _Fanova(object):
         self._evaluator = _get_evaluator(study)
 
     def get_param_importance(self) -> Dict[str, float]:
-        _logger.info('Starting fANOVA parameter importance evaluation.')
-
         importances = OrderedDict()
         evaluator = self._evaluator
 
