@@ -11,6 +11,7 @@ import numpy as np
 
 def test__is_arraylike():
     assert integration.sklearn._is_arraylike([])
+    assert integration.sklearn._is_arraylike(np.zeros(5))
     assert not integration.sklearn._is_arraylike(1)
 
 
