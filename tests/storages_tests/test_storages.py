@@ -331,6 +331,7 @@ def test_create_new_trial_with_template_trial(storage_init_func):
     assert trials[0].intermediate_values == template_trial.intermediate_values
     assert trials[0].system_attrs == template_trial.system_attrs
 
+
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 def test_get_trial_number_from_id(storage_mode):
     # type: (str) -> None

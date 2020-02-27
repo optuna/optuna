@@ -418,13 +418,10 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        trial_count = session.query(models.TrialModel). \
-            filter(models.TrialModel.study_id == study_id).count()
-
         if template_trial is None:
             trial = models.TrialModel(
                 study_id=study_id,
-                number=trial_count,
+                number=None,
                 state=structs.TrialState.RUNNING,
             )
         else:
@@ -436,7 +433,7 @@ class RDBStorage(BaseStorage):
 
             trial = models.TrialModel(
                 study_id=study_id,
-                number=trial_count,
+                number=None,
                 state=temp_state,
                 value=template_trial.value,
                 datetime_start=template_trial.datetime_start,
@@ -470,8 +467,27 @@ class RDBStorage(BaseStorage):
                                                                   intermediate_value)
 
             trial.state = template_trial.state
+
         self._commit(session)
+
+        self._create_new_trial_number(trial.trial_id)
+
         return trial.trial_id
+
+    def _create_new_trial_number(self, trial_id):
+        # type: (int) -> int
+
+        session = self.scoped_session()
+        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        trial_number = trial.count_past_trials(session)
+
+        trial.number = trial_number
+        session.add(trial)
+
+        # Terminate transaction explicitly to avoid connection timeout during transaction.
+        self._commit(session)
+
+        return trial_number
 
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> bool

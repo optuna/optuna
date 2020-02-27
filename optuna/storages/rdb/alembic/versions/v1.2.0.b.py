@@ -46,7 +46,7 @@ def upgrade():
 
     with op.batch_alter_table("trials") as batch_op:
         batch_op.add_column(sa.Column('number', sa.Integer(), nullable=True, default=-1))
-        batch_op.create_index('ix_study_trial_number', ['study_id', 'number'], unique=True),
+        batch_op.create_index('ix_study_trial_number', ['study_id', 'number']),
 
     try:
         number_records = session.query(TrialSystemAttributeModel) \
