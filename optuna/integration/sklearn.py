@@ -1,8 +1,8 @@
 from logging import DEBUG
 from logging import INFO
 from logging import WARNING
-from numbers import Number
 from numbers import Integral
+from numbers import Number
 from time import time
 
 import numpy as np
@@ -43,6 +43,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
+    from typing import Iterable  # NOQA
     from typing import List  # NOQA
     from typing import Mapping  # NOQA
     from typing import Optional  # NOQA
@@ -54,35 +55,6 @@ if type_checking.TYPE_CHECKING:
         Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
 
 _logger = logging.get_logger(__name__)
-
-
-# NOTE Original implementation:
-# https://github.com/scikit-learn/scikit-learn/blob/ \
-# 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L131-L135
-def _is_arraylike(x):
-    # type: (Any) -> bool
-
-    return (
-        hasattr(x, '__len__') or
-        hasattr(x, 'shape') or
-        hasattr(x, '__array__')
-    )
-
-
-def _num_samples(x):
-    # type: (ArrayLikeType) -> int
-
-    # NOTE For dask dataframes
-    # https://github.com/scikit-learn/scikit-learn/blob/ \
-    # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L155-L158
-    if hasattr(x, 'shape') and x.shape is not None:
-        if isinstance(x.shape[0], Integral):
-            return x.shape[0]
-
-    try:
-        return len(x)
-    except TypeError:
-        raise TypeError('Expected sequence or array-like, got %s' % type(x))
 
 
 def _check_fit_params(
@@ -100,7 +72,7 @@ def _check_fit_params(
         ):
             fit_params_validated[key] = value
         else:
-            fit_params_validated[key] = value
+            fit_params_validated[key] = _make_indexable(value)
             fit_params_validated[key] = _safe_indexing(
                 fit_params_validated[key], indices
             )
@@ -118,6 +90,48 @@ def _check_sklearn_availability():
             'please refer to the installation guide of scikit-learn. (The '
             'actual import error is as follows: ' + str(_import_error) + ')'
         )
+
+
+# NOTE Original implementation:
+# https://github.com/scikit-learn/scikit-learn/blob/ \
+# 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L131-L135
+def _is_arraylike(x):
+    # type: (Any) -> bool
+
+    return (
+        hasattr(x, '__len__') or
+        hasattr(x, 'shape') or
+        hasattr(x, '__array__')
+    )
+
+
+# NOTE Original implementation:
+# https://github.com/scikit-learn/scikit-learn/blob/ \
+# 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L217-L234
+# It removed the check if an input is scipy sparse matrix
+def _make_indexable(iterable):
+    # type: (Iterable) -> (Iterable)
+    if hasattr(iterable, "__getitem__") or hasattr(iterable, "iloc"):
+        return iterable
+    elif iterable is None:
+        return iterable
+    return np.array(iterable)
+
+
+def _num_samples(x):
+    # type: (ArrayLikeType) -> int
+
+    # NOTE For dask dataframes
+    # https://github.com/scikit-learn/scikit-learn/blob/ \
+    # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L155-L158
+    if hasattr(x, 'shape') and x.shape is not None:
+        if isinstance(x.shape[0], Integral):
+            return x.shape[0]
+
+    try:
+        return len(x)
+    except TypeError:
+        raise TypeError('Expected sequence or array-like, got %s' % type(x))
 
 
 def _safe_indexing(
