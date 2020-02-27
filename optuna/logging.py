@@ -127,7 +127,7 @@ def disable_default_handler():
 
     Example:
 
-        Stop and then resume logging to stderr.
+        Stop and then resume logging to :obj:`sys.stderr`.
 
         .. testsetup::
 
@@ -142,11 +142,11 @@ def disable_default_handler():
 
             study = optuna.create_study()
 
-            # There are no logs in stderr.
+            # There are no logs in sys.stderr.
             optuna.logging.disable_default_handler()
             study.optimize(objective, n_trials=10)
 
-            # There are logs in stderr.
+            # There are logs in sys.stderr.
             optuna.logging.enable_default_handler()
             study.optimize(objective, n_trials=10)
             # [I 2020-02-23 17:00:54,314] Finished trial#10 resulted in value: ...
@@ -214,7 +214,7 @@ def enable_propagation():
             logger.addHandler(logging.FileHandler("foo.log", mode="w"))
 
             optuna.logging.enable_propagation()  # Propagate logs to the root logger.
-            optuna.logging.disable_default_handler()  # Stop showing logs in stderr.
+            optuna.logging.disable_default_handler()  # Stop showing logs in sys.stderr.
 
             study = optuna.create_study()
 
