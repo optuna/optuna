@@ -113,7 +113,7 @@ def _get_evaluator(study: Study) -> fANOVA:
             distributions.keys(), config_space.get_hyperparameter_names()):
         assert distribution_name == hyperparameter_name
 
-    _logger.info('Sorted parameter names {}.'.format(config_space.get_hyperparameter_names()))
+    _logger.debug('Sorted parameter names {}.'.format(config_space.get_hyperparameter_names()))
 
     n_trials = len(trials)
     n_params = len(distributions)
@@ -164,7 +164,7 @@ class _Fanova(object):
             imp = evaluator.quantify_importance((i,))
             imp = imp[(i,)]['individual importance']
 
-            _logger.info('Individual importance for parameter {} is {}.'.format(name, imp))
+            _logger.debug('Individual importance for parameter {} is {}.'.format(name, imp))
 
             importances[name] = imp
 
