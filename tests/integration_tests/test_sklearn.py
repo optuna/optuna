@@ -16,7 +16,8 @@ def test_is_arraylike() -> None:
     assert not integration.sklearn._is_arraylike(1)
 
 
-def test__num_samples():
+def test_num_samples() -> None:
+
     x1 = np.random.random((10, 10))
     x2 = [1, 2, 3]
     assert integration.sklearn._num_samples(x1) == 10
