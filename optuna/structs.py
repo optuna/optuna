@@ -346,21 +346,6 @@ class TrialPruned(exceptions.TrialPruned):
 
         This class was moved to :mod:`~optuna.exceptions`. Please use
         :class:`~optuna.exceptions.TrialPruned` instead.
-
-    This error tells a trainer that the current :class:`~optuna.trial.Trial` was pruned. It is
-    supposed to be raised after :func:`optuna.trial.Trial.should_prune` as shown in the following
-    example.
-
-    Example:
-
-        .. code::
-
-            >>> def objective(trial):
-            >>>     ...
-            >>>     for step in range(n_train_iter):
-            >>>         ...
-            >>>         if trial.should_prune():
-            >>>             raise TrailPruned()
     """
 
     def __init__(self, *args, **kwargs):

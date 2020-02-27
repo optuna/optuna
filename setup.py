@@ -84,9 +84,7 @@ def get_extras_require():
             'scikit-learn',
             'torch',
             'torchvision>=0.5.0',
-            # TODO(hvy): Remove version constraint when
-            # https://github.com/dmlc/xgboost/issues/5328 is fixed.
-            'xgboost<1.0.0',
+            'xgboost',
         ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + ([
             'dask[dataframe]',
@@ -111,9 +109,7 @@ def get_extras_require():
             'scikit-optimize',
             'torch',
             'torchvision>=0.5.0',
-            # TODO(hvy): Remove version constraint when
-            # https://github.com/dmlc/xgboost/issues/5328 is fixed.
-            'xgboost<1.0.0',
+            'xgboost',
         ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + ([
             'keras',
