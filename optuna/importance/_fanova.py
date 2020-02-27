@@ -13,6 +13,7 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna import logging
 from optuna.structs import FrozenTrial
+from optuna.structs import TrialState
 from optuna.study import Study
 
 try:
@@ -98,8 +99,11 @@ def _get_evaluator(study: Study) -> fANOVA:
     # TODO(hvy): Set cutoff based on minimization/maximization of study.
     # https://github.com/automl/ParameterImportance/blob/master/pimp/evaluator/fanova.py#L44
 
-    # TODO(hvy): Filter out only completed trials.
-    trials = study.trials
+    trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+
+    if len(trials) == 0:
+        raise ValueError('Study must contain completed trials.')
+
     distributions = _get_distributions(trials)
     config_space = _get_configuration_space(distributions)
 

@@ -3,6 +3,7 @@ import typing
 
 import pytest
 
+import optuna
 from optuna.importance import get_param_importance
 from optuna import samplers
 from optuna import storages
@@ -37,3 +38,19 @@ def test_get_param_importance(
     for param_name, importance in param_importance.items():
         assert isinstance(param_name, str)
         assert isinstance(importance, float)
+
+
+def test_get_param_importance_empty_study() -> None:
+
+    study = create_study()
+
+    with pytest.raises(ValueError):
+        get_param_importance(study)
+
+    def objective(trial: Trial) -> float:
+        raise optuna.exceptions.TrialPruned
+
+    study.optimize(objective, n_trials=3)
+
+    with pytest.raises(ValueError):
+        get_param_importance(study)
