@@ -137,9 +137,9 @@ jobs:
             sudo apt-get -y install openmpi-bin libopenmpi-dev
 
             # Install swig which is required by pyrfr which is required by fanova.
-            wget http://prdownloads.sourceforge.net/swig/swig-4.0.1.tar.gz
-            tar -zxvf swig-4.0.1.tar.gz
-            pushd swig-4.0.1
+            wget http://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz
+            tar -zxvf swig-3.0.12.tar.gz
+            pushd swig-3.0.12
             ./configure
             make
             sudo make install
