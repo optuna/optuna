@@ -12,7 +12,7 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna import logging
-from optuna.structs import FrozenTrial
+from optuna.samplers import intersection_search_space
 from optuna.structs import TrialState
 from optuna.study import Study
 
@@ -36,23 +36,14 @@ except ImportError as e:
 _logger = logging.get_logger(__name__)
 
 
-def _get_distributions(trials: List[FrozenTrial]) -> Dict[str, BaseDistribution]:
+def _get_distributions(study: Study) -> Dict[str, BaseDistribution]:
     # Return an ordered dict, ordered by parameter names lexicographically.
     # It must be sorted because the corresponding `ConfigurationSpace` container depends on the
     # order and also sorts.
 
-    distributions = {}  # type: Dict[str, BaseDistribution]
-
-    for trial in trials:
-        for name, distribution in trial.distributions.items():
-            if name not in distributions:
-                distributions[name] = distribution
-            else:
-                # TODO(hvy): Update low, high, choices, etc. to cover the entire search space.
-                # Search spaces may vary between trials.
-                pass
-
-    distributions = OrderedDict([(name, distributions[name]) for name in sorted(distributions)])
+    # Condtional hyperparameters are excluded here since we are taking the intersection.
+    distributions = intersection_search_space(study)
+    distributions = OrderedDict(sorted(distributions.items(), key=lambda x: x[0]))
 
     return distributions
 
@@ -104,7 +95,7 @@ def _get_evaluator(study: Study) -> fANOVA:
     if len(trials) == 0:
         raise ValueError('Study must contain completed trials.')
 
-    distributions = _get_distributions(trials)
+    distributions = _get_distributions(study)
     config_space = _get_configuration_space(distributions)
 
     assert len(distributions) > 0
