@@ -119,8 +119,6 @@ def _get_evaluator(study: Study) -> fANOVA:
             param = trial_params[name]
             if isinstance(distribution, CategoricalDistribution):
                 param = distribution.to_internal_repr(param)
-            else:
-                param = config_space.get_hyperparameter(name)._transform(param)
             params[i, j] = param
 
         values[i] = trial.value
