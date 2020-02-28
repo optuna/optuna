@@ -116,12 +116,6 @@ def _get_evaluator(study: Study) -> fANOVA:
         trial_params = trial.params
 
         for j, (name, distribution) in enumerate(distributions.items()):
-            # TODO(hvy): Impute missing values.
-            if name not in trial_params:
-                raise RuntimeError(
-                    'Parameter \'{}\' was never suggested in trial number {}.'.format(
-                        name, trial.number))
-
             param = trial_params[name]
             if isinstance(distribution, CategoricalDistribution):
                 param = distribution.to_internal_repr(param)
