@@ -8,6 +8,7 @@ import warnings
 import joblib
 from joblib import delayed
 from joblib import Parallel
+import numpy as np
 
 from optuna._experimental import experimental
 from optuna._study_direction import StudyDirection
@@ -369,7 +370,7 @@ class Study(BaseStudy):
                         _logger.warning(msg)
 
                     parallel(
-                        delayed(self._optimize_sequential)(
+                        delayed(self._reseed_and_optimize_sequential)(
                             func, 1, timeout, catch, callbacks, gc_after_trial, time_start
                         )
                         for _ in _iter
@@ -599,6 +600,32 @@ class Study(BaseStudy):
 
         trial_id = self._storage.create_new_trial(self._study_id, template_trial=trial)
         return trial_id
+
+    def _reseed_and_optimize_sequential(
+        self,
+        func,  # type: ObjectiveFuncType
+        n_trials,  # type: Optional[int]
+        timeout,  # type: Optional[float]
+        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+        gc_after_trial,  # type: bool
+        time_start,  # type: Optional[datetime.datetime]
+    ):
+        # type: (...) -> None
+
+        _rng = getattr(self.sampler, "_rng", None)
+        if isinstance(_rng, np.random.RandomState):
+            setattr(self.sampler, "_rng", np.random.RandomState())
+        else:
+            raise TypeError(
+                "Failed to reseed the random number generator of the sampler although "
+                "it is required if n_jobs>1. The random number generator is of type "
+                "'{}' but supposed to be a numpy.random.RandomState.".format(type(_rng).__name__)
+            )
+
+        self._optimize_sequential(
+            func, n_trials, timeout, catch, callbacks, gc_after_trial, time_start
+        )
 
     def _optimize_sequential(
         self,

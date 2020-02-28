@@ -43,8 +43,7 @@ def test_pickle_random_sampler(seed):
 
     sampler = optuna.samplers.RandomSampler(seed)
     restored_sampler = pickle.loads(pickle.dumps(sampler))
-    assert sampler._rng != restored_sampler._rng
-    assert sampler._rng.bytes(10) != restored_sampler._rng.bytes(10)
+    assert sampler._rng.bytes(10) == restored_sampler._rng.bytes(10)
 
 
 @parametrize_sampler
