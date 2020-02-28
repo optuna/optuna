@@ -1,11 +1,9 @@
-import operator
-
 from optuna.pruners import BasePruner
 
 from optuna.type_checking import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Callable
+    from typing import Optional
 
     from optuna.structs import FrozenTrial
     from optuna.study import Study
@@ -26,31 +24,11 @@ class ThresholdPruner(BasePruner):
 
     """
 
-    def __init__(self, threshold, op):
-        # type: (float, str) -> None
+    def __init__(self, lower_bound=None, upper_bound=None):
+        # type: (Optional[float], Optional[float]) -> None
 
-        self.threshold = threshold
-        self.operator = self.get_operator_func(op)
-
-    @staticmethod
-    def get_operator_func(op):
-        # type: (str) -> Callable
-
-        # When minimize some metric (e.g. loss),
-        # it prunes if the metric be extremely large.
-        if op == 'gt':
-            return operator.gt
-
-        # When maximize some metric (e.g. accuracy),
-        # it prunes if the metric be extremely small.
-        if op == 'lt':
-            return operator.lt
-
-        # It prunes if the metric go out from a given range
-        if op == 'range':
-            return lambda x, y: not (-y < x < y)
-
-        raise ValueError('Unexpected operator given')
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
 
     def prune(self, study, trial):
         # type: (Study, FrozenTrial) -> bool
@@ -60,7 +38,11 @@ class ThresholdPruner(BasePruner):
             return False
 
         latest_value = trial.intermediate_values[last_step]
-        if self.operator(latest_value, self.threshold):
+
+        if self.lower_bound is not None and latest_value < self.lower_bound:
+            return True
+
+        if self.upper_bound is not None and latest_value > self.upper_bound:
             return True
 
         return False
