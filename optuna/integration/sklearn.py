@@ -66,6 +66,13 @@ def _check_fit_params(
 
     fit_params_validated = {}
     for key, value in fit_params.items():
+
+        # NOTE Original implementation:
+        # https://github.com/scikit-learn/scikit-learn/blob/ \
+        # 2467e1b84aeb493a22533fa15ff92e0d7c05ed1c/sklearn/utils/validation.py#L1324-L1328
+        # Scikit-learn does not accept non-iterable inputs.
+        # This line is for keeping backward compatibility.
+        # (See: https://github.com/scikit-learn/scikit-learn/issues/15805)
         if (
             not _is_arraylike(value) or
             _num_samples(value) != _num_samples(X)
