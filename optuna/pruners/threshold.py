@@ -12,15 +12,25 @@ if TYPE_CHECKING:
 class ThresholdPruner(BasePruner):
     """Pruner to detect abnormal metrics of the trials.
 
-    Prune if the metric exceed a threshold.
+    Prune if the metric exceeds user-specified upper/lower bounds.
 
     Example:
 
         .. code::
 
             >>> from optuna import create_study
+            >>> from optuna.pruners import ThresholdPruner
+            >>>
+            >>> study = create_study(pruner=ThresholdPruner(upper=500))
+            >>> study.optimize(objective)
 
     Args
+        lower_bound:
+            minimum value which determines whether pruner prunes or not
+            (If value is smaller than lower_bound, it prunes)
+        upper_bound:
+            maximum value which determines whether pruner prunes or not
+            (If value is larger than upper_bound, it prunes)
 
     """
 
