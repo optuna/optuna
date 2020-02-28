@@ -133,6 +133,11 @@ class TPESampler(base.BaseSampler):
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution)
 
+        # Re-seed the random generator using trial number to prevent multiple sampler instances
+        # from sampling the same parameters for different trials in parallel execution.
+        seed = (self._rng.randint(0, 2**32 - 1) + trial.number) % 2**32
+        self._rng.seed(seed)
+
         below_param_values, above_param_values = self._split_observation_pairs(values, scores)
 
         if isinstance(param_distribution, distributions.UniformDistribution):

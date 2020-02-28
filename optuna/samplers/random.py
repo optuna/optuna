@@ -62,6 +62,11 @@ class RandomSampler(BaseSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         # type: (Study, FrozenTrial, str, distributions.BaseDistribution) -> Any
 
+        # Re-seed the random generator using trial number to prevent multiple sampler instances
+        # from sampling the same parameters for different trials in parallel execution.
+        seed = (self._rng.randint(0, 2**32 - 1) + trial.number) % 2**32
+        self._rng.seed(seed)
+
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._rng.uniform(param_distribution.low, param_distribution.high)
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
