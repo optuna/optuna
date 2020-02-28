@@ -703,16 +703,17 @@ class Study(BaseStudy):
 
         self._storage.set_trial_value(trial_id, result)
         self._storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
-        self._log_completed_trial(trial_number, result)
+        self._log_completed_trial(trial, result)
 
         return trial
 
-    def _log_completed_trial(self, trial_number, value):
-        # type: (int, float) -> None
+    def _log_completed_trial(self, trial, result):
+        # type: (trial_module.Trial, float) -> None
 
-        _logger.info('Finished trial#{} resulted in value: {}. '
-                     'Current best value is {} with parameters: {}.'.format(
-                         trial_number, value, self.best_value, self.best_params))
+        _logger.info('Finished trial#{} with value: {} with parameters: {}. '
+                     'Best is trial#{} with value: {}.'.format(
+                         trial.number, result, trial.params, self.best_trial.number,
+                         self.best_value))
 
 
 def create_study(
