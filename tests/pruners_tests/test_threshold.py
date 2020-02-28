@@ -6,12 +6,12 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
 
 
-def test_threshold_pruner_with_gt():
+def test_threshold_pruner_with_ub():
     # type: () -> None
 
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    pruner = optuna.pruners.ThresholdPruner(2, 'gt')
+    pruner = optuna.pruners.ThresholdPruner(upper_bound=2)
 
     trial.report(1, 1)
     assert not pruner.prune(
@@ -27,7 +27,7 @@ def test_threshold_pruner_with_lt():
 
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    pruner = optuna.pruners.ThresholdPruner(2, 'lt')
+    pruner = optuna.pruners.ThresholdPruner(lower_bound=2)
 
     trial.report(3, 1)
     assert not pruner.prune(
