@@ -54,6 +54,19 @@ def test_get_param_importance(
         assert isinstance(importance, float)
 
 
+def test_get_param_importance_bad_evaluator() -> None:
+
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_uniform('x1', 0.1, 3)
+        return x1 ** 2
+
+    study = create_study()
+    study.optimize(objective, n_trials=3)
+
+    with pytest.raises(TypeError):
+        get_param_importance(study, evaluator=dict())
+
+
 def test_get_param_importance_empty_study() -> None:
 
     study = create_study()

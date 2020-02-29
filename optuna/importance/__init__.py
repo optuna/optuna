@@ -40,4 +40,7 @@ def get_param_importance(
     if evaluator is None:
         evaluator = RandomForestFeatureImportanceEvaluator()
 
+    if not isinstance(evaluator, BaseImportanceEvaluator):
+        raise TypeError('Evaluator must be a subclass of BaseImportanceEvaluator.')
+
     return evaluator.get_param_importance(study)
