@@ -12,7 +12,8 @@ if TYPE_CHECKING:
 class ThresholdPruner(BasePruner):
     """Pruner to detect abnormal metrics of the trials.
 
-    Prune if the metric exceeds user-specified upper/lower bounds.
+    Prune if a metric exceeds upper bound threshold or
+    falls behind lower bound threshold which users specify.
 
     Example:
 
