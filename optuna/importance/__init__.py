@@ -1,25 +1,28 @@
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Type
 
-from optuna._experimental import experimental
-from optuna.importance import _base
-from optuna.importance import _fanova
-from optuna.importance import _sklearn
+from optuna import _experimental
+from optuna.importance._base import BaseImportanceEvaluator
+from optuna.importance._fanova import FanovaImportanceEvaluator  # NOQA
+from optuna.importance._sklearn import PermutationImportanceEvaluator  # NOQA
+from optuna.importance._sklearn import RandomForestFeatureImportanceEvaluator
 from optuna.structs import TrialState
 from optuna.study import Study
 
 
-@experimental("1.2.0")
+@_experimental.experimental("1.2.0")
 def get_param_importance(
-        study: Study, evaluator: str = 'random_forest_feature_importance',
+        study: Study, evaluator: BaseImportanceEvaluator = None,
         params: Optional[List[str]] = None) -> Dict[str, float]:
     """Compute parameter importances based on an optimized study.
 
     Args:
         study:
             An optimized study.
+        evaluator:
+            Importance evaluator object. Defaults to
+            :class:`~optuna.importance._sklearn.RandomForestFeatureImportanceEvaluator`.
         params:
             Names of the parameters to evaluate.
 
@@ -31,22 +34,10 @@ def get_param_importance(
     if params is not None:
         raise NotImplementedError
 
-    trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
-    if len(trials) == 0:
-        raise ValueError('Cannot evaluate parameter importance without complete d trials.')
+    if not any(t for t in study.trials if t.state == TrialState.COMPLETE):
+        raise ValueError('Cannot evaluate parameter importances without completed trials.')
 
-    evaluator_cls = None  # type: Optional[Type[_base._BaseImportanceEvaluator]]
-    if evaluator == 'random_forest_feature_importance':
-        evaluator_cls = _sklearn._RandomForestFeatureImportance
-    elif evaluator == 'permutation_importance':
-        evaluator_cls = _sklearn._PermutationImportance
-    elif evaluator == 'fanova':
-        evaluator_cls = _fanova._Fanova
-    else:
-        # TODO(hvy): Make message more verbose.
-        raise ValueError('Unsupported evaluator {}.'.format(evaluator))
+    if evaluator is None:
+        evaluator = RandomForestFeatureImportanceEvaluator()
 
-    assert evaluator_cls is not None
-    evaltr = evaluator_cls()
-
-    return evaltr.get_param_importance(study)
+    return evaluator.get_param_importance(study)

@@ -1,9 +1,14 @@
 from collections import OrderedDict
-import typing
+from typing import Callable
+from typing import Type
 
 import pytest
 
 import optuna
+from optuna.importance import BaseImportanceEvaluator
+from optuna.importance import FanovaImportanceEvaluator
+from optuna.importance import PermutationImportanceEvaluator
+from optuna.importance import RandomForestFeatureImportanceEvaluator
 from optuna.importance import get_param_importance
 from optuna import samplers
 from optuna import storages
@@ -17,10 +22,15 @@ parametrize_storage = pytest.mark.parametrize(
 
 @parametrize_storage
 @pytest.mark.parametrize(
-    'evaluator', ['random_forest_feature_importance', 'permutation_importance', 'fanova'])
+    'evaluator_cls', [
+        RandomForestFeatureImportanceEvaluator,
+        PermutationImportanceEvaluator,
+        FanovaImportanceEvaluator,
+    ]
+)
 def test_get_param_importance(
-        storage_init_func: typing.Callable[[], storages.BaseStorage],
-        evaluator: str) -> None:
+        storage_init_func: Callable[[], storages.BaseStorage],
+        evaluator_cls: Type[BaseImportanceEvaluator]) -> None:
 
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_uniform('x1', 0.1, 3)
@@ -35,7 +45,7 @@ def test_get_param_importance(
     study = create_study(storage_init_func(), sampler=samplers.RandomSampler())
     study.optimize(objective, n_trials=10)
 
-    param_importance = get_param_importance(study)
+    param_importance = get_param_importance(study, evaluator=evaluator_cls())
 
     assert isinstance(param_importance, OrderedDict)
     assert len(param_importance) == 5

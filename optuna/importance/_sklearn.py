@@ -3,7 +3,7 @@ from typing import Dict
 
 import numpy as np
 
-from optuna.importance._base import _BaseImportanceEvaluator
+from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._base import _get_search_space
 from optuna.importance._base import _get_trial_data
 from optuna.study import Study
@@ -25,7 +25,7 @@ if _available:
         permutation_importance = None
 
 
-class _RandomForestFeatureImportance(_BaseImportanceEvaluator):
+class RandomForestFeatureImportanceEvaluator(BaseImportanceEvaluator):
 
     def get_param_importance(self, study: Study) -> Dict[str, float]:
         search_space = _get_search_space(study)
@@ -44,7 +44,7 @@ class _RandomForestFeatureImportance(_BaseImportanceEvaluator):
         return param_importances
 
 
-class _PermutationImportance(_BaseImportanceEvaluator):
+class PermutationImportanceEvaluator(BaseImportanceEvaluator):
 
     def get_param_importance(self, study: Study) -> Dict[str, float]:
         search_space = _get_search_space(study)

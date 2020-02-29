@@ -7,7 +7,7 @@ from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.importance._base import _BaseImportanceEvaluator
+from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._base import _get_search_space
 from optuna.importance._base import _get_trial_data
 from optuna.study import Study
@@ -84,18 +84,20 @@ def _get_evaluator(study: Study) -> fANOVA:
     return evaluator
 
 
-class _Fanova(_BaseImportanceEvaluator):
+class FanovaImportanceEvaluator(BaseImportanceEvaluator):
 
     def get_param_importance(self, study: Study) -> Dict[str, float]:
         _check_fanova_availability()
 
         evaluator = _get_evaluator(study)
 
-        param_importances = OrderedDict()
+        individual_importances = {}
         for i, name in enumerate(evaluator.cs.get_hyperparameter_names()):
             imp = evaluator.quantify_importance((i,))
             imp = imp[(i,)]['individual importance']
-            param_importances[name] = imp
+            individual_importances[name] = imp
+
+        param_importances = OrderedDict(sorted(individual_importances.items(), key=lambda x: x[1]))
 
         return param_importances
 

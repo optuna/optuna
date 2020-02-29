@@ -40,7 +40,7 @@ def _get_trial_data(
     return params, values
 
 
-class _BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
+class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
 
     # TODO(hvy): Rename to `get_param_importances`.
     @abc.abstractmethod
