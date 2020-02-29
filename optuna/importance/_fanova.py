@@ -30,6 +30,24 @@ except ImportError as e:
     _available = False
 
 
+class FanovaImportanceEvaluator(BaseImportanceEvaluator):
+
+    def get_param_importances(self, study: Study) -> Dict[str, float]:
+        _check_fanova_availability()
+
+        evaluator = _get_evaluator(study)
+
+        individual_importances = {}
+        for i, name in enumerate(evaluator.cs.get_hyperparameter_names()):
+            imp = evaluator.quantify_importance((i,))
+            imp = imp[(i,)]['individual importance']
+            individual_importances[name] = imp
+
+        param_importances = OrderedDict(sorted(individual_importances.items(), key=lambda x: x[1]))
+
+        return param_importances
+
+
 def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -> Hyperparameter:
     d = distribution
 
@@ -82,24 +100,6 @@ def _get_evaluator(study: Study) -> fANOVA:
     evaluator = fANOVA(X=params, Y=values, config_space=config_space, seed=0)
 
     return evaluator
-
-
-class FanovaImportanceEvaluator(BaseImportanceEvaluator):
-
-    def get_param_importances(self, study: Study) -> Dict[str, float]:
-        _check_fanova_availability()
-
-        evaluator = _get_evaluator(study)
-
-        individual_importances = {}
-        for i, name in enumerate(evaluator.cs.get_hyperparameter_names()):
-            imp = evaluator.quantify_importance((i,))
-            imp = imp[(i,)]['individual importance']
-            individual_importances[name] = imp
-
-        param_importances = OrderedDict(sorted(individual_importances.items(), key=lambda x: x[1]))
-
-        return param_importances
 
 
 def _check_fanova_availability():

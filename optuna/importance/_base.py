@@ -11,6 +11,13 @@ from optuna.structs import TrialState
 from optuna.study import Study
 
 
+class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def get_param_importances(self, study: Study) -> Dict[str, float]:
+        raise NotImplementedError
+
+
 def _get_search_space(study: Study) -> Dict[str, BaseDistribution]:
     return intersection_search_space(study, ordered_dict=True)
 
@@ -38,10 +45,3 @@ def _get_trial_data(
         values[i] = trial.value
 
     return params, values
-
-
-class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
-
-    @abc.abstractmethod
-    def get_param_importances(self, study: Study) -> Dict[str, float]:
-        raise NotImplementedError
