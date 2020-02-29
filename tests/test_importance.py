@@ -7,9 +7,9 @@ import pytest
 import optuna
 from optuna.importance import BaseImportanceEvaluator
 from optuna.importance import FanovaImportanceEvaluator
+from optuna.importance import get_param_importance
 from optuna.importance import PermutationImportanceEvaluator
 from optuna.importance import RandomForestFeatureImportanceEvaluator
-from optuna.importance import get_param_importance
 from optuna import samplers
 from optuna import storages
 from optuna.study import create_study

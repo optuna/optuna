@@ -3,9 +3,9 @@ from typing import Dict
 
 import numpy as np
 
-from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._base import _get_search_space
 from optuna.importance._base import _get_trial_data
+from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
 
 try:

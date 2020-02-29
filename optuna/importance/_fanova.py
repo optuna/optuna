@@ -7,9 +7,9 @@ from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._base import _get_search_space
 from optuna.importance._base import _get_trial_data
+from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
 
 try:
