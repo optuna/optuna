@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import optuna
 from optuna.samplers.base import BaseSampler  # NOQA
 from optuna.samplers.random import RandomSampler  # NOQA
@@ -10,8 +12,8 @@ if optuna.type_checking.TYPE_CHECKING:
     from optuna.study import BaseStudy  # NOQA
 
 
-def intersection_search_space(study):
-    # type: (BaseStudy) -> Dict[str, BaseDistribution]
+def intersection_search_space(study, ordered_dict=False):
+    # type: (BaseStudy, bool) -> Dict[str, BaseDistribution]
     """Return the intersection search space of the :class:`~optuna.study.BaseStudy`.
 
     Intersection search space contains the intersection of parameter distributions that have been
@@ -19,6 +21,8 @@ def intersection_search_space(study):
     If there are multiple parameters that have the same name but different distributions,
     neither is included in the resulting search space
     (i.e., the parameters with dynamic value ranges are excluded).
+
+    TODO(hvy): Document arguments.
 
     Returns:
         A dictionary containing the parameter names and parameter's distributions.
@@ -43,4 +47,9 @@ def intersection_search_space(study):
         for param_name in delete_list:
             del search_space[param_name]
 
-    return search_space or {}
+    search_space = search_space or {}
+
+    if ordered_dict:
+        search_space = OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
+
+    return search_space

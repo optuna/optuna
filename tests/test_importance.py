@@ -16,20 +16,24 @@ parametrize_storage = pytest.mark.parametrize(
 
 
 @parametrize_storage
+@pytest.mark.parametrize(
+    'evaluator', ['random_forest_feature_importance', 'permutation_importance', 'fanova'])
 def test_get_param_importance(
-        storage_init_func: typing.Callable[[], storages.BaseStorage]) -> None:
+        storage_init_func: typing.Callable[[], storages.BaseStorage],
+        evaluator: str) -> None:
 
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_uniform('x1', 0.1, 3)
         x2 = trial.suggest_loguniform('x2', 0.1, 3)
         x3 = trial.suggest_discrete_uniform('x3', 0, 3, 1)
         x4 = trial.suggest_int('x4', -3, 3)
-        x5 = trial.suggest_categorical('x5', [1, 1.1, 1.2])
+        x5 = trial.suggest_categorical('x5', [1.0, 1.1, 1.2])
+        assert isinstance(x5, float)
 
         return x1 ** 4 + x2 + x3 - x4 ** 2 - x5
 
     study = create_study(storage_init_func(), sampler=samplers.RandomSampler())
-    study.optimize(objective, n_trials=30)
+    study.optimize(objective, n_trials=10)
 
     param_importance = get_param_importance(study)
 

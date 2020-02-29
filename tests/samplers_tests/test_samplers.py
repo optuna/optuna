@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import pickle
 
 import numpy as np
@@ -235,11 +236,17 @@ def test_intersection_search_space():
     assert optuna.samplers.intersection_search_space(study) == {}
 
     # First trial.
-    study.optimize(lambda t: t.suggest_int('x', 0, 10) + t.suggest_uniform('y', -3, 3), n_trials=1)
+    study.optimize(lambda t: t.suggest_uniform('y', -3, 3) + t.suggest_int('x', 0, 10), n_trials=1)
     assert optuna.samplers.intersection_search_space(study) == {
         'x': IntUniformDistribution(low=0, high=10),
         'y': UniformDistribution(low=-3, high=3)
     }
+
+    # Returning sorted `OrderedDict` instead of `dict`.
+    assert optuna.samplers.intersection_search_space(study, ordered_dict=True) == OrderedDict([
+        ('x', IntUniformDistribution(low=0, high=10)),
+        ('y', UniformDistribution(low=-3, high=3)),
+    ])
 
     # Second trial (only 'y' parameter is suggested in this trial).
     study.optimize(lambda t: t.suggest_uniform('y', -3, 3), n_trials=1)
