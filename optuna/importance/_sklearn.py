@@ -74,7 +74,7 @@ def _transform_params_categorical_to_one_hot(
 
 class RandomForestFeatureImportanceEvaluator(BaseImportanceEvaluator):
 
-    def get_param_importance(self, study: Study) -> Dict[str, float]:
+    def get_param_importances(self, study: Study) -> Dict[str, float]:
         search_space = _get_search_space(study)
         params, values = _get_trial_data(study, search_space)
         params_transformed, transformed_cols_to_original_cols = (
@@ -99,7 +99,7 @@ class RandomForestFeatureImportanceEvaluator(BaseImportanceEvaluator):
 
 class PermutationImportanceEvaluator(BaseImportanceEvaluator):
 
-    def get_param_importance(self, study: Study) -> Dict[str, float]:
+    def get_param_importances(self, study: Study) -> Dict[str, float]:
         search_space = _get_search_space(study)
         params, values = _get_trial_data(study, search_space)
         params_transformed, transformed_cols_to_original_cols = (

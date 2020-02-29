@@ -42,7 +42,6 @@ def _get_trial_data(
 
 class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
 
-    # TODO(hvy): Rename to `get_param_importances`.
     @abc.abstractmethod
-    def get_param_importance(self, study: Study) -> Dict[str, float]:
+    def get_param_importances(self, study: Study) -> Dict[str, float]:
         raise NotImplementedError

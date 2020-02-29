@@ -12,7 +12,7 @@ from optuna.study import Study
 
 
 @_experimental.experimental("1.2.0")
-def get_param_importance(
+def get_param_importances(
         study: Study, evaluator: BaseImportanceEvaluator = None,
         params: Optional[List[str]] = None) -> Dict[str, float]:
     """Compute parameter importances based on an optimized study.
@@ -43,4 +43,4 @@ def get_param_importance(
     if not isinstance(evaluator, BaseImportanceEvaluator):
         raise TypeError('Evaluator must be a subclass of BaseImportanceEvaluator.')
 
-    return evaluator.get_param_importance(study)
+    return evaluator.get_param_importances(study)

@@ -86,7 +86,7 @@ def _get_evaluator(study: Study) -> fANOVA:
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
 
-    def get_param_importance(self, study: Study) -> Dict[str, float]:
+    def get_param_importances(self, study: Study) -> Dict[str, float]:
         _check_fanova_availability()
 
         evaluator = _get_evaluator(study)
