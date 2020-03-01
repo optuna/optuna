@@ -422,8 +422,9 @@ class _Optimizer(object):
             # v may slightly exceed range due to round-off errors.
             return float(min(max(v, dist.low), dist.high))
         if isinstance(dist, IntUniformDistribution):
-            v = numpy.round(cma_param_value / dist.q) * dist.q + dist.low
-            return int(min(max(v, dist.low), dist.high))
+            r = numpy.round((cma_param_value - dist.low) / dist.q)
+            v = r * dist.q + dist.low
+            return v
         if isinstance(dist, CategoricalDistribution):
             v = int(numpy.round(cma_param_value))
             return dist.choices[v]
