@@ -39,7 +39,7 @@ class NopPruner(BasePruner):
                     trial.report(intermediate_value, step)
 
                     if trial.should_prune():
-                        print("Never reach here")
+                        assert False, "should_prune() should always return False with this pruner."
                         raise optuna.exceptions.TrialPruned()
 
                 return clf.score(X_test, y_test)
