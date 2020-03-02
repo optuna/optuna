@@ -130,10 +130,11 @@ def _num_samples(x):
 
     # NOTE For dask dataframes
     # https://github.com/scikit-learn/scikit-learn/blob/ \
-    # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L155-L158
-    if hasattr(x, 'shape') and x.shape is not None:
-        if isinstance(x.shape[0], Integral):
-            return x.shape[0]
+    # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L155-L
+    x_shape = getattr(x, 'shape', None)
+    if x_shape is not None:
+        if isinstance(x_shape[0], Integral):
+            return int(x_shape[0])
 
     try:
         return len(x)
