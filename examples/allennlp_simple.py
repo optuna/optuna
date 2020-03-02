@@ -4,20 +4,19 @@ import allennlp
 import allennlp.data
 import allennlp.models
 import allennlp.modules
-import optuna
 import torch
 
+import optuna
 
-DEVICE = -1  # If you want to use GPU, use DEVICE = 0
 
-# Run tuning with small portion of data
-# to reduce computational time.
+DEVICE = -1  # If you want to use GPU, use DEVICE = 0.
+
+# Run tuning with small portion of data to reduce computational time.
 # https://github.com/optuna/optuna/pull/949#pullrequestreview-364110499
 MAX_DATA_SIZE = 3000
 
 GLOVE_FILE_PATH = (
-    'https://s3-us-west-2.amazonaws.com/'
-    'allennlp/datasets/glove/glove.6B.50d.txt.gz'
+    'https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.50d.txt.gz'
 )
 
 
@@ -30,8 +29,7 @@ def prepare_data():
     )
 
     reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
-        token_indexers={'tokens': glove_indexer},
-        tokenizer=tokenizer,
+        token_indexers={'tokens': glove_indexer}, tokenizer=tokenizer,
     )
     train_dataset = reader.read(
         'https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/train.jsonl'
@@ -47,7 +45,7 @@ def prepare_data():
     return train_dataset, valid_dataset, vocab
 
 
-def create_model(vocab, trial: optuna.Trial):
+def create_model(vocab, trial):
     embedding = allennlp.modules.Embedding(
         embedding_dim=50,
         trainable=True,
@@ -59,9 +57,9 @@ def create_model(vocab, trial: optuna.Trial):
         {'tokens': embedding}
     )
 
-    output_dim = trial.suggest_int('output_dim', 80, 120)
+    output_dim = trial.suggest_int('output_dim', 16, 128)
     max_filter_size = trial.suggest_int('max_filter_size', 3, 6)
-    num_filters = trial.suggest_int('num_filters', 64, 256)
+    num_filters = trial.suggest_int('num_filters', 16, 128)
     encoder = allennlp.modules.seq2vec_encoders.CnnEncoder(
         ngram_filter_sizes=range(1, max_filter_size),
         num_filters=num_filters,
@@ -77,15 +75,13 @@ def create_model(vocab, trial: optuna.Trial):
         vocab=vocab,
     )
 
-    print(output_dim, max_filter_size, num_filters, dropout)
     return model
 
 
-def objective(trial: optuna.Trial):
+def objective(trial):
     model = create_model(vocab, trial)
 
     if DEVICE > -1:
-        print(f'send model to GPU #{DEVICE}')
         model.cuda(DEVICE)
 
     lr = trial.suggest_loguniform('lr', 1e-1, 1e0)
@@ -115,7 +111,7 @@ if __name__ == '__main__':
     train_dataset, valid_dataset, vocab = prepare_data()
 
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=2)
+    study.optimize(objective, n_trials=80, timeout=600)
 
     print('Number of finished trials: ', len(study.trials))
     print('Best trial:')
