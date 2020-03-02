@@ -6,6 +6,7 @@ from numbers import Number
 from time import time
 
 import numpy as np
+import scipy as sp
 
 try:
     from sklearn.base import BaseEstimator
@@ -49,10 +50,12 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
     from typing import Union  # NOQA
 
-    ArrayLikeType = Union[List, np.ndarray, pd.Series]
+    ArrayLikeType = Union[List, np.ndarray, pd.Series, spmatrix]
     OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
     TwoDimArrayLikeType = \
         Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
+    IterableType = Union[List, pd.DataFrame, np.ndarray, pd.Series, spmatrix, None]
+    IndexableType = Union[Iterable, None]
 
 _logger = logging.get_logger(__name__)
 
@@ -117,8 +120,12 @@ def _is_arraylike(x):
 # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L217-L234
 # It removed the check if an input is scipy sparse matrix
 def _make_indexable(iterable):
-    # type: (Iterable) -> (Iterable)
-    if hasattr(iterable, "__getitem__") or hasattr(iterable, "iloc"):
+    # type: (IndexableType) -> (IterableType)
+
+    tocsr_func = getattr(iterable, "tocsr", None)
+    if tocsr_func is not None and sp.issparse(iterable):
+        return tocsr_func(iterable)
+    elif hasattr(iterable, "__getitem__") or hasattr(iterable, "iloc"):
         return iterable
     elif iterable is None:
         return iterable
