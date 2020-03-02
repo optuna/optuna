@@ -21,16 +21,17 @@ def plot_intermediate_values(study):
 
         The following code snippet shows how to plot intermediate values.
 
-        .. code::
+        .. testcode::
 
             import optuna
 
             def objective(trial):
-                # Intermediate values are supposed to be reported inside the objective function.
-                ...
+                x = trial.suggest_uniform('x', -100, 100)
+                y = trial.suggest_categorical('y', [-1, 0, 1])
+                return x ** 2 + y
 
             study = optuna.create_study()
-            study.optimize(objective, n_trials=100)
+            study.optimize(objective, n_trials=10)
 
             optuna.visualization.plot_intermediate_values(study)
 
