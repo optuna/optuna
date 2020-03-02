@@ -73,7 +73,6 @@ def get_extras_require():
             'sphinx_rtd_theme',
         ],
         'example': [
-            'allennlp',
             'catboost',
             'chainer',
             'lightgbm',
@@ -85,7 +84,7 @@ def get_extras_require():
             'torch',
             'torchvision>=0.5.0',
             'xgboost',
-        ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        ] + (['allennlp', 'fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + ([
             'dask[dataframe]',
             'dask-ml',

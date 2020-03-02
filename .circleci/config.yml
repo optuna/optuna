@@ -297,7 +297,7 @@ jobs:
           <<: *examples
           environment:
             OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_lightning_.*|tensorflow_.*|tfkeras_.*|fastai_.*
+            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_lightning_.*|tensorflow_.*|tfkeras_.*|fastai_.*|allennlp_.*
 
       - run: *examples-mn
 
@@ -323,6 +323,6 @@ jobs:
           <<: *examples
           environment:
             OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|pytorch_lightning.*|fastai_.*
+            IGNORES: chainermn_.*|pytorch_lightning.*|fastai_.*|allennlp_.*
 
       - run: *examples-mn
