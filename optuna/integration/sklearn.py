@@ -118,7 +118,6 @@ def _is_arraylike(x):
 # NOTE Original implementation:
 # https://github.com/scikit-learn/scikit-learn/blob/ \
 # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L217-L234
-# It removed the check if an input is scipy sparse matrix
 def _make_indexable(iterable):
     # type: (IndexableType) -> (IterableType)
 
