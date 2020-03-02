@@ -118,6 +118,7 @@ def _is_arraylike(x):
 # It removed the check if an input is scipy sparse matrix
 def _make_indexable(iterable):
     # type: (Iterable) -> (Iterable)
+
     if hasattr(iterable, "__getitem__") or hasattr(iterable, "iloc"):
         return iterable
     elif iterable is None:
