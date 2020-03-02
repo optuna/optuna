@@ -4,14 +4,14 @@ import allennlp
 import allennlp.data
 import allennlp.models
 import allennlp.modules
-import optuna
 import torch
+
+import optuna
 
 
 DEVICE = -1  # If you want to use GPU, use DEVICE = 0.
 
-# Run tuning with small portion of data
-# to reduce computational time.
+# Run tuning with small portion of data to reduce computational time.
 # https://github.com/optuna/optuna/pull/949#pullrequestreview-364110499
 MAX_DATA_SIZE = 3000
 
