@@ -13,6 +13,7 @@ from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import BaseStorage  # NOQA
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
+from optuna.storages import RedisStorage
 from optuna.structs import FrozenTrial
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
@@ -73,8 +74,9 @@ STORAGE_MODES = [
 
 # TODO(Yanase): Replace @parametrize_storage with StorageSupplier.
 parametrize_storage = pytest.mark.parametrize(
-    "storage_init_func", [InMemoryStorage, lambda: RDBStorage("sqlite:///:memory:")]
-)
+    'storage_init_func', [InMemoryStorage,
+                          lambda: RDBStorage('sqlite:///:memory:'),
+                          lambda: RedisStorage.init_with_flush("redis://localhost:6379/15")])
 
 
 def setup_module():

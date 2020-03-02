@@ -30,14 +30,15 @@ def get_long_description() -> str:
 def get_install_requires() -> List[str]:
 
     return [
-        "alembic",
-        "cliff",
-        "colorlog",
-        "joblib",
-        "numpy",
-        "scipy!=1.4.0",
-        "sqlalchemy>=1.1.0",
-        "tqdm",
+        'alembic',
+        'cliff',
+        'colorlog',
+        'joblib',
+        'numpy',
+        'redis',
+        'scipy!=1.4.0',
+        'sqlalchemy>=1.1.0',
+        'tqdm',
     ]
 
 
