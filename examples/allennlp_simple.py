@@ -57,9 +57,9 @@ def create_model(vocab, trial):
         {'tokens': embedding}
     )
 
-    output_dim = trial.suggest_int('output_dim', 80, 120)
+    output_dim = trial.suggest_int('output_dim', 16, 128)
     max_filter_size = trial.suggest_int('max_filter_size', 3, 6)
-    num_filters = trial.suggest_int('num_filters', 64, 256)
+    num_filters = trial.suggest_int('num_filters', 16, 128)
     encoder = allennlp.modules.seq2vec_encoders.CnnEncoder(
         ngram_filter_sizes=range(1, max_filter_size),
         num_filters=num_filters,
