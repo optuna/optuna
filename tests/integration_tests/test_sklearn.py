@@ -77,6 +77,12 @@ def test_optuna_search_properties():
     assert type(optuna_search.predict_log_proba(X)) == np.ndarray
     assert type(optuna_search.predict_proba(X)) == np.ndarray
 
+
+@pytest.mark.filterwarnings('ignore::UserWarning')
+def test_optuna_search_score_samples():
+    # type: () -> None
+
+    X, y = make_blobs(n_samples=10)
     est = KernelDensity()
     optuna_search = integration.OptunaSearchCV(
         est,
@@ -89,6 +95,12 @@ def test_optuna_search_properties():
     optuna_search.fit(X)
     assert optuna_search.score_samples(X) is not None
 
+
+@pytest.mark.filterwarnings('ignore::UserWarning')
+def test_optuna_search_transforms():
+    # type: () -> None
+
+    X, y = make_blobs(n_samples=10)
     est = PCA()
     optuna_search = integration.OptunaSearchCV(
         est,
@@ -257,7 +269,7 @@ def test_optuna_search_subsample():
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
-def test_objective_exceptions():
+def test_objective_y_None():
     # type: () -> None
 
     X, y = make_blobs(n_samples=10)
@@ -276,9 +288,14 @@ def test_objective_exceptions():
     with pytest.raises(ValueError, match='y cannot be None'):
         optuna_search.fit(X)
 
+
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+def test_objective_error_score_nan():
+    # type: () -> None
+
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
-    param_dist = {}
+    param_dist = {}  # type: ignore
     optuna_search = integration.OptunaSearchCV(
         est,
         param_dist,
@@ -293,9 +310,14 @@ def test_objective_exceptions():
     with pytest.raises(ValueError, match='y cannot be None'):
         optuna_search.fit(X)
 
+
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+def test_objective_error_score_invalid():
+    # type: () -> None
+
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
-    param_dist = {}
+    param_dist = {}  # type: ignore
     optuna_search = integration.OptunaSearchCV(
         est,
         param_dist,
