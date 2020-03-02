@@ -122,7 +122,7 @@ def _make_indexable(iterable):
     # type: (IndexableType) -> (IterableType)
 
     tocsr_func = getattr(iterable, "tocsr", None)
-    if tocsr_func is not None and sp.issparse(iterable):
+    if tocsr_func is not None and sp.sparse.issparse(iterable):
         return tocsr_func(iterable)
     elif hasattr(iterable, "__getitem__") or hasattr(iterable, "iloc"):
         return iterable
