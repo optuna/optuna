@@ -145,7 +145,7 @@ def _num_samples(x):
     try:
         return len(x)
     except TypeError:
-        raise TypeError('Expected sequence or array-like, got %s' % type(x))
+        raise TypeError('Expected sequence or array-like, got %s.' % type(x))
 
 
 def _safe_indexing(
