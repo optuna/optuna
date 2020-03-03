@@ -15,14 +15,39 @@ class ThresholdPruner(BasePruner):
     falls behind lower bound threshold.
 
     Example:
+        .. testcode::
 
-        .. code::
+            from optuna import create_study
+            from optuna.exceptions import TrialPruned
+            from optuna.pruners import ThresholdPruner
 
-            >>> from optuna import create_study
-            >>> from optuna.pruners import ThresholdPruner
-            >>>
-            >>> study = create_study(pruner=ThresholdPruner(upper=500))
-            >>> study.optimize(objective)
+
+            def objective_1(trial):
+                for step in range(n_trial_step):
+                    trial.report(ys_for_upper[step], step)
+
+                    if trial.should_prune():
+                        raise TrialPruned()
+
+
+            def objective_2(trial):
+                for step in range(n_trial_step):
+                    trial.report(ys_for_lower[step], step)
+
+                    if trial.should_prune():
+                        raise TrialPruned()
+
+
+            ys_for_upper = [0.0, 0.1, 0.2, 0.5, 1.2]
+            ys_for_lower = [100.0, 90.0, 0.1, 0.0, -1]
+            n_trial_step = 5
+
+            study = create_study(pruner=ThresholdPruner(upper=1.0))
+            study.optimize(objective_1, n_trials=10)
+
+            study = create_study(pruner=ThresholdPruner(lower=0.0))
+            study.optimize(objective_2, n_trials=10)
+
 
     Args
         lower:
