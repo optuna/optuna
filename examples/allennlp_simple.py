@@ -1,4 +1,5 @@
-import uuid
+import os
+import shutil
 
 import allennlp
 import allennlp.data
@@ -11,6 +12,9 @@ import optuna
 
 DEVICE = -1  # If you want to use GPU, use DEVICE = 0.
 MAX_DATA_SIZE = 3000
+
+DIR = os.getcwd()
+MODEL_DIR = os.path.join(DIR, 'result')
 
 GLOVE_FILE_PATH = (
     'https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.50d.txt.gz'
@@ -89,6 +93,7 @@ def objective(trial):
     )
     iterator.index_with(vocab)
 
+    serialization_dir = os.path.join(MODEL_DIR, 'trial_{}'.format(trial.number))
     trainer = allennlp.training.Trainer(
         model=model,
         optimizer=optimizer,
@@ -98,7 +103,7 @@ def objective(trial):
         patience=3,
         num_epochs=6,
         cuda_device=DEVICE,
-        serialization_dir=f'/tmp/xx/{uuid.uuid1()}',
+        serialization_dir=serialization_dir,
     )
     metrics = trainer.train()
     return metrics['best_validation_accuracy']
@@ -118,3 +123,5 @@ if __name__ == '__main__':
     print('  Params: ')
     for key, value in trial.params.items():
         print('    {}: {}'.format(key, value))
+
+    shutil.rmtree(MODEL_DIR)
