@@ -136,7 +136,7 @@ def _num_samples(x):
 
     # NOTE For dask dataframes
     # https://github.com/scikit-learn/scikit-learn/blob/ \
-    # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L155-L
+    # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L155-L158
     x_shape = getattr(x, 'shape', None)
     if x_shape is not None:
         if isinstance(x_shape[0], Integral):
