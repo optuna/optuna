@@ -119,7 +119,7 @@ def _is_arraylike(x):
 # https://github.com/scikit-learn/scikit-learn/blob/ \
 # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L217-L234
 def _make_indexable(iterable):
-    # type: (IndexableType) -> (IterableType)
+    # type: (IterableType) -> (IndexableType)
 
     tocsr_func = getattr(iterable, "tocsr", None)
     if tocsr_func is not None and sp.sparse.issparse(iterable):
