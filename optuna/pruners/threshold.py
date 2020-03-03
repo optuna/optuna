@@ -26,20 +26,20 @@ class ThresholdPruner(BasePruner):
             >>> study.optimize(objective)
 
     Args
-        lower_bound:
+        lower:
             minimum value which determines whether pruner prunes or not
-            (If value is smaller than lower_bound, it prunes)
-        upper_bound:
+            (If value is smaller than lower, it prunes)
+        upper:
             maximum value which determines whether pruner prunes or not
-            (If value is larger than upper_bound, it prunes)
+            (If value is larger than upper, it prunes)
 
     """
 
-    def __init__(self, lower_bound=None, upper_bound=None):
+    def __init__(self, lower=None, upper=None):
         # type: (Optional[float], Optional[float]) -> None
 
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
+        self.lower = lower
+        self.upper = upper
 
     def prune(self, study, trial):
         # type: (Study, FrozenTrial) -> bool
@@ -50,10 +50,10 @@ class ThresholdPruner(BasePruner):
 
         latest_value = trial.intermediate_values[last_step]
 
-        if self.lower_bound is not None and latest_value < self.lower_bound:
+        if self.lower is not None and latest_value < self.lower:
             return True
 
-        if self.upper_bound is not None and latest_value > self.upper_bound:
+        if self.upper is not None and latest_value > self.upper:
             return True
 
         return False
