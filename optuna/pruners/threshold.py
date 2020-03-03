@@ -1,5 +1,4 @@
 from optuna.pruners import BasePruner
-
 from optuna.type_checking import TYPE_CHECKING
 
 if TYPE_CHECKING:
