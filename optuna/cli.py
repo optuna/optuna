@@ -70,9 +70,9 @@ class _CreateStudy(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
-        storage = optuna.storages.RDBStorage(storage_url)
+        storage = optuna.storages.get_storage(storage_url)
         study_name = optuna.create_study(
-            storage,
+            storage=storage,
             study_name=parsed_args.study_name,
             direction=parsed_args.direction,
             load_if_exists=parsed_args.skip_if_exists,
@@ -96,7 +96,7 @@ class _DeleteStudy(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
-        storage = optuna.storages.RDBStorage(storage_url)
+        storage = optuna.storages.get_storage(storage_url)
         study_id = storage.get_study_id_from_name(parsed_args.study_name)
         storage.delete_study(study_id)
 
@@ -264,6 +264,9 @@ class _StorageUpgrade(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
+        if storage_url.startswith("redis"):
+            self.logger.info("This storage does not support upgrade yet.")
+            return
         storage = RDBStorage(storage_url, skip_compatibility_check=True)
         current_version = storage.get_current_version()
         head_version = storage.get_head_version()

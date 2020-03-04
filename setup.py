@@ -30,15 +30,14 @@ def get_long_description() -> str:
 def get_install_requires() -> List[str]:
 
     return [
-        'alembic',
-        'cliff',
-        'colorlog',
-        'joblib',
-        'numpy',
-        'redis',
-        'scipy!=1.4.0',
-        'sqlalchemy>=1.1.0',
-        'tqdm',
+        "alembic",
+        "cliff",
+        "colorlog",
+        "joblib",
+        "numpy",
+        "scipy!=1.4.0",
+        "sqlalchemy>=1.1.0",
+        "tqdm",
     ]
 
 
@@ -83,12 +82,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             if sys.version_info[:2] < (3, 8)
             else []
         ),
+        "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
             "bokeh<2.0.0",
             "chainer>=5.0.0",
             "cma",
+            "fakeredis",
             "fanova",
             "lightgbm",
             "mock",

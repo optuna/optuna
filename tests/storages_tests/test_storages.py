@@ -1,6 +1,7 @@
 import copy
 from datetime import datetime
 
+import fakeredis
 from mock import patch
 import pytest
 
@@ -72,11 +73,21 @@ STORAGE_MODES = [
     "common",  # We use a sqlite DB file for the whole experiments.
 ]
 
+
+def redis_with_flushdb():
+    # type: () -> BaseStorage
+
+    # the redis url is not going to be used, but it has to be valid
+    storage = RedisStorage("redis://localhost")
+    storage.redis = fakeredis.FakeStrictRedis()
+    return storage
+
+
 # TODO(Yanase): Replace @parametrize_storage with StorageSupplier.
 parametrize_storage = pytest.mark.parametrize(
-    'storage_init_func', [InMemoryStorage,
-                          lambda: RDBStorage('sqlite:///:memory:'),
-                          lambda: RedisStorage.init_with_flush("redis://localhost:6379/15")])
+    "storage_init_func",
+    [InMemoryStorage, lambda: RDBStorage("sqlite:///:memory:"), redis_with_flushdb],
+)
 
 
 def setup_module():
