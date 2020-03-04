@@ -80,6 +80,12 @@ def _get_parallel_coordinate_plot(study, params=None):
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
+    labelangle = None
+    for p_name in sorted_params:
+        if len(p_name) > 10:
+            labelangle = 30
+            break
+
     dims = [{
         'label': 'Objective Value',
         'values': tuple([t.value for t in trials]),
@@ -98,7 +104,7 @@ def _get_parallel_coordinate_plot(study, params=None):
             values = [vocab[v] for v in values]
             is_categorical = True
         dim = {
-            'label': p_name,
+            'label': p_name if len(p_name) < 20 else p_name[:17] + '...',
             'values': tuple(values),
             'range': (min(values), max(values))
         }
@@ -110,6 +116,7 @@ def _get_parallel_coordinate_plot(study, params=None):
     traces = [
         go.Parcoords(
             dimensions=dims,
+            labelangle=labelangle,
             line={
                 'color': dims[0]['values'],
                 'colorscale': 'blues',
