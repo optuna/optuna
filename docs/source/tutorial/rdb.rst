@@ -59,7 +59,7 @@ For example, we can get all trials of ``example-study`` as:
 
 The method :func:`~optuna.study.Study.trials_dataframe` returns a pandas dataframe like:
 
-.. code-block:: bash
+.. code-block:: console
 
     number       value  params_x     state
          0   25.301959 -3.030105  COMPLETE
@@ -71,7 +71,7 @@ The method :func:`~optuna.study.Study.trials_dataframe` returns a pandas datafra
 
 A :class:`~optuna.study.Study` object also provides properties such as :attr:`~optuna.study.Study.trials`, :attr:`~optuna.study.Study.best_value`, :attr:`~optuna.study.Study.best_params` (see also :ref:`firstopt`).
 
-.. code-block:: bash
+.. code-block:: python
 
     study.best_params  # Get best parameters for the objective function.
     study.best_value  # Get best objective value.
