@@ -3,8 +3,6 @@ from typing import Optional
 
 from optuna.pruners import BasePruner
 from optuna.pruners.percentile import _is_first_in_interval_step
-from optuna import structs
-from optuna.structs import FrozenTrial
 
 import optuna
 
@@ -72,16 +70,12 @@ class ThresholdPruner(BasePruner):
             self,
             lower: Optional[float] = None,
             upper: Optional[float] = None,
-            n_startup_trials: int = 5,
             n_warmup_steps: int = 0,
             interval_steps: int = 1
     ) -> None:
 
         if isinstance(lower, float) and isinstance(upper, float) and lower > upper:
             raise ValueError('lower should be smaller than upper')
-        if n_startup_trials < 0:
-            raise ValueError(
-                'Number of startup trials cannot be negative but got {}.'.format(n_startup_trials))
         if n_warmup_steps < 0:
             raise ValueError(
                 'Number of warmup steps cannot be negative but got {}.'.format(n_warmup_steps))
@@ -91,17 +85,10 @@ class ThresholdPruner(BasePruner):
 
         self.lower = lower
         self.upper = upper
-        self._n_startup_trials = n_startup_trials
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
 
-    def prune(self, study: 'optuna.study.Study', trial: FrozenTrial) -> bool:
-
-        all_trials = study.get_trials(deepcopy=False)
-        n_trials = len([t for t in all_trials if t.state == structs.TrialState.COMPLETE])
-
-        if n_trials < self._n_startup_trials:
-            return False
+    def prune(self, study: 'optuna.study.Study', trial: optuna.structs.FrozenTrial) -> bool:
 
         step = trial.last_step
         if step is None:

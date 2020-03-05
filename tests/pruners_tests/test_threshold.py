@@ -5,8 +5,7 @@ def test_threshold_pruner_with_ub() -> None:
 
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    pruner = optuna.pruners.ThresholdPruner(
-        upper=2, n_startup_trials=0, n_warmup_steps=0, interval_steps=1)
+    pruner = optuna.pruners.ThresholdPruner(upper=2, n_warmup_steps=0, interval_steps=1)
 
     trial.report(1, 1)
     assert not pruner.prune(
@@ -21,8 +20,7 @@ def test_threshold_pruner_with_lt() -> None:
 
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    pruner = optuna.pruners.ThresholdPruner(
-        lower=2, n_startup_trials=0, n_warmup_steps=0, interval_steps=1)
+    pruner = optuna.pruners.ThresholdPruner(lower=2, n_warmup_steps=0, interval_steps=1)
 
     trial.report(3, 1)
     assert not pruner.prune(
@@ -37,8 +35,7 @@ def test_threshold_pruner_with_two_side() -> None:
 
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    pruner = optuna.pruners.ThresholdPruner(
-        lower=0, upper=1, n_startup_trials=0, n_warmup_steps=0, interval_steps=1)
+    pruner = optuna.pruners.ThresholdPruner(lower=0, upper=1, n_warmup_steps=0, interval_steps=1)
 
     trial.report(-0.1, 1)
     assert pruner.prune(
