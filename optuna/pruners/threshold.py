@@ -59,11 +59,31 @@ class ThresholdPruner(BasePruner):
 
     """
 
-    def __init__(self, lower=None, upper=None):
-        # type: (Optional[float], Optional[float]) -> None
+    def __init__(
+            self,
+            lower=None,
+            upper=None,
+            n_startup_trials=5,
+            n_warmup_steps=0,
+            interval_steps=1
+    ):
+        # type: (Optional[float], Optional[float], int, int, int) -> None
+
+        if n_startup_trials < 0:
+            raise ValueError(
+                'Number of startup trials cannot be negative but got {}.'.format(n_startup_trials))
+        if n_warmup_steps < 0:
+            raise ValueError(
+                'Number of warmup steps cannot be negative but got {}.'.format(n_warmup_steps))
+        if interval_steps < 1:
+            raise ValueError(
+                'Pruning interval steps must be at least 1 but got {}.'.format(interval_steps))
 
         self.lower = lower
         self.upper = upper
+        self._n_startup_trials = n_startup_trials
+        self._n_warmup_steps = n_warmup_steps
+        self._interval_steps = interval_steps
 
     def prune(self, study, trial):
         # type: (Study, FrozenTrial) -> bool
