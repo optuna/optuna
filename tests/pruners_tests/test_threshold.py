@@ -1,13 +1,7 @@
 import optuna
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Tuple  # NOQA
 
 
-def test_threshold_pruner_with_ub():
-    # type: () -> None
+def test_threshold_pruner_with_ub() -> None:
 
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
@@ -23,8 +17,7 @@ def test_threshold_pruner_with_ub():
         study=study, trial=study._storage.get_trial(trial._trial_id))
 
 
-def test_threshold_pruner_with_lt():
-    # type: () -> None
+def test_threshold_pruner_with_lt() -> None:
 
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
@@ -40,8 +33,7 @@ def test_threshold_pruner_with_lt():
         study=study, trial=study._storage.get_trial(trial._trial_id))
 
 
-def test_threshold_pruner_with_two_side():
-    # type: () -> None
+def test_threshold_pruner_with_two_side() -> None:
 
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))

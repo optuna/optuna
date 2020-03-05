@@ -1,15 +1,11 @@
 import math
+from typing import Optional
 
 from optuna.pruners import BasePruner
 from optuna.pruners.percentile import _is_first_in_interval_step
 from optuna import structs
-from optuna.type_checking import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing import Optional
-
-    from optuna.structs import FrozenTrial
-    from optuna.study import Study
+from optuna.structs import FrozenTrial
+from optuna import Study
 
 
 class ThresholdPruner(BasePruner):
@@ -73,13 +69,12 @@ class ThresholdPruner(BasePruner):
 
     def __init__(
             self,
-            lower=None,
-            upper=None,
-            n_startup_trials=5,
-            n_warmup_steps=0,
-            interval_steps=1
-    ):
-        # type: (Optional[float], Optional[float], int, int, int) -> None
+            lower: Optional[float] = None,
+            upper: Optional[float] = None,
+            n_startup_trials: int = 5,
+            n_warmup_steps: int = 0,
+            interval_steps: int = 1
+    ) -> None:
 
         if isinstance(lower, float) and isinstance(upper, float) and lower > upper:
             raise ValueError('lower should be smaller than upper')
@@ -99,8 +94,7 @@ class ThresholdPruner(BasePruner):
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
 
-    def prune(self, study, trial):
-        # type: (Study, FrozenTrial) -> bool
+    def prune(self, study: Study, trial: FrozenTrial) -> bool:
 
         all_trials = study.get_trials(deepcopy=False)
         n_trials = len([t for t in all_trials if t.state == structs.TrialState.COMPLETE])
