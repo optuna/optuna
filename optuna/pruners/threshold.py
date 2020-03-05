@@ -1,4 +1,8 @@
+import math
+
 from optuna.pruners import BasePruner
+from optuna.pruners.percentile import _is_first_in_interval_step
+from optuna import structs
 from optuna.type_checking import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -88,11 +92,28 @@ class ThresholdPruner(BasePruner):
     def prune(self, study, trial):
         # type: (Study, FrozenTrial) -> bool
 
-        last_step = trial.last_step
-        if last_step is None:
+        all_trials = study.get_trials(deepcopy=False)
+        n_trials = len([t for t in all_trials if t.state == structs.TrialState.COMPLETE])
+
+        if n_trials < self._n_startup_trials:
             return False
 
-        latest_value = trial.intermediate_values[last_step]
+        step = trial.last_step
+        if step is None:
+            return False
+
+        n_warmup_steps = self._n_warmup_steps
+        if step <= n_warmup_steps:
+            return False
+
+        if not _is_first_in_interval_step(
+            step, trial.intermediate_values.keys(), n_warmup_steps,
+                self._interval_steps):
+            return False
+
+        latest_value = trial.intermediate_values[step]
+        if math.isnan(latest_value):
+            return True
 
         if self.lower is not None and latest_value < self.lower:
             return True
