@@ -81,6 +81,8 @@ class ThresholdPruner(BasePruner):
     ):
         # type: (Optional[float], Optional[float], int, int, int) -> None
 
+        if isinstance(lower, float) and isinstance(upper, float) and lower > upper:
+            raise ValueError('lower should be smaller than upper')
         if n_startup_trials < 0:
             raise ValueError(
                 'Number of startup trials cannot be negative but got {}.'.format(n_startup_trials))
