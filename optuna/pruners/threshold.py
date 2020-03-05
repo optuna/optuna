@@ -5,7 +5,8 @@ from optuna.pruners import BasePruner
 from optuna.pruners.percentile import _is_first_in_interval_step
 from optuna import structs
 from optuna.structs import FrozenTrial
-from optuna import Study
+
+import optuna
 
 
 class ThresholdPruner(BasePruner):
@@ -94,7 +95,7 @@ class ThresholdPruner(BasePruner):
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
 
-    def prune(self, study: Study, trial: FrozenTrial) -> bool:
+    def prune(self, study: 'optuna.study.Study', trial: FrozenTrial) -> bool:
 
         all_trials = study.get_trials(deepcopy=False)
         n_trials = len([t for t in all_trials if t.state == structs.TrialState.COMPLETE])
