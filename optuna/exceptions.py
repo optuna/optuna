@@ -79,6 +79,16 @@ class DuplicatedStudyError(OptunaError):
     pass
 
 
+class StopStudy(OptunaError):
+    """Exception for stopping a study, once a threshold is achieved.
+
+    This error is raised when a study achieves the same or better value of objective function
+    as threshold.
+    """
+
+    pass
+
+
 class ExperimentalWarning(Warning):
     """Experimental Warning class.
 
