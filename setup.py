@@ -5,9 +5,9 @@ import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
 
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
+from typing import Dict
+from typing import List
+from typing import Optional
 
 
 def get_version() -> str:
