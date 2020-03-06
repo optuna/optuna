@@ -54,6 +54,6 @@ def test_plot_intermediate_values():
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_intermediate_values(study)
     assert not figure.data

@@ -27,8 +27,7 @@ def _check_storage_url(storage_url):
     # type: (Optional[str]) -> str
 
     if storage_url is None:
-        raise CLIUsageError(
-            'Storage URL is not specified.')
+        raise CLIUsageError("Storage URL is not specified.")
     return storage_url
 
 
@@ -46,22 +45,25 @@ class _CreateStudy(_BaseCommand):
 
         parser = super(_CreateStudy, self).get_parser(prog_name)
         parser.add_argument(
-            '--study-name',
+            "--study-name",
             default=None,
-            help='A human-readable name of a study to distinguish it from others.')
+            help="A human-readable name of a study to distinguish it from others.",
+        )
         parser.add_argument(
-            '--direction',
+            "--direction",
             type=str,
-            choices=('minimize', 'maximize'),
-            default='minimize',
-            help='Set direction of optimization to a new study. Set \'minimize\' '
-            'for minimization and \'maximize\' for maximization.')
+            choices=("minimize", "maximize"),
+            default="minimize",
+            help="Set direction of optimization to a new study. Set 'minimize' "
+            "for minimization and 'maximize' for maximization.",
+        )
         parser.add_argument(
-            '--skip-if-exists',
+            "--skip-if-exists",
             default=False,
-            action='store_true',
-            help='If specified, the creation of the study is skipped '
-            'without any error when the study name is duplicated.')
+            action="store_true",
+            help="If specified, the creation of the study is skipped "
+            "without any error when the study name is duplicated.",
+        )
         return parser
 
     def take_action(self, parsed_args):
@@ -73,7 +75,8 @@ class _CreateStudy(_BaseCommand):
             storage,
             study_name=parsed_args.study_name,
             direction=parsed_args.direction,
-            load_if_exists=parsed_args.skip_if_exists).study_name
+            load_if_exists=parsed_args.skip_if_exists,
+        ).study_name
         print(study_name)
 
 
@@ -83,9 +86,10 @@ class _DeleteStudy(_BaseCommand):
 
         parser = super(_DeleteStudy, self).get_parser(prog_name)
         parser.add_argument(
-            '--study-name',
+            "--study-name",
             default=None,
-            help='A human-readable name of a study to distinguish it from others.')
+            help="A human-readable name of a study to distinguish it from others.",
+        )
         return parser
 
     def take_action(self, parsed_args):
@@ -102,9 +106,9 @@ class _StudySetUserAttribute(_BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(_StudySetUserAttribute, self).get_parser(prog_name)
-        parser.add_argument('--study', required=True, help='Study name.')
-        parser.add_argument('--key', '-k', required=True, help='Key of the user attribute.')
-        parser.add_argument('--value', '-v', required=True, help='Value to be set.')
+        parser.add_argument("--study", required=True, help="Study name.")
+        parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
+        parser.add_argument("--value", "-v", required=True, help="Value to be set.")
         return parser
 
     def take_action(self, parsed_args):
@@ -114,13 +118,13 @@ class _StudySetUserAttribute(_BaseCommand):
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
-        self.logger.info('Attribute successfully written.')
+        self.logger.info("Attribute successfully written.")
 
 
 class _Studies(Lister):
 
-    _datetime_format = '%Y-%m-%d %H:%M:%S'
-    _study_list_header = ('NAME', 'DIRECTION', 'N_TRIALS', 'DATETIME_START')
+    _datetime_format = "%Y-%m-%d %H:%M:%S"
+    _study_list_header = ("NAME", "DIRECTION", "N_TRIALS", "DATETIME_START")
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
@@ -136,8 +140,11 @@ class _Studies(Lister):
 
         rows = []
         for s in summaries:
-            start = s.datetime_start.strftime(self._datetime_format) \
-                if s.datetime_start is not None else None
+            start = (
+                s.datetime_start.strftime(self._datetime_format)
+                if s.datetime_start is not None
+                else None
+            )
             row = (s.study_name, s.direction.name, s.n_trials, start)
             rows.append(row)
 
@@ -149,23 +156,25 @@ class _Dashboard(_BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(_Dashboard, self).get_parser(prog_name)
-        parser.add_argument('--study', required=True, help='Study name.')
+        parser.add_argument("--study", required=True, help="Study name.")
         parser.add_argument(
-            '--out',
-            '-o',
-            help='Output HTML file path. If it is not given, a HTTP server starts '
-            'and the dashboard is served.')
+            "--out",
+            "-o",
+            help="Output HTML file path. If it is not given, a HTTP server starts "
+            "and the dashboard is served.",
+        )
         parser.add_argument(
-            '--allow-websocket-origin',
-            dest='bokeh_allow_websocket_origins',
-            action='append',
+            "--allow-websocket-origin",
+            dest="bokeh_allow_websocket_origins",
+            action="append",
             default=[],
-            help='Allow websocket access from the specified host(s).'
-            'Internally, it is used as the value of bokeh\'s '
-            '--allow-websocket-origin option. Please refer to '
-            'https://bokeh.pydata.org/en/latest/docs/'
-            'reference/command/subcommands/serve.html '
-            'for more details.')
+            help="Allow websocket access from the specified host(s)."
+            "Internally, it is used as the value of bokeh's "
+            "--allow-websocket-origin option. Please refer to "
+            "https://bokeh.pydata.org/en/latest/docs/"
+            "reference/command/subcommands/serve.html "
+            "for more details.",
+        )
         return parser
 
     def take_action(self, parsed_args):
@@ -178,7 +187,7 @@ class _Dashboard(_BaseCommand):
             optuna.dashboard._serve(study, parsed_args.bokeh_allow_websocket_origins)
         else:
             optuna.dashboard._write(study, parsed_args.out)
-            self.logger.info('Report successfully written to: {}'.format(parsed_args.out))
+            self.logger.info("Report successfully written to: {}".format(parsed_args.out))
 
 
 class _StudyOptimize(_BaseCommand):
@@ -187,25 +196,29 @@ class _StudyOptimize(_BaseCommand):
 
         parser = super(_StudyOptimize, self).get_parser(prog_name)
         parser.add_argument(
-            '--n-trials',
+            "--n-trials",
             type=int,
-            help='The number of trials. If this argument is not given, as many '
-            'trials run as possible.')
+            help="The number of trials. If this argument is not given, as many "
+            "trials run as possible.",
+        )
         parser.add_argument(
-            '--timeout',
+            "--timeout",
             type=float,
-            help='Stop study after the given number of second(s). If this argument'
-            ' is not given, as many trials run as possible.')
+            help="Stop study after the given number of second(s). If this argument"
+            " is not given, as many trials run as possible.",
+        )
         parser.add_argument(
-            '--n-jobs',
+            "--n-jobs",
             type=int,
             default=1,
-            help='The number of parallel jobs. If this argument is set to -1, the '
-            'number is set to CPU counts.')
-        parser.add_argument('--study', required=True, help='Study name.')
+            help="The number of parallel jobs. If this argument is set to -1, the "
+            "number is set to CPU counts.",
+        )
+        parser.add_argument("--study", required=True, help="Study name.")
         parser.add_argument(
-            'file', help='Python script file where the objective function resides.')
-        parser.add_argument('method', help='The method name of the objective function.')
+            "file", help="Python script file where the objective function resides."
+        )
+        parser.add_argument("method", help="The method name of the objective function.")
         return parser
 
     def take_action(self, parsed_args):
@@ -218,7 +231,7 @@ class _StudyOptimize(_BaseCommand):
         # exception stack traces by default.
         self.app.options.debug = True
 
-        module_name = 'optuna_target_module'
+        module_name = "optuna_target_module"
         target_module = types.ModuleType(module_name)
         loader = SourceFileLoader(module_name, parsed_args.file)
         loader.exec_module(target_module)
@@ -226,15 +239,17 @@ class _StudyOptimize(_BaseCommand):
         try:
             target_method = getattr(target_module, parsed_args.method)
         except AttributeError:
-            self.logger.error('Method {} not found in file {}.'.format(
-                parsed_args.method, parsed_args.file))
+            self.logger.error(
+                "Method {} not found in file {}.".format(parsed_args.method, parsed_args.file)
+            )
             return 1
 
         study.optimize(
             target_method,
             n_trials=parsed_args.n_trials,
             timeout=parsed_args.timeout,
-            n_jobs=parsed_args.n_jobs)
+            n_jobs=parsed_args.n_jobs,
+        )
         return 0
 
 
@@ -254,25 +269,27 @@ class _StorageUpgrade(_BaseCommand):
         head_version = storage.get_head_version()
         known_versions = storage.get_all_versions()
         if current_version == head_version:
-            self.logger.info('This storage is up-to-date.')
+            self.logger.info("This storage is up-to-date.")
         elif current_version in known_versions:
-            self.logger.info('Upgrading the storage schema to the latest version.')
+            self.logger.info("Upgrading the storage schema to the latest version.")
             storage.upgrade()
             self.logger.info("Completed to upgrade the storage.")
         else:
-            self.logger.warning('Your optuna version seems outdated against the storage version. '
-                                'Please try updating optuna to the latest version by '
-                                '`$ pip install -U optuna`.')
+            self.logger.warning(
+                "Your optuna version seems outdated against the storage version. "
+                "Please try updating optuna to the latest version by "
+                "`$ pip install -U optuna`."
+            )
 
 
 _COMMANDS = {
-    'create-study': _CreateStudy,
-    'delete-study': _DeleteStudy,
-    'study set-user-attr': _StudySetUserAttribute,
-    'studies': _Studies,
-    'dashboard': _Dashboard,
-    'study optimize': _StudyOptimize,
-    'storage upgrade': _StorageUpgrade,
+    "create-study": _CreateStudy,
+    "delete-study": _DeleteStudy,
+    "study set-user-attr": _StudySetUserAttribute,
+    "studies": _Studies,
+    "dashboard": _Dashboard,
+    "study optimize": _StudyOptimize,
+    "storage upgrade": _StorageUpgrade,
 }
 
 
@@ -280,9 +297,10 @@ class _OptunaApp(App):
     def __init__(self):
         # type: () -> None
 
-        command_manager = CommandManager('optuna.command')
+        command_manager = CommandManager("optuna.command")
         super(_OptunaApp, self).__init__(
-            description='', version=optuna.__version__, command_manager=command_manager)
+            description="", version=optuna.__version__, command_manager=command_manager
+        )
         for name, cls in _COMMANDS.items():
             command_manager.add_command(name, cls)
 
@@ -290,7 +308,7 @@ class _OptunaApp(App):
         # type: (str, str, Optional[Dict]) -> ArgumentParser
 
         parser = super(_OptunaApp, self).build_option_parser(description, version, argparse_kwargs)
-        parser.add_argument('--storage', default=None, help='DB URL. (e.g. sqlite:///example.db)')
+        parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
         return parser
 
     def configure_logging(self):
@@ -302,7 +320,8 @@ class _OptunaApp(App):
         # and replace its formatter with our fancy one.
         root_logger = logging.getLogger()
         stream_handlers = [
-            handler for handler in root_logger.handlers
+            handler
+            for handler in root_logger.handlers
             if isinstance(handler, logging.StreamHandler)
         ]
         assert len(stream_handlers) == 1
@@ -319,5 +338,5 @@ class _OptunaApp(App):
 def main():
     # type: () -> int
 
-    argv = sys.argv[1:] if len(sys.argv) > 1 else ['help']
+    argv = sys.argv[1:] if len(sys.argv) > 1 else ["help"]
     return _OptunaApp().run(argv)
