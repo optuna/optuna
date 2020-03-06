@@ -26,6 +26,7 @@ if type_checking.TYPE_CHECKING:
 
 try:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -86,9 +87,9 @@ class ChainerMNStudy(object):
     """
 
     def __init__(
-            self,
-            study,  # type: Study
-            comm,  # type: CommunicatorBase
+        self,
+        study,  # type: Study
+        comm,  # type: CommunicatorBase
     ):
         # type: (...) -> None
 
@@ -100,8 +101,10 @@ class ChainerMNStudy(object):
         if isinstance(study._storage, RDBStorage):
             if study._storage.engine.dialect.name == 'sqlite':
                 logger = get_logger(__name__)
-                logger.warning('SQLite may cause synchronization problems when used with '
-                               'ChainerMN integration. Please use other DBs like PostgreSQL.')
+                logger.warning(
+                    'SQLite may cause synchronization problems when used with '
+                    'ChainerMN integration. Please use other DBs like PostgreSQL.'
+                )
 
         study_names = comm.mpi_comm.allgather(study.study_name)
         if len(set(study_names)) != 1:
@@ -111,11 +114,11 @@ class ChainerMNStudy(object):
         super(ChainerMNStudy, self).__setattr__('comm', comm)
 
     def optimize(
-            self,
-            func,  # type: Callable[[ChainerMNTrial, CommunicatorBase], float]
-            n_trials=None,  # type: Optional[int]
-            timeout=None,  # type: Optional[float]
-            catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        self,
+        func,  # type: Callable[[ChainerMNTrial, CommunicatorBase], float]
+        n_trials=None,  # type: Optional[int]
+        timeout=None,  # type: Optional[float]
+        catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -294,7 +297,9 @@ class ChainerMNTrial(BaseTrial):
 
         warnings.warn(
             'The use of `ChainerMNTrial.trial_id` is deprecated. '
-            'Please use `ChainerMNTrial.number` instead.', DeprecationWarning)
+            'Please use `ChainerMNTrial.number` instead.',
+            DeprecationWarning,
+        )
         return self._trial_id
 
     @property
@@ -395,4 +400,5 @@ def _check_chainermn_availability():
             'ChainerMN is not available. Please install ChainerMN to use this feature. '
             'ChainerMN can be installed by executing `$ pip install chainermn`. '
             'For further information, please refer to the installation guide of ChainerMN. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            '(The actual import error is as follows: ' + str(_import_error) + ')'
+        )

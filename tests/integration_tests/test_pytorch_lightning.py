@@ -15,7 +15,6 @@ if type_checking.TYPE_CHECKING:
 
 
 class Model(pl.LightningModule):
-
     def __init__(self):
         # type: () -> None
 

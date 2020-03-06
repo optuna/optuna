@@ -51,11 +51,11 @@ def get_lbp_hist(img, P, R, method):
         bin_max = P + 3
         range_max = P + 2
     elif method == 'default':
-        bin_max = 2**P
-        range_max = 2**P - 1
-    hist, _ = np.histogram(lbp.ravel(), density=True,
-                           bins=np.arange(0, bin_max),
-                           range=(0, range_max))
+        bin_max = 2 ** P
+        range_max = 2 ** P - 1
+    hist, _ = np.histogram(
+        lbp.ravel(), density=True, bins=np.arange(0, bin_max), range=(0, range_max)
+    )
     return hist
 
 

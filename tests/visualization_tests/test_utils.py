@@ -11,23 +11,16 @@ def test_is_log_scale():
     study = create_study()
     study._append_trial(
         value=0.0,
-        params={
-            'param_linear': 1.0,
-        },
-        distributions={
-            'param_linear': UniformDistribution(0.0, 3.0),
-        }
+        params={'param_linear': 1.0,},
+        distributions={'param_linear': UniformDistribution(0.0, 3.0),},
     )
     study._append_trial(
         value=2.0,
-        params={
-            'param_linear': 2.0,
-            'param_log': 1e-3,
-        },
+        params={'param_linear': 2.0, 'param_log': 1e-3,},
         distributions={
             'param_linear': UniformDistribution(0.0, 3.0),
-            'param_log': LogUniformDistribution(1e-5, 1.),
-        }
+            'param_log': LogUniformDistribution(1e-5, 1.0),
+        },
     )
     assert _is_log_scale(study.trials, 'param_log')
     assert not _is_log_scale(study.trials, 'param_linear')
@@ -38,6 +31,7 @@ def _is_plotly_available():
 
     try:
         import plotly  # NOQA
+
         available = True
     except Exception:
         available = False

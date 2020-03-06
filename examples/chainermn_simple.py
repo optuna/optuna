@@ -58,9 +58,11 @@ def objective(trial, comm):
         train, test = chainer.datasets.get_mnist()
         rng = np.random.RandomState(0)
         train = chainer.datasets.SubDataset(
-            train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
+            train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))
+        )
         test = chainer.datasets.SubDataset(
-            test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
+            test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test))
+        )
     else:
         train, test = None, None
 

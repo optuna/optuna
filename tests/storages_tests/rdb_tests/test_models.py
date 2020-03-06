@@ -32,7 +32,8 @@ class TestStudySystemAttributeModel(object):
 
         study = StudyModel(study_id=1, study_name='test-study')
         session.add(
-            StudySystemAttributeModel(study_id=study.study_id, key='sample-key', value_json='1'))
+            StudySystemAttributeModel(study_id=study.study_id, key='sample-key', value_json='1')
+        )
         session.commit()
 
         attr = StudySystemAttributeModel.find_by_study_and_key(study, 'sample-key', session)
@@ -49,7 +50,9 @@ class TestStudySystemAttributeModel(object):
 
         session.add(
             StudySystemAttributeModel(
-                study_id=sample_study.study_id, key='sample-key', value_json='1'))
+                study_id=sample_study.study_id, key='sample-key', value_json='1'
+            )
+        )
 
         assert 1 == len(StudySystemAttributeModel.where_study_id(sample_study.study_id, session))
         assert 0 == len(StudySystemAttributeModel.where_study_id(empty_study.study_id, session))
@@ -61,12 +64,15 @@ class TestStudySystemAttributeModel(object):
         # type: (Session) -> None
 
         study_id = 1
-        study = StudyModel(study_id=study_id, study_name='test-study',
-                           direction=StudyDirection.MINIMIZE)
-        study.system_attributes.append(StudySystemAttributeModel(
-            study_id=study_id, key='sample-key1', value_json='1'))
-        study.system_attributes.append(StudySystemAttributeModel(
-            study_id=study_id, key='sample-key2', value_json='2'))
+        study = StudyModel(
+            study_id=study_id, study_name='test-study', direction=StudyDirection.MINIMIZE
+        )
+        study.system_attributes.append(
+            StudySystemAttributeModel(study_id=study_id, key='sample-key1', value_json='1')
+        )
+        study.system_attributes.append(
+            StudySystemAttributeModel(study_id=study_id, key='sample-key2', value_json='2')
+        )
         session.add(study)
         session.commit()
 
@@ -137,8 +143,9 @@ class TestTrialModel(object):
         # type: (Session) -> None
 
         study_id = 1
-        study = StudyModel(study_id=study_id, study_name='test-study',
-                           direction=StudyDirection.MINIMIZE)
+        study = StudyModel(
+            study_id=study_id, study_name='test-study', direction=StudyDirection.MINIMIZE
+        )
         study.trials.append(TrialModel(study_id=study.study_id, state=TrialState.COMPLETE))
         study.trials.append(TrialModel(study_id=study.study_id, state=TrialState.RUNNING))
         session.add(study)
@@ -161,7 +168,8 @@ class TestTrialUserAttributeModel(object):
         trial = TrialModel(study_id=study.study_id)
 
         session.add(
-            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
+            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1')
+        )
         session.commit()
 
         attr = TrialUserAttributeModel.find_by_trial_and_key(trial, 'sample-key', session)
@@ -179,7 +187,8 @@ class TestTrialUserAttributeModel(object):
         session.add(study)
         session.add(trial)
         session.add(
-            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
+            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1')
+        )
         session.commit()
 
         user_attributes = TrialUserAttributeModel.where_study(study, session)
@@ -195,7 +204,8 @@ class TestTrialUserAttributeModel(object):
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(
-            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
+            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1')
+        )
         session.commit()
 
         user_attributes = TrialUserAttributeModel.where_trial(trial, session)
@@ -211,7 +221,8 @@ class TestTrialUserAttributeModel(object):
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(
-            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
+            TrialUserAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1')
+        )
         session.commit()
 
         user_attributes = TrialUserAttributeModel.all(session)
@@ -226,10 +237,12 @@ class TestTrialUserAttributeModel(object):
         trial_id = 1
         study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
-        trial.user_attributes.append(TrialUserAttributeModel(
-            trial_id=trial_id, key='sample-key1', value_json='1'))
-        trial.user_attributes.append(TrialUserAttributeModel(
-            trial_id=trial_id, key='sample-key2', value_json='2'))
+        trial.user_attributes.append(
+            TrialUserAttributeModel(trial_id=trial_id, key='sample-key1', value_json='1')
+        )
+        trial.user_attributes.append(
+            TrialUserAttributeModel(trial_id=trial_id, key='sample-key2', value_json='2')
+        )
         study.trials.append(trial)
         session.add(study)
         session.commit()
@@ -251,7 +264,8 @@ class TestTrialSystemAttributeModel(object):
         trial = TrialModel(study_id=study.study_id)
 
         session.add(
-            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
+            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1')
+        )
         session.commit()
 
         attr = TrialSystemAttributeModel.find_by_trial_and_key(trial, 'sample-key', session)
@@ -269,7 +283,8 @@ class TestTrialSystemAttributeModel(object):
         session.add(study)
         session.add(trial)
         session.add(
-            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
+            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1')
+        )
         session.commit()
 
         system_attributes = TrialSystemAttributeModel.where_study(study, session)
@@ -285,7 +300,8 @@ class TestTrialSystemAttributeModel(object):
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(
-            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
+            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1')
+        )
         session.commit()
 
         system_attributes = TrialSystemAttributeModel.where_trial(trial, session)
@@ -301,7 +317,8 @@ class TestTrialSystemAttributeModel(object):
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(
-            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1'))
+            TrialSystemAttributeModel(trial_id=trial.trial_id, key='sample-key', value_json='1')
+        )
         session.commit()
 
         system_attributes = TrialSystemAttributeModel.all(session)
@@ -316,10 +333,12 @@ class TestTrialSystemAttributeModel(object):
         trial_id = 1
         study = StudyModel(study_id=1, study_name='test-study', direction=StudyDirection.MINIMIZE)
         trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
-        trial.system_attributes.append(TrialSystemAttributeModel(
-            trial_id=trial_id, key='sample-key1', value_json='1'))
-        trial.system_attributes.append(TrialSystemAttributeModel(
-            trial_id=trial_id, key='sample-key2', value_json='2'))
+        trial.system_attributes.append(
+            TrialSystemAttributeModel(trial_id=trial_id, key='sample-key1', value_json='1')
+        )
+        trial.system_attributes.append(
+            TrialSystemAttributeModel(trial_id=trial_id, key='sample-key2', value_json='2')
+        )
         study.trials.append(trial)
         session.add(study)
         session.commit()

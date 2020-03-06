@@ -7,6 +7,7 @@ if type_checking.TYPE_CHECKING:
 try:
     from fastai.basic_train import Learner  # NOQA
     from fastai.callbacks import TrackerCallback
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -91,4 +92,5 @@ def _check_fastai_availability():
             'fastai is not available. Please install fastai to use this feature. '
             'fastai can be installed by executing `$ pip install fastai`. '
             'For further information, please refer to the installation guide of fastai. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            '(The actual import error is as follows: ' + str(_import_error) + ')'
+        )

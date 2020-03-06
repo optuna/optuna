@@ -50,7 +50,6 @@ def turnoff_train():
 
 
 class TestOptunaObjective(object):
-
     def test_init_(self):
         # type: () -> None
 
@@ -74,11 +73,7 @@ class TestOptunaObjective(object):
 
         with turnoff_train():
             objective = OptunaObjective(
-                target_param_names,
-                lgbm_params,
-                train_set,
-                lgbm_kwargs,
-                best_score,
+                target_param_names, lgbm_params, train_set, lgbm_kwargs, best_score,
             )
             study = optuna.create_study(direction='minimize')
             study.optimize(objective, n_trials=10)
@@ -115,9 +110,7 @@ class TestBaseTuner(object):
             def __init__(self):
                 # type: () -> None
 
-                self.best_score = {
-                    'valid_0': {'binary_logloss': expected_value}
-                }
+                self.best_score = {'valid_0': {'binary_logloss': expected_value}}
 
         booster = DummyBooster()
         dummy_dataset = lgb.Dataset(None)
@@ -146,17 +139,12 @@ class TestBaseTuner(object):
             def __init__(self):
                 # type: () -> None
 
-                self.best_score = {
-                    'dev': {'binary_logloss': expected_value}
-                }
+                self.best_score = {'dev': {'binary_logloss': expected_value}}
 
         booster = DummyBooster()
         dummy_dataset = lgb.Dataset(None)
 
-        tuner = BaseTuner(lgbm_kwargs={
-            'valid_names': 'dev',
-            'valid_sets': dummy_dataset,
-        })
+        tuner = BaseTuner(lgbm_kwargs={'valid_names': 'dev', 'valid_sets': dummy_dataset,})
         val_score = tuner._get_booster_best_score(booster)
         assert val_score == expected_value
 
@@ -172,17 +160,19 @@ class TestBaseTuner(object):
 
                 self.best_score = {
                     'train': {'binary_logloss': unexpected_value},
-                    'val': {'binary_logloss': expected_value}
+                    'val': {'binary_logloss': expected_value},
                 }
 
         booster = DummyBooster()
         dummy_train_dataset = lgb.Dataset(None)
         dummy_val_dataset = lgb.Dataset(None)
 
-        tuner = BaseTuner(lgbm_kwargs={
-            'valid_names': ['train', 'val'],
-            'valid_sets': [dummy_train_dataset, dummy_val_dataset],
-        })
+        tuner = BaseTuner(
+            lgbm_kwargs={
+                'valid_names': ['train', 'val'],
+                'valid_sets': [dummy_train_dataset, dummy_val_dataset],
+            }
+        )
         val_score = tuner._get_booster_best_score(booster)
         assert val_score == expected_value
 
@@ -201,23 +191,26 @@ class TestBaseTuner(object):
             assert not tuner.compare_validation_metrics(0.5, 0.5)
             assert tuner.compare_validation_metrics(0.1, 0.5)
 
-    @pytest.mark.parametrize('metric, eval_at_param, expected', [
-        ('auc', {'eval_at': 5}, 'auc'),
-        ('accuracy', {'eval_at': 5}, 'accuracy'),
-        ('rmsle', {'eval_at': 5}, 'rmsle'),
-        ('rmse', {'eval_at': 5}, 'rmse'),
-        ('binary_logloss', {'eval_at': 5}, 'binary_logloss'),
-        ('ndcg', {'eval_at': 5}, 'ndcg@5'),
-        ('ndcg', {'ndcg_at': 5}, 'ndcg@5'),
-        ('ndcg', {'ndcg_eval_at': 5}, 'ndcg@5'),
-        ('ndcg', {'eval_at': [20]}, 'ndcg@20'),
-        ('ndcg', {'eval_at': [10, 20]}, 'ndcg@10'),
-        ('ndcg', {}, 'ndcg@1'),
-        ('map', {'eval_at': 5}, 'map@5'),
-        ('map', {'eval_at': [20]}, 'map@20'),
-        ('map', {'eval_at': [10, 20]}, 'map@10'),
-        ('map', {}, 'map@1'),
-    ])
+    @pytest.mark.parametrize(
+        'metric, eval_at_param, expected',
+        [
+            ('auc', {'eval_at': 5}, 'auc'),
+            ('accuracy', {'eval_at': 5}, 'accuracy'),
+            ('rmsle', {'eval_at': 5}, 'rmsle'),
+            ('rmse', {'eval_at': 5}, 'rmse'),
+            ('binary_logloss', {'eval_at': 5}, 'binary_logloss'),
+            ('ndcg', {'eval_at': 5}, 'ndcg@5'),
+            ('ndcg', {'ndcg_at': 5}, 'ndcg@5'),
+            ('ndcg', {'ndcg_eval_at': 5}, 'ndcg@5'),
+            ('ndcg', {'eval_at': [20]}, 'ndcg@20'),
+            ('ndcg', {'eval_at': [10, 20]}, 'ndcg@10'),
+            ('ndcg', {}, 'ndcg@1'),
+            ('map', {'eval_at': 5}, 'map@5'),
+            ('map', {'eval_at': [20]}, 'map@20'),
+            ('map', {'eval_at': [10, 20]}, 'map@10'),
+            ('map', {}, 'map@1'),
+        ],
+    )
     def test_metric_with_eval_at(self, metric, eval_at_param, expected):
         # type: (str, Dict[str, Union[int, List[int]]], str) -> None
 
@@ -235,18 +228,13 @@ class TestBaseTuner(object):
 
 
 class TestLightGBMTuner(object):
-
     def _get_tuner_object(self, params={}, train_set=None, kwargs_options={}):
         # type: (Dict[str, Any], lgb.Dataset, Dict[str, Any]) -> lgb.LightGBMTuner
 
         # Required keyword arguments.
         dummy_dataset = lgb.Dataset(None)
 
-        kwargs = dict(
-            num_boost_round=5,
-            early_stopping_rounds=2,
-            valid_sets=dummy_dataset,
-        )
+        kwargs = dict(num_boost_round=5, early_stopping_rounds=2, valid_sets=dummy_dataset,)
         kwargs.update(kwargs_options)
 
         runner = lgb.LightGBMTuner(params, train_set, **kwargs)
@@ -258,10 +246,7 @@ class TestLightGBMTuner(object):
         params = {}  # type: Dict[str, Any]
         train_set = lgb.Dataset(None)
         with pytest.raises(ValueError) as excinfo:
-            lgb.LightGBMTuner(params,
-                              train_set,
-                              num_boost_round=5,
-                              early_stopping_rounds=2)
+            lgb.LightGBMTuner(params, train_set, num_boost_round=5, early_stopping_rounds=2)
 
         assert excinfo.type == ValueError
         assert str(excinfo.value) == '`valid_sets` is required.'
@@ -302,8 +287,9 @@ class TestLightGBMTuner(object):
         X_trn = np.random.uniform(10, size=50).reshape((10, 5))
         y_trn = np.random.randint(2, size=10)
         train_dataset = lgb.Dataset(X_trn, label=y_trn)
-        runner = self._get_tuner_object(train_set=train_dataset,
-                                        kwargs_options=dict(sample_size=sample_size))
+        runner = self._get_tuner_object(
+            train_set=train_dataset, kwargs_options=dict(sample_size=sample_size)
+        )
         runner.sample_train_set()
 
         # Workaround for mypy.
@@ -320,12 +306,12 @@ class TestLightGBMTuner(object):
             tuning_history = []  # type: List[Dict[str, float]]
             best_params = {}  # type: Dict[str, Any]
 
-            runner = self._get_tuner_object(params=dict(
-                feature_fraction=unexpected_value,  # set default as unexpected value.
-            ), kwargs_options=dict(
-                tuning_history=tuning_history,
-                best_params=best_params,
-            ))
+            runner = self._get_tuner_object(
+                params=dict(
+                    feature_fraction=unexpected_value,  # set default as unexpected value.
+                ),
+                kwargs_options=dict(tuning_history=tuning_history, best_params=best_params,),
+            )
             assert len(tuning_history) == 0
             runner.tune_feature_fraction()
 
@@ -340,12 +326,10 @@ class TestLightGBMTuner(object):
         with turnoff_train():
             tuning_history = []  # type: List[Dict[str, float]]
 
-            runner = self._get_tuner_object(params=dict(
-                num_leaves=unexpected_value,
-            ), kwargs_options=dict(
-                tuning_history=tuning_history,
-                best_params={},
-            ))
+            runner = self._get_tuner_object(
+                params=dict(num_leaves=unexpected_value,),
+                kwargs_options=dict(tuning_history=tuning_history, best_params={},),
+            )
             assert len(tuning_history) == 0
             runner.tune_num_leaves()
 
@@ -365,12 +349,14 @@ class TestLightGBMTuner(object):
         valid_dataset = lgb.Dataset(X_trn, label=y_trn)
 
         tuning_history = []  # type: List[Dict[str, float]]
-        runner = lgb.LightGBMTuner(params,
-                                   train_dataset,
-                                   num_boost_round=3,
-                                   early_stopping_rounds=2,
-                                   valid_sets=valid_dataset,
-                                   tuning_history=tuning_history)
+        runner = lgb.LightGBMTuner(
+            params,
+            train_dataset,
+            num_boost_round=3,
+            early_stopping_rounds=2,
+            valid_sets=valid_dataset,
+            tuning_history=tuning_history,
+        )
         runner.tune_num_leaves()
         assert len(tuning_history) == 20
 
@@ -382,12 +368,10 @@ class TestLightGBMTuner(object):
         with turnoff_train():
             tuning_history = []  # type: List[Dict[str, float]]
 
-            runner = self._get_tuner_object(params=dict(
-                bagging_fraction=unexpected_value,
-            ), kwargs_options=dict(
-                tuning_history=tuning_history,
-                best_params={},
-            ))
+            runner = self._get_tuner_object(
+                params=dict(bagging_fraction=unexpected_value,),
+                kwargs_options=dict(tuning_history=tuning_history, best_params={},),
+            )
             assert len(tuning_history) == 0
             runner.tune_bagging()
 
@@ -402,12 +386,10 @@ class TestLightGBMTuner(object):
         with turnoff_train():
             tuning_history = []  # type: List[Dict[str, float]]
 
-            runner = self._get_tuner_object(params=dict(
-                feature_fraction=unexpected_value,
-            ), kwargs_options=dict(
-                tuning_history=tuning_history,
-                best_params={},
-            ))
+            runner = self._get_tuner_object(
+                params=dict(feature_fraction=unexpected_value,),
+                kwargs_options=dict(tuning_history=tuning_history, best_params={},),
+            )
             assert len(tuning_history) == 0
             runner.tune_feature_fraction_stage2()
 
@@ -422,12 +404,10 @@ class TestLightGBMTuner(object):
         with turnoff_train():
             tuning_history = []  # type: List[Dict[str, float]]
 
-            runner = self._get_tuner_object(params=dict(
-                lambda_l1=unexpected_value,  # set default as unexpected value.
-            ), kwargs_options=dict(
-                tuning_history=tuning_history,
-                best_params={},
-            ))
+            runner = self._get_tuner_object(
+                params=dict(lambda_l1=unexpected_value,),  # set default as unexpected value.
+                kwargs_options=dict(tuning_history=tuning_history, best_params={},),
+            )
             assert len(tuning_history) == 0
             runner.tune_regularization_factors()
 
@@ -442,12 +422,12 @@ class TestLightGBMTuner(object):
         with turnoff_train():
             tuning_history = []  # type: List[Dict[str, float]]
 
-            runner = self._get_tuner_object(params=dict(
-                min_child_samples=unexpected_value,  # set default as unexpected value.
-            ), kwargs_options=dict(
-                tuning_history=tuning_history,
-                best_params={},
-            ))
+            runner = self._get_tuner_object(
+                params=dict(
+                    min_child_samples=unexpected_value,  # set default as unexpected value.
+                ),
+                kwargs_options=dict(tuning_history=tuning_history, best_params={},),
+            )
             assert len(tuning_history) == 0
             runner.tune_min_data_in_leaf()
 
@@ -465,9 +445,9 @@ class TestLightGBMTuner(object):
 
         objective_class_name = 'optuna.integration.lightgbm_tuner.optimize.OptunaObjective'
 
-        with mock.patch(objective_class_name) as objective_mock,\
-                mock.patch('optuna.study.Study') as study_mock,\
-                mock.patch('optuna.trial.Trial') as trial_mock:
+        with mock.patch(objective_class_name) as objective_mock, mock.patch(
+            'optuna.study.Study'
+        ) as study_mock, mock.patch('optuna.trial.Trial') as trial_mock:
 
             fake_objective = mock.MagicMock(spec=OptunaObjective)
             fake_objective.report = []
@@ -492,9 +472,9 @@ class TestLightGBMTuner(object):
         assert 'feature_fraction' in tuner.best_params
         assert tuner.best_score == 0.9
 
-        with mock.patch(objective_class_name) as objective_mock,\
-                mock.patch('optuna.study.Study') as study_mock,\
-                mock.patch('optuna.trial.Trial') as trial_mock:
+        with mock.patch(objective_class_name) as objective_mock, mock.patch(
+            'optuna.study.Study'
+        ) as study_mock, mock.patch('optuna.trial.Trial') as trial_mock:
 
             fake_objective = mock.MagicMock(spec=OptunaObjective)
             fake_objective.report = []

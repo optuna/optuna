@@ -26,11 +26,11 @@ def test_tfkeras_pruning_callback():
 
         model.fit(
             np.zeros((16, 20), np.float32),
-            np.zeros((16, ), np.int32),
+            np.zeros((16,), np.int32),
             batch_size=1,
             epochs=1,
             callbacks=[TFKerasPruningCallback(trial, callback_metric_name)],
-            verbose=0
+            verbose=0,
         )
 
         return 1.0

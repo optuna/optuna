@@ -52,7 +52,9 @@ def _validate_version(version: str) -> None:
     if not isinstance(version, str) or len(version.split('.')) != 3:
         raise ValueError(
             'Invalid version specification. Must follow `x.y.z` format but `{}` is given'.format(
-                version))
+                version
+            )
+        )
 
 
 def experimental(version: str, name: str = None) -> Any:
@@ -83,8 +85,9 @@ def experimental(version: str, name: str = None) -> Any:
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
                     "The interface can change in the future.".format(
-                        name if name is not None else func.__name__, version),
-                    ExperimentalWarning
+                        name if name is not None else func.__name__, version
+                    ),
+                    ExperimentalWarning,
                 )
 
                 return func(*args, **kwargs)  # type: ignore
@@ -103,8 +106,9 @@ def experimental(version: str, name: str = None) -> Any:
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
                     "The interface can change in the future.".format(
-                        name if name is not None else cls.__name__, version),
-                    ExperimentalWarning
+                        name if name is not None else cls.__name__, version
+                    ),
+                    ExperimentalWarning,
                 )
 
                 _original_init(self, *args, **kwargs)
@@ -114,9 +118,9 @@ def experimental(version: str, name: str = None) -> Any:
             if cls.__doc__ is None:
                 cls.__doc__ = ''
             cls.__doc__ = (
-                _make_func_spec_str(_original_init) +
-                cls.__doc__ +
-                _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+                _make_func_spec_str(_original_init)
+                + cls.__doc__
+                + _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
             )
             return cls
 

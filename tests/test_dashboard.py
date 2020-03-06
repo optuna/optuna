@@ -15,7 +15,7 @@ def _create_some_study():
         z = trial.suggest_categorical('z', (10.0, 20.5, 30.0))
         assert isinstance(z, float)
 
-        return x**2 + y**2 + z
+        return x ** 2 + y ** 2 + z
 
     study = optuna.create_study()
     study.optimize(f, n_trials=100)

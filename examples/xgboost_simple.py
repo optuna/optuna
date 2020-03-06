@@ -41,7 +41,7 @@ def objective(trial):
         'objective': 'binary:logistic',
         'booster': trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart']),
         'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
-        'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0)
+        'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0),
     }
 
     if param['booster'] == 'gbtree' or param['booster'] == 'dart':

@@ -6,6 +6,7 @@ if type_checking.TYPE_CHECKING:
 
 try:
     from ignite.engine import Engine  # NOQA
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -68,4 +69,5 @@ def _check_pytorch_ignite_availability():
             'PyTorch Ignite is not available. Please install PyTorch Ignite to use this feature. '
             'PyTorch Ignite can be installed by executing `$ pip install pytorch-ignite`. '
             'For further information, please refer to the installation guide of PyTorch Ignite. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            '(The actual import error is as follows: ' + str(_import_error) + ')'
+        )

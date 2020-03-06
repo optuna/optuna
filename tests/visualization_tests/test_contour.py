@@ -15,14 +15,15 @@ if type_checking.TYPE_CHECKING:
 
 
 @pytest.mark.parametrize(
-    'params', [
+    'params',
+    [
         [],
         ['param_a'],
         ['param_a', 'param_b'],
         ['param_a', 'param_b', 'param_c'],
         ['param_a', 'param_b', 'param_c', 'param_d'],
         None,
-    ]
+    ],
 )
 def test_plot_contour(params):
     # type: (Optional[List[str]]) -> None
@@ -40,7 +41,7 @@ def test_plot_contour(params):
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_contour(study, params=params)
     assert len(figure.data) == 0
 
@@ -65,7 +66,7 @@ def test_plot_contour(params):
     else:
         # TODO(crcrpar): Add more checks. Currently this only checks the number of data.
         n_params = len(params) if params is not None else 4
-        assert len(figure.data) == n_params**2 + n_params * (n_params - 1)
+        assert len(figure.data) == n_params ** 2 + n_params * (n_params - 1)
 
 
 def test_generate_contour_plot_for_few_observations():
@@ -96,25 +97,19 @@ def test_plot_contour_log_scale():
     study = create_study()
     study._append_trial(
         value=0.0,
-        params={
-            'param_a': 1e-6,
-            'param_b': 1e-4,
-        },
+        params={'param_a': 1e-6, 'param_b': 1e-4,},
         distributions={
             'param_a': LogUniformDistribution(1e-7, 1e-2),
             'param_b': LogUniformDistribution(1e-5, 1e-1),
-        }
+        },
     )
     study._append_trial(
         value=1.0,
-        params={
-            'param_a': 1e-5,
-            'param_b': 1e-3,
-        },
+        params={'param_a': 1e-5, 'param_b': 1e-3,},
         distributions={
             'param_a': LogUniformDistribution(1e-7, 1e-2),
             'param_b': LogUniformDistribution(1e-5, 1e-1),
-        }
+        },
     )
 
     figure = plot_contour(study)
@@ -127,29 +122,21 @@ def test_plot_contour_log_scale():
     study = create_study()
     study._append_trial(
         value=0.0,
-        params={
-            'param_a': 1e-6,
-            'param_b': 1e-4,
-            'param_c': 1e-2,
-        },
+        params={'param_a': 1e-6, 'param_b': 1e-4, 'param_c': 1e-2,},
         distributions={
             'param_a': LogUniformDistribution(1e-7, 1e-2),
             'param_b': LogUniformDistribution(1e-5, 1e-1),
             'param_c': LogUniformDistribution(1e-3, 10),
-        }
+        },
     )
     study._append_trial(
         value=1.0,
-        params={
-            'param_a': 1e-5,
-            'param_b': 1e-3,
-            'param_c': 1e-1,
-        },
+        params={'param_a': 1e-5, 'param_b': 1e-3, 'param_c': 1e-1,},
         distributions={
             'param_a': LogUniformDistribution(1e-7, 1e-2),
             'param_b': LogUniformDistribution(1e-5, 1e-1),
             'param_c': LogUniformDistribution(1e-3, 10),
-        }
+        },
     )
 
     figure = plot_contour(study)

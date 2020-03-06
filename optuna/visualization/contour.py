@@ -68,9 +68,7 @@ def plot_contour(study, params=None):
 def _get_contour_plot(study, params=None):
     # type: (Study, Optional[List[str]]) -> go.Figure
 
-    layout = go.Layout(
-        title='Contour Plot',
-    )
+    layout = go.Layout(title='Contour Plot',)
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
@@ -98,8 +96,7 @@ def _get_contour_plot(study, params=None):
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
         y_param = sorted_params[1]
-        sub_plots = _generate_contour_subplot(
-            trials, x_param, y_param, study.direction)
+        sub_plots = _generate_contour_subplot(trials, x_param, y_param, study.direction)
         figure = go.Figure(data=sub_plots)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
         figure.update_yaxes(title_text=y_param, range=param_values_range[y_param])
@@ -110,16 +107,18 @@ def _get_contour_plot(study, params=None):
             log_range = [math.log10(p) for p in param_values_range[y_param]]
             figure.update_yaxes(range=log_range, type='log')
     else:
-        figure = make_subplots(rows=len(sorted_params),
-                               cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True)
-        showscale = True   # showscale option only needs to be specified once
+        figure = make_subplots(
+            rows=len(sorted_params), cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True
+        )
+        showscale = True  # showscale option only needs to be specified once
         for x_i, x_param in enumerate(sorted_params):
             for y_i, y_param in enumerate(sorted_params):
                 if x_param == y_param:
                     figure.add_trace(go.Scatter(), row=y_i + 1, col=x_i + 1)
                 else:
                     sub_plots = _generate_contour_subplot(
-                        trials, x_param, y_param, study.direction)
+                        trials, x_param, y_param, study.direction
+                    )
                     contour = sub_plots[0]
                     scatter = sub_plots[1]
                     contour.update(showscale=showscale)  # showscale's default is True
@@ -127,10 +126,8 @@ def _get_contour_plot(study, params=None):
                         showscale = False
                     figure.add_trace(contour, row=y_i + 1, col=x_i + 1)
                     figure.add_trace(scatter, row=y_i + 1, col=x_i + 1)
-                figure.update_xaxes(range=param_values_range[x_param],
-                                    row=y_i + 1, col=x_i + 1)
-                figure.update_yaxes(range=param_values_range[y_param],
-                                    row=y_i + 1, col=x_i + 1)
+                figure.update_xaxes(range=param_values_range[x_param], row=y_i + 1, col=x_i + 1)
+                figure.update_yaxes(range=param_values_range[y_param], row=y_i + 1, col=x_i + 1)
                 if _is_log_scale(trials, x_param):
                     log_range = [math.log10(p) for p in param_values_range[x_param]]
                     figure.update_xaxes(range=log_range, type='log', row=y_i + 1, col=x_i + 1)
@@ -173,7 +170,8 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
             value = trial.value
         else:
             raise ValueError(
-                'Trial{} has COMPLETE state, but its value is non-numeric.'.format(trial.number))
+                'Trial{} has COMPLETE state, but its value is non-numeric.'.format(trial.number)
+            )
         z[y_i][x_i] = value
 
     # TODO(Yanase): Use reversescale argument to reverse colorscale if Plotly's bug is fixed.
@@ -185,7 +183,9 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
         colorscale.reverse()
 
     contour = go.Contour(
-        x=x_indices, y=y_indices, z=z,
+        x=x_indices,
+        y=y_indices,
+        z=z,
         colorbar={'title': 'Objective Value'},
         colorscale=colorscale,
         connectgaps=True,
@@ -195,11 +195,7 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
     )
 
     scatter = go.Scatter(
-        x=x_values,
-        y=y_values,
-        marker={'color': 'black'},
-        mode='markers',
-        showlegend=False
+        x=x_values, y=y_values, marker={'color': 'black'}, mode='markers', showlegend=False
     )
 
     return (contour, scatter)

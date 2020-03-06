@@ -45,12 +45,13 @@ def test_chainer_pruning_extension_trigger():
     assert isinstance(extension._pruner_trigger, triggers.IntervalTrigger)
     extension = ChainerPruningExtension(trial, 'main/loss', triggers.IntervalTrigger(1, 'epoch'))
     assert isinstance(extension._pruner_trigger, triggers.IntervalTrigger)
-    extension = ChainerPruningExtension(trial, 'main/loss',
-                                        triggers.ManualScheduleTrigger(1, 'epoch'))
+    extension = ChainerPruningExtension(
+        trial, 'main/loss', triggers.ManualScheduleTrigger(1, 'epoch')
+    )
     assert isinstance(extension._pruner_trigger, triggers.ManualScheduleTrigger)
 
     with pytest.raises(TypeError):
-        ChainerPruningExtension(trial, 'main/loss', triggers.TimeTrigger(1.))
+        ChainerPruningExtension(trial, 'main/loss', triggers.TimeTrigger(1.0))
 
 
 def test_chainer_pruning_extension():
@@ -67,7 +68,8 @@ def test_chainer_pruning_extension():
         updater = chainer.training.StandardUpdater(train_iter, optimizer)
         trainer = chainer.training.Trainer(updater, (1, 'epoch'))
         trainer.extend(
-            optuna.integration.chainer.ChainerPruningExtension(trial, 'main/loss', (1, 'epoch')))
+            optuna.integration.chainer.ChainerPruningExtension(trial, 'main/loss', (1, 'epoch'))
+        )
 
         trainer.run(show_loop_exception_msg=False)
         return 1.0
@@ -104,7 +106,7 @@ def test_observation_exists():
 
     study = optuna.create_study()
     trial = create_running_trial(study, 1.0)
-    MockTrainer = namedtuple('_MockTrainer', ('observation', ))
+    MockTrainer = namedtuple('_MockTrainer', ('observation',))
     trainer = MockTrainer(observation={'OK': 0})
 
     # Trigger is deactivated. Return False whether trainer has observation or not.

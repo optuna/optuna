@@ -73,10 +73,12 @@ def get_data_loaders(train_batch_size, val_batch_size):
     train_data = MNIST(download=True, root=".", transform=data_transform, train=True)
     val_data = MNIST(download=False, root=".", transform=data_transform, train=False)
 
-    train_loader = DataLoader(Subset(train_data, range(N_TRAIN_EXAMPLES)),
-                              batch_size=train_batch_size, shuffle=True)
-    val_loader = DataLoader(Subset(val_data, range(N_VALID_EXAMPLES)),
-                            batch_size=val_batch_size, shuffle=False)
+    train_loader = DataLoader(
+        Subset(train_data, range(N_TRAIN_EXAMPLES)), batch_size=train_batch_size, shuffle=True
+    )
+    val_loader = DataLoader(
+        Subset(val_data, range(N_VALID_EXAMPLES)), batch_size=val_batch_size, shuffle=False
+    )
 
     return train_loader, val_loader
 
@@ -91,9 +93,7 @@ def objective(trial):
 
     optimizer = Adam(model.parameters())
     trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)
-    evaluator = create_supervised_evaluator(model,
-                                            metrics={'accuracy': Accuracy()},
-                                            device=device)
+    evaluator = create_supervised_evaluator(model, metrics={'accuracy': Accuracy()}, device=device)
 
     # Register a pruning handler to the evaluator.
     pruning_handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
@@ -116,9 +116,13 @@ def objective(trial):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch Ignite example.')
-    parser.add_argument('--pruning', '-p', action='store_true',
-                        help='Activate the pruning feature. `MedianPruner` stops unpromising '
-                             'trials at the early stages of training.')
+    parser.add_argument(
+        '--pruning',
+        '-p',
+        action='store_true',
+        help='Activate the pruning feature. `MedianPruner` stops unpromising '
+        'trials at the early stages of training.',
+    )
     args = parser.parse_args()
     pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
 

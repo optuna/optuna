@@ -24,8 +24,9 @@ import optuna
 def objective(trial):
     iris = sklearn.datasets.load_iris()
     classes = list(set(iris.target))
-    train_x, test_x, train_y, test_y = \
-        sklearn.model_selection.train_test_split(iris.data, iris.target, test_size=0.25)
+    train_x, test_x, train_y, test_y = sklearn.model_selection.train_test_split(
+        iris.data, iris.target, test_size=0.25
+    )
 
     alpha = trial.suggest_loguniform('alpha', 1e-5, 1e-1)
     clf = sklearn.linear_model.SGDClassifier(alpha=alpha)

@@ -47,7 +47,6 @@ DEFAULT_LIGHTGBM_PARAMETERS = {
 
 
 class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
-
     def __init__(self, param_name, param_values):
         # type: (str, Any) -> None
 
@@ -68,7 +67,8 @@ class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
         # type: (Study, FrozenTrial, str, BaseDistribution) -> None
 
         raise ValueError(
-            'Suggest method is called for an invalid parameter: {}.'.format(param_name))
+            'Suggest method is called for an invalid parameter: {}.'.format(param_name)
+        )
 
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
@@ -98,11 +98,7 @@ def _timer():
 
 
 class BaseTuner(object):
-    def __init__(
-            self,
-            lgbm_params=None,
-            lgbm_kwargs=None
-    ):
+    def __init__(self, lgbm_params=None, lgbm_kwargs=None):
         # type: (Dict[str, Any], Dict[str,Any]) -> None
 
         self.lgbm_params = lgbm_params or {}
@@ -167,8 +163,10 @@ class BaseTuner(object):
             return '{}@{}'.format(metric, eval_at[0])
         if type(eval_at) is int:
             return '{}@{}'.format(metric, eval_at)
-        raise ValueError('The value of eval_at is expected to be int or a list/tuple of int.'
-                         '\'{}\' is specified.'.format(eval_at))
+        raise ValueError(
+            'The value of eval_at is expected to be int or a list/tuple of int.'
+            '\'{}\' is specified.'.format(eval_at)
+        )
 
     def higher_is_better(self):
         # type: () -> bool
@@ -189,13 +187,13 @@ class OptunaObjective(BaseTuner):
     """Objective for hyperparameter-tuning with Optuna."""
 
     def __init__(
-            self,
-            target_param_names,  # type: List[str]
-            lgbm_params,  # type: Dict[str, Any]
-            train_set,  # type: lgb.Dataset
-            lgbm_kwargs,  # type: Dict[str, Any]
-            best_score,  # type: float
-            pbar=None,  # type: Optional[tqdm.tqdm]
+        self,
+        target_param_names,  # type: List[str]
+        lgbm_params,  # type: Dict[str, Any]
+        train_set,  # type: lgb.Dataset
+        lgbm_kwargs,  # type: Dict[str, Any]
+        best_score,  # type: float
+        pbar=None,  # type: Optional[tqdm.tqdm]
     ):
 
         self.target_param_names = target_param_names
@@ -242,9 +240,8 @@ class OptunaObjective(BaseTuner):
             self.lgbm_params['lambda_l2'] = trial.suggest_loguniform('lambda_l2', 1e-8, 10.0)
         if 'num_leaves' in self.target_param_names:
             tree_depth = self.lgbm_params.get('max_depth', DEFAULT_TUNER_TREE_DEPTH)
-            max_num_leaves = 2**tree_depth if tree_depth > 0 else 2**DEFAULT_TUNER_TREE_DEPTH
-            self.lgbm_params['num_leaves'] = trial.suggest_int(
-                'num_leaves', 2, max_num_leaves)
+            max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** DEFAULT_TUNER_TREE_DEPTH
+            self.lgbm_params['num_leaves'] = trial.suggest_int('num_leaves', 2, max_num_leaves)
         if 'feature_fraction' in self.target_param_names:
             # `_GridSamplerUniform1D` is used for sampling feature_fraction value.
             # The value 1.0 for the hyperparameter is always sampled.
@@ -277,13 +274,16 @@ class OptunaObjective(BaseTuner):
             self.pbar.set_description(pbar_fmt.format(self.action, self.best_score))
             self.pbar.update(1)
 
-        self.report.append(dict(
-            action=self.action,
-            trial=self.trial_count,
-            value=str(trial.params),
-            val_score=val_score,
-            elapsed_secs=elapsed_secs,
-            average_iteration_time=average_iteration_time))
+        self.report.append(
+            dict(
+                action=self.action,
+                trial=self.trial_count,
+                value=str(trial.params),
+                val_score=val_score,
+                elapsed_secs=elapsed_secs,
+                average_iteration_time=average_iteration_time,
+            )
+        )
 
         self.trial_count += 1
 
@@ -294,46 +294,48 @@ class LightGBMTuner(BaseTuner):
     """Hyperparameter-tuning with Optuna for LightGBM."""
 
     def __init__(
-            self,
-            params,  # type: Dict[str, Any]
-            train_set,  # type: lgb.Dataset
-            num_boost_round=1000,  # type: int
-            valid_sets=None,  # type: Optional[VALID_SET_TYPE]
-            valid_names=None,  # type: Optional[Any]
-            fobj=None,  # type: Optional[Callable[..., Any]]
-            feval=None,  # type: Optional[Callable[..., Any]]
-            feature_name='auto',  # type: str
-            categorical_feature='auto',  # type: str
-            early_stopping_rounds=None,  # type: Optional[int]
-            evals_result=None,  # type: Optional[Dict[Any, Any]]
-            verbose_eval=True,  # type: Optional[bool]
-            learning_rates=None,  # type: Optional[List[float]]
-            keep_training_booster=False,  # type: Optional[bool]
-            callbacks=None,  # type: Optional[List[Callable[..., Any]]]
-            time_budget=None,  # type: Optional[int]
-            sample_size=None,  # type: Optional[int]
-            best_params=None,  # type: Optional[Dict[str, Any]]
-            tuning_history=None,  # type: Optional[List[Dict[str, Any]]]
-            verbosity=1,  # type: Optional[int]
+        self,
+        params,  # type: Dict[str, Any]
+        train_set,  # type: lgb.Dataset
+        num_boost_round=1000,  # type: int
+        valid_sets=None,  # type: Optional[VALID_SET_TYPE]
+        valid_names=None,  # type: Optional[Any]
+        fobj=None,  # type: Optional[Callable[..., Any]]
+        feval=None,  # type: Optional[Callable[..., Any]]
+        feature_name='auto',  # type: str
+        categorical_feature='auto',  # type: str
+        early_stopping_rounds=None,  # type: Optional[int]
+        evals_result=None,  # type: Optional[Dict[Any, Any]]
+        verbose_eval=True,  # type: Optional[bool]
+        learning_rates=None,  # type: Optional[List[float]]
+        keep_training_booster=False,  # type: Optional[bool]
+        callbacks=None,  # type: Optional[List[Callable[..., Any]]]
+        time_budget=None,  # type: Optional[int]
+        sample_size=None,  # type: Optional[int]
+        best_params=None,  # type: Optional[Dict[str, Any]]
+        tuning_history=None,  # type: Optional[List[Dict[str, Any]]]
+        verbosity=1,  # type: Optional[int]
     ):
         params = copy.deepcopy(params)
         args = [params, train_set]
-        kwargs = dict(num_boost_round=num_boost_round,
-                      valid_sets=valid_sets,
-                      valid_names=valid_names,
-                      fobj=fobj,
-                      feval=feval,
-                      feature_name=feature_name,
-                      categorical_feature=categorical_feature,
-                      early_stopping_rounds=early_stopping_rounds,
-                      evals_result=evals_result,
-                      verbose_eval=verbose_eval,
-                      learning_rates=learning_rates,
-                      keep_training_booster=keep_training_booster,
-                      callbacks=callbacks,
-                      time_budget=time_budget,
-                      verbosity=verbosity,
-                      sample_size=sample_size)  # type: Dict[str, Any]
+        kwargs = dict(
+            num_boost_round=num_boost_round,
+            valid_sets=valid_sets,
+            valid_names=valid_names,
+            fobj=fobj,
+            feval=feval,
+            feature_name=feature_name,
+            categorical_feature=categorical_feature,
+            early_stopping_rounds=early_stopping_rounds,
+            evals_result=evals_result,
+            verbose_eval=verbose_eval,
+            learning_rates=learning_rates,
+            keep_training_booster=keep_training_booster,
+            callbacks=callbacks,
+            time_budget=time_budget,
+            verbosity=verbosity,
+            sample_size=sample_size,
+        )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
         self.best_booster = None
 
@@ -461,18 +463,19 @@ class LightGBMTuner(BaseTuner):
     def tune_bagging(self, n_trials=10):
         # type: (int) -> None
 
-        self.tune_params(['bagging_fraction', 'bagging_freq'],
-                         n_trials,
-                         optuna.samplers.TPESampler())
+        self.tune_params(
+            ['bagging_fraction', 'bagging_freq'], n_trials, optuna.samplers.TPESampler()
+        )
 
     def tune_feature_fraction_stage2(self, n_trials=6):
         # type: (int) -> None
 
         param_name = 'feature_fraction'
-        param_values = list(np.linspace(
-            self.lgbm_params[param_name] - 0.08,
-            self.lgbm_params[param_name] + 0.08,
-            n_trials))
+        param_values = list(
+            np.linspace(
+                self.lgbm_params[param_name] - 0.08, self.lgbm_params[param_name] + 0.08, n_trials
+            )
+        )
         param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
         sampler = _GridSamplerUniform1D(param_name, param_values)
         self.tune_params([param_name], len(param_values), sampler)
@@ -511,8 +514,8 @@ class LightGBMTuner(BaseTuner):
             pbar=pbar,
         )
         study = optuna.create_study(
-            direction='maximize' if self.higher_is_better() else 'minimize',
-            sampler=sampler)
+            direction='maximize' if self.higher_is_better() else 'minimize', sampler=sampler
+        )
         study.optimize(objective, n_trials=n_trials, catch=())
 
         pbar.close()

@@ -62,9 +62,7 @@ def plot_slice(study, params=None):
 def _get_slice_plot(study, params=None):
     # type: (Study, Optional[List[str]]) -> go.Figure
 
-    layout = go.Layout(
-        title='Slice Plot',
-    )
+    layout = go.Layout(title='Slice Plot',)
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
@@ -85,8 +83,7 @@ def _get_slice_plot(study, params=None):
 
     if n_params == 1:
         figure = go.Figure(
-            data=[_generate_slice_subplot(study, trials, sorted_params[0])],
-            layout=layout
+            data=[_generate_slice_subplot(study, trials, sorted_params[0])], layout=layout
         )
         figure.update_xaxes(title_text=sorted_params[0])
         figure.update_yaxes(title_text='Objective Value')
@@ -95,7 +92,7 @@ def _get_slice_plot(study, params=None):
     else:
         figure = make_subplots(rows=1, cols=len(sorted_params), shared_yaxes=True)
         figure.update_layout(layout)
-        showscale = True   # showscale option only needs to be specified once.
+        showscale = True  # showscale option only needs to be specified once.
         for i, param in enumerate(sorted_params):
             trace = _generate_slice_subplot(study, trials, param)
             trace.update(marker={'showscale': showscale})  # showscale's default is True.
@@ -122,17 +119,14 @@ def _generate_slice_subplot(study, trials, param):
         y=[t.value for t in trials if param in t.params],
         mode='markers',
         marker={
-            'line': {
-                'width': 0.5,
-                'color': 'Grey',
-            },
+            'line': {'width': 0.5, 'color': 'Grey',},
             'color': [t.number for t in trials if param in t.params],
             'colorscale': 'Blues',
             'colorbar': {
                 'title': '#Trials',
                 'x': 1.0,  # Offset the colorbar position with a fixed width `xpad`.
                 'xpad': 40,
-            }
+            },
         },
         showlegend=False,
     )

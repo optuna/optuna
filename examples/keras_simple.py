@@ -50,27 +50,32 @@ def objective(trial):
 
     model = Sequential()
     model.add(
-        Conv2D(filters=trial.suggest_categorical('filters', [32, 64]),
-               kernel_size=trial.suggest_categorical('kernel_size', [3, 5]),
-               strides=trial.suggest_categorical('strides', [1, 2]),
-               activation=trial.suggest_categorical('activation', ['relu', 'linear']),
-               input_shape=input_shape))
+        Conv2D(
+            filters=trial.suggest_categorical('filters', [32, 64]),
+            kernel_size=trial.suggest_categorical('kernel_size', [3, 5]),
+            strides=trial.suggest_categorical('strides', [1, 2]),
+            activation=trial.suggest_categorical('activation', ['relu', 'linear']),
+            input_shape=input_shape,
+        )
+    )
     model.add(Flatten())
     model.add(Dense(CLASSES, activation='softmax'))
 
     # We compile our model with a sampled learning rate.
     lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
-    model.compile(loss='sparse_categorical_crossentropy',
-                  optimizer=RMSprop(lr=lr),
-                  metrics=['accuracy'])
+    model.compile(
+        loss='sparse_categorical_crossentropy', optimizer=RMSprop(lr=lr), metrics=['accuracy']
+    )
 
-    model.fit(x_train,
-              y_train,
-              validation_data=(x_test, y_test),
-              shuffle=True,
-              batch_size=BATCHSIZE,
-              epochs=EPOCHS,
-              verbose=False)
+    model.fit(
+        x_train,
+        y_train,
+        validation_data=(x_test, y_test),
+        shuffle=True,
+        batch_size=BATCHSIZE,
+        epochs=EPOCHS,
+        verbose=False,
+    )
 
     # Evaluate the model accuracy on the test set.
     score = model.evaluate(x_test, y_test, verbose=0)

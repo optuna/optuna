@@ -56,8 +56,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
-    TwoDimArrayLikeType = \
-        Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
+    TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
 
 _logger = logging.get_logger(__name__)
 
@@ -65,7 +64,7 @@ _logger = logging.get_logger(__name__)
 def _check_fit_params(
     X,  # type: TwoDimArrayLikeType
     fit_params,  # type: Dict
-    indices  # type: OneDimArrayLikeType
+    indices,  # type: OneDimArrayLikeType
 ):
     # type: (...) -> Dict
 
@@ -73,11 +72,7 @@ def _check_fit_params(
         return _sklearn_check_fit_params(X, fit_params, indices)
     else:  # '_sklearn_version < 0.22.1'
         return {
-            key: _sklearn_index_param_value(
-                X,
-                value,
-                indices
-            ) for key, value in fit_params.items()
+            key: _sklearn_index_param_value(X, value, indices) for key, value in fit_params.items()
         }
 
 
@@ -96,7 +91,7 @@ def _check_sklearn_availability():
 
 def _safe_indexing(
     X,  # type: Union[OneDimArrayLikeType, TwoDimArrayLikeType]
-    indices  # type: OneDimArrayLikeType
+    indices,  # type: OneDimArrayLikeType
 ):
     # type: (...) -> Union[OneDimArrayLikeType, TwoDimArrayLikeType]
     if X is None:
@@ -175,7 +170,7 @@ class _Objective(object):
         groups,  # type: Optional[OneDimArrayLikeType]
         max_iter,  # type: int
         return_train_score,  # type: bool
-        scoring  # type: Callable[..., float]
+        scoring,  # type: Callable[..., float]
     ):
         # type: (...) -> None
 
@@ -212,7 +207,7 @@ class _Objective(object):
                 fit_params=self.fit_params,
                 groups=self.groups,
                 return_train_score=self.return_train_score,
-                scoring=self.scoring
+                scoring=self.scoring,
             )
 
         self._store_scores(trial, scores)
@@ -222,7 +217,7 @@ class _Objective(object):
     def _cross_validate_with_pruning(
         self,
         trial,  # type: trial_module.Trial
-        estimator  # type: BaseEstimator
+        estimator,  # type: BaseEstimator
     ):
         # type: (...) -> Dict[str, OneDimArrayLikeType]
 
@@ -240,22 +235,15 @@ class _Objective(object):
         scores = {
             'fit_time': np.zeros(n_splits),
             'score_time': np.zeros(n_splits),
-            'test_score': np.empty(n_splits)
+            'test_score': np.empty(n_splits),
         }
 
         if self.return_train_score:
             scores['train_score'] = np.empty(n_splits)
 
         for step in range(self.max_iter):
-            for i, (train, test) in enumerate(
-                self.cv.split(self.X, self.y, groups=self.groups)
-            ):
-                out = self._partial_fit_and_score(
-                    estimators[i],
-                    train,
-                    test,
-                    partial_fit_params
-                )
+            for i, (train, test) in enumerate(self.cv.split(self.X, self.y, groups=self.groups)):
+                out = self._partial_fit_and_score(estimators[i], train, test, partial_fit_params)
 
                 if self.return_train_score:
                     scores['train_score'][i] = out.pop(0)
@@ -271,9 +259,7 @@ class _Objective(object):
             if trial.should_prune():
                 self._store_scores(trial, scores)
 
-                raise exceptions.TrialPruned(
-                    'trial was pruned at iteration {}.'.format(step)
-                )
+                raise exceptions.TrialPruned('trial was pruned at iteration {}.'.format(step))
 
         return scores
 
@@ -281,9 +267,8 @@ class _Objective(object):
         # type: (trial_module.Trial) -> Dict[str, Any]
 
         return {
-            name: trial._suggest(
-                name, distribution
-            ) for name, distribution in self.param_distributions.items()
+            name: trial._suggest(name, distribution)
+            for name, distribution in self.param_distributions.items()
         }
 
     def _partial_fit_and_score(
@@ -291,18 +276,12 @@ class _Objective(object):
         estimator,  # type: BaseEstimator
         train,  # type: List[int]
         test,  # type: List[int]
-        partial_fit_params  # type: Dict[str, Any]
+        partial_fit_params,  # type: Dict[str, Any]
     ):
         # type: (...) -> List[float]
 
         X_train, y_train = _safe_split(estimator, self.X, self.y, train)
-        X_test, y_test = _safe_split(
-            estimator,
-            self.X,
-            self.y,
-            test,
-            train_indices=train
-        )
+        X_test, y_test = _safe_split(estimator, self.X, self.y, test, train_indices=train)
 
         start_time = time()
 
@@ -322,9 +301,7 @@ class _Objective(object):
                     train_score = self.error_score
 
             else:
-                raise ValueError(
-                    'error_score must be \'raise\' or numeric.'
-                )
+                raise ValueError('error_score must be \'raise\' or numeric.')
 
         else:
             fit_time = time() - start_time
@@ -697,7 +674,7 @@ class OptunaSearchCV(BaseEstimator):
         study=None,  # type: Optional[study_module.Study]
         subsample=1.0,  # type: Union[float, int]
         timeout=None,  # type: Optional[float]
-        verbose=0  # type: int
+        verbose=0,  # type: int
     ):
         # type: (...) -> None
 
@@ -723,12 +700,7 @@ class OptunaSearchCV(BaseEstimator):
     def _check_is_fitted(self):
         # type: () -> None
 
-        attributes = [
-            'n_splits_',
-            'sample_indices_',
-            'scorer_',
-            'study_'
-        ]
+        attributes = ['n_splits_', 'sample_indices_', 'scorer_', 'study_']
 
         if self.refit:
             attributes += ['best_estimator_', 'refit_time_']
@@ -739,29 +711,22 @@ class OptunaSearchCV(BaseEstimator):
         # type: () -> None
 
         if not hasattr(self.estimator, 'fit'):
-            raise ValueError(
-                'estimator must be a scikit-learn estimator.'
-            )
+            raise ValueError('estimator must be a scikit-learn estimator.')
 
         if type(self.param_distributions) is not dict:
             raise ValueError('param_distributions must be a dictionary.')
 
         for name, distribution in self.param_distributions.items():
             if not isinstance(distribution, distributions.BaseDistribution):
-                raise ValueError(
-                    'Value of {} must be a optuna distribution.'.format(name)
-                )
+                raise ValueError('Value of {} must be a optuna distribution.'.format(name))
 
         if self.enable_pruning and not hasattr(self.estimator, 'partial_fit'):
             raise ValueError('estimator must support partial_fit.')
 
         if self.max_iter <= 0:
-            raise ValueError(
-                'max_iter must be > 0, got {}.'.format(self.max_iter)
-            )
+            raise ValueError('max_iter must be > 0, got {}.'.format(self.max_iter))
 
-        if self.study is not None \
-                and self.study.direction != structs.StudyDirection.MAXIMIZE:
+        if self.study is not None and self.study.direction != structs.StudyDirection.MAXIMIZE:
             raise ValueError('direction of study must be \'maximize\'.')
 
     def _more_tags(self):
@@ -786,9 +751,7 @@ class OptunaSearchCV(BaseEstimator):
         except ValueError as e:
             _logger.exception(e)
 
-        _logger.info(
-            'Refitting the estimator using {} samples...'.format(n_samples)
-        )
+        _logger.info('Refitting the estimator using {} samples...'.format(n_samples))
 
         start_time = time()
 
@@ -796,10 +759,7 @@ class OptunaSearchCV(BaseEstimator):
 
         self.refit_time_ = time() - start_time
 
-        _logger.info(
-            'Finished refitting! '
-            '(elapsed time: {:.3f} sec.)'.format(self.refit_time_)
-        )
+        _logger.info('Finished refitting! ' '(elapsed time: {:.3f} sec.)'.format(self.refit_time_))
 
         return self
 
@@ -853,9 +813,7 @@ class OptunaSearchCV(BaseEstimator):
 
         if max_samples < n_samples:
             self.sample_indices_ = random_state.choice(
-                self.sample_indices_,
-                max_samples,
-                replace=False
+                self.sample_indices_, max_samples, replace=False
             )
 
             self.sample_indices_.sort()
@@ -878,10 +836,7 @@ class OptunaSearchCV(BaseEstimator):
             seed = random_state.randint(0, np.iinfo('int32').max)
             sampler = samplers.TPESampler(seed=seed)
 
-            self.study_ = study_module.create_study(
-                direction='maximize',
-                sampler=sampler
-            )
+            self.study_ = study_module.create_study(direction='maximize', sampler=sampler)
 
         else:
             self.study_ = self.study
@@ -898,7 +853,7 @@ class OptunaSearchCV(BaseEstimator):
             groups_res,
             self.max_iter,
             self.return_train_score,
-            self.scorer_
+            self.scorer_,
         )
 
         _logger.info(
@@ -907,10 +862,7 @@ class OptunaSearchCV(BaseEstimator):
         )
 
         self.study_.optimize(
-            objective,
-            n_jobs=self.n_jobs,
-            n_trials=self.n_trials,
-            timeout=self.timeout
+            objective, n_jobs=self.n_jobs, n_trials=self.n_trials, timeout=self.timeout
         )
 
         _logger.info('Finished hyperparemeter search!')

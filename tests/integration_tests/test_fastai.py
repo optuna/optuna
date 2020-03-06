@@ -46,27 +46,26 @@ def test_fastai_pruning_callback(tmpdir):
     # type: (typing.Any) -> None
 
     train_x = np.zeros((16, 20), np.float32)
-    train_y = np.zeros((16, ), np.int64)
+    train_y = np.zeros((16,), np.int64)
     valid_x = np.zeros((4, 20), np.float32)
-    valid_y = np.zeros((4, ), np.int64)
+    valid_y = np.zeros((4,), np.int64)
     train_ds = ArrayDataset(train_x, train_y)
     valid_ds = ArrayDataset(valid_x, valid_y)
 
     data_bunch = DataBunch.create(
-        train_ds=train_ds,
-        valid_ds=valid_ds,
-        test_ds=None,
-        path=tmpdir,
-        bs=1  # batch size
+        train_ds=train_ds, valid_ds=valid_ds, test_ds=None, path=tmpdir, bs=1  # batch size
     )
 
     def objective(trial):
         # type: (optuna.trial.Trial) -> float
 
         model = nn.Sequential(nn.Linear(20, 1), nn.Sigmoid())
-        learn = Learner(data_bunch, model, metrics=[accuracy], callback_fns=[
-            partial(FastAIPruningCallback, trial=trial, monitor='valid_loss')
-        ])
+        learn = Learner(
+            data_bunch,
+            model,
+            metrics=[accuracy],
+            callback_fns=[partial(FastAIPruningCallback, trial=trial, monitor='valid_loss')],
+        )
 
         learn.fit(1)
 

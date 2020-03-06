@@ -83,26 +83,29 @@ def objective(trial):
         data=mnist['train_data'][permute_train][:N_TRAIN_EXAMPLES],
         label=mnist['train_label'][permute_train][:N_TRAIN_EXAMPLES],
         batch_size=BATCHSIZE,
-        shuffle=True)
+        shuffle=True,
+    )
     permute_test = rng.permutation(len(mnist['test_data']))
     val = mx.io.NDArrayIter(
         data=mnist['test_data'][permute_test][:N_TEST_EXAMPLES],
         label=mnist['test_label'][permute_test][:N_TEST_EXAMPLES],
-        batch_size=BATCHSIZE)
+        batch_size=BATCHSIZE,
+    )
 
     # Create our MXNet trainable model and fit it on MNIST data.
     model = mx.mod.Module(symbol=mlp)
-    model.fit(train_data=train,
-              eval_data=val,
-              optimizer=optimizer,
-              optimizer_params={'rescale_grad': 1.0 / BATCHSIZE},
-              num_epoch=EPOCH)
+    model.fit(
+        train_data=train,
+        eval_data=val,
+        optimizer=optimizer,
+        optimizer_params={'rescale_grad': 1.0 / BATCHSIZE},
+        num_epoch=EPOCH,
+    )
 
     # Compute the accuracy on the entire test set.
     test = mx.io.NDArrayIter(
-        data=mnist['test_data'],
-        label=mnist['test_label'],
-        batch_size=BATCHSIZE)
+        data=mnist['test_data'], label=mnist['test_label'], batch_size=BATCHSIZE
+    )
     accuracy = model.score(eval_data=test, eval_metric='acc')[0]
 
     return accuracy[1]

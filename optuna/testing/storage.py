@@ -32,15 +32,13 @@ class StorageSupplier(object):
             self.tempfile = tempfile.NamedTemporaryFile()
             url = 'sqlite:///{}'.format(self.tempfile.name)
             return optuna.storages.RDBStorage(
-                url,
-                engine_kwargs={'connect_args': {'timeout': SQLITE3_TIMEOUT}},
+                url, engine_kwargs={'connect_args': {'timeout': SQLITE3_TIMEOUT}},
             )
         elif self.storage_specifier == 'common':
             assert self._common_tempfile is not None
             url = 'sqlite:///{}'.format(self._common_tempfile.name)
             return optuna.storages.RDBStorage(
-                url,
-                engine_kwargs={'connect_args': {'timeout': SQLITE3_TIMEOUT}},
+                url, engine_kwargs={'connect_args': {'timeout': SQLITE3_TIMEOUT}},
             )
         else:
             assert False

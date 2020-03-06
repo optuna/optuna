@@ -18,16 +18,12 @@ if __name__ == '__main__':
     clf = SVC(gamma='auto')
 
     param_distributions = {
-        'C': optuna.distributions.LogUniformDistribution(1e-10, 1e+10),
+        'C': optuna.distributions.LogUniformDistribution(1e-10, 1e10),
         'degree': optuna.distributions.IntUniformDistribution(1, 5),
     }
 
     optuna_search = optuna.integration.OptunaSearchCV(
-        clf,
-        param_distributions,
-        n_trials=100,
-        timeout=600,
-        verbose=2,
+        clf, param_distributions, n_trials=100, timeout=600, verbose=2,
     )
 
     X, y = load_iris(return_X_y=True)

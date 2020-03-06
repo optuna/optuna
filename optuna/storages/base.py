@@ -218,4 +218,5 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         if trial_state.is_finished():
             trial = self.get_trial(trial_id)
             raise RuntimeError(
-                "Trial#{} has already finished and can not be updated.".format(trial.number))
+                "Trial#{} has already finished and can not be updated.".format(trial.number)
+            )

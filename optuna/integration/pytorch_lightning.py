@@ -6,6 +6,7 @@ if optuna.type_checking.TYPE_CHECKING:
 
 try:
     from pytorch_lightning.callbacks import EarlyStopping
+
     _available = True
 except (ImportError, SyntaxError) as e:
     # SyntaxError is raised with Python versions below 3.6 since PyTorch Lightning does not
@@ -72,4 +73,6 @@ def _check_pytorch_lightning_availability():
             'feature. PyTorch Lightning can be installed by executing `$ pip install '
             'pytorch-lightning`. For further information, please refer to the installation guide '
             'of PyTorch Lightining. (The actual import error is as follows: '
-            + str(_import_error) + ')')
+            + str(_import_error)
+            + ')'
+        )

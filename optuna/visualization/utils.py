@@ -37,20 +37,26 @@ def _check_plotly_availability():
             'Plotly is not available. Please install plotly to use this feature. '
             'Plotly can be installed by executing `$ pip install plotly`. '
             'For further information, please refer to the installation guide of plotly. '
-            '(The actual import error is as follows: ' + str(plotly_imports._import_error) + ')')
+            '(The actual import error is as follows: ' + str(plotly_imports._import_error) + ')'
+        )
 
     from distutils.version import StrictVersion
     from plotly import __version__ as plotly_version
+
     if StrictVersion(plotly_version) < StrictVersion('4.0.0'):
         raise ImportError(
             'Your version of Plotly is ' + plotly_version + ' . '
             'Please install plotly version 4.0.0 or higher. '
             'Plotly can be installed by executing `$ pip install -U plotly>=4.0.0`. '
-            'For further information, please refer to the installation guide of plotly. ')
+            'For further information, please refer to the installation guide of plotly. '
+        )
 
 
 def _is_log_scale(trials, param):
     # type: (List[FrozenTrial], str) -> bool
 
-    return any(isinstance(t.distributions[param], LogUniformDistribution)
-               for t in trials if param in t.params)
+    return any(
+        isinstance(t.distributions[param], LogUniformDistribution)
+        for t in trials
+        if param in t.params
+    )

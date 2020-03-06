@@ -55,7 +55,7 @@ def _get_intermediate_plot(study):
         title='Intermediate Values Plot',
         xaxis={'title': 'Step'},
         yaxis={'title': 'Intermediate Value'},
-        showlegend=False
+        showlegend=False,
     )
 
     target_state = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
@@ -73,16 +73,15 @@ def _get_intermediate_plot(study):
                 x=tuple((x for x, _ in sorted_intermediate_values)),
                 y=tuple((y for _, y in sorted_intermediate_values)),
                 mode='lines+markers',
-                marker={
-                    'maxdisplayed': 10
-                },
-                name='Trial{}'.format(trial.number)
+                marker={'maxdisplayed': 10},
+                name='Trial{}'.format(trial.number),
             )
             traces.append(trace)
 
     if not traces:
         logger.warning(
-            'You need to set up the pruning feature to utilize `plot_intermediate_values()`')
+            'You need to set up the pruning feature to utilize `plot_intermediate_values()`'
+        )
         return go.Figure(data=[], layout=layout)
 
     figure = go.Figure(data=traces, layout=layout)

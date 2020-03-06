@@ -15,41 +15,52 @@ EPS = 1e-12
 
 
 class _ParzenEstimatorParameters(
-        NamedTuple('_ParzenEstimatorParameters', [
+    NamedTuple(
+        '_ParzenEstimatorParameters',
+        [
             ('consider_prior', bool),
             ('prior_weight', Optional[float]),
             ('consider_magic_clip', bool),
             ('consider_endpoints', bool),
             ('weights', Callable[[int], ndarray]),
-        ])):
+        ],
+    )
+):
     pass
 
 
 class _ParzenEstimator(object):
     def __init__(
-            self,
-            mus,  # type: ndarray
-            low,  # type: float
-            high,  # type: float
-            parameters  # type: _ParzenEstimatorParameters
+        self,
+        mus,  # type: ndarray
+        low,  # type: float
+        high,  # type: float
+        parameters,  # type: _ParzenEstimatorParameters
     ):
         # type: (...) -> None
 
         self.weights, self.mus, self.sigmas = _ParzenEstimator._calculate(
-            mus, low, high, parameters.consider_prior, parameters.prior_weight,
-            parameters.consider_magic_clip, parameters.consider_endpoints, parameters.weights)
+            mus,
+            low,
+            high,
+            parameters.consider_prior,
+            parameters.prior_weight,
+            parameters.consider_magic_clip,
+            parameters.consider_endpoints,
+            parameters.weights,
+        )
 
     @classmethod
     def _calculate(
-            cls,
-            mus,  # type: ndarray
-            low,  # type: float
-            high,  # type: float
-            consider_prior,  # type: bool
-            prior_weight,  # type: Optional[float]
-            consider_magic_clip,  # type: bool
-            consider_endpoints,  # type: bool
-            weights_func  # type: Callable[[int], ndarray]
+        cls,
+        mus,  # type: ndarray
+        low,  # type: float
+        high,  # type: float
+        consider_prior,  # type: bool
+        prior_weight,  # type: Optional[float]
+        consider_magic_clip,  # type: bool
+        consider_endpoints,  # type: bool
+        weights_func,  # type: Callable[[int], ndarray]
     ):
         # type: (...) -> Tuple[ndarray, ndarray, ndarray]
 
@@ -76,7 +87,7 @@ class _ParzenEstimator(object):
                 sorted_mus = low_sorted_mus_high[1:-1]
                 sorted_mus[:prior_pos] = ordered_mus[:prior_pos]
                 sorted_mus[prior_pos] = prior_mu
-                sorted_mus[prior_pos + 1:] = ordered_mus[prior_pos:]
+                sorted_mus[prior_pos + 1 :] = ordered_mus[prior_pos:]
         else:
             order = numpy.argsort(mus)
             # We decide the mus.
@@ -88,8 +99,10 @@ class _ParzenEstimator(object):
         if mus.size > 0:
             low_sorted_mus_high[-1] = high
             low_sorted_mus_high[0] = low
-            sigma = numpy.maximum(low_sorted_mus_high[1:-1] - low_sorted_mus_high[0:-2],
-                                  low_sorted_mus_high[2:] - low_sorted_mus_high[1:-1])
+            sigma = numpy.maximum(
+                low_sorted_mus_high[1:-1] - low_sorted_mus_high[0:-2],
+                low_sorted_mus_high[2:] - low_sorted_mus_high[1:-1],
+            )
             if not consider_endpoints and low_sorted_mus_high.size > 2:
                 sigma[0] = low_sorted_mus_high[2] - low_sorted_mus_high[1]
                 sigma[-1] = low_sorted_mus_high[-2] - low_sorted_mus_high[-3]
@@ -100,7 +113,7 @@ class _ParzenEstimator(object):
             sorted_weights = numpy.zeros_like(sorted_mus)
             sorted_weights[:prior_pos] = unsorted_weights[order[:prior_pos]]
             sorted_weights[prior_pos] = prior_weight
-            sorted_weights[prior_pos + 1:] = unsorted_weights[order[prior_pos:]]
+            sorted_weights[prior_pos + 1 :] = unsorted_weights[order[prior_pos:]]
         else:
             sorted_weights = unsorted_weights[order]
         sorted_weights /= sorted_weights.sum()

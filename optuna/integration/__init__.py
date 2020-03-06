@@ -44,6 +44,7 @@ if TYPE_CHECKING:
     from optuna.integration.tfkeras import TFKerasPruningCallback  # NOQA
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
 else:
+
     class _IntegrationModule(ModuleType):
         """Module class that implements `optuna.integration` package.
 
@@ -79,6 +80,7 @@ else:
             # type: (str) -> ModuleType
 
             import importlib
+
             return importlib.import_module('.' + module_name, self.__name__)
 
     sys.modules[__name__] = _IntegrationModule(__name__)

@@ -43,7 +43,8 @@ def objective(trial):
     # Add a callback for pruning.
     pruning_callback = optuna.integration.LightGBMPruningCallback(trial, 'auc')
     gbm = lgb.train(
-        param, dtrain, valid_sets=[dtest], verbose_eval=False, callbacks=[pruning_callback])
+        param, dtrain, valid_sets=[dtest], verbose_eval=False, callbacks=[pruning_callback]
+    )
 
     preds = gbm.predict(test_x)
     pred_labels = np.rint(preds)
@@ -52,8 +53,9 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    study = optuna.create_study(pruner=optuna.pruners.MedianPruner(n_warmup_steps=10),
-                                direction='maximize')
+    study = optuna.create_study(
+        pruner=optuna.pruners.MedianPruner(n_warmup_steps=10), direction='maximize'
+    )
     study.optimize(objective, n_trials=100)
 
     print('Number of finished trials: {}'.format(len(study.trials)))

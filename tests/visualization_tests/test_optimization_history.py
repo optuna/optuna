@@ -48,7 +48,7 @@ def test_plot_optimization_history(direction):
         raise ValueError
 
     study = create_study(direction=direction)
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
 
     figure = plot_optimization_history(study)
     assert len(figure.data) == 0

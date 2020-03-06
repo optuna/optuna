@@ -97,7 +97,6 @@ class Net(nn.Module):
 
 
 class LightningNet(pl.LightningModule):
-
     def __init__(self, trial):
         super(LightningNet, self).__init__()
 
@@ -133,20 +132,25 @@ class LightningNet(pl.LightningModule):
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
             datasets.MNIST(DIR, train=True, download=True, transform=transforms.ToTensor()),
-            batch_size=BATCHSIZE, shuffle=True)
+            batch_size=BATCHSIZE,
+            shuffle=True,
+        )
 
     @pl.data_loader
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
             datasets.MNIST(DIR, train=False, download=True, transform=transforms.ToTensor()),
-            batch_size=BATCHSIZE, shuffle=False)
+            batch_size=BATCHSIZE,
+            shuffle=False,
+        )
 
 
 def objective(trial):
     # PyTorch Lightning will try to restore model parameters from previous trials if checkpoint
     # filenames match. Therefore, the filenames for each trial must be made unique.
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        os.path.join(MODEL_DIR, 'trial_{}'.format(trial.number)), monitor='accuracy')
+        os.path.join(MODEL_DIR, 'trial_{}'.format(trial.number)), monitor='accuracy'
+    )
 
     # The default logger in PyTorch Lightning writes to event files to be consumed by
     # TensorBoard. We create a simple logger instead that holds the log in memory so that the
@@ -160,7 +164,7 @@ def objective(trial):
         checkpoint_callback=checkpoint_callback,
         max_epochs=EPOCHS,
         gpus=0 if torch.cuda.is_available() else None,
-        early_stop_callback=PyTorchLightningPruningCallback(trial, monitor='accuracy')
+        early_stop_callback=PyTorchLightningPruningCallback(trial, monitor='accuracy'),
     )
 
     model = LightningNet(trial)
@@ -171,9 +175,13 @@ def objective(trial):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Lightning example.')
-    parser.add_argument('--pruning', '-p', action='store_true',
-                        help='Activate the pruning feature. `MedianPruner` stops unpromising '
-                             'trials at the early stages of training.')
+    parser.add_argument(
+        '--pruning',
+        '-p',
+        action='store_true',
+        help='Activate the pruning feature. `MedianPruner` stops unpromising '
+        'trials at the early stages of training.',
+    )
     args = parser.parse_args()
 
     pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
