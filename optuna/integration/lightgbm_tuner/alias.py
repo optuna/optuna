@@ -86,7 +86,6 @@ def _handling_alias_metrics(lgbm_params):
         alias_names = metric['alias_names']
 
         for alias_name in alias_names:
-            if lgbm_params['metric'].startswith(alias_name):
-                lgbm_params['metric'] = \
-                    lgbm_params['metric'].replace(alias_name, metric_name)
+            if lgbm_params['metric'] == alias_name:
+                lgbm_params['metric'] = metric_name
                 break
