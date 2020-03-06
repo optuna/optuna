@@ -474,9 +474,9 @@ def test_study_trials_dataframe_with_no_trials():
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 @pytest.mark.parametrize('attrs', [
     ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
-     'state'),
+     'system_attrs', 'state'),
     ('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
-     'state', 'intermediate_values', '_trial_id', 'distributions')])
+     'system_attrs', 'state', 'intermediate_values', '_trial_id', 'distributions')])
 @pytest.mark.parametrize('multi_index', [True, False])
 def test_trials_dataframe(storage_mode, attrs, multi_index):
     # type: (str, Tuple[str, ...], bool) -> None
@@ -488,6 +488,7 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
         y = trial.suggest_categorical('y', (2.5, ))
         assert isinstance(y, float)
         trial.set_user_attr('train_loss', 3)
+        trial.set_system_attr('foo', 'bar')
         value = x + y  # 3.5
 
         # Test reported intermediate values, although it in practice is not "intermediate".
@@ -506,12 +507,12 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
             df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
 
-        # Number columns are as follows (total of 11):
+        # Number columns are as follows (total of 12):
         #   non-nested: 5 (number, value, state, datetime_start, datetime_complete)
         #   params: 2
         #   distributions: 2
         #   user_attrs: 1
-        #   system_attrs: 0
+        #   system_attrs: 1
         #   intermediate_values: 1
         expected_n_columns = len(attrs)
         if 'params' in attrs:
@@ -537,6 +538,7 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
                 assert df.params.x[i] == 1
                 assert df.params.y[i] == 2.5
                 assert df.user_attrs.train_loss[i] == 3
+                assert df.system_attrs.foo[i] == 'bar'
             else:
                 if 'distributions' in attrs:
                     assert 'distributions_x' in df.columns
@@ -547,6 +549,7 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
                 assert df.params_x[i] == 1
                 assert df.params_y[i] == 2.5
                 assert df.user_attrs_train_loss[i] == 3
+                assert df.system_attrs_foo[i] == 'bar'
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
