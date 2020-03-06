@@ -5,13 +5,12 @@ import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
 
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
+from typing import Dict
+from typing import List
+from typing import Optional
 
 
-def get_version():
-    # type: () -> str
+def get_version() -> str:
 
     version_filepath = os.path.join(os.path.dirname(__file__), 'optuna', 'version.py')
     with open(version_filepath) as f:
@@ -21,16 +20,14 @@ def get_version():
     assert False
 
 
-def get_long_description():
-    # type: () -> str
+def get_long_description() -> str:
 
     readme_filepath = os.path.join(os.path.dirname(__file__), 'README.md')
     with open(readme_filepath) as f:
         return f.read()
 
 
-def get_install_requires():
-    # type: () -> List[str]
+def get_install_requires() -> List[str]:
 
     return [
         'alembic',
@@ -44,14 +41,12 @@ def get_install_requires():
     ]
 
 
-def get_tests_require():
-    # type: () -> List[str]
+def get_tests_require() -> List[str]:
 
     return get_extras_require()['testing']
 
 
-def get_extras_require():
-    # type: () -> Dict[str, List[str]]
+def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
         'checking': [
@@ -122,8 +117,7 @@ def get_extras_require():
     return requirements
 
 
-def find_any_distribution(pkgs):
-    # type: (List[str]) -> Optional[pkg_resources.Distribution]
+def find_any_distribution(pkgs: List[str]) -> Optional[pkg_resources.Distribution]:
 
     for pkg in pkgs:
         try:
