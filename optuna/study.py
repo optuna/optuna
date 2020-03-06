@@ -594,7 +594,12 @@ class Study(BaseStudy):
                 if elapsed_seconds >= timeout:
                     break
 
-            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
+            try:
+                self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
+            except exceptions.StopStudy:
+                break
+            except Exception:
+                raise
 
             self._progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
         self._storage.remove_session()

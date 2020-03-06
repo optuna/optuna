@@ -14,6 +14,7 @@ import pandas as pd
 import pytest
 
 import optuna
+from optuna import exceptions
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 
@@ -259,6 +260,44 @@ def test_optimize_with_catch_invalid_type(catch):
 
     with pytest.raises(TypeError):
         study.optimize(func_value_error, n_trials=20, catch=catch)
+
+
+@pytest.mark.parametrize('x_range', [(-1., 0.), (0., 1.), (1., 2.)])
+def test_optimize_with_objective_threshold(x_range):
+    # type: (Tuple[float, float]) -> None
+
+    EXIT_THRESHOLD = 0.5  # type: float
+    low, high = x_range
+    max_n_trials = 20  # type: int
+
+    if low > EXIT_THRESHOLD:
+        n_executed_trials = [max_n_trials]
+    elif high < EXIT_THRESHOLD:
+        n_executed_trials = [1]
+    else:
+        n_executed_trials = list(range(1, max_n_trials))
+
+    study = optuna.create_study()
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        x = trial.suggest_uniform('x', low, high)
+        return x
+
+    def callback(study, trial):
+        # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
+
+        nonlocal EXIT_THRESHOLD
+        if trial.value is not None and trial.value < EXIT_THRESHOLD:
+            raise exceptions.StopStudy
+
+    study.optimize(objective, n_trials=max_n_trials, callbacks=[callback])
+
+    assert len(study.trials) in n_executed_trials
+    assert all(trial.state == optuna.structs.TrialState.COMPLETE for trial in study.trials)
+    if len(study.trials) < max_n_trials:
+        assert study.best_value < EXIT_THRESHOLD
 
 
 def test_optimize_parallel_storage_warning(recwarn):
