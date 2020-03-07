@@ -95,26 +95,18 @@ def objective(trial):
                                             metrics={'accuracy': Accuracy()},
                                             device=device)
 
-    # Create another evaluator which calls the pruning handler.
-    pruning_evaluator = create_supervised_evaluator(model,
-                                                    metrics={'accuracy': Accuracy()},
-                                                    device=device)
+    # Register a pruning handler to the evaluator.
     pruning_handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
-    pruning_evaluator.add_event_handler(Events.COMPLETED, pruning_handler)
+    evaluator.add_event_handler(Events.COMPLETED, pruning_handler)
 
     # Load MNIST dataset.
     train_loader, val_loader = get_data_loaders(TRAIN_BATCH_SIZE, VAL_BATCH_SIZE)
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def log_results(engine):
-        evaluator.run(train_loader)
-        train_acc = evaluator.state.metrics['accuracy']
-        pruning_evaluator.run(val_loader)
-        validation_acc = pruning_evaluator.state.metrics['accuracy']
-        print(
-            "Epoch: {}  Train accuracy: {:.2f}  Validation accuracy: {:.2f}"
-            .format(engine.state.epoch, train_acc, validation_acc)
-        )
+        evaluator.run(val_loader)
+        validation_acc = evaluator.state.metrics['accuracy']
+        print("Epoch: {} Validation accuracy: {:.2f}".format(engine.state.epoch, validation_acc))
 
     trainer.run(train_loader, max_epochs=EPOCHS)
 

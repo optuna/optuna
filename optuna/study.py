@@ -265,6 +265,12 @@ class Study(BaseStudy):
         # type: (...) -> None
         """Optimize an objective function.
 
+        Optimization is done by choosing a suitable set of hyperparameter values from a given
+        range. Uses a sampler which implements the task of value suggestion based on a specified
+        distribution. The sampler is specified in :func:`~optuna.study.create_study` and the
+        default choice for the sampler is TPE.
+        See also :class:`~optuna.samplers.TPESampler` for more details on 'TPE'.
+
         Args:
             func:
                 A callable that implements objective function.

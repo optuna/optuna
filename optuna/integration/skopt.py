@@ -70,6 +70,7 @@ class SkoptSampler(BaseSampler):
 
             Note that the parameters of the first trial in a study are always sampled
             via an independent sampler, so no warning messages are emitted in this case.
+
         skopt_kwargs:
             Keyword arguments passed to the constructor of
             `skopt.Optimizer <https://scikit-optimize.github.io/#skopt.Optimizer>`_
@@ -78,11 +79,14 @@ class SkoptSampler(BaseSampler):
             Note that ``dimensions`` argument in ``skopt_kwargs`` will be ignored
             because it is added by :class:`~optuna.integration.SkoptSampler` automatically.
 
+        n_startup_trials:
+            The independent sampling is used until the given number of trials finish in the
+            same study.
     """
 
     def __init__(self, independent_sampler=None, warn_independent_sampling=True,
-                 skopt_kwargs=None):
-        # type: (Optional[BaseSampler], bool, Optional[Dict[str, Any]]) -> None
+                 skopt_kwargs=None, n_startup_trials=1):
+        # type: (Optional[BaseSampler], bool, Optional[Dict[str, Any]], int) -> None
 
         _check_skopt_availability()
 
@@ -92,6 +96,7 @@ class SkoptSampler(BaseSampler):
 
         self._independent_sampler = independent_sampler or samplers.RandomSampler()
         self._warn_independent_sampling = warn_independent_sampling
+        self._n_startup_trials = n_startup_trials
 
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
@@ -116,8 +121,12 @@ class SkoptSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
+        complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
+        if len(complete_trials) < self._n_startup_trials:
+            return {}
+
         optimizer = _Optimizer(search_space, self._skopt_kwargs)
-        optimizer.tell(study)
+        optimizer.tell(study, complete_trials)
         return optimizer.ask()
 
     def sample_independent(self, study, trial, param_name, param_distribution):
@@ -125,7 +134,7 @@ class SkoptSampler(BaseSampler):
 
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
-            if len(complete_trials) >= 1:
+            if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
         return self._independent_sampler.sample_independent(study, trial, param_name,
@@ -175,15 +184,13 @@ class _Optimizer(object):
 
         self._optimizer = skopt.Optimizer(dimensions, **skopt_kwargs)
 
-    def tell(self, study):
-        # type: (Study) -> None
+    def tell(self, study, complete_trials):
+        # type: (Study, List[FrozenTrial]) -> None
 
         xs = []
         ys = []
-        for trial in study.trials:
-            if trial.state != structs.TrialState.COMPLETE:
-                continue
 
+        for trial in complete_trials:
             if not self._is_compatible(trial):
                 continue
 
