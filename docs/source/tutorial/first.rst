@@ -35,6 +35,8 @@ To start the optimization, we create a study object and pass the objective funct
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
 
+Out:
+
 .. code-block:: console
 
     [I 2018-05-09 10:03:22,469] Finished trial#0 resulted in value: 52.9345515866657. Current best value is 52.9345515866657 with parameters: {'x': -5.275613485244093}.
@@ -47,9 +49,13 @@ To start the optimization, we create a study object and pass the objective funct
     ...
     [I 2018-05-09 10:03:23,431] Finished trial#99 resulted in value: 8.760381111220335. Current best value is 0.0026232243068543526 with parameters: {'x': 1.9487825780924659}.
 
+You can get the best parameter as follows.
+
 .. code-block:: python
 
     study.best_params
+
+Out:
 
 .. code-block:: console
 
@@ -72,33 +78,49 @@ Let us clarify the terminology in Optuna as follows:
 In Optuna, we use the study object to manage optimization. Method :func:`~optuna.study.create_study` returns a study object.
 A study object has useful properties for analyzing the optimization outcome.
 
+To get the best params:
+
 .. code-block:: python
 
     study.best_params
+
+Out:
 
 .. code-block:: console
 
     {'x': 1.9926578647650126}
 
+To get the best value:
+
 .. code-block:: python
 
     study.best_value
+
+Out:
 
 .. code-block:: console
 
     5.390694980884334e-05
 
+To get the best trial:
+
 .. code-block:: python
 
     study.best_trial
+
+Out:
 
 .. code-block:: console
 
     FrozenTrial(number=26, state=<TrialState.COMPLETE: 1>, params={'x': 1.9926578647650126}, user_attrs={}, system_attrs={'_number': 26}, value=5.390694980884334e-05, intermediate_values={}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 87060), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 91010), trial_id=26)
 
+To get all trials:
+
 .. code-block:: python
 
     study.trials  # all trials
+
+Out:
 
 .. code-block:: console
 
@@ -106,9 +128,13 @@ A study object has useful properties for analyzing the optimization outcome.
      ...
      user_attrs={}, system_attrs={'_number': 99}, value=8.2881000286123179, intermediate_values={}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 886434), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 891347), trial_id=99)]
 
+To get the number of trials:
+
 .. code-block:: python
 
     len(study.trials)
+
+Out:
 
 .. code-block:: console
 
@@ -123,6 +149,8 @@ By executing :func:`~optuna.study.Study.optimize` again, we can continue the opt
 .. code-block:: python
 
     len(study.trials)
+
+Out:
 
 .. code-block:: console
 

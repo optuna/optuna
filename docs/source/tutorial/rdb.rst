@@ -59,15 +59,21 @@ For example, we can get all trials of ``example-study`` as:
 
 The method :func:`~optuna.study.Study.trials_dataframe` returns a pandas dataframe like:
 
+.. code-block:: python
+
+    print(df)
+
+Out:
+
 .. code-block:: console
 
-    number       value  params_x     state
-         0   25.301959 -3.030105  COMPLETE
-         1    1.406223  0.814157  COMPLETE
-         2   44.010366 -4.634031  COMPLETE
-         3   55.872181  9.474770  COMPLETE
-         4  113.039223 -8.631991  COMPLETE
-         5   57.319570  9.570969  COMPLETE
+            number       value  params_x     state
+         0       0   25.301959 -3.030105  COMPLETE
+         1       1    1.406223  0.814157  COMPLETE
+         2       2   44.010366 -4.634031  COMPLETE
+         3       3   55.872181  9.474770  COMPLETE
+         4       4  113.039223 -8.631991  COMPLETE
+         5       5   57.319570  9.570969  COMPLETE
 
 A :class:`~optuna.study.Study` object also provides properties such as :attr:`~optuna.study.Study.trials`, :attr:`~optuna.study.Study.best_value`, :attr:`~optuna.study.Study.best_params` (see also :ref:`firstopt`).
 
