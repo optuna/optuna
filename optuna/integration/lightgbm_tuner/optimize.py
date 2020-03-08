@@ -142,14 +142,39 @@ class BaseTuner(object):
         else:
             raise NotImplementedError
 
+        metric = self._metric_with_eval_at(metric)
         val_score = booster.best_score[valid_name][metric]
         return val_score
+
+    def _metric_with_eval_at(self, metric):
+        # type: (str) -> str
+
+        if metric != 'ndcg' and metric != 'map':
+            return metric
+
+        eval_at = self.lgbm_params.get('eval_at')
+        if eval_at is None:
+            eval_at = self.lgbm_params.get('{}_at'.format(metric))
+        if eval_at is None:
+            eval_at = self.lgbm_params.get('{}_eval_at'.format(metric))
+        if eval_at is None:
+            # Set default value of LightGBM.
+            # See https://lightgbm.readthedocs.io/en/latest/Parameters.html#eval_at.
+            eval_at = [1, 2, 3, 4, 5]
+
+        # Optuna can handle only a single metric. Choose first one.
+        if type(eval_at) in [list, tuple]:
+            return '{}@{}'.format(metric, eval_at[0])
+        if type(eval_at) is int:
+            return '{}@{}'.format(metric, eval_at)
+        raise ValueError('The value of eval_at is expected to be int or a list/tuple of int.'
+                         '\'{}\' is specified.'.format(eval_at))
 
     def higher_is_better(self):
         # type: () -> bool
 
         metric_name = self.lgbm_params.get('metric', 'binary_logloss')
-        return metric_name.startswith(('auc', 'ndcg@', 'map@', 'accuracy'))
+        return metric_name.startswith(('auc', 'ndcg', 'map', 'accuracy'))
 
     def compare_validation_metrics(self, val_score, best_score):
         # type: (float, float) -> bool

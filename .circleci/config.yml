@@ -72,7 +72,7 @@ jobs:
           name: mypy
           command: |
             . venv/bin/activate
-            mypy --disallow-untyped-defs --ignore-missing-imports .
+            mypy .
 
   document:
     docker:

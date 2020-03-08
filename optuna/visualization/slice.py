@@ -30,17 +30,19 @@ def plot_slice(study, params=None):
 
         The following code snippet shows how to plot the parameter relationship as slice plot.
 
-        .. code::
+        .. testcode::
 
             import optuna
 
             def objective(trial):
-                ...
+                x = trial.suggest_uniform('x', -100, 100)
+                y = trial.suggest_categorical('y', [-1, 0, 1])
+                return x ** 2 + y
 
             study = optuna.create_study()
-            study.optimize(objective, n_trials=100)
+            study.optimize(objective, n_trials=10)
 
-            optuna.visualization.plot_slice(study, params=['param_a', 'param_b'])
+            optuna.visualization.plot_slice(study, params=['x', 'y'])
 
     Args:
         study:
