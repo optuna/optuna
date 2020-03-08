@@ -20,8 +20,7 @@ if is_available():
 logger = get_logger(__name__)
 
 
-def plot_parallel_coordinate(study, params=None):
-    # type: (Study, Optional[List[str]]) -> go.Figure
+def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -> go.Figure:
     """Plot the high-dimentional parameter relationships in a study.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
@@ -59,8 +58,7 @@ def plot_parallel_coordinate(study, params=None):
     return _get_parallel_coordinate_plot(study, params)
 
 
-def _get_parallel_coordinate_plot(study, params=None):
-    # type: (Study, Optional[List[str]]) -> go.Figure
+def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = None) -> go.Figure:
 
     layout = go.Layout(
         title='Parallel Coordinate Plot',
