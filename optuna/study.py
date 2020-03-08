@@ -485,8 +485,8 @@ class Study(BaseStudy):
         return df
 
     @experimental('1.2.0')
-    def enqueue_trial(self, params):
-        # type: (Dict[str, Any]) -> None
+    def enqueue_trial(self, params, skip_if_exists=True):
+        # type: (Dict[str, Any],bool) -> None
         """Enqueue a trial with given parameter values.
 
         You can fix the next sampling parameters which will be evaluated in your
@@ -514,6 +514,13 @@ class Study(BaseStudy):
             params:
                 Parameter values to pass your objective function.
         """
+
+        if skip_if_exists is True:
+            trials_dataframe = self.trials_dataframe()
+            if "system_attrs_fixed_params" in trials_dataframe.columns:
+                system_attrs_fixed_params = trials_dataframe["system_attrs_fixed_params"].values
+                if params in system_attrs_fixed_params:
+                    return
 
         system_attrs = {'fixed_params': params}
         self._append_trial(state=structs.TrialState.WAITING,
