@@ -15,7 +15,7 @@ EXAMPLE_DISTRIBUTIONS = {
     'u': distributions.UniformDistribution(low=1., high=2.),
     'l': distributions.LogUniformDistribution(low=0.001, high=100),
     'du': distributions.DiscreteUniformDistribution(low=1., high=10., q=2.),
-    'iu': distributions.IntUniformDistribution(low=1, high=10, q=2),
+    'iu': distributions.IntUniformDistribution(low=1, high=10, step=2),
     'c1': distributions.CategoricalDistribution(choices=(2.71, -float('inf'))),
     'c2': distributions.CategoricalDistribution(choices=('Roppongi', 'Azabu'))
 }  # type: Dict[str, Any]
@@ -25,7 +25,7 @@ EXAMPLE_JSONS = {
     'l': '{"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}}',
     'du': '{"name": "DiscreteUniformDistribution",'
     '"attributes": {"low": 1.0, "high": 10.0, "q": 2.0}}',
-    'iu': '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10, "q": 2}}',
+    'iu': '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10, "step": 2}}',
     'c1': '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     'c2': '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}'
 }
@@ -123,7 +123,7 @@ def test_contains():
     assert not iu._contains(11)
 
     # IntUniformDistribution with a 'q' parameter.
-    iuq = distributions.IntUniformDistribution(low=1, high=10, q=2)
+    iuq = distributions.IntUniformDistribution(low=1, high=10, step=2)
     assert not iuq._contains(0.9)
     assert iuq._contains(1)
     assert iuq._contains(4)
@@ -163,7 +163,7 @@ def test_empty_range_contains():
     assert iu._contains(1)
     assert not iu._contains(2)
 
-    iuq = distributions.IntUniformDistribution(low=1, high=1, q=2)
+    iuq = distributions.IntUniformDistribution(low=1, high=1, step=2)
     assert not iuq._contains(0)
     assert iuq._contains(1)
     assert not iuq._contains(2)
@@ -210,7 +210,7 @@ def test_empty_distribution():
         distributions.IntUniformDistribution(low=123, high=100)
 
     with pytest.raises(ValueError):
-        distributions.IntUniformDistribution(low=123, high=100, q=2)
+        distributions.IntUniformDistribution(low=123, high=100, step=2)
 
     with pytest.raises(ValueError):
         distributions.CategoricalDistribution(choices=())

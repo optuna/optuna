@@ -116,7 +116,10 @@ def test_discrete_uniform(sampler_class, distribution):
 @pytest.mark.parametrize('distribution', [
     IntUniformDistribution(-10, 10),
     IntUniformDistribution(0, 10),
-    IntUniformDistribution(-10, 0)
+    IntUniformDistribution(-10, 0),
+    IntUniformDistribution(-10, 10, 2),
+    IntUniformDistribution(0, 10, 2),
+    IntUniformDistribution(-10, 0, 2)
 ])
 def test_int(sampler_class, distribution):
     # type: (typing.Callable[[], BaseSampler], IntUniformDistribution) -> None

@@ -231,22 +231,23 @@ class IntUniformDistribution(BaseDistribution):
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
-        q:
-            A step of discretization.
+        step:
+            A step for spacing between values.
     """
 
-    def __init__(self, low, high, q=1):
+    def __init__(self, low, high, step=1):
         # type: (int, int, int) -> None
 
         if low > high:
             raise ValueError("The `low` value must be smaller than or equal to the `high` value "
                              "(low={}, high={}).".format(low, high))
-        if q <= 0:
-            raise ValueError("The `q` value must be non-zero positive value, but q={}.".format(q))
+        if step <= 0:
+            raise ValueError(
+                "The `step` value must be non-zero positive value, but step={}.".format(step))
 
         self.low = low
         self.high = high
-        self.q = q
+        self.step = step
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
@@ -267,7 +268,7 @@ class IntUniformDistribution(BaseDistribution):
         # type: (float) -> bool
 
         value = param_value_in_internal_repr
-        return self.low <= value and value <= self.high
+        return self.low <= value <= self.high
 
 
 class CategoricalDistribution(BaseDistribution):

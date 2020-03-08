@@ -211,12 +211,12 @@ class TPESampler(base.BaseSampler):
         # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> int
 
         low = 0
-        high = int((distribution.high - distribution.low) / distribution.q)
+        high = int((distribution.high - distribution.low) / distribution.step)
 
-        above = (above - distribution.low) / distribution.q
-        below = (below - distribution.low) / distribution.q
+        above = (above - distribution.low) / distribution.step
+        below = (below - distribution.low) / distribution.step
         best_sample = self._sample_numerical(
-            low, high, below, above) * distribution.q + distribution.low
+            low, high, below, above) * distribution.step + distribution.low
         return min(max(int(best_sample), distribution.low), distribution.high)
 
     def _sample_numerical(

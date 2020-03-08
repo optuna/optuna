@@ -282,7 +282,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high, q=1):
+    def suggest_int(self, name, low, high, step=1):
         # type: (str, int, int, int) -> int
         """Suggest a value for the integer parameter.
 
@@ -297,7 +297,7 @@ class Trial(BaseTrial):
 
                 >>> def objective(trial):
                 >>>     ...
-                >>>     n_estimators = trial.suggest_int('n_estimators', 50, 400)
+                >>>     n_estimators = trial.suggest_int('n_estimators', 50, 400, 1)
                 >>>     clf = sklearn.ensemble.RandomForestClassifier(n_estimators=n_estimators)
                 >>>     ...
 
@@ -308,8 +308,8 @@ class Trial(BaseTrial):
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
-            q:
-                A step of discretization.
+            step:
+                A step of spacing between values.
 
         Returns:
             A suggested integer value.
@@ -317,7 +317,7 @@ class Trial(BaseTrial):
 
         self._check_distribution(low=low, high=high, name=name)
 
-        distribution = distributions.IntUniformDistribution(low=low, high=high)
+        distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
 
@@ -752,9 +752,10 @@ class FixedTrial(BaseTrial):
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
-    def suggest_int(self, name, low, high, q=1):
+    def suggest_int(self, name, low, high, step=1):
         # type: (str, int, int, int) -> int
-        sample = self._suggest(name, distributions.IntUniformDistribution(low=low, high=high, q=q))
+        sample = self._suggest(
+            name, distributions.IntUniformDistribution(low=low, high=high, step=step))
         return int(sample)
 
     def suggest_categorical(self, name, choices):

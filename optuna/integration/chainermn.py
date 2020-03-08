@@ -219,14 +219,14 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def suggest_int(self, name, low, high, q=1):
+    def suggest_int(self, name, low, high, step=1):
         # type: (str, int, int, int) -> int
 
         def func():
             # type: () -> int
 
             assert self.delegate is not None
-            return self.delegate.suggest_int(name, low, high, q)
+            return self.delegate.suggest_int(name, low, high, step)
 
         return self._call_with_mpi(func)
 

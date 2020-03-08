@@ -161,7 +161,7 @@ class _Optimizer(object):
                 high = np.nextafter(distribution.high, float('-inf'))
                 dimension = space.Real(distribution.low, high, prior='log-uniform')
             elif isinstance(distribution, distributions.IntUniformDistribution):
-                count = (distribution.high - distribution.low) // distribution.q
+                count = (distribution.high - distribution.low) // distribution.step
                 dimension = space.Integer(0, count)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 count = int((distribution.high - distribution.low) // distribution.q)
@@ -203,7 +203,7 @@ class _Optimizer(object):
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 value = value * distribution.q + distribution.low
             if isinstance(distribution, distributions.IntUniformDistribution):
-                value = value * distribution.q + distribution.low
+                value = value * distribution.step + distribution.low
 
             params[name] = value
 
@@ -240,7 +240,7 @@ class _Optimizer(object):
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 param_value = (param_value - distribution.low) // distribution.q
             if isinstance(distribution, distributions.IntUniformDistribution):
-                param_value = (param_value - distribution.low) // distribution.q
+                param_value = (param_value - distribution.low) // distribution.step
 
             param_values.append(param_value)
 
