@@ -285,4 +285,4 @@ def test_discrete_uniform_distribution_asdict():
 def test_int_uniform_distribution_asdict():
     # type: () -> None
 
-    assert EXAMPLE_DISTRIBUTIONS['iu']._asdict() == {'low': 1, 'high': 10}
+    assert EXAMPLE_DISTRIBUTIONS['iu']._asdict() == {'low': 1, 'high': 10, 'step': 2}
