@@ -39,7 +39,7 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
-    def suggest_int(self, name, low, high, q):
+    def suggest_int(self, name, low, high, step=1):
         # type: (str, int, int, int) -> int
 
         raise NotImplementedError
