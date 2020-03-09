@@ -57,3 +57,11 @@ def test_handling_alias_metrics():
     lgbm_params = {}
     _handling_alias_metrics(lgbm_params)
     assert lgbm_params == {}
+
+    lgbm_params = {'metric': 'auc'}
+    _handling_alias_metrics(lgbm_params)
+    assert lgbm_params['metric'] == 'auc'
+
+    lgbm_params = {'metric': 'rmse'}
+    _handling_alias_metrics(lgbm_params)
+    assert lgbm_params['metric'] == 'rmse'
