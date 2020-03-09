@@ -43,7 +43,7 @@ def test_init():
     assert version_info.library_version == version.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
-    assert storage.get_all_versions() == ['v1.2.0.a', 'v0.9.0.a']
+    assert storage.get_all_versions() == ['v1.3.0.a', 'v1.2.0.a', 'v0.9.0.a']
 
 
 def test_init_url_template():
@@ -298,19 +298,6 @@ def test_commit():
     session.add(v)
     with pytest.raises(StorageInternalError):
         storage._commit(session)
-
-
-def test_create_new_trial_number():
-    # type: () -> None
-
-    storage = create_test_storage()
-    study_id = storage.create_new_study()
-
-    trial_id = storage.create_new_trial(study_id)
-    assert storage._create_new_trial_number(trial_id) == 0
-
-    trial_id = storage.create_new_trial(study_id)
-    assert storage._create_new_trial_number(trial_id) == 1
 
 
 def test_update_finished_trial():
