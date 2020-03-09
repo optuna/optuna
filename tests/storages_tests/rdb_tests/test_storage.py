@@ -300,19 +300,6 @@ def test_commit():
         storage._commit(session)
 
 
-def test_create_new_trial_number():
-    # type: () -> None
-
-    storage = create_test_storage()
-    study_id = storage.create_new_study()
-
-    trial_id = storage.create_new_trial(study_id)
-    assert storage._create_new_trial_number(trial_id) == 0
-
-    trial_id = storage.create_new_trial(study_id)
-    assert storage._create_new_trial_number(trial_id) == 1
-
-
 def test_update_finished_trial():
     # type: () -> None
 
