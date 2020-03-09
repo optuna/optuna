@@ -1,12 +1,5 @@
 import colorlog
 import logging
-from logging import CRITICAL
-from logging import DEBUG
-from logging import ERROR
-from logging import FATAL
-from logging import INFO
-from logging import WARN
-from logging import WARNING
 import threading
 
 from optuna import type_checking
