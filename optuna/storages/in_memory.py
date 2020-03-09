@@ -162,7 +162,6 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             trial_id = len(self.trials)
-            trial.system_attrs['_number'] = trial_id
             trial.number = trial_id
             trial._trial_id = trial_id
             self.trials.append(trial)

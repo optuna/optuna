@@ -146,6 +146,7 @@ class StudySystemAttributeModel(BaseModel):
 class TrialModel(BaseModel):
     __tablename__ = 'trials'
     trial_id = Column(Integer, primary_key=True)
+    number = Column(Integer)
     study_id = Column(Integer, ForeignKey('studies.study_id'))
     state = Column(Enum(TrialState), nullable=False)
     value = Column(Float)
