@@ -12,8 +12,7 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 from optuna.study import Study  # NOQA
 
-if is_available():
-    from optuna.visualization.plotly_imports import go
+from optuna.visualization.plotly_imports import go
 
 logger = get_logger(__name__)
 
