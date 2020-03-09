@@ -45,7 +45,7 @@ def upgrade():
     session = orm.Session(bind=bind)
 
     with op.batch_alter_table("trials") as batch_op:
-        batch_op.add_column(sa.Column('number', sa.Integer(), nullable=True, default=-1))
+        batch_op.add_column(sa.Column('number', sa.Integer(), nullable=True, default=None))
 
     try:
         number_records = session.query(TrialSystemAttributeModel) \
