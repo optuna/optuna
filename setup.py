@@ -33,11 +33,11 @@ def get_install_requires() -> List[str]:
         'alembic',
         'cliff',
         'colorlog',
+        'joblib',
         'numpy',
         'scipy!=1.4.0',
         'sqlalchemy>=1.1.0',
         'tqdm',
-        'joblib',
     ]
 
 
@@ -59,10 +59,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             'pytest-cov',
         ],
         'doctest': [
-            'pandas',
             'cma',
-            'scikit-learn>=0.19.0',
+            'pandas',
             'plotly>=4.0.0',
+            'scikit-learn>=0.19.0',
         ],
         'document': [
             'sphinx',
