@@ -94,6 +94,7 @@ if not on_rtd:
 # html_theme_options = {}
 
 html_favicon = '../image/favicon.ico'
+html_js_files = ["https://cdn.plot.ly/plotly-latest.min.js"]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
