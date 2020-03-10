@@ -80,10 +80,11 @@ class DuplicatedStudyError(OptunaError):
 
 
 class StopStudy(OptunaError):
-    """Exception for stopping a study, once a threshold is achieved.
+    """Exception for stopping a study.
 
-    This error is raised when a study achieves the same or better value of objective function
-    as threshold.
+    This error can be raised to stop a study once some exit criterion is met, e.g. once
+    required value of an objective function is achieved or all grid points are processed
+    in :class:`~optuna.samplers.GridSampler`.
     """
 
     pass
