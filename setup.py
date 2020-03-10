@@ -63,6 +63,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             'pandas',
             'plotly>=4.0.0',
             'scikit-learn>=0.19.0',
+            'scikit-optimize',
         ],
         'document': [
             'sphinx',
