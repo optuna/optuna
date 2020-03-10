@@ -54,8 +54,6 @@ class ThresholdPruner(BasePruner):
         upper:
             maximum value which determines whether pruner prunes or not
             (If value is larger than upper, it prunes)
-        n_startup_trials:
-            Pruning is disabled until the given number of trials finish in the same study.
         n_warmup_steps:
             Pruning is disabled until the trial exceeds the given number of step.
         interval_steps:
