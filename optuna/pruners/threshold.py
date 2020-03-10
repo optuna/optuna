@@ -1,10 +1,9 @@
 import math
 from typing import Optional
 
+import optuna
 from optuna.pruners import BasePruner
 from optuna.pruners.percentile import _is_first_in_interval_step
-
-import optuna
 
 
 class ThresholdPruner(BasePruner):
