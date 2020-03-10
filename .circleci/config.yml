@@ -97,6 +97,9 @@ jobs:
             cd docs
             make html
 
+      - store_artifacts:
+          path: ./docs/build
+
   doctest:
     docker:
       - image: readthedocs/build:latest
