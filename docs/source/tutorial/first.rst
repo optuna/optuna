@@ -78,7 +78,7 @@ Let us clarify the terminology in Optuna as follows:
 In Optuna, we use the study object to manage optimization. Method :func:`~optuna.study.create_study` returns a study object.
 A study object has useful properties for analyzing the optimization outcome.
 
-To get the best params:
+To get the best parameter:
 
 .. code-block:: python
 
@@ -118,7 +118,7 @@ To get all trials:
 
 .. code-block:: python
 
-    study.trials  # all trials
+    study.trials
 
 Out:
 
