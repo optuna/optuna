@@ -73,7 +73,7 @@ class ThresholdPruner(BasePruner):
             interval_steps: int = 1
     ) -> None:
 
-        if isinstance(lower, float) and isinstance(upper, float) and lower > upper:
+        if lower is not None and upper is not None and lower > upper:
             raise ValueError('lower should be smaller than upper')
         if n_warmup_steps < 0:
             raise ValueError(
