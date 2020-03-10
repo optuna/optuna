@@ -50,6 +50,9 @@ def plot_contour(study, params=None):
 
             optuna.visualization.plot_contour(study, params=['x', 'y'])
 
+        .. raw:: html
+            :file: ../../docs/source/plotly_figures/plot_contour.html
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
