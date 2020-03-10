@@ -146,6 +146,8 @@ By executing :func:`~optuna.study.Study.optimize` again, we can continue the opt
 
     study.optimize(objective, n_trials=100)
 
+To get the updated number of trials:
+
 .. code-block:: python
 
     len(study.trials)
