@@ -8,6 +8,8 @@ SPHINXPROJ    = Optuna
 SOURCEDIR     = source
 BUILDDIR      = build
 
+export PYTHONPATH := $(realpath ..):$(PYTHONPATH)  
+
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
