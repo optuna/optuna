@@ -17,13 +17,13 @@ from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-from optuna import structs
-from optuna import study as study_module
 from optuna.integration.lightgbm_tuner.sklearn import _VotingBooster
 from optuna.integration.lightgbm_tuner.sklearn import check_fit_params
 from optuna.integration.lightgbm_tuner.sklearn import check_X
 from optuna.integration.lightgbm_tuner.sklearn import OGBMClassifier
 from optuna.integration.lightgbm_tuner.sklearn import OGBMRegressor
+from optuna import structs
+from optuna import study as study_module
 
 n_estimators = 10
 n_trials = 5
