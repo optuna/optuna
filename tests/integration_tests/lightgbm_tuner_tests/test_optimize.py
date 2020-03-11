@@ -129,7 +129,9 @@ class TestBaseTuner(object):
     def test_higher_is_better(self):
         # type: () -> None
 
-        for metric in ['auc', 'ndcg', 'map', 'accuracy']:
+        for metric in ['auc', 'ndcg', 'lambdarank', 'rank_xendcg', 'xendcg',
+                       'xe_ndcg', 'xe_ndcg_mart', 'xendcg_mart', 'map',
+                       'mean_average_precision']:
             tuner = BaseTuner(lgbm_params={'metric': metric})
             assert tuner.higher_is_better()
 
@@ -189,7 +191,9 @@ class TestBaseTuner(object):
     def test_compare_validation_metrics(self):
         # type: () -> None
 
-        for metric in ['auc', 'ndcg', 'map', 'accuracy']:
+        for metric in ['auc', 'ndcg', 'lambdarank', 'rank_xendcg', 'xendcg',
+                       'xe_ndcg', 'xe_ndcg_mart', 'xendcg_mart', 'map',
+                       'mean_average_precision']:
             tuner = BaseTuner(lgbm_params={'metric': metric})
             assert tuner.compare_validation_metrics(0.5, 0.1)
             assert not tuner.compare_validation_metrics(0.5, 0.5)

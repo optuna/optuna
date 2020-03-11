@@ -11,6 +11,34 @@ from optuna import integration
 from optuna.study import create_study
 
 import numpy as np
+import scipy as sp
+
+
+def test_is_arraylike() -> None:
+
+    assert integration.sklearn._is_arraylike([])
+    assert integration.sklearn._is_arraylike(np.zeros(5))
+    assert not integration.sklearn._is_arraylike(1)
+
+
+def test_num_samples() -> None:
+
+    x1 = np.random.random((10, 10))
+    x2 = [1, 2, 3]
+    assert integration.sklearn._num_samples(x1) == 10
+    assert integration.sklearn._num_samples(x2) == 3
+
+
+def test_make_indexable() -> None:
+
+    x1 = np.random.random((10, 10))
+    x2 = sp.sparse.coo_matrix(x1)
+    x3 = [1, 2, 3]
+
+    assert hasattr(integration.sklearn._make_indexable(x1), '__getitem__')
+    assert hasattr(integration.sklearn._make_indexable(x2), '__getitem__')
+    assert hasattr(integration.sklearn._make_indexable(x3), '__getitem__')
+    assert integration.sklearn._make_indexable(None) is None
 
 
 @pytest.mark.parametrize('enable_pruning', [True, False])
