@@ -480,10 +480,15 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
+        if trial is None:
+            session.rollback()
+            raise ValueError(models.NOT_FOUND_MSG)
+
         self.check_trial_is_updatable(trial_id, trial.state)
 
         if state == structs.TrialState.RUNNING and trial.state != structs.TrialState.WAITING:
+            session.rollback()
             return False
 
         trial.state = state
