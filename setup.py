@@ -74,6 +74,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             'chainer',
             'lightgbm',
             'mlflow',
+            'mpi4py',
             'mxnet',
             'pytorch-ignite',
             'scikit-image',
@@ -90,6 +91,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/optuna/optuna/issues/997.
             'pytorch-lightning<0.7.0',
             'tensorflow>=2.0.0',
+            'tensorflow-datasets',
         ] if sys.version_info[:2] < (3, 8) else []),
         'testing': [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
