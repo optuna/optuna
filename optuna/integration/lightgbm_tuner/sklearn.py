@@ -736,7 +736,7 @@ class LGBMModel(lgb.LGBMModel):
         else:
             self.study_ = self.study
 
-        # https://github.com/microsoft/LightGBM/issues/2319
+        # See https:/github.com/microsoft/LightGBM/issues/2319
         if group is None and groups is not None:
             indices = np.argsort(groups)
             X = safe_indexing(X, indices)

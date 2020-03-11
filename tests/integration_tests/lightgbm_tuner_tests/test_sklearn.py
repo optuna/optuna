@@ -152,7 +152,7 @@ def test_fit_with_params(
     )
 
     if boosting_type == "rf" and callable(objective):
-        # https://github.com/microsoft/LightGBM/issues/2328
+        # See https://github.com/microsoft/LightGBM/issues/2328
         with pytest.raises(lgb.basic.LightGBMError):
             clf.fit(X, y)
     else:
