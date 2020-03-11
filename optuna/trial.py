@@ -24,6 +24,11 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     Note that this class is not supposed to be directly accessed by library users.
     """
 
+    def suggest_float(self, name, low, high, log):
+        # type: (str, float, float, bool) -> float
+
+        raise NotImplementedError
+
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
@@ -147,6 +152,40 @@ class Trial(BaseTrial):
         self.relative_params = self.study.sampler.sample_relative(
             self.study, trial, self.relative_search_space
         )
+
+    def suggest_float(self, name, low, high, log=False):
+        # type: (str, float, float, bool) -> float
+        """
+        Wrapper method for suggest_uniform and suggest_loguniform.
+
+        Example:
+
+            Suggest a xxxx.
+
+        Args:
+            name:
+                A parameter name.
+            low:
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
+            high:
+                Upper endpoint of the range of suggested values. ``high`` is excluded from the
+                range.
+
+        Returns:
+            A suggested float value.
+        """
+
+        if log:
+            distribution = distributions.LogUniformDistribution(low=low, high=high)
+        else:
+            distribution = distributions.UniformDistribution(low=low, high=high)
+
+        self._check_distribution(name, distribution)
+
+        if low == high:
+            return self._set_new_param_or_get_existing(name, low, distribution)
+
+        return self._suggest(name, distribution)
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
