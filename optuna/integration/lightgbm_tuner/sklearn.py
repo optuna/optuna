@@ -372,6 +372,7 @@ class _Objective(object):
             params["num_leaves"] = trial.suggest_int(
                 "num_leaves", 2, 2 ** params["max_depth"]
             )
+            # See https://github.com/Microsoft/LightGBM/issues/907
             params["min_child_samples"] = trial.suggest_int(
                 "min_child_samples",
                 1,
