@@ -1,3 +1,5 @@
+import os
+
 import optuna
 import plotly
 
@@ -13,10 +15,12 @@ def main():
     study.optimize(objective, n_trials=10)
 
     fig = optuna.visualization.plot_contour(study, params=['x', 'y'])
-    fig_div = plotly.offline.plot(fig, output_type='div', include_plotlyjs=False, auto_open=False)
+    fig_html = plotly.offline.plot(fig, output_type='div', include_plotlyjs=False, auto_open=False)
 
-    with open('../plotly_figures/plot_contour.html', 'w') as f:
-        f.write(fig_div)
+    fig_dir = '../plotly_figures'
+    os.makedirs(fig_dir, exist_ok=True)
+    with open(os.path.join(fig_dir, 'plot_contour.html'), 'w') as f:
+        f.write(fig_html)
 
 
 if __name__ == '__main__':
