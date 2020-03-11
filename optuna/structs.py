@@ -172,7 +172,7 @@ class FrozenTrial(object):
         else:
             if self.datetime_complete is not None:
                 raise ValueError(
-                    '`datetime_complete` is supposed to not be set for a finished trial.')
+                    '`datetime_complete` is supposed to be None for an unfinished trial.')
 
         if self.state == TrialState.COMPLETE and self.value is None:
             raise ValueError('`value` is supposed to be set for a complete trial.')
