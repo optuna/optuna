@@ -293,7 +293,7 @@ class Study(BaseStudy):
                 exception except for :class:`~optuna.exceptions.TrialPruned`.
             callbacks:
                 List of callback functions that are invoked at the end of each trial. Each function
-                should accept two parameters with the following types in this order:
+                must accept two parameters with the following types in this order:
                 :class:`~optuna.study.Study` and :class:`~optuna.structs.FrozenTrial`.
             gc_after_trial:
                 Flag to execute garbage collection at the end of each trial. By default, garbage
