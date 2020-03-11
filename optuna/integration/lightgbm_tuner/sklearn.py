@@ -24,13 +24,13 @@ from sklearn.model_selection import BaseCrossValidator
 from sklearn.model_selection import check_cv as sklearn_check_cv
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import check_random_state
-from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_array
 from sklearn.utils import check_consistent_length
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import _assert_all_finite
 from sklearn.utils.validation import _num_samples
+from sklearn.utils.validation import check_is_fitted
 from sklearn.utils.validation import column_or_1d
 
 from optuna import distributions
@@ -51,7 +51,7 @@ if lgb.__version__ >= "2.3":
 else:
     from lightgbm.sklearn import _eval_function_wrapper as _EvalFunctionWrapper
     from lightgbm.sklearn import (
-        _objective_function_wrapper as _ObjectiveFunctionWrapper,
+        _objective_function_wrapper as _ObjectiveFunctionWrapper
     )
 
 if sklearn.__version__ >= "0.22":
