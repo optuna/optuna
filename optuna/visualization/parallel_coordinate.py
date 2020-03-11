@@ -8,7 +8,9 @@ from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import is_available
 
 if type_checking.TYPE_CHECKING:
+    from typing import Any  # NOQA
     from typing import DefaultDict  # NOQA
+    from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
 
@@ -84,7 +86,7 @@ def _get_parallel_coordinate_plot(study, params=None):
         'label': 'Objective Value',
         'values': tuple([t.value for t in trials]),
         'range': (min([t.value for t in trials]), max([t.value for t in trials]))
-    }]
+    }]  # type: List[Dict[str, Any]]
     for p_name in sorted_params:
         values = []
         for t in trials:

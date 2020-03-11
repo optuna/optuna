@@ -2,7 +2,6 @@ from logging import DEBUG
 from logging import INFO
 from logging import WARNING
 from numbers import Integral
-from numbers import Number
 from time import time
 
 import numpy as np
@@ -367,7 +366,7 @@ class _Objective(object):
             if self.error_score == 'raise':
                 raise e
 
-            elif isinstance(self.error_score, Number):
+            elif isinstance(self.error_score, float):
                 fit_time = time() - start_time
                 test_score = self.error_score
                 score_time = 0.0
