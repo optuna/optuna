@@ -13,8 +13,10 @@ def main():
     study.optimize(objective, n_trials=10)
 
     fig = optuna.visualization.plot_contour(study, params=['x', 'y'])
-    plotly.offline.plot(fig, filename='../plotly_figures/plot_contour.html',
-                        include_plotlyjs=False, auto_open=False)
+    fig_div = plotly.offline.plot(fig, output_type='div', include_plotlyjs=False, auto_open=False)
+
+    with open('../plotly_figures/plot_contour.html', 'w') as f:
+        f.write(fig_div)
 
 
 if __name__ == '__main__':
