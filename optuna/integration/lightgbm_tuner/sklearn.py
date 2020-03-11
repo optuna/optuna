@@ -1,5 +1,4 @@
 import copy
-import logging
 import time
 
 from typing import Any
@@ -36,6 +35,7 @@ from sklearn.utils.validation import column_or_1d
 
 from optuna import distributions
 from optuna import integration
+from optuna import logging
 from optuna import samplers
 from optuna import study as study_module
 from optuna import trial as trial_module
@@ -771,7 +771,7 @@ class LGBMModel(lgb.LGBMModel):
             param_distributions=self.param_distributions,
         )
 
-        logger = logging.getLogger(__name__)
+        logger = logging.get_logger(__name__)
 
         logger.info("Searching the best hyperparameters...")
 
