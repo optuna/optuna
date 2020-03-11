@@ -1,6 +1,8 @@
 name: examples
 
-on: [push, pull_request]
+on:
+  schedule:
+    - cron: '0 15 * * *'
 
 jobs:
   build:
