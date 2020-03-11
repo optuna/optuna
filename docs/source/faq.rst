@@ -86,11 +86,13 @@ If you want to save and resume studies,  it's handy to use SQLite as the local s
 Please see :ref:`rdb` for more details.
 
 
-How do I save and resume studies without a database?
+How can I save and resume studies?
 ----------------------------------------------------
 
-You can also save and load studies like usual Python objects using ``pickle``
-or ``joblib``. For example, using ``joblib``:
+There are two ways of persisting studies, which depends if you are using
+in-memory storage (default) or remote databases (RDB). In-memory studies can be
+saved and loaded like usual Python objects using ``pickle`` or ``joblib``. For
+example, using ``joblib``:
 
 .. code-block:: python
 
@@ -108,11 +110,7 @@ And to resume the study:
     for key, value in study.best_trial.params.items():
         print(f'    {key}: {value}')
 
-.. warning::
-    Dump and load is recommended only for in-memory storage (i.e., without a
-    RDB), since an RDB requires to handle two files to be consistent, the DB
-    file and the dumped-study file.
-
+If you are using RDBs, see :ref:`rdb` for more details.
 
 How to suppress log messages of Optuna?
 ---------------------------------------
