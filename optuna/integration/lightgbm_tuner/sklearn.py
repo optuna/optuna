@@ -124,23 +124,22 @@ def check_cv(
     y: Optional[OneDimArrayLikeType] = None,
     classifier: bool = False,
 ) -> BaseCrossValidator:
-    """Check `cv`.
+    """Check ``cv``.
 
-    Parameters
-    ----------
-    cv
-        Cross-validation strategy.
+    Args:
+        cv:
+            Cross-validation strategy.
 
-    y
-        Target.
+        y:
+            Target.
 
-    classifier
-        If the task is a classification task, `StratifiedKFold` will be used.
+        classifier:
+            If the task is a classification task, ``StratifiedKFold`` will be
+            used.
 
-    Returns
-    -------
-    cv
-        Converted cross-validation strategy.
+    Returns:
+        cv:
+            Converted cross-validation strategy.
     """
     if classifier and isinstance(cv, int):
         _, counts = np.unique(y, return_counts=True)
@@ -154,23 +153,21 @@ def check_X(
     estimator: Optional[BaseEstimator] = None,
     **kwargs: Any
 ) -> TwoDimArrayLikeType:
-    """Check `X`.
+    """Check ``X``.
 
-    Parameters
-    ----------
-    X
-        Data.
+    Args:
+        X:
+            Data.
 
-    estimator
-        Object to use to fit the data.
+        estimator:
+            Object to use to fit the data.
 
-    **kwargs
-        Other keywords passed to `sklearn.utils.check_array`.
+        **kwargs:
+            Other keywords passed to ``sklearn.utils.check_array``.
 
-    Returns
-    -------
-    X
-        Converted and validated data.
+    Returns:
+        X:
+            Converted and validated data.
     """
     if not isinstance(X, pd.DataFrame):
         X = check_array(X, estimator=estimator, **kwargs)
@@ -197,35 +194,33 @@ def check_fit_params(
 ) -> Tuple[
     TwoDimArrayLikeType, OneDimArrayLikeType, OneDimArrayLikeType
 ]:
-    """Check `X`, `y` and `sample_weight`.
+    """Check ``X``, ``y`` and ``sample_weight``.
 
-    Parameters
-    ----------
-    X
-        Data.
+    Args:
+        X:
+            Data.
 
-    y
-        Target.
+        y:
+            Target.
 
-    sample_weight
-        Weights of data.
+        sample_weight:
+            Weights of data.
 
-    estimator
-        Object to use to fit the data.
+        estimator:
+            Object to use to fit the data.
 
-    **kwargs
-        Other keywords passed to `sklearn.utils.check_array`.
+        **kwargs:
+            Other keywords passed to ``sklearn.utils.check_array``.
 
-    Returns
-    -------
-    X
-        Converted and validated data.
+    Returns:
+        X:
+            Converted and validated data.
 
-    y
-        Converted and validated target.
+        y:
+            Converted and validated target.
 
-    sample_weight
-        Converted and validated weights of data.
+        sample_weight:
+            Converted and validated weights of data.
     """
     X = check_X(X, estimator=estimator, **kwargs)
 
@@ -550,37 +545,36 @@ class LGBMModel(lgb.LGBMModel):
     ) -> lgb.Booster:
         """Refit the estimator with the best found hyperparameters.
 
-        Parameters
-        ----------
-        X
-            Training data.
+        Args:
+            X:
+                Training data.
 
-        y
-            Target.
+            y:
+                Target.
 
-        sample_weight
-            Weights of training data.
+            sample_weight:
+                Weights of training data.
 
-        callbacks
-            List of callback functions that are applied at each iteration.
+            callbacks:
+                List of callback functions that are applied at each iteration.
 
-        categorical_feature
-            Categorical features. If list of int, interpreted as indices. If
-            list of strings, interpreted as feature names. If 'auto' and data
-            is pandas DataFrame, pandas categorical columns are used. All
-            values in categorical features should be less than int32 max value
-            (2147483647). Large values could be memory consuming. Consider
-            using consecutive integers starting from zero. All negative values
-            in categorical features will be treated as missing values.
+            categorical_feature:
+                Categorical features. If list of int, interpreted as indices.
+                If list of strings, interpreted as feature names. If 'auto' and
+                data is pandas DataFrame, pandas categorical columns are used.
+                All values in categorical features should be less than int32
+                max value (2147483647). Large values could be memory consuming.
+                Consider using consecutive integers starting from zero. All
+                negative values in categorical features will be treated as
+                missing values.
 
-        feature_name
-            Feature names. If 'auto' and data is pandas DataFrame, data columns
-            names are used.
+            feature_name:
+                Feature names. If 'auto' and data is pandas DataFrame, data
+                columns names are used.
 
-        Returns
-        -------
-        booster
-            Trained booster.
+        Returns:
+            booster:
+                Trained booster.
         """
         self._check_is_fitted()
 
@@ -610,55 +604,55 @@ class LGBMModel(lgb.LGBMModel):
     ) -> "LGBMModel":
         """Fit the model according to the given training data.
 
-        Parameters
-        ----------
-        X
-            Training data.
+        Args:
+            X:
+                Training data.
 
-        y
-            Target.
+            y:
+                Target.
 
-        sample_weight
-            Weights of training data.
+            sample_weight:
+                Weights of training data.
 
-        group
-            Group data of training data.
+            group:
+                Group data of training data.
 
-        eval_metric
-            Evaluation metric. See
-            https://lightgbm.readthedocs.io/en/latest/Parameters.html#metric.
+            eval_metric:
+                Evaluation metric. See
+                https:/lightgbm.readthedocs.io/en/latest/Parameters.html#metric.
 
-        early_stopping_rounds
-            Used to activate early stopping. The model will train until the
-            validation score stops improving.
+            early_stopping_rounds
+                Used to activate early stopping. The model will train until the
+                validation score stops improving.
 
-        feature_name
-            Feature names. If 'auto' and data is pandas DataFrame, data columns
-            names are used.
+            feature_name:
+                Feature names. If 'auto' and data is pandas DataFrame, data
+                columns names are used.
 
-        categorical_feature
-            Categorical features. If list of int, interpreted as indices. If
-            list of strings, interpreted as feature names. If 'auto' and data
-            is pandas DataFrame, pandas categorical columns are used. All
-            values in categorical features should be less than int32 max value
-            (2147483647). Large values could be memory consuming. Consider
-            using consecutive integers starting from zero. All negative values
-            in categorical features will be treated as missing values.
+            categorical_feature:
+                Categorical features. If list of int, interpreted as indices.
+                If list of strings, interpreted as feature names. If 'auto' and
+                data is pandas DataFrame, pandas categorical columns are used.
+                All values in categorical features should be less than int32
+                max value (2147483647). Large values could be memory consuming.
+                Consider using consecutive integers starting from zero. All
+                negative values in categorical features will be treated as
+                missing values.
 
-        callbacks
-            List of callback functions that are applied at each iteration.
+            callbacks:
+                List of callback functions that are applied at each iteration.
 
-        groups
-            Group labels for the samples used while splitting the dataset into
-            train/test set. If `group` is not None, this parameter is ignored.
+            groups:
+                Group labels for the samples used while splitting the dataset
+                into traintest set. If ``group`` is not None, this parameter is
+                ignored.
 
-        **fit_params
-            Always ignored. This parameter exists for compatibility.
+            **fit_params:
+                Always ignored. This parameter exists for compatibility.
 
-        Returns
-        -------
-        self
-            Return self.
+        Returns:
+            self:
+                Return self.
         """
         X, y, sample_weight = check_fit_params(
             X,
@@ -826,176 +820,175 @@ class LGBMModel(lgb.LGBMModel):
 class LGBMClassifier(LGBMModel, ClassifierMixin):
     """LightGBM classifier using Optuna.
 
-    Parameters
-    ----------
-    boosting_type
-        Boosting type.
+    Args:
+        boosting_type:
+            Boosting type.
 
-        - 'dart', Dropouts meet Multiple Additive Regression Trees,
-        - 'gbdt', traditional Gradient Boosting Decision Tree,
-        - 'goss', Gradient-based One-Side Sampling,
-        - 'rf', Random Forest.
+            - 'dart', Dropouts meet Multiple Additive Regression Trees,
+            - 'gbdt', traditional Gradient Boosting Decision Tree,
+            - 'goss', Gradient-based One-Side Sampling,
+            - 'rf', Random Forest.
 
-    num_leaves
-        Maximum tree leaves for base learners.
+        num_leaves:
+            Maximum tree leaves for base learners.
 
-    max_depth
-        Maximum depth of each tree. -1 means no limit.
+        max_depth:
+            Maximum depth of each tree. -1 means no limit.
 
-    learning_rate
-        Learning rate. You can use `callbacks` parameter of `fit` method to
-        shrink/adapt learning rate in training using `reset_parameter`
-        callback. Note, that this will ignore the `learning_rate` argument in
-        training.
+        learning_rate:
+            Learning rate. You can use ``callbacks`` parameter of ``fit``
+            method to shrinkadapt learning rate in training using
+            ``reset_parameter`` callback. Note, that this will ignore the
+            ``learning_rate`` argument in training.
 
-    n_estimators
-        Maximum number of iterations of the boosting process. a.k.a.
-        `num_boost_round`.
+        n_estimators:
+            Maximum number of iterations of the boosting process. a.k.a.
+            ``num_boost_round``.
 
-    subsample_for_bin
-        Number of samples for constructing bins.
+        subsample_for_bin:
+            Number of samples for constructing bins.
 
-    objective
-        Objective function. See
-        https://lightgbm.readthedocs.io/en/latest/Parameters.html#objective.
+        objective:
+            Objective function.
 
-    class_weight
-        Weights associated with classes in the form `{class_label: weight}`.
-        This parameter is used only for multi-class classification task. For
-        binary classification task you may use `is_unbalance` or
-        `scale_pos_weight` parameters. The 'balanced' mode uses the values of y
-        to automatically adjust weights inversely proportional to class
-        frequencies in the input data as
-        `n_samples / (n_classes * np.bincount(y))`. If None, all classes are
-        supposed to have weight one. Note, that these weights will be
-        multiplied with `sample_weight` if `sample_weight` is specified.
+        class_weight:
+            Weights associated with classes in the form
+            ``{class_label: weight}``. This parameter is used only for
+            multi-class classification task. For binary classification task you
+            may use ``is_unbalance`` or ``scale_pos_weight`` parameters. The
+            'balanced' mode uses the values of y to automatically adjust
+            weights inversely proportional to class frequencies in the input
+            data as ``n_samples  (n_classes * np.bincount(y))``. If None, all
+            classes are supposed to have weight one. Note, that these weights
+            will be multiplied with ``sample_weight`` if ``sample_weight`` is
+            specified.
 
-    min_split_gain
-        Minimum loss reduction required to make a further partition on a leaf
-        node of the tree.
+        min_split_gain:
+            Minimum loss reduction required to make a further partition on a
+            leaf node of the tree.
 
-    min_child_weight
-        Minimum sum of instance weight (hessian) needed in a child (leaf).
+        min_child_weight:
+            Minimum sum of instance weight (hessian) needed in a child (leaf).
 
-    min_child_samples
-        Minimum number of data needed in a child (leaf).
+        min_child_samples:
+            Minimum number of data needed in a child (leaf).
 
-    subsample
-        Subsample ratio of the training instance.
+        subsample:
+            Subsample ratio of the training instance.
 
-    subsample_freq
-        Frequence of subsample. <=0 means no enable.
+        subsample_freq:
+            Frequence of subsample. <=0 means no enable.
 
-    colsample_bytree
-        Subsample ratio of columns when constructing each tree.
+        colsample_bytree:
+            Subsample ratio of columns when constructing each tree.
 
-    reg_alpha
-        L1 regularization term on weights.
+        reg_alpha:
+            L1 regularization term on weights.
 
-    reg_lambda
-        L2 regularization term on weights.
+        reg_lambda:
+            L2 regularization term on weights.
 
-    random_state
-        Seed of the pseudo random number generator. If int, this is the
-        seed used by the random number generator. If `numpy.random.RandomState`
-        object, this is the random number generator. If None, the global random
-        state from `numpy.random` is used.
+        random_state:
+            Seed of the pseudo random number generator. If int, this is the
+            seed used by the random number generator. If
+            ``numpy.random.RandomState`` object, this is the random number
+            generator. If None, the global random state from ``numpy.random``
+            is used.
 
-    n_jobs
-        Number of parallel jobs. -1 means using all processors.
+        n_jobs:
+            Number of parallel jobs. -1 means using all processors.
 
-    importance_type
-        Type of feature importances. If 'split', result contains numbers of
-        times the feature is used in a model. If 'gain', result contains total
-        gains of splits which use the feature.
+        importance_type:
+            Type of feature importances. If 'split', result contains numbers of
+            times the feature is used in a model. If 'gain', result contains
+            total gains of splits which use the feature.
 
-    cv
-        Cross-validation strategy. Possible inputs for cv are:
+        cv:
+            Cross-validation strategy. Possible inputs for cv are:
 
-        - integer to specify the number of folds in a CV splitter,
-        - a CV splitter,
-        - an iterable yielding (train, test) splits as arrays of indices.
+            - integer to specify the number of folds in a CV splitter,
+            - a CV splitter,
+            - an iterable yielding (train, test) splits as arrays of indices.
 
-        If int, `sklearn.model_selection.StratifiedKFold` is used.
+            If int, ``sklearn.model_selection.StratifiedKFold`` is used.
 
-    enable_pruning
-        If True, pruning is performed.
+        enable_pruning:
+            If True, pruning is performed.
 
-    n_trials
-        Number of trials. If None, there is no limitation on the number of
-        trials. If `timeout` is also set to None, the study continues to create
-        trials until it receives a termination signal such as Ctrl+C or
-        SIGTERM. This trades off runtime vs quality of the solution.
+        n_trials:
+            Number of trials. If None, there is no limitation on the number of
+            trials. If ``timeout`` is also set to None, the study continues to
+            create trials until it receives a termination signal such as Ctrl+C
+            or SIGTERM. This trades off runtime vs quality of the solution.
 
-    param_distributions
-        Dictionary where keys are parameters and values are distributions.
-        Distributions are assumed to implement the optuna distribution
-        interface. If None, `num_leaves`, `max_depth`, `min_child_samples`,
-        `subsample`, `subsample_freq`, `colsample_bytree`, `reg_alpha` and
-        `reg_lambda` are searched.
+        param_distributions:
+            Dictionary where keys are parameters and values are distributions.
+            Distributions are assumed to implement the optuna distribution
+            interface. If None, ``num_leaves``, ``max_depth``,
+            ``min_child_samples``, ``subsample``, ``subsample_freq``,
+            ``colsample_bytree``, ``reg_alpha`` and ``reg_lambda`` are
+            searched.
 
-    refit
-        If True, refit the estimator with the best found hyperparameters.
+        refit:
+            If True, refit the estimator with the best found hyperparameters.
 
-    study
-        Study corresponds to the optimization task. If None, a new study is
-        created.
+        study:
+            Study corresponds to the optimization task. If None, a new study is
+            created.
 
-    timeout
-        Time limit in seconds for the search of appropriate models. If None,
-        the study is executed without time limitation. If `n_trials` is also
-        set to None, the study continues to create trials until it receives a
-        termination signal such as Ctrl+C or SIGTERM. This trades off runtime
-        vs quality of the solution.
+        timeout:
+            Time limit in seconds for the search of appropriate models. If
+            None, the study is executed without time limitation. If
+            ``n_trials`` is also set to None, the study continues to create
+            trials until it receives a termination signal such as Ctrl+C or
+            SIGTERM. This trades off runtime vs quality of the solution.
 
-    **kwargs
-        Other parameters for the model. See
-        http://lightgbm.readthedocs.io/en/latest/Parameters.html for more
-        parameters. Note, that **kwargs is not supported in sklearn, so it
-        may cause unexpected issues.
+        **kwargs:
+            Other parameters for the model. See
+            http:/lightgbm.readthedocs.io/en/latest/Parameters.html for more
+            parameters. Note, that **kwargs is not supported in sklearn, so it
+            may cause unexpected issues.
 
-    Attributes
-    ----------
-    best_iteration_
-        Number of iterations as selected by early stopping.
+    Attributes:
+        best_iteration_:
+            Number of iterations as selected by early stopping.
 
-    best_params_
-        Parameters of the best trial in the `Study`.
+        best_params_:
+            Parameters of the best trial in the ``Study``.
 
-    best_score_
-        Mean cross-validated score of the best estimator.
+        best_score_:
+            Mean cross-validated score of the best estimator.
 
-    booster_
-        Trained booster.
+        booster_:
+            Trained booster.
 
-    encoder_
-        Label encoder.
+        encoder_:
+            Label encoder.
 
-    n_features_
-        Number of features of fitted model.
+        n_features_:
+            Number of features of fitted model.
 
-    n_splits_
-        Number of cross-validation splits.
+        n_splits_:
+            Number of cross-validation splits.
 
-    objective_
-        Concrete objective used while fitting this model.
+        objective_:
+            Concrete objective used while fitting this model.
 
-    study_
-        Actual study.
+        study_:
+            Actual study.
 
-    refit_time_
-        Time for refitting the best estimator. This is present only if `refit`
-        is set to True.
+        refit_time_:
+            Time for refitting the best estimator. This is present only if
+            ``refit`` is set to True.
 
-    Examples
-    --------
-    >>> from optgbm.sklearn import LGBMClassifier
-    >>> from sklearn.datasets import load_iris
-    >>> clf = LGBMClassifier(random_state=0)
-    >>> X, y = load_iris(return_X_y=True)
-    >>> clf.fit(X, y)
-    LGBMClassifier(...)
-    >>> y_pred = clf.predict(X)
+    Examples:
+        >>> from optuna.integration.lightgbm_tuner import LGBMClassifier
+        >>> from sklearn.datasets import load_iris
+        >>> clf = LGBMClassifier(random_state=0)
+        >>> X, y = load_iris(return_X_y=True)
+        >>> clf.fit(X, y)
+        LGBMClassifier(...)
+        >>> y_pred = clf.predict(X)
     """
 
     @property
@@ -1020,23 +1013,21 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
     ) -> np.ndarray:
         """Predict using the fitted model.
 
-        Parameters
-        ----------
-        X
-            Data.
+        Args:
+            X:
+                Data.
 
-        num_iteration
-            Limit number of iterations in the prediction. If None, if the best
-            iteration exists, it is used; otherwise, all trees are used. If
-            <=0, all trees are used (no limits).
+            num_iteration:
+                Limit number of iterations in the prediction. If None, if the
+                best iteration exists, it is used; otherwise, all trees are
+                used. If <=0, all trees are used (no limits).
 
-        **predict_params
-            Always ignored. This parameter exists for compatibility.
+            **predict_params:
+                Always ignored. This parameter exists for compatibility.
 
-        Returns
-        -------
-        y_pred
-            Predicted values.
+        Returns:
+            y_pred:
+                Predicted values.
         """
         probas = self.predict_proba(
             X,
@@ -1055,23 +1046,21 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
     ) -> np.ndarray:
         """Predict class probabilities for data.
 
-        Parameters
-        ----------
-        X
-            Data.
+        Args:
+            X:
+                Data.
 
-        num_iteration
-            Limit number of iterations in the prediction. If None, if the best
-            iteration exists, it is used; otherwise, all trees are used. If
-            <=0, all trees are used (no limits).
+            num_iteration:
+                Limit number of iterations in the prediction. If None, if the
+                best iteration exists, it is used; otherwise, all trees are
+                used. If <=0, all trees are used (no limits).
 
-        **predict_params
-            Always ignored. This parameter exists for compatibility.
+            **predict_params:
+                Always ignored. This parameter exists for compatibility.
 
-        Returns
-        -------
-        p
-            Class probabilities of data.
+        Returns:
+            p:
+                Class probabilities of data.
         """
         self._check_is_fitted()
 
@@ -1092,162 +1081,160 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
 class LGBMRegressor(LGBMModel, RegressorMixin):
     """LightGBM regressor using Optuna.
 
-    Parameters
-    ----------
-    boosting_type
-        Boosting type.
+    Args:
+        boosting_type:
+            Boosting type.
 
-        - 'dart', Dropouts meet Multiple Additive Regression Trees,
-        - 'gbdt', traditional Gradient Boosting Decision Tree,
-        - 'goss', Gradient-based One-Side Sampling,
-        - 'rf', Random Forest.
+            - 'dart', Dropouts meet Multiple Additive Regression Trees,
+            - 'gbdt', traditional Gradient Boosting Decision Tree,
+            - 'goss', Gradient-based One-Side Sampling,
+            - 'rf', Random Forest.
 
-    num_leaves
-        Maximum tree leaves for base learners.
+        num_leaves:
+            Maximum tree leaves for base learners.
 
-    max_depth
-        Maximum depth of each tree. -1 means no limit.
+        max_depth:
+            Maximum depth of each tree. -1 means no limit.
 
-    learning_rate
-        Learning rate. You can use `callbacks` parameter of `fit` method to
-        shrink/adapt learning rate in training using `reset_parameter`
-        callback. Note, that this will ignore the `learning_rate` argument in
-        training.
+        learning_rate:
+            Learning rate. You can use ``callbacks`` parameter of ``fit``
+            method to shrinkadapt learning rate in training using
+            ``reset_parameter`` callback. Note, that this will ignore the
+            ``learning_rate`` argument in training.
 
-    n_estimators
-        Maximum number of iterations of the boosting process. a.k.a.
-        `num_boost_round`.
+        n_estimators:
+            Maximum number of iterations of the boosting process. a.k.a.
+            ``num_boost_round``.
 
-    subsample_for_bin
-        Number of samples for constructing bins.
+        subsample_for_bin:
+            Number of samples for constructing bins.
 
-    objective
-        Objective function. See
-        https://lightgbm.readthedocs.io/en/latest/Parameters.html#objective.
+        objective:
+            Objective function.
 
-    min_split_gain
-        Minimum loss reduction required to make a further partition on a leaf
-        node of the tree.
+        min_split_gain:
+            Minimum loss reduction required to make a further partition on a
+            leaf node of the tree.
 
-    min_child_weight
-        Minimum sum of instance weight (hessian) needed in a child (leaf).
+        min_child_weight:
+            Minimum sum of instance weight (hessian) needed in a child (leaf).
 
-    min_child_samples
-        Minimum number of data needed in a child (leaf).
+        min_child_samples:
+            Minimum number of data needed in a child (leaf).
 
-    subsample
-        Subsample ratio of the training instance.
+        subsample:
+            Subsample ratio of the training instance.
 
-    subsample_freq
-        Frequence of subsample. <=0 means no enable.
+        subsample_freq:
+            Frequence of subsample. <=0 means no enable.
 
-    colsample_bytree
-        Subsample ratio of columns when constructing each tree.
+        colsample_bytree:
+            Subsample ratio of columns when constructing each tree.
 
-    reg_alpha
-        L1 regularization term on weights.
+        reg_alpha:
+            L1 regularization term on weights.
 
-    reg_lambda
-        L2 regularization term on weights.
+        reg_lambda:
+            L2 regularization term on weights.
 
-    random_state
-        Seed of the pseudo random number generator. If int, this is the
-        seed used by the random number generator. If `numpy.random.RandomState`
-        object, this is the random number generator. If None, the global random
-        state from `numpy.random` is used.
+        random_state:
+            Seed of the pseudo random number generator. If int, this is the
+            seed used by the random number generator. If
+            ``numpy.random.RandomState`` object, this is the random number
+            generator. If None, the global random state from ``numpy.random``
+            is used.
 
-    n_jobs
-        Number of parallel jobs. -1 means using all processors.
+        n_jobs:
+            Number of parallel jobs. -1 means using all processors.
 
-    importance_type
-        Type of feature importances. If 'split', result contains numbers of
-        times the feature is used in a model. If 'gain', result contains total
-        gains of splits which use the feature.
+        importance_type:
+            Type of feature importances. If 'split', result contains numbers of
+            times the feature is used in a model. If 'gain', result contains
+            total gains of splits which use the feature.
 
-    cv
-        Cross-validation strategy. Possible inputs for cv are:
+        cv:
+            Cross-validation strategy. Possible inputs for cv are:
 
-        - integer to specify the number of folds in a CV splitter,
-        - a CV splitter,
-        - an iterable yielding (train, test) splits as arrays of indices.
+            - integer to specify the number of folds in a CV splitter,
+            - a CV splitter,
+            - an iterable yielding (train, test) splits as arrays of indices.
 
-        If int, `sklearn.model_selection.StratifiedKFold` is used.
+            If int, ``sklearn.model_selection.StratifiedKFold`` is used.
 
-    enable_pruning
-        If True, pruning is performed.
+        enable_pruning:
+            If True, pruning is performed.
 
-    n_trials
-        Number of trials. If None, there is no limitation on the number of
-        trials. If `timeout` is also set to None, the study continues to create
-        trials until it receives a termination signal such as Ctrl+C or
-        SIGTERM. This trades off runtime vs quality of the solution.
+        n_trials:
+            Number of trials. If None, there is no limitation on the number of
+            trials. If ``timeout`` is also set to None, the study continues to
+            create trials until it receives a termination signal such as Ctrl+C
+            or SIGTERM. This trades off runtime vs quality of the solution.
 
-    param_distributions
-        Dictionary where keys are parameters and values are distributions.
-        Distributions are assumed to implement the optuna distribution
-        interface. If None, `num_leaves`, `max_depth`, `min_child_samples`,
-        `subsample`, `subsample_freq`, `colsample_bytree`, `reg_alpha` and
-        `reg_lambda` are searched.
+        param_distributions:
+            Dictionary where keys are parameters and values are distributions.
+            Distributions are assumed to implement the optuna distribution
+            interface. If None, ``num_leaves``, ``max_depth``,
+            ``min_child_samples``, ``subsample``, ``subsample_freq``,
+            ``colsample_bytree``, ``reg_alpha`` and ``reg_lambda`` are
+            searched.
 
-    refit
-        If True, refit the estimator with the best found hyperparameters.
+        refit:
+            If True, refit the estimator with the best found hyperparameters.
 
-    study
-        Study corresponds to the optimization task. If None, a new study is
-        created.
+        study:
+            Study corresponds to the optimization task. If None, a new study is
+            created.
 
-    timeout
-        Time limit in seconds for the search of appropriate models. If None,
-        the study is executed without time limitation. If `n_trials` is also
-        set to None, the study continues to create trials until it receives a
-        termination signal such as Ctrl+C or SIGTERM. This trades off runtime
-        vs quality of the solution.
+        timeout:
+            Time limit in seconds for the search of appropriate models. If
+            None, the study is executed without time limitation. If
+            ``n_trials`` is also set to None, the study continues to create
+            trials until it receives a termination signal such as Ctrl+C or
+            SIGTERM. This trades off runtime vs quality of the solution.
 
-    **kwargs
-        Other parameters for the model. See
-        http://lightgbm.readthedocs.io/en/latest/Parameters.html for more
-        parameters. Note, that **kwargs is not supported in sklearn, so it
-        may cause unexpected issues.
+        **kwargs:
+            Other parameters for the model. See
+            http:/lightgbm.readthedocs.io/en/latest/Parameters.html for more
+            parameters. Note, that **kwargs is not supported in sklearn, so it
+            may cause unexpected issues.
 
-    Attributes
-    ----------
-    best_iteration_
-        Number of iterations as selected by early stopping.
+    Attributes:
+        best_iteration_:
+            Number of iterations as selected by early stopping.
 
-    best_params_
-        Parameters of the best trial in the `Study`.
+        best_params_:
+            Parameters of the best trial in the ``Study``.
 
-    best_score_
-        Mean cross-validated score of the best estimator.
+        best_score_:
+            Mean cross-validated score of the best estimator.
 
-    booster_
-        Trained booster.
+        booster_:
+            Trained booster.
 
-    n_features_
-        Number of features of fitted model.
+        n_features_:
+            Number of features of fitted model.
 
-    n_splits_
-        Number of cross-validation splits.
+        n_splits_:
+            Number of cross-validation splits.
 
-    objective_
-        Concrete objective used while fitting this model.
+        objective_:
+            Concrete objective used while fitting this model.
 
-    study_
-        Actual study.
+        study_:
+            Actual study.
 
-    refit_time_
-        Time for refitting the best estimator. This is present only if `refit`
-        is set to True.
+        refit_time_:
+            Time for refitting the best estimator. This is present only if
+            ``refit`` is set to True.
 
-    Examples
-    --------
-    >>> from optgbm.sklearn import LGBMRegressor
-    >>> from sklearn.datasets import load_boston
-    >>> reg = LGBMRegressor(random_state=0)
-    >>> X, y = load_boston(return_X_y=True)
-    >>> reg.fit(X, y)
-    LGBMRegressor(...)
-    >>> y_pred = reg.predict(X)
+    Examples:
+        >>> from optuna.integration.lightgbm_tuner import LGBMRegressor
+        >>> from sklearn.datasets import load_boston
+        >>> reg = LGBMRegressor(random_state=0)
+        >>> X, y = load_boston(return_X_y=True)
+        >>> reg.fit(X, y)
+        LGBMRegressor(...)
+        >>> y_pred = reg.predict(X)
     """
 
     def __init__(
@@ -1318,23 +1305,21 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
     ) -> np.ndarray:
         """Predict using the fitted model.
 
-        Parameters
-        ----------
-        X
-            Data.
+        Args:
+            X:
+                Data.
 
-        num_iteration
-            Limit number of iterations in the prediction. If None, if the best
-            iteration exists, it is used; otherwise, all trees are used. If
-            <=0, all trees are used (no limits).
+            num_iteration:
+                Limit number of iterations in the prediction. If None, if the
+                best iteration exists, it is used; otherwise, all trees are
+                used. If <=0, all trees are used (no limits).
 
-        **predict_params
-            Always ignored. This parameter exists for compatibility.
+            **predict_params:
+                Always ignored. This parameter exists for compatibility.
 
-        Returns
-        -------
-        y_pred
-            Predicted values.
+        Returns:
+            y_pred:
+                Predicted values.
         """
         self._check_is_fitted()
 
