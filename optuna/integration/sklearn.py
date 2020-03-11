@@ -224,12 +224,12 @@ class _Objective(object):
         y,  # type: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]]
         cv,  # type: BaseCrossValidator
         enable_pruning,  # type: bool
-        error_score,  # type: Union[float, str]
+        error_score,  # type: Union[Number, str]
         fit_params,  # type: Dict[str, Any]
         groups,  # type: Optional[OneDimArrayLikeType]
         max_iter,  # type: int
         return_train_score,  # type: bool
-        scoring  # type: Callable[..., float]
+        scoring  # type: Callable[..., Number]
     ):
         # type: (...) -> None
 
@@ -347,7 +347,7 @@ class _Objective(object):
         test,  # type: List[int]
         partial_fit_params  # type: Dict[str, Any]
     ):
-        # type: (...) -> List[float]
+        # type: (...) -> List[Number]
 
         X_train, y_train = _safe_split(estimator, self.X, self.y, train)
         X_test, y_test = _safe_split(
@@ -387,6 +387,10 @@ class _Objective(object):
 
             if self.return_train_score:
                 train_score = self.scoring(estimator, X_train, y_train)
+
+        # Required for type checking but is never expected to fail.
+        assert isinstance(fit_time, Number)
+        assert isinstance(score_time, Number)
 
         ret = [test_score, fit_time, score_time]
 
@@ -740,7 +744,7 @@ class OptunaSearchCV(BaseEstimator):
         param_distributions,  # type: Mapping[str, distributions.BaseDistribution]
         cv=5,  # type: Optional[Union[BaseCrossValidator, int]]
         enable_pruning=False,  # type: bool
-        error_score=np.nan,  # type: Union[float, str]
+        error_score=np.nan,  # type: Union[Number, str]
         max_iter=1000,  # type: int
         n_jobs=1,  # type: int
         n_trials=10,  # type: int
