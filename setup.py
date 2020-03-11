@@ -72,7 +72,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         'example': [
             'catboost',
             'chainer',
-            'lightgbm',
+            'lightgbm>=2.2.2',
             'mlflow',
             'mxnet',
             'pytorch-ignite',
@@ -97,7 +97,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             'bokeh<2.0.0',
             'chainer>=5.0.0',
             'cma',
-            'lightgbm',
+            'lightgbm>=2.2.2',
             'mock',
             'mpi4py',
             'mxnet',
