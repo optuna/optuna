@@ -98,6 +98,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             'chainer>=5.0.0',
             'cma',
             'lightgbm>=2.2.2',
+            'matplotlib',
             'mock',
             'mpi4py',
             'mxnet',
