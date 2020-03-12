@@ -1,13 +1,14 @@
 from logging import DEBUG
 from logging import INFO
 from logging import WARNING
+from numbers import Integral
 from numbers import Number
 from time import time
 
 import numpy as np
+import scipy as sp
 
 try:
-    from sklearn import __version__ as _sklearn_version
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
     from sklearn.base import is_classifier
@@ -18,7 +19,6 @@ try:
     from sklearn.utils import check_random_state
     from sklearn.utils.metaestimators import _safe_split
     from sklearn.utils import safe_indexing as sklearn_safe_indexing
-    from sklearn.utils.validation import _num_samples
     from sklearn.utils.validation import check_is_fitted
 
     _available = True
@@ -28,12 +28,6 @@ except ImportError as e:
 
     _import_error = e
     _available = False
-
-if _available:
-    if _sklearn_version >= '0.22.1':
-        from sklearn.utils.validation import _check_fit_params as _sklearn_check_fit_params
-    else:
-        from sklearn.utils.validation import _index_param_value as _sklearn_index_param_value
 
 from optuna import distributions  # NOQA
 from optuna import exceptions  # NOQA
@@ -50,14 +44,18 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
+    from typing import Iterable  # NOQA
     from typing import List  # NOQA
     from typing import Mapping  # NOQA
     from typing import Optional  # NOQA
     from typing import Union  # NOQA
 
+    ArrayLikeType = Union[List, np.ndarray, pd.Series, spmatrix]
     OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
     TwoDimArrayLikeType = \
         Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
+    IterableType = Union[List, pd.DataFrame, np.ndarray, pd.Series, spmatrix, None]
+    IndexableType = Union[Iterable, None]
 
 _logger = logging.get_logger(__name__)
 
@@ -69,16 +67,26 @@ def _check_fit_params(
 ):
     # type: (...) -> Dict
 
-    if _sklearn_version >= '0.22.1':
-        return _sklearn_check_fit_params(X, fit_params, indices)
-    else:  # '_sklearn_version < 0.22.1'
-        return {
-            key: _sklearn_index_param_value(
-                X,
-                value,
-                indices
-            ) for key, value in fit_params.items()
-        }
+    fit_params_validated = {}
+    for key, value in fit_params.items():
+
+        # NOTE Original implementation:
+        # https://github.com/scikit-learn/scikit-learn/blob/ \
+        # 2467e1b84aeb493a22533fa15ff92e0d7c05ed1c/sklearn/utils/validation.py#L1324-L1328
+        # Scikit-learn does not accept non-iterable inputs.
+        # This line is for keeping backward compatibility.
+        # (See: https://github.com/scikit-learn/scikit-learn/issues/15805)
+        if (
+            not _is_arraylike(value) or
+            _num_samples(value) != _num_samples(X)
+        ):
+            fit_params_validated[key] = value
+        else:
+            fit_params_validated[key] = _make_indexable(value)
+            fit_params_validated[key] = _safe_indexing(
+                fit_params_validated[key], indices
+            )
+    return fit_params_validated
 
 
 def _check_sklearn_availability():
@@ -92,6 +100,52 @@ def _check_sklearn_availability():
             'please refer to the installation guide of scikit-learn. (The '
             'actual import error is as follows: ' + str(_import_error) + ')'
         )
+
+
+# NOTE Original implementation:
+# https://github.com/scikit-learn/scikit-learn/blob/ \
+# 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L131-L135
+def _is_arraylike(x):
+    # type: (Any) -> bool
+
+    return (
+        hasattr(x, '__len__') or
+        hasattr(x, 'shape') or
+        hasattr(x, '__array__')
+    )
+
+
+# NOTE Original implementation:
+# https://github.com/scikit-learn/scikit-learn/blob/ \
+# 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L217-L234
+def _make_indexable(iterable):
+    # type: (IterableType) -> (IndexableType)
+
+    tocsr_func = getattr(iterable, "tocsr", None)
+    if tocsr_func is not None and sp.sparse.issparse(iterable):
+        return tocsr_func(iterable)
+    elif hasattr(iterable, "__getitem__") or hasattr(iterable, "iloc"):
+        return iterable
+    elif iterable is None:
+        return iterable
+    return np.array(iterable)
+
+
+def _num_samples(x):
+    # type: (ArrayLikeType) -> int
+
+    # NOTE For dask dataframes
+    # https://github.com/scikit-learn/scikit-learn/blob/ \
+    # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L155-L158
+    x_shape = getattr(x, 'shape', None)
+    if x_shape is not None:
+        if isinstance(x_shape[0], Integral):
+            return int(x_shape[0])
+
+    try:
+        return len(x)
+    except TypeError:
+        raise TypeError('Expected sequence or array-like, got %s.' % type(x))
 
 
 def _safe_indexing(
@@ -170,12 +224,12 @@ class _Objective(object):
         y,  # type: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]]
         cv,  # type: BaseCrossValidator
         enable_pruning,  # type: bool
-        error_score,  # type: Union[float, str]
+        error_score,  # type: Union[Number, str]
         fit_params,  # type: Dict[str, Any]
         groups,  # type: Optional[OneDimArrayLikeType]
         max_iter,  # type: int
         return_train_score,  # type: bool
-        scoring  # type: Callable[..., float]
+        scoring  # type: Callable[..., Number]
     ):
         # type: (...) -> None
 
@@ -293,7 +347,7 @@ class _Objective(object):
         test,  # type: List[int]
         partial_fit_params  # type: Dict[str, Any]
     ):
-        # type: (...) -> List[float]
+        # type: (...) -> List[Number]
 
         X_train, y_train = _safe_split(estimator, self.X, self.y, train)
         X_test, y_test = _safe_split(
@@ -333,6 +387,10 @@ class _Objective(object):
 
             if self.return_train_score:
                 train_score = self.scoring(estimator, X_train, y_train)
+
+        # Required for type checking but is never expected to fail.
+        assert isinstance(fit_time, Number)
+        assert isinstance(score_time, Number)
 
         ret = [test_score, fit_time, score_time]
 
@@ -686,7 +744,7 @@ class OptunaSearchCV(BaseEstimator):
         param_distributions,  # type: Mapping[str, distributions.BaseDistribution]
         cv=5,  # type: Optional[Union[BaseCrossValidator, int]]
         enable_pruning=False,  # type: bool
-        error_score=np.nan,  # type: Union[float, str]
+        error_score=np.nan,  # type: Union[Number, str]
         max_iter=1000,  # type: int
         n_jobs=1,  # type: int
         n_trials=10,  # type: int

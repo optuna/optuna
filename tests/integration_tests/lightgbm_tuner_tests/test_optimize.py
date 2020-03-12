@@ -20,6 +20,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Generator  # NOQA
     from typing import List  # NOQA
+    from typing import Union  # NOQA
 
 
 @contextlib.contextmanager
@@ -128,7 +129,9 @@ class TestBaseTuner(object):
     def test_higher_is_better(self):
         # type: () -> None
 
-        for metric in ['auc', 'accuracy']:
+        for metric in ['auc', 'ndcg', 'lambdarank', 'rank_xendcg', 'xendcg',
+                       'xe_ndcg', 'xe_ndcg_mart', 'xendcg_mart', 'map',
+                       'mean_average_precision']:
             tuner = BaseTuner(lgbm_params={'metric': metric})
             assert tuner.higher_is_better()
 
@@ -188,7 +191,9 @@ class TestBaseTuner(object):
     def test_compare_validation_metrics(self):
         # type: () -> None
 
-        for metric in ['auc', 'accuracy']:
+        for metric in ['auc', 'ndcg', 'lambdarank', 'rank_xendcg', 'xendcg',
+                       'xe_ndcg', 'xe_ndcg_mart', 'xendcg_mart', 'map',
+                       'mean_average_precision']:
             tuner = BaseTuner(lgbm_params={'metric': metric})
             assert tuner.compare_validation_metrics(0.5, 0.1)
             assert not tuner.compare_validation_metrics(0.5, 0.5)
@@ -199,6 +204,38 @@ class TestBaseTuner(object):
             assert not tuner.compare_validation_metrics(0.5, 0.1)
             assert not tuner.compare_validation_metrics(0.5, 0.5)
             assert tuner.compare_validation_metrics(0.1, 0.5)
+
+    @pytest.mark.parametrize('metric, eval_at_param, expected', [
+        ('auc', {'eval_at': 5}, 'auc'),
+        ('accuracy', {'eval_at': 5}, 'accuracy'),
+        ('rmsle', {'eval_at': 5}, 'rmsle'),
+        ('rmse', {'eval_at': 5}, 'rmse'),
+        ('binary_logloss', {'eval_at': 5}, 'binary_logloss'),
+        ('ndcg', {'eval_at': 5}, 'ndcg@5'),
+        ('ndcg', {'ndcg_at': 5}, 'ndcg@5'),
+        ('ndcg', {'ndcg_eval_at': 5}, 'ndcg@5'),
+        ('ndcg', {'eval_at': [20]}, 'ndcg@20'),
+        ('ndcg', {'eval_at': [10, 20]}, 'ndcg@10'),
+        ('ndcg', {}, 'ndcg@1'),
+        ('map', {'eval_at': 5}, 'map@5'),
+        ('map', {'eval_at': [20]}, 'map@20'),
+        ('map', {'eval_at': [10, 20]}, 'map@10'),
+        ('map', {}, 'map@1'),
+    ])
+    def test_metric_with_eval_at(self, metric, eval_at_param, expected):
+        # type: (str, Dict[str, Union[int, List[int]]], str) -> None
+
+        params = {'metric': metric}  # type: Dict[str, Union[str, int, List[int]]]
+        params.update(eval_at_param)
+        tuner = BaseTuner(lgbm_params=params)
+        assert tuner._metric_with_eval_at(metric) == expected
+
+    def test_metric_with_eval_at_error(self):
+        # type: () -> None
+
+        tuner = BaseTuner(lgbm_params={'metric': 'ndcg', 'eval_at': '1'})
+        with pytest.raises(ValueError):
+            tuner._metric_with_eval_at('ndcg')
 
 
 class TestLightGBMTuner(object):
