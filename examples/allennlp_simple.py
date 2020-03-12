@@ -80,6 +80,7 @@ def create_model(vocab, trial):
 
 
 def objective(trial):
+    train_dataset, valid_dataset, vocab = prepare_data()
     model = create_model(vocab, trial)
 
     if DEVICE > -1:
@@ -110,8 +111,6 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    train_dataset, valid_dataset, vocab = prepare_data()
-
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=80, timeout=600)
 
