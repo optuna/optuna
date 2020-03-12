@@ -102,7 +102,7 @@ class CmaEsSampler(BaseSampler):
         self._x0 = x0
         self._sigma0 = sigma0
         self._independent_sampler = (
-            independent_sampler or optuna.samplers.RandomSampler(seed=seed)
+                independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         )
         self._n_startup_trials = n_startup_trials
         self._warn_independent_sampling = warn_independent_sampling
@@ -127,10 +127,10 @@ class CmaEsSampler(BaseSampler):
             if not isinstance(
                     distribution,
                     (
-                        optuna.distributions.UniformDistribution,
-                        optuna.distributions.LogUniformDistribution,
-                        optuna.distributions.DiscreteUniformDistribution,
-                        optuna.distributions.IntUniformDistribution,
+                            optuna.distributions.UniformDistribution,
+                            optuna.distributions.LogUniformDistribution,
+                            optuna.distributions.DiscreteUniformDistribution,
+                            optuna.distributions.IntUniformDistribution,
                     ),
             ):
                 # Categorical distribution is unsupported.

@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.samplers.cmaes.sampler import _initialize_sigma0
-from optuna.samplers.cmaes.sampler import _initialize_x0
+from optuna.samplers.cmaes import _initialize_sigma0
+from optuna.samplers.cmaes import _initialize_x0
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 
@@ -21,7 +21,7 @@ def test_init_cmaes_opts() -> None:
         independent_sampler=DeterministicRelativeSampler({}, {}))
     study = optuna.create_study(sampler=sampler)
 
-    with patch('optuna.samplers.cmaes.sampler.CMA') as cma_class:
+    with patch('optuna.samplers.cmaes.CMA') as cma_class:
         cma_obj = MagicMock()
         cma_obj.ask.return_value = np.array((-1, -1))
         cma_obj.generation = 0
@@ -85,9 +85,9 @@ def test_sample_relative_n_startup_trials() -> None:
     # The independent sampler is used for Trial#0 (FAILED), Trial#1 (COMPLETE)
     # and Trial#2 (COMPLETE). The CMA-ES is used for Trial#3 (COMPLETE).
     with patch.object(
-        independent_sampler,
-        'sample_independent',
-        wraps=independent_sampler.sample_independent
+            independent_sampler,
+            'sample_independent',
+            wraps=independent_sampler.sample_independent
     ) as mock_independent, patch.object(
         sampler,
         'sample_relative',
