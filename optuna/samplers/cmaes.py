@@ -39,10 +39,12 @@ class CmaEsSampler(BaseSampler):
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=20)
 
-    Please note that this sampler does not support CategoricalDistribution. If your search space
-    contains categorical parameters, I recommend you to use :class:`~optuna.samplers.TPESampler` instead.
-    Furthermore, there is room for performance improvements in parallel optimization settings.
-    This sampler cannot use some trials for updating the parameters of multivariate normal distribution.
+    Please note that this sampler does not support CategoricalDistribution.
+    If your search space contains categorical parameters, I recommend you
+    to use :class:`~optuna.samplers.TPESampler` instead.
+    Furthermore, there is room for performance improvements in parallel
+    optimization settings. This sampler cannot use some trials for updating
+    the parameters of multivariate normal distribution.
 
     .. seealso::
         You can also use :class:`optuna.integration.CmaEsSampler` which is a sampler using cma
@@ -102,7 +104,7 @@ class CmaEsSampler(BaseSampler):
         self._x0 = x0
         self._sigma0 = sigma0
         self._independent_sampler = (
-                independent_sampler or optuna.samplers.RandomSampler(seed=seed)
+            independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         )
         self._n_startup_trials = n_startup_trials
         self._warn_independent_sampling = warn_independent_sampling
@@ -127,10 +129,10 @@ class CmaEsSampler(BaseSampler):
             if not isinstance(
                     distribution,
                     (
-                            optuna.distributions.UniformDistribution,
-                            optuna.distributions.LogUniformDistribution,
-                            optuna.distributions.DiscreteUniformDistribution,
-                            optuna.distributions.IntUniformDistribution,
+                        optuna.distributions.UniformDistribution,
+                        optuna.distributions.LogUniformDistribution,
+                        optuna.distributions.DiscreteUniformDistribution,
+                        optuna.distributions.IntUniformDistribution,
                     ),
             ):
                 # Categorical distribution is unsupported.
