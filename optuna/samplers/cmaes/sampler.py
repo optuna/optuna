@@ -137,13 +137,6 @@ class CmaEsSampler(BaseSampler):
                 continue
             search_space[name] = distribution
 
-        if len(search_space) < 2:
-            self._logger.info("`CmaEsSampler` only supports two or more dimensional continuous "
-                              "search space. `{}` is used instead of `CmaEsSampler`.".format(
-                                  self._independent_sampler.__class__.__name__))
-            self._warn_independent_sampling = False
-            return {}
-
         return search_space
 
     def sample_relative(
@@ -162,6 +155,16 @@ class CmaEsSampler(BaseSampler):
             if t.state == TrialState.COMPLETE
         ]
         if len(completed_trials) < self._n_startup_trials:
+            return {}
+
+        if len(search_space) == 1:
+            self._logger.info(
+                "`CmaEsSampler` only supports two or more dimensional continuous "
+                "search space. `{}` is used instead of `CmaEsSampler`.".format(
+                    self._independent_sampler.__class__.__name__
+                )
+            )
+            self._warn_independent_sampling = False
             return {}
 
         ordered_keys = [key for key in search_space]
@@ -265,7 +268,7 @@ class CmaEsSampler(BaseSampler):
 
         self._logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
-            "by using `{}` instead of `CMASampler` "
+            "by using `{}` instead of `CmaEsSampler` "
             "(optimization performance may be degraded). "
             "You can suppress this warning by setting `warn_independent_sampling` "
             "to `False` in the constructor of `CMASampler`, "
