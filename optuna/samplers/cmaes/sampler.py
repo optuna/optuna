@@ -39,10 +39,10 @@ class CmaEsSampler(BaseSampler):
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=20)
 
-    Note that this sampler does not support CategoricalDistribution. If your search space
-    contains categorical parameters, I recommend you to use TPESampler instead.
-    Furthermore, parallel execution of trials may affect the optimization performance of CMA-ES,
-    especially if the number of trials running in parallel exceeds the population size.
+    Please note that this sampler does not support CategoricalDistribution. If your search space
+    contains categorical parameters, I recommend you to use :class:`~optuna.samplers.TPESampler` instead.
+    Furthermore, there is room for performance improvements in parallel optimization settings.
+    This sampler cannot use some trials for updating the parameters of multivariate normal distribution.
 
     .. seealso::
         You can also use :class:`optuna.integration.CmaEsSampler` which is a sampler using cma
@@ -171,6 +171,8 @@ class CmaEsSampler(BaseSampler):
             completed_trials, search_space, ordered_keys
         )
 
+        # TODO(c-bata): Reduce the number of wasted trials during parallel optimization.
+        # See https://github.com/optuna/optuna/pull/920#discussion_r385114002 for details.
         solution_trials = [
             t
             for t in completed_trials
