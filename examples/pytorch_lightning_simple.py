@@ -35,8 +35,8 @@ from torchvision import transforms
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 
-if pkg_resources.parse_version(pl.__version__) < pkg_resources.parse_version('0.7.1'):
-    raise RuntimeError('PyTorch Lightning>=0.7.1 is required for this example.')
+if pkg_resources.parse_version(pl.__version__) < pkg_resources.parse_version("0.7.1"):
+    raise RuntimeError("PyTorch Lightning>=0.7.1 is required for this example.")
 
 PERCENT_VALID_EXAMPLES = 0.1
 BATCHSIZE = 128
@@ -122,14 +122,18 @@ class LightningNet(pl.LightningModule):
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
-            datasets.MNIST(DIR, train=True, download=True, transform=transforms.ToTensor()),
+            datasets.MNIST(
+                DIR, train=True, download=True, transform=transforms.ToTensor()
+            ),
             batch_size=BATCHSIZE,
             shuffle=True,
         )
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
-            datasets.MNIST(DIR, train=False, download=True, transform=transforms.ToTensor()),
+            datasets.MNIST(
+                DIR, train=False, download=True, transform=transforms.ToTensor()
+            ),
             batch_size=BATCHSIZE,
             shuffle=False,
         )
@@ -138,7 +142,8 @@ class LightningNet(pl.LightningModule):
 def objective(trial):
     # filenames for each trial must be made unique in order to access each checkpoint
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        os.path.join(MODEL_DIR, "trial_{}".format(trial.number), "{epoch}"), monitor="val_acc"
+        os.path.join(MODEL_DIR, "trial_{}".format(trial.number), "{epoch}"),
+        monitor="val_acc",
     )
 
     # The default logger in PyTorch Lightning writes to event files to be consumed by
@@ -152,7 +157,7 @@ def objective(trial):
         max_epochs=EPOCHS,
         gpus=0 if torch.cuda.is_available() else None,
         callbacks=[metrics_callback],
-        early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="val_acc")
+        early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="val_acc"),
     )
 
     model = LightningNet(trial)
@@ -172,7 +177,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
+    pruner = (
+        optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
+    )
 
     study = optuna.create_study(direction="maximize", pruner=pruner)
     study.optimize(objective, n_trials=100, timeout=600)
