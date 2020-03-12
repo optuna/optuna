@@ -128,6 +128,7 @@ class RDBStorage(BaseStorage):
 
     def __setstate__(self, state):
         # type: (Dict[Any, Any]) -> None
+
         self.__dict__.update(state)
         try:
             self.engine = create_engine(self.url, **self.engine_kwargs)
