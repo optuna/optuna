@@ -206,7 +206,7 @@ class FrozenTrial(object):
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)
             if not distribution._contains(param_value_in_internal_repr):
                 raise ValueError(
-                    "The value {} of parameter '{}' isn't contained in the distribution {}.".format(
+                    "The value {} of parameter {} isn't contained in the distribution {}.".format(
                         param_value, param_name, distribution
                     )
                 )

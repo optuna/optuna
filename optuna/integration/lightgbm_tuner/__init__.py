@@ -4,11 +4,11 @@ from optuna._experimental import experimental
 from optuna import type_checking
 
 try:
-    from optuna.integration.lightgbm_tuner.sklearn import (
-        LGBMClassifier,
+    from optuna.integration.lightgbm_tuner.sklearn import (  # NOQA
+        LGBMClassifier, 
         LGBMModel,
         LGBMRegressor,
-    )  # NOQA
+    )
     from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
 
     _available = True
