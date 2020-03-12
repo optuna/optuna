@@ -155,12 +155,19 @@ class Trial(BaseTrial):
 
     def suggest_float(self, name, low, high, log=False):
         # type: (str, float, float, bool) -> float
-        """
-        Wrapper method for suggest_uniform and suggest_loguniform.
+        """Wrapper method for suggest_uniform and suggest_loguniform.
 
         Example:
 
             Suggest a xxxx.
+
+            .. testsetup::
+
+                import numpy
+
+            ..testcode::
+
+                import optuna
 
         Args:
             name:
