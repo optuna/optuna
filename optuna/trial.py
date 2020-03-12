@@ -382,7 +382,7 @@ class Trial(BaseTrial):
             A suggested integer value.
         """
 
-        distribution = distributions.IntUniformDistribution(low=low, high=high)
+        distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
 

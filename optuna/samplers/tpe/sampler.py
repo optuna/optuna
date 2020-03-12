@@ -216,7 +216,7 @@ class TPESampler(base.BaseSampler):
         above = (above - distribution.low) / distribution.step
         below = (below - distribution.low) / distribution.step
         best_sample = self._sample_numerical(
-            low, high, below, above) * distribution.step + distribution.low
+            low, high, below, above, q=1) * distribution.step + distribution.low
         return min(max(int(best_sample), distribution.low), distribution.high)
 
     def _sample_numerical(
