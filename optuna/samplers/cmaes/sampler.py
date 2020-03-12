@@ -174,6 +174,16 @@ class CmaEsSampler(BaseSampler):
             completed_trials, search_space, ordered_keys
         )
 
+        if optimizer.dim != len(ordered_keys):
+            self._logger.info(
+                "`CmaEsSampler` does not support dynamic search space. "
+                "`{}` is used instead of `CmaEsSampler`.".format(
+                    self._independent_sampler.__class__.__name__
+                )
+            )
+            self._warn_independent_sampling = False
+            return {}
+
         # TODO(c-bata): Reduce the number of wasted trials during parallel optimization.
         # See https://github.com/optuna/optuna/pull/920#discussion_r385114002 for details.
         solution_trials = [
