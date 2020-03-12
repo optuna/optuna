@@ -260,6 +260,7 @@ class CmaEsSampler(BaseSampler):
         )
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
+
         self._logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
             "by using `{}` instead of `CMASampler` "
@@ -311,23 +312,23 @@ def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.nd
 
 def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
 
-    sigma0s = []
+    sigma0 = []
     for name, distribution in search_space.items():
         if isinstance(distribution, optuna.distributions.UniformDistribution):
-            sigma0s.append((distribution.high - distribution.low) / 6)
+            sigma0.append((distribution.high - distribution.low) / 6)
         elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
-            sigma0s.append((distribution.high - distribution.low) / 6)
+            sigma0.append((distribution.high - distribution.low) / 6)
         elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
-            sigma0s.append((distribution.high - distribution.low) / 6)
+            sigma0.append((distribution.high - distribution.low) / 6)
         elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
             log_high = math.log(distribution.high)
             log_low = math.log(distribution.low)
-            sigma0s.append((log_high - log_low) / 6)
+            sigma0.append((log_high - log_low) / 6)
         else:
             raise NotImplementedError(
                 "The distribution {} is not implemented.".format(distribution)
             )
-    return min(sigma0s)
+    return min(sigma0)
 
 
 def _get_search_space_bound(
