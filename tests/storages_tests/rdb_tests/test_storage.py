@@ -43,14 +43,14 @@ def test_init():
     assert version_info.library_version == version.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
-    assert storage.get_all_versions() == ['v1.3.0.a', 'v1.2.0.a', 'v0.9.0.a']
+    assert storage.get_all_versions() == ["v1.3.0.a", "v1.2.0.a", "v0.9.0.a"]
 
 
 def test_init_url_template():
     # type: ()-> None
 
-    with tempfile.NamedTemporaryFile(suffix='{SCHEMA_VERSION}') as tf:
-        storage = RDBStorage('sqlite:///' + tf.name)
+    with tempfile.NamedTemporaryFile(suffix="{SCHEMA_VERSION}") as tf:
+        storage = RDBStorage("sqlite:///" + tf.name)
         assert storage.engine.url.database.endswith(str(SCHEMA_VERSION))
 
 
@@ -59,48 +59,53 @@ def test_init_url_that_contains_percent_character():
 
     # Alembic's ini file regards '%' as the special character for variable expansion.
     # We checks `RDBStorage` does not raise an error even if a storage url contains the character.
-    with tempfile.NamedTemporaryFile(suffix='%') as tf:
-        RDBStorage('sqlite:///' + tf.name)
+    with tempfile.NamedTemporaryFile(suffix="%") as tf:
+        RDBStorage("sqlite:///" + tf.name)
 
-    with tempfile.NamedTemporaryFile(suffix='%foo') as tf:
-        RDBStorage('sqlite:///' + tf.name)
+    with tempfile.NamedTemporaryFile(suffix="%foo") as tf:
+        RDBStorage("sqlite:///" + tf.name)
 
-    with tempfile.NamedTemporaryFile(suffix='%foo%%bar') as tf:
-        RDBStorage('sqlite:///' + tf.name)
+    with tempfile.NamedTemporaryFile(suffix="%foo%%bar") as tf:
+        RDBStorage("sqlite:///" + tf.name)
 
 
 def test_init_db_module_import_error():
     # type: () -> None
 
-    expected_msg = 'Failed to import DB access module for the specified storage URL. ' \
-                   'Please install appropriate one.'
+    expected_msg = (
+        "Failed to import DB access module for the specified storage URL. "
+        "Please install appropriate one."
+    )
 
-    with patch.dict(sys.modules, {'psycopg2': None}):
+    with patch.dict(sys.modules, {"psycopg2": None}):
         with pytest.raises(ImportError, match=expected_msg):
-            RDBStorage('postgresql://user:password@host/database')
+            RDBStorage("postgresql://user:password@host/database")
 
 
 def test_engine_kwargs():
     # type: () -> None
 
-    create_test_storage(engine_kwargs={'pool_size': 5})
+    create_test_storage(engine_kwargs={"pool_size": 5})
 
     with pytest.raises(TypeError):
-        create_test_storage(engine_kwargs={'wrong_key': 'wrong_value'})
+        create_test_storage(engine_kwargs={"wrong_key": "wrong_value"})
 
 
-@pytest.mark.parametrize('url,engine_kwargs,expected', [
-    ('mysql://localhost', {'pool_pre_ping': False}, False),
-    ('mysql://localhost', {'pool_pre_ping': True}, True),
-    ('mysql://localhost', {}, True),
-    ('mysql+pymysql://localhost', {}, True),
-    ('mysql://localhost', {'pool_size': 5}, True),
-])
+@pytest.mark.parametrize(
+    "url,engine_kwargs,expected",
+    [
+        ("mysql://localhost", {"pool_pre_ping": False}, False),
+        ("mysql://localhost", {"pool_pre_ping": True}, True),
+        ("mysql://localhost", {}, True),
+        ("mysql+pymysql://localhost", {}, True),
+        ("mysql://localhost", {"pool_size": 5}, True),
+    ],
+)
 def test_set_default_engine_kwargs_for_mysql(url, engine_kwargs, expected):
     # type: (str, Dict[str, Any], bool)-> None
 
     RDBStorage._set_default_engine_kwargs_for_mysql(url, engine_kwargs)
-    assert engine_kwargs['pool_pre_ping'] is expected
+    assert engine_kwargs["pool_pre_ping"] is expected
 
 
 def test_set_default_engine_kwargs_for_mysql_with_other_rdb():
@@ -108,10 +113,10 @@ def test_set_default_engine_kwargs_for_mysql_with_other_rdb():
 
     # Do not change engine_kwargs if database is not MySQL.
     engine_kwargs = {}  # type: Dict[str, Any]
-    RDBStorage._set_default_engine_kwargs_for_mysql('sqlite:///example.db', engine_kwargs)
-    assert 'pool_pre_ping' not in engine_kwargs
-    RDBStorage._set_default_engine_kwargs_for_mysql('postgres:///example.db', engine_kwargs)
-    assert 'pool_pre_ping' not in engine_kwargs
+    RDBStorage._set_default_engine_kwargs_for_mysql("sqlite:///example.db", engine_kwargs)
+    assert "pool_pre_ping" not in engine_kwargs
+    RDBStorage._set_default_engine_kwargs_for_mysql("postgres:///example.db", engine_kwargs)
+    assert "pool_pre_ping" not in engine_kwargs
 
 
 def test_create_new_study_multiple_studies():
@@ -134,7 +139,7 @@ def test_create_new_study_duplicated_name():
     # type: () -> None
 
     storage = create_test_storage()
-    study_name = 'sample_study_name'
+    study_name = "sample_study_name"
     storage.create_new_study(study_name)
     with pytest.raises(DuplicatedStudyError):
         storage.create_new_study(study_name)
@@ -144,8 +149,8 @@ def test_set_trial_param_to_check_distribution_json():
     # type: () -> None
 
     example_distributions = {
-        'x': UniformDistribution(low=1., high=2.),
-        'y': CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
+        "x": UniformDistribution(low=1.0, high=2.0),
+        "y": CategoricalDistribution(choices=("Otemachi", "Tokyo", "Ginza")),
     }  # type: Dict[str, BaseDistribution]
 
     storage = create_test_storage()
@@ -153,17 +158,15 @@ def test_set_trial_param_to_check_distribution_json():
     study_id = storage.create_new_study()
 
     trial_id = storage.create_new_trial(study_id)
-    storage.set_trial_param(trial_id, 'x', 1.5, example_distributions['x'])
-    storage.set_trial_param(trial_id, 'y', 2, example_distributions['y'])
+    storage.set_trial_param(trial_id, "x", 1.5, example_distributions["x"])
+    storage.set_trial_param(trial_id, "y", 2, example_distributions["y"])
 
     # test setting new name
-    result_1 = session.query(TrialParamModel). \
-        filter(TrialParamModel.param_name == 'x').one()
-    assert json_to_distribution(result_1.distribution_json) == example_distributions['x']
+    result_1 = session.query(TrialParamModel).filter(TrialParamModel.param_name == "x").one()
+    assert json_to_distribution(result_1.distribution_json) == example_distributions["x"]
 
-    result_2 = session.query(TrialParamModel). \
-        filter(TrialParamModel.param_name == 'y').one()
-    assert json_to_distribution(result_2.distribution_json) == example_distributions['y']
+    result_2 = session.query(TrialParamModel).filter(TrialParamModel.param_name == "y").one()
+    assert json_to_distribution(result_2.distribution_json) == example_distributions["y"]
 
 
 def test_get_all_study_summaries_with_multiple_studies():
@@ -211,7 +214,7 @@ def test_get_all_study_summaries_with_multiple_studies():
         system_attrs={},
         best_trial=summaries[0].best_trial,  # This always passes.
         n_trials=2,
-        datetime_start=summaries[0].datetime_start  # This always passes.
+        datetime_start=summaries[0].datetime_start,  # This always passes.
     )
     expected_summary_2 = StudySummary(
         study_id=study_id_2,
@@ -221,7 +224,7 @@ def test_get_all_study_summaries_with_multiple_studies():
         system_attrs={},
         best_trial=summaries[1].best_trial,  # This always passes.
         n_trials=2,
-        datetime_start=summaries[1].datetime_start  # This always passes.
+        datetime_start=summaries[1].datetime_start,  # This always passes.
     )
     expected_summary_3 = StudySummary(
         study_id=study_id_3,
@@ -231,7 +234,8 @@ def test_get_all_study_summaries_with_multiple_studies():
         system_attrs={},
         best_trial=None,
         n_trials=0,
-        datetime_start=None)
+        datetime_start=None,
+    )
 
     assert summaries[0] == expected_summary_1
     assert summaries[1] == expected_summary_2
@@ -269,7 +273,7 @@ def test_check_table_schema_compatibility():
 def create_test_storage(engine_kwargs=None):
     # type: (Optional[Dict[str, Any]]) -> RDBStorage
 
-    storage = RDBStorage('sqlite:///:memory:', engine_kwargs=engine_kwargs)
+    storage = RDBStorage("sqlite:///:memory:", engine_kwargs=engine_kwargs)
     return storage
 
 
@@ -294,7 +298,7 @@ def test_commit():
     session = storage.scoped_session()
 
     # This object violates the unique constraint of version_info_id.
-    v = VersionInfoModel(version_info_id=1, schema_version=1, library_version='0.0.1')
+    v = VersionInfoModel(version_info_id=1, schema_version=1, library_version="0.0.1")
     session.add(v)
     with pytest.raises(StorageInternalError):
         storage._commit(session)
@@ -312,9 +316,9 @@ def test_update_finished_trial():
 
     storage.set_trial_intermediate_value(trial_id, 3, 5)
     storage.set_trial_value(trial_id, 10)
-    storage.set_trial_param(trial_id, 'x', 1.5, UniformDistribution(low=1.0, high=2.0))
-    storage.set_trial_user_attr(trial_id, 'foo', 'bar')
-    storage.set_trial_system_attr(trial_id, 'baz', 'qux')
+    storage.set_trial_param(trial_id, "x", 1.5, UniformDistribution(low=1.0, high=2.0))
+    storage.set_trial_user_attr(trial_id, "foo", "bar")
+    storage.set_trial_system_attr(trial_id, "baz", "qux")
     storage.set_trial_state(trial_id, TrialState.COMPLETE)
 
     # Finished trials are not allowed to be updated.
@@ -327,11 +331,11 @@ def test_update_finished_trial():
         with pytest.raises(RuntimeError):
             storage.set_trial_value(trial_id, 10)
         with pytest.raises(RuntimeError):
-            storage.set_trial_param(trial_id, 'x', 1.5, UniformDistribution(low=1.0, high=2.0))
+            storage.set_trial_param(trial_id, "x", 1.5, UniformDistribution(low=1.0, high=2.0))
         with pytest.raises(RuntimeError):
-            storage.set_trial_user_attr(trial_id, 'foo', 'bar')
+            storage.set_trial_user_attr(trial_id, "foo", "bar")
         with pytest.raises(RuntimeError):
-            storage.set_trial_system_attr(trial_id, 'baz', 'qux')
+            storage.set_trial_system_attr(trial_id, "baz", "qux")
         with pytest.raises(RuntimeError):
             storage.set_trial_state(trial_id, TrialState.COMPLETE)
 
@@ -369,20 +373,20 @@ def test_storage_cache():
     trials = setup_trials(storage, study_id)
 
     with patch.object(
-            TrialModel, 'find_or_raise_by_id',
-            wraps=TrialModel.find_or_raise_by_id) as mock_object:
+        TrialModel, "find_or_raise_by_id", wraps=TrialModel.find_or_raise_by_id
+    ) as mock_object:
         for trial in trials:
             assert storage.get_trial(trial._trial_id) == trial
         assert mock_object.call_count == 1  # Only a running trial was fetched from the storage.
 
     # Running trials are fetched from the storage individually.
-    with patch.object(TrialModel, 'where_study', wraps=TrialModel.where_study) as mock_object:
+    with patch.object(TrialModel, "where_study", wraps=TrialModel.where_study) as mock_object:
         assert storage.get_all_trials(study_id) == trials
         assert mock_object.call_count == 0  # `TrialModel.where_study` has not been called.
 
     with patch.object(
-            TrialModel, 'find_or_raise_by_id',
-            wraps=TrialModel.find_or_raise_by_id) as mock_object:
+        TrialModel, "find_or_raise_by_id", wraps=TrialModel.find_or_raise_by_id
+    ) as mock_object:
         assert storage.get_all_trials(study_id) == trials
         assert mock_object.call_count == 1
 
@@ -399,7 +403,7 @@ def test_check_python_version():
         {"major": 3, "minor": 7, "micro": 4},
     ]
 
-    with patch.object(sys, 'version_info') as v_info:
+    with patch.object(sys, "version_info") as v_info:
         # If Python version is 3.4.0 to 3.4.3, RDBStorage raises RuntimeError.
         for ver in error_versions:
             v_info.major = ver["major"]
