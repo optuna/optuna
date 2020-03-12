@@ -88,7 +88,7 @@ def get_extras_require() -> Dict[str, List[str]]:
                 "keras",
                 # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
                 # https://github.com/optuna/optuna/issues/997.
-                "pytorch-lightning<0.7.0",
+                "pytorch-lightning>=0.7.1",
                 "tensorflow>=2.0.0",
                 "tensorflow-datasets",
             ]
@@ -125,7 +125,7 @@ def get_extras_require() -> Dict[str, List[str]]:
                 "keras",
                 # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
                 # https://github.com/optuna/optuna/issues/997.
-                "pytorch-lightning<0.7.0",
+                "pytorch-lightning>=0.7.1",
                 "tensorflow",
                 "tensorflow-datasets",
             ]
