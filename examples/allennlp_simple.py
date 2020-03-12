@@ -1,3 +1,23 @@
+"""
+Optuna example that optimizes a classifier configuration for IMDB movie review dataset.
+This script is based on the example of allentune (https://github.com/allenai/allentune).
+
+In this example, we optimize the validation accuracy of sentiment classification using AllenNLP.
+Since it is too time-consuming to use the entire dataset, we here use a small subset of it.
+
+We have the following two ways to execute this example:
+
+(1) Execute this code directly.
+    $ python allennlp_simple.py
+
+
+(2) Execute through CLI.
+    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
+    $ optuna study optimize allennlp_simple.py objective --n-trials=100 --study $STUDY_NAME \
+      --storage sqlite:///example.db
+
+"""
+
 import os
 import shutil
 
