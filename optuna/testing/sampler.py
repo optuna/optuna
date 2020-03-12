@@ -45,6 +45,10 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
 
         return param_value
 
+    def reseed_rng(self) -> None:
+
+        pass
+
 
 class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):
     def sample_relative(self, study, trial, search_space):

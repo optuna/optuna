@@ -149,6 +149,11 @@ class CmaEsSampler(BaseSampler):
         self._logger = optuna.logging.get_logger(__name__)
         self._search_space = optuna.samplers.IntersectionSearchSpace()
 
+    def reseed_rng(self) -> None:
+
+        self._cma_opts['seed'] = random.randint(1, 2**32)
+        self._independent_sampler.reseed_rng()
+
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 

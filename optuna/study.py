@@ -8,7 +8,6 @@ import warnings
 import joblib
 from joblib import delayed
 from joblib import Parallel
-import numpy as np
 
 from optuna._experimental import experimental
 from optuna._study_direction import StudyDirection
@@ -613,16 +612,7 @@ class Study(BaseStudy):
     ):
         # type: (...) -> None
 
-        _rng = getattr(self.sampler, "_rng", None)
-        if isinstance(_rng, np.random.RandomState):
-            setattr(self.sampler, "_rng", np.random.RandomState())
-        else:
-            raise TypeError(
-                "Failed to reseed the random number generator of the sampler although "
-                "it is required if n_jobs>1. The random number generator is of type "
-                "'{}' but supposed to be a numpy.random.RandomState.".format(type(_rng).__name__)
-            )
-
+        self.sampler.reseed_rng()
         self._optimize_sequential(
             func, n_trials, timeout, catch, callbacks, gc_after_trial, time_start
         )

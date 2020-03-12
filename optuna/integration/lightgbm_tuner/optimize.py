@@ -52,6 +52,10 @@ DEFAULT_LIGHTGBM_PARAMETERS = {
 
 _logger = optuna.logging.get_logger(__name__)
 
+    def reseed_rng(self) -> None:
+
+        pass
+
 
 class _TimeKeeper(object):
     def __init__(self):

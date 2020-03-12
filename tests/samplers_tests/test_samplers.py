@@ -208,6 +208,10 @@ class FixedSampler(BaseSampler):
 
         return self.unknown_param_value
 
+    def reseed_rng(self) -> None:
+
+        pass
+
 
 def test_sample_relative():
     # type: () -> None
