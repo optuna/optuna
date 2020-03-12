@@ -6,7 +6,8 @@ if optuna.type_checking.TYPE_CHECKING:
 
 try:
     from pytorch_lightning.callbacks import EarlyStopping
-
+    from pytorch_lightning import Trainer
+    from pytorch_lightning import LightningModule
     _available = True
 except (ImportError, SyntaxError) as e:
     # SyntaxError is raised with Python versions below 3.6 since PyTorch Lightning does not
