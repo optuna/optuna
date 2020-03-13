@@ -670,6 +670,60 @@ def test_nested_optimization():
     study.optimize(objective, n_trials=10, catch=())
 
 
+def test_stop_in_objective():
+    # type: () -> None
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        if trial.number > 3:
+            trial.study.stop()
+
+        return trial.number
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=10)
+    assert len(study.trials) == 5
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        if trial.number > 10:
+            trial.study.stop()
+
+        return trial.number
+
+    study.optimize(objective, n_trials=10)
+    assert len(study.trials) == 12
+
+
+def test_stop_in_callback():
+    # type: () -> None
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        return 1.0
+
+    def callback(study, trial):
+        # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
+
+        if trial.number > 3:
+            study.stop()
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=10, callbacks=[callback])
+    assert len(study.trials) == 5
+
+
+def test_stop_outside_optimize():
+    # type: () -> None
+
+    study = optuna.create_study()
+    with pytest.raises(RuntimeError):
+        study.stop()
+
+
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
 def test_append_trial(storage_mode):
     # type: (str) -> None

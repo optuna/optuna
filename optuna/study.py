@@ -195,6 +195,7 @@ class Study(BaseStudy):
         self.pruner = pruner or pruners.MedianPruner()
 
         self._optimize_lock = threading.Lock()
+        self._stop_flag = False
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -492,6 +493,18 @@ class Study(BaseStudy):
 
         return df
 
+    @experimental('1.3.0')
+    def stop(self):
+        # type: () -> None
+        """Stop the optimization after the current trial finishes.
+        """
+
+        if self._optimize_lock.acquire(False):
+            raise RuntimeError("`Study.stop` is supposed be invoked inside an objective function "
+                               "or callback.")
+
+        self._stop_flag = True
+
     @experimental('1.2.0')
     def enqueue_trial(self, params):
         # type: (Dict[str, Any]) -> None
@@ -581,6 +594,7 @@ class Study(BaseStudy):
         # type: (...) -> None
 
         i_trial = 0
+        self._stop_flag = False
 
         if time_start is None:
             time_start = datetime.datetime.now()
@@ -599,6 +613,10 @@ class Study(BaseStudy):
             self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
 
             self._progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
+
+            if self._stop_flag:
+                break
+
         self._storage.remove_session()
 
     def _pop_waiting_trial_id(self):
