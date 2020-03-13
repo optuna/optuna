@@ -20,7 +20,7 @@ class ThresholdPruner(BasePruner):
             from optuna.pruners import ThresholdPruner
 
 
-            def objective_1(trial):
+            def objective_for_upper(trial):
                 for step, y in enumerate(ys_for_upper):
                     trial.report(y, step)
 
@@ -28,7 +28,7 @@ class ThresholdPruner(BasePruner):
                         raise TrialPruned()
 
 
-            def objective_2(trial):
+            def objective_for_lower(trial):
                 for step, y in enumerate(ys_for_lower):
                     trial.report(y, step)
 
