@@ -1,5 +1,6 @@
 import math
 from typing import Optional
+import warnings
 
 import optuna
 from optuna.pruners import BasePruner
@@ -73,6 +74,8 @@ class ThresholdPruner(BasePruner):
             interval_steps: int = 1
     ) -> None:
 
+        if lower is None and upper is None:
+            warnings.warn('Both lower and upper are not specified.')
         if lower is not None and upper is not None and lower > upper:
             raise ValueError('lower should be smaller than upper')
         if n_warmup_steps < 0:
