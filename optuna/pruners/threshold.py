@@ -21,16 +21,16 @@ class ThresholdPruner(BasePruner):
 
 
             def objective_1(trial):
-                for step in range(n_trial_step):
-                    trial.report(ys_for_upper[step], step)
+                for step, y in enumerate(ys_for_upper):
+                    trial.report(y, step)
 
                     if trial.should_prune():
                         raise TrialPruned()
 
 
             def objective_2(trial):
-                for step in range(n_trial_step):
-                    trial.report(ys_for_lower[step], step)
+                for step, y in enumerate(ys_for_lower):
+                    trial.report(y, step)
 
                     if trial.should_prune():
                         raise TrialPruned()
