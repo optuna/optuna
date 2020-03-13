@@ -71,6 +71,8 @@ class RDBStorage(BaseStorage):
         engine_kwargs:
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
+        skip_compatibility_check:
+            Flag to skip schema compatibility check if set to True.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -126,6 +128,7 @@ class RDBStorage(BaseStorage):
 
     def __setstate__(self, state):
         # type: (Dict[Any, Any]) -> None
+
         self.__dict__.update(state)
         try:
             self.engine = create_engine(self.url, **self.engine_kwargs)
