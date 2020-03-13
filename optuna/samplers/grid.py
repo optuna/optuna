@@ -3,6 +3,7 @@ import itertools
 import random
 
 from optuna._experimental import experimental
+from optuna.logging import get_logger
 from optuna.samplers.base import BaseSampler
 from optuna import type_checking
 
@@ -17,6 +18,9 @@ if type_checking.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
 
     GridValueType = Union[str, float, int, bool, None]
+
+
+_logger = get_logger(__name__)
 
 
 @experimental('1.2.0')
@@ -106,19 +110,26 @@ class GridSampler(BaseSampler):
         # object is hard to get at the beginning of trial, while we need the access to the object
         # to validate the sampled value.
 
-        unvisited_grids = self._get_unvisited_grid_ids(study)
+        target_grids = self._get_unvisited_grid_ids(study)
 
-        if len(unvisited_grids) == 0:
-            raise ValueError('All grids have been evaluated. If you want to avoid this error, '
-                             'please make sure that unnecessary trials do not run during '
-                             'optimization by properly setting `n_trials` in `study.optimize`.')
+        if len(target_grids) == 0:
+            _logger.warning('`GridSampler` is evaluating a duplicated point because all grids '
+                            'have been evaluated. This may happen due to a timing issue during '
+                            'distributed optimization or an unnecessary number of `n_trials`.')
+
+            study.stop()
+            target_grids = list(range(len(self._all_grids)))
 
         # In distributed optimization, multiple workers may simultaneously pick up the same grid.
         # To make the conflict less frequent, the grid is chosen randomly.
-        grid_id = random.choice(unvisited_grids)
+        grid_id = random.choice(target_grids)
 
         study._storage.set_trial_system_attr(trial._trial_id, 'search_space', self._search_space)
         study._storage.set_trial_system_attr(trial._trial_id, 'grid_id', grid_id)
+
+        # Once all grids are picked up, optimization stops after the current trial finishes.
+        if len(self._get_unvisited_grid_ids(study, include_unfinished=True)) == 0:
+            study.stop()
 
         return {}
 
@@ -152,13 +163,14 @@ class GridSampler(BaseSampler):
                          '`GridSampler`. Please make sure a value is `str`, `int`, `float`, `bool`'
                          ' or `None`.'.format(param_name, type(param_value)))
 
-    def _get_unvisited_grid_ids(self, study):
-        # type: (Study) -> List[int]
+    def _get_unvisited_grid_ids(self, study, include_unfinished=False):
+        # type: (Study, bool) -> List[int]
 
         # List up unvisited grids based on already finished ones.
         visited_grids = []
         for t in study.trials:
-            if (t.state.is_finished() and 'grid_id' in t.system_attrs
+            if ((t.state.is_finished() or include_unfinished)
+                    and 'grid_id' in t.system_attrs
                     and self._same_search_space(t.system_attrs['search_space'])):
                 visited_grids.append(t.system_attrs['grid_id'])
 

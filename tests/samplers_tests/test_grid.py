@@ -71,10 +71,6 @@ def test_study_optimize_with_single_search_space():
     ids = sorted([t.system_attrs['grid_id'] for t in study.trials])
     assert ids == list(range(n_grids))
 
-    # Test that an optimization fails if the number of trials is more than that of all grids.
-    with pytest.raises(ValueError):
-        study.optimize(objective, n_trials=1)
-
     # Test a non-existing parameter name in the grid.
     search_space = {'a': list(range(0, 100, 20))}
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
@@ -92,6 +88,25 @@ def test_study_optimize_with_single_search_space():
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
     with pytest.raises(ValueError):
         study.optimize(objective)
+
+
+def test_study_optimize_with_exceeding_number_of_trials():
+    # type: () -> None
+
+    def objective(trial):
+        # type: (Trial) -> float
+
+        return trial.suggest_int('a', 0, 100)
+
+    # When `n_trials` is `None`, the optimization stops just after all grids are evaluated.
+    search_space = {'a': [0, 50]}  # type: Dict[str, List[GridValueType]]
+    study = optuna.create_study(sampler=samplers.GridSampler(search_space))
+    study.optimize(objective, n_trials=None)
+    assert len(study.trials) == 2
+
+    # If the optimization is triggered after all grids are evaluated, an additional trial runs.
+    study.optimize(objective, n_trials=None)
+    assert len(study.trials) == 3
 
 
 def test_study_optimize_with_multiple_search_spaces():
