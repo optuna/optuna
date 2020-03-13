@@ -385,4 +385,3 @@ def test_storage_cache():
             wraps=TrialModel.find_or_raise_by_id) as mock_object:
         assert storage.get_all_trials(study_id) == trials
         assert mock_object.call_count == 1
-
