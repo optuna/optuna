@@ -26,6 +26,7 @@ class ThresholdPruner(BasePruner):
 
                     if trial.should_prune():
                         raise TrialPruned()
+                return ys_for_upper[-1]
 
 
             def objective_for_lower(trial):
@@ -34,6 +35,7 @@ class ThresholdPruner(BasePruner):
 
                     if trial.should_prune():
                         raise TrialPruned()
+                return ys_for_lower[-1]
 
 
             ys_for_upper = [0.0, 0.1, 0.2, 0.5, 1.2]
