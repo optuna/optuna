@@ -72,7 +72,7 @@ class RDBStorage(BaseStorage):
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
         skip_compatibility_check:
-            Skip to check the schema compatibility if True.
+            Flag to skip schema compatibility check if set to True.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
