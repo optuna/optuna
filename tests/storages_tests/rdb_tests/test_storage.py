@@ -385,33 +385,3 @@ def test_storage_cache():
             wraps=TrialModel.find_or_raise_by_id) as mock_object:
         assert storage.get_all_trials(study_id) == trials
         assert mock_object.call_count == 1
-
-
-def test_check_python_version():
-    # type: () -> None
-
-    error_versions = [{"major": 3, "minor": 4, "micro": i} for i in range(0, 4)]
-    valid_versions = [
-        {"major": 2, "minor": 7, "micro": 3},
-        {"major": 3, "minor": 3, "micro": 7},
-        {"major": 3, "minor": 4, "micro": 4},
-        {"major": 3, "minor": 4, "micro": 10},
-        {"major": 3, "minor": 7, "micro": 4},
-    ]
-
-    with patch.object(sys, 'version_info') as v_info:
-        # If Python version is 3.4.0 to 3.4.3, RDBStorage raises RuntimeError.
-        for ver in error_versions:
-            v_info.major = ver["major"]
-            v_info.minor = ver["minor"]
-            v_info.micro = ver["micro"]
-
-            with pytest.raises(RuntimeError):
-                RDBStorage._check_python_version()
-
-        # Otherwise, RDBStorage does not raise RuntimeError.
-        for ver in valid_versions:
-            v_info.major = ver["major"]
-            v_info.minor = ver["minor"]
-            v_info.micro = ver["micro"]
-            RDBStorage._check_python_version()
