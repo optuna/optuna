@@ -51,8 +51,8 @@ class ThresholdPruner(BasePruner):
 
     Args
         lower:
-            minimum value which determines whether pruner prunes or not
-            (If value is smaller than lower, it prunes)
+            A minimum value which determines whether pruner prunes or not.
+            If an intermediate value is smaller than lower, it prunes.
         upper:
             maximum value which determines whether pruner prunes or not
             (If value is larger than upper, it prunes)
