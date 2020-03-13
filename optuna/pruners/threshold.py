@@ -54,8 +54,8 @@ class ThresholdPruner(BasePruner):
             A minimum value which determines whether pruner prunes or not.
             If an intermediate value is smaller than lower, it prunes.
         upper:
-            maximum value which determines whether pruner prunes or not
-            (If value is larger than upper, it prunes)
+            A maximum value which determines whether pruner prunes or not.
+            If an intermediate value is larger than upper, it prunes.
         n_warmup_steps:
             Pruning is disabled until the trial exceeds the given number of step.
         interval_steps:
