@@ -44,10 +44,10 @@ class ThresholdPruner(BasePruner):
             n_trial_step = 5
 
             study = create_study(pruner=ThresholdPruner(upper=1.0))
-            study.optimize(objective_1, n_trials=10)
+            study.optimize(objective_for_upper, n_trials=10)
 
             study = create_study(pruner=ThresholdPruner(lower=0.0))
-            study.optimize(objective_2, n_trials=10)
+            study.optimize(objective_for_lower, n_trials=10)
 
 
     Args
