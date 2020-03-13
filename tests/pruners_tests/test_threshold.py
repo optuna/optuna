@@ -1,3 +1,5 @@
+import pytest
+
 import optuna
 
 
@@ -56,3 +58,12 @@ def test_threshold_pruner_with_two_side() -> None:
     trial.report(1.1, 5)
     assert pruner.prune(
         study=study, trial=study._storage.get_trial(trial._trial_id))
+
+
+def test_threshold_pruner_with_invalid_inputs() -> None:
+
+    with pytest.raises(Exception):
+        pruner = optuna.pruners.ThresholdPruner(lower='0', upper=1)  # NOQA
+
+    with pytest.raises(Exception):
+        pruner = optuna.pruners.ThresholdPruner(lower=0, upper=False)  # NOQA

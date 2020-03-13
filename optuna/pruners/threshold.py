@@ -74,6 +74,12 @@ class ThresholdPruner(BasePruner):
             interval_steps: int = 1
     ) -> None:
 
+        if isinstance(lower, bool) or isinstance(upper, bool):
+            raise ValueError('lower and upper should be either None, integers or floating points')
+        if (lower is not None) and (not isinstance(lower, int)) and (not isinstance(lower, float)):
+            raise ValueError('lower should be either None, integer or floating point.')
+        if (upper is not None) and (not isinstance(upper, int)) and (not isinstance(upper, float)):
+            raise ValueError('upper should be either None, integer or floating point.')
         if lower is None and upper is None:
             warnings.warn('Both lower and upper are not specified.')
         if lower is not None and upper is not None and lower > upper:
