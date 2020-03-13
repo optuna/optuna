@@ -316,6 +316,9 @@ class Study(BaseStudy):
         # TODO(crcrpar): Make progress bar work when n_jobs != 1.
         self._progress_bar = pbar_module._ProgressBar(
             show_progress_bar and n_jobs == 1, n_trials, timeout)
+
+        self._stop_flag = False
+
         try:
             if n_jobs == 1:
                 self._optimize_sequential(func, n_trials, timeout, catch, callbacks,
@@ -328,16 +331,23 @@ class Study(BaseStudy):
 
                 time_start = datetime.datetime.now()
 
+                def _should_stop():
+                    # type: () -> bool
+
+                    if self._stop_flag:
+                        return True
+
+                    if timeout is not None:
+                        # This is needed for mypy.
+                        t = timeout  # type: float
+                        return (datetime.datetime.now() - time_start).total_seconds() > t
+
+                    return False
+
                 if n_trials is not None:
                     _iter = iter(range(n_trials))
-                elif timeout is not None:
-                    # This is needed for mypy
-                    actual_timeout = timeout  # type: float
-                    _iter = iter(lambda: (datetime.datetime.now() -
-                                          time_start).total_seconds() > actual_timeout, True)
                 else:
-                    # The following expression makes an iterator that never ends.
-                    _iter = iter(int, 1)
+                    _iter = iter(_should_stop, True)
 
                 with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
                     if not isinstance(parallel._backend, joblib.parallel.ThreadingBackend) and \
@@ -496,8 +506,7 @@ class Study(BaseStudy):
     @experimental('1.3.0')
     def stop(self):
         # type: () -> None
-        """Stop the optimization after the current trial finishes.
-        """
+        """Stop the optimization after the current trial finishes."""
 
         if self._optimize_lock.acquire(False):
             raise RuntimeError("`Study.stop` is supposed be invoked inside an objective function "
@@ -594,12 +603,14 @@ class Study(BaseStudy):
         # type: (...) -> None
 
         i_trial = 0
-        self._stop_flag = False
 
         if time_start is None:
             time_start = datetime.datetime.now()
 
         while True:
+            if self._stop_flag:
+                break
+
             if n_trials is not None:
                 if i_trial >= n_trials:
                     break
@@ -613,9 +624,6 @@ class Study(BaseStudy):
             self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
 
             self._progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
-
-            if self._stop_flag:
-                break
 
         self._storage.remove_session()
 

@@ -673,52 +673,57 @@ def test_nested_optimization():
 def test_stop_in_objective():
     # type: () -> None
 
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+    def objective(trial, threshold_number):
+        # type: (optuna.trial.Trial, int) -> float
 
-        if trial.number > 3:
+        if trial.number >= threshold_number:
             trial.study.stop()
 
         return trial.number
 
+    # Test stopping the optimization: it should stop once the trial number reaches 4.
     study = optuna.create_study()
-    study.optimize(objective, n_trials=10)
+    study.optimize(lambda x: objective(x, 4), n_trials=10)
     assert len(study.trials) == 5
 
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
-
-        if trial.number > 10:
-            trial.study.stop()
-
-        return trial.number
-
-    study.optimize(objective, n_trials=10)
+    # Test calling `optimize` again: it should stop once the trial number reaches 11.
+    study.optimize(lambda x: objective(x, 11), n_trials=10)
     assert len(study.trials) == 12
 
 
 def test_stop_in_callback():
     # type: () -> None
 
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+    def callback(study, trial):
+        # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
 
-        return 1.0
+        if trial.number >= 4:
+            study.stop()
+
+    # Test stopping the optimization inside a callback.
+    study = optuna.create_study()
+    study.optimize(lambda _: 1.0, n_trials=10, callbacks=[callback])
+    assert len(study.trials) == 5
+
+
+def test_stop_n_jobs():
+    # type: () -> None
 
     def callback(study, trial):
         # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
 
-        if trial.number > 3:
+        if trial.number >= 4:
             study.stop()
 
     study = optuna.create_study()
-    study.optimize(objective, n_trials=10, callbacks=[callback])
-    assert len(study.trials) == 5
+    study.optimize(lambda _: 1.0, n_trials=None, callbacks=[callback], n_jobs=2)
+    assert 5 <= len(study.trials) <= 6  # todo(g-votte): discuss if we need more strict assertion.
 
 
 def test_stop_outside_optimize():
     # type: () -> None
 
+    # Test stopping outside the optimization: it should raise RuntimeError.
     study = optuna.create_study()
     with pytest.raises(RuntimeError):
         study.stop()
