@@ -71,5 +71,5 @@ def _check_pytorch_lightning_availability():
             'PyTorch Lightning is not available. Please install PyTorch Lightning to use this '
             'feature. PyTorch Lightning can be installed by executing `$ pip install '
             'pytorch-lightning`. For further information, please refer to the installation guide '
-            'of PyTorch Lightining. (The actual import error is as follows: '
+            'of PyTorch Lightning. (The actual import error is as follows: '
             + str(_import_error) + ')')
