@@ -77,7 +77,7 @@ class ThresholdPruner(BasePruner):
         if lower is None and upper is None:
             warnings.warn('Both lower and upper are not specified.')
         if lower is not None and upper is not None and lower > upper:
-            raise ValueError('lower should be smaller than upper')
+            raise ValueError('lower should be smaller than upper.')
         if n_warmup_steps < 0:
             raise ValueError(
                 'Number of warmup steps cannot be negative but got {}.'.format(n_warmup_steps))
