@@ -48,7 +48,8 @@ def plot_parallel_coordinate(study, params=None):
 
         .. raw:: html
 
-            <iframe src="../_static/plot_parallel_coordinate.html" width="100%" height="500px" frameborder="0">
+            <iframe src="../_static/plot_parallel_coordinate.html"
+             width="100%" height="500px" frameborder="0">
             </iframe>
 
     Args:
