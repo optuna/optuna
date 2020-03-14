@@ -163,17 +163,42 @@ class Trial(BaseTrial):
         # type: (str, float, float, bool) -> float
         """Wrapper method for suggest_uniform and suggest_loguniform.
 
+        .. seealso::
+            Please refer to :class:`~optuna.trial.Trial.suggest_uniform` and
+            `~optuna.trial.Trial.suggest_loguniform`.
+
         Example:
 
-            Suggest a xxxx.
+            Suggest a momentum and learning rate for neural network training.
 
             .. testsetup::
 
-                import numpy
+                import numpy as np
+                import optuna
+                from sklearn.model_selection import train_test_split
+                from sklearn.neural_network import MLPClassifier
+
+                np.random.seed(seed=0)
+                X = np.random.randn(200).reshape(-1, 1)
+                y = np.random.randint(0, 2, 200)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
 
             ..testcode::
 
-                import optuna
+                def objective(trial):
+                    momentum = trial.suggest_float('momentum', 0.0, 1.0)
+                    learning_rate_init = trial.suggest_float('learning_rate_init',
+                                                             1e-5, 1e-3, log=True)
+                    clf = MLPClassifier(hidden_layer_sizes=(100, 50), momentum=momentum,
+                                        learning_rate_init=learning_rate_init,
+                                        solver='sgd', random_state=0)
+                    clf.fit(X_train, y_train)
+
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
 
         Args:
             name:
