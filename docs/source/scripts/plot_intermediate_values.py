@@ -10,7 +10,8 @@ def main():
         y = trial.suggest_categorical('y', [-1, 0, 1])
         return x ** 2 + y
 
-    study = optuna.create_study()
+    sampler = optuna.samplers.TPESampler(seed=10)
+    study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=10)
 
     fig = optuna.visualization.plot_intermediate_values(study)
