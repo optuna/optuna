@@ -6,6 +6,7 @@ from typing import Any
 from typing import Dict
 from typing import Sequence
 from typing import Union
+import numpy
 import warnings
 
 
@@ -54,6 +55,10 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
             otherwise :obj:`False`.
         """
 
+        raise NotImplementedError
+
+    def isinclude(self, value):
+        # type: (Any) -> bool
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -121,6 +126,13 @@ class UniformDistribution(BaseDistribution):
 
         return self.low == self.high
 
+    def isinclude(self, value):
+        # type: (Any) -> bool
+        if self.low == self.high:
+            return value == self.low
+        else:
+            return self.low <= value and value < self.high
+
     def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
@@ -162,6 +174,13 @@ class LogUniformDistribution(BaseDistribution):
     def single(self) -> bool:
 
         return self.low == self.high
+
+    def isinclude(self, value):
+        # type: (Any) -> bool
+        if self.low == self.high:
+            return value == self.low
+        else:
+            return self.low <= value and value < self.high
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
 
@@ -215,6 +234,14 @@ class DiscreteUniformDistribution(BaseDistribution):
         if (high - low) < q:
             return True
         return False
+
+    def isinclude(self, value):
+        # type: (Any) -> bool
+        tmp = (value - self.low) / self.q
+        if numpy.allclose(tmp, int(tmp)) is False:
+            return False
+        else:
+            return self.low <= value and value <= self.high
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
 
@@ -273,6 +300,13 @@ class IntUniformDistribution(BaseDistribution):
         if self.low == self.high:
             return True
         return (self.high - self.low) < self.step
+
+    def isinclude(self, value):
+        # type: (Any) -> bool
+        if isinstance(value, int) is False:
+            return False
+        else:
+            return self.low <= value and value <= self.high
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
 
@@ -421,6 +455,10 @@ class CategoricalDistribution(BaseDistribution):
     def single(self) -> bool:
 
         return len(self.choices) == 1
+
+    def isinclude(self, value):
+        # type: (Any) -> bool
+        return value in self.choices
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
 

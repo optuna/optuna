@@ -1086,6 +1086,57 @@ def delete_study(
     storage.delete_study(study_id)
 
 
+def import_study_new_distributions(
+        study,  # type: Study
+        new_distributions,  # type: Dict[str, BaseDistribution]
+):
+    # type: (...) -> Study
+    new_study = create_study()
+
+    def _check_param(
+        params,  # type: Dict[str, Any]
+        new_distributions,  # type: Dict[str, BaseDistribution]
+    ):
+        # type: (...) -> bool
+        for variable_name, new_distribution in new_distributions.items():
+            if new_distribution.isinclude(params[variable_name]) is False:
+                return False
+        return True
+
+    for trial in study.trials:
+        if _check_param(trial.params, new_distributions) is False:
+            continue
+        print(trial.params)
+        new_study._append_trial(
+            value=trial.value,
+            params=trial.params,
+            distributions=trial.distributions,
+            user_attrs=trial.user_attrs,
+            system_attrs=trial.system_attrs
+        )
+    return new_study
+
+
+def import_study_new_objective(
+        study,  # type: Study
+        new_objective,  # type: ObjectiveFuncType
+):
+    # type: (...) -> Study
+    tmp_study = create_study()
+    tmp_study.optimize(new_objective, n_trials=1, n_jobs=1)
+    new_distributions = tmp_study.trials[0].distributions
+    new_study = import_study_new_distributions(study, new_distributions)
+    for trial in tmp_study.trials:
+        new_study._append_trial(
+            value=trial.value,
+            params=trial.params,
+            distributions=trial.distributions,
+            user_attrs=trial.user_attrs,
+            system_attrs=trial.system_attrs
+        )
+    return new_study
+
+
 def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[StudySummary]:
     """Get all history of studies stored in a specified storage.
 
