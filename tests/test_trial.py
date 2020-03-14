@@ -27,6 +27,25 @@ parametrize_storage = pytest.mark.parametrize(
 
 
 @parametrize_storage
+def test_check_distribution_suggest_float(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    x1 = trial.suggest_float('x1', 10, 20)
+    x2 = trial.suggest_uniform('x1', 10, 20)
+
+    assert x1 == x2
+
+    x3 = trial.suggest_float('x2', 1e-5, 1e-3, log=True)
+    x4 = trial.suggest_loguniform('x2', 1e-5, 1e-3)
+
+    assert x3 == x4
+
+
+@parametrize_storage
 def test_check_distribution_suggest_uniform(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
 
