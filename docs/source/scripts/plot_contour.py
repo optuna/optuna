@@ -15,7 +15,7 @@ def main():
     study.optimize(objective, n_trials=10)
 
     fig = optuna.visualization.plot_contour(study, params=['x', 'y'])
-    fig_html = plotly.offline.plot(fig, output_type='div', include_plotlyjs=False, auto_open=False)
+    fig_html = plotly.offline.plot(fig, output_type='div', include_plotlyjs='cdn', auto_open=False)
 
     fig_dir = '../plotly_figures'
     os.makedirs(fig_dir, exist_ok=True)
