@@ -12,10 +12,16 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
+    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
+
+    FloatingPointDistributionType = Union[
+        distributions.UniformDistribution,
+        distributions.LogUniformDistribution
+    ]
 
 
 class BaseTrial(object, metaclass=abc.ABCMeta):
@@ -183,7 +189,7 @@ class Trial(BaseTrial):
         """
 
         if log:
-            distribution = distributions.LogUniformDistribution(low=low, high=high)
+            distribution = distributions.LogUniformDistribution(low=low, high=high)  # type: FloatingPointDistributionType  # NOQA
         else:
             distribution = distributions.UniformDistribution(low=low, high=high)
 
