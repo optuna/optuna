@@ -11,7 +11,7 @@ from optuna.structs import TrialState
 from optuna.study import Study
 
 
-@_experimental.experimental("1.2.0")
+@_experimental.experimental("1.3.0")
 def get_param_importances(
         study: Study, evaluator: BaseImportanceEvaluator = None,
         params: Optional[List[str]] = None) -> Dict[str, float]:
