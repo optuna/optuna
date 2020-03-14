@@ -51,7 +51,9 @@ def plot_contour(study, params=None):
             optuna.visualization.plot_contour(study, params=['x', 'y'])
 
         .. raw:: html
-            :file: ../../docs/source/plotly_figures/plot_contour.html
+
+            <iframe src="../_static/plot_contour.html" width="100%" height="500px" frameborder="0">
+            </iframe>
 
     Args:
         study:
