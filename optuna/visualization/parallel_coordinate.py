@@ -6,10 +6,12 @@ from optuna.structs import TrialState
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import is_available
 
+from typing import Any
 from typing import DefaultDict
+from typing import Dict
 from typing import List
 from typing import Optional
-#from optuna.study import Study
+# from optuna.study import Study
 
 if is_available():
     from optuna.visualization.plotly_imports import go
@@ -17,7 +19,9 @@ if is_available():
 logger = get_logger(__name__)
 
 
-def plot_parallel_coordinate(study: 'optuna.study.Study', params: Optional[List[str]] = None) -> 'go.Figure':
+def plot_parallel_coordinate(
+        study: 'optuna.study.Study',
+        params: Optional[List[str]] = None) -> 'go.Figure':
     """Plot the high-dimentional parameter relationships in a study.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
@@ -55,7 +59,9 @@ def plot_parallel_coordinate(study: 'optuna.study.Study', params: Optional[List[
     return _get_parallel_coordinate_plot(study, params)
 
 
-def _get_parallel_coordinate_plot(study: 'optuna.study.Study', params: Optional[List[str]] = None) -> 'go.Figure':
+def _get_parallel_coordinate_plot(
+        study: 'optuna.study.Study',
+        params: Optional[List[str]] = None) -> 'go.Figure':
 
     layout = go.Layout(
         title='Parallel Coordinate Plot',
