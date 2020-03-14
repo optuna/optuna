@@ -37,7 +37,9 @@ class SkoptSampler(BaseSampler):
 
         Optimize a simple quadratic function by using :class:`~optuna.integration.SkoptSampler`.
 
-        .. code::
+        .. testcode::
+
+                import optuna
 
                 def objective(trial):
                     x = trial.suggest_uniform('x', -10, 10)
@@ -46,7 +48,7 @@ class SkoptSampler(BaseSampler):
 
                 sampler = optuna.integration.SkoptSampler()
                 study = optuna.create_study(sampler=sampler)
-                study.optimize(objective, n_trials=100)
+                study.optimize(objective, n_trials=10)
 
     Args:
         independent_sampler:

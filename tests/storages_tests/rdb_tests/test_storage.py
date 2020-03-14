@@ -43,7 +43,7 @@ def test_init():
     assert version_info.library_version == version.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
-    assert storage.get_all_versions() == ['v1.2.0.a', 'v0.9.0.a']
+    assert storage.get_all_versions() == ['v1.3.0.a', 'v1.2.0.a', 'v0.9.0.a']
 
 
 def test_init_url_template():
@@ -300,19 +300,6 @@ def test_commit():
         storage._commit(session)
 
 
-def test_create_new_trial_number():
-    # type: () -> None
-
-    storage = create_test_storage()
-    study_id = storage.create_new_study()
-
-    trial_id = storage.create_new_trial(study_id)
-    assert storage._create_new_trial_number(trial_id) == 0
-
-    trial_id = storage.create_new_trial(study_id)
-    assert storage._create_new_trial_number(trial_id) == 1
-
-
 def test_update_finished_trial():
     # type: () -> None
 
@@ -398,33 +385,3 @@ def test_storage_cache():
             wraps=TrialModel.find_or_raise_by_id) as mock_object:
         assert storage.get_all_trials(study_id) == trials
         assert mock_object.call_count == 1
-
-
-def test_check_python_version():
-    # type: () -> None
-
-    error_versions = [{"major": 3, "minor": 4, "micro": i} for i in range(0, 4)]
-    valid_versions = [
-        {"major": 2, "minor": 7, "micro": 3},
-        {"major": 3, "minor": 3, "micro": 7},
-        {"major": 3, "minor": 4, "micro": 4},
-        {"major": 3, "minor": 4, "micro": 10},
-        {"major": 3, "minor": 7, "micro": 4},
-    ]
-
-    with patch.object(sys, 'version_info') as v_info:
-        # If Python version is 3.4.0 to 3.4.3, RDBStorage raises RuntimeError.
-        for ver in error_versions:
-            v_info.major = ver["major"]
-            v_info.minor = ver["minor"]
-            v_info.micro = ver["micro"]
-
-            with pytest.raises(RuntimeError):
-                RDBStorage._check_python_version()
-
-        # Otherwise, RDBStorage does not raise RuntimeError.
-        for ver in valid_versions:
-            v_info.major = ver["major"]
-            v_info.minor = ver["minor"]
-            v_info.micro = ver["micro"]
-            RDBStorage._check_python_version()

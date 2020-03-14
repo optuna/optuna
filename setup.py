@@ -33,11 +33,11 @@ def get_install_requires() -> List[str]:
         'alembic',
         'cliff',
         'colorlog',
+        'joblib',
         'numpy',
         'scipy!=1.4.0',
         'sqlalchemy>=1.1.0',
         'tqdm',
-        'joblib',
     ]
 
 
@@ -59,10 +59,11 @@ def get_extras_require() -> Dict[str, List[str]]:
             'pytest-cov',
         ],
         'doctest': [
-            'pandas',
             'cma',
-            'scikit-learn>=0.19.0',
+            'pandas',
             'plotly>=4.0.0',
+            'scikit-learn>=0.19.0',
+            'scikit-optimize',
         ],
         'document': [
             'sphinx',
@@ -73,6 +74,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             'chainer',
             'lightgbm',
             'mlflow',
+            'mpi4py',
             'mxnet',
             'pytorch-ignite',
             'scikit-image',
@@ -85,11 +87,16 @@ def get_extras_require() -> Dict[str, List[str]]:
             'dask[dataframe]',
             'dask-ml',
             'keras',
-            'pytorch-lightning',
+            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
+            # https://github.com/optuna/optuna/issues/997.
+            'pytorch-lightning<0.7.0',
             'tensorflow>=2.0.0',
+            'tensorflow-datasets',
         ] if sys.version_info[:2] < (3, 8) else []),
         'testing': [
-            'bokeh',
+            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
+            # https://github.com/optuna/optuna/issues/1000.
+            'bokeh<2.0.0',
             'chainer>=5.0.0',
             'cma',
             'lightgbm',
@@ -108,7 +115,9 @@ def get_extras_require() -> Dict[str, List[str]]:
         ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + ([
             'keras',
-            'pytorch-lightning',
+            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
+            # https://github.com/optuna/optuna/issues/997.
+            'pytorch-lightning<0.7.0',
             'tensorflow',
             'tensorflow-datasets',
         ] if sys.version_info[:2] < (3, 8) else []),

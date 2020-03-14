@@ -3,13 +3,18 @@ from collections import defaultdict
 from optuna.logging import get_logger
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
+from optuna import type_checking
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import is_available
 
-from typing import DefaultDict
-from typing import List
-from typing import Optional
-#from optuna.study import Study
+if type_checking.TYPE_CHECKING:
+    from typing import Any
+    from typing import DefaultDict
+    from typing import Dict
+    from typing import List
+    from typing import Optional
+
+    #from optuna.study import Study
 
 if is_available():
     from optuna.visualization.plotly_imports import go
@@ -79,7 +84,7 @@ def _get_parallel_coordinate_plot(study: 'optuna.study.Study', params: Optional[
         'label': 'Objective Value',
         'values': tuple([t.value for t in trials]),
         'range': (min([t.value for t in trials]), max([t.value for t in trials]))
-    }]
+    }]  # type: List[Dict[str, Any]]
     for p_name in sorted_params:
         values = []
         for t in trials:
