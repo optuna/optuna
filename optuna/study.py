@@ -1086,9 +1086,33 @@ def delete_study(
     storage.delete_study(study_id)
 
 
-def import_study_new_distributions(
+def import_study_add_parameters(
         study,  # type: Study
-        new_distributions,  # type: Dict[str, BaseDistribution]
+        add_parameters,  # type: List[Tuple[str, BaseDistribution, Any]]
+):
+    # type: (...) -> Study
+    new_study = create_study()
+    new_params = {}
+    new_distributions = {}
+    for variable_name, new_distribution, default in add_parameters:
+        new_params[variable_name] = default
+        new_distributions[variable_name] = new_distribution
+    for trial in study.trials:
+        new_params.update(trial.params)
+        new_distributions.update(trial.distributions)
+        new_study._append_trial(
+            value=trial.value,
+            params=new_params,
+            distributions=new_distributions,
+            user_attrs=trial.user_attrs,
+            system_attrs=trial.system_attrs
+        )
+    return new_study
+
+
+def import_study_modify_distributions(
+        study,  # type: Study
+        modify_distributions,  # type: Dict[str, BaseDistribution]
 ):
     # type: (...) -> Study
     new_study = create_study()
@@ -1098,15 +1122,14 @@ def import_study_new_distributions(
         new_distributions,  # type: Dict[str, BaseDistribution]
     ):
         # type: (...) -> bool
-        for variable_name, new_distribution in new_distributions.items():
-            if new_distribution.isinclude(params[variable_name]) is False:
+        for variable_name, modify_distribution in modify_distributions.items():
+            if modify_distribution.isinclude(params[variable_name]) is False:
                 return False
         return True
 
     for trial in study.trials:
-        if _check_param(trial.params, new_distributions) is False:
+        if _check_param(trial.params, modify_distributions) is False:
             continue
-        print(trial.params)
         new_study._append_trial(
             value=trial.value,
             params=trial.params,
@@ -1117,15 +1140,15 @@ def import_study_new_distributions(
     return new_study
 
 
-def import_study_new_objective(
+def import_study_modify_objective(
         study,  # type: Study
-        new_objective,  # type: ObjectiveFuncType
+        modify_objective,  # type: ObjectiveFuncType
 ):
     # type: (...) -> Study
     tmp_study = create_study()
-    tmp_study.optimize(new_objective, n_trials=1, n_jobs=1)
-    new_distributions = tmp_study.trials[0].distributions
-    new_study = import_study_new_distributions(study, new_distributions)
+    tmp_study.optimize(modify_objective, n_trials=1, n_jobs=1)
+    modify_distributions = tmp_study.trials[0].distributions
+    new_study = import_study_modify_distributions(study, modify_distributions)
     for trial in tmp_study.trials:
         new_study._append_trial(
             value=trial.value,
