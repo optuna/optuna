@@ -3,6 +3,7 @@ from collections import defaultdict
 from optuna.logging import get_logger
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
+from optuna.study import Study
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import is_available
 
@@ -11,7 +12,6 @@ from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
-from optuna.study import Study
 
 if is_available():
     from optuna.visualization.plotly_imports import go
