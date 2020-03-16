@@ -50,7 +50,7 @@ def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
         'checking': [
-            'autopep8',
+            'black',
             'hacking',
             'mypy',
         ],
