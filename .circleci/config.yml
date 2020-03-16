@@ -60,7 +60,7 @@ jobs:
           name: black
           command: |
             . venv/bin/activate
-            black . --line-length 99 --check --skip-string-normalization --exclude="docs"
+            black . --line-length 99 --check --exclude="docs"
 
       - run:
           name: flake8
