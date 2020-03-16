@@ -228,7 +228,7 @@ class Study(BaseStudy):
         """
 
         message = (
-            "The use of `Study.study_id` is deprecated. " "Please use `Study.study_name` instead."
+            "The use of `Study.study_id` is deprecated. Please use `Study.study_name` instead."
         )
         warnings.warn(message, DeprecationWarning)
         _logger.warning(message)

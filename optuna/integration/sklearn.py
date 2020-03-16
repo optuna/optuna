@@ -812,7 +812,7 @@ class OptunaSearchCV(BaseEstimator):
 
         self.refit_time_ = time() - start_time
 
-        _logger.info("Finished refitting! " "(elapsed time: {:.3f} sec.)".format(self.refit_time_))
+        _logger.info("Finished refitting! (elapsed time: {:.3f} sec.)".format(self.refit_time_))
 
         return self
 

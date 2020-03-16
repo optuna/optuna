@@ -728,12 +728,12 @@ class Trial(BaseTrial):
         """
 
         warnings.warn(
-            "The use of `Trial.trial_id` is deprecated. " "Please use `Trial.number` instead.",
+            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead.",
             DeprecationWarning,
         )
 
         self.logger.warning(
-            "The use of `Trial.trial_id` is deprecated. " "Please use `Trial.number` instead."
+            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead."
         )
 
         return self._trial_id
@@ -805,7 +805,7 @@ class Trial(BaseTrial):
             The study ID.
         """
 
-        message = "The use of `Trial.study_id` is deprecated. " "Please use `Trial.study` instead."
+        message = "The use of `Trial.study_id` is deprecated. Please use `Trial.study` instead."
         warnings.warn(message, DeprecationWarning)
         self.logger.warning(message)
 
