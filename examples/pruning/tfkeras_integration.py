@@ -30,7 +30,7 @@ VALIDATION_STEPS = 30
 def train_dataset():
 
     ds = tfds.load('mnist', split=tfds.Split.TRAIN, shuffle_files=True)
-    ds = ds.map(lambda x: (tf.cast(x['image'], tf.float32)/255., x['label']))
+    ds = ds.map(lambda x: (tf.cast(x['image'], tf.float32) / 255.0, x['label']))
     ds = ds.repeat().shuffle(1024).batch(BATCHSIZE)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
@@ -40,7 +40,7 @@ def train_dataset():
 def eval_dataset():
 
     ds = tfds.load('mnist', split=tfds.Split.TEST, shuffle_files=False)
-    ds = ds.map(lambda x: (tf.cast(x['image'], tf.float32)/255., x['label']))
+    ds = ds.map(lambda x: (tf.cast(x['image'], tf.float32) / 255.0, x['label']))
     ds = ds.repeat().batch(BATCHSIZE)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
@@ -90,7 +90,7 @@ def objective(trial):
     # Create callbacks for early stopping and pruning.
     callbacks = [
         tf.keras.callbacks.EarlyStopping(patience=3),
-        TFKerasPruningCallback(trial, monitor)
+        TFKerasPruningCallback(trial, monitor),
     ]
 
     # Train model.
@@ -132,8 +132,9 @@ def show_result(study):
 
 def main():
 
-    study = optuna.create_study(direction='maximize',
-                                pruner=optuna.pruners.MedianPruner(n_startup_trials=2))
+    study = optuna.create_study(
+        direction='maximize', pruner=optuna.pruners.MedianPruner(n_startup_trials=2)
+    )
 
     study.optimize(objective, n_trials=25, timeout=600)
 

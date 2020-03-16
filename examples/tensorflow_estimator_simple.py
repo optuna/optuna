@@ -35,7 +35,7 @@ N_TEST_BATCHES = 1000
 
 
 def preprocess(image, label):
-    image = tf.reshape(image, [-1, 28*28])
+    image = tf.reshape(image, [-1, 28 * 28])
     image = tf.cast(image, tf.float32)
     image /= 255
     label = tf.cast(label, tf.int32)
@@ -82,11 +82,12 @@ def create_classifier(trial):
 
     model_dir = '{}/{}'.format(MODEL_DIR, trial.number)
     classifier = tf.estimator.DNNClassifier(
-        feature_columns=[tf.feature_column.numeric_column('x', shape=[28*28])],
+        feature_columns=[tf.feature_column.numeric_column('x', shape=[28 * 28])],
         hidden_units=hidden_units,
         model_dir=model_dir,
         n_classes=10,
-        optimizer=optimizer)
+        optimizer=optimizer,
+    )
 
     return classifier
 

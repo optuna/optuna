@@ -11,17 +11,20 @@ if optuna.type_checking.TYPE_CHECKING:
 
     from optuna.samplers import BaseSampler  # NOQA
 
-parametrize_sampler = pytest.mark.parametrize('sampler_class', [
-    optuna.integration.SkoptSampler,
-    optuna.integration.CmaEsSampler,
-])
+parametrize_sampler = pytest.mark.parametrize(
+    'sampler_class', [optuna.integration.SkoptSampler, optuna.integration.CmaEsSampler,]
+)
 
 
-@pytest.mark.parametrize('sampler_class', [
-    lambda: SkoptSampler(
-        independent_sampler=FirstTrialOnlyRandomSampler(), skopt_kwargs={'n_initial_points': 5}),
-    lambda: CmaEsSampler(independent_sampler=FirstTrialOnlyRandomSampler()),
-])
+@pytest.mark.parametrize(
+    'sampler_class',
+    [
+        lambda: SkoptSampler(
+            independent_sampler=FirstTrialOnlyRandomSampler(), skopt_kwargs={'n_initial_points': 5}
+        ),
+        lambda: CmaEsSampler(independent_sampler=FirstTrialOnlyRandomSampler()),
+    ],
+)
 def test_suggested_value(sampler_class):
     # type: (Callable[[], BaseSampler]) -> None
 
@@ -110,10 +113,13 @@ def test_sample_independent(sampler_class):
         assert [call[1][2] for call in mock_object.mock_calls] == ['p1', 'p5']
 
 
-@pytest.mark.parametrize('sampler_class', [
-    lambda x: SkoptSampler(warn_independent_sampling=x),
-    lambda x: CmaEsSampler(warn_independent_sampling=x),
-])
+@pytest.mark.parametrize(
+    'sampler_class',
+    [
+        lambda x: SkoptSampler(warn_independent_sampling=x),
+        lambda x: CmaEsSampler(warn_independent_sampling=x),
+    ],
+)
 def test_warn_independent_sampling(sampler_class):
     # type: (Callable[[bool], BaseSampler]) -> None
 
@@ -126,12 +132,14 @@ def test_warn_independent_sampling(sampler_class):
 
     with patch(method_name) as mock_object:
         study.optimize(
-            lambda t: t.suggest_uniform('p0', 0, 10) + t.suggest_uniform('q0', 0, 10), n_trials=1)
+            lambda t: t.suggest_uniform('p0', 0, 10) + t.suggest_uniform('q0', 0, 10), n_trials=1
+        )
         assert mock_object.call_count == 0
 
     with patch(method_name) as mock_object:
         study.optimize(
-            lambda t: t.suggest_uniform('p1', 0, 10) + t.suggest_uniform('q1', 0, 10), n_trials=1)
+            lambda t: t.suggest_uniform('p1', 0, 10) + t.suggest_uniform('q1', 0, 10), n_trials=1
+        )
         assert mock_object.call_count == 2
 
     # warn_independent_sampling=False
@@ -140,12 +148,14 @@ def test_warn_independent_sampling(sampler_class):
 
     with patch(method_name) as mock_object:
         study.optimize(
-            lambda t: t.suggest_uniform('p0', 0, 10) + t.suggest_uniform('q0', 0, 10), n_trials=1)
+            lambda t: t.suggest_uniform('p0', 0, 10) + t.suggest_uniform('q0', 0, 10), n_trials=1
+        )
         assert mock_object.call_count == 0
 
     with patch(method_name) as mock_object:
         study.optimize(
-            lambda t: t.suggest_uniform('p1', 0, 10) + t.suggest_uniform('q1', 0, 10), n_trials=1)
+            lambda t: t.suggest_uniform('p1', 0, 10) + t.suggest_uniform('q1', 0, 10), n_trials=1
+        )
         assert mock_object.call_count == 0
 
 

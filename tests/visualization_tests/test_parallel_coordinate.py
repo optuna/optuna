@@ -54,7 +54,7 @@ def test_plot_parallel_coordinate():
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_parallel_coordinate(study)
     assert len(figure.data) == 0
 
@@ -62,25 +62,19 @@ def test_plot_parallel_coordinate():
     study_categorical_params = create_study()
     study_categorical_params._append_trial(
         value=0.0,
-        params={
-            'category_a': 'preferred',
-            'category_b': 'net',
-        },
+        params={'category_a': 'preferred', 'category_b': 'net',},
         distributions={
             'category_a': CategoricalDistribution(('preferred', 'opt')),
             'category_b': CategoricalDistribution(('net', 'una')),
-        }
+        },
     )
     study_categorical_params._append_trial(
         value=2.0,
-        params={
-            'category_a': 'opt',
-            'category_b': 'una',
-        },
+        params={'category_a': 'opt', 'category_b': 'una',},
         distributions={
             'category_a': CategoricalDistribution(('preferred', 'opt')),
             'category_b': CategoricalDistribution(('net', 'una')),
-        }
+        },
     )
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.data[0]['dimensions']) == 3

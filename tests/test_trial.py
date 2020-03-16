@@ -22,7 +22,8 @@ if type_checking.TYPE_CHECKING:
 
 parametrize_storage = pytest.mark.parametrize(
     'storage_init_func',
-    [storages.InMemoryStorage, lambda: storages.RDBStorage('sqlite:///:memory:')])
+    [storages.InMemoryStorage, lambda: storages.RDBStorage('sqlite:///:memory:')],
+)
 
 
 @parametrize_storage
@@ -98,18 +99,18 @@ def test_suggest_uniform(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
 
     mock = Mock()
-    mock.side_effect = [1., 2., 3.]
+    mock.side_effect = [1.0, 2.0, 3.0]
     sampler = samplers.RandomSampler()
 
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = distributions.UniformDistribution(low=0., high=3.)
+        distribution = distributions.UniformDistribution(low=0.0, high=3.0)
 
-        assert trial._suggest('x', distribution) == 1.  # Test suggesting a param.
-        assert trial._suggest('x', distribution) == 1.  # Test suggesting the same param.
-        assert trial._suggest('y', distribution) == 3.  # Test suggesting a different param.
-        assert trial.params == {'x': 1., 'y': 3.}
+        assert trial._suggest('x', distribution) == 1.0  # Test suggesting a param.
+        assert trial._suggest('x', distribution) == 1.0  # Test suggesting the same param.
+        assert trial._suggest('y', distribution) == 3.0  # Test suggesting a different param.
+        assert trial.params == {'x': 1.0, 'y': 3.0}
         assert mock_object.call_count == 3
 
 
@@ -118,18 +119,18 @@ def test_suggest_discrete_uniform(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
 
     mock = Mock()
-    mock.side_effect = [1., 2., 3.]
+    mock.side_effect = [1.0, 2.0, 3.0]
     sampler = samplers.RandomSampler()
 
     with patch.object(sampler, 'sample_independent', mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = distributions.DiscreteUniformDistribution(low=0., high=3., q=1.)
+        distribution = distributions.DiscreteUniformDistribution(low=0.0, high=3.0, q=1.0)
 
-        assert trial._suggest('x', distribution) == 1.  # Test suggesting a param.
-        assert trial._suggest('x', distribution) == 1.  # Test suggesting the same param.
-        assert trial._suggest('y', distribution) == 3.  # Test suggesting a different param.
-        assert trial.params == {'x': 1., 'y': 3.}
+        assert trial._suggest('x', distribution) == 1.0  # Test suggesting a param.
+        assert trial._suggest('x', distribution) == 1.0  # Test suggesting the same param.
+        assert trial._suggest('y', distribution) == 3.0  # Test suggesting a different param.
+        assert trial.params == {'x': 1.0, 'y': 3.0}
         assert mock_object.call_count == 3
 
 
@@ -142,14 +143,16 @@ def test_suggest_low_equals_high(storage_init_func):
 
     # Parameter values are determined without suggestion when low == high.
     with patch.object(trial, '_suggest', wraps=trial._suggest) as mock_object:
-        assert trial.suggest_uniform('a', 1., 1.) == 1.  # Suggesting a param.
-        assert trial.suggest_uniform('a', 1., 1.) == 1.  # Suggesting the same param.
+        assert trial.suggest_uniform('a', 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert trial.suggest_uniform('a', 1.0, 1.0) == 1.0  # Suggesting the same param.
         assert mock_object.call_count == 0
-        assert trial.suggest_loguniform('b', 1., 1.) == 1.  # Suggesting a param.
-        assert trial.suggest_loguniform('b', 1., 1.) == 1.  # Suggesting the same param.
+        assert trial.suggest_loguniform('b', 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert trial.suggest_loguniform('b', 1.0, 1.0) == 1.0  # Suggesting the same param.
         assert mock_object.call_count == 0
-        assert trial.suggest_discrete_uniform('c', 1., 1., 1.) == 1.  # Suggesting a param.
-        assert trial.suggest_discrete_uniform('c', 1., 1., 1.) == 1.  # Suggesting the same param.
+        assert trial.suggest_discrete_uniform('c', 1.0, 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert (
+            trial.suggest_discrete_uniform('c', 1.0, 1.0, 1.0) == 1.0
+        )  # Suggesting the same param.
         assert mock_object.call_count == 0
         assert trial.suggest_int('d', 1, 1) == 1  # Suggesting a param.
         assert trial.suggest_int('d', 1, 1) == 1  # Suggesting the same param.
@@ -160,51 +163,17 @@ def test_suggest_low_equals_high(storage_init_func):
 @pytest.mark.parametrize(
     'range_config',
     [
-        {
-            'low': 0.,
-            'high': 10.,
-            'q': 3.,
-            'mod_high': 9.
-        },
-        {
-            'low': 1.,
-            'high': 11.,
-            'q': 3.,
-            'mod_high': 10.
-        },
-        {
-            'low': 64.,
-            'high': 1312.,
-            'q': 160.,
-            'mod_high': 1184.
-        },
+        {'low': 0.0, 'high': 10.0, 'q': 3.0, 'mod_high': 9.0},
+        {'low': 1.0, 'high': 11.0, 'q': 3.0, 'mod_high': 10.0},
+        {'low': 64.0, 'high': 1312.0, 'q': 160.0, 'mod_high': 1184.0},
         # high is excluded due to the round-off error of 10 // 0.1.
-        {
-            'low': 0.,
-            'high': 10.,
-            'q': 0.1,
-            'mod_high': 10.0
-        },
+        {'low': 0.0, 'high': 10.0, 'q': 0.1, 'mod_high': 10.0},
         # high is excluded doe to the round-off error of 10.1 // 0.1
-        {
-            'low': 0.,
-            'high': 10.1,
-            'q': 0.1,
-            'mod_high': 10.1
-        },
-        {
-            'low': 0.,
-            'high': 10.,
-            'q': math.pi,
-            'mod_high': 3 * math.pi
-        },
-        {
-            'low': 0.,
-            'high': 3.45,
-            'q': 0.1,
-            'mod_high': 3.4
-        }
-    ])
+        {'low': 0.0, 'high': 10.1, 'q': 0.1, 'mod_high': 10.1},
+        {'low': 0.0, 'high': 10.0, 'q': math.pi, 'mod_high': 3 * math.pi},
+        {'low': 0.0, 'high': 3.45, 'q': 0.1, 'mod_high': 3.4},
+    ],
+)
 def test_suggest_discrete_uniform_range(storage_init_func, range_config):
     # type: (typing.Callable[[], storages.BaseStorage], typing.Dict[str, float]) -> None
 
@@ -217,8 +186,9 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-        x = trial.suggest_discrete_uniform('x', range_config['low'], range_config['high'],
-                                           range_config['q'])
+        x = trial.suggest_discrete_uniform(
+            'x', range_config['low'], range_config['high'], range_config['q']
+        )
         assert x == range_config['mod_high']
         assert mock_object.call_count == 1
 
@@ -229,8 +199,9 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-        x = trial.suggest_discrete_uniform('x', range_config['low'], range_config['high'],
-                                           range_config['q'])
+        x = trial.suggest_discrete_uniform(
+            'x', range_config['low'], range_config['high'], range_config['q']
+        )
         assert x == range_config['low']
         assert mock_object.call_count == 1
 
@@ -278,7 +249,7 @@ def test_distributions(storage_init_func):
         'b': distributions.LogUniformDistribution(low=0.1, high=10),
         'c': distributions.DiscreteUniformDistribution(low=0, high=10, q=1),
         'd': distributions.IntUniformDistribution(low=0, high=10),
-        'e': distributions.CategoricalDistribution(choices=('foo', 'bar', 'baz'))
+        'e': distributions.CategoricalDistribution(choices=('foo', 'bar', 'baz')),
     }
 
 
@@ -295,31 +266,31 @@ def test_trial_should_prune():
 def test_fixed_trial_suggest_uniform():
     # type: () -> None
 
-    trial = FixedTrial({'x': 1.})
-    assert trial.suggest_uniform('x', -100., 100.) == 1.
+    trial = FixedTrial({'x': 1.0})
+    assert trial.suggest_uniform('x', -100.0, 100.0) == 1.0
 
     with pytest.raises(ValueError):
-        trial.suggest_uniform('y', -100., 100.)
+        trial.suggest_uniform('y', -100.0, 100.0)
 
 
 def test_fixed_trial_suggest_loguniform():
     # type: () -> None
 
     trial = FixedTrial({'x': 0.99})
-    assert trial.suggest_loguniform('x', 0., 1.) == 0.99
+    assert trial.suggest_loguniform('x', 0.0, 1.0) == 0.99
 
     with pytest.raises(ValueError):
-        trial.suggest_loguniform('y', 0., 1.)
+        trial.suggest_loguniform('y', 0.0, 1.0)
 
 
 def test_fixed_trial_suggest_discrete_uniform():
     # type: () -> None
 
     trial = FixedTrial({'x': 0.9})
-    assert trial.suggest_discrete_uniform('x', 0., 1., 0.1) == 0.9
+    assert trial.suggest_discrete_uniform('x', 0.0, 1.0, 0.1) == 0.9
 
     with pytest.raises(ValueError):
-        trial.suggest_discrete_uniform('y', 0., 1., 0.1)
+        trial.suggest_discrete_uniform('y', 0.0, 1.0, 0.1)
 
 
 def test_fixed_trial_suggest_int():
@@ -418,13 +389,9 @@ def test_relative_parameters(storage_init_func):
 
     relative_search_space = {
         'x': distributions.UniformDistribution(low=5, high=6),
-        'y': distributions.UniformDistribution(low=5, high=6)
+        'y': distributions.UniformDistribution(low=5, high=6),
     }
-    relative_params = {
-        'x': 5.5,
-        'y': 5.5,
-        'z': 5.5
-    }
+    relative_params = {'x': 5.5, 'y': 5.5, 'z': 5.5}
 
     sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
     study = create_study(storage=storage_init_func(), sampler=sampler)

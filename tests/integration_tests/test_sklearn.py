@@ -49,7 +49,7 @@ def test_optuna_search(enable_pruning, fit_params):
 
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
-    param_dist = {'alpha': distributions.LogUniformDistribution(1e-04, 1e+03)}
+    param_dist = {'alpha': distributions.LogUniformDistribution(1e-04, 1e03)}
     optuna_search = integration.OptunaSearchCV(
         est,
         param_dist,
@@ -58,7 +58,7 @@ def test_optuna_search(enable_pruning, fit_params):
         error_score='raise',
         max_iter=5,
         random_state=0,
-        return_train_score=True
+        return_train_score=True,
     )
 
     with pytest.raises(NotFittedError):
@@ -81,15 +81,10 @@ def test_optuna_search_properties():
 
     X, y = make_blobs(n_samples=10)
     est = LogisticRegression(max_iter=5, tol=1e-03)
-    param_dist = {'C': distributions.LogUniformDistribution(1e-04, 1e+03)}
+    param_dist = {'C': distributions.LogUniformDistribution(1e-04, 1e03)}
 
     optuna_search = integration.OptunaSearchCV(
-        est,
-        param_dist,
-        cv=3,
-        error_score='raise',
-        random_state=0,
-        return_train_score=True
+        est, param_dist, cv=3, error_score='raise', random_state=0, return_train_score=True
     )
     optuna_search.fit(X, y)
     optuna_search.set_user_attr('dataset', 'blobs')
@@ -113,12 +108,7 @@ def test_optuna_search_score_samples():
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
     optuna_search = integration.OptunaSearchCV(
-        est,
-        {},
-        cv=3,
-        error_score='raise',
-        random_state=0,
-        return_train_score=True
+        est, {}, cv=3, error_score='raise', random_state=0, return_train_score=True
     )
     optuna_search.fit(X)
     assert optuna_search.score_samples(X) is not None
@@ -131,12 +121,7 @@ def test_optuna_search_transforms():
     X, y = make_blobs(n_samples=10)
     est = PCA()
     optuna_search = integration.OptunaSearchCV(
-        est,
-        {},
-        cv=3,
-        error_score='raise',
-        random_state=0,
-        return_train_score=True
+        est, {}, cv=3, error_score='raise', random_state=0, return_train_score=True
     )
     optuna_search.fit(X)
     assert type(optuna_search.transform(X)) == np.ndarray
@@ -149,12 +134,7 @@ def test_optuna_search_invalid_estimator():
     X, y = make_blobs(n_samples=10)
     est = 'not an estimator'
     optuna_search = integration.OptunaSearchCV(
-        est,
-        {},
-        cv=3,
-        error_score='raise',
-        random_state=0,
-        return_train_score=True
+        est, {}, cv=3, error_score='raise', random_state=0, return_train_score=True
     )
 
     with pytest.raises(ValueError, match='estimator must be a scikit-learn estimator.'):
@@ -173,7 +153,7 @@ def test_optuna_search_invalid_param_dist():
         cv=3,
         error_score='raise',
         random_state=0,
-        return_train_score=True
+        return_train_score=True,
     )
 
     with pytest.raises(ValueError, match='param_distributions must be a dictionary.'):
@@ -193,7 +173,7 @@ def test_optuna_search_pruning_without_partial_fit():
         enable_pruning=True,
         error_score='raise',
         random_state=0,
-        return_train_score=True
+        return_train_score=True,
     )
 
     with pytest.raises(ValueError, match='estimator must support partial_fit.'):
@@ -213,7 +193,7 @@ def test_optuna_search_negative_max_iter():
         max_iter=-1,
         error_score='raise',
         random_state=0,
-        return_train_score=True
+        return_train_score=True,
     )
 
     with pytest.raises(ValueError, match='max_iter must be > 0'):
@@ -232,7 +212,7 @@ def test_optuna_search_tuple_instead_of_distribution():
         cv=3,
         error_score='raise',
         random_state=0,
-        return_train_score=True
+        return_train_score=True,
     )
 
     with pytest.raises(ValueError, match='must be a optuna distribution.'):
@@ -246,13 +226,7 @@ def test_optuna_search_study_with_minimize():
     est = KernelDensity()
     study = create_study(direction='minimize')
     optuna_search = integration.OptunaSearchCV(
-        est,
-        {},
-        cv=3,
-        error_score='raise',
-        random_state=0,
-        return_train_score=True,
-        study=study
+        est, {}, cv=3, error_score='raise', random_state=0, return_train_score=True, study=study
     )
 
     with pytest.raises(ValueError, match='direction of study must be \'maximize\'.'):

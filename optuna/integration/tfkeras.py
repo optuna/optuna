@@ -7,6 +7,7 @@ if type_checking.TYPE_CHECKING:
 
 try:
     from tensorflow.keras.callbacks import Callback
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -73,4 +74,5 @@ def _check_tensorflow_availability():
             'TensorFlow is not available. Please install TensorFlow to use this feature. '
             'TensorFlow can be installed by executing `$ pip install tensorflow`. '
             'For further information, please refer to the installation guide of TensorFlow. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            '(The actual import error is as follows: ' + str(_import_error) + ')'
+        )

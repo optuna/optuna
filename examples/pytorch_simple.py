@@ -63,17 +63,16 @@ def define_model(trial):
 
 def get_mnist():
     # Load MNIST dataset.
-    train_loader = torch.utils.data.DataLoader(datasets.MNIST(DIR,
-                                                              train=True,
-                                                              download=True,
-                                                              transform=transforms.ToTensor()),
-                                               batch_size=BATCHSIZE,
-                                               shuffle=True)
-    test_loader = torch.utils.data.DataLoader(datasets.MNIST(DIR,
-                                                             train=False,
-                                                             transform=transforms.ToTensor()),
-                                              batch_size=BATCHSIZE,
-                                              shuffle=True)
+    train_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(DIR, train=True, download=True, transform=transforms.ToTensor()),
+        batch_size=BATCHSIZE,
+        shuffle=True,
+    )
+    test_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(DIR, train=False, transform=transforms.ToTensor()),
+        batch_size=BATCHSIZE,
+        shuffle=True,
+    )
 
     return train_loader, test_loader
 

@@ -38,13 +38,15 @@ def objective(trial):
         # disabled. However, the two flipping will be important when the dataset is CIFAR or
         # ImageNet.
         tfms = vision.get_transforms(
-            do_flip=False, flip_vert=False,
+            do_flip=False,
+            flip_vert=False,
             max_rotate=trial.suggest_int('max_rotate', -45, 45),
             max_zoom=trial.suggest_uniform('max_zoom', 1, 2),
-            p_affine=trial.suggest_discrete_uniform('p_affine', 0.1, 1.0, 0.1)
+            p_affine=trial.suggest_discrete_uniform('p_affine', 0.1, 1.0, 0.1),
         )
     data = vision.ImageDataBunch.from_folder(
-        path, bs=BATCHSIZE, ds_tfms=tfms if apply_tfms else None)
+        path, bs=BATCHSIZE, ds_tfms=tfms if apply_tfms else None
+    )
 
     n_layers = trial.suggest_int('n_layers', 2, 5)
 
@@ -57,8 +59,12 @@ def objective(trial):
     model = vision.simple_cnn(n_channels)
 
     learn = vision.Learner(
-        data, model, silent=True, metrics=[vision.accuracy],
-        callback_fns=[partial(FastAIPruningCallback, trial=trial, monitor='valid_loss')])
+        data,
+        model,
+        silent=True,
+        metrics=[vision.accuracy],
+        callback_fns=[partial(FastAIPruningCallback, trial=trial, monitor='valid_loss')],
+    )
     learn.fit(EPOCHS)
 
     return learn.validate()[-1].item()
@@ -67,9 +73,12 @@ def objective(trial):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='FastAI example.')
     parser.add_argument(
-        '--pruning', '-p', action='store_true',
+        '--pruning',
+        '-p',
+        action='store_true',
         help='Activate the pruning feature. `MedianPruner` stops unpromising '
-             'trials at the early stages of training.')
+        'trials at the early stages of training.',
+    )
     args = parser.parse_args()
 
     pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()

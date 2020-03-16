@@ -43,9 +43,11 @@ def create_model(trial):
 
     # We compile our model with a sampled learning rate.
     lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
-    model.compile(loss='categorical_crossentropy',
-                  optimizer=keras.optimizers.RMSprop(lr=lr),
-                  metrics=['accuracy'])
+    model.compile(
+        loss='categorical_crossentropy',
+        optimizer=keras.optimizers.RMSprop(lr=lr),
+        metrics=['accuracy'],
+    )
 
     return model
 
@@ -68,13 +70,15 @@ def objective(trial):
 
     # Fit the model on the training data.
     # The KerasPruningCallback checks for pruning condition every epoch.
-    model.fit(x_train,
-              y_train,
-              batch_size=BATCHSIZE,
-              callbacks=[KerasPruningCallback(trial, 'val_acc')],
-              epochs=EPOCHS,
-              validation_data=(x_test, y_test),
-              verbose=1)
+    model.fit(
+        x_train,
+        y_train,
+        batch_size=BATCHSIZE,
+        callbacks=[KerasPruningCallback(trial, 'val_acc')],
+        epochs=EPOCHS,
+        validation_data=(x_test, y_test),
+        verbose=1,
+    )
 
     # Evaluate the model accuracy on the test set.
     score = model.evaluate(x_test, y_test, verbose=0)

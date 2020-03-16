@@ -55,27 +55,11 @@ def test_frozen_trial_validate():
     # Invalid: Inconsistent `params` and `distributions`
     inconsistent_pairs = [
         # `params` has an extra element.
-        ({
-            'x': 0.1,
-            'y': 0.5
-        }, {
-            'x': UniformDistribution(0, 1)
-        }),
-
+        ({'x': 0.1, 'y': 0.5}, {'x': UniformDistribution(0, 1)}),
         # `distributions` has an extra element.
-        ({
-            'x': 0.1
-        }, {
-            'x': UniformDistribution(0, 1),
-            'y': LogUniformDistribution(0, 1)
-        }),
-
+        ({'x': 0.1}, {'x': UniformDistribution(0, 1), 'y': LogUniformDistribution(0, 1)}),
         # The value of `x` isn't contained in the distribution.
-        ({
-            'x': -0.5
-        }, {
-            'x': UniformDistribution(0, 1)
-        })
+        ({'x': -0.5}, {'x': UniformDistribution(0, 1)}),
     ]  # type: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]]
 
     for params, distributions in inconsistent_pairs:
@@ -129,33 +113,37 @@ def test_frozen_trial_lt():
 def _create_frozen_trial():
     # type: () -> FrozenTrial
 
-    return FrozenTrial(number=0,
-                       trial_id=0,
-                       state=TrialState.COMPLETE,
-                       value=0.2,
-                       datetime_start=datetime.datetime.now(),
-                       datetime_complete=datetime.datetime.now(),
-                       params={'x': 10},
-                       distributions={'x': UniformDistribution(5, 12)},
-                       user_attrs={},
-                       system_attrs={},
-                       intermediate_values={})
+    return FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={'x': 10},
+        distributions={'x': UniformDistribution(5, 12)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
 
 
 def test_frozen_trial_repr():
     # type: () -> None
 
-    trial = FrozenTrial(number=0,
-                        trial_id=0,
-                        state=TrialState.COMPLETE,
-                        value=0.2,
-                        datetime_start=datetime.datetime.now(),
-                        datetime_complete=datetime.datetime.now(),
-                        params={'x': 10},
-                        distributions={'x': UniformDistribution(5, 12)},
-                        user_attrs={},
-                        system_attrs={},
-                        intermediate_values={})
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={'x': 10},
+        distributions={'x': UniformDistribution(5, 12)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
 
     assert trial == eval(repr(trial))
 

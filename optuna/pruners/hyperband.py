@@ -70,11 +70,7 @@ class HyperbandPruner(BasePruner):
     """
 
     def __init__(
-            self,
-            min_resource=1,
-            reduction_factor=3,
-            n_brackets=4,
-            min_early_stopping_rate_low=0
+        self, min_resource=1, reduction_factor=3, n_brackets=4, min_early_stopping_rate_low=0
     ):
         # type: (int, int, int, int) -> None
 
@@ -96,7 +92,9 @@ class HyperbandPruner(BasePruner):
 
             _logger.debug(
                 '{}th bracket has minimum early stopping rate of {}'.format(
-                    i, min_early_stopping_rate))
+                    i, min_early_stopping_rate
+                )
+            )
 
             pruner = SuccessiveHalvingPruner(
                 min_resource=min_resource,
@@ -146,8 +144,14 @@ class HyperbandPruner(BasePruner):
         class _BracketStudy(optuna.study.Study):
 
             _VALID_ATTRS = (
-                'get_trials', 'direction', '_storage', '_study_id',
-                'pruner', 'study_name', '_bracket_id', 'sampler'
+                'get_trials',
+                'direction',
+                '_storage',
+                '_study_id',
+                'pruner',
+                'study_name',
+                '_bracket_id',
+                'sampler',
             )
 
             def __init__(self, study, bracket_id):
@@ -157,7 +161,7 @@ class HyperbandPruner(BasePruner):
                     study_name=study.study_name,
                     storage=study._storage,
                     sampler=study.sampler,
-                    pruner=study.pruner
+                    pruner=study.pruner,
                 )
                 self._bracket_id = bracket_id
 
@@ -167,15 +171,13 @@ class HyperbandPruner(BasePruner):
                 trials = super().get_trials(deepcopy=deepcopy)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
-                return [
-                    t for t in trials
-                    if pruner._get_bracket_id(self, t) == self._bracket_id
-                ]
+                return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]
 
             def __getattribute__(self, attr_name):  # type: ignore
                 if attr_name not in _BracketStudy._VALID_ATTRS:
                     raise AttributeError(
-                        "_BracketStudy does not have attribute of '{}'".format(attr_name))
+                        "_BracketStudy does not have attribute of '{}'".format(attr_name)
+                    )
                 else:
                     return object.__getattribute__(self, attr_name)
 

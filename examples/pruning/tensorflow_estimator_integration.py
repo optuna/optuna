@@ -28,7 +28,7 @@ N_TEST_BATCHES = 1000
 
 
 def preprocess(image, label):
-    image = tf.reshape(image, [-1, 28*28])
+    image = tf.reshape(image, [-1, 28 * 28])
     image = tf.cast(image, tf.float32)
     image /= 255
     label = tf.cast(label, tf.int32)
@@ -59,16 +59,18 @@ def create_classifier(trial):
         hidden_units.append(n_units)
 
     config = tf.estimator.RunConfig(
-        save_summary_steps=PRUNING_INTERVAL_STEPS, save_checkpoints_steps=PRUNING_INTERVAL_STEPS)
+        save_summary_steps=PRUNING_INTERVAL_STEPS, save_checkpoints_steps=PRUNING_INTERVAL_STEPS
+    )
 
     model_dir = "{}/{}".format(MODEL_DIR, trial.number)
     classifier = tf.estimator.DNNClassifier(
-        feature_columns=[tf.feature_column.numeric_column('x', shape=[28*28])],
+        feature_columns=[tf.feature_column.numeric_column('x', shape=[28 * 28])],
         hidden_units=hidden_units,
         model_dir=model_dir,
         n_classes=10,
         optimizer=lambda: tf.keras.optimizers.Adam(learning_rate=0.01),
-        config=config)
+        config=config,
+    )
 
     return classifier
 
@@ -84,10 +86,10 @@ def objective(trial):
     )
 
     train_spec = tf.estimator.TrainSpec(
-        input_fn=train_input_fn, max_steps=TRAIN_STEPS, hooks=[optuna_pruning_hook])
+        input_fn=train_input_fn, max_steps=TRAIN_STEPS, hooks=[optuna_pruning_hook]
+    )
 
-    eval_spec = tf.estimator.EvalSpec(
-        input_fn=eval_input_fn, start_delay_secs=0, throttle_secs=0)
+    eval_spec = tf.estimator.EvalSpec(input_fn=eval_input_fn, start_delay_secs=0, throttle_secs=0)
 
     eval_results, _ = tf.estimator.train_and_evaluate(classifier, train_spec, eval_spec)
 

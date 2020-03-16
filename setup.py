@@ -49,26 +49,10 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        'checking': [
-            'black',
-            'hacking',
-            'mypy',
-        ],
-        'codecov': [
-            'codecov',
-            'pytest-cov',
-        ],
-        'doctest': [
-            'cma',
-            'pandas',
-            'plotly>=4.0.0',
-            'scikit-learn>=0.19.0',
-            'scikit-optimize',
-        ],
-        'document': [
-            'sphinx',
-            'sphinx_rtd_theme',
-        ],
+        'checking': ['black', 'hacking', 'mypy',],
+        'codecov': ['codecov', 'pytest-cov',],
+        'doctest': ['cma', 'pandas', 'plotly>=4.0.0', 'scikit-learn>=0.19.0', 'scikit-optimize',],
+        'document': ['sphinx', 'sphinx_rtd_theme',],
         'example': [
             'catboost',
             'chainer',
@@ -82,17 +66,22 @@ def get_extras_require() -> Dict[str, List[str]]:
             'torch',
             'torchvision>=0.5.0',
             'xgboost',
-        ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
-        + ([
-            'dask[dataframe]',
-            'dask-ml',
-            'keras',
-            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-            # https://github.com/optuna/optuna/issues/997.
-            'pytorch-lightning<0.7.0',
-            'tensorflow>=2.0.0',
-            'tensorflow-datasets',
-        ] if sys.version_info[:2] < (3, 8) else []),
+        ]
+        + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (
+            [
+                'dask[dataframe]',
+                'dask-ml',
+                'keras',
+                # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
+                # https://github.com/optuna/optuna/issues/997.
+                'pytorch-lightning<0.7.0',
+                'tensorflow>=2.0.0',
+                'tensorflow-datasets',
+            ]
+            if sys.version_info[:2] < (3, 8)
+            else []
+        ),
         'testing': [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
@@ -112,15 +101,20 @@ def get_extras_require() -> Dict[str, List[str]]:
             'torch',
             'torchvision>=0.5.0',
             'xgboost',
-        ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
-        + ([
-            'keras',
-            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-            # https://github.com/optuna/optuna/issues/997.
-            'pytorch-lightning<0.7.0',
-            'tensorflow',
-            'tensorflow-datasets',
-        ] if sys.version_info[:2] < (3, 8) else []),
+        ]
+        + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (
+            [
+                'keras',
+                # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
+                # https://github.com/optuna/optuna/issues/997.
+                'pytorch-lightning<0.7.0',
+                'tensorflow',
+                'tensorflow-datasets',
+            ]
+            if sys.version_info[:2] < (3, 8)
+            else []
+        ),
     }
 
     return requirements
@@ -138,9 +132,11 @@ def find_any_distribution(pkgs: List[str]) -> Optional[pkg_resources.Distributio
 
 pfnopt_pkg = find_any_distribution(['pfnopt'])
 if pfnopt_pkg is not None:
-    msg = 'We detected that PFNOpt is installed in your environment.\n' \
-        'PFNOpt has been renamed Optuna. Please uninstall the old\n' \
+    msg = (
+        'We detected that PFNOpt is installed in your environment.\n'
+        'PFNOpt has been renamed Optuna. Please uninstall the old\n'
         'PFNOpt in advance (e.g. by executing `$ pip uninstall pfnopt`).'
+    )
     print(msg)
     exit(1)
 
@@ -158,10 +154,11 @@ setup(
         'optuna': [
             'storages/rdb/alembic.ini',
             'storages/rdb/alembic/*.*',
-            'storages/rdb/alembic/versions/*.*'
+            'storages/rdb/alembic/versions/*.*',
         ]
     },
     install_requires=get_install_requires(),
     tests_require=get_tests_require(),
     extras_require=get_extras_require(),
-    entry_points={'console_scripts': ['optuna = optuna.cli:main']})
+    entry_points={'console_scripts': ['optuna = optuna.cli:main']},
+)

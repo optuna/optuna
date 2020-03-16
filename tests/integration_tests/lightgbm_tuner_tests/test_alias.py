@@ -43,8 +43,15 @@ def test_handling_alias_parameter():
 def test_handling_alias_metrics():
     # type: () -> None
 
-    for alias in ['lambdarank', 'rank_xendcg', 'xendcg', 'xe_ndcg',
-                  'xe_ndcg_mart', 'xendcg_mart', 'ndcg']:
+    for alias in [
+        'lambdarank',
+        'rank_xendcg',
+        'xendcg',
+        'xe_ndcg',
+        'xe_ndcg_mart',
+        'xendcg_mart',
+        'ndcg',
+    ]:
         lgbm_params = {'metric': alias}
         _handling_alias_metrics(lgbm_params)
         assert lgbm_params['metric'] == 'ndcg'

@@ -87,7 +87,7 @@ def test_study_optimize_with_single_search_space():
         'b': [0],
         'c': ['x'],
         'd': [0],
-        'e': [0.1]
+        'e': [0.1],
     }
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
     with pytest.raises(ValueError):
@@ -106,10 +106,7 @@ def test_study_optimize_with_multiple_search_spaces():
         return a * b
 
     # Run 3 trials with a search space.
-    search_space_0 = {
-        'a': [0, 50],
-        'b': [-50, 0, 50]
-    }  # type: Dict[str, List[GridValueType]]
+    search_space_0 = {'a': [0, 50], 'b': [-50, 0, 50]}  # type: Dict[str, List[GridValueType]]
     sampler_0 = samplers.GridSampler(search_space_0)
     study = optuna.create_study(sampler=sampler_0)
     study.optimize(objective, n_trials=3)

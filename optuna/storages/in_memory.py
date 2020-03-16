@@ -74,8 +74,11 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             if self.direction != structs.StudyDirection.NOT_SET and self.direction != direction:
-                raise ValueError('Cannot overwrite study direction from {} to {}.'.format(
-                    self.direction, direction))
+                raise ValueError(
+                    'Cannot overwrite study direction from {} to {}.'.format(
+                        self.direction, direction
+                    )
+                )
             self.direction = direction
 
     def set_study_user_attr(self, study_id, key, value):
@@ -146,7 +149,7 @@ class InMemoryStorage(base.BaseStorage):
                 system_attrs=copy.deepcopy(self.study_system_attrs),
                 n_trials=len(self.trials),
                 datetime_start=datetime_start,
-                study_id=IN_MEMORY_STORAGE_STUDY_ID
+                study_id=IN_MEMORY_STORAGE_STUDY_ID,
             )
         ]
 
@@ -183,7 +186,8 @@ class InMemoryStorage(base.BaseStorage):
             value=None,
             intermediate_values={},
             datetime_start=datetime.now(),
-            datetime_complete=None)
+            datetime_complete=None,
+        )
 
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> bool
@@ -210,8 +214,9 @@ class InMemoryStorage(base.BaseStorage):
 
             # Check param distribution compatibility with previous trial(s).
             if param_name in self.param_distribution:
-                distributions.check_distribution_compatibility(self.param_distribution[param_name],
-                                                               distribution)
+                distributions.check_distribution_compatibility(
+                    self.param_distribution[param_name], distribution
+                )
 
             # Check param has not been set; otherwise, return False.
             if param_name in self.trials[trial_id].params:
@@ -222,7 +227,8 @@ class InMemoryStorage(base.BaseStorage):
 
             # Set param.
             self.trials[trial_id].params[param_name] = distribution.to_external_repr(
-                param_value_internal)
+                param_value_internal
+            )
             self.trials[trial_id].distributions[param_name] = distribution
 
             return True
@@ -271,8 +277,7 @@ class InMemoryStorage(base.BaseStorage):
         # Complete trials do not have `None` values.
         assert new_value is not None
 
-        if (self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) ==
-                structs.StudyDirection.MAXIMIZE):
+        if self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) == structs.StudyDirection.MAXIMIZE:
             if best_value < new_value:
                 self.best_trial_id = trial_id
             return
@@ -339,5 +344,8 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int) -> None
 
         if study_id != IN_MEMORY_STORAGE_STUDY_ID:
-            raise ValueError('study_id is supposed to be {} in {}.'.format(
-                IN_MEMORY_STORAGE_STUDY_ID, self.__class__.__name__))
+            raise ValueError(
+                'study_id is supposed to be {} in {}.'.format(
+                    IN_MEMORY_STORAGE_STUDY_ID, self.__class__.__name__
+                )
+            )

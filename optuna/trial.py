@@ -120,9 +120,9 @@ class Trial(BaseTrial):
     """
 
     def __init__(
-            self,
-            study,  # type: Study
-            trial_id,  # type: int
+        self,
+        study,  # type: Study
+        trial_id,  # type: int
     ):
         # type: (...) -> None
 
@@ -142,9 +142,11 @@ class Trial(BaseTrial):
         trial = self.storage.get_trial(self._trial_id)
 
         self.relative_search_space = self.study.sampler.infer_relative_search_space(
-            self.study, trial)
-        self.relative_params = self.study.sampler.sample_relative(self.study, trial,
-                                                                  self.relative_search_space)
+            self.study, trial
+        )
+        self.relative_params = self.study.sampler.sample_relative(
+            self.study, trial, self.relative_search_space
+        )
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -507,7 +509,8 @@ class Trial(BaseTrial):
             value = float(value)
         except (TypeError, ValueError):
             message = 'The `value` argument is of type \'{}\' but supposed to be a float.'.format(
-                type(value).__name__)
+                type(value).__name__
+            )
             raise TypeError(message)
 
         if step < 0:
@@ -544,7 +547,9 @@ class Trial(BaseTrial):
             warnings.warn(
                 'The use of `step` argument is deprecated. '
                 'The last reported step is used instead of '
-                'the step given by the argument.', DeprecationWarning)
+                'the step given by the argument.',
+                DeprecationWarning,
+            )
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
@@ -626,7 +631,8 @@ class Trial(BaseTrial):
         else:
             trial = self.storage.get_trial(self._trial_id)
             param_value = self.study.sampler.sample_independent(
-                self.study, trial, name, distribution)
+                self.study, trial, name, distribution
+            )
 
         return self._set_new_param_or_get_existing(name, param_value, distribution)
 
@@ -634,8 +640,9 @@ class Trial(BaseTrial):
         # type: (str, Any, BaseDistribution) -> Any
 
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
-        set_success = self.storage.set_trial_param(self._trial_id, name,
-                                                   param_value_in_internal_repr, distribution)
+        set_success = self.storage.set_trial_param(
+            self._trial_id, name, param_value_in_internal_repr, distribution
+        )
         if not set_success:
             param_value_in_internal_repr = self.storage.get_trial_param(self._trial_id, name)
             param_value = distribution.to_external_repr(param_value_in_internal_repr)
@@ -656,8 +663,10 @@ class Trial(BaseTrial):
 
         contained = distribution._contains(param_value_in_internal_repr)
         if not contained:
-            warnings.warn("Fixed parameter '{}' with value {} is out of range "
-                          "for distribution {}.".format(name, param_value, distribution))
+            warnings.warn(
+                "Fixed parameter '{}' with value {} is out of range "
+                "for distribution {}.".format(name, param_value, distribution)
+            )
         return contained
 
     def _is_relative_param(self, name, distribution):
@@ -667,8 +676,10 @@ class Trial(BaseTrial):
             return False
 
         if name not in self.relative_search_space:
-            raise ValueError("The parameter '{}' was sampled by `sample_relative` method "
-                             "but it is not contained in the relative search space.".format(name))
+            raise ValueError(
+                "The parameter '{}' was sampled by `sample_relative` method "
+                "but it is not contained in the relative search space.".format(name)
+            )
 
         relative_distribution = self.relative_search_space[name]
         distributions.check_distribution_compatibility(relative_distribution, distribution)
@@ -682,14 +693,16 @@ class Trial(BaseTrial):
 
         old_distribution = self.distributions.get(name, distribution)
         if old_distribution != distribution:
-            warnings.warn('Inconsistent parameter values for distribution with name "{}"! '
-                          'This might be a configuration mistake. '
-                          'Optuna allows to call the same distribution with the same '
-                          'name more then once in a trial. '
-                          'When the parameter values are inconsistent optuna only '
-                          'uses the values of the first call and ignores all following. '
-                          'Using these values: {}'
-                          .format(name, old_distribution._asdict()), RuntimeWarning)
+            warnings.warn(
+                'Inconsistent parameter values for distribution with name "{}"! '
+                'This might be a configuration mistake. '
+                'Optuna allows to call the same distribution with the same '
+                'name more then once in a trial. '
+                'When the parameter values are inconsistent optuna only '
+                'uses the values of the first call and ignores all following. '
+                'Using these values: {}'.format(name, old_distribution._asdict()),
+                RuntimeWarning,
+            )
 
     @property
     def number(self):
@@ -715,11 +728,13 @@ class Trial(BaseTrial):
         """
 
         warnings.warn(
-            'The use of `Trial.trial_id` is deprecated. '
-            'Please use `Trial.number` instead.', DeprecationWarning)
+            'The use of `Trial.trial_id` is deprecated. ' 'Please use `Trial.number` instead.',
+            DeprecationWarning,
+        )
 
-        self.logger.warning('The use of `Trial.trial_id` is deprecated. '
-                            'Please use `Trial.number` instead.')
+        self.logger.warning(
+            'The use of `Trial.trial_id` is deprecated. ' 'Please use `Trial.number` instead.'
+        )
 
         return self._trial_id
 
@@ -790,8 +805,7 @@ class Trial(BaseTrial):
             The study ID.
         """
 
-        message = 'The use of `Trial.study_id` is deprecated. ' \
-                  'Please use `Trial.study` instead.'
+        message = 'The use of `Trial.study_id` is deprecated. ' 'Please use `Trial.study` instead.'
         warnings.warn(message, DeprecationWarning)
         self.logger.warning(message)
 
@@ -874,14 +888,18 @@ class FixedTrial(BaseTrial):
         # type: (str, BaseDistribution) -> Any
 
         if name not in self._params:
-            raise ValueError('The value of the parameter \'{}\' is not found. Please set it at '
-                             'the construction of the FixedTrial object.'.format(name))
+            raise ValueError(
+                'The value of the parameter \'{}\' is not found. Please set it at '
+                'the construction of the FixedTrial object.'.format(name)
+            )
 
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
-            raise ValueError("The value {} of the parameter '{}' is out of "
-                             "the range of the distribution {}.".format(value, name, distribution))
+            raise ValueError(
+                "The value {} of the parameter '{}' is out of "
+                "the range of the distribution {}.".format(value, name, distribution)
+            )
 
         if name in self._distributions:
             distributions.check_distribution_compatibility(self._distributions[name], distribution)
@@ -954,7 +972,9 @@ def _adjust_discrete_uniform_high(name, low, high, q):
     if d_r % d_q != decimal.Decimal('0'):
         high = float((d_r // d_q) * d_q + d_low)
         logger = logging.get_logger(__name__)
-        logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
-                       'replaced by [{}, {}].'.format(name, low, high))
+        logger.warning(
+            'The range of parameter `{}` is not divisible by `q`, and is '
+            'replaced by [{}, {}].'.format(name, low, high)
+        )
 
     return high

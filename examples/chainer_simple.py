@@ -78,7 +78,8 @@ def objective(trial):
     rng = np.random.RandomState(0)
     train, test = chainer.datasets.get_mnist()
     train = chainer.datasets.SubDataset(
-        train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
+        train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))
+    )
     test = chainer.datasets.SubDataset(test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
     train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE)
     test_iter = chainer.iterators.SerialIterator(test, BATCHSIZE, repeat=False, shuffle=False)
@@ -89,14 +90,19 @@ def objective(trial):
     trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
     log_report_extension = chainer.training.extensions.LogReport(log_name=None)
     trainer.extend(
-        chainer.training.extensions.PrintReport([
-            'epoch', 'main/loss', 'validation/main/loss', 'main/accuracy',
-            'validation/main/accuracy'
-        ]))
+        chainer.training.extensions.PrintReport(
+            [
+                'epoch',
+                'main/loss',
+                'validation/main/loss',
+                'main/accuracy',
+                'validation/main/accuracy',
+            ]
+        )
+    )
     trainer.extend(log_report_extension)
 
-    trainer.extend(
-        ChainerPruningExtension(trial, 'validation/main/accuracy', (1, 'epoch')))
+    trainer.extend(ChainerPruningExtension(trial, 'validation/main/accuracy', (1, 'epoch')))
 
     # Run!
     trainer.run(show_loop_exception_msg=False)

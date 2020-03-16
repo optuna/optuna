@@ -43,11 +43,15 @@ def create_model(trial):
     for i in range(n_layers):
         num_hidden = int(trial.suggest_loguniform('n_units_l{}'.format(i), 4, 128))
         model.add(
-            tf.keras.layers.Dense(num_hidden,
-                                  activation='relu',
-                                  kernel_regularizer=tf.keras.regularizers.l2(weight_decay)))
+            tf.keras.layers.Dense(
+                num_hidden,
+                activation='relu',
+                kernel_regularizer=tf.keras.regularizers.l2(weight_decay),
+            )
+        )
     model.add(
-        tf.keras.layers.Dense(CLASSES, kernel_regularizer=tf.keras.regularizers.l2(weight_decay)))
+        tf.keras.layers.Dense(CLASSES, kernel_regularizer=tf.keras.regularizers.l2(weight_decay))
+    )
     return model
 
 
@@ -63,8 +67,7 @@ def create_optimizer(trial):
     elif optimizer_selected == 'Adam':
         kwargs['learning_rate'] = trial.suggest_loguniform('adam_learning_rate', 1e-5, 1e-1)
     elif optimizer_selected == 'SGD':
-        kwargs['learning_rate'] = trial.suggest_loguniform('sgd_opt_learning_rate', 1e-5,
-                                                           1e-1)
+        kwargs['learning_rate'] = trial.suggest_loguniform('sgd_opt_learning_rate', 1e-5, 1e-1)
         kwargs['momentum'] = trial.suggest_loguniform('sgd_opt_momentum', 1e-5, 1e-1)
 
     optimizer = getattr(tf.optimizers, optimizer_selected)(**kwargs)
@@ -78,10 +81,12 @@ def learn(model, optimizer, dataset, mode='eval'):
         with tf.GradientTape() as tape:
             logits = model(images, training=(mode == 'train'))
             loss_value = tf.reduce_mean(
-                tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+                tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+            )
             if mode == 'eval':
-                accuracy(tf.argmax(logits, axis=1, output_type=tf.int64),
-                         tf.cast(labels, tf.int64))
+                accuracy(
+                    tf.argmax(logits, axis=1, output_type=tf.int64), tf.cast(labels, tf.int64)
+                )
             else:
                 grads = tape.gradient(loss_value, model.variables)
                 optimizer.apply_gradients(zip(grads, model.variables))

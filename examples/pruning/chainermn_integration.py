@@ -59,9 +59,11 @@ def objective(trial, comm):
         train, test = chainer.datasets.get_mnist()
         rng = np.random.RandomState(0)
         train = chainer.datasets.SubDataset(
-            train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
+            train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))
+        )
         test = chainer.datasets.SubDataset(
-            test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
+            test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test))
+        )
     else:
         train, test = None, None
 
@@ -77,8 +79,10 @@ def objective(trial, comm):
 
     # Add Chainer extension for pruners.
     trainer.extend(
-        optuna.integration.ChainerPruningExtension(trial, 'validation/main/accuracy',
-                                                   (PRUNER_INTERVAL, 'epoch')))
+        optuna.integration.ChainerPruningExtension(
+            trial, 'validation/main/accuracy', (PRUNER_INTERVAL, 'epoch')
+        )
+    )
     evaluator = chainer.training.extensions.Evaluator(test_iter, model)
     trainer.extend(chainermn.create_multi_node_evaluator(evaluator, comm))
     log_report_extension = chainer.training.extensions.LogReport(log_name=None)
@@ -119,8 +123,9 @@ if __name__ == '__main__':
 
     if comm.rank == 0:
         pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
-        complete_trials = \
-            [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
+        complete_trials = [
+            t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE
+        ]
         print('Study statistics: ')
         print('  Number of finished trials: ', len(study.trials))
         print('  Number of pruned trials: ', len(pruned_trials))

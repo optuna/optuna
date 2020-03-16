@@ -28,60 +28,41 @@ if type_checking.TYPE_CHECKING:
 EXAMPLE_ATTRS = {
     'dataset': 'MNIST',
     'none': None,
-    'json_serializable': {
-        'baseline_score': 0.001,
-        'tags': ['image', 'classification']
-    },
+    'json_serializable': {'baseline_score': 0.001, 'tags': ['image', 'classification']},
 }
 
 EXAMPLE_DISTRIBUTIONS = {
-    'x': UniformDistribution(low=1., high=2.),
-    'y': CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
+    'x': UniformDistribution(low=1.0, high=2.0),
+    'y': CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza')),
 }  # type: Dict[str, BaseDistribution]
 
 EXAMPLE_TRIALS = [
     FrozenTrial(
         number=0,  # dummy
-        value=1.,
+        value=1.0,
         state=TrialState.COMPLETE,
         user_attrs={},
         system_attrs={},
-        params={
-            'x': 0.5,
-            'y': 'Ginza'
-        },
+        params={'x': 0.5, 'y': 'Ginza'},
         distributions=EXAMPLE_DISTRIBUTIONS,
-        intermediate_values={
-            0: 2.,
-            1: 3.
-        },
+        intermediate_values={0: 2.0, 1: 3.0},
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy
         trial_id=-1,  # dummy id
     ),
     FrozenTrial(
         number=0,  # dummy
-        value=2.,
+        value=2.0,
         state=TrialState.RUNNING,
-        user_attrs={
-            'tags': ['video', 'classification'],
-            'dataset': 'YouTube-8M'
-        },
+        user_attrs={'tags': ['video', 'classification'], 'dataset': 'YouTube-8M'},
         system_attrs={'some_key': 'some_value'},
-        params={
-            'x': 0.01,
-            'y': 'Otemachi'
-        },
+        params={'x': 0.01, 'y': 'Otemachi'},
         distributions=EXAMPLE_DISTRIBUTIONS,
-        intermediate_values={
-            0: -2.,
-            1: -3.,
-            2: 100.
-        },
+        intermediate_values={0: -2.0, 1: -3.0, 2: 100.0},
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy
         trial_id=-1,  # dummy id
-    )
+    ),
 ]
 
 STORAGE_MODES = [
@@ -92,7 +73,8 @@ STORAGE_MODES = [
 
 # TODO(Yanase): Replace @parametrize_storage with StorageSupplier.
 parametrize_storage = pytest.mark.parametrize(
-    'storage_init_func', [InMemoryStorage, lambda: RDBStorage('sqlite:///:memory:')])
+    'storage_init_func', [InMemoryStorage, lambda: RDBStorage('sqlite:///:memory:')]
+)
 
 
 def setup_module():
@@ -306,9 +288,7 @@ def test_create_new_trial_with_template_trial(storage_init_func):
         params={'x': 0.5},
         distributions={'x': UniformDistribution(0, 1)},
         user_attrs={'foo': 'bar'},
-        system_attrs={
-            'baz': 123,
-        },
+        system_attrs={'baz': 123,},
         intermediate_values={1: 10, 2: 100, 3: 1000},
         number=55,  # This entry is ignored.
         trial_id=-1,  # dummy value (unused).
@@ -417,8 +397,9 @@ def test_set_and_get_trial_param(storage_init_func):
         storage.set_trial_param(trial_id_2, 'x', 0.5, distribution_z)
     # Test trial_2: setting CategoricalDistribution in different order.
     with pytest.raises(ValueError):
-        storage.set_trial_param(trial_id_2, 'y', 2,
-                                CategoricalDistribution(choices=('Meguro', 'Shibuya', 'Ebisu')))
+        storage.set_trial_param(
+            trial_id_2, 'y', 2, CategoricalDistribution(choices=('Meguro', 'Shibuya', 'Ebisu'))
+        )
 
     # Setup trial_3: setting new params (to different study from trial_1).
     if isinstance(storage, InMemoryStorage):
@@ -550,8 +531,9 @@ def test_get_all_study_summaries(storage_init_func):
     datetime_1 = datetime.now()
 
     # Set up trial 1.
-    _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[0])
+    _create_new_trial_with_example_trial(
+        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0]
+    )
 
     datetime_2 = datetime.now()
 
@@ -585,8 +567,9 @@ def test_get_trial(storage_init_func):
     for example_trial in EXAMPLE_TRIALS:
         datetime_before = datetime.now()
 
-        trial_id = _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
-                                                        example_trial)
+        trial_id = _create_new_trial_with_example_trial(
+            storage, study_id, EXAMPLE_DISTRIBUTIONS, example_trial
+        )
 
         datetime_after = datetime.now()
 
@@ -613,12 +596,15 @@ def test_get_all_trials(storage_init_func):
 
     datetime_before = datetime.now()
 
-    _create_new_trial_with_example_trial(storage, study_id_1, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[0])
-    _create_new_trial_with_example_trial(storage, study_id_1, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[1])
-    _create_new_trial_with_example_trial(storage, study_id_2, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[0])
+    _create_new_trial_with_example_trial(
+        storage, study_id_1, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0]
+    )
+    _create_new_trial_with_example_trial(
+        storage, study_id_1, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[1]
+    )
+    _create_new_trial_with_example_trial(
+        storage, study_id_2, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0]
+    )
 
     datetime_after = datetime.now()
 
@@ -667,10 +653,12 @@ def test_get_n_trials(storage_init_func):
     storage = storage_init_func()
     study_id = storage.create_new_study()
 
-    _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[0])
-    _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[1])
+    _create_new_trial_with_example_trial(
+        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0]
+    )
+    _create_new_trial_with_example_trial(
+        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[1]
+    )
 
     assert 2 == storage.get_n_trials(study_id)
     assert 1 == storage.get_n_trials(study_id, TrialState.COMPLETE)
@@ -709,5 +697,7 @@ def _check_example_trial_static_attributes(trial_1, trial_2):
     assert trial_1 is not None
     assert trial_2 is not None
     assert all(
-        getattr(trial_1, field) == getattr(trial_2, field) for field in FrozenTrial._ordered_fields
-        if field not in ['_trial_id', 'number', 'datetime_start', 'datetime_complete'])
+        getattr(trial_1, field) == getattr(trial_2, field)
+        for field in FrozenTrial._ordered_fields
+        if field not in ['_trial_id', 'number', 'datetime_start', 'datetime_complete']
+    )

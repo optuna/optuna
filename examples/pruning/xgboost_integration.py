@@ -33,7 +33,7 @@ def objective(trial):
         'eval_metric': 'auc',
         'booster': trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart']),
         'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
-        'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0)
+        'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0),
     }
 
     if param['booster'] == 'gbtree' or param['booster'] == 'dart':
@@ -57,7 +57,8 @@ def objective(trial):
 
 
 if __name__ == '__main__':
-    study = optuna.create_study(pruner=optuna.pruners.MedianPruner(n_warmup_steps=5),
-                                direction='maximize')
+    study = optuna.create_study(
+        pruner=optuna.pruners.MedianPruner(n_warmup_steps=5), direction='maximize'
+    )
     study.optimize(objective, n_trials=100)
     print(study.best_trial)

@@ -64,9 +64,7 @@ def plot_parallel_coordinate(study, params=None):
 def _get_parallel_coordinate_plot(study, params=None):
     # type: (Study, Optional[List[str]]) -> go.Figure
 
-    layout = go.Layout(
-        title='Parallel Coordinate Plot',
-    )
+    layout = go.Layout(title='Parallel Coordinate Plot',)
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
@@ -82,11 +80,13 @@ def _get_parallel_coordinate_plot(study, params=None):
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
-    dims = [{
-        'label': 'Objective Value',
-        'values': tuple([t.value for t in trials]),
-        'range': (min([t.value for t in trials]), max([t.value for t in trials]))
-    }]  # type: List[Dict[str, Any]]
+    dims = [
+        {
+            'label': 'Objective Value',
+            'values': tuple([t.value for t in trials]),
+            'range': (min([t.value for t in trials]), max([t.value for t in trials])),
+        }
+    ]  # type: List[Dict[str, Any]]
     for p_name in sorted_params:
         values = []
         for t in trials:
@@ -99,11 +99,7 @@ def _get_parallel_coordinate_plot(study, params=None):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
             values = [vocab[v] for v in values]
             is_categorical = True
-        dim = {
-            'label': p_name,
-            'values': tuple(values),
-            'range': (min(values), max(values))
-        }
+        dim = {'label': p_name, 'values': tuple(values), 'range': (min(values), max(values))}
         if is_categorical:
             dim['tickvals'] = list(range(len(vocab)))
             dim['ticktext'] = list(sorted(vocab.items(), key=lambda x: x[1]))
@@ -118,7 +114,7 @@ def _get_parallel_coordinate_plot(study, params=None):
                 'colorbar': {'title': 'Objective Value'},
                 'showscale': True,
                 'reversescale': study.direction == StudyDirection.MINIMIZE,
-            }
+            },
         )
     ]
 

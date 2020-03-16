@@ -24,7 +24,6 @@ def _h(a: Any = None, b: int = 10) -> None:
 
 
 class _Sample(object):
-
     def __init__(self, a: Any, b: Any, c: Any) -> None:
         pass
 
@@ -45,15 +44,15 @@ def test_experimental_decorator(version: str) -> None:
     else:
         decorator_experimental = _experimental.experimental(version)
         assert (
-            callable(decorator_experimental) and
-            decorator_experimental.__name__ == '_experimental_wrapper'
+            callable(decorator_experimental)
+            and decorator_experimental.__name__ == '_experimental_wrapper'
         )
 
         decorated_sample_func = decorator_experimental(_sample_func)
         assert decorated_sample_func.__name__ == '_sample_func'
         assert (
-            decorated_sample_func.__doc__ ==
-            _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+            decorated_sample_func.__doc__
+            == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
         )
 
         with pytest.warns(ExperimentalWarning):
@@ -69,16 +68,16 @@ def test_experimental_class_decorator(version: str) -> None:
     else:
         decorator_experimental = _experimental.experimental(version)
         assert (
-            callable(decorator_experimental) and
-            decorator_experimental.__name__ == '_experimental_wrapper'
+            callable(decorator_experimental)
+            and decorator_experimental.__name__ == '_experimental_wrapper'
         )
 
         decorated_sample = decorator_experimental(_Sample)
         assert decorated_sample.__name__ == '_Sample'
         assert (
-            decorated_sample.__doc__ ==
-            '__init__(a, b, c)\n\n    ' +
-            _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+            decorated_sample.__doc__
+            == '__init__(a, b, c)\n\n    '
+            + _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
         )
 
         with pytest.warns(ExperimentalWarning):

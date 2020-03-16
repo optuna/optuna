@@ -31,14 +31,15 @@ if __name__ == '__main__':
 
     best_params, tuning_history = dict(), list()
 
-    model = lgb.train(params,
-                      dtrain,
-                      valid_sets=[dtrain, dval],
-                      best_params=best_params,
-                      tuning_history=tuning_history,
-                      verbose_eval=100,
-                      early_stopping_rounds=100,
-                      )
+    model = lgb.train(
+        params,
+        dtrain,
+        valid_sets=[dtrain, dval],
+        best_params=best_params,
+        tuning_history=tuning_history,
+        verbose_eval=100,
+        early_stopping_rounds=100,
+    )
 
     prediction = np.rint(model.predict(val_x, num_iteration=model.best_iteration))
     accuracy = accuracy_score(val_y, prediction)

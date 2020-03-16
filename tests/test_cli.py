@@ -126,8 +126,15 @@ def test_study_set_user_attr_command():
         # Create study.
         study_name = storage.get_study_name_from_id(storage.create_new_study())
 
-        base_command = ['optuna', 'study', 'set-user-attr', '--study', study_name, '--storage',
-                        storage_url]
+        base_command = [
+            'optuna',
+            'study',
+            'set-user-attr',
+            '--study',
+            study_name,
+            '--storage',
+            storage_url,
+        ]
 
         example_attrs = {'architecture': 'ResNet', 'baselen_score': '0.002'}
         for key, value in example_attrs.items():
@@ -202,8 +209,13 @@ def test_create_study_command_with_skip_if_exists():
 
         # Try to create the same name study with `--skip-if-exists` flag (OK).
         command = [
-            'optuna', 'create-study', '--storage', storage_url, '--study-name', study_name,
-            '--skip-if-exists'
+            'optuna',
+            'create-study',
+            '--storage',
+            storage_url,
+            '--study-name',
+            study_name,
+            '--skip-if-exists',
         ]
         study_name = str(subprocess.check_output(command).decode().strip())
         new_study_id = storage.get_study_id_from_name(study_name)
@@ -219,8 +231,16 @@ def test_dashboard_command():
 
         study_name = storage.get_study_name_from_id(storage.create_new_study())
 
-        command = ['optuna', 'dashboard', '--study', study_name, '--out', tf_report.name,
-                   '--storage', storage_url]
+        command = [
+            'optuna',
+            'dashboard',
+            '--study',
+            study_name,
+            '--out',
+            tf_report.name,
+            '--storage',
+            storage_url,
+        ]
         subprocess.check_call(command)
 
         html = tf_report.read()
@@ -228,8 +248,9 @@ def test_dashboard_command():
         assert 'bokeh' in html
 
 
-@pytest.mark.parametrize('origins',
-                         [['192.168.111.1:5006'], ['192.168.111.1:5006', '192.168.111.2:5006']])
+@pytest.mark.parametrize(
+    'origins', [['192.168.111.1:5006'], ['192.168.111.1:5006', '192.168.111.2:5006']]
+)
 def test_dashboard_command_with_allow_websocket_origin(origins):
     # type: (List[str]) -> None
 
@@ -239,8 +260,14 @@ def test_dashboard_command_with_allow_websocket_origin(origins):
 
         study_name = storage.get_study_name_from_id(storage.create_new_study())
         command = [
-            'optuna', 'dashboard', '--study', study_name, '--out', tf_report.name, '--storage',
-            storage_url
+            'optuna',
+            'dashboard',
+            '--study',
+            study_name,
+            '--out',
+            tf_report.name,
+            '--storage',
+            storage_url,
         ]
         for origin in origins:
             command.extend(['--allow-websocket-origin', origin])
@@ -256,7 +283,7 @@ def objective_func(trial):
     # type: (Trial) -> float
 
     x = trial.suggest_uniform('x', -10, 10)
-    return (x + 5)**2
+    return (x + 5) ** 2
 
 
 def test_study_optimize_command():
@@ -268,8 +295,17 @@ def test_study_optimize_command():
 
         study_name = storage.get_study_name_from_id(storage.create_new_study())
         command = [
-            'optuna', 'study', 'optimize', '--study', study_name, '--n-trials', '10', __file__,
-            'objective_func', '--storage', storage_url
+            'optuna',
+            'study',
+            'optimize',
+            '--study',
+            study_name,
+            '--n-trials',
+            '10',
+            __file__,
+            'objective_func',
+            '--storage',
+            storage_url,
         ]
         subprocess.check_call(command)
 
@@ -278,8 +314,9 @@ def test_study_optimize_command():
         assert 'x' in study.best_params
 
         # Check if a default value of study_name is stored in the storage.
-        assert storage.get_study_name_from_id(
-            study._study_id).startswith(DEFAULT_STUDY_NAME_PREFIX)
+        assert storage.get_study_name_from_id(study._study_id).startswith(
+            DEFAULT_STUDY_NAME_PREFIX
+        )
 
 
 def test_study_optimize_command_inconsistent_args():
@@ -290,10 +327,19 @@ def test_study_optimize_command_inconsistent_args():
 
         # --study argument is missing.
         with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_call([
-                'optuna', 'study', 'optimize', '--storage', db_url, '--n-trials', '10', __file__,
-                'objective_func'
-            ])
+            subprocess.check_call(
+                [
+                    'optuna',
+                    'study',
+                    'optimize',
+                    '--storage',
+                    db_url,
+                    '--n-trials',
+                    '10',
+                    __file__,
+                    'objective_func',
+                ]
+            )
 
 
 def test_empty_argv():

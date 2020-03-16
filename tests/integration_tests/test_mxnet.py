@@ -27,23 +27,29 @@ def test_mxnet_pruning_callback():
         optimizer = mx.optimizer.RMSProp()
 
         # Dataset
-        train_data = mx.io.NDArrayIter(data=np.zeros((16, 20), np.float32),
-                                       label=np.zeros((16,), np.int32),
-                                       batch_size=1,
-                                       shuffle=True)
+        train_data = mx.io.NDArrayIter(
+            data=np.zeros((16, 20), np.float32),
+            label=np.zeros((16,), np.int32),
+            batch_size=1,
+            shuffle=True,
+        )
 
-        eval_data = mx.io.NDArrayIter(data=np.zeros((5, 20), np.float32),
-                                      label=np.zeros((5,), np.int32),
-                                      batch_size=1,
-                                      shuffle=True)
+        eval_data = mx.io.NDArrayIter(
+            data=np.zeros((5, 20), np.float32),
+            label=np.zeros((5,), np.int32),
+            batch_size=1,
+            shuffle=True,
+        )
 
         model = mx.mod.Module(symbol=mlp)
-        model.fit(train_data=train_data,
-                  eval_data=eval_data,
-                  eval_metric=eval_metric,
-                  optimizer=optimizer,
-                  num_epoch=1,
-                  eval_end_callback=MXNetPruningCallback(trial, 'accuracy'))
+        model.fit(
+            train_data=train_data,
+            eval_data=eval_data,
+            eval_metric=eval_metric,
+            optimizer=optimizer,
+            num_epoch=1,
+            eval_end_callback=MXNetPruningCallback(trial, 'accuracy'),
+        )
         return 1.0
 
     study = optuna.create_study(pruner=DeterministicPruner(True))

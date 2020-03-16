@@ -26,7 +26,7 @@ def objective(trial):
         'eval_metric': 'auc',
         'booster': trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart']),
         'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
-        'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0)
+        'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0),
     }
 
     if param['booster'] == 'gbtree' or param['booster'] == 'dart':
@@ -41,12 +41,7 @@ def objective(trial):
         param['skip_drop'] = trial.suggest_loguniform('skip_drop', 1e-8, 1.0)
 
     pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'test-auc')
-    history = xgb.cv(
-        param,
-        dtrain,
-        num_boost_round=100,
-        callbacks=[pruning_callback]
-    )
+    history = xgb.cv(param, dtrain, num_boost_round=100, callbacks=[pruning_callback])
 
     mean_auc = history['test-auc-mean'].values[-1]
     return mean_auc

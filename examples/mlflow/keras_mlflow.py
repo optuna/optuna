@@ -37,24 +37,23 @@ def standardize(data):
 
 def create_model(num_features, trial):
     model = Sequential()
-    model.add(Dense(num_features,
-                    activation='relu',
-                    kernel_initializer='normal',
-                    input_shape=(num_features,))),
-    model.add(Dense(16,
-                    activation='relu',
-                    kernel_initializer='normal'))
-    model.add(Dense(16,
-                    activation='relu',
-                    kernel_initializer='normal'))
-    model.add(Dense(1,
-                    kernel_initializer='normal',
-                    activation='linear'))
+    model.add(
+        Dense(
+            num_features,
+            activation='relu',
+            kernel_initializer='normal',
+            input_shape=(num_features,),
+        )
+    ),
+    model.add(Dense(16, activation='relu', kernel_initializer='normal'))
+    model.add(Dense(16, activation='relu', kernel_initializer='normal'))
+    model.add(Dense(1, kernel_initializer='normal', activation='linear'))
 
-    optimizer = SGD(lr=trial.suggest_loguniform('lr', 1e-5, 1e-1),
-                    momentum=trial.suggest_uniform('momentum', 0.0, 1.0))
-    model.compile(loss='mean_squared_error',
-                  optimizer=optimizer)
+    optimizer = SGD(
+        lr=trial.suggest_loguniform('lr', 1e-5, 1e-1),
+        momentum=trial.suggest_uniform('momentum', 0.0, 1.0),
+    )
+    model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
 
 
@@ -74,12 +73,7 @@ def objective(trial):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE, random_state=42)
 
     model = create_model(X.shape[1], trial)
-    model.fit(X_train,
-              y_train,
-              shuffle=True,
-              batch_size=BATCHSIZE,
-              epochs=EPOCHS,
-              verbose=False)
+    model.fit(X_train, y_train, shuffle=True, batch_size=BATCHSIZE, epochs=EPOCHS, verbose=False)
 
     return model.evaluate(X_test, y_test, verbose=0)
 

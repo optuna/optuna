@@ -7,6 +7,7 @@ try:
     import bokeh.plotting
     import bokeh.themes
     import tornado.gen
+
     _available = True
 except ImportError as e:
     _available = False
@@ -68,11 +69,13 @@ if _available:
             else:
                 best_values = np.maximum.accumulate(values, axis=0)
 
-            self.cds = bokeh.models.ColumnDataSource({
-                '#': list(range(len(complete_trials))),
-                'value': values,
-                'best_value': best_values,
-            })
+            self.cds = bokeh.models.ColumnDataSource(
+                {
+                    '#': list(range(len(complete_trials))),
+                    'value': values,
+                    'best_value': best_values,
+                }
+            )
 
             self.best_value = best_values[-1] if complete_trials else np.inf
 
@@ -120,14 +123,22 @@ if _available:
             return bokeh.models.widgets.DataTable(
                 source=self.cds,
                 columns=[
-                    bokeh.models.widgets.TableColumn(field=field, title=field) for field in
-                    ['number', 'state', 'value', 'params', 'datetime_start', 'datetime_complete']
-                ])
+                    bokeh.models.widgets.TableColumn(field=field, title=field)
+                    for field in [
+                        'number',
+                        'state',
+                        'value',
+                        'params',
+                        'datetime_start',
+                        'datetime_complete',
+                    ]
+                ],
+            )
 
         def update(
-                self,
-                old_trials,  # type: List[optuna.structs.FrozenTrial]
-                new_trials,  # type: List[optuna.structs.FrozenTrial]
+            self,
+            old_trials,  # type: List[optuna.structs.FrozenTrial]
+            new_trials,  # type: List[optuna.structs.FrozenTrial]
         ):
             # type: (...) -> None
 
@@ -143,7 +154,7 @@ if _available:
             patch_dict = {k: list(zip(modified_indices, v)) for k, v in patch_dict.items()}
             self.cds.patch(patch_dict)
 
-            self.cds.stream(self.trials_to_dict(new_trials[len(old_trials):]))
+            self.cds.stream(self.trials_to_dict(new_trials[len(old_trials) :]))
 
         @staticmethod
         def trials_to_dict(trials):
@@ -156,11 +167,15 @@ if _available:
                 'params': [str(trial.params) for trial in trials],
                 'datetime_start': [
                     trial.datetime_start.strftime(_DATETIME_FORMAT)
-                    if trial.datetime_start is not None else None for trial in trials
+                    if trial.datetime_start is not None
+                    else None
+                    for trial in trials
                 ],
                 'datetime_complete': [
                     trial.datetime_complete.strftime(_DATETIME_FORMAT)
-                    if trial.datetime_complete is not None else None for trial in trials
+                    if trial.datetime_complete is not None
+                    else None
+                    for trial in trials
                 ],
             }
 
@@ -176,20 +191,27 @@ if _available:
             # type: (bokeh.document.Document) -> None
 
             self.doc = doc
-            self.current_trials = \
-                self.study.trials  # type: Optional[List[optuna.structs.FrozenTrial]]
+            self.current_trials = (
+                self.study.trials
+            )  # type: Optional[List[optuna.structs.FrozenTrial]]
             self.new_trials = None  # type: Optional[List[optuna.structs.FrozenTrial]]
             self.complete_trials_widget = _CompleteTrialsWidget(
-                self.current_trials, self.study.direction)
+                self.current_trials, self.study.direction
+            )
             self.all_trials_widget = _AllTrialsWidget(self.current_trials)
 
             self.doc.title = 'Optuna Dashboard (Beta)'
             header = _HEADER_FORMAT.format(study_name=self.study.study_name)
             self.doc.add_root(
-                bokeh.layouts.layout([[bokeh.models.widgets.Div(text=header)],
-                                      [self.complete_trials_widget.create_figure()],
-                                      [self.all_trials_widget.create_table()]],
-                                     sizing_mode='scale_width'))
+                bokeh.layouts.layout(
+                    [
+                        [bokeh.models.widgets.Div(text=header)],
+                        [self.complete_trials_widget.create_figure()],
+                        [self.all_trials_widget.create_table()],
+                    ],
+                    sizing_mode='scale_width',
+                )
+            )
 
             if self.launch_update_thread:
                 thread = threading.Thread(target=self.thread_loop)
@@ -203,7 +225,7 @@ if _available:
                 time.sleep(1)
                 new_trials = self.study.trials
                 with self.lock:
-                    need_to_add_callback = (self.new_trials is None)
+                    need_to_add_callback = self.new_trials is None
                     self.new_trials = new_trials
                     if need_to_add_callback:
                         self.doc.add_next_tick_callback(self.update_callback)
@@ -232,7 +254,8 @@ def _check_bokeh_availability():
             'Bokeh is not available. Please install Bokeh to use the dashboard. '
             'Bokeh can be installed by executing `$ pip install bokeh`. '
             'For further information, please refer to the installation guide of Bokeh. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            '(The actual import error is as follows: ' + str(_import_error) + ')'
+        )
 
 
 def _show_experimental_warning():

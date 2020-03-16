@@ -13,7 +13,8 @@ def test_successive_halving_pruner_intermediate_values(direction_value):
 
     direction, intermediate_value = direction_value
     pruner = optuna.pruners.SuccessiveHalvingPruner(
-        min_resource=1, reduction_factor=2, min_early_stopping_rate=0)
+        min_resource=1, reduction_factor=2, min_early_stopping_rate=0
+    )
     study = optuna.study.create_study(direction=direction)
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
@@ -35,7 +36,8 @@ def test_successive_halving_pruner_rung_check():
     # type: () -> None
 
     pruner = optuna.pruners.SuccessiveHalvingPruner(
-        min_resource=1, reduction_factor=2, min_early_stopping_rate=0)
+        min_resource=1, reduction_factor=2, min_early_stopping_rate=0
+    )
     study = optuna.study.create_study()
 
     # Report 7 trials in advance.
@@ -70,7 +72,8 @@ def test_successive_halving_pruner_first_trial_is_not_pruned():
     # type: () -> None
 
     pruner = optuna.pruners.SuccessiveHalvingPruner(
-        min_resource=1, reduction_factor=2, min_early_stopping_rate=0)
+        min_resource=1, reduction_factor=2, min_early_stopping_rate=0
+    )
     study = optuna.study.create_study()
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
@@ -78,8 +81,7 @@ def test_successive_halving_pruner_first_trial_is_not_pruned():
         trial.report(1, step=i)
 
         # The first trial is not pruned.
-        assert not pruner.prune(study=study,
-                                trial=study._storage.get_trial(trial._trial_id))
+        assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
 
     # The trial completed until rung 3.
     assert 'completed_rung_0' in trial.system_attrs
@@ -93,7 +95,8 @@ def test_successive_halving_pruner_with_nan():
     # type: () -> None
 
     pruner = optuna.pruners.SuccessiveHalvingPruner(
-        min_resource=2, reduction_factor=2, min_early_stopping_rate=0)
+        min_resource=2, reduction_factor=2, min_early_stopping_rate=0
+    )
     study = optuna.study.create_study()
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
@@ -149,11 +152,13 @@ def test_successive_halving_pruner_min_resource_parameter():
     # min_resource=0: Error (must be `min_resource >= 1`).
     with pytest.raises(ValueError):
         optuna.pruners.SuccessiveHalvingPruner(
-            min_resource=0, reduction_factor=2, min_early_stopping_rate=0)
+            min_resource=0, reduction_factor=2, min_early_stopping_rate=0
+        )
 
     # min_resource=1: The rung 0 ends at step 1.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
-        min_resource=1, reduction_factor=2, min_early_stopping_rate=0)
+        min_resource=1, reduction_factor=2, min_early_stopping_rate=0
+    )
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
 
     trial.report(1, step=1)
@@ -163,7 +168,8 @@ def test_successive_halving_pruner_min_resource_parameter():
 
     # min_resource=2: The rung 0 ends at step 2.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
-        min_resource=2, reduction_factor=2, min_early_stopping_rate=0)
+        min_resource=2, reduction_factor=2, min_early_stopping_rate=0
+    )
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
 
     trial.report(1, step=1)
@@ -184,11 +190,13 @@ def test_successive_halving_pruner_reduction_factor_parameter():
     # reduction_factor=1: Error (must be `reduction_factor >= 2`).
     with pytest.raises(ValueError):
         optuna.pruners.SuccessiveHalvingPruner(
-            min_resource=1, reduction_factor=1, min_early_stopping_rate=0)
+            min_resource=1, reduction_factor=1, min_early_stopping_rate=0
+        )
 
     # reduction_factor=2: The rung 0 ends at step 1.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
-        min_resource=1, reduction_factor=2, min_early_stopping_rate=0)
+        min_resource=1, reduction_factor=2, min_early_stopping_rate=0
+    )
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
 
     trial.report(1, step=1)
@@ -198,7 +206,8 @@ def test_successive_halving_pruner_reduction_factor_parameter():
 
     # reduction_factor=3: The rung 1 ends at step 3.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
-        min_resource=1, reduction_factor=3, min_early_stopping_rate=0)
+        min_resource=1, reduction_factor=3, min_early_stopping_rate=0
+    )
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
 
     trial.report(1, step=1)
@@ -224,11 +233,13 @@ def test_successive_halving_pruner_min_early_stopping_rate_parameter():
     # min_early_stopping_rate=-1: Error (must be `min_early_stopping_rate >= 0`).
     with pytest.raises(ValueError):
         optuna.pruners.SuccessiveHalvingPruner(
-            min_resource=1, reduction_factor=2, min_early_stopping_rate=-1)
+            min_resource=1, reduction_factor=2, min_early_stopping_rate=-1
+        )
 
     # min_early_stopping_rate=0: The rung 0 ends at step 1.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
-        min_resource=1, reduction_factor=2, min_early_stopping_rate=0)
+        min_resource=1, reduction_factor=2, min_early_stopping_rate=0
+    )
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
 
     trial.report(1, step=1)
@@ -237,7 +248,8 @@ def test_successive_halving_pruner_min_early_stopping_rate_parameter():
 
     # min_early_stopping_rate=1: The rung 0 ends at step 2.
     pruner = optuna.pruners.SuccessiveHalvingPruner(
-        min_resource=1, reduction_factor=2, min_early_stopping_rate=1)
+        min_resource=1, reduction_factor=2, min_early_stopping_rate=1
+    )
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
 
     trial.report(1, step=1)

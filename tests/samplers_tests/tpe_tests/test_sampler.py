@@ -15,7 +15,8 @@ def test_hyperopt_parameters(use_hyperband):
 
     sampler = TPESampler(**TPESampler.hyperopt_parameters())
     study = optuna.create_study(
-        sampler=sampler, pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None)
+        sampler=sampler, pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None
+    )
     study.optimize(lambda t: t.suggest_uniform('x', 10, 20), n_trials=50)
 
 
@@ -49,11 +50,12 @@ def test_get_observation_pairs():
     assert tpe.sampler._get_observation_pairs(study, 'x', trial) == (
         [5.0, 5.0, 5.0, 5.0],
         [
-            (-float('inf'), 5.0),   # COMPLETE
+            (-float('inf'), 5.0),  # COMPLETE
             (-7, 2),  # PRUNED (with intermediate values)
             (-3, float('inf')),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float('inf'), 0.0)  # PRUNED (without intermediate values)
-        ])
+            (float('inf'), 0.0),  # PRUNED (without intermediate values)
+        ],
+    )
     assert tpe.sampler._get_observation_pairs(study, 'y', trial) == ([], [])
 
     # direction=maximize.
@@ -64,9 +66,10 @@ def test_get_observation_pairs():
     assert tpe.sampler._get_observation_pairs(study, 'x', trial) == (
         [5.0, 5.0, 5.0, 5.0],
         [
-            (-float('inf'), -5.0),   # COMPLETE
+            (-float('inf'), -5.0),  # COMPLETE
             (-7, -2),  # PRUNED (with intermediate values)
             (-3, float('inf')),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float('inf'), 0.0)  # PRUNED (without intermediate values)
-        ])
+            (float('inf'), 0.0),  # PRUNED (without intermediate values)
+        ],
+    )
     assert tpe.sampler._get_observation_pairs(study, 'y', trial) == ([], [])

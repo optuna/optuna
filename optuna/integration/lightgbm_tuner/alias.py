@@ -7,43 +7,26 @@ if type_checking.TYPE_CHECKING:
 
 
 ALIAS_GROUP_LIST = [
-    {
-        'param_name': 'bagging_fraction',
-        'alias_names': ['sub_row', 'subsample', 'bagging'],
-    },
-    {
-        'param_name': 'learning_rate',
-        'alias_names': ['shrinkage_rate', 'eta'],
-    },
+    {'param_name': 'bagging_fraction', 'alias_names': ['sub_row', 'subsample', 'bagging'],},
+    {'param_name': 'learning_rate', 'alias_names': ['shrinkage_rate', 'eta'],},
     {
         'param_name': 'min_data_in_leaf',
         'alias_names': ['min_data_per_leaf', 'min_data', 'min_child_samples'],
     },
     {
         'param_name': 'min_sum_hessian_in_leaf',
-        'alias_names': ['min_sum_hessian_per_leaf', 'min_sum_hessian',
-                        'min_hessian', 'min_child_weight'],
+        'alias_names': [
+            'min_sum_hessian_per_leaf',
+            'min_sum_hessian',
+            'min_hessian',
+            'min_child_weight',
+        ],
     },
-    {
-        'param_name': 'bagging_freq',
-        'alias_names': ['subsample_freq'],
-    },
-    {
-        'param_name': 'feature_fraction',
-        'alias_names': ['sub_feature', 'colsample_bytree'],
-    },
-    {
-        'param_name': 'lambda_l1',
-        'alias_names': ['reg_alpha'],
-    },
-    {
-        'param_name': 'lambda_l2',
-        'alias_names': ['reg_lambda', 'lambda'],
-    },
-    {
-        'param_name': 'min_gain_to_split',
-        'alias_names': ['min_split_gain'],
-    },
+    {'param_name': 'bagging_freq', 'alias_names': ['subsample_freq'],},
+    {'param_name': 'feature_fraction', 'alias_names': ['sub_feature', 'colsample_bytree'],},
+    {'param_name': 'lambda_l1', 'alias_names': ['reg_alpha'],},
+    {'param_name': 'lambda_l2', 'alias_names': ['reg_lambda', 'lambda'],},
+    {'param_name': 'min_gain_to_split', 'alias_names': ['min_split_gain'],},
 ]  # type: List[Dict[str, Any]]
 
 
@@ -64,13 +47,16 @@ def _handling_alias_parameters(lgbm_params):
 ALIAS_METRIC_LIST = [
     {
         'metric_name': 'ndcg',
-        'alias_names': ['lambdarank', 'rank_xendcg', 'xendcg', 'xe_ndcg',
-                        'xe_ndcg_mart', 'xendcg_mart'],
+        'alias_names': [
+            'lambdarank',
+            'rank_xendcg',
+            'xendcg',
+            'xe_ndcg',
+            'xe_ndcg_mart',
+            'xendcg_mart',
+        ],
     },
-    {
-        'metric_name': 'map',
-        'alias_names': ['mean_average_precision'],
-    },
+    {'metric_name': 'map', 'alias_names': ['mean_average_precision'],},
 ]  # type: List[Dict[str, Any]]
 
 

@@ -46,7 +46,7 @@ def test_plot_slice():
         raise ValueError
 
     study = create_study()
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_slice(study)
     assert len(figure.data) == 0
 
@@ -57,14 +57,11 @@ def test_plot_slice_log_scale():
     study = create_study()
     study._append_trial(
         value=0.0,
-        params={
-            'x_linear': 1.0,
-            'y_log': 1e-3,
-        },
+        params={'x_linear': 1.0, 'y_log': 1e-3,},
         distributions={
             'x_linear': UniformDistribution(0.0, 3.0),
-            'y_log': LogUniformDistribution(1e-5, 1.),
-        }
+            'y_log': LogUniformDistribution(1e-5, 1.0),
+        },
     )
 
     # Plot a parameter.

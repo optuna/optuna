@@ -48,14 +48,17 @@ def upgrade():
         batch_op.add_column(sa.Column('number', sa.Integer(), nullable=True, default=None))
 
     try:
-        number_records = session.query(TrialSystemAttributeModel) \
-            .filter(TrialSystemAttributeModel.key == '_number').all()
-        mapping = [{'trial_id': r.trial_id, 'number': json.loads(r.value_json)}
-                   for r in number_records]
+        number_records = (
+            session.query(TrialSystemAttributeModel)
+            .filter(TrialSystemAttributeModel.key == '_number')
+            .all()
+        )
+        mapping = [
+            {'trial_id': r.trial_id, 'number': json.loads(r.value_json)} for r in number_records
+        ]
         session.bulk_update_mappings(TrialModel, mapping)
 
-        session.query(TrialSystemAttributeModel.key == '_number') \
-            .delete(synchronize_session=False)
+        session.query(TrialSystemAttributeModel.key == '_number').delete(synchronize_session=False)
         session.commit()
     except SQLAlchemyError as e:
         session.rollback()
@@ -72,11 +75,11 @@ def downgrade():
         number_attrs = []
         trials = session.query(TrialModel).all()
         for trial in trials:
-            number_attrs.append(TrialSystemAttributeModel(
-                trial_id=trial.trial_id,
-                key='_number',
-                value_json=json.dumps(trial.number),
-            ))
+            number_attrs.append(
+                TrialSystemAttributeModel(
+                    trial_id=trial.trial_id, key='_number', value_json=json.dumps(trial.number),
+                )
+            )
         session.bulk_save_objects(number_attrs)
         session.commit()
     except SQLAlchemyError as e:

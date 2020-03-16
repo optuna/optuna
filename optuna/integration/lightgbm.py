@@ -6,6 +6,7 @@ from optuna.integration import lightgbm_tuner as tuner
 
 try:
     import lightgbm as lgb  # NOQA
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -97,19 +98,25 @@ class LightGBMPruningCallback(object):
                 continue
 
             if is_higher_better:
-                if self._trial.storage.get_study_direction(self._trial.study._study_id) != \
-                        optuna.structs.StudyDirection.MAXIMIZE:
+                if (
+                    self._trial.storage.get_study_direction(self._trial.study._study_id)
+                    != optuna.structs.StudyDirection.MAXIMIZE
+                ):
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
                         "terms of study directions. Please specify a metric to be minimized for "
-                        "LightGBMPruningCallback.")
+                        "LightGBMPruningCallback."
+                    )
             else:
-                if self._trial.storage.get_study_direction(self._trial.study._study_id) != \
-                        optuna.structs.StudyDirection.MINIMIZE:
+                if (
+                    self._trial.storage.get_study_direction(self._trial.study._study_id)
+                    != optuna.structs.StudyDirection.MINIMIZE
+                ):
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
                         "terms of study directions. Please specify a metric to be maximized for "
-                        "LightGBMPruningCallback.")
+                        "LightGBMPruningCallback."
+                    )
 
             self._trial.report(current_score, step=env.iteration)
             if self._trial.should_prune():
@@ -121,7 +128,9 @@ class LightGBMPruningCallback(object):
         raise ValueError(
             'The entry associated with the validation name "{}" and the metric name "{}" '
             'is not found in the evaluation result list {}.'.format(
-                target_valid_name, self._metric, str(env.evaluation_result_list)))
+                target_valid_name, self._metric, str(env.evaluation_result_list)
+            )
+        )
 
 
 def _check_lightgbm_availability():
@@ -132,4 +141,5 @@ def _check_lightgbm_availability():
             'LightGBM is not available. Please install LightGBM to use this feature. '
             'LightGBM can be installed by executing `$ pip install lightgbm`. '
             'For further information, please refer to the installation guide of LightGBM. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            '(The actual import error is as follows: ' + str(_import_error) + ')'
+        )

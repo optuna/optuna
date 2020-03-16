@@ -123,8 +123,10 @@ class UniformDistribution(BaseDistribution):
         # type: (float, float) -> None
 
         if low > high:
-            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
-                             "(low={}, high={}).".format(low, high))
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
 
         self.low = low
         self.high = high
@@ -161,8 +163,10 @@ class LogUniformDistribution(BaseDistribution):
         # type: (float, float) -> None
 
         if low > high:
-            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
-                             "(low={}, high={}).".format(low, high))
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
 
         self.low = low
         self.high = high
@@ -201,8 +205,10 @@ class DiscreteUniformDistribution(BaseDistribution):
         # type: (float, float, float) -> None
 
         if low > high:
-            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
-                             "(low={}, high={}, q={}).".format(low, high, q))
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}, q={}).".format(low, high, q)
+            )
 
         self.low = low
         self.high = high
@@ -237,8 +243,10 @@ class IntUniformDistribution(BaseDistribution):
         # type: (int, int) -> None
 
         if low > high:
-            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
-                             "(low={}, high={}).".format(low, high))
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
 
         self.low = low
         self.high = high
@@ -296,7 +304,8 @@ class CategoricalDistribution(BaseDistribution):
                 message = (
                     "Choices for a categorical distribution should be a tuple of None, bool, "
                     "int, float and str for persistent storage but contains {} which is of type "
-                    "{}.".format(choice, type(choice).__name__))
+                    "{}.".format(choice, type(choice).__name__)
+                )
                 warnings.warn(message)
 
                 logger = logging._get_library_root_logger()
@@ -316,8 +325,8 @@ class CategoricalDistribution(BaseDistribution):
             return self.choices.index(param_value_in_external_repr)
         except ValueError as e:
             raise ValueError(
-                '\'{}\' not in {}.'.format(
-                    param_value_in_external_repr, self.choices)) from e
+                '\'{}\' not in {}.'.format(param_value_in_external_repr, self.choices)
+            ) from e
 
     def single(self):
         # type: () -> bool
@@ -331,8 +340,13 @@ class CategoricalDistribution(BaseDistribution):
         return 0 <= index and index < len(self.choices)
 
 
-DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, DiscreteUniformDistribution,
-                        IntUniformDistribution, CategoricalDistribution)
+DISTRIBUTION_CLASSES = (
+    UniformDistribution,
+    LogUniformDistribution,
+    DiscreteUniformDistribution,
+    IntUniformDistribution,
+    CategoricalDistribution,
+)
 
 
 def json_to_distribution(json_str):
@@ -395,5 +409,6 @@ def check_distribution_compatibility(dist_old, dist_new):
     if not isinstance(dist_new, CategoricalDistribution):
         return
     if dist_old.choices != dist_new.choices:
-        raise ValueError(CategoricalDistribution.__name__ +
-                         ' does not support dynamic value space.')
+        raise ValueError(
+            CategoricalDistribution.__name__ + ' does not support dynamic value space.'
+        )

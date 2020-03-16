@@ -33,7 +33,8 @@ def objective(trial):
     else:
         rf_max_depth = int(trial.suggest_loguniform('rf_max_depth', 2, 32))
         classifier_obj = sklearn.ensemble.RandomForestClassifier(
-            max_depth=rf_max_depth, n_estimators=10)
+            max_depth=rf_max_depth, n_estimators=10
+        )
 
     score = sklearn.model_selection.cross_val_score(classifier_obj, x, y, n_jobs=-1, cv=3)
     accuracy = score.mean()
@@ -49,7 +50,7 @@ if __name__ == '__main__':
             os.environ['POSTGRES_PASSWORD'],
             os.environ['POSTGRES_DB'],
         ),
-        load_if_exists=True
+        load_if_exists=True,
     )
     study.optimize(objective, n_trials=20)
     print(study.best_trial)

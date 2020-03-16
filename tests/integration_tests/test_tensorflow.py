@@ -41,13 +41,11 @@ def test_tensorflow_pruning_hook():
             config=tf.estimator.RunConfig(save_summary_steps=10, save_checkpoints_steps=10),
         )
         hook = TensorFlowPruningHook(
-            trial=trial,
-            estimator=clf,
-            metric="accuracy",
-            run_every_steps=5,
+            trial=trial, estimator=clf, metric="accuracy", run_every_steps=5,
         )
         train_spec = tf.estimator.TrainSpec(
-            input_fn=fixed_value_input_fn, max_steps=100, hooks=[hook])
+            input_fn=fixed_value_input_fn, max_steps=100, hooks=[hook]
+        )
         eval_spec = tf.estimator.EvalSpec(input_fn=fixed_value_input_fn, steps=1, hooks=[])
         tf.estimator.train_and_evaluate(estimator=clf, train_spec=train_spec, eval_spec=eval_spec)
         return 1.0
@@ -92,4 +90,5 @@ def test_init_with_is_higher_better(is_higher_better):
             estimator=clf,
             metric="accuracy",
             run_every_steps=5,
-            is_higher_better=is_higher_better)
+            is_higher_better=is_higher_better,
+        )

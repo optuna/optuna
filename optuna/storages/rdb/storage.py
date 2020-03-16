@@ -100,9 +100,10 @@ class RDBStorage(BaseStorage):
         try:
             self.engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
-            raise ImportError('Failed to import DB access module for the specified storage URL. '
-                              'Please install appropriate one. (The actual import error is: ' +
-                              str(e) + '.)')
+            raise ImportError(
+                'Failed to import DB access module for the specified storage URL. '
+                'Please install appropriate one. (The actual import error is: ' + str(e) + '.)'
+            )
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
@@ -131,9 +132,10 @@ class RDBStorage(BaseStorage):
         try:
             self.engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
-            raise ImportError('Failed to import DB access module for the specified storage URL. '
-                              'Please install appropriate one. (The actual import error is: ' +
-                              str(e) + '.)')
+            raise ImportError(
+                'Failed to import DB access module for the specified storage URL. '
+                'Please install appropriate one. (The actual import error is: ' + str(e) + '.)'
+            )
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
@@ -157,7 +159,8 @@ class RDBStorage(BaseStorage):
                 "Another study with name '{}' already exists. "
                 "Please specify a different name, or reuse the existing one "
                 "by setting `load_if_exists` (for Python API) or "
-                "`--skip-if-exists` flag (for CLI).".format(study_name))
+                "`--skip-if-exists` flag (for CLI).".format(study_name)
+            )
 
         _logger.info('A new study created with name: {}'.format(study.study_name))
 
@@ -195,8 +198,11 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         if study.direction != structs.StudyDirection.NOT_SET and study.direction != direction:
-            raise ValueError('Cannot overwrite study direction from {} to {}.'.format(
-                study.direction, direction))
+            raise ValueError(
+                'Cannot overwrite study direction from {} to {}.'.format(
+                    study.direction, direction
+                )
+            )
 
         study.direction = direction
 
@@ -211,7 +217,8 @@ class RDBStorage(BaseStorage):
         attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
         if attribute is None:
             attribute = models.StudyUserAttributeModel(
-                study_id=study_id, key=key, value_json=json.dumps(value))
+                study_id=study_id, key=key, value_json=json.dumps(value)
+            )
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
@@ -227,7 +234,8 @@ class RDBStorage(BaseStorage):
         attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
         if attribute is None:
             attribute = models.StudySystemAttributeModel(
-                study_id=study_id, key=key, value_json=json.dumps(value))
+                study_id=study_id, key=key, value_json=json.dumps(value)
+            )
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
@@ -362,18 +370,24 @@ class RDBStorage(BaseStorage):
                     v for v in value_models if v.trial_id == best_trial_model.trial_id
                 ]
                 best_trial_user_models = [
-                    u for u in trial_user_attribute_models
+                    u
+                    for u in trial_user_attribute_models
                     if u.trial_id == best_trial_model.trial_id
                 ]
                 best_trial_system_models = [
-                    s for s in trial_system_attribute_models
+                    s
+                    for s in trial_system_attribute_models
                     if s.trial_id == best_trial_model.trial_id
                 ]
 
                 # Merge model objects related to the best trial.
-                best_trial = self._merge_trials_orm([best_trial_model], best_param_models,
-                                                    best_value_models, best_trial_user_models,
-                                                    best_trial_system_models)[0]
+                best_trial = self._merge_trials_orm(
+                    [best_trial_model],
+                    best_param_models,
+                    best_value_models,
+                    best_trial_user_models,
+                    best_trial_system_models,
+                )[0]
 
             # Find datetime_start.
             datetime_start = None
@@ -381,7 +395,8 @@ class RDBStorage(BaseStorage):
                 datetime_start = min([t.datetime_start for t in study_trial_models])
 
             attributes = models.StudySystemAttributeModel.where_study_id(
-                study_model.study_id, session)
+                study_model.study_id, session
+            )
             system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
             # Consolidate StudySummary.
@@ -394,7 +409,9 @@ class RDBStorage(BaseStorage):
                     system_attrs=system_attrs,
                     n_trials=len(study_trial_models),
                     datetime_start=datetime_start,
-                    study_id=study_model.study_id))
+                    study_id=study_model.study_id,
+                )
+            )
 
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
@@ -408,9 +425,7 @@ class RDBStorage(BaseStorage):
 
         if template_trial is None:
             trial = models.TrialModel(
-                study_id=study_id,
-                number=None,
-                state=structs.TrialState.RUNNING,
+                study_id=study_id, number=None, state=structs.TrialState.RUNNING,
             )
         else:
             # Because only `RUNNING` trials can be updated,
@@ -441,8 +456,9 @@ class RDBStorage(BaseStorage):
             for param_name, param_value in template_trial.params.items():
                 distribution = template_trial.distributions[param_name]
                 param_value_in_internal_repr = distribution.to_internal_repr(param_value)
-                self._set_trial_param_without_commit(session, trial.trial_id, param_name,
-                                                     param_value_in_internal_repr, distribution)
+                self._set_trial_param_without_commit(
+                    session, trial.trial_id, param_name, param_value_in_internal_repr, distribution
+                )
 
             for key, value in template_trial.user_attrs.items():
                 self._set_trial_user_attr_without_commit(session, trial.trial_id, key, value)
@@ -451,8 +467,9 @@ class RDBStorage(BaseStorage):
                 self._set_trial_system_attr_without_commit(session, trial.trial_id, key, value)
 
             for step, intermediate_value in template_trial.intermediate_values.items():
-                self._set_trial_intermediate_value_without_commit(session, trial.trial_id, step,
-                                                                  intermediate_value)
+                self._set_trial_intermediate_value_without_commit(
+                    session, trial.trial_id, step, intermediate_value
+                )
 
             trial.state = template_trial.state
 
@@ -485,28 +502,32 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        if not self._set_trial_param_without_commit(session, trial_id, param_name,
-                                                    param_value_internal, distribution):
+        if not self._set_trial_param_without_commit(
+            session, trial_id, param_name, param_value_internal, distribution
+        ):
             return False
 
         commit_success = self._commit_with_integrity_check(session)
 
         return commit_success
 
-    def _set_trial_param_without_commit(self, session, trial_id, param_name, param_value_internal,
-                                        distribution):
+    def _set_trial_param_without_commit(
+        self, session, trial_id, param_name, param_value_internal, distribution
+    ):
         # type: (orm.Session, int, str, float, distributions.BaseDistribution) -> bool
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial_param = \
-            models.TrialParamModel.find_by_trial_and_param_name(trial, param_name, session)
+        trial_param = models.TrialParamModel.find_by_trial_and_param_name(
+            trial, param_name, session
+        )
 
         if trial_param is not None:
             # Raise error in case distribution is incompatible.
             distributions.check_distribution_compatibility(
-                distributions.json_to_distribution(trial_param.distribution_json), distribution)
+                distributions.json_to_distribution(trial_param.distribution_json), distribution
+            )
 
             # Terminate transaction explicitly to avoid connection timeout during transaction.
             self._commit(session)
@@ -517,7 +538,8 @@ class RDBStorage(BaseStorage):
             trial_id=trial_id,
             param_name=param_name,
             param_value=param_value_internal,
-            distribution_json=distributions.distribution_to_json(distribution))
+            distribution_json=distributions.distribution_to_json(distribution),
+        )
 
         param.check_and_add(session)
 
@@ -530,7 +552,8 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         trial_param = models.TrialParamModel.find_or_raise_by_trial_and_param_name(
-            trial, param_name, session)
+            trial, param_name, session
+        )
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
@@ -553,16 +576,18 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        if not self._set_trial_intermediate_value_without_commit(session, trial_id, step,
-                                                                 intermediate_value):
+        if not self._set_trial_intermediate_value_without_commit(
+            session, trial_id, step, intermediate_value
+        ):
             return False
 
         commit_success = self._commit_with_integrity_check(session)
 
         return commit_success
 
-    def _set_trial_intermediate_value_without_commit(self, session, trial_id, step,
-                                                     intermediate_value):
+    def _set_trial_intermediate_value_without_commit(
+        self, session, trial_id, step, intermediate_value
+    ):
         # type: (orm.Session, int, int, float) -> bool
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -572,9 +597,9 @@ class RDBStorage(BaseStorage):
         if trial_value is not None:
             return False
 
-        trial_value = models.TrialValueModel(trial_id=trial_id,
-                                             step=step,
-                                             value=intermediate_value)
+        trial_value = models.TrialValueModel(
+            trial_id=trial_id, step=step, value=intermediate_value
+        )
 
         session.add(trial_value)
 
@@ -597,9 +622,9 @@ class RDBStorage(BaseStorage):
 
         attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
-            attribute = models.TrialUserAttributeModel(trial_id=trial_id,
-                                                       key=key,
-                                                       value_json=json.dumps(value))
+            attribute = models.TrialUserAttributeModel(
+                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            )
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
@@ -621,9 +646,9 @@ class RDBStorage(BaseStorage):
 
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
-            attribute = models.TrialSystemAttributeModel(trial_id=trial_id,
-                                                         key=key,
-                                                         value_json=json.dumps(value))
+            attribute = models.TrialSystemAttributeModel(
+                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            )
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
@@ -657,8 +682,9 @@ class RDBStorage(BaseStorage):
         user_attributes = models.TrialUserAttributeModel.where_trial(trial, session)
         system_attributes = models.TrialSystemAttributeModel.where_trial(trial, session)
 
-        frozen_trial = self._merge_trials_orm([trial], params, values, user_attributes,
-                                              system_attributes)[0]
+        frozen_trial = self._merge_trials_orm(
+            [trial], params, values, user_attributes, system_attributes
+        )[0]
 
         self._finished_trials_cache.cache_trial_if_finished(frozen_trial)
 
@@ -720,7 +746,8 @@ class RDBStorage(BaseStorage):
         system_attributes = models.TrialSystemAttributeModel.where_study(study, session)
 
         all_trials = self._merge_trials_orm(
-            trials, params, values, user_attributes, system_attributes)
+            trials, params, values, user_attributes, system_attributes
+        )
 
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
@@ -738,12 +765,12 @@ class RDBStorage(BaseStorage):
         return n_trials
 
     def _merge_trials_orm(
-            self,
-            trials,  # type: List[models.TrialModel]
-            trial_params,  # type: List[models.TrialParamModel]
-            trial_intermediate_values,  # type: List[models.TrialValueModel]
-            trial_user_attrs,  # type: List[models.TrialUserAttributeModel]
-            trial_system_attrs  # type: List[models.TrialSystemAttributeModel]
+        self,
+        trials,  # type: List[models.TrialModel]
+        trial_params,  # type: List[models.TrialParamModel]
+        trial_intermediate_values,  # type: List[models.TrialValueModel]
+        trial_user_attrs,  # type: List[models.TrialUserAttributeModel]
+        trial_system_attrs,  # type: List[models.TrialSystemAttributeModel]
     ):
         # type: (...) -> List[structs.FrozenTrial]
 
@@ -759,13 +786,15 @@ class RDBStorage(BaseStorage):
         for value in trial_intermediate_values:
             id_to_values[value.trial_id].append(value)
 
-        id_to_user_attrs = \
-            defaultdict(list)  # type: Dict[int, List[models.TrialUserAttributeModel]]
+        id_to_user_attrs = defaultdict(
+            list
+        )  # type: Dict[int, List[models.TrialUserAttributeModel]]
         for user_attr in trial_user_attrs:
             id_to_user_attrs[user_attr.trial_id].append(user_attr)
 
-        id_to_system_attrs = \
-            defaultdict(list)  # type: Dict[int, List[models.TrialSystemAttributeModel]]
+        id_to_system_attrs = defaultdict(
+            list
+        )  # type: Dict[int, List[models.TrialSystemAttributeModel]]
         for system_attr in trial_system_attrs:
             id_to_system_attrs[system_attr.trial_id].append(system_attr)
 
@@ -802,7 +831,9 @@ class RDBStorage(BaseStorage):
                     intermediate_values=intermediate_values,
                     datetime_start=trial.datetime_start,
                     datetime_complete=trial.datetime_complete,
-                    trial_id=trial_id))
+                    trial_id=trial_id,
+                )
+            )
 
         return result
 
@@ -840,7 +871,8 @@ class RDBStorage(BaseStorage):
         except IntegrityError as e:
             _logger.debug(
                 'Ignoring {}. This happens due to a timing issue among threads/processes/nodes. '
-                'Another one might have committed a record with the same key(s).'.format(repr(e)))
+                'Another one might have committed a record with the same key(s).'.format(repr(e))
+            )
             session.rollback()
             return False
 
@@ -854,11 +886,12 @@ class RDBStorage(BaseStorage):
             session.commit()
         except SQLAlchemyError as e:
             session.rollback()
-            message = \
-                'An exception is raised during the commit. ' \
-                'This typically happens due to invalid data in the commit, ' \
-                'e.g. exceeding max length. ' \
+            message = (
+                'An exception is raised during the commit. '
+                'This typically happens due to invalid data in the commit, '
+                'e.g. exceeding max length. '
                 '(The actual exception is as follows: {})'.format(repr(e))
+            )
             raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
 
     def remove_session(self):
@@ -936,7 +969,8 @@ class _VersionManager(object):
             return
 
         version_info = models.VersionInfoModel(
-            schema_version=models.SCHEMA_VERSION, library_version=version.__version__)
+            schema_version=models.SCHEMA_VERSION, library_version=version.__version__
+        )
 
         session.add(version_info)
         RDBStorage._commit_with_integrity_check(session)
@@ -986,16 +1020,20 @@ class _VersionManager(object):
         if current_version == head_version:
             return
 
-        message = 'The runtime optuna version {} is no longer compatible with the table schema ' \
-                  '(set up by optuna {}). '.format(version.__version__,
-                                                   version_info.library_version)
+        message = (
+            'The runtime optuna version {} is no longer compatible with the table schema '
+            '(set up by optuna {}). '.format(version.__version__, version_info.library_version)
+        )
         known_versions = self.get_all_versions()
         if current_version in known_versions:
-            message += 'Please execute `$ optuna storage upgrade --storage $STORAGE_URL` ' \
-                       'for upgrading the storage.'
+            message += (
+                'Please execute `$ optuna storage upgrade --storage $STORAGE_URL` '
+                'for upgrading the storage.'
+            )
         else:
-            message += 'Please try updating optuna to the latest version by '\
-                       '`$ pip install -U optuna`.'
+            message += (
+                'Please try updating optuna to the latest version by ' '`$ pip install -U optuna`.'
+            )
 
         raise RuntimeError(message)
 

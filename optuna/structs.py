@@ -120,8 +120,18 @@ class FrozenTrial(object):
     # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
     # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
     _ordered_fields = [
-        'number', 'value', 'datetime_start', 'datetime_complete', 'params', '_distributions',
-        'user_attrs', 'system_attrs', 'intermediate_values', '_trial_id', 'state', ]
+        'number',
+        'value',
+        'datetime_start',
+        'datetime_complete',
+        'params',
+        '_distributions',
+        'user_attrs',
+        'system_attrs',
+        'intermediate_values',
+        '_trial_id',
+        'state',
+    ]
 
     def __eq__(self, other):
         # type: (Any) -> bool
@@ -154,11 +164,16 @@ class FrozenTrial(object):
     def __repr__(self):
         # type: () -> str
 
-        return ('{cls}({kwargs})'.format(
+        return '{cls}({kwargs})'.format(
             cls=self.__class__.__name__,
-            kwargs=', '.join('{field}={value}'.format(
-                field=field if not field.startswith('_') else field[1:],
-                value=repr(getattr(self, field))) for field in self._ordered_fields)))
+            kwargs=', '.join(
+                '{field}={value}'.format(
+                    field=field if not field.startswith('_') else field[1:],
+                    value=repr(getattr(self, field)),
+                )
+                for field in self._ordered_fields
+            ),
+        )
 
     def _validate(self):
         # type: () -> None
@@ -172,14 +187,18 @@ class FrozenTrial(object):
         else:
             if self.datetime_complete is not None:
                 raise ValueError(
-                    '`datetime_complete` is supposed to be None for an unfinished trial.')
+                    '`datetime_complete` is supposed to be None for an unfinished trial.'
+                )
 
         if self.state == TrialState.COMPLETE and self.value is None:
             raise ValueError('`value` is supposed to be set for a complete trial.')
 
         if set(self.params.keys()) != set(self.distributions.keys()):
-            raise ValueError('Inconsistent parameters {} and distributions {}.'.format(
-                set(self.params.keys()), set(self.distributions.keys())))
+            raise ValueError(
+                'Inconsistent parameters {} and distributions {}.'.format(
+                    set(self.params.keys()), set(self.distributions.keys())
+                )
+            )
 
         for param_name, param_value in self.params.items():
             distribution = self.distributions[param_name]
@@ -187,8 +206,9 @@ class FrozenTrial(object):
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)
             if not distribution._contains(param_value_in_internal_repr):
                 raise ValueError(
-                    "The value {} of parameter '{}' isn't contained in the distribution {}.".
-                    format(param_value, param_name, distribution))
+                    "The value {} of parameter '{}' isn't contained in the distribution "
+                    "{}.".format(param_value, param_name, distribution)
+                )
 
     @property
     def distributions(self):
@@ -227,12 +247,15 @@ class FrozenTrial(object):
 
         warnings.warn(
             'The use of `FrozenTrial.trial_id` is deprecated. '
-            'Please use `FrozenTrial.number` instead.', DeprecationWarning)
+            'Please use `FrozenTrial.number` instead.',
+            DeprecationWarning,
+        )
 
         logger = logging.get_logger(__name__)
         logger.warning(
             'The use of `FrozenTrial.trial_id` is deprecated. '
-            'Please use `FrozenTrial.number` instead.')
+            'Please use `FrozenTrial.number` instead.'
+        )
 
         return self._trial_id
 
@@ -271,15 +294,15 @@ class StudySummary(object):
     """
 
     def __init__(
-            self,
-            study_name,  # type: str
-            direction,  # type: StudyDirection
-            best_trial,  # type: Optional[FrozenTrial]
-            user_attrs,  # type: Dict[str, Any]
-            system_attrs,  # type: Dict[str, Any]
-            n_trials,  # type: int
-            datetime_start,  # type: Optional[datetime]
-            study_id,  # type: int
+        self,
+        study_name,  # type: str
+        direction,  # type: StudyDirection
+        best_trial,  # type: Optional[FrozenTrial]
+        user_attrs,  # type: Dict[str, Any]
+        system_attrs,  # type: Dict[str, Any]
+        n_trials,  # type: int
+        datetime_start,  # type: Optional[datetime]
+        study_id,  # type: int
     ):
         # type: (...) -> None
 
@@ -329,8 +352,10 @@ class StudySummary(object):
             The study ID.
         """
 
-        message = 'The use of `StudySummary.study_id` is deprecated. ' \
-                  'Please use `StudySummary.study_name` instead.'
+        message = (
+            'The use of `StudySummary.study_id` is deprecated. '
+            'Please use `StudySummary.study_name` instead.'
+        )
         warnings.warn(message, DeprecationWarning)
 
         logger = logging.get_logger(__name__)
@@ -351,8 +376,10 @@ class TrialPruned(exceptions.TrialPruned):
     def __init__(self, *args, **kwargs):
         # type: (Any, Any) -> None
 
-        message = 'The use of `optuna.structs.TrialPruned` is deprecated. ' \
-                  'Please use `optuna.exceptions.TrialPruned` instead.'
+        message = (
+            'The use of `optuna.structs.TrialPruned` is deprecated. '
+            'Please use `optuna.exceptions.TrialPruned` instead.'
+        )
         warnings.warn(message, DeprecationWarning)
         logger = logging.get_logger(__name__)
         logger.warning(message)
