@@ -18,7 +18,10 @@ try:
     from sklearn.model_selection import cross_validate
     from sklearn.utils import check_random_state
     from sklearn.utils.metaestimators import _safe_split
-    from sklearn.utils import safe_indexing as sklearn_safe_indexing
+    if sklearn.__version__ >= "0.22":
+        from sklearn.utils import _safe_indexing as sklearn_safe_indexing
+    else:
+        from sklearn.utils import safe_indexing as sklearn_safe_indexing
     from sklearn.utils.validation import check_is_fitted
 
     _available = True
