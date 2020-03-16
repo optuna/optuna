@@ -488,6 +488,7 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
         y = trial.suggest_categorical('y', (2.5, ))
         assert isinstance(y, float)
         trial.set_user_attr('train_loss', 3)
+        trial.set_system_attr('foo', 'bar')
         value = x + y  # 3.5
 
         # Test reported intermediate values, although it in practice is not "intermediate".
@@ -505,8 +506,8 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
         else:
             df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
-        # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-        # Number columns are as follows (total of 10):
+
+        # Number columns are as follows (total of 12):
         #   non-nested: 5 (number, value, state, datetime_start, datetime_complete)
         #   params: 2
         #   distributions: 2
@@ -537,7 +538,7 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
                 assert df.params.x[i] == 1
                 assert df.params.y[i] == 2.5
                 assert df.user_attrs.train_loss[i] == 3
-                assert df.system_attrs._number[i] == i
+                assert df.system_attrs.foo[i] == 'bar'
             else:
                 if 'distributions' in attrs:
                     assert 'distributions_x' in df.columns
@@ -548,7 +549,7 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
                 assert df.params_x[i] == 1
                 assert df.params_y[i] == 2.5
                 assert df.user_attrs_train_loss[i] == 3
-                assert df.system_attrs__number[i] == i
+                assert df.system_attrs_foo[i] == 'bar'
 
 
 @pytest.mark.parametrize('storage_mode', STORAGE_MODES)
@@ -571,9 +572,8 @@ def test_trials_dataframe_with_failure(storage_mode):
         # Change index to access rows via trial number.
         df.set_index('number', inplace=True, drop=False)
         assert len(df) == 3
-        # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 2
-        assert len(df.columns) == 10
+        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 1
+        assert len(df.columns) == 9
         for i in range(3):
             assert df.number[i] == i
             assert df.state[i] == 'FAIL'
@@ -583,7 +583,6 @@ def test_trials_dataframe_with_failure(storage_mode):
             assert df.params_x[i] == 1
             assert df.params_y[i] == 2.5
             assert df.user_attrs_train_loss[i] == 3
-            assert df.system_attrs__number[i] == i
             assert 'system_attrs_fail_reason' in df.columns
 
 

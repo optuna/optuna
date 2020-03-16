@@ -59,3 +59,33 @@ def _handling_alias_parameters(lgbm_params):
             if alias_name in lgbm_params:
                 lgbm_params[param_name] = lgbm_params[alias_name]
                 del lgbm_params[alias_name]
+
+
+ALIAS_METRIC_LIST = [
+    {
+        'metric_name': 'ndcg',
+        'alias_names': ['lambdarank', 'rank_xendcg', 'xendcg', 'xe_ndcg',
+                        'xe_ndcg_mart', 'xendcg_mart'],
+    },
+    {
+        'metric_name': 'map',
+        'alias_names': ['mean_average_precision'],
+    },
+]  # type: List[Dict[str, Any]]
+
+
+def _handling_alias_metrics(lgbm_params):
+    # type: (Dict[str, Any]) -> None
+    """Handling alias metrics."""
+
+    if 'metric' not in lgbm_params.keys():
+        return
+
+    for metric in ALIAS_METRIC_LIST:
+        metric_name = metric['metric_name']
+        alias_names = metric['alias_names']
+
+        for alias_name in alias_names:
+            if lgbm_params['metric'] == alias_name:
+                lgbm_params['metric'] = metric_name
+                break

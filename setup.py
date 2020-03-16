@@ -5,13 +5,12 @@ import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
 
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
+from typing import Dict
+from typing import List
+from typing import Optional
 
 
-def get_version():
-    # type: () -> str
+def get_version() -> str:
 
     version_filepath = os.path.join(os.path.dirname(__file__), 'optuna', 'version.py')
     with open(version_filepath) as f:
@@ -21,37 +20,33 @@ def get_version():
     assert False
 
 
-def get_long_description():
-    # type: () -> str
+def get_long_description() -> str:
 
     readme_filepath = os.path.join(os.path.dirname(__file__), 'README.md')
     with open(readme_filepath) as f:
         return f.read()
 
 
-def get_install_requires():
-    # type: () -> List[str]
+def get_install_requires() -> List[str]:
 
     return [
         'alembic',
         'cliff',
         'colorlog',
+        'joblib',
         'numpy',
         'scipy!=1.4.0',
         'sqlalchemy>=1.1.0',
         'tqdm',
-        'joblib',
     ]
 
 
-def get_tests_require():
-    # type: () -> List[str]
+def get_tests_require() -> List[str]:
 
     return get_extras_require()['testing']
 
 
-def get_extras_require():
-    # type: () -> Dict[str, List[str]]
+def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
         'checking': [
@@ -64,10 +59,11 @@ def get_extras_require():
             'pytest-cov',
         ],
         'doctest': [
-            'pandas',
             'cma',
-            'scikit-learn>=0.19.0',
+            'pandas',
             'plotly>=4.0.0',
+            'scikit-learn>=0.19.0',
+            'scikit-optimize',
         ],
         'document': [
             'sphinx',
@@ -78,6 +74,7 @@ def get_extras_require():
             'chainer',
             'lightgbm',
             'mlflow',
+            'mpi4py',
             'mxnet',
             'pytorch-ignite',
             'scikit-image',
@@ -90,11 +87,16 @@ def get_extras_require():
             'dask[dataframe]',
             'dask-ml',
             'keras',
-            'pytorch-lightning',
+            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
+            # https://github.com/optuna/optuna/issues/997.
+            'pytorch-lightning<0.7.0',
             'tensorflow>=2.0.0',
+            'tensorflow-datasets',
         ] if sys.version_info[:2] < (3, 8) else []),
         'testing': [
-            'bokeh',
+            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
+            # https://github.com/optuna/optuna/issues/1000.
+            'bokeh<2.0.0',
             'chainer>=5.0.0',
             'cma',
             'lightgbm',
@@ -113,7 +115,9 @@ def get_extras_require():
         ] + (['fastai<2'] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + ([
             'keras',
-            'pytorch-lightning',
+            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
+            # https://github.com/optuna/optuna/issues/997.
+            'pytorch-lightning<0.7.0',
             'tensorflow',
             'tensorflow-datasets',
         ] if sys.version_info[:2] < (3, 8) else []),
@@ -122,8 +126,7 @@ def get_extras_require():
     return requirements
 
 
-def find_any_distribution(pkgs):
-    # type: (List[str]) -> Optional[pkg_resources.Distribution]
+def find_any_distribution(pkgs: List[str]) -> Optional[pkg_resources.Distribution]:
 
     for pkg in pkgs:
         try:
