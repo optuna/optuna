@@ -9,6 +9,7 @@ from optuna.visualization.utils import is_available
 
 if type_checking.TYPE_CHECKING:
     from typing import DefaultDict  # NOQA
+    from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
 
@@ -80,11 +81,12 @@ def _get_parallel_coordinate_plot(study, params=None):
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
-    labelangle = None
-    for p_name in sorted_params:
-        if len(p_name) > 10:
-            labelangle = 30
-            break
+    if any(len(p_name) > 10 for p_name in sorted_params):
+        labelangle = 30
+        labelside = 'bottom'
+    else:
+        labelangle = 0
+        labelside = 'top'
 
     dims = [{
         'label': 'Objective Value',
@@ -104,10 +106,10 @@ def _get_parallel_coordinate_plot(study, params=None):
             values = [vocab[v] for v in values]
             is_categorical = True
         dim = {
-            'label': p_name if len(p_name) < 20 else p_name[:17] + '...',
+            'label': p_name if len(p_name) < 20 else '{}...'.format(p_name[:17]),
             'values': tuple(values),
             'range': (min(values), max(values))
-        }
+        }  # type: Dict[str, object]
         if is_categorical:
             dim['tickvals'] = list(range(len(vocab)))
             dim['ticktext'] = list(sorted(vocab.items(), key=lambda x: x[1]))
@@ -117,6 +119,7 @@ def _get_parallel_coordinate_plot(study, params=None):
         go.Parcoords(
             dimensions=dims,
             labelangle=labelangle,
+            labelside=labelside,
             line={
                 'color': dims[0]['values'],
                 'colorscale': 'blues',
