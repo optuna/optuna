@@ -290,6 +290,11 @@ class OptunaObjective(BaseTuner):
             elapsed_secs=elapsed_secs,
             average_iteration_time=average_iteration_time))
 
+        trial.set_user_attr('action', self.action)
+        trial.set_user_attr('trial_count', self.trial_count)
+        trial.set_user_attr('elapsed_secs', elapsed_secs)
+        trial.set_user_attr('average_iteration_time', average_iteration_time)
+
         self.trial_count += 1
 
         return val_score
@@ -319,6 +324,7 @@ class LightGBMTuner(BaseTuner):
             sample_size=None,  # type: Optional[int]
             best_params=None,  # type: Optional[Dict[str, Any]]
             tuning_history=None,  # type: Optional[List[Dict[str, Any]]]
+            study=None,  # type: Optional[Study]
             verbosity=1,  # type: Optional[int]
     ):
         params = copy.deepcopy(params)
@@ -352,6 +358,12 @@ class LightGBMTuner(BaseTuner):
 
         # Set default parameters as best.
         self.best_params.update(DEFAULT_LIGHTGBM_PARAMETERS)
+
+        if study is None:
+            self.study = optuna.create_study(
+                direction='maximize' if self.higher_is_better() else 'minimize')
+        else:
+            self.study = study
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
@@ -519,9 +531,8 @@ class LightGBMTuner(BaseTuner):
             self.best_score,
             pbar=pbar,
         )
-        study = optuna.create_study(
-            direction='maximize' if self.higher_is_better() else 'minimize',
-            sampler=sampler)
+        study = self.study
+        study.sampler = sampler
         study.optimize(objective, n_trials=n_trials, catch=())
 
         pbar.close()
