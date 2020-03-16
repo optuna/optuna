@@ -9,6 +9,7 @@ import numpy as np
 import scipy as sp
 
 try:
+    import sklearn
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
     from sklearn.base import is_classifier
