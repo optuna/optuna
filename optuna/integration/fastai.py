@@ -80,7 +80,7 @@ class FastAIPruningCallback(TrackerCallback):
         # - https://github.com/optuna/optuna/issue/655.
         self._trial.report(float(value), step=epoch)
         if self._trial.should_prune():
-            message = 'Trial was pruned at epoch {}.'.format(epoch)
+            message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.exceptions.TrialPruned(message)
 
 
@@ -89,8 +89,8 @@ def _check_fastai_availability():
 
     if not _available:
         raise ImportError(
-            'fastai is not available. Please install fastai to use this feature. '
-            'fastai can be installed by executing `$ pip install fastai`. '
-            'For further information, please refer to the installation guide of fastai. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')'
+            "fastai is not available. Please install fastai to use this feature. "
+            "fastai can be installed by executing `$ pip install fastai`. "
+            "For further information, please refer to the installation guide of fastai. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )

@@ -53,7 +53,7 @@ class MXNetPruningCallback(object):
             else:
                 raise ValueError(
                     'The entry associated with the metric name "{}" '
-                    'is not found in the evaluation result list {}.'.format(
+                    "is not found in the evaluation result list {}.".format(
                         self._eval_metric, str(metric_names)
                     )
                 )
@@ -68,8 +68,8 @@ def _check_mxnet_availability():
 
     if not _available:
         raise ImportError(
-            'MXNet is not available. Please install MXNet to use this feature. '
-            'MXNet can be installed by executing `$ pip install mxnet`. '
-            'For further information, please refer to the installation guide of MXNet. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')'
+            "MXNet is not available. Please install MXNet to use this feature. "
+            "MXNet can be installed by executing `$ pip install mxnet`. "
+            "For further information, please refer to the installation guide of MXNet. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )

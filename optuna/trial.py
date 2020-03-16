@@ -508,13 +508,13 @@ class Trial(BaseTrial):
             # For convenience, we allow users to report a value that can be cast to `float`.
             value = float(value)
         except (TypeError, ValueError):
-            message = 'The `value` argument is of type \'{}\' but supposed to be a float.'.format(
+            message = "The `value` argument is of type '{}' but supposed to be a float.".format(
                 type(value).__name__
             )
             raise TypeError(message)
 
         if step < 0:
-            raise ValueError('The `step` argument is {} but cannot be negative.'.format(step))
+            raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
         self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
@@ -545,9 +545,9 @@ class Trial(BaseTrial):
         """
         if step is not None:
             warnings.warn(
-                'The use of `step` argument is deprecated. '
-                'The last reported step is used instead of '
-                'the step given by the argument.',
+                "The use of `step` argument is deprecated. "
+                "The last reported step is used instead of "
+                "the step given by the argument.",
                 DeprecationWarning,
             )
 
@@ -625,7 +625,7 @@ class Trial(BaseTrial):
         # type: (str, BaseDistribution) -> Any
 
         if self._is_fixed_param(name, distribution):
-            param_value = self.system_attrs['fixed_params'][name]
+            param_value = self.system_attrs["fixed_params"][name]
         elif self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
@@ -652,13 +652,13 @@ class Trial(BaseTrial):
     def _is_fixed_param(self, name, distribution):
         # type: (str, BaseDistribution) -> bool
 
-        if 'fixed_params' not in self.system_attrs:
+        if "fixed_params" not in self.system_attrs:
             return False
 
-        if name not in self.system_attrs['fixed_params']:
+        if name not in self.system_attrs["fixed_params"]:
             return False
 
-        param_value = self.system_attrs['fixed_params'][name]
+        param_value = self.system_attrs["fixed_params"][name]
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
 
         contained = distribution._contains(param_value_in_internal_repr)
@@ -695,12 +695,12 @@ class Trial(BaseTrial):
         if old_distribution != distribution:
             warnings.warn(
                 'Inconsistent parameter values for distribution with name "{}"! '
-                'This might be a configuration mistake. '
-                'Optuna allows to call the same distribution with the same '
-                'name more then once in a trial. '
-                'When the parameter values are inconsistent optuna only '
-                'uses the values of the first call and ignores all following. '
-                'Using these values: {}'.format(name, old_distribution._asdict()),
+                "This might be a configuration mistake. "
+                "Optuna allows to call the same distribution with the same "
+                "name more then once in a trial. "
+                "When the parameter values are inconsistent optuna only "
+                "uses the values of the first call and ignores all following. "
+                "Using these values: {}".format(name, old_distribution._asdict()),
                 RuntimeWarning,
             )
 
@@ -728,12 +728,12 @@ class Trial(BaseTrial):
         """
 
         warnings.warn(
-            'The use of `Trial.trial_id` is deprecated. ' 'Please use `Trial.number` instead.',
+            "The use of `Trial.trial_id` is deprecated. " "Please use `Trial.number` instead.",
             DeprecationWarning,
         )
 
         self.logger.warning(
-            'The use of `Trial.trial_id` is deprecated. ' 'Please use `Trial.number` instead.'
+            "The use of `Trial.trial_id` is deprecated. " "Please use `Trial.number` instead."
         )
 
         return self._trial_id
@@ -805,7 +805,7 @@ class Trial(BaseTrial):
             The study ID.
         """
 
-        message = 'The use of `Trial.study_id` is deprecated. ' 'Please use `Trial.study` instead.'
+        message = "The use of `Trial.study_id` is deprecated. " "Please use `Trial.study` instead."
         warnings.warn(message, DeprecationWarning)
         self.logger.warning(message)
 
@@ -889,8 +889,8 @@ class FixedTrial(BaseTrial):
 
         if name not in self._params:
             raise ValueError(
-                'The value of the parameter \'{}\' is not found. Please set it at '
-                'the construction of the FixedTrial object.'.format(name)
+                "The value of the parameter '{}' is not found. Please set it at "
+                "the construction of the FixedTrial object.".format(name)
             )
 
         value = self._params[name]
@@ -969,12 +969,12 @@ def _adjust_discrete_uniform_high(name, low, high, q):
 
     d_r = d_high - d_low
 
-    if d_r % d_q != decimal.Decimal('0'):
+    if d_r % d_q != decimal.Decimal("0"):
         high = float((d_r // d_q) * d_q + d_low)
         logger = logging.get_logger(__name__)
         logger.warning(
-            'The range of parameter `{}` is not divisible by `q`, and is '
-            'replaced by [{}, {}].'.format(name, low, high)
+            "The range of parameter `{}` is not divisible by `q`, and is "
+            "replaced by [{}, {}].".format(name, low, high)
         )
 
     return high

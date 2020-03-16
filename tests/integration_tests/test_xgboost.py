@@ -12,25 +12,25 @@ def test_xgboost_pruning_callback_call():
     # type: () -> None
 
     env = xgb.core.CallbackEnv(
-        model='test',
+        model="test",
         cvfolds=1,
         begin_iteration=0,
         end_iteration=1,
         rank=1,
         iteration=1,
-        evaluation_result_list=[['validation-error', 1.0]],
+        evaluation_result_list=[["validation-error", 1.0]],
     )
 
     # The pruner is deactivated.
     study = optuna.create_study(pruner=DeterministicPruner(False))
     trial = create_running_trial(study, 1.0)
-    pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
+    pruning_callback = XGBoostPruningCallback(trial, "validation-error")
     pruning_callback(env)
 
     # The pruner is activated.
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)
-    pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
+    pruning_callback = XGBoostPruningCallback(trial, "validation-error")
     with pytest.raises(optuna.exceptions.TrialPruned):
         pruning_callback(env)
 
@@ -44,12 +44,12 @@ def test_xgboost_pruning_callback():
         dtrain = xgb.DMatrix(np.asarray([[1.0]]), label=[1.0])
         dtest = xgb.DMatrix(np.asarray([[1.0]]), label=[1.0])
 
-        pruning_callback = XGBoostPruningCallback(trial, 'validation-error')
+        pruning_callback = XGBoostPruningCallback(trial, "validation-error")
         xgb.train(
-            {'silent': 1, 'objective': 'binary:logistic'},
+            {"silent": 1, "objective": "binary:logistic"},
             dtrain,
             1,
-            evals=[(dtest, 'validation')],
+            evals=[(dtest, "validation")],
             verbose_eval=False,
             callbacks=[pruning_callback],
         )
@@ -73,11 +73,11 @@ def test_xgboost_pruning_callback_cv():
 
         dtrain = xgb.DMatrix(np.ones((2, 1)), label=[1.0, 1.0])
         params = {
-            'silent': 1,
-            'objective': 'binary:logistic',
+            "silent": 1,
+            "objective": "binary:logistic",
         }
 
-        pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'test-error')
+        pruning_callback = optuna.integration.XGBoostPruningCallback(trial, "test-error")
         xgb.cv(params, dtrain, callbacks=[pruning_callback], nfold=2)
         return 1.0
 

@@ -141,8 +141,8 @@ class CmaEsSampler(BaseSampler):
         if seed is None:
             seed = random.randint(1, 2 ** 32)
         self._cma_opts = cma_opts or {}
-        self._cma_opts['seed'] = seed
-        self._cma_opts.setdefault('verbose', -2)
+        self._cma_opts["seed"] = seed
+        self._cma_opts.setdefault("verbose", -2)
         self._n_startup_trials = n_startup_trials
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._warn_independent_sampling = warn_independent_sampling
@@ -230,7 +230,7 @@ class CmaEsSampler(BaseSampler):
                 x0[name] = distribution.choices[index]
             else:
                 raise NotImplementedError(
-                    'The distribution {} is not implemented.'.format(distribution)
+                    "The distribution {} is not implemented.".format(distribution)
                 )
         return x0
 
@@ -254,7 +254,7 @@ class CmaEsSampler(BaseSampler):
                 sigma0s.append((len(distribution.choices) - 1) / 6)
             else:
                 raise NotImplementedError(
-                    'The distribution {} is not implemented.'.format(distribution)
+                    "The distribution {} is not implemented.".format(distribution)
                 )
         return min(sigma0s)
 
@@ -307,7 +307,7 @@ class _Optimizer(object):
                 lows.append(dist.low - 0.5)
                 highs.append(dist.high + 0.5)
             else:
-                raise NotImplementedError('The distribution {} is not implemented.'.format(dist))
+                raise NotImplementedError("The distribution {} is not implemented.".format(dist))
 
         # Set initial params.
         initial_cma_params = []
@@ -316,12 +316,12 @@ class _Optimizer(object):
                 self._to_cma_params(self._search_space, param_name, x0[param_name])
             )
         cma_option = {
-            'BoundaryHandler': cma.BoundTransform,
-            'bounds': [lows, highs],
+            "BoundaryHandler": cma.BoundTransform,
+            "bounds": [lows, highs],
         }
 
         if cma_stds:
-            cma_option['CMA_stds'] = [cma_stds.get(name, 1.0) for name in self._param_names]
+            cma_option["CMA_stds"] = [cma_stds.get(name, 1.0) for name in self._param_names]
 
         cma_opts.update(cma_option)
 
@@ -444,8 +444,8 @@ def _check_cma_availability():
 
     if not _available:
         raise ImportError(
-            'cma library is not available. Please install cma to use this feature. '
-            'cma can be installed by executing `$ pip install cma`. '
-            'For further information, please refer to the installation guide of cma. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')'
+            "cma library is not available. Please install cma to use this feature. "
+            "cma can be installed by executing `$ pip install cma`. "
+            "For further information, please refer to the installation guide of cma. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )

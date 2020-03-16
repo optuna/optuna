@@ -15,7 +15,7 @@ if type_checking.TYPE_CHECKING:
 class TestParzenEstimator(object):
     @staticmethod
     @pytest.mark.parametrize(
-        'mus, prior, magic_clip, endpoints',
+        "mus, prior, magic_clip, endpoints",
         itertools.product(
             ([], [0.4], [-0.4, 0.4]),  # mus
             (True, False),  # prior
@@ -45,32 +45,32 @@ class TestParzenEstimator(object):
     # TODO(Yanase): Improve test coverage for prior, magic_clip, and endpoints.
     @staticmethod
     @pytest.mark.parametrize(
-        'mus, flags, expected',
+        "mus, flags, expected",
         [
             [
                 [],
-                {'prior': False, 'magic_clip': False, 'endpoints': True},
-                {'weights': [], 'mus': [], 'sigmas': []},
+                {"prior": False, "magic_clip": False, "endpoints": True},
+                {"weights": [], "mus": [], "sigmas": []},
             ],
             [
                 [],
-                {'prior': True, 'magic_clip': False, 'endpoints': True},
-                {'weights': [1.0], 'mus': [0.0], 'sigmas': [2.0]},
+                {"prior": True, "magic_clip": False, "endpoints": True},
+                {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
             ],
             [
                 [0.4],
-                {'prior': True, 'magic_clip': False, 'endpoints': True},
-                {'weights': [0.5, 0.5], 'mus': [0.0, 0.4], 'sigmas': [2.0, 0.6]},
+                {"prior": True, "magic_clip": False, "endpoints": True},
+                {"weights": [0.5, 0.5], "mus": [0.0, 0.4], "sigmas": [2.0, 0.6]},
             ],
             [
                 [-0.4],
-                {'prior': True, 'magic_clip': False, 'endpoints': True},
-                {'weights': [0.5, 0.5], 'mus': [-0.4, 0.0], 'sigmas': [0.6, 2.0]},
+                {"prior": True, "magic_clip": False, "endpoints": True},
+                {"weights": [0.5, 0.5], "mus": [-0.4, 0.0], "sigmas": [0.6, 2.0]},
             ],
             [
                 [-0.4, 0.4],
-                {'prior': True, 'magic_clip': False, 'endpoints': True},
-                {'weights': [1.0 / 3] * 3, 'mus': [-0.4, 0.0, 0.4], 'sigmas': [0.6, 2.0, 0.6]},
+                {"prior": True, "magic_clip": False, "endpoints": True},
+                {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.0, 0.4], "sigmas": [0.6, 2.0, 0.6]},
             ],
         ],
     )
@@ -82,13 +82,13 @@ class TestParzenEstimator(object):
             -1.0,
             1.0,
             prior_weight=1.0,
-            consider_prior=flags['prior'],
-            consider_magic_clip=flags['magic_clip'],
-            consider_endpoints=flags['endpoints'],
+            consider_prior=flags["prior"],
+            consider_magic_clip=flags["magic_clip"],
+            consider_endpoints=flags["endpoints"],
             weights_func=default_weights,
         )
 
         # Result contains an additional value for a prior distribution if consider_prior is True.
-        np.testing.assert_almost_equal(s_weights, expected['weights'])
-        np.testing.assert_almost_equal(s_mus, expected['mus'])
-        np.testing.assert_almost_equal(s_sigmas, expected['sigmas'])
+        np.testing.assert_almost_equal(s_weights, expected["weights"])
+        np.testing.assert_almost_equal(s_mus, expected["mus"])
+        np.testing.assert_almost_equal(s_sigmas, expected["sigmas"])

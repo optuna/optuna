@@ -205,7 +205,7 @@ class Study(BaseStudy):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
-        del state['_optimize_lock']
+        del state["_optimize_lock"]
         return state
 
     def __setstate__(self, state):
@@ -228,7 +228,7 @@ class Study(BaseStudy):
         """
 
         message = (
-            'The use of `Study.study_id` is deprecated. ' 'Please use `Study.study_name` instead.'
+            "The use of `Study.study_id` is deprecated. " "Please use `Study.study_name` instead."
         )
         warnings.warn(message, DeprecationWarning)
         _logger.warning(message)
@@ -313,7 +313,7 @@ class Study(BaseStudy):
 
         if not isinstance(catch, tuple):
             raise TypeError(
-                "The catch argument is of type \'{}\' but must be a tuple.".format(
+                "The catch argument is of type '{}' but must be a tuple.".format(
                     type(catch).__name__
                 )
             )
@@ -332,7 +332,7 @@ class Study(BaseStudy):
                 )
             else:
                 if show_progress_bar:
-                    msg = 'Progress bar only supports serial execution (`n_jobs=1`).'
+                    msg = "Progress bar only supports serial execution (`n_jobs=1`)."
                     warnings.warn(msg)
                     _logger.warning(msg)
 
@@ -357,10 +357,10 @@ class Study(BaseStudy):
                         parallel._backend, joblib.parallel.ThreadingBackend
                     ) and isinstance(self._storage, storages.InMemoryStorage):
                         msg = (
-                            'The default storage cannot be shared by multiple processes. '
-                            'Please use an RDB (RDBStorage) when you use joblib for '
-                            'multi-processing. The usage of RDBStorage can be found in '
-                            'https://optuna.readthedocs.io/en/stable/tutorial/rdb.html.'
+                            "The default storage cannot be shared by multiple processes. "
+                            "Please use an RDB (RDBStorage) when you use joblib for "
+                            "multi-processing. The usage of RDBStorage can be found in "
+                            "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html."
                         )
                         warnings.warn(msg, UserWarning)
                         _logger.warning(msg)
@@ -406,14 +406,14 @@ class Study(BaseStudy):
     def trials_dataframe(
         self,
         attrs=(
-            'number',
-            'value',
-            'datetime_start',
-            'datetime_complete',
-            'params',
-            'user_attrs',
-            'system_attrs',
-            'state',
+            "number",
+            "value",
+            "datetime_start",
+            "datetime_complete",
+            "params",
+            "user_attrs",
+            "system_attrs",
+            "state",
         ),  # type: Tuple[str, ...]
         multi_index=False,  # type: bool
     ):
@@ -470,7 +470,7 @@ class Study(BaseStudy):
         assert all(isinstance(trial, structs.FrozenTrial) for trial in trials)
         attrs_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
         for attr in attrs:
-            if attr.startswith('_'):
+            if attr.startswith("_"):
                 # Python conventional underscores are omitted in the dataframe.
                 df_column = attr[1:]
             else:
@@ -481,7 +481,7 @@ class Study(BaseStudy):
         # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
         # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
-        non_nested_attr = ''
+        non_nested_attr = ""
 
         def _create_record_and_aggregate_column(trial):
             # type: (structs.FrozenTrial) -> Dict[Tuple[str, str], Any]
@@ -491,7 +491,7 @@ class Study(BaseStudy):
                 value = getattr(trial, attr)
                 if isinstance(value, structs.TrialState):
                     # Convert TrialState to str and remove the common prefix.
-                    value = str(value).split('.')[-1]
+                    value = str(value).split(".")[-1]
                 if isinstance(value, dict):
                     for nested_attr, nested_value in value.items():
                         record[(df_column, nested_attr)] = nested_value
@@ -514,12 +514,12 @@ class Study(BaseStudy):
             # Filtering is required to omit non-nested columns avoiding unwanted trailing
             # underscores.
             df.columns = [
-                '_'.join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns
+                "_".join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns
             ]
 
         return df
 
-    @experimental('1.2.0')
+    @experimental("1.2.0")
     def enqueue_trial(self, params):
         # type: (Dict[str, Any]) -> None
         """Enqueue a trial with given parameter values.
@@ -550,7 +550,7 @@ class Study(BaseStudy):
                 Parameter values to pass your objective function.
         """
 
-        system_attrs = {'fixed_params': params}
+        system_attrs = {"fixed_params": params}
         self._append_trial(state=structs.TrialState.WAITING, system_attrs=system_attrs)
 
     def _append_trial(
@@ -676,7 +676,7 @@ class Study(BaseStudy):
         try:
             result = func(trial)
         except exceptions.TrialPruned as e:
-            message = 'Setting status of trial#{} as {}. {}'.format(
+            message = "Setting status of trial#{} as {}. {}".format(
                 trial_number, structs.TrialState.PRUNED, str(e)
             )
             _logger.info(message)
@@ -692,11 +692,11 @@ class Study(BaseStudy):
             self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
         except Exception as e:
-            message = 'Setting status of trial#{} as {} because of the following error: {}'.format(
+            message = "Setting status of trial#{} as {} because of the following error: {}".format(
                 trial_number, structs.TrialState.FAIL, repr(e)
             )
             _logger.warning(message, exc_info=True)
-            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
 
             if isinstance(e, catch):
@@ -717,22 +717,22 @@ class Study(BaseStudy):
             TypeError,
         ):
             message = (
-                'Setting status of trial#{} as {} because the returned value from the '
-                'objective function cannot be casted to float. Returned value is: '
-                '{}'.format(trial_number, structs.TrialState.FAIL, repr(result))
+                "Setting status of trial#{} as {} because the returned value from the "
+                "objective function cannot be casted to float. Returned value is: "
+                "{}".format(trial_number, structs.TrialState.FAIL, repr(result))
             )
             _logger.warning(message)
-            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
         if math.isnan(result):
             message = (
-                'Setting status of trial#{} as {} because the objective function '
-                'returned {}.'.format(trial_number, structs.TrialState.FAIL, result)
+                "Setting status of trial#{} as {} because the objective function "
+                "returned {}.".format(trial_number, structs.TrialState.FAIL, result)
             )
             _logger.warning(message)
-            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
@@ -746,8 +746,8 @@ class Study(BaseStudy):
         # type: (int, float) -> None
 
         _logger.info(
-            'Finished trial#{} resulted in value: {}. '
-            'Current best value is {} with parameters: {}.'.format(
+            "Finished trial#{} resulted in value: {}. "
+            "Current best value is {} with parameters: {}.".format(
                 trial_number, value, self.best_value, self.best_params
             )
         )
@@ -758,7 +758,7 @@ def create_study(
     sampler=None,  # type: samplers.BaseSampler
     pruner=None,  # type: pruners.BasePruner
     study_name=None,  # type: Optional[str]
-    direction='minimize',  # type: str
+    direction="minimize",  # type: str
     load_if_exists=False,  # type: bool
 ):
     # type: (...) -> Study
@@ -824,12 +824,12 @@ def create_study(
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
-    if direction == 'minimize':
+    if direction == "minimize":
         _direction = structs.StudyDirection.MINIMIZE
-    elif direction == 'maximize':
+    elif direction == "maximize":
         _direction = structs.StudyDirection.MAXIMIZE
     else:
-        raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
+        raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
 
     study._storage.set_study_direction(study_id, _direction)
 
@@ -909,8 +909,8 @@ def _check_pandas_availability():
 
     if not _pandas_available:
         raise ImportError(
-            'pandas is not available. Please install pandas to use this feature. '
-            'pandas can be installed by executing `$ pip install pandas`. '
-            'For further information, please refer to the installation guide of pandas. '
-            '(The actual import error is as follows: ' + str(_pandas_import_error) + ')'
+            "pandas is not available. Please install pandas to use this feature. "
+            "pandas can be installed by executing `$ pip install pandas`. "
+            "For further information, please refer to the installation guide of pandas. "
+            "(The actual import error is as follows: " + str(_pandas_import_error) + ")"
         )

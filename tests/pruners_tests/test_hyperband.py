@@ -58,11 +58,11 @@ def test_bracket_study():
     with pytest.raises(AttributeError):
         bracket_study.optimize(lambda *args: 1.0)
 
-    for attr in ('set_user_attr', 'set_system_attr'):
+    for attr in ("set_user_attr", "set_system_attr"):
         with pytest.raises(AttributeError):
-            getattr(bracket_study, attr)('abc', 100)
+            getattr(bracket_study, attr)("abc", 100)
 
-    for attr in ('user_attrs', 'system_attrs'):
+    for attr in ("user_attrs", "system_attrs"):
         with pytest.raises(AttributeError):
             getattr(bracket_study, attr)
 

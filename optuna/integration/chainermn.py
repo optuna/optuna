@@ -96,22 +96,22 @@ class ChainerMNStudy(object):
         _check_chainermn_availability()
 
         if isinstance(study._storage, InMemoryStorage):
-            raise ValueError('ChainerMN integration is not available with InMemoryStorage.')
+            raise ValueError("ChainerMN integration is not available with InMemoryStorage.")
 
         if isinstance(study._storage, RDBStorage):
-            if study._storage.engine.dialect.name == 'sqlite':
+            if study._storage.engine.dialect.name == "sqlite":
                 logger = get_logger(__name__)
                 logger.warning(
-                    'SQLite may cause synchronization problems when used with '
-                    'ChainerMN integration. Please use other DBs like PostgreSQL.'
+                    "SQLite may cause synchronization problems when used with "
+                    "ChainerMN integration. Please use other DBs like PostgreSQL."
                 )
 
         study_names = comm.mpi_comm.allgather(study.study_name)
         if len(set(study_names)) != 1:
-            raise ValueError('Please make sure an identical study name is shared among workers.')
+            raise ValueError("Please make sure an identical study name is shared among workers.")
 
-        super(ChainerMNStudy, self).__setattr__('delegate', study)
-        super(ChainerMNStudy, self).__setattr__('comm', comm)
+        super(ChainerMNStudy, self).__setattr__("delegate", study)
+        super(ChainerMNStudy, self).__setattr__("comm", comm)
 
     def optimize(
         self,
@@ -296,8 +296,8 @@ class ChainerMNTrial(BaseTrial):
         # type: () -> int
 
         warnings.warn(
-            'The use of `ChainerMNTrial.trial_id` is deprecated. '
-            'Please use `ChainerMNTrial.number` instead.',
+            "The use of `ChainerMNTrial.trial_id` is deprecated. "
+            "Please use `ChainerMNTrial.number` instead.",
             DeprecationWarning,
         )
         return self._trial_id
@@ -397,8 +397,8 @@ def _check_chainermn_availability():
 
     if not _available:
         raise ImportError(
-            'ChainerMN is not available. Please install ChainerMN to use this feature. '
-            'ChainerMN can be installed by executing `$ pip install chainermn`. '
-            'For further information, please refer to the installation guide of ChainerMN. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')'
+            "ChainerMN is not available. Please install ChainerMN to use this feature. "
+            "ChainerMN can be installed by executing `$ pip install chainermn`. "
+            "For further information, please refer to the installation guide of ChainerMN. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )

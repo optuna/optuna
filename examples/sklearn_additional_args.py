@@ -26,12 +26,12 @@ class Objective(object):
     def __call__(self, trial):
         x, y = self.iris.data, self.iris.target
 
-        classifier_name = trial.suggest_categorical('classifier', ['SVC', 'RandomForest'])
-        if classifier_name == 'SVC':
-            svc_c = trial.suggest_loguniform('svc_c', 1e-10, 1e10)
-            classifier_obj = sklearn.svm.SVC(C=svc_c, gamma='auto')
+        classifier_name = trial.suggest_categorical("classifier", ["SVC", "RandomForest"])
+        if classifier_name == "SVC":
+            svc_c = trial.suggest_loguniform("svc_c", 1e-10, 1e10)
+            classifier_obj = sklearn.svm.SVC(C=svc_c, gamma="auto")
         else:
-            rf_max_depth = int(trial.suggest_loguniform('rf_max_depth', 2, 32))
+            rf_max_depth = int(trial.suggest_loguniform("rf_max_depth", 2, 32))
             classifier_obj = sklearn.ensemble.RandomForestClassifier(
                 max_depth=rf_max_depth, n_estimators=10
             )
@@ -41,11 +41,11 @@ class Objective(object):
         return accuracy
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Load the dataset in advance for reusing it each trial execution.
     iris = sklearn.datasets.load_iris()
     objective = Objective(iris)
 
-    study = optuna.create_study(direction='maximize')
+    study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100)
     print(study.best_trial)

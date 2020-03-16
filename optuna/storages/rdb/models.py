@@ -33,13 +33,13 @@ MAX_INDEXED_STRING_LENGTH = 512
 MAX_STRING_LENGTH = 2048
 MAX_VERSION_LENGTH = 256
 
-NOT_FOUND_MSG = 'Record does not exist.'
+NOT_FOUND_MSG = "Record does not exist."
 
 BaseModel = declarative_base()  # type: Any
 
 
 class StudyModel(BaseModel):
-    __tablename__ = 'studies'
+    __tablename__ = "studies"
     study_id = Column(Integer, primary_key=True)
     study_name = Column(String(MAX_INDEXED_STRING_LENGTH), index=True, unique=True, nullable=False)
     direction = Column(Enum(StudyDirection), nullable=False)
@@ -88,10 +88,10 @@ class StudyModel(BaseModel):
 
 
 class StudyUserAttributeModel(BaseModel):
-    __tablename__ = 'study_user_attributes'
-    __table_args__ = (UniqueConstraint('study_id', 'key'),)  # type: Any
+    __tablename__ = "study_user_attributes"
+    __table_args__ = (UniqueConstraint("study_id", "key"),)  # type: Any
     study_user_attribute_id = Column(Integer, primary_key=True)
-    study_id = Column(Integer, ForeignKey('studies.study_id'))
+    study_id = Column(Integer, ForeignKey("studies.study_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
@@ -120,10 +120,10 @@ class StudyUserAttributeModel(BaseModel):
 
 
 class StudySystemAttributeModel(BaseModel):
-    __tablename__ = 'study_system_attributes'
-    __table_args__ = (UniqueConstraint('study_id', 'key'),)  # type: Any
+    __tablename__ = "study_system_attributes"
+    __table_args__ = (UniqueConstraint("study_id", "key"),)  # type: Any
     study_system_attribute_id = Column(Integer, primary_key=True)
-    study_id = Column(Integer, ForeignKey('studies.study_id'))
+    study_id = Column(Integer, ForeignKey("studies.study_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
@@ -152,13 +152,13 @@ class StudySystemAttributeModel(BaseModel):
 
 
 class TrialModel(BaseModel):
-    __tablename__ = 'trials'
+    __tablename__ = "trials"
     trial_id = Column(Integer, primary_key=True)
     # No `UniqueConstraint` is put on the `number` columns although it in practice is constrained
     # to be unique. This is to reduce code complexity as table-level locking would be required
     # otherwise. See https://github.com/optuna/optuna/pull/939#discussion_r387447632.
     number = Column(Integer)
-    study_id = Column(Integer, ForeignKey('studies.study_id'))
+    study_id = Column(Integer, ForeignKey("studies.study_id"))
     state = Column(Enum(TrialState), nullable=False)
     value = Column(Float)
     datetime_start = Column(DateTime, default=datetime.now)
@@ -269,10 +269,10 @@ class TrialModel(BaseModel):
 
 
 class TrialUserAttributeModel(BaseModel):
-    __tablename__ = 'trial_user_attributes'
-    __table_args__ = (UniqueConstraint('trial_id', 'key'),)  # type: Any
+    __tablename__ = "trial_user_attributes"
+    __table_args__ = (UniqueConstraint("trial_id", "key"),)  # type: Any
     trial_user_attribute_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
@@ -323,10 +323,10 @@ class TrialUserAttributeModel(BaseModel):
 
 
 class TrialSystemAttributeModel(BaseModel):
-    __tablename__ = 'trial_system_attributes'
-    __table_args__ = (UniqueConstraint('trial_id', 'key'),)  # type: Any
+    __tablename__ = "trial_system_attributes"
+    __table_args__ = (UniqueConstraint("trial_id", "key"),)  # type: Any
     trial_system_attribute_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
@@ -377,10 +377,10 @@ class TrialSystemAttributeModel(BaseModel):
 
 
 class TrialParamModel(BaseModel):
-    __tablename__ = 'trial_params'
-    __table_args__ = (UniqueConstraint('trial_id', 'param_name'),)  # type: Any
+    __tablename__ = "trial_params"
+    __table_args__ = (UniqueConstraint("trial_id", "param_name"),)  # type: Any
     param_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     param_name = Column(String(MAX_INDEXED_STRING_LENGTH))
     param_value = Column(Float)
     distribution_json = Column(String(MAX_STRING_LENGTH))
@@ -463,10 +463,10 @@ class TrialParamModel(BaseModel):
 
 
 class TrialValueModel(BaseModel):
-    __tablename__ = 'trial_values'
-    __table_args__ = (UniqueConstraint('trial_id', 'step'),)  # type: Any
+    __tablename__ = "trial_values"
+    __table_args__ = (UniqueConstraint("trial_id", "step"),)  # type: Any
     trial_value_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     step = Column(Integer)
     value = Column(Float)
 
@@ -513,9 +513,9 @@ class TrialValueModel(BaseModel):
 
 
 class VersionInfoModel(BaseModel):
-    __tablename__ = 'version_info'
+    __tablename__ = "version_info"
     # setting check constraint to ensure the number of rows is at most 1
-    __table_args__ = (CheckConstraint('version_info_id=1'),)  # type: Any
+    __table_args__ = (CheckConstraint("version_info_id=1"),)  # type: Any
     version_info_id = Column(Integer, primary_key=True, autoincrement=False, default=1)
     schema_version = Column(Integer)
     library_version = Column(String(MAX_VERSION_LENGTH))

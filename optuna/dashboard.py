@@ -33,7 +33,7 @@ if type_checking.TYPE_CHECKING:
 _mode = None  # type: Optional[str]
 _study = None  # type: Optional[optuna.study.Study]
 
-_HEADER_FORMAT = '''
+_HEADER_FORMAT = """
 <style>
 body {{
     margin: 20px;
@@ -47,9 +47,9 @@ h1, p {{
 <p>
 <b>Study name:</b> {study_name}<br>
 </p>
-'''
+"""
 
-_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 if _available:
 
@@ -71,9 +71,9 @@ if _available:
 
             self.cds = bokeh.models.ColumnDataSource(
                 {
-                    '#': list(range(len(complete_trials))),
-                    'value': values,
-                    'best_value': best_values,
+                    "#": list(range(len(complete_trials))),
+                    "value": values,
+                    "best_value": best_values,
                 }
             )
 
@@ -83,10 +83,10 @@ if _available:
             # type: () -> bokeh.plotting.Figure
 
             figure = bokeh.plotting.figure(height=150)
-            figure.circle(x='#', y='value', source=self.cds, alpha=0.3, color='navy')
-            figure.line(x='#', y='best_value', source=self.cds, color='firebrick')
-            figure.xaxis[0].axis_label = 'Number of Trials'
-            figure.yaxis[0].axis_label = 'Objective Value'
+            figure.circle(x="#", y="value", source=self.cds, alpha=0.3, color="navy")
+            figure.line(x="#", y="best_value", source=self.cds, color="firebrick")
+            figure.xaxis[0].axis_label = "Number of Trials"
+            figure.yaxis[0].axis_label = "Objective Value"
             return figure
 
         def update(self, new_trials):
@@ -99,13 +99,13 @@ if _available:
                     continue
                 if trial._trial_id in self.trial_ids:
                     continue
-                stream_dict['#'].append(len(self.trial_ids))
-                stream_dict['value'].append(trial.value)
+                stream_dict["#"].append(len(self.trial_ids))
+                stream_dict["value"].append(trial.value)
                 if self.direction == optuna.structs.StudyDirection.MINIMIZE:
                     self.best_value = min(self.best_value, trial.value)
                 else:
                     self.best_value = max(self.best_value, trial.value)
-                stream_dict['best_value'].append(self.best_value)
+                stream_dict["best_value"].append(self.best_value)
                 self.trial_ids.add(trial._trial_id)
 
             if stream_dict:
@@ -125,12 +125,12 @@ if _available:
                 columns=[
                     bokeh.models.widgets.TableColumn(field=field, title=field)
                     for field in [
-                        'number',
-                        'state',
-                        'value',
-                        'params',
-                        'datetime_start',
-                        'datetime_complete',
+                        "number",
+                        "state",
+                        "value",
+                        "params",
+                        "datetime_start",
+                        "datetime_complete",
                     ]
                 ],
             )
@@ -161,17 +161,17 @@ if _available:
             # type: (List[optuna.structs.FrozenTrial]) -> Dict[str, List[Any]]
 
             return {
-                'number': [trial.number for trial in trials],
-                'state': [trial.state.name for trial in trials],
-                'value': [trial.value for trial in trials],
-                'params': [str(trial.params) for trial in trials],
-                'datetime_start': [
+                "number": [trial.number for trial in trials],
+                "state": [trial.state.name for trial in trials],
+                "value": [trial.value for trial in trials],
+                "params": [str(trial.params) for trial in trials],
+                "datetime_start": [
                     trial.datetime_start.strftime(_DATETIME_FORMAT)
                     if trial.datetime_start is not None
                     else None
                     for trial in trials
                 ],
-                'datetime_complete': [
+                "datetime_complete": [
                     trial.datetime_complete.strftime(_DATETIME_FORMAT)
                     if trial.datetime_complete is not None
                     else None
@@ -200,7 +200,7 @@ if _available:
             )
             self.all_trials_widget = _AllTrialsWidget(self.current_trials)
 
-            self.doc.title = 'Optuna Dashboard (Beta)'
+            self.doc.title = "Optuna Dashboard (Beta)"
             header = _HEADER_FORMAT.format(study_name=self.study.study_name)
             self.doc.add_root(
                 bokeh.layouts.layout(
@@ -209,7 +209,7 @@ if _available:
                         [self.complete_trials_widget.create_figure()],
                         [self.all_trials_widget.create_table()],
                     ],
-                    sizing_mode='scale_width',
+                    sizing_mode="scale_width",
                 )
             )
 
@@ -251,10 +251,10 @@ def _check_bokeh_availability():
 
     if not _available:
         raise ImportError(
-            'Bokeh is not available. Please install Bokeh to use the dashboard. '
-            'Bokeh can be installed by executing `$ pip install bokeh`. '
-            'For further information, please refer to the installation guide of Bokeh. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')'
+            "Bokeh is not available. Please install Bokeh to use the dashboard. "
+            "Bokeh can be installed by executing `$ pip install bokeh`. "
+            "For further information, please refer to the installation guide of Bokeh. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )
 
 
@@ -262,7 +262,7 @@ def _show_experimental_warning():
     # type: () -> None
 
     logger = optuna.logging.get_logger(__name__)
-    logger.warning('Optuna dashboard is still highly experimental. Please use with caution!')
+    logger.warning("Optuna dashboard is still highly experimental. Please use with caution!")
 
 
 def _get_this_source_path():
@@ -271,7 +271,7 @@ def _get_this_source_path():
     path = __file__
 
     # Sometimes __file__ points to a *.pyc file, but Bokeh doesn't accept it.
-    if path.endswith('.pyc'):
+    if path.endswith(".pyc"):
         path = path[:-1]
     return path
 
@@ -288,7 +288,7 @@ def _serve(study, bokeh_allow_websocket_origins):
     # to our Bokeh app. Unfortunately, as we are using `bokeh.command.bootstrap.main` to launch
     # our Bokeh app, we cannot directly pass Python objects to it. Therefore, we have no choice but
     # to use global variables to pass them.
-    _mode = 'serve'
+    _mode = "serve"
     _study = study
 
     # TODO(akiba): Stop using Bokeh's CLI entry point, and start the HTTP server by ourselves.
@@ -299,9 +299,9 @@ def _serve(study, bokeh_allow_websocket_origins):
     # for some reason, we found that the CDS update is not reflected to browsers, at least on Bokeh
     # version 0.12.15. In addition, we will need to do many configuration to servers, which can be
     # done automatically with the following one line. So, for now, we decided to use this way.
-    command = ['bokeh', 'serve', '--show', _get_this_source_path()]
+    command = ["bokeh", "serve", "--show", _get_this_source_path()]
     for bokeh_allow_websocket_origin in bokeh_allow_websocket_origins:
-        command.extend(['--allow-websocket-origin', bokeh_allow_websocket_origin])
+        command.extend(["--allow-websocket-origin", bokeh_allow_websocket_origin])
     bokeh.command.bootstrap.main(command)
 
 
@@ -313,9 +313,9 @@ def _write(study, out_path):
     _check_bokeh_availability()
     _show_experimental_warning()
 
-    _mode = 'html'
+    _mode = "html"
     _study = study
-    bokeh.command.bootstrap.main(['bokeh', 'html', _get_this_source_path(), '-o', out_path])
+    bokeh.command.bootstrap.main(["bokeh", "html", _get_this_source_path(), "-o", out_path])
 
 
 def _run():
@@ -327,11 +327,11 @@ def _run():
     mode = optuna.dashboard._mode
 
     assert study is not None
-    app = _DashboardApp(study, launch_update_thread=(mode == 'serve'))
+    app = _DashboardApp(study, launch_update_thread=(mode == "serve"))
     doc = bokeh.plotting.curdoc()
     app(doc)
 
 
-if __name__.startswith('bk_script_'):
+if __name__.startswith("bk_script_"):
     # Here, this module is loaded inside Bokeh. Therefore, we should launch the Bokeh app.
     _run()

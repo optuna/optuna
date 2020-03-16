@@ -35,11 +35,11 @@ class ArrayDataset(Dataset):
         return self.x[i], self.y[i]
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def tmpdir(tmpdir_factory):
     # type: (typing.Any) -> typing.Any
 
-    return tmpdir_factory.mktemp('fastai_integration_test')
+    return tmpdir_factory.mktemp("fastai_integration_test")
 
 
 def test_fastai_pruning_callback(tmpdir):
@@ -64,7 +64,7 @@ def test_fastai_pruning_callback(tmpdir):
             data_bunch,
             model,
             metrics=[accuracy],
-            callback_fns=[partial(FastAIPruningCallback, trial=trial, monitor='valid_loss')],
+            callback_fns=[partial(FastAIPruningCallback, trial=trial, monitor="valid_loss")],
         )
 
         learn.fit(1)

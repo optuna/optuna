@@ -12,13 +12,13 @@ from optuna.testing.integration import DeterministicPruner
 CV_FLAGS = [False, True]
 
 
-@pytest.mark.parametrize('cv', CV_FLAGS)
+@pytest.mark.parametrize("cv", CV_FLAGS)
 def test_lightgbm_pruning_callback_call(cv):
     # type: (bool) -> None
 
     callback_env = partial(
         lgb.callback.CallbackEnv,
-        model='test',
+        model="test",
         params={},
         begin_iteration=0,
         end_iteration=1,
@@ -26,25 +26,25 @@ def test_lightgbm_pruning_callback_call(cv):
     )
 
     if cv:
-        env = callback_env(evaluation_result_list=[(('cv_agg', 'binary_error', 1.0, False, 1.0))])
+        env = callback_env(evaluation_result_list=[(("cv_agg", "binary_error", 1.0, False, 1.0))])
     else:
-        env = callback_env(evaluation_result_list=[('validation', 'binary_error', 1.0, False)])
+        env = callback_env(evaluation_result_list=[("validation", "binary_error", 1.0, False)])
 
     # The pruner is deactivated.
     study = optuna.create_study(pruner=DeterministicPruner(False))
     trial = create_running_trial(study, 1.0)
-    pruning_callback = LightGBMPruningCallback(trial, 'binary_error', valid_name='validation')
+    pruning_callback = LightGBMPruningCallback(trial, "binary_error", valid_name="validation")
     pruning_callback(env)
 
     # The pruner is activated.
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)
-    pruning_callback = LightGBMPruningCallback(trial, 'binary_error', valid_name='validation')
+    pruning_callback = LightGBMPruningCallback(trial, "binary_error", valid_name="validation")
     with pytest.raises(optuna.exceptions.TrialPruned):
         pruning_callback(env)
 
 
-@pytest.mark.parametrize('cv', CV_FLAGS)
+@pytest.mark.parametrize("cv", CV_FLAGS)
 def test_lightgbm_pruning_callback(cv):
     # type: (bool) -> None
 
@@ -58,24 +58,24 @@ def test_lightgbm_pruning_callback(cv):
     assert study.trials[0].value == 1.0
 
     # Use non default validation name.
-    custom_valid_name = 'my_validation'
+    custom_valid_name = "my_validation"
     study = optuna.create_study(pruner=DeterministicPruner(False))
     study.optimize(lambda trial: objective(trial, valid_name=custom_valid_name, cv=cv), n_trials=1)
     assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
     # Check "maximize" direction.
-    study = optuna.create_study(pruner=DeterministicPruner(True), direction='maximize')
-    study.optimize(lambda trial: objective(trial, metric='auc', cv=cv), n_trials=1, catch=())
+    study = optuna.create_study(pruner=DeterministicPruner(True), direction="maximize")
+    study.optimize(lambda trial: objective(trial, metric="auc", cv=cv), n_trials=1, catch=())
     assert study.trials[0].state == optuna.structs.TrialState.PRUNED
 
-    study = optuna.create_study(pruner=DeterministicPruner(False), direction='maximize')
-    study.optimize(lambda trial: objective(trial, metric='auc', cv=cv), n_trials=1, catch=())
+    study = optuna.create_study(pruner=DeterministicPruner(False), direction="maximize")
+    study.optimize(lambda trial: objective(trial, metric="auc", cv=cv), n_trials=1, catch=())
     assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
 
-@pytest.mark.parametrize('cv', CV_FLAGS)
+@pytest.mark.parametrize("cv", CV_FLAGS)
 def test_lightgbm_pruning_callback_errors(cv):
     # type: (bool) -> None
 
@@ -83,7 +83,7 @@ def test_lightgbm_pruning_callback_errors(cv):
     study = optuna.create_study(pruner=DeterministicPruner(False))
     with pytest.raises(ValueError):
         study.optimize(
-            lambda trial: objective(trial, metric='foo_metric', cv=cv), n_trials=1, catch=()
+            lambda trial: objective(trial, metric="foo_metric", cv=cv), n_trials=1, catch=()
         )
 
     if not cv:
@@ -92,7 +92,7 @@ def test_lightgbm_pruning_callback_errors(cv):
         with pytest.raises(ValueError):
             study.optimize(
                 lambda trial: objective(
-                    trial, valid_name='valid_1', force_default_valid_names=True
+                    trial, valid_name="valid_1", force_default_valid_names=True
                 ),
                 n_trials=1,
                 catch=(),
@@ -101,17 +101,17 @@ def test_lightgbm_pruning_callback_errors(cv):
     # Check consistency of study direction.
     study = optuna.create_study(pruner=DeterministicPruner(False))
     with pytest.raises(ValueError):
-        study.optimize(lambda trial: objective(trial, metric='auc', cv=cv), n_trials=1, catch=())
+        study.optimize(lambda trial: objective(trial, metric="auc", cv=cv), n_trials=1, catch=())
 
-    study = optuna.create_study(pruner=DeterministicPruner(False), direction='maximize')
+    study = optuna.create_study(pruner=DeterministicPruner(False), direction="maximize")
     with pytest.raises(ValueError):
         study.optimize(
-            lambda trial: objective(trial, metric='binary_error', cv=cv), n_trials=1, catch=()
+            lambda trial: objective(trial, metric="binary_error", cv=cv), n_trials=1, catch=()
         )
 
 
 def objective(
-    trial, metric='binary_error', valid_name='valid_0', force_default_valid_names=False, cv=False
+    trial, metric="binary_error", valid_name="valid_0", force_default_valid_names=False, cv=False
 ):
     # type: (optuna.trial.Trial, str, str, bool, bool) -> float
 
@@ -126,7 +126,7 @@ def objective(
     pruning_callback = LightGBMPruningCallback(trial, metric, valid_name=valid_name)
     if cv:
         lgb.cv(
-            {'objective': 'binary', 'metric': ['auc', 'binary_error']},
+            {"objective": "binary", "metric": ["auc", "binary_error"]},
             dtrain,
             1,
             verbose_eval=False,
@@ -135,7 +135,7 @@ def objective(
         )
     else:
         lgb.train(
-            {'objective': 'binary', 'metric': ['auc', 'binary_error']},
+            {"objective": "binary", "metric": ["auc", "binary_error"]},
             dtrain,
             1,
             valid_sets=[dtest],

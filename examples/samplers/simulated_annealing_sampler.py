@@ -72,7 +72,7 @@ class SimulatedAnnealingSampler(BaseSampler):
                 params[param_name] = self._rng.uniform(neighbor_low, neighbor_high)
             else:
                 raise NotImplementedError(
-                    'Unsupported distribution {}.'.format(param_distribution)
+                    "Unsupported distribution {}.".format(param_distribution)
                 )
 
         return params
@@ -109,19 +109,19 @@ class SimulatedAnnealingSampler(BaseSampler):
 
 # Define a simple 2-dimensional objective function whose minimum value is -1 when (x, y) = (0, -1).
 def objective(trial):
-    x = trial.suggest_uniform('x', -100, 100)
-    y = trial.suggest_uniform('y', -1, 1)
+    x = trial.suggest_uniform("x", -100, 100)
+    y = trial.suggest_uniform("y", -1, 1)
     return x ** 2 + y
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Run optimization by using `SimulatedAnnealingSampler`.
     sampler = SimulatedAnnealingSampler()
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=100)
 
-    print('Best trial:')
-    print('  Value: ', study.best_trial.value)
-    print('  Params: ')
+    print("Best trial:")
+    print("  Value: ", study.best_trial.value)
+    print("  Params: ")
     for key, value in study.best_trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

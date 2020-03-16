@@ -15,7 +15,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
 IN_MEMORY_STORAGE_STUDY_ID = 0
-IN_MEMORY_STORAGE_STUDY_UUID = '00000000-0000-0000-0000-000000000000'
+IN_MEMORY_STORAGE_STUDY_UUID = "00000000-0000-0000-0000-000000000000"
 
 
 class InMemoryStorage(base.BaseStorage):
@@ -39,7 +39,7 @@ class InMemoryStorage(base.BaseStorage):
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
         state = self.__dict__.copy()
-        del state['_lock']
+        del state["_lock"]
         return state
 
     def __setstate__(self, state):
@@ -75,7 +75,7 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             if self.direction != structs.StudyDirection.NOT_SET and self.direction != direction:
                 raise ValueError(
-                    'Cannot overwrite study direction from {} to {}.'.format(
+                    "Cannot overwrite study direction from {} to {}.".format(
                         self.direction, direction
                     )
                 )
@@ -242,7 +242,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int) -> structs.FrozenTrial
 
         if self.best_trial_id is None:
-            raise ValueError('No trials are completed yet.')
+            raise ValueError("No trials are completed yet.")
         return self.get_trial(self.best_trial_id)
 
     def get_trial_param(self, trial_id, param_name):
@@ -345,7 +345,7 @@ class InMemoryStorage(base.BaseStorage):
 
         if study_id != IN_MEMORY_STORAGE_STUDY_ID:
             raise ValueError(
-                'study_id is supposed to be {} in {}.'.format(
+                "study_id is supposed to be {} in {}.".format(
                     IN_MEMORY_STORAGE_STUDY_ID, self.__class__.__name__
                 )
             )

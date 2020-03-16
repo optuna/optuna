@@ -51,9 +51,9 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        dropout_rate = trial.suggest_uniform('dropout_rate', 0, 1)
+        dropout_rate = trial.suggest_uniform("dropout_rate", 0, 1)
         self.conv2_drop = nn.Dropout2d(p=dropout_rate)
-        fc2_input_dim = trial.suggest_int('fc2_input_dim', 40, 80)
+        fc2_input_dim = trial.suggest_int("fc2_input_dim", 40, 80)
         self.fc1 = nn.Linear(320, fc2_input_dim)
         self.fc2 = nn.Linear(fc2_input_dim, 10)
 
@@ -87,16 +87,16 @@ def objective(trial):
     # Create a convolutional neural network.
     model = Net(trial)
 
-    device = 'cpu'
+    device = "cpu"
     if torch.cuda.is_available():
-        device = 'cuda'
+        device = "cuda"
 
     optimizer = Adam(model.parameters())
     trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)
-    evaluator = create_supervised_evaluator(model, metrics={'accuracy': Accuracy()}, device=device)
+    evaluator = create_supervised_evaluator(model, metrics={"accuracy": Accuracy()}, device=device)
 
     # Register a pruning handler to the evaluator.
-    pruning_handler = optuna.integration.PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
+    pruning_handler = optuna.integration.PyTorchIgnitePruningHandler(trial, "accuracy", trainer)
     evaluator.add_event_handler(Events.COMPLETED, pruning_handler)
 
     # Load MNIST dataset.
@@ -105,37 +105,37 @@ def objective(trial):
     @trainer.on(Events.EPOCH_COMPLETED)
     def log_results(engine):
         evaluator.run(val_loader)
-        validation_acc = evaluator.state.metrics['accuracy']
+        validation_acc = evaluator.state.metrics["accuracy"]
         print("Epoch: {} Validation accuracy: {:.2f}".format(engine.state.epoch, validation_acc))
 
     trainer.run(train_loader, max_epochs=EPOCHS)
 
     evaluator.run(val_loader)
-    return evaluator.state.metrics['accuracy']
+    return evaluator.state.metrics["accuracy"]
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='PyTorch Ignite example.')
+    parser = argparse.ArgumentParser(description="PyTorch Ignite example.")
     parser.add_argument(
-        '--pruning',
-        '-p',
-        action='store_true',
-        help='Activate the pruning feature. `MedianPruner` stops unpromising '
-        'trials at the early stages of training.',
+        "--pruning",
+        "-p",
+        action="store_true",
+        help="Activate the pruning feature. `MedianPruner` stops unpromising "
+        "trials at the early stages of training.",
     )
     args = parser.parse_args()
     pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
 
-    study = optuna.create_study(direction='maximize', pruner=pruner)
+    study = optuna.create_study(direction="maximize", pruner=pruner)
     study.optimize(objective, n_trials=100, timeout=600)
 
-    print('Number of finished trials: ', len(study.trials))
+    print("Number of finished trials: ", len(study.trials))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: ', trial.value)
+    print("  Value: ", trial.value)
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

@@ -98,8 +98,8 @@ class SkoptSampler(BaseSampler):
         _check_skopt_availability()
 
         self._skopt_kwargs = skopt_kwargs or {}
-        if 'dimensions' in self._skopt_kwargs:
-            del self._skopt_kwargs['dimensions']
+        if "dimensions" in self._skopt_kwargs:
+            del self._skopt_kwargs["dimensions"]
 
         self._independent_sampler = independent_sampler or samplers.RandomSampler()
         self._warn_independent_sampling = warn_independent_sampling
@@ -174,12 +174,12 @@ class _Optimizer(object):
         for name, distribution in sorted(self._search_space.items()):
             if isinstance(distribution, distributions.UniformDistribution):
                 # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
-                high = np.nextafter(distribution.high, float('-inf'))
+                high = np.nextafter(distribution.high, float("-inf"))
                 dimension = space.Real(distribution.low, high)
             elif isinstance(distribution, distributions.LogUniformDistribution):
                 # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
-                high = np.nextafter(distribution.high, float('-inf'))
-                dimension = space.Real(distribution.low, high, prior='log-uniform')
+                high = np.nextafter(distribution.high, float("-inf"))
+                dimension = space.Real(distribution.low, high, prior="log-uniform")
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 dimension = space.Integer(distribution.low, distribution.high)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
@@ -272,8 +272,8 @@ def _check_skopt_availability():
 
     if not _available:
         raise ImportError(
-            'Scikit-Optimize is not available. Please install it to use this feature. '
-            'Scikit-Optimize can be installed by executing `$ pip install scikit-optimize`. '
-            'For further information, please refer to the installation guide of Scikit-Optimize. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')'
+            "Scikit-Optimize is not available. Please install it to use this feature. "
+            "Scikit-Optimize can be installed by executing `$ pip install scikit-optimize`. "
+            "For further information, please refer to the installation guide of Scikit-Optimize. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )

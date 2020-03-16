@@ -21,7 +21,7 @@ def test_median_pruner_with_one_trial():
     assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
 
 
-@pytest.mark.parametrize('direction_value', [('minimize', 2), ('maximize', 0.5)])
+@pytest.mark.parametrize("direction_value", [("minimize", 2), ("maximize", 0.5)])
 def test_median_pruner_intermediate_values(direction_value):
     # type: (Tuple[str, float]) -> None
 
@@ -49,13 +49,13 @@ def test_median_pruner_intermediate_values_nan():
     study = optuna.study.create_study()
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.report(float('nan'), 1)
+    trial.report(float("nan"), 1)
     # A pruner is not activated if the study does not have any previous trials.
     assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
     study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.report(float('nan'), 1)
+    trial.report(float("nan"), 1)
     # A pruner is activated if the best intermediate value of this trial is NaN.
     assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
     study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
@@ -110,7 +110,7 @@ def test_median_pruner_n_warmup_steps():
 
 
 @pytest.mark.parametrize(
-    'n_warmup_steps,interval_steps,report_steps,expected_prune_steps',
+    "n_warmup_steps,interval_steps,report_steps,expected_prune_steps",
     [
         (1, 2, 1, [2, 4]),
         (0, 3, 10, list(range(1, 30))),

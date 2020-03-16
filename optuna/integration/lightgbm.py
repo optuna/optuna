@@ -20,10 +20,10 @@ if _available:
     from lightgbm import Dataset  # NOQA
     from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
 
-    _names_from_tuners = ['train', 'LGBMModel', 'LGBMClassifier', 'LGBMRegressor']
+    _names_from_tuners = ["train", "LGBMModel", "LGBMClassifier", "LGBMRegressor"]
 
     # API from lightgbm.
-    for api_name in lgb.__dict__['__all__']:
+    for api_name in lgb.__dict__["__all__"]:
         if api_name in _names_from_tuners:
             continue
         setattr(sys.modules[__name__], api_name, lgb.__dict__[api_name])
@@ -33,7 +33,7 @@ if _available:
         setattr(sys.modules[__name__], api_name, tuner.__dict__[api_name])
 else:
     # To create docstring of train.
-    setattr(sys.modules[__name__], 'train', tuner.__dict__['train'])
+    setattr(sys.modules[__name__], "train", tuner.__dict__["train"])
 
 
 class LightGBMPruningCallback(object):
@@ -70,7 +70,7 @@ class LightGBMPruningCallback(object):
             instead of train method.
     """
 
-    def __init__(self, trial, metric, valid_name='valid_0'):
+    def __init__(self, trial, metric, valid_name="valid_0"):
         # type: (optuna.trial.Trial, str, str) -> None
 
         _check_lightgbm_availability()
@@ -88,7 +88,7 @@ class LightGBMPruningCallback(object):
         # Note that `5` is not the number of folds but the length of sequence.
         is_cv = len(env.evaluation_result_list) > 0 and len(env.evaluation_result_list[0]) == 5
         if is_cv:
-            target_valid_name = 'cv_agg'
+            target_valid_name = "cv_agg"
         else:
             target_valid_name = self._valid_name
 
@@ -127,7 +127,7 @@ class LightGBMPruningCallback(object):
 
         raise ValueError(
             'The entry associated with the validation name "{}" and the metric name "{}" '
-            'is not found in the evaluation result list {}.'.format(
+            "is not found in the evaluation result list {}.".format(
                 target_valid_name, self._metric, str(env.evaluation_result_list)
             )
         )
@@ -138,8 +138,8 @@ def _check_lightgbm_availability():
 
     if not _available:
         raise ImportError(
-            'LightGBM is not available. Please install LightGBM to use this feature. '
-            'LightGBM can be installed by executing `$ pip install lightgbm`. '
-            'For further information, please refer to the installation guide of LightGBM. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')'
+            "LightGBM is not available. Please install LightGBM to use this feature. "
+            "LightGBM can be installed by executing `$ pip install lightgbm`. "
+            "For further information, please refer to the installation guide of LightGBM. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )

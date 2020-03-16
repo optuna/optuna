@@ -42,8 +42,8 @@ def objective(trial):
 
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
     img_x, img_y = x_train.shape[1], x_train.shape[2]
-    x_train = x_train.reshape(-1, img_x, img_y, 1)[:N_TRAIN_EXAMPLES].astype('float32') / 255
-    x_test = x_test.reshape(-1, img_x, img_y, 1)[:N_TEST_EXAMPLES].astype('float32') / 255
+    x_train = x_train.reshape(-1, img_x, img_y, 1)[:N_TRAIN_EXAMPLES].astype("float32") / 255
+    x_test = x_test.reshape(-1, img_x, img_y, 1)[:N_TEST_EXAMPLES].astype("float32") / 255
     y_train = y_train[:N_TRAIN_EXAMPLES]
     y_test = y_test[:N_TEST_EXAMPLES]
     input_shape = (img_x, img_y, 1)
@@ -51,20 +51,20 @@ def objective(trial):
     model = Sequential()
     model.add(
         Conv2D(
-            filters=trial.suggest_categorical('filters', [32, 64]),
-            kernel_size=trial.suggest_categorical('kernel_size', [3, 5]),
-            strides=trial.suggest_categorical('strides', [1, 2]),
-            activation=trial.suggest_categorical('activation', ['relu', 'linear']),
+            filters=trial.suggest_categorical("filters", [32, 64]),
+            kernel_size=trial.suggest_categorical("kernel_size", [3, 5]),
+            strides=trial.suggest_categorical("strides", [1, 2]),
+            activation=trial.suggest_categorical("activation", ["relu", "linear"]),
             input_shape=input_shape,
         )
     )
     model.add(Flatten())
-    model.add(Dense(CLASSES, activation='softmax'))
+    model.add(Dense(CLASSES, activation="softmax"))
 
     # We compile our model with a sampled learning rate.
-    lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
+    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
     model.compile(
-        loss='sparse_categorical_crossentropy', optimizer=RMSprop(lr=lr), metrics=['accuracy']
+        loss="sparse_categorical_crossentropy", optimizer=RMSprop(lr=lr), metrics=["accuracy"]
     )
 
     model.fit(
@@ -82,17 +82,17 @@ def objective(trial):
     return score[1]
 
 
-if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize')
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100, timeout=600)
 
-    print('Number of finished trials: {}'.format(len(study.trials)))
+    print("Number of finished trials: {}".format(len(study.trials)))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: {}'.format(trial.value))
+    print("  Value: {}".format(trial.value))
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

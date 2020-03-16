@@ -104,10 +104,10 @@ class SuccessiveHalvingPruner(BasePruner):
             referred to as :math:`s`).
     """
 
-    def __init__(self, min_resource='auto', reduction_factor=4, min_early_stopping_rate=0):
+    def __init__(self, min_resource="auto", reduction_factor=4, min_early_stopping_rate=0):
         # type: (Union[str, int], int, int) -> None
 
-        if isinstance(min_resource, str) and min_resource != 'auto':
+        if isinstance(min_resource, str) and min_resource != "auto":
             raise ValueError(
                 "The value of `min_resource` is {}, "
                 "but must be either `min_resource` >= 1 or 'auto'".format(min_resource)
@@ -115,19 +115,19 @@ class SuccessiveHalvingPruner(BasePruner):
 
         if isinstance(min_resource, int) and min_resource < 1:
             raise ValueError(
-                'The value of `min_resource` is {}, '
+                "The value of `min_resource` is {}, "
                 "but must be either `min_resource >= 1` or 'auto'".format(min_resource)
             )
 
         if reduction_factor < 2:
             raise ValueError(
-                'The value of `reduction_factor` is {}, '
-                'but must be `reduction_factor >= 2`'.format(reduction_factor)
+                "The value of `reduction_factor` is {}, "
+                "but must be `reduction_factor >= 2`".format(reduction_factor)
             )
 
         if min_early_stopping_rate < 0:
             raise ValueError(
-                'The value of `min_early_stopping_rate` is {}, '
+                "The value of `min_early_stopping_rate` is {}, "
                 "but must be `min_early_stopping_rate >= 0`".format(min_early_stopping_rate)
             )
 
@@ -212,7 +212,7 @@ def _get_current_rung(trial):
 def _completed_rung_key(rung):
     # type: (int) -> str
 
-    return 'completed_rung_{}'.format(rung)
+    return "completed_rung_{}".format(rung)
 
 
 def _get_competing_values(trials, value, rung_key):

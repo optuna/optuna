@@ -32,21 +32,21 @@ def create_model(trial):
     # the learning rate of RMSProp optimizer.
 
     # We define our MLP.
-    n_layers = trial.suggest_int('n_layers', 1, 3)
+    n_layers = trial.suggest_int("n_layers", 1, 3)
     model = Sequential()
     for i in range(n_layers):
-        num_hidden = int(trial.suggest_loguniform('n_units_l{}'.format(i), 4, 128))
-        model.add(Dense(num_hidden, activation='relu'))
-        dropout = trial.suggest_uniform('dropout_l{}'.format(i), 0.2, 0.5)
+        num_hidden = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
+        model.add(Dense(num_hidden, activation="relu"))
+        dropout = trial.suggest_uniform("dropout_l{}".format(i), 0.2, 0.5)
         model.add(Dropout(rate=dropout))
-    model.add(Dense(CLASSES, activation='softmax'))
+    model.add(Dense(CLASSES, activation="softmax"))
 
     # We compile our model with a sampled learning rate.
-    lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
+    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
     model.compile(
-        loss='categorical_crossentropy',
+        loss="categorical_crossentropy",
         optimizer=keras.optimizers.RMSprop(lr=lr),
-        metrics=['accuracy'],
+        metrics=["accuracy"],
     )
 
     return model
@@ -58,8 +58,8 @@ def objective(trial):
 
     # The data is split between train and test sets.
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
-    x_train = x_train.reshape(60000, 784)[:N_TRAIN_EXAMPLES].astype('float32') / 255
-    x_test = x_test.reshape(10000, 784)[:N_TEST_EXAMPLES].astype('float32') / 255
+    x_train = x_train.reshape(60000, 784)[:N_TRAIN_EXAMPLES].astype("float32") / 255
+    x_test = x_test.reshape(10000, 784)[:N_TEST_EXAMPLES].astype("float32") / 255
 
     # Convert class vectors to binary class matrices.
     y_train = keras.utils.to_categorical(y_train[:N_TRAIN_EXAMPLES], CLASSES)
@@ -74,7 +74,7 @@ def objective(trial):
         x_train,
         y_train,
         batch_size=BATCHSIZE,
-        callbacks=[KerasPruningCallback(trial, 'val_acc')],
+        callbacks=[KerasPruningCallback(trial, "val_acc")],
         epochs=EPOCHS,
         validation_data=(x_test, y_test),
         verbose=1,
@@ -85,21 +85,21 @@ def objective(trial):
     return score[1]
 
 
-if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
     study.optimize(objective, n_trials=100)
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
     complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
-    print('Study statistics: ')
-    print('  Number of finished trials: ', len(study.trials))
-    print('  Number of pruned trials: ', len(pruned_trials))
-    print('  Number of complete trials: ', len(complete_trials))
+    print("Study statistics: ")
+    print("  Number of finished trials: ", len(study.trials))
+    print("  Number of pruned trials: ", len(pruned_trials))
+    print("  Number of complete trials: ", len(complete_trials))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: ', trial.value)
+    print("  Value: ", trial.value)
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

@@ -14,12 +14,12 @@ from sklearn.svm import SVC
 
 import optuna
 
-if __name__ == '__main__':
-    clf = SVC(gamma='auto')
+if __name__ == "__main__":
+    clf = SVC(gamma="auto")
 
     param_distributions = {
-        'C': optuna.distributions.LogUniformDistribution(1e-10, 1e10),
-        'degree': optuna.distributions.IntUniformDistribution(1, 5),
+        "C": optuna.distributions.LogUniformDistribution(1e-10, 1e10),
+        "degree": optuna.distributions.IntUniformDistribution(1, 5),
     }
 
     optuna_search = optuna.integration.OptunaSearchCV(
@@ -29,10 +29,10 @@ if __name__ == '__main__':
     X, y = load_iris(return_X_y=True)
     optuna_search.fit(X, y)
 
-    print('Best trial:')
+    print("Best trial:")
     trial = optuna_search.study_.best_trial
 
-    print('  Value: ', trial.value)
-    print('  Params: ')
+    print("  Value: ", trial.value)
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

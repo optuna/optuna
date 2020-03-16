@@ -68,9 +68,9 @@ class TensorFlowPruningHook(SessionRunHook):
 
         if is_higher_better is not None:
             raise ValueError(
-                'Please do not use is_higher_better argument of '
-                'TensorFlowPruningHook.__init__(). is_higher_better argument '
-                'is obsolete since Optuna 0.9.0.'
+                "Please do not use is_higher_better argument of "
+                "TensorFlowPruningHook.__init__(). is_higher_better argument "
+                "is obsolete since Optuna 0.9.0."
             )
 
     def begin(self):
@@ -101,7 +101,7 @@ class TensorFlowPruningHook(SessionRunHook):
             if summary_step > self._current_summary_step:
                 current_score = latest_eval_metrics[self._metric]
                 if current_score is None:
-                    current_score = float('nan')
+                    current_score = float("nan")
                 self._trial.report(float(current_score), step=summary_step)
                 self._current_summary_step = summary_step
             if self._trial.should_prune():
@@ -114,8 +114,8 @@ def _check_tensorflow_availability():
 
     if not _available:
         raise ImportError(
-            'TensorFlow is not available. Please install TensorFlow to use this feature. '
-            'TensorFlow can be installed by executing `$ pip install tensorflow`. '
-            'For further information, please refer to the installation guide of TensorFlow. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')'
+            "TensorFlow is not available. Please install TensorFlow to use this feature. "
+            "TensorFlow can be installed by executing `$ pip install tensorflow`. "
+            "For further information, please refer to the installation guide of TensorFlow. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )

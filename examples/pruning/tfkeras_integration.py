@@ -29,8 +29,8 @@ VALIDATION_STEPS = 30
 
 def train_dataset():
 
-    ds = tfds.load('mnist', split=tfds.Split.TRAIN, shuffle_files=True)
-    ds = ds.map(lambda x: (tf.cast(x['image'], tf.float32) / 255.0, x['label']))
+    ds = tfds.load("mnist", split=tfds.Split.TRAIN, shuffle_files=True)
+    ds = ds.map(lambda x: (tf.cast(x["image"], tf.float32) / 255.0, x["label"]))
     ds = ds.repeat().shuffle(1024).batch(BATCHSIZE)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
@@ -39,8 +39,8 @@ def train_dataset():
 
 def eval_dataset():
 
-    ds = tfds.load('mnist', split=tfds.Split.TEST, shuffle_files=False)
-    ds = ds.map(lambda x: (tf.cast(x['image'], tf.float32) / 255.0, x['label']))
+    ds = tfds.load("mnist", split=tfds.Split.TEST, shuffle_files=False)
+    ds = ds.map(lambda x: (tf.cast(x["image"], tf.float32) / 255.0, x["label"]))
     ds = ds.repeat().batch(BATCHSIZE)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
@@ -50,9 +50,9 @@ def eval_dataset():
 def create_model(trial):
 
     # Hyperparameters to be tuned by Optuna.
-    lr = trial.suggest_loguniform('lr', 1e-4, 1e-1)
-    momentum = trial.suggest_uniform('momentum', 0.0, 1.0)
-    units = trial.suggest_categorical('units', [32, 64, 128, 256, 512])
+    lr = trial.suggest_loguniform("lr", 1e-4, 1e-1)
+    momentum = trial.suggest_uniform("momentum", 0.0, 1.0)
+    units = trial.suggest_categorical("units", [32, 64, 128, 256, 512])
 
     # Compose neural network with one hidden layer.
     model = tf.keras.Sequential()
@@ -63,8 +63,8 @@ def create_model(trial):
     # Compile model.
     model.compile(
         optimizer=tf.keras.optimizers.SGD(lr=lr, momentum=momentum, nesterov=True),
-        loss='sparse_categorical_crossentropy',
-        metrics=['accuracy'],
+        loss="sparse_categorical_crossentropy",
+        metrics=["accuracy"],
     )
 
     return model
@@ -75,10 +75,10 @@ def objective(trial):
     tf.keras.backend.clear_session()
 
     # Metrics to be monitored by Optuna.
-    if tf.__version__ >= '2':
-        monitor = 'val_accuracy'
+    if tf.__version__ >= "2":
+        monitor = "val_accuracy"
     else:
-        monitor = 'val_acc'
+        monitor = "val_acc"
 
     # Create tf.keras model instance.
     model = create_model(trial)
@@ -115,25 +115,25 @@ def show_result(study):
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
     complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
 
-    print('Study statistics: ')
-    print('  Number of finished trials: ', len(study.trials))
-    print('  Number of pruned trials: ', len(pruned_trials))
-    print('  Number of complete trials: ', len(complete_trials))
+    print("Study statistics: ")
+    print("  Number of finished trials: ", len(study.trials))
+    print("  Number of pruned trials: ", len(pruned_trials))
+    print("  Number of complete trials: ", len(complete_trials))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: ', trial.value)
+    print("  Value: ", trial.value)
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))
 
 
 def main():
 
     study = optuna.create_study(
-        direction='maximize', pruner=optuna.pruners.MedianPruner(n_startup_trials=2)
+        direction="maximize", pruner=optuna.pruners.MedianPruner(n_startup_trials=2)
     )
 
     study.optimize(objective, n_trials=25, timeout=600)
@@ -141,5 +141,5 @@ def main():
     show_result(study)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

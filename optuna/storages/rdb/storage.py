@@ -101,8 +101,8 @@ class RDBStorage(BaseStorage):
             self.engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError(
-                'Failed to import DB access module for the specified storage URL. '
-                'Please install appropriate one. (The actual import error is: ' + str(e) + '.)'
+                "Failed to import DB access module for the specified storage URL. "
+                "Please install appropriate one. (The actual import error is: " + str(e) + ".)"
             )
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
@@ -119,10 +119,10 @@ class RDBStorage(BaseStorage):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
-        del state['scoped_session']
-        del state['engine']
-        del state['_version_manager']
-        del state['_finished_trials_cache']
+        del state["scoped_session"]
+        del state["engine"]
+        del state["_version_manager"]
+        del state["_finished_trials_cache"]
         return state
 
     def __setstate__(self, state):
@@ -133,8 +133,8 @@ class RDBStorage(BaseStorage):
             self.engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError(
-                'Failed to import DB access module for the specified storage URL. '
-                'Please install appropriate one. (The actual import error is: ' + str(e) + '.)'
+                "Failed to import DB access module for the specified storage URL. "
+                "Please install appropriate one. (The actual import error is: " + str(e) + ".)"
             )
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
@@ -162,7 +162,7 @@ class RDBStorage(BaseStorage):
                 "`--skip-if-exists` flag (for CLI).".format(study_name)
             )
 
-        _logger.info('A new study created with name: {}'.format(study.study_name))
+        _logger.info("A new study created with name: {}".format(study.study_name))
 
         return study.study_id
 
@@ -199,7 +199,7 @@ class RDBStorage(BaseStorage):
 
         if study.direction != structs.StudyDirection.NOT_SET and study.direction != direction:
             raise ValueError(
-                'Cannot overwrite study direction from {} to {}.'.format(
+                "Cannot overwrite study direction from {} to {}.".format(
                     study.direction, direction
                 )
             )
@@ -842,19 +842,19 @@ class RDBStorage(BaseStorage):
         # type: (str, Dict[str, Any]) -> None
 
         # Skip if RDB is not MySQL.
-        if not url.startswith('mysql'):
+        if not url.startswith("mysql"):
             return
 
         # Do not overwrite value.
-        if 'pool_pre_ping' in engine_kwargs:
+        if "pool_pre_ping" in engine_kwargs:
             return
 
         # If True, the connection pool checks liveness of connections at every checkout.
         # Without this option, trials that take longer than `wait_timeout` may cause connection
         # errors. For further details, please refer to the following document:
         # https://docs.sqlalchemy.org/en/13/core/pooling.html#pool-disconnects-pessimistic
-        engine_kwargs['pool_pre_ping'] = True
-        _logger.debug('pool_pre_ping=True was set to engine_kwargs to prevent connection timeout.')
+        engine_kwargs["pool_pre_ping"] = True
+        _logger.debug("pool_pre_ping=True was set to engine_kwargs to prevent connection timeout.")
 
     @staticmethod
     def _fill_storage_url_template(template):
@@ -870,8 +870,8 @@ class RDBStorage(BaseStorage):
             session.commit()
         except IntegrityError as e:
             _logger.debug(
-                'Ignoring {}. This happens due to a timing issue among threads/processes/nodes. '
-                'Another one might have committed a record with the same key(s).'.format(repr(e))
+                "Ignoring {}. This happens due to a timing issue among threads/processes/nodes. "
+                "Another one might have committed a record with the same key(s).".format(repr(e))
             )
             session.rollback()
             return False
@@ -887,10 +887,10 @@ class RDBStorage(BaseStorage):
         except SQLAlchemyError as e:
             session.rollback()
             message = (
-                'An exception is raised during the commit. '
-                'This typically happens due to invalid data in the commit, '
-                'e.g. exceeding max length. '
-                '(The actual exception is as follows: {})'.format(repr(e))
+                "An exception is raised during the commit. "
+                "This typically happens due to invalid data in the commit, "
+                "e.g. exceeding max length. "
+                "(The actual exception is as follows: {})".format(repr(e))
             )
             raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
 
@@ -918,7 +918,7 @@ class RDBStorage(BaseStorage):
         # counters, so it is not guaranteed that they are released by correct threads (for more
         # information, please see the docstring of remove_session).
 
-        if hasattr(self, 'scoped_session'):
+        if hasattr(self, "scoped_session"):
             self.remove_session()
 
     def upgrade(self):
@@ -978,7 +978,7 @@ class _VersionManager(object):
     def _init_alembic(self):
         # type: () -> None
 
-        logging.getLogger('alembic').setLevel(logging.WARN)
+        logging.getLogger("alembic").setLevel(logging.WARN)
 
         context = alembic.migration.MigrationContext.configure(self.engine.connect())
         is_initialized = context.get_current_revision() is not None
@@ -1021,18 +1021,18 @@ class _VersionManager(object):
             return
 
         message = (
-            'The runtime optuna version {} is no longer compatible with the table schema '
-            '(set up by optuna {}). '.format(version.__version__, version_info.library_version)
+            "The runtime optuna version {} is no longer compatible with the table schema "
+            "(set up by optuna {}). ".format(version.__version__, version_info.library_version)
         )
         known_versions = self.get_all_versions()
         if current_version in known_versions:
             message += (
-                'Please execute `$ optuna storage upgrade --storage $STORAGE_URL` '
-                'for upgrading the storage.'
+                "Please execute `$ optuna storage upgrade --storage $STORAGE_URL` "
+                "for upgrading the storage."
             )
         else:
             message += (
-                'Please try updating optuna to the latest version by ' '`$ pip install -U optuna`.'
+                "Please try updating optuna to the latest version by " "`$ pip install -U optuna`."
             )
 
         raise RuntimeError(message)
@@ -1068,7 +1068,7 @@ class _VersionManager(object):
         # type: () -> None
 
         config = self._create_alembic_config()
-        alembic.command.upgrade(config, 'head')
+        alembic.command.upgrade(config, "head")
 
     def _is_alembic_supported(self):
         # type: () -> bool
@@ -1095,11 +1095,11 @@ class _VersionManager(object):
     def _create_alembic_config(self):
         # type: () -> alembic.config.Config
 
-        alembic_dir = os.path.join(os.path.dirname(__file__), 'alembic')
+        alembic_dir = os.path.join(os.path.dirname(__file__), "alembic")
 
-        config = alembic.config.Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
-        config.set_main_option('script_location', escape_alembic_config_value(alembic_dir))
-        config.set_main_option('sqlalchemy.url', escape_alembic_config_value(self.url))
+        config = alembic.config.Config(os.path.join(os.path.dirname(__file__), "alembic.ini"))
+        config.set_main_option("script_location", escape_alembic_config_value(alembic_dir))
+        config.set_main_option("sqlalchemy.url", escape_alembic_config_value(self.url))
         return config
 
 
@@ -1136,4 +1136,4 @@ def escape_alembic_config_value(value):
     # We must escape '%' in a value string because the character
     # is regarded as the trigger of variable expansion.
     # Please see the documentation of `configparser.BasicInterpolation` for more details.
-    return value.replace('%', '%%')
+    return value.replace("%", "%%")

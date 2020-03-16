@@ -40,28 +40,28 @@ def create_model(num_features, trial):
     model.add(
         Dense(
             num_features,
-            activation='relu',
-            kernel_initializer='normal',
+            activation="relu",
+            kernel_initializer="normal",
             input_shape=(num_features,),
         )
     ),
-    model.add(Dense(16, activation='relu', kernel_initializer='normal'))
-    model.add(Dense(16, activation='relu', kernel_initializer='normal'))
-    model.add(Dense(1, kernel_initializer='normal', activation='linear'))
+    model.add(Dense(16, activation="relu", kernel_initializer="normal"))
+    model.add(Dense(16, activation="relu", kernel_initializer="normal"))
+    model.add(Dense(1, kernel_initializer="normal", activation="linear"))
 
     optimizer = SGD(
-        lr=trial.suggest_loguniform('lr', 1e-5, 1e-1),
-        momentum=trial.suggest_uniform('momentum', 0.0, 1.0),
+        lr=trial.suggest_loguniform("lr", 1e-5, 1e-1),
+        momentum=trial.suggest_uniform("momentum", 0.0, 1.0),
     )
-    model.compile(loss='mean_squared_error', optimizer=optimizer)
+    model.compile(loss="mean_squared_error", optimizer=optimizer)
     return model
 
 
 def mlflow_callback(study, trial):
-    trial_value = trial.value if trial.value is not None else float('nan')
+    trial_value = trial.value if trial.value is not None else float("nan")
     with mlflow.start_run(run_name=study.study_name):
         mlflow.log_params(trial.params)
-        mlflow.log_metrics({'mean_squared_error': trial_value})
+        mlflow.log_metrics({"mean_squared_error": trial_value})
 
 
 def objective(trial):
@@ -78,17 +78,17 @@ def objective(trial):
     return model.evaluate(X_test, y_test, verbose=0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     study = optuna.create_study()
     study.optimize(objective, n_trials=100, timeout=600, callbacks=[mlflow_callback])
 
-    print('Number of finished trials: {}'.format(len(study.trials)))
+    print("Number of finished trials: {}".format(len(study.trials)))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: {}'.format(trial.value))
+    print("  Value: {}".format(trial.value))
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

@@ -66,8 +66,8 @@ def _check_pytorch_ignite_availability():
 
     if not _available:
         raise ImportError(
-            'PyTorch Ignite is not available. Please install PyTorch Ignite to use this feature. '
-            'PyTorch Ignite can be installed by executing `$ pip install pytorch-ignite`. '
-            'For further information, please refer to the installation guide of PyTorch Ignite. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')'
+            "PyTorch Ignite is not available. Please install PyTorch Ignite to use this feature. "
+            "PyTorch Ignite can be installed by executing `$ pip install pytorch-ignite`. "
+            "For further information, please refer to the installation guide of PyTorch Ignite. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )

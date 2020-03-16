@@ -40,8 +40,8 @@ def _check_lightgbm_availability():
 
     if not _available:
         raise ImportError(
-            'LightGBM is not available. Please install LightGBM to use this feature. '
-            'LightGBM can be installed by executing `$ pip install lightgbm`. '
-            'For further information, please refer to the installation guide of LightGBM. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')'
+            "LightGBM is not available. Please install LightGBM to use this feature. "
+            "LightGBM can be installed by executing `$ pip install lightgbm`. "
+            "For further information, please refer to the installation guide of LightGBM. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )

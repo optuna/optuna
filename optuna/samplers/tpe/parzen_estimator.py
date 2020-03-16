@@ -16,13 +16,13 @@ EPS = 1e-12
 
 class _ParzenEstimatorParameters(
     NamedTuple(
-        '_ParzenEstimatorParameters',
+        "_ParzenEstimatorParameters",
         [
-            ('consider_prior', bool),
-            ('prior_weight', Optional[float]),
-            ('consider_magic_clip', bool),
-            ('consider_endpoints', bool),
-            ('weights', Callable[[int], ndarray]),
+            ("consider_prior", bool),
+            ("prior_weight", Optional[float]),
+            ("consider_magic_clip", bool),
+            ("consider_endpoints", bool),
+            ("weights", Callable[[int], ndarray]),
         ],
     )
 ):

@@ -26,19 +26,19 @@ class StorageSupplier(object):
     def __enter__(self):
         # type: () -> Optional[optuna.storages.BaseStorage]
 
-        if self.storage_specifier == 'none':
+        if self.storage_specifier == "none":
             return None
-        elif self.storage_specifier == 'new':
+        elif self.storage_specifier == "new":
             self.tempfile = tempfile.NamedTemporaryFile()
-            url = 'sqlite:///{}'.format(self.tempfile.name)
+            url = "sqlite:///{}".format(self.tempfile.name)
             return optuna.storages.RDBStorage(
-                url, engine_kwargs={'connect_args': {'timeout': SQLITE3_TIMEOUT}},
+                url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
             )
-        elif self.storage_specifier == 'common':
+        elif self.storage_specifier == "common":
             assert self._common_tempfile is not None
-            url = 'sqlite:///{}'.format(self._common_tempfile.name)
+            url = "sqlite:///{}".format(self._common_tempfile.name)
             return optuna.storages.RDBStorage(
-                url, engine_kwargs={'connect_args': {'timeout': SQLITE3_TIMEOUT}},
+                url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
             )
         else:
             assert False

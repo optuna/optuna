@@ -19,8 +19,8 @@ import pkg_resources
 
 import optuna
 
-if pkg_resources.parse_version(chainer.__version__) < pkg_resources.parse_version('4.0.0'):
-    raise RuntimeError('Chainer>=4.0.0 is required for this example.')
+if pkg_resources.parse_version(chainer.__version__) < pkg_resources.parse_version("4.0.0"):
+    raise RuntimeError("Chainer>=4.0.0 is required for this example.")
 
 N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
@@ -31,11 +31,11 @@ PRUNER_INTERVAL = 3
 
 def create_model(trial):
     # We optimize the numbers of layers and their units.
-    n_layers = trial.suggest_int('n_layers', 1, 3)
+    n_layers = trial.suggest_int("n_layers", 1, 3)
 
     layers = []
     for i in range(n_layers):
-        n_units = int(trial.suggest_loguniform('n_units_l{}'.format(i), 32, 256))
+        n_units = int(trial.suggest_loguniform("n_units_l{}".format(i), 32, 256))
         layers.append(L.Linear(None, n_units))
         layers.append(F.relu)
     layers.append(L.Linear(None, 10))
@@ -61,12 +61,12 @@ def objective(trial):
 
     # Setup trainer.
     updater = chainer.training.StandardUpdater(train_iter, optimizer)
-    trainer = chainer.training.Trainer(updater, (EPOCH, 'epoch'))
+    trainer = chainer.training.Trainer(updater, (EPOCH, "epoch"))
 
     # Add Chainer extension for pruners.
     trainer.extend(
         optuna.integration.ChainerPruningExtension(
-            trial, 'validation/main/accuracy', (PRUNER_INTERVAL, 'epoch')
+            trial, "validation/main/accuracy", (PRUNER_INTERVAL, "epoch")
         )
     )
 
@@ -74,11 +74,11 @@ def objective(trial):
     trainer.extend(
         chainer.training.extensions.PrintReport(
             [
-                'epoch',
-                'main/loss',
-                'validation/main/loss',
-                'main/accuracy',
-                'validation/main/accuracy',
+                "epoch",
+                "main/loss",
+                "validation/main/loss",
+                "main/accuracy",
+                "validation/main/accuracy",
             ]
         )
     )
@@ -96,28 +96,28 @@ def objective(trial):
     for key, value in log_last.items():
         trial.set_user_attr(key, value)
 
-    return log_report_extension.log[-1]['validation/main/accuracy']
+    return log_report_extension.log[-1]["validation/main/accuracy"]
 
 
-if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
     study.optimize(objective, n_trials=100)
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
     complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
-    print('Study statistics: ')
-    print('  Number of finished trials: ', len(study.trials))
-    print('  Number of pruned trials: ', len(pruned_trials))
-    print('  Number of complete trials: ', len(complete_trials))
+    print("Study statistics: ")
+    print("  Number of finished trials: ", len(study.trials))
+    print("  Number of pruned trials: ", len(pruned_trials))
+    print("  Number of complete trials: ", len(complete_trials))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: ', trial.value)
+    print("  Value: ", trial.value)
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))
 
-    print('  User attrs:')
+    print("  User attrs:")
     for key, value in trial.user_attrs.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

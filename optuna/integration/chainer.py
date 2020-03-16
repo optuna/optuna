@@ -89,8 +89,8 @@ class ChainerPruningExtension(Extension):
             observation_value = float(observation_value)
         except TypeError:
             raise TypeError(
-                'Type of observation value is not supported by ChainerPruningExtension.\n'
-                '{} cannot be casted to float.'.format(type(observation_value))
+                "Type of observation value is not supported by ChainerPruningExtension.\n"
+                "{} cannot be casted to float.".format(type(observation_value))
             )
 
         return observation_value
@@ -119,8 +119,8 @@ def _check_chainer_availability():
 
     if not _available:
         raise ImportError(
-            'Chainer is not available. Please install Chainer to use this feature. '
-            'Chainer can be installed by executing `$ pip install chainer`. '
-            'For further information, please refer to the installation guide of Chainer. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')'
+            "Chainer is not available. Please install Chainer to use this feature. "
+            "Chainer can be installed by executing `$ pip install chainer`. "
+            "For further information, please refer to the installation guide of Chainer. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )

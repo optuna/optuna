@@ -131,19 +131,19 @@ class PercentilePruner(BasePruner):
 
         if not 0.0 <= percentile <= 100:
             raise ValueError(
-                'Percentile must be between 0 and 100 inclusive but got {}.'.format(percentile)
+                "Percentile must be between 0 and 100 inclusive but got {}.".format(percentile)
             )
         if n_startup_trials < 0:
             raise ValueError(
-                'Number of startup trials cannot be negative but got {}.'.format(n_startup_trials)
+                "Number of startup trials cannot be negative but got {}.".format(n_startup_trials)
             )
         if n_warmup_steps < 0:
             raise ValueError(
-                'Number of warmup steps cannot be negative but got {}.'.format(n_warmup_steps)
+                "Number of warmup steps cannot be negative but got {}.".format(n_warmup_steps)
             )
         if interval_steps < 1:
             raise ValueError(
-                'Pruning interval steps must be at least 1 but got {}.'.format(interval_steps)
+                "Pruning interval steps must be at least 1 but got {}.".format(interval_steps)
             )
 
         self._percentile = percentile

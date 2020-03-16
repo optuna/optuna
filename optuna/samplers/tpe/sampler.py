@@ -177,7 +177,7 @@ class TPESampler(base.BaseSampler):
         # type: (...) -> Tuple[np.ndarray, np.ndarray]
 
         config_vals = np.asarray(config_vals)
-        loss_vals = np.asarray(loss_vals, dtype=[('step', float), ('score', float)])
+        loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
 
         n_below = self._gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
@@ -531,14 +531,14 @@ class TPESampler(base.BaseSampler):
         """
 
         return {
-            'consider_prior': True,
-            'prior_weight': 1.0,
-            'consider_magic_clip': True,
-            'consider_endpoints': False,
-            'n_startup_trials': 20,
-            'n_ei_candidates': 24,
-            'gamma': hyperopt_default_gamma,
-            'weights': default_weights,
+            "consider_prior": True,
+            "prior_weight": 1.0,
+            "consider_magic_clip": True,
+            "consider_endpoints": False,
+            "n_startup_trials": 20,
+            "n_ei_candidates": 24,
+            "gamma": hyperopt_default_gamma,
+            "weights": default_weights,
         }
 
 
@@ -578,16 +578,16 @@ def _get_observation_pairs(study, param_name, trial):
             continue
 
         if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
-            score = (-float('inf'), sign * trial.value)
+            score = (-float("inf"), sign * trial.value)
         elif trial.state is structs.TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
                 if math.isnan(intermediate_value):
-                    score = (-step, float('inf'))
+                    score = (-step, float("inf"))
                 else:
                     score = (-step, sign * intermediate_value)
             else:
-                score = (float('inf'), 0.0)
+                score = (float("inf"), 0.0)
         else:
             continue
 

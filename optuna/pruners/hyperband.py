@@ -80,7 +80,7 @@ class HyperbandPruner(BasePruner):
         self._n_brackets = n_brackets
         self._bracket_resource_budgets = []  # type: List[int]
 
-        _logger.debug('Hyperband has {} brackets'.format(self._n_brackets))
+        _logger.debug("Hyperband has {} brackets".format(self._n_brackets))
 
         for i in range(n_brackets):
             bracket_resource_budget = self._calc_bracket_resource_budget(i, n_brackets)
@@ -91,7 +91,7 @@ class HyperbandPruner(BasePruner):
             min_early_stopping_rate = min_early_stopping_rate_low + i
 
             _logger.debug(
-                '{}th bracket has minimum early stopping rate of {}'.format(
+                "{}th bracket has minimum early stopping rate of {}".format(
                     i, min_early_stopping_rate
                 )
             )
@@ -107,7 +107,7 @@ class HyperbandPruner(BasePruner):
         # type: (optuna.study.Study, structs.FrozenTrial) -> bool
 
         i = self._get_bracket_id(study, trial)
-        _logger.debug('{}th bracket is selected'.format(i))
+        _logger.debug("{}th bracket is selected".format(i))
         bracket_study = self._create_bracket_study(study, i)
         return self._pruners[i].prune(bracket_study, trial)
 
@@ -126,13 +126,13 @@ class HyperbandPruner(BasePruner):
         `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
         """
 
-        n = hash('{}_{}'.format(study.study_name, trial.number)) % self._resource_budget
+        n = hash("{}_{}".format(study.study_name, trial.number)) % self._resource_budget
         for i in range(self._n_brackets):
             n -= self._bracket_resource_budgets[i]
             if n < 0:
                 return i
 
-        assert False, 'This line should be unreachable.'
+        assert False, "This line should be unreachable."
 
     def _create_bracket_study(self, study, bracket_index):
         # type: (optuna.study.Study, int) -> optuna.study.Study
@@ -144,14 +144,14 @@ class HyperbandPruner(BasePruner):
         class _BracketStudy(optuna.study.Study):
 
             _VALID_ATTRS = (
-                'get_trials',
-                'direction',
-                '_storage',
-                '_study_id',
-                'pruner',
-                'study_name',
-                '_bracket_id',
-                'sampler',
+                "get_trials",
+                "direction",
+                "_storage",
+                "_study_id",
+                "pruner",
+                "study_name",
+                "_bracket_id",
+                "sampler",
             )
 
             def __init__(self, study, bracket_id):

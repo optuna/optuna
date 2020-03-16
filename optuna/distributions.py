@@ -102,8 +102,8 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
     def __repr__(self):
         # type: () -> str
 
-        kwargs = ', '.join('{}={}'.format(k, v) for k, v in sorted(self.__dict__.items()))
-        return '{}({})'.format(self.__class__.__name__, kwargs)
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self.__dict__.items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
 
 
 class UniformDistribution(BaseDistribution):
@@ -325,7 +325,7 @@ class CategoricalDistribution(BaseDistribution):
             return self.choices.index(param_value_in_external_repr)
         except ValueError as e:
             raise ValueError(
-                '\'{}\' not in {}.'.format(param_value_in_external_repr, self.choices)
+                "'{}' not in {}.".format(param_value_in_external_repr, self.choices)
             ) from e
 
     def single(self):
@@ -362,14 +362,14 @@ def json_to_distribution(json_str):
 
     json_dict = json.loads(json_str)
 
-    if json_dict['name'] == CategoricalDistribution.__name__:
-        json_dict['attributes']['choices'] = tuple(json_dict['attributes']['choices'])
+    if json_dict["name"] == CategoricalDistribution.__name__:
+        json_dict["attributes"]["choices"] = tuple(json_dict["attributes"]["choices"])
 
     for cls in DISTRIBUTION_CLASSES:
-        if json_dict['name'] == cls.__name__:
-            return cls(**json_dict['attributes'])
+        if json_dict["name"] == cls.__name__:
+            return cls(**json_dict["attributes"])
 
-    raise ValueError('Unknown distribution class: {}'.format(json_dict['name']))
+    raise ValueError("Unknown distribution class: {}".format(json_dict["name"]))
 
 
 def distribution_to_json(dist):
@@ -384,7 +384,7 @@ def distribution_to_json(dist):
 
     """
 
-    return json.dumps({'name': dist.__class__.__name__, 'attributes': dist._asdict()})
+    return json.dumps({"name": dist.__class__.__name__, "attributes": dist._asdict()})
 
 
 def check_distribution_compatibility(dist_old, dist_new):
@@ -402,7 +402,7 @@ def check_distribution_compatibility(dist_old, dist_new):
     """
 
     if dist_old.__class__ != dist_new.__class__:
-        raise ValueError('Cannot set different distribution kind to the same parameter name.')
+        raise ValueError("Cannot set different distribution kind to the same parameter name.")
 
     if not isinstance(dist_old, CategoricalDistribution):
         return
@@ -410,5 +410,5 @@ def check_distribution_compatibility(dist_old, dist_new):
         return
     if dist_old.choices != dist_new.choices:
         raise ValueError(
-            CategoricalDistribution.__name__ + ' does not support dynamic value space.'
+            CategoricalDistribution.__name__ + " does not support dynamic value space."
         )

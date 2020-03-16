@@ -26,12 +26,12 @@ def objective(trial):
     iris = sklearn.datasets.load_iris()
     x, y = iris.data, iris.target
 
-    classifier_name = trial.suggest_categorical('classifier', ['SVC', 'RandomForest'])
-    if classifier_name == 'SVC':
-        svc_c = trial.suggest_loguniform('svc_c', 1e-10, 1e10)
-        classifier_obj = sklearn.svm.SVC(C=svc_c, gamma='auto')
+    classifier_name = trial.suggest_categorical("classifier", ["SVC", "RandomForest"])
+    if classifier_name == "SVC":
+        svc_c = trial.suggest_loguniform("svc_c", 1e-10, 1e10)
+        classifier_obj = sklearn.svm.SVC(C=svc_c, gamma="auto")
     else:
-        rf_max_depth = int(trial.suggest_loguniform('rf_max_depth', 2, 32))
+        rf_max_depth = int(trial.suggest_loguniform("rf_max_depth", 2, 32))
         classifier_obj = sklearn.ensemble.RandomForestClassifier(
             max_depth=rf_max_depth, n_estimators=10
         )
@@ -41,14 +41,14 @@ def objective(trial):
     return accuracy
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     study = optuna.create_study(
-        direction='maximize',
-        study_name='kubernetes',
-        storage='postgresql://{}:{}@postgres:5432/{}'.format(
-            os.environ['POSTGRES_USER'],
-            os.environ['POSTGRES_PASSWORD'],
-            os.environ['POSTGRES_DB'],
+        direction="maximize",
+        study_name="kubernetes",
+        storage="postgresql://{}:{}@postgres:5432/{}".format(
+            os.environ["POSTGRES_USER"],
+            os.environ["POSTGRES_PASSWORD"],
+            os.environ["POSTGRES_DB"],
         ),
         load_if_exists=True,
     )

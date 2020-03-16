@@ -32,20 +32,20 @@ def objective(trial):
     train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.3)
 
     param = {
-        'objective': trial.suggest_categorical('objective', ['Logloss', 'CrossEntropy']),
-        'colsample_bylevel': trial.suggest_uniform('colsample_bylevel', 0.01, 0.1),
-        'depth': trial.suggest_int('depth', 1, 12),
-        'boosting_type': trial.suggest_categorical('boosting_type', ['Ordered', 'Plain']),
-        'bootstrap_type': trial.suggest_categorical(
-            'bootstrap_type', ['Bayesian', 'Bernoulli', 'MVS']
+        "objective": trial.suggest_categorical("objective", ["Logloss", "CrossEntropy"]),
+        "colsample_bylevel": trial.suggest_uniform("colsample_bylevel", 0.01, 0.1),
+        "depth": trial.suggest_int("depth", 1, 12),
+        "boosting_type": trial.suggest_categorical("boosting_type", ["Ordered", "Plain"]),
+        "bootstrap_type": trial.suggest_categorical(
+            "bootstrap_type", ["Bayesian", "Bernoulli", "MVS"]
         ),
-        'used_ram_limit': '3gb',
+        "used_ram_limit": "3gb",
     }
 
-    if param['bootstrap_type'] == 'Bayesian':
-        param['bagging_temperature'] = trial.suggest_uniform('bagging_temperature', 0, 10)
-    elif param['bootstrap_type'] == 'Bernoulli':
-        param['subsample'] = trial.suggest_uniform('subsample', 0.1, 1)
+    if param["bootstrap_type"] == "Bayesian":
+        param["bagging_temperature"] = trial.suggest_uniform("bagging_temperature", 0, 10)
+    elif param["bootstrap_type"] == "Bernoulli":
+        param["subsample"] = trial.suggest_uniform("subsample", 0.1, 1)
 
     gbm = cb.CatBoostClassifier(**param)
 
@@ -57,17 +57,17 @@ def objective(trial):
     return accuracy
 
 
-if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize')
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100, timeout=600)
 
-    print('Number of finished trials: {}'.format(len(study.trials)))
+    print("Number of finished trials: {}".format(len(study.trials)))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: {}'.format(trial.value))
+    print("  Value: {}".format(trial.value))
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

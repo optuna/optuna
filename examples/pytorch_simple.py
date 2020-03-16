@@ -31,7 +31,7 @@ from torchvision import transforms
 
 import optuna
 
-DEVICE = torch.device('cpu')
+DEVICE = torch.device("cpu")
 BATCHSIZE = 128
 CLASSES = 10
 DIR = os.getcwd()
@@ -43,15 +43,15 @@ N_TEST_EXAMPLES = BATCHSIZE * 10
 
 def define_model(trial):
     # We optimize the number of layers, hidden untis and dropout ratio in each layer.
-    n_layers = trial.suggest_int('n_layers', 1, 3)
+    n_layers = trial.suggest_int("n_layers", 1, 3)
     layers = []
 
     in_features = 28 * 28
     for i in range(n_layers):
-        out_features = trial.suggest_int('n_units_l{}'.format(i), 4, 128)
+        out_features = trial.suggest_int("n_units_l{}".format(i), 4, 128)
         layers.append(nn.Linear(in_features, out_features))
         layers.append(nn.ReLU())
-        p = trial.suggest_uniform('dropout_l{}'.format(i), 0.2, 0.5)
+        p = trial.suggest_uniform("dropout_l{}".format(i), 0.2, 0.5)
         layers.append(nn.Dropout(p))
 
         in_features = out_features
@@ -83,8 +83,8 @@ def objective(trial):
     model = define_model(trial).to(DEVICE)
 
     # Generate the optimizers.
-    optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'RMSprop', 'SGD'])
-    lr = trial.suggest_uniform('lr', 1e-5, 1e-1)
+    optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
+    lr = trial.suggest_uniform("lr", 1e-5, 1e-1)
     optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
 
     # Get the MNIST dataset.
@@ -128,17 +128,17 @@ def objective(trial):
     return accuracy
 
 
-if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize')
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100)
 
-    print('Number of finished trials: ', len(study.trials))
+    print("Number of finished trials: ", len(study.trials))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: ', trial.value)
+    print("  Value: ", trial.value)
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

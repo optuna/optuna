@@ -52,9 +52,9 @@ def _get_intermediate_plot(study):
     # type: (Study) -> go.Figure
 
     layout = go.Layout(
-        title='Intermediate Values Plot',
-        xaxis={'title': 'Step'},
-        yaxis={'title': 'Intermediate Value'},
+        title="Intermediate Values Plot",
+        xaxis={"title": "Step"},
+        yaxis={"title": "Intermediate Value"},
         showlegend=False,
     )
 
@@ -62,7 +62,7 @@ def _get_intermediate_plot(study):
     trials = [trial for trial in study.trials if trial.state in target_state]
 
     if len(trials) == 0:
-        logger.warning('Study instance does not contain trials.')
+        logger.warning("Study instance does not contain trials.")
         return go.Figure(data=[], layout=layout)
 
     traces = []
@@ -72,15 +72,15 @@ def _get_intermediate_plot(study):
             trace = go.Scatter(
                 x=tuple((x for x, _ in sorted_intermediate_values)),
                 y=tuple((y for _, y in sorted_intermediate_values)),
-                mode='lines+markers',
-                marker={'maxdisplayed': 10},
-                name='Trial{}'.format(trial.number),
+                mode="lines+markers",
+                marker={"maxdisplayed": 10},
+                name="Trial{}".format(trial.number),
             )
             traces.append(trace)
 
     if not traces:
         logger.warning(
-            'You need to set up the pruning feature to utilize `plot_intermediate_values()`'
+            "You need to set up the pruning feature to utilize `plot_intermediate_values()`"
         )
         return go.Figure(data=[], layout=layout)
 
