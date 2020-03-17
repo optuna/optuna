@@ -24,10 +24,11 @@ import optuna
 def objective(trial):
     iris = sklearn.datasets.load_iris()
     classes = list(set(iris.target))
-    train_x, test_x, train_y, test_y = \
-        sklearn.model_selection.train_test_split(iris.data, iris.target, test_size=0.25)
+    train_x, test_x, train_y, test_y = sklearn.model_selection.train_test_split(
+        iris.data, iris.target, test_size=0.25
+    )
 
-    alpha = trial.suggest_loguniform('alpha', 1e-5, 1e-1)
+    alpha = trial.suggest_loguniform("alpha", 1e-5, 1e-1)
     clf = sklearn.linear_model.SGDClassifier(alpha=alpha)
 
     for step in range(100):
@@ -44,23 +45,23 @@ def objective(trial):
     return clf.score(test_x, test_y)
 
 
-if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize')
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100)
 
     pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
     complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
 
-    print('Study statistics: ')
-    print('  Number of finished trials: ', len(study.trials))
-    print('  Number of pruned trials: ', len(pruned_trials))
-    print('  Number of complete trials: ', len(complete_trials))
+    print("Study statistics: ")
+    print("  Number of finished trials: ", len(study.trials))
+    print("  Number of pruned trials: ", len(pruned_trials))
+    print("  Number of complete trials: ", len(complete_trials))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: ', trial.value)
+    print("  Value: ", trial.value)
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

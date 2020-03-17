@@ -17,6 +17,7 @@ from optuna import type_checking
 
 try:
     import cma
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -45,16 +46,18 @@ class CmaEsSampler(BaseSampler):
 
         Optimize a simple quadratic function by using :class:`~optuna.integration.CmaEsSampler`.
 
-        .. code::
+        .. testcode::
 
-                def objective(trial):
-                    x = trial.suggest_uniform('x', -1, 1)
-                    y = trial.suggest_int('y', -1, 1)
-                    return x**2 + y
+            import optuna
 
-                sampler = optuna.integration.CmaEsSampler()
-                study = optuna.create_study(sampler=sampler)
-                study.optimize(objective, n_trials=100)
+            def objective(trial):
+                x = trial.suggest_uniform('x', -1, 1)
+                y = trial.suggest_int('y', -1, 1)
+                return x**2 + y
+
+            sampler = optuna.integration.CmaEsSampler()
+            study = optuna.create_study(sampler=sampler)
+            study.optimize(objective, n_trials=20)
 
     Note that parallel execution of trials may affect the optimization performance of CMA-ES,
     especially if the number of trials running in parallel exceeds the population size.
@@ -118,15 +121,15 @@ class CmaEsSampler(BaseSampler):
     """
 
     def __init__(
-            self,
-            x0=None,  # type: Optional[Dict[str, Any]]
-            sigma0=None,  # type: Optional[float]
-            cma_stds=None,  # type: Optional[Dict[str, float]]
-            seed=None,  # type: Optional[int]
-            cma_opts=None,  # type: Optional[Dict[str, Any]]
-            n_startup_trials=1,  # type: int
-            independent_sampler=None,  # type: Optional[BaseSampler]
-            warn_independent_sampling=True,  # type: bool
+        self,
+        x0=None,  # type: Optional[Dict[str, Any]]
+        sigma0=None,  # type: Optional[float]
+        cma_stds=None,  # type: Optional[Dict[str, float]]
+        seed=None,  # type: Optional[int]
+        cma_opts=None,  # type: Optional[Dict[str, Any]]
+        n_startup_trials=1,  # type: int
+        independent_sampler=None,  # type: Optional[BaseSampler]
+        warn_independent_sampling=True,  # type: bool
     ):
         # type: (...) -> None
 
@@ -136,10 +139,10 @@ class CmaEsSampler(BaseSampler):
         self._sigma0 = sigma0
         self._cma_stds = cma_stds
         if seed is None:
-            seed = random.randint(1, 2**32)
+            seed = random.randint(1, 2 ** 32)
         self._cma_opts = cma_opts or {}
-        self._cma_opts['seed'] = seed
-        self._cma_opts.setdefault('verbose', -2)
+        self._cma_opts["seed"] = seed
+        self._cma_opts.setdefault("verbose", -2)
         self._n_startup_trials = n_startup_trials
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._warn_independent_sampling = warn_independent_sampling
@@ -168,8 +171,9 @@ class CmaEsSampler(BaseSampler):
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
-        return self._independent_sampler.sample_independent(study, trial, param_name,
-                                                            param_distribution)
+        return self._independent_sampler.sample_independent(
+            study, trial, param_name, param_distribution
+        )
 
     def sample_relative(self, study, trial, search_space):
         # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
@@ -178,9 +182,12 @@ class CmaEsSampler(BaseSampler):
             return {}
 
         if len(search_space) == 1:
-            self._logger.info("`CmaEsSampler` does not support optimization of 1-D search space. "
-                              "`{}` is used instead of `CmaEsSampler`.".format(
-                                  self._independent_sampler.__class__.__name__))
+            self._logger.info(
+                "`CmaEsSampler` does not support optimization of 1-D search space. "
+                "`{}` is used instead of `CmaEsSampler`.".format(
+                    self._independent_sampler.__class__.__name__
+                )
+            )
             self._warn_independent_sampling = False
             return {}
 
@@ -197,8 +204,7 @@ class CmaEsSampler(BaseSampler):
             sigma0 = self._sigma0
         sigma0 = max(sigma0, _MIN_SIGMA0)
 
-        optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds,
-                               self._cma_opts)
+        optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds, self._cma_opts)
         trials = study.trials
         last_told_trial_number = optimizer.tell(trials, study.direction)
         return optimizer.ask(trials, last_told_trial_number)
@@ -223,8 +229,9 @@ class CmaEsSampler(BaseSampler):
                 index = (len(distribution.choices) - 1) // 2
                 x0[name] = distribution.choices[index]
             else:
-                raise NotImplementedError('The distribution {} is not implemented.'.format(
-                    distribution))
+                raise NotImplementedError(
+                    "The distribution {} is not implemented.".format(distribution)
+                )
         return x0
 
     @staticmethod
@@ -246,8 +253,9 @@ class CmaEsSampler(BaseSampler):
             elif isinstance(distribution, CategoricalDistribution):
                 sigma0s.append((len(distribution.choices) - 1) / 6)
             else:
-                raise NotImplementedError('The distribution {} is not implemented.'.format(
-                    distribution))
+                raise NotImplementedError(
+                    "The distribution {} is not implemented.".format(distribution)
+                )
         return min(sigma0s)
 
     def _log_independent_sampling(self, trial, param_name):
@@ -260,17 +268,19 @@ class CmaEsSampler(BaseSampler):
             "You can suppress this warning by setting `warn_independent_sampling` "
             "to `False` in the constructor of `CmaEsSampler`, "
             "if this independent sampling is intended behavior.".format(
-                param_name, trial.number, self._independent_sampler.__class__.__name__))
+                param_name, trial.number, self._independent_sampler.__class__.__name__
+            )
+        )
 
 
 class _Optimizer(object):
     def __init__(
-            self,
-            search_space,  # type: Dict[str, BaseDistribution]
-            x0,  # type: Dict[str, Any]
-            sigma0,  # type: float
-            cma_stds,  # type: Optional[Dict[str, float]]
-            cma_opts  # type: Dict[str, Any]
+        self,
+        search_space,  # type: Dict[str, BaseDistribution]
+        x0,  # type: Dict[str, Any]
+        sigma0,  # type: float
+        cma_stds,  # type: Optional[Dict[str, float]]
+        cma_opts,  # type: Dict[str, Any]
     ):
         # type: (...) -> None
 
@@ -286,8 +296,7 @@ class _Optimizer(object):
                 # TODO(Yanase): Support one-hot representation.
                 lows.append(-0.5)
                 highs.append(len(dist.choices) - 0.5)
-            elif isinstance(dist, UniformDistribution) or \
-                    isinstance(dist, LogUniformDistribution):
+            elif isinstance(dist, UniformDistribution) or isinstance(dist, LogUniformDistribution):
                 lows.append(self._to_cma_params(search_space, param_name, dist.low))
                 highs.append(self._to_cma_params(search_space, param_name, dist.high))
             elif isinstance(dist, DiscreteUniformDistribution):
@@ -298,20 +307,21 @@ class _Optimizer(object):
                 lows.append(dist.low - 0.5)
                 highs.append(dist.high + 0.5)
             else:
-                raise NotImplementedError('The distribution {} is not implemented.'.format(dist))
+                raise NotImplementedError("The distribution {} is not implemented.".format(dist))
 
         # Set initial params.
         initial_cma_params = []
         for param_name in self._param_names:
             initial_cma_params.append(
-                self._to_cma_params(self._search_space, param_name, x0[param_name]))
+                self._to_cma_params(self._search_space, param_name, x0[param_name])
+            )
         cma_option = {
-            'BoundaryHandler': cma.BoundTransform,
-            'bounds': [lows, highs],
+            "BoundaryHandler": cma.BoundTransform,
+            "bounds": [lows, highs],
         }
 
         if cma_stds:
-            cma_option['CMA_stds'] = [cma_stds.get(name, 1.) for name in self._param_names]
+            cma_option["CMA_stds"] = [cma_stds.get(name, 1.0) for name in self._param_names]
 
         cma_opts.update(cma_option)
 
@@ -328,7 +338,7 @@ class _Optimizer(object):
         for i in range(generation):
             xs = []
             ys = []
-            for t in complete_trials[i * popsize:(i + 1) * popsize]:
+            for t in complete_trials[i * popsize : (i + 1) * popsize]:
                 x = [
                     self._to_cma_params(self._search_space, name, t.params[name])
                     for name in self._param_names
@@ -434,7 +444,8 @@ def _check_cma_availability():
 
     if not _available:
         raise ImportError(
-            'cma library is not available. Please install cma to use this feature. '
-            'cma can be installed by executing `$ pip install cma`. '
-            'For further information, please refer to the installation guide of cma. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "cma library is not available. Please install cma to use this feature. "
+            "cma can be installed by executing `$ pip install cma`. "
+            "For further information, please refer to the installation guide of cma. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )

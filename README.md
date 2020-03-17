@@ -95,12 +95,12 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 
 Optuna is available at [the Python Package Index](https://pypi.org/project/optuna/) and on [Anaconda Cloud](https://anaconda.org/conda-forge/optuna).
 
-```
+```bash
 # PyPI
 $ pip install optuna
 ```
 
-```
+```bash
 # Anaconda Cloud
 $ conda install -c conda-forge optuna
 ```
@@ -110,7 +110,7 @@ Optuna supports Python 3.5 or newer.
 
 ## Communication
 
-- [Github Issues] for bug reports, feature requests and questions.
+- [GitHub Issues] for bug reports, feature requests and questions.
 - [Gitter] for interactive chat with developers.
 - [Stack Overflow] for questions.
 

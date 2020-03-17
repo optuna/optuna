@@ -7,6 +7,7 @@ import os
 import sys
 import threading
 import uuid
+import weakref
 
 import alembic.command
 import alembic.config
@@ -70,6 +71,8 @@ class RDBStorage(BaseStorage):
         engine_kwargs:
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
+        skip_compatibility_check:
+            Flag to skip schema compatibility check if set to True.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -88,8 +91,6 @@ class RDBStorage(BaseStorage):
     def __init__(self, url, engine_kwargs=None, skip_compatibility_check=False):
         # type: (str, Optional[Dict[str, Any]], bool) -> None
 
-        self._check_python_version()
-
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
@@ -99,9 +100,10 @@ class RDBStorage(BaseStorage):
         try:
             self.engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
-            raise ImportError('Failed to import DB access module for the specified storage URL. '
-                              'Please install appropriate one. (The actual import error is: ' +
-                              str(e) + '.)')
+            raise ImportError(
+                "Failed to import DB access module for the specified storage URL. "
+                "Please install appropriate one. (The actual import error is: " + str(e) + ".)"
+            )
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
@@ -111,26 +113,29 @@ class RDBStorage(BaseStorage):
             self._version_manager.check_table_schema_compatibility()
 
         self._finished_trials_cache = _FinishedTrialsCache()
+        weakref.finalize(self, self._finalize)
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
-        del state['scoped_session']
-        del state['engine']
-        del state['_version_manager']
-        del state['_finished_trials_cache']
+        del state["scoped_session"]
+        del state["engine"]
+        del state["_version_manager"]
+        del state["_finished_trials_cache"]
         return state
 
     def __setstate__(self, state):
         # type: (Dict[Any, Any]) -> None
+
         self.__dict__.update(state)
         try:
             self.engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
-            raise ImportError('Failed to import DB access module for the specified storage URL. '
-                              'Please install appropriate one. (The actual import error is: ' +
-                              str(e) + '.)')
+            raise ImportError(
+                "Failed to import DB access module for the specified storage URL. "
+                "Please install appropriate one. (The actual import error is: " + str(e) + ".)"
+            )
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
@@ -138,19 +143,6 @@ class RDBStorage(BaseStorage):
         if not self.skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
         self._finished_trials_cache = _FinishedTrialsCache()
-
-    @staticmethod
-    def _check_python_version():
-        # type: () -> None
-
-        if sys.version_info.major != 3:
-            return
-
-        if sys.version_info.minor != 4:
-            return
-
-        if 0 <= sys.version_info.micro < 4:
-            raise RuntimeError('RDBStorage does not support Python 3.4.0 to 3.4.3.')
 
     def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
@@ -167,9 +159,10 @@ class RDBStorage(BaseStorage):
                 "Another study with name '{}' already exists. "
                 "Please specify a different name, or reuse the existing one "
                 "by setting `load_if_exists` (for Python API) or "
-                "`--skip-if-exists` flag (for CLI).".format(study_name))
+                "`--skip-if-exists` flag (for CLI).".format(study_name)
+            )
 
-        _logger.info('A new study created with name: {}'.format(study.study_name))
+        _logger.info("A new study created with name: {}".format(study.study_name))
 
         return study.study_id
 
@@ -205,8 +198,11 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         if study.direction != structs.StudyDirection.NOT_SET and study.direction != direction:
-            raise ValueError('Cannot overwrite study direction from {} to {}.'.format(
-                study.direction, direction))
+            raise ValueError(
+                "Cannot overwrite study direction from {} to {}.".format(
+                    study.direction, direction
+                )
+            )
 
         study.direction = direction
 
@@ -221,7 +217,8 @@ class RDBStorage(BaseStorage):
         attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
         if attribute is None:
             attribute = models.StudyUserAttributeModel(
-                study_id=study_id, key=key, value_json=json.dumps(value))
+                study_id=study_id, key=key, value_json=json.dumps(value)
+            )
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
@@ -237,7 +234,8 @@ class RDBStorage(BaseStorage):
         attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
         if attribute is None:
             attribute = models.StudySystemAttributeModel(
-                study_id=study_id, key=key, value_json=json.dumps(value))
+                study_id=study_id, key=key, value_json=json.dumps(value)
+            )
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
@@ -372,18 +370,24 @@ class RDBStorage(BaseStorage):
                     v for v in value_models if v.trial_id == best_trial_model.trial_id
                 ]
                 best_trial_user_models = [
-                    u for u in trial_user_attribute_models
+                    u
+                    for u in trial_user_attribute_models
                     if u.trial_id == best_trial_model.trial_id
                 ]
                 best_trial_system_models = [
-                    s for s in trial_system_attribute_models
+                    s
+                    for s in trial_system_attribute_models
                     if s.trial_id == best_trial_model.trial_id
                 ]
 
                 # Merge model objects related to the best trial.
-                best_trial = self._merge_trials_orm([best_trial_model], best_param_models,
-                                                    best_value_models, best_trial_user_models,
-                                                    best_trial_system_models)[0]
+                best_trial = self._merge_trials_orm(
+                    [best_trial_model],
+                    best_param_models,
+                    best_value_models,
+                    best_trial_user_models,
+                    best_trial_system_models,
+                )[0]
 
             # Find datetime_start.
             datetime_start = None
@@ -391,7 +395,8 @@ class RDBStorage(BaseStorage):
                 datetime_start = min([t.datetime_start for t in study_trial_models])
 
             attributes = models.StudySystemAttributeModel.where_study_id(
-                study_model.study_id, session)
+                study_model.study_id, session
+            )
             system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
             # Consolidate StudySummary.
@@ -404,7 +409,9 @@ class RDBStorage(BaseStorage):
                     system_attrs=system_attrs,
                     n_trials=len(study_trial_models),
                     datetime_start=datetime_start,
-                    study_id=study_model.study_id))
+                    study_id=study_model.study_id,
+                )
+            )
 
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
@@ -417,7 +424,9 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         if template_trial is None:
-            trial = models.TrialModel(study_id=study_id, state=structs.TrialState.RUNNING)
+            trial = models.TrialModel(
+                study_id=study_id, number=None, state=structs.TrialState.RUNNING,
+            )
         else:
             # Because only `RUNNING` trials can be updated,
             # we temporarily set the state of the new trial to `RUNNING`.
@@ -427,6 +436,7 @@ class RDBStorage(BaseStorage):
 
             trial = models.TrialModel(
                 study_id=study_id,
+                number=None,
                 state=temp_state,
                 value=template_trial.value,
                 datetime_start=template_trial.datetime_start,
@@ -446,44 +456,29 @@ class RDBStorage(BaseStorage):
             for param_name, param_value in template_trial.params.items():
                 distribution = template_trial.distributions[param_name]
                 param_value_in_internal_repr = distribution.to_internal_repr(param_value)
-                self._set_trial_param_without_commit(session, trial.trial_id, param_name,
-                                                     param_value_in_internal_repr, distribution)
+                self._set_trial_param_without_commit(
+                    session, trial.trial_id, param_name, param_value_in_internal_repr, distribution
+                )
 
             for key, value in template_trial.user_attrs.items():
                 self._set_trial_user_attr_without_commit(session, trial.trial_id, key, value)
 
             for key, value in template_trial.system_attrs.items():
-                if key == '_number':
-                    continue
-
                 self._set_trial_system_attr_without_commit(session, trial.trial_id, key, value)
 
             for step, intermediate_value in template_trial.intermediate_values.items():
-                self._set_trial_intermediate_value_without_commit(session, trial.trial_id, step,
-                                                                  intermediate_value)
+                self._set_trial_intermediate_value_without_commit(
+                    session, trial.trial_id, step, intermediate_value
+                )
 
             trial.state = template_trial.state
 
-        self._commit(session)
+        trial.number = trial.count_past_trials(session)
+        session.add(trial)
 
-        self._create_new_trial_number(trial.trial_id)
+        self._commit(session)
 
         return trial.trial_id
-
-    def _create_new_trial_number(self, trial_id):
-        # type: (int) -> int
-
-        session = self.scoped_session()
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-
-        trial_number = trial.count_past_trials(session)
-
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
-
-        self.set_trial_system_attr(trial.trial_id, '_number', trial_number)
-
-        return trial_number
 
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> bool
@@ -507,28 +502,32 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        if not self._set_trial_param_without_commit(session, trial_id, param_name,
-                                                    param_value_internal, distribution):
+        if not self._set_trial_param_without_commit(
+            session, trial_id, param_name, param_value_internal, distribution
+        ):
             return False
 
         commit_success = self._commit_with_integrity_check(session)
 
         return commit_success
 
-    def _set_trial_param_without_commit(self, session, trial_id, param_name, param_value_internal,
-                                        distribution):
+    def _set_trial_param_without_commit(
+        self, session, trial_id, param_name, param_value_internal, distribution
+    ):
         # type: (orm.Session, int, str, float, distributions.BaseDistribution) -> bool
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial_param = \
-            models.TrialParamModel.find_by_trial_and_param_name(trial, param_name, session)
+        trial_param = models.TrialParamModel.find_by_trial_and_param_name(
+            trial, param_name, session
+        )
 
         if trial_param is not None:
             # Raise error in case distribution is incompatible.
             distributions.check_distribution_compatibility(
-                distributions.json_to_distribution(trial_param.distribution_json), distribution)
+                distributions.json_to_distribution(trial_param.distribution_json), distribution
+            )
 
             # Terminate transaction explicitly to avoid connection timeout during transaction.
             self._commit(session)
@@ -539,7 +538,8 @@ class RDBStorage(BaseStorage):
             trial_id=trial_id,
             param_name=param_name,
             param_value=param_value_internal,
-            distribution_json=distributions.distribution_to_json(distribution))
+            distribution_json=distributions.distribution_to_json(distribution),
+        )
 
         param.check_and_add(session)
 
@@ -552,7 +552,8 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         trial_param = models.TrialParamModel.find_or_raise_by_trial_and_param_name(
-            trial, param_name, session)
+            trial, param_name, session
+        )
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
@@ -575,16 +576,18 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        if not self._set_trial_intermediate_value_without_commit(session, trial_id, step,
-                                                                 intermediate_value):
+        if not self._set_trial_intermediate_value_without_commit(
+            session, trial_id, step, intermediate_value
+        ):
             return False
 
         commit_success = self._commit_with_integrity_check(session)
 
         return commit_success
 
-    def _set_trial_intermediate_value_without_commit(self, session, trial_id, step,
-                                                     intermediate_value):
+    def _set_trial_intermediate_value_without_commit(
+        self, session, trial_id, step, intermediate_value
+    ):
         # type: (orm.Session, int, int, float) -> bool
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -594,9 +597,9 @@ class RDBStorage(BaseStorage):
         if trial_value is not None:
             return False
 
-        trial_value = models.TrialValueModel(trial_id=trial_id,
-                                             step=step,
-                                             value=intermediate_value)
+        trial_value = models.TrialValueModel(
+            trial_id=trial_id, step=step, value=intermediate_value
+        )
 
         session.add(trial_value)
 
@@ -619,9 +622,9 @@ class RDBStorage(BaseStorage):
 
         attribute = models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
-            attribute = models.TrialUserAttributeModel(trial_id=trial_id,
-                                                       key=key,
-                                                       value_json=json.dumps(value))
+            attribute = models.TrialUserAttributeModel(
+                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            )
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
@@ -639,22 +642,13 @@ class RDBStorage(BaseStorage):
         # type: (orm.Session, int, str, Any) -> None
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        if key == '_number':
-            # `_number` attribute may be set even after a trial is finished.
-            # This happens if the trial was created before v0.9.0,
-            # where a trial didn't have `_number` attribute.
-            # In this case, `check_trial_is_updatable` is skipped to avoid the `RuntimeError`.
-            #
-            # TODO(ohta): Remove this workaround when `number` field is added to `TrialModel`.
-            pass
-        else:
-            self.check_trial_is_updatable(trial_id, trial.state)
+        self.check_trial_is_updatable(trial_id, trial.state)
 
         attribute = models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
         if attribute is None:
-            attribute = models.TrialSystemAttributeModel(trial_id=trial_id,
-                                                         key=key,
-                                                         value_json=json.dumps(value))
+            attribute = models.TrialSystemAttributeModel(
+                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            )
             session.add(attribute)
         else:
             attribute.value_json = json.dumps(value)
@@ -662,11 +656,7 @@ class RDBStorage(BaseStorage):
     def get_trial_number_from_id(self, trial_id):
         # type: (int) -> int
 
-        trial_number = self.get_trial_system_attrs(trial_id).get('_number')
-        if trial_number is None:
-            # If a study is created by optuna<=0.8.0, trial number is not found.
-            # Create new one.
-            return self._create_new_trial_number(trial_id)
+        trial_number = self.get_trial(trial_id).number
         return trial_number
 
     def get_trial(self, trial_id):
@@ -692,8 +682,9 @@ class RDBStorage(BaseStorage):
         user_attributes = models.TrialUserAttributeModel.where_trial(trial, session)
         system_attributes = models.TrialSystemAttributeModel.where_trial(trial, session)
 
-        frozen_trial = self._merge_trials_orm([trial], params, values, user_attributes,
-                                              system_attributes)[0]
+        frozen_trial = self._merge_trials_orm(
+            [trial], params, values, user_attributes, system_attributes
+        )[0]
 
         self._finished_trials_cache.cache_trial_if_finished(frozen_trial)
 
@@ -755,7 +746,8 @@ class RDBStorage(BaseStorage):
         system_attributes = models.TrialSystemAttributeModel.where_study(study, session)
 
         all_trials = self._merge_trials_orm(
-            trials, params, values, user_attributes, system_attributes)
+            trials, params, values, user_attributes, system_attributes
+        )
 
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
@@ -773,12 +765,12 @@ class RDBStorage(BaseStorage):
         return n_trials
 
     def _merge_trials_orm(
-            self,
-            trials,  # type: List[models.TrialModel]
-            trial_params,  # type: List[models.TrialParamModel]
-            trial_intermediate_values,  # type: List[models.TrialValueModel]
-            trial_user_attrs,  # type: List[models.TrialUserAttributeModel]
-            trial_system_attrs  # type: List[models.TrialSystemAttributeModel]
+        self,
+        trials,  # type: List[models.TrialModel]
+        trial_params,  # type: List[models.TrialParamModel]
+        trial_intermediate_values,  # type: List[models.TrialValueModel]
+        trial_user_attrs,  # type: List[models.TrialUserAttributeModel]
+        trial_system_attrs,  # type: List[models.TrialSystemAttributeModel]
     ):
         # type: (...) -> List[structs.FrozenTrial]
 
@@ -794,17 +786,19 @@ class RDBStorage(BaseStorage):
         for value in trial_intermediate_values:
             id_to_values[value.trial_id].append(value)
 
-        id_to_user_attrs = \
-            defaultdict(list)  # type: Dict[int, List[models.TrialUserAttributeModel]]
+        id_to_user_attrs = defaultdict(
+            list
+        )  # type: Dict[int, List[models.TrialUserAttributeModel]]
         for user_attr in trial_user_attrs:
             id_to_user_attrs[user_attr.trial_id].append(user_attr)
 
-        id_to_system_attrs = \
-            defaultdict(list)  # type: Dict[int, List[models.TrialSystemAttributeModel]]
+        id_to_system_attrs = defaultdict(
+            list
+        )  # type: Dict[int, List[models.TrialSystemAttributeModel]]
         for system_attr in trial_system_attrs:
             id_to_system_attrs[system_attr.trial_id].append(system_attr)
 
-        temp_trials = []
+        result = []
         for trial_id, trial in id_to_trial.items():
             params = {}
             param_distributions = {}
@@ -825,15 +819,9 @@ class RDBStorage(BaseStorage):
             for system_attr in id_to_system_attrs[trial_id]:
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
-            # `-1` is a dummy value.
-            # It will be replaced by a proper value before returned to the caller.
-            #
-            # TODO(ohta): Use trial.number after TrialModel.number is added.
-            trial_number = -1
-
-            temp_trials.append(
+            result.append(
                 structs.FrozenTrial(
-                    number=trial_number,
+                    number=trial.number,
                     state=trial.state,
                     params=params,
                     distributions=param_distributions,
@@ -843,20 +831,9 @@ class RDBStorage(BaseStorage):
                     intermediate_values=intermediate_values,
                     datetime_start=trial.datetime_start,
                     datetime_complete=trial.datetime_complete,
-                    trial_id=trial_id))
-
-        result = []
-        for temp_trial in temp_trials:
-            # [NOTE]
-            # We set actual trial numbers here to avoid calling `self.get_trial_number_from_id()`
-            # within the above loop.
-            #
-            # This is because `self.get_trial_number_from_id()` may call `session.commit()`
-            # internally, which causes unintended changes of the states of `trials`.
-            # (see https://github.com/optuna/optuna/pull/349#issuecomment-475086642 for details)
-            trial_number = self.get_trial_number_from_id(temp_trial._trial_id)
-            temp_trial.number = trial_number
-            result.append(temp_trial)
+                    trial_id=trial_id,
+                )
+            )
 
         return result
 
@@ -865,19 +842,19 @@ class RDBStorage(BaseStorage):
         # type: (str, Dict[str, Any]) -> None
 
         # Skip if RDB is not MySQL.
-        if not url.startswith('mysql'):
+        if not url.startswith("mysql"):
             return
 
         # Do not overwrite value.
-        if 'pool_pre_ping' in engine_kwargs:
+        if "pool_pre_ping" in engine_kwargs:
             return
 
         # If True, the connection pool checks liveness of connections at every checkout.
         # Without this option, trials that take longer than `wait_timeout` may cause connection
         # errors. For further details, please refer to the following document:
         # https://docs.sqlalchemy.org/en/13/core/pooling.html#pool-disconnects-pessimistic
-        engine_kwargs['pool_pre_ping'] = True
-        _logger.debug('pool_pre_ping=True was set to engine_kwargs to prevent connection timeout.')
+        engine_kwargs["pool_pre_ping"] = True
+        _logger.debug("pool_pre_ping=True was set to engine_kwargs to prevent connection timeout.")
 
     @staticmethod
     def _fill_storage_url_template(template):
@@ -893,8 +870,9 @@ class RDBStorage(BaseStorage):
             session.commit()
         except IntegrityError as e:
             _logger.debug(
-                'Ignoring {}. This happens due to a timing issue among threads/processes/nodes. '
-                'Another one might have committed a record with the same key(s).'.format(repr(e)))
+                "Ignoring {}. This happens due to a timing issue among threads/processes/nodes. "
+                "Another one might have committed a record with the same key(s).".format(repr(e))
+            )
             session.rollback()
             return False
 
@@ -908,11 +886,12 @@ class RDBStorage(BaseStorage):
             session.commit()
         except SQLAlchemyError as e:
             session.rollback()
-            message = \
-                'An exception is raised during the commit. ' \
-                'This typically happens due to invalid data in the commit, ' \
-                'e.g. exceeding max length. ' \
-                '(The actual exception is as follows: {})'.format(repr(e))
+            message = (
+                "An exception is raised during the commit. "
+                "This typically happens due to invalid data in the commit, "
+                "e.g. exceeding max length. "
+                "(The actual exception is as follows: {})".format(repr(e))
+            )
             raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
 
     def remove_session(self):
@@ -931,7 +910,7 @@ class RDBStorage(BaseStorage):
 
         self.scoped_session.remove()
 
-    def __del__(self):
+    def _finalize(self):
         # type: () -> None
 
         # This destructor calls remove_session to explicitly close the DB connection. We need this
@@ -939,7 +918,7 @@ class RDBStorage(BaseStorage):
         # counters, so it is not guaranteed that they are released by correct threads (for more
         # information, please see the docstring of remove_session).
 
-        if hasattr(self, 'scoped_session'):
+        if hasattr(self, "scoped_session"):
             self.remove_session()
 
     def upgrade(self):
@@ -990,7 +969,8 @@ class _VersionManager(object):
             return
 
         version_info = models.VersionInfoModel(
-            schema_version=models.SCHEMA_VERSION, library_version=version.__version__)
+            schema_version=models.SCHEMA_VERSION, library_version=version.__version__
+        )
 
         session.add(version_info)
         RDBStorage._commit_with_integrity_check(session)
@@ -998,7 +978,7 @@ class _VersionManager(object):
     def _init_alembic(self):
         # type: () -> None
 
-        logging.getLogger('alembic').setLevel(logging.WARN)
+        logging.getLogger("alembic").setLevel(logging.WARN)
 
         context = alembic.migration.MigrationContext.configure(self.engine.connect())
         is_initialized = context.get_current_revision() is not None
@@ -1040,16 +1020,20 @@ class _VersionManager(object):
         if current_version == head_version:
             return
 
-        message = 'The runtime optuna version {} is no longer compatible with the table schema ' \
-                  '(set up by optuna {}). '.format(version.__version__,
-                                                   version_info.library_version)
+        message = (
+            "The runtime optuna version {} is no longer compatible with the table schema "
+            "(set up by optuna {}). ".format(version.__version__, version_info.library_version)
+        )
         known_versions = self.get_all_versions()
         if current_version in known_versions:
-            message += 'Please execute `$ optuna storage upgrade --storage $STORAGE_URL` ' \
-                       'for upgrading the storage.'
+            message += (
+                "Please execute `$ optuna storage upgrade --storage $STORAGE_URL` "
+                "for upgrading the storage."
+            )
         else:
-            message += 'Please try updating optuna to the latest version by '\
-                       '`$ pip install -U optuna`.'
+            message += (
+                "Please try updating optuna to the latest version by " "`$ pip install -U optuna`."
+            )
 
         raise RuntimeError(message)
 
@@ -1084,7 +1068,7 @@ class _VersionManager(object):
         # type: () -> None
 
         config = self._create_alembic_config()
-        alembic.command.upgrade(config, 'head')
+        alembic.command.upgrade(config, "head")
 
     def _is_alembic_supported(self):
         # type: () -> bool
@@ -1111,11 +1095,11 @@ class _VersionManager(object):
     def _create_alembic_config(self):
         # type: () -> alembic.config.Config
 
-        alembic_dir = os.path.join(os.path.dirname(__file__), 'alembic')
+        alembic_dir = os.path.join(os.path.dirname(__file__), "alembic")
 
-        config = alembic.config.Config(os.path.join(os.path.dirname(__file__), 'alembic.ini'))
-        config.set_main_option('script_location', escape_alembic_config_value(alembic_dir))
-        config.set_main_option('sqlalchemy.url', escape_alembic_config_value(self.url))
+        config = alembic.config.Config(os.path.join(os.path.dirname(__file__), "alembic.ini"))
+        config.set_main_option("script_location", escape_alembic_config_value(alembic_dir))
+        config.set_main_option("sqlalchemy.url", escape_alembic_config_value(self.url))
         return config
 
 
@@ -1152,4 +1136,4 @@ def escape_alembic_config_value(value):
     # We must escape '%' in a value string because the character
     # is regarded as the trigger of variable expansion.
     # Please see the documentation of `configparser.BasicInterpolation` for more details.
-    return value.replace('%', '%%')
+    return value.replace("%", "%%")

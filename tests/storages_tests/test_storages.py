@@ -25,77 +25,56 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
-# TODO(Yanase): Remove _number from system_attrs after adding TrialModel.number.
 EXAMPLE_ATTRS = {
-    'dataset': 'MNIST',
-    'none': None,
-    'json_serializable': {
-        'baseline_score': 0.001,
-        'tags': ['image', 'classification']
-    },
-    '_number': 0,
+    "dataset": "MNIST",
+    "none": None,
+    "json_serializable": {"baseline_score": 0.001, "tags": ["image", "classification"]},
 }
 
 EXAMPLE_DISTRIBUTIONS = {
-    'x': UniformDistribution(low=1., high=2.),
-    'y': CategoricalDistribution(choices=('Otemachi', 'Tokyo', 'Ginza'))
+    "x": UniformDistribution(low=1.0, high=2.0),
+    "y": CategoricalDistribution(choices=("Otemachi", "Tokyo", "Ginza")),
 }  # type: Dict[str, BaseDistribution]
 
-# TODO(Yanase): Remove _number from system_attrs after adding TrialModel.number.
 EXAMPLE_TRIALS = [
     FrozenTrial(
         number=0,  # dummy
-        value=1.,
+        value=1.0,
         state=TrialState.COMPLETE,
         user_attrs={},
-        system_attrs={'_number': 0},
-        params={
-            'x': 0.5,
-            'y': 'Ginza'
-        },
+        system_attrs={},
+        params={"x": 0.5, "y": "Ginza"},
         distributions=EXAMPLE_DISTRIBUTIONS,
-        intermediate_values={
-            0: 2.,
-            1: 3.
-        },
+        intermediate_values={0: 2.0, 1: 3.0},
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy
         trial_id=-1,  # dummy id
     ),
     FrozenTrial(
         number=0,  # dummy
-        value=2.,
+        value=2.0,
         state=TrialState.RUNNING,
-        user_attrs={
-            'tags': ['video', 'classification'],
-            'dataset': 'YouTube-8M'
-        },
-        system_attrs={'some_key': 'some_value', '_number': 0},
-        params={
-            'x': 0.01,
-            'y': 'Otemachi'
-        },
+        user_attrs={"tags": ["video", "classification"], "dataset": "YouTube-8M"},
+        system_attrs={"some_key": "some_value"},
+        params={"x": 0.01, "y": "Otemachi"},
         distributions=EXAMPLE_DISTRIBUTIONS,
-        intermediate_values={
-            0: -2.,
-            1: -3.,
-            2: 100.
-        },
+        intermediate_values={0: -2.0, 1: -3.0, 2: 100.0},
         datetime_start=None,  # dummy
         datetime_complete=None,  # dummy
         trial_id=-1,  # dummy id
-    )
+    ),
 ]
 
 STORAGE_MODES = [
-    'none',  # We give `None` to storage argument, so InMemoryStorage is used.
-    'new',  # We always create a new sqlite DB file for each experiment.
-    'common',  # We use a sqlite DB file for the whole experiments.
+    "none",  # We give `None` to storage argument, so InMemoryStorage is used.
+    "new",  # We always create a new sqlite DB file for each experiment.
+    "common",  # We use a sqlite DB file for the whole experiments.
 ]
 
 # TODO(Yanase): Replace @parametrize_storage with StorageSupplier.
 parametrize_storage = pytest.mark.parametrize(
-    'storage_init_func', [InMemoryStorage, lambda: RDBStorage('sqlite:///:memory:')])
+    "storage_init_func", [InMemoryStorage, lambda: RDBStorage("sqlite:///:memory:")]
+)
 
 
 def setup_module():
@@ -123,7 +102,7 @@ def test_create_new_study(storage_init_func):
     assert summaries[0].study_name.startswith(DEFAULT_STUDY_NAME_PREFIX)
 
 
-@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_study_with_name(storage_mode):
     # type: (str) -> None
 
@@ -131,7 +110,7 @@ def test_create_new_study_with_name(storage_mode):
 
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_create_new_study_with_name.__name__
-        study_name = function_name + '/' + storage_mode
+        study_name = function_name + "/" + storage_mode
         storage = optuna.storages.get_storage(storage)
         study_id = storage.create_new_study(study_name)
 
@@ -157,7 +136,7 @@ def test_delete_study(storage_init_func):
 def test_delete_study_after_create_multiple_studies():
     # type: () -> None
 
-    storage = RDBStorage('sqlite:///:memory:')
+    storage = RDBStorage("sqlite:///:memory:")
     study_id1 = storage.create_new_study()
     study_id2 = storage.create_new_study()
     study_id3 = storage.create_new_study()
@@ -170,7 +149,7 @@ def test_delete_study_after_create_multiple_studies():
     assert study_id3 in studies
 
 
-@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
     # type: (str) -> None
 
@@ -178,7 +157,7 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
 
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_get_study_id_from_name_and_get_study_name_from_id.__name__
-        study_name = function_name + '/' + storage_mode
+        study_name = function_name + "/" + storage_mode
         storage = optuna.storages.get_storage(storage)
         study = optuna.create_study(storage=storage, study_name=study_name)
 
@@ -188,13 +167,13 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
 
         # Test not existing study.
         with pytest.raises(ValueError):
-            storage.get_study_id_from_name('dummy-name')
+            storage.get_study_id_from_name("dummy-name")
 
         with pytest.raises(ValueError):
             storage.get_study_name_from_id(-1)
 
 
-@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_study_id_from_trial_id(storage_mode):
     # type: (str) -> None
 
@@ -252,7 +231,7 @@ def test_set_and_get_study_user_attrs(storage_init_func):
     assert storage.get_study_user_attrs(study_id) == EXAMPLE_ATTRS
 
     # Test overwriting value.
-    check_set_and_get('dataset', 'ImageNet')
+    check_set_and_get("dataset", "ImageNet")
 
 
 @parametrize_storage
@@ -273,7 +252,7 @@ def test_set_and_get_study_system_attrs(storage_init_func):
         check_set_and_get(key, value)
 
     # Test overwriting value.
-    check_set_and_get('dataset', 'ImageNet')
+    check_set_and_get("dataset", "ImageNet")
 
 
 @parametrize_storage
@@ -291,9 +270,7 @@ def test_create_new_trial(storage_init_func):
     assert trials[0].number == 0
     assert trials[0].state == TrialState.RUNNING
     assert trials[0].user_attrs == {}
-
-    # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-    assert trials[0].system_attrs == {'_number': 0}
+    assert trials[0].system_attrs == {}
 
 
 @parametrize_storage
@@ -308,16 +285,12 @@ def test_create_new_trial_with_template_trial(storage_init_func):
         value=10000,
         datetime_start=now,
         datetime_complete=now,
-        params={'x': 0.5},
-        distributions={'x': UniformDistribution(0, 1)},
-        user_attrs={'foo': 'bar'},
-        system_attrs={
-            'baz': 123,
-            '_number': 55  # This entry is ignored.
-        },
+        params={"x": 0.5},
+        distributions={"x": UniformDistribution(0, 1)},
+        user_attrs={"foo": "bar"},
+        system_attrs={"baz": 123,},
         intermediate_values={1: 10, 2: 100, 3: 1000},
-
-        number=-1,  # dummy value (unused).
+        number=55,  # This entry is ignored.
         trial_id=-1,  # dummy value (unused).
     )
 
@@ -336,13 +309,10 @@ def test_create_new_trial_with_template_trial(storage_init_func):
     assert trials[0].distributions == template_trial.distributions
     assert trials[0].user_attrs == template_trial.user_attrs
     assert trials[0].intermediate_values == template_trial.intermediate_values
-
-    # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-    template_trial.system_attrs['_number'] = 0
     assert trials[0].system_attrs == template_trial.system_attrs
 
 
-@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_number_from_id(storage_mode):
     # type: (str) -> None
 
@@ -357,26 +327,6 @@ def test_get_trial_number_from_id(storage_mode):
 
         trial_id = storage.create_new_trial(study_id)
         assert storage.get_trial_number_from_id(trial_id) == 1
-
-
-# TODO(Yanase): Remove the following test case after TrialModel.number is added.
-@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
-def test_get_trial_number_from_id_with_empty_system_attrs(storage_mode):
-    # type: (str) -> None
-
-    with StorageSupplier(storage_mode) as storage:
-        storage = optuna.storages.get_storage(storage)
-        study_id = storage.create_new_study()
-        with patch.object(storage, 'get_trial_system_attrs', return_value=dict()) as _mock_attrs:
-            trial_id = storage.create_new_trial(study_id)
-            assert storage.get_trial_number_from_id(trial_id) == 0
-
-            trial_id = storage.create_new_trial(study_id)
-            assert storage.get_trial_number_from_id(trial_id) == 1
-
-            if storage_mode == 'none':
-                return
-            assert _mock_attrs.call_count == 2
 
 
 @parametrize_storage
@@ -416,50 +366,51 @@ def test_set_and_get_trial_param(storage_init_func):
 
     # Setup Distributions.
     distribution_x = UniformDistribution(low=1.0, high=2.0)
-    distribution_y_1 = CategoricalDistribution(choices=('Shibuya', 'Ebisu', 'Meguro'))
-    distribution_y_2 = CategoricalDistribution(choices=('Shibuya', 'Shinsen'))
+    distribution_y_1 = CategoricalDistribution(choices=("Shibuya", "Ebisu", "Meguro"))
+    distribution_y_2 = CategoricalDistribution(choices=("Shibuya", "Shinsen"))
     distribution_z = LogUniformDistribution(low=1.0, high=100.0)
 
     # Test trial_1: setting new params.
-    assert storage.set_trial_param(trial_id_1, 'x', 0.5, distribution_x)
-    assert storage.set_trial_param(trial_id_1, 'y', 2, distribution_y_1)
+    assert storage.set_trial_param(trial_id_1, "x", 0.5, distribution_x)
+    assert storage.set_trial_param(trial_id_1, "y", 2, distribution_y_1)
 
     # Test trial_1: getting params.
-    assert storage.get_trial_param(trial_id_1, 'x') == 0.5
-    assert storage.get_trial_param(trial_id_1, 'y') == 2
+    assert storage.get_trial_param(trial_id_1, "x") == 0.5
+    assert storage.get_trial_param(trial_id_1, "y") == 2
     # Test trial_1: checking all params and external repr.
-    assert storage.get_trial(trial_id_1).params == {'x': 0.5, 'y': 'Meguro'}
+    assert storage.get_trial(trial_id_1).params == {"x": 0.5, "y": "Meguro"}
     # Test trial_1: setting existing name.
-    assert not storage.set_trial_param(trial_id_1, 'x', 0.6, distribution_x)
+    assert not storage.set_trial_param(trial_id_1, "x", 0.6, distribution_x)
 
     # Setup trial_2: setting new params (to the same study as trial_1).
-    assert storage.set_trial_param(trial_id_2, 'x', 0.3, distribution_x)
-    assert storage.set_trial_param(trial_id_2, 'z', 0.1, distribution_z)
+    assert storage.set_trial_param(trial_id_2, "x", 0.3, distribution_x)
+    assert storage.set_trial_param(trial_id_2, "z", 0.1, distribution_z)
 
     # Test trial_2: getting params.
-    assert storage.get_trial_param(trial_id_2, 'x') == 0.3
-    assert storage.get_trial_param(trial_id_2, 'z') == 0.1
+    assert storage.get_trial_param(trial_id_2, "x") == 0.3
+    assert storage.get_trial_param(trial_id_2, "z") == 0.1
 
     # Test trial_2: checking all params and external repr.
-    assert storage.get_trial(trial_id_2).params == {'x': 0.3, 'z': 0.1}
+    assert storage.get_trial(trial_id_2).params == {"x": 0.3, "z": 0.1}
     # Test trial_2: setting different distribution.
     with pytest.raises(ValueError):
-        storage.set_trial_param(trial_id_2, 'x', 0.5, distribution_z)
+        storage.set_trial_param(trial_id_2, "x", 0.5, distribution_z)
     # Test trial_2: setting CategoricalDistribution in different order.
     with pytest.raises(ValueError):
-        storage.set_trial_param(trial_id_2, 'y', 2,
-                                CategoricalDistribution(choices=('Meguro', 'Shibuya', 'Ebisu')))
+        storage.set_trial_param(
+            trial_id_2, "y", 2, CategoricalDistribution(choices=("Meguro", "Shibuya", "Ebisu"))
+        )
 
     # Setup trial_3: setting new params (to different study from trial_1).
     if isinstance(storage, InMemoryStorage):
         with pytest.raises(ValueError):
             # InMemoryStorage shares the same study if create_new_study is additionally invoked.
             # Thus, the following line should fail due to distribution incompatibility.
-            storage.set_trial_param(trial_id_3, 'y', 1, distribution_y_2)
+            storage.set_trial_param(trial_id_3, "y", 1, distribution_y_2)
     else:
-        assert storage.set_trial_param(trial_id_3, 'y', 1, distribution_y_2)
-        assert storage.get_trial_param(trial_id_3, 'y') == 1
-        assert storage.get_trial(trial_id_3).params == {'y': 'Shinsen'}
+        assert storage.set_trial_param(trial_id_3, "y", 1, distribution_y_2)
+        assert storage.get_trial_param(trial_id_3, "y") == 1
+        assert storage.get_trial(trial_id_3).params == {"y": "Shinsen"}
 
 
 @parametrize_storage
@@ -476,11 +427,11 @@ def test_set_trial_value(storage_init_func):
 
     # Test setting new value.
     storage.set_trial_value(trial_id_1, 0.5)
-    storage.set_trial_value(trial_id_3, float('inf'))
+    storage.set_trial_value(trial_id_3, float("inf"))
 
     assert storage.get_trial(trial_id_1).value == 0.5
     assert storage.get_trial(trial_id_2).value is None
-    assert storage.get_trial(trial_id_3).value == float('inf')
+    assert storage.get_trial(trial_id_3).value == float("inf")
 
 
 @parametrize_storage
@@ -529,17 +480,17 @@ def test_set_trial_user_attr(storage_init_func):
     assert storage.get_trial(trial_id_1).user_attrs == EXAMPLE_ATTRS
 
     # Test overwriting value.
-    check_set_and_get(trial_id_1, 'dataset', 'ImageNet')
+    check_set_and_get(trial_id_1, "dataset", "ImageNet")
 
     # Test another trial.
     trial_id_2 = storage.create_new_trial(storage.create_new_study())
-    check_set_and_get(trial_id_2, 'baseline_score', 0.001)
+    check_set_and_get(trial_id_2, "baseline_score", 0.001)
     assert len(storage.get_trial(trial_id_2).user_attrs) == 1
-    assert storage.get_trial(trial_id_2).user_attrs['baseline_score'] == 0.001
+    assert storage.get_trial(trial_id_2).user_attrs["baseline_score"] == 0.001
 
 
 @parametrize_storage
-def test_set_and_get_tiral_system_attr(storage_init_func):
+def test_set_and_get_trial_system_attr(storage_init_func):
     # type: (Callable[[], BaseStorage]) -> None
 
     storage = storage_init_func()
@@ -559,14 +510,13 @@ def test_set_and_get_tiral_system_attr(storage_init_func):
     assert system_attrs == EXAMPLE_ATTRS
 
     # Test overwriting value.
-    check_set_and_get(trial_id_1, 'dataset', 'ImageNet')
+    check_set_and_get(trial_id_1, "dataset", "ImageNet")
 
     # Test another trial.
     trial_id_2 = storage.create_new_trial(study_id)
-    check_set_and_get(trial_id_2, 'baseline_score', 0.001)
+    check_set_and_get(trial_id_2, "baseline_score", 0.001)
     system_attrs = storage.get_trial(trial_id_2).system_attrs
-    # TODO(Yanase): Remove number from system_attrs after adding TrialModel.number.
-    assert system_attrs == {'baseline_score': 0.001, '_number': 1}
+    assert system_attrs == {"baseline_score": 0.001}
 
 
 @parametrize_storage
@@ -581,8 +531,9 @@ def test_get_all_study_summaries(storage_init_func):
     datetime_1 = datetime.now()
 
     # Set up trial 1.
-    _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[0])
+    _create_new_trial_with_example_trial(
+        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0]
+    )
 
     datetime_2 = datetime.now()
 
@@ -616,8 +567,9 @@ def test_get_trial(storage_init_func):
     for example_trial in EXAMPLE_TRIALS:
         datetime_before = datetime.now()
 
-        trial_id = _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
-                                                        example_trial)
+        trial_id = _create_new_trial_with_example_trial(
+            storage, study_id, EXAMPLE_DISTRIBUTIONS, example_trial
+        )
 
         datetime_after = datetime.now()
 
@@ -644,12 +596,15 @@ def test_get_all_trials(storage_init_func):
 
     datetime_before = datetime.now()
 
-    _create_new_trial_with_example_trial(storage, study_id_1, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[0])
-    _create_new_trial_with_example_trial(storage, study_id_1, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[1])
-    _create_new_trial_with_example_trial(storage, study_id_2, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[0])
+    _create_new_trial_with_example_trial(
+        storage, study_id_1, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0]
+    )
+    _create_new_trial_with_example_trial(
+        storage, study_id_1, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[1]
+    )
+    _create_new_trial_with_example_trial(
+        storage, study_id_2, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0]
+    )
 
     datetime_after = datetime.now()
 
@@ -681,7 +636,7 @@ def test_get_all_trials_deepcopy_option(storage_init_func):
     for trial in EXAMPLE_TRIALS:
         _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS, trial)
 
-    with patch('copy.deepcopy', wraps=copy.deepcopy) as mock_object:
+    with patch("copy.deepcopy", wraps=copy.deepcopy) as mock_object:
         trials0 = storage.get_all_trials(study_id, deepcopy=False)
         assert mock_object.call_count == 0
         assert len(trials0) == len(EXAMPLE_TRIALS)
@@ -698,10 +653,12 @@ def test_get_n_trials(storage_init_func):
     storage = storage_init_func()
     study_id = storage.create_new_study()
 
-    _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[0])
-    _create_new_trial_with_example_trial(storage, study_id, EXAMPLE_DISTRIBUTIONS,
-                                         EXAMPLE_TRIALS[1])
+    _create_new_trial_with_example_trial(
+        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[0]
+    )
+    _create_new_trial_with_example_trial(
+        storage, study_id, EXAMPLE_DISTRIBUTIONS, EXAMPLE_TRIALS[1]
+    )
 
     assert 2 == storage.get_n_trials(study_id)
     assert 1 == storage.get_n_trials(study_id, TrialState.COMPLETE)
@@ -740,5 +697,7 @@ def _check_example_trial_static_attributes(trial_1, trial_2):
     assert trial_1 is not None
     assert trial_2 is not None
     assert all(
-        getattr(trial_1, field) == getattr(trial_2, field) for field in FrozenTrial._ordered_fields
-        if field not in ['_trial_id', 'number', 'datetime_start', 'datetime_complete'])
+        getattr(trial_1, field) == getattr(trial_2, field)
+        for field in FrozenTrial._ordered_fields
+        if field not in ["_trial_id", "number", "datetime_start", "datetime_complete"]
+    )

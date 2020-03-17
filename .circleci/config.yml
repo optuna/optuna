@@ -57,10 +57,10 @@ jobs:
             pip install --progress-bar off .[checking]
 
       - run:
-          name: autopep8
+          name: black
           command: |
             . venv/bin/activate
-            autopep8 . -r --diff --exit-code
+            black . --line-length 99 --check --exclude="docs"
 
       - run:
           name: flake8
@@ -72,7 +72,7 @@ jobs:
           name: mypy
           command: |
             . venv/bin/activate
-            mypy --disallow-untyped-defs --ignore-missing-imports .
+            mypy .
 
   document:
     docker:
@@ -96,6 +96,9 @@ jobs:
             . venv/bin/activate
             cd docs
             make html
+
+      - store_artifacts:
+          path: ./docs/build
 
   doctest:
     docker:

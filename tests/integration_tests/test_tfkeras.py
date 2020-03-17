@@ -16,21 +16,21 @@ def test_tfkeras_pruning_callback():
         # type: (optuna.trial.Trial) -> float
 
         model = tf.keras.Sequential()
-        model.add(tf.keras.layers.Dense(1, activation='sigmoid', input_dim=20))
-        model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
+        model.add(tf.keras.layers.Dense(1, activation="sigmoid", input_dim=20))
+        model.compile(optimizer="rmsprop", loss="binary_crossentropy", metrics=["accuracy"])
 
         # TODO(Yanase): Unify the metric with 'accuracy' after stopping TensorFlow 1.x support.
-        callback_metric_name = 'accuracy'
-        if pkg_resources.parse_version(tf.__version__) < pkg_resources.parse_version('2.0.0'):
-            callback_metric_name = 'acc'
+        callback_metric_name = "accuracy"
+        if pkg_resources.parse_version(tf.__version__) < pkg_resources.parse_version("2.0.0"):
+            callback_metric_name = "acc"
 
         model.fit(
             np.zeros((16, 20), np.float32),
-            np.zeros((16, ), np.int32),
+            np.zeros((16,), np.int32),
             batch_size=1,
             epochs=1,
             callbacks=[TFKerasPruningCallback(trial, callback_metric_name)],
-            verbose=0
+            verbose=0,
         )
 
         return 1.0
@@ -50,10 +50,10 @@ def test_tfkeras_pruning_callback_observation_isnan():
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)
-    callback = TFKerasPruningCallback(trial, 'loss')
+    callback = TFKerasPruningCallback(trial, "loss")
 
     with pytest.raises(optuna.exceptions.TrialPruned):
-        callback.on_epoch_end(0, {'loss': 1.0})
+        callback.on_epoch_end(0, {"loss": 1.0})
 
     with pytest.raises(optuna.exceptions.TrialPruned):
-        callback.on_epoch_end(0, {'loss': float('nan')})
+        callback.on_epoch_end(0, {"loss": float("nan")})

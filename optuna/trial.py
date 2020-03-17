@@ -120,9 +120,9 @@ class Trial(BaseTrial):
     """
 
     def __init__(
-            self,
-            study,  # type: Study
-            trial_id,  # type: int
+        self,
+        study,  # type: Study
+        trial_id,  # type: int
     ):
         # type: (...) -> None
 
@@ -136,19 +136,17 @@ class Trial(BaseTrial):
 
         self._init_relative_params()
 
-        # store all seen distributions in trial to check for consistency
-        # see: _check_distribution function
-        self._distributions_in_trial = {}  # type: Dict[str, Dict[str, Any]]
-
     def _init_relative_params(self):
         # type: () -> None
 
         trial = self.storage.get_trial(self._trial_id)
 
         self.relative_search_space = self.study.sampler.infer_relative_search_space(
-            self.study, trial)
-        self.relative_params = self.study.sampler.sample_relative(self.study, trial,
-                                                                  self.relative_search_space)
+            self.study, trial
+        )
+        self.relative_params = self.study.sampler.sample_relative(
+            self.study, trial, self.relative_search_space
+        )
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -160,14 +158,33 @@ class Trial(BaseTrial):
 
         Example:
 
-            Suggest a dropout rate for neural network training.
+            Suggest a momentum for neural network training.
 
-            .. code::
+            .. testsetup::
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     dropout_rate = trial.suggest_uniform('dropout_rate', 0, 1.0)
-                >>>     ...
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(200).reshape(-1, 1)
+                y = np.random.randint(0, 2, 200)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+            .. testcode::
+
+                import optuna
+                from sklearn.neural_network import MLPClassifier
+
+                def objective(trial):
+                    momentum = trial.suggest_uniform('momentum', 0.0, 1.0)
+                    clf = MLPClassifier(hidden_layer_sizes=(100, 50), momentum=momentum,
+                                        solver='sgd', random_state=0)
+                    clf.fit(X_train, y_train)
+
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
 
         Args:
             name:
@@ -182,9 +199,10 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        self._check_distribution(low=low, high=high, name=name)
-
         distribution = distributions.UniformDistribution(low=low, high=high)
+
+        self._check_distribution(name, distribution)
+
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
 
@@ -203,13 +221,29 @@ class Trial(BaseTrial):
             Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/
             generated/sklearn.svm.SVC.html>`_.
 
-            .. code::
+            .. testsetup::
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     c = trial.suggest_loguniform('c', 1e-5, 1e2)
-                >>>     clf = sklearn.svm.SVC(C=c)
-                >>>     ...
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+            .. testcode::
+
+                import optuna
+                from sklearn.svm import SVC
+
+                def objective(trial):
+                    c = trial.suggest_loguniform('c', 1e-5, 1e2)
+                    clf = SVC(C=c, gamma='scale', random_state=0)
+                    clf.fit(X_train, y_train)
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
 
         Args:
             name:
@@ -224,9 +258,10 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        self._check_distribution(low=low, high=high, name=name)
-
         distribution = distributions.LogUniformDistribution(low=low, high=high)
+
+        self._check_distribution(name, distribution)
+
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
 
@@ -251,13 +286,29 @@ class Trial(BaseTrial):
             `GradientBoostingClassifier <https://scikit-learn.org/stable/modules/generated/
             sklearn.ensemble.GradientBoostingClassifier.html>`_.
 
-            .. code::
+            .. testsetup::
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
-                >>>     clf = sklearn.ensemble.GradientBoostingClassifier(subsample=subsample)
-                >>>     ...
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+            .. testcode::
+
+                import optuna
+                from sklearn.ensemble import GradientBoostingClassifier
+
+                def objective(trial):
+                    subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
+                    clf = GradientBoostingClassifier(subsample=subsample, random_state=0)
+                    clf.fit(X_train, y_train)
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
 
         Args:
             name:
@@ -273,10 +324,11 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        self._check_distribution(low=low, high=high, q=q, name=name)
-
         high = _adjust_discrete_uniform_high(name, low, high, q)
         distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+
+        self._check_distribution(name, distribution)
+
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
 
@@ -293,13 +345,30 @@ class Trial(BaseTrial):
             Suggest the number of trees in `RandomForestClassifier <https://scikit-learn.org/
             stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
 
-            .. code::
+            .. testsetup::
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     n_estimators = trial.suggest_int('n_estimators', 50, 400)
-                >>>     clf = sklearn.ensemble.RandomForestClassifier(n_estimators=n_estimators)
-                >>>     ...
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+            .. testcode::
+
+                import optuna
+                from sklearn.ensemble import RandomForestClassifier
+
+                def objective(trial):
+                    n_estimators = trial.suggest_int('n_estimators', 50, 400)
+                    clf = RandomForestClassifier(n_estimators=n_estimators, random_state=0)
+                    clf.fit(X_train, y_train)
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
 
         Args:
             name:
@@ -313,9 +382,10 @@ class Trial(BaseTrial):
             A suggested integer value.
         """
 
-        self._check_distribution(low=low, high=high, name=name)
-
         distribution = distributions.IntUniformDistribution(low=low, high=high)
+
+        self._check_distribution(name, distribution)
+
         if low == high:
             return self._set_new_param_or_get_existing(name, low, distribution)
 
@@ -332,13 +402,30 @@ class Trial(BaseTrial):
             Suggest a kernel function of `SVC <https://scikit-learn.org/stable/modules/generated/
             sklearn.svm.SVC.html>`_.
 
-            .. code::
+            .. testsetup::
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     kernel = trial.suggest_categorical('kernel', ['linear', 'poly', 'rbf'])
-                >>>     clf = sklearn.svm.SVC(kernel=kernel)
-                >>>     ...
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+            .. testcode::
+
+                import optuna
+                from sklearn.svm import SVC
+
+                def objective(trial):
+                    kernel = trial.suggest_categorical('kernel', ['linear', 'poly', 'rbf'])
+                    clf = SVC(kernel=kernel, gamma='scale', random_state=0)
+                    clf.fit(X_train, y_train)
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
 
         Args:
             name:
@@ -378,20 +465,37 @@ class Trial(BaseTrial):
         Example:
 
             Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
-            generated/sklearn.linear_model.SGDClassifier.html>`_ training
+            generated/sklearn.linear_model.SGDClassifier.html>`_ training.
 
-            .. code::
+            .. testsetup::
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     clf = sklearn.linear_model.SGDClassifier()
-                >>>     for step in range(100):
-                >>>         clf.partial_fit(x_train , y_train , classes)
-                >>>         intermediate_value = clf.score(x_val , y_val)
-                >>>         trial.report(intermediate_value , step=step)
-                >>>         if trial.should_prune():
-                >>>             raise TrialPruned()
-                >>>     ...
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+            .. testcode::
+
+                import optuna
+                from sklearn.linear_model import SGDClassifier
+
+                def objective(trial):
+                    clf = SGDClassifier(random_state=0)
+                    for step in range(100):
+                        clf.partial_fit(X_train, y_train, np.unique(y))
+                        intermediate_value = clf.score(X_test, y_test)
+                        trial.report(intermediate_value, step=step)
+                        if trial.should_prune():
+                            raise TrialPruned()
+
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
 
         Args:
             value:
@@ -404,12 +508,13 @@ class Trial(BaseTrial):
             # For convenience, we allow users to report a value that can be cast to `float`.
             value = float(value)
         except (TypeError, ValueError):
-            message = 'The `value` argument is of type \'{}\' but supposed to be a float.'.format(
-                type(value).__name__)
+            message = "The `value` argument is of type '{}' but supposed to be a float.".format(
+                type(value).__name__
+            )
             raise TypeError(message)
 
         if step < 0:
-            raise ValueError('The `step` argument is {} but cannot be negative.'.format(step))
+            raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
         self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
@@ -440,9 +545,11 @@ class Trial(BaseTrial):
         """
         if step is not None:
             warnings.warn(
-                'The use of `step` argument is deprecated. '
-                'The last reported step is used instead of '
-                'the step given by the argument.', DeprecationWarning)
+                "The use of `step` argument is deprecated. "
+                "The last reported step is used instead of "
+                "the step given by the argument.",
+                DeprecationWarning,
+            )
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
@@ -455,16 +562,37 @@ class Trial(BaseTrial):
 
         Example:
 
-            Save fixed hyperparameters of neural network training:
+            Save fixed hyperparameters of neural network training.
 
-            .. code::
+            .. testsetup::
 
-                >>> def objective(trial):
-                >>>     ...
-                >>>     trial.set_user_attr('BATCHSIZE', 128)
-                >>>
-                >>> study.best_trial.user_attrs
-                {'BATCHSIZE': 128}
+                import numpy as np
+                from sklearn.model_selection import train_test_split
+
+                np.random.seed(seed=0)
+                X = np.random.randn(50).reshape(-1, 1)
+                y = np.random.randint(0, 2, 50)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+            .. testcode::
+
+                import optuna
+                from sklearn.neural_network import MLPClassifier
+
+                def objective(trial):
+                    trial.set_user_attr('BATCHSIZE', 128)
+                    momentum = trial.suggest_uniform('momentum', 0, 1.0)
+                    clf = MLPClassifier(hidden_layer_sizes=(100, 50),
+                                        batch_size=trial.user_attrs['BATCHSIZE'],
+                                        momentum=momentum, solver='sgd', random_state=0)
+                    clf.fit(X_train, y_train)
+
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+                assert 'BATCHSIZE' in study.best_trial.user_attrs.keys()
+                assert study.best_trial.user_attrs['BATCHSIZE'] == 128
 
 
         Args:
@@ -497,13 +625,14 @@ class Trial(BaseTrial):
         # type: (str, BaseDistribution) -> Any
 
         if self._is_fixed_param(name, distribution):
-            param_value = self.system_attrs['fixed_params'][name]
+            param_value = self.system_attrs["fixed_params"][name]
         elif self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
             trial = self.storage.get_trial(self._trial_id)
             param_value = self.study.sampler.sample_independent(
-                self.study, trial, name, distribution)
+                self.study, trial, name, distribution
+            )
 
         return self._set_new_param_or_get_existing(name, param_value, distribution)
 
@@ -511,8 +640,9 @@ class Trial(BaseTrial):
         # type: (str, Any, BaseDistribution) -> Any
 
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
-        set_success = self.storage.set_trial_param(self._trial_id, name,
-                                                   param_value_in_internal_repr, distribution)
+        set_success = self.storage.set_trial_param(
+            self._trial_id, name, param_value_in_internal_repr, distribution
+        )
         if not set_success:
             param_value_in_internal_repr = self.storage.get_trial_param(self._trial_id, name)
             param_value = distribution.to_external_repr(param_value_in_internal_repr)
@@ -522,19 +652,21 @@ class Trial(BaseTrial):
     def _is_fixed_param(self, name, distribution):
         # type: (str, BaseDistribution) -> bool
 
-        if 'fixed_params' not in self.system_attrs:
+        if "fixed_params" not in self.system_attrs:
             return False
 
-        if name not in self.system_attrs['fixed_params']:
+        if name not in self.system_attrs["fixed_params"]:
             return False
 
-        param_value = self.system_attrs['fixed_params'][name]
+        param_value = self.system_attrs["fixed_params"][name]
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
 
         contained = distribution._contains(param_value_in_internal_repr)
         if not contained:
-            warnings.warn("Fixed parameter '{}' with value {} is out of range "
-                          "for distribution {}.".format(name, param_value, distribution))
+            warnings.warn(
+                "Fixed parameter '{}' with value {} is out of range "
+                "for distribution {}.".format(name, param_value, distribution)
+            )
         return contained
 
     def _is_relative_param(self, name, distribution):
@@ -544,8 +676,10 @@ class Trial(BaseTrial):
             return False
 
         if name not in self.relative_search_space:
-            raise ValueError("The parameter '{}' was sampled by `sample_relative` method "
-                             "but it is not contained in the relative search space.".format(name))
+            raise ValueError(
+                "The parameter '{}' was sampled by `sample_relative` method "
+                "but it is not contained in the relative search space.".format(name)
+            )
 
         relative_distribution = self.relative_search_space[name]
         distributions.check_distribution_compatibility(relative_distribution, distribution)
@@ -554,35 +688,21 @@ class Trial(BaseTrial):
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
         return distribution._contains(param_value_in_internal_repr)
 
-    def _check_distribution(self, name, low=None, high=None, q=None):
-        # type: (str, Any, Any, Optional[float]) -> None
+    def _check_distribution(self, name, distribution):
+        # type: (str, BaseDistribution) -> None
 
-        dist_dict = {}
-        if low is not None:
-            dist_dict['low'] = low
-        if high is not None:
-            dist_dict['high'] = high
-        if q is not None:
-            dist_dict['q'] = q
-
-        old_distribution_in_trial = self._distributions_in_trial.get(name, None)
-
-        if old_distribution_in_trial is None:
-            self._distributions_in_trial[name] = dist_dict
-        elif old_distribution_in_trial != dist_dict:
-            old_distribution_in_trial_values = 'low = {}, high = {}'.format(
-                old_distribution_in_trial['low'], old_distribution_in_trial['high'])
-            if 'q' in old_distribution_in_trial:
-                old_distribution_in_trial_values += ', q = {}'.format(
-                    old_distribution_in_trial['q'])
-            warnings.warn('Inconsistent parameter values for distribution with name "{}"! '
-                          'This might be a configuration mistake. '
-                          'Optuna allows to call the same distribution with the same '
-                          'name more then once in a trial. '
-                          'When the parameter values are inconsistent optuna only '
-                          'uses the values of the first call and ignores all following. '
-                          'Using these values: {}'
-                          .format(name, old_distribution_in_trial_values), RuntimeWarning)
+        old_distribution = self.distributions.get(name, distribution)
+        if old_distribution != distribution:
+            warnings.warn(
+                'Inconsistent parameter values for distribution with name "{}"! '
+                "This might be a configuration mistake. "
+                "Optuna allows to call the same distribution with the same "
+                "name more then once in a trial. "
+                "When the parameter values are inconsistent optuna only "
+                "uses the values of the first call and ignores all following. "
+                "Using these values: {}".format(name, old_distribution._asdict()),
+                RuntimeWarning,
+            )
 
     @property
     def number(self):
@@ -608,11 +728,13 @@ class Trial(BaseTrial):
         """
 
         warnings.warn(
-            'The use of `Trial.trial_id` is deprecated. '
-            'Please use `Trial.number` instead.', DeprecationWarning)
+            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead.",
+            DeprecationWarning,
+        )
 
-        self.logger.warning('The use of `Trial.trial_id` is deprecated. '
-                            'Please use `Trial.number` instead.')
+        self.logger.warning(
+            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead."
+        )
 
         return self._trial_id
 
@@ -683,8 +805,7 @@ class Trial(BaseTrial):
             The study ID.
         """
 
-        message = 'The use of `Trial.study_id` is deprecated. ' \
-                  'Please use `Trial.study` instead.'
+        message = "The use of `Trial.study_id` is deprecated. Please use `Trial.study` instead."
         warnings.warn(message, DeprecationWarning)
         self.logger.warning(message)
 
@@ -702,17 +823,19 @@ class FixedTrial(BaseTrial):
 
     Example:
 
-        Evaluate an objective function with parameter values given by a user:
+        Evaluate an objective function with parameter values given by a user.
 
-        .. code::
+        .. testcode::
 
-            >>> def objective(trial):
-            >>>     x = trial.suggest_uniform('x', -100, 100)
-            >>>     y = trial.suggest_categorical('y', [-1, 0, 1])
-            >>>     return x ** 2 + y
-            >>>
-            >>> objective(FixedTrial({'x': 1, 'y': 0}))
-            1
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -100, 100)
+                y = trial.suggest_categorical('y', [-1, 0, 1])
+                return x ** 2 + y
+
+            assert objective(optuna.trial.FixedTrial({'x': 1, 'y': 0})) == 1
+
 
     .. note::
         Please refer to :class:`~optuna.trial.Trial` for details of methods and properties.
@@ -765,14 +888,18 @@ class FixedTrial(BaseTrial):
         # type: (str, BaseDistribution) -> Any
 
         if name not in self._params:
-            raise ValueError('The value of the parameter \'{}\' is not found. Please set it at '
-                             'the construction of the FixedTrial object.'.format(name))
+            raise ValueError(
+                "The value of the parameter '{}' is not found. Please set it at "
+                "the construction of the FixedTrial object.".format(name)
+            )
 
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
-            raise ValueError("The value {} of the parameter '{}' is out of "
-                             "the range of the distribution {}.".format(value, name, distribution))
+            raise ValueError(
+                "The value {} of the parameter '{}' is out of "
+                "the range of the distribution {}.".format(value, name, distribution)
+            )
 
         if name in self._distributions:
             distributions.check_distribution_compatibility(self._distributions[name], distribution)
@@ -842,10 +969,12 @@ def _adjust_discrete_uniform_high(name, low, high, q):
 
     d_r = d_high - d_low
 
-    if d_r % d_q != decimal.Decimal('0'):
+    if d_r % d_q != decimal.Decimal("0"):
         high = float((d_r // d_q) * d_q + d_low)
         logger = logging.get_logger(__name__)
-        logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
-                       'replaced by [{}, {}].'.format(name, low, high))
+        logger.warning(
+            "The range of parameter `{}` is not divisible by `q`, and is "
+            "replaced by [{}, {}].".format(name, low, high)
+        )
 
     return high
