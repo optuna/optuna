@@ -1,5 +1,6 @@
 import contextlib
 import copy
+from optuna.structs import StudyDirection
 import time
 
 import lightgbm as lgb
@@ -364,6 +365,20 @@ class LightGBMTuner(BaseTuner):
                 direction='maximize' if self.higher_is_better() else 'minimize')
         else:
             self.study = study
+
+        if self.higher_is_better():
+            if self.study.direction != StudyDirection.MAXIMIZE:
+                metric_name = self.lgbm_params.get('metric', 'binary_logloss')
+                raise ValueError(
+                    "Study direction is inconsistent with the metric {}. "
+                    "Please set 'maximize' to the direction.".format(metric_name))
+        else:
+            if self.study.direction != StudyDirection.MINIMIZE:
+                print(self.study.direction)
+                metric_name = self.lgbm_params.get('metric', 'binary_logloss')
+                raise ValueError(
+                    "Study direction is inconsistent with the metric {}. "
+                    "Please set 'minimize' to the direction.".format(metric_name))
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")

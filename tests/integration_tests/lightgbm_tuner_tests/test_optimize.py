@@ -1,4 +1,5 @@
 import contextlib
+from optuna.structs import StudyDirection
 
 import mock
 import numpy as np
@@ -270,6 +271,30 @@ class TestLightGBMTuner(object):
         assert excinfo.type == ValueError
         assert str(excinfo.value) == '`valid_sets` is required.'
 
+    @pytest.mark.parametrize('metric, study_direction', [
+        ('auc', 'minimize'),
+        ('mse', 'maximize'),
+        (None, 'maximize'),  # The default metric is binary_logloss.
+    ])
+    def test_inconsitent_study_direction(self, metric: str, study_direction: str) -> None:
+
+        params = {}  # type: Dict[str, Any]
+        if metric is not None:
+            params['metric'] = metric
+        train_set = lgb.Dataset(None)
+        valid_set = lgb.Dataset(None)
+        study = optuna.create_study(direction=study_direction)
+        with pytest.raises(ValueError) as excinfo:
+            lgb.LightGBMTuner(params,
+                              train_set,
+                              valid_sets=[train_set, valid_set],
+                              num_boost_round=5,
+                              early_stopping_rounds=2,
+                              study=study)
+
+        assert excinfo.type == ValueError
+        assert str(excinfo.value).startswith("Study direction is inconsistent with the metric")
+
     def test_with_minimum_required_args(self):
         # type: () -> None
 
@@ -471,6 +496,7 @@ class TestLightGBMTuner(object):
             fake_study = mock.MagicMock(spec=Study)
             fake_study._storage = mock.MagicMock()
             fake_study.best_value = 0.9
+            fake_study.direction = StudyDirection.MINIMIZE
             study_mock.return_value = fake_study
 
             tuner = LightGBMTuner(params, None, valid_sets=valid_sets)
