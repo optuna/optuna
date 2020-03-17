@@ -208,6 +208,11 @@ class Trial(BaseTrial):
             high:
                 Upper endpoint of the range of suggested values. ``high`` is excluded from the
                 range.
+            log:
+                A flag to sample the value from the log domain or not.
+                If ``log`` is true, the value is sampled from the range in the log domain.
+                Otherwise, the value is sampled from the range in the linear domain.
+                See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
 
         Returns:
             A suggested float value.
