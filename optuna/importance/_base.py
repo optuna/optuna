@@ -27,12 +27,6 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
 
 
 def get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
-    """
-
-    .. note::
-
-        This function should not be directly called by library users.
-    """
     _check_evaluate_args(study, params)
 
     if params is None:
@@ -66,7 +60,6 @@ def get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, Ba
                 "parameters are specified. Specified parameters: {}.".format(params)
             )
 
-    assert distributions is not None
     distributions = OrderedDict(
         sorted(distributions.items(), key=lambda name_and_distribution: name_and_distribution[0])
     )
@@ -76,12 +69,6 @@ def get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, Ba
 def get_study_data(
     study: Study, distributions: Dict[str, BaseDistribution]
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """
-
-    .. note::
-
-        This function should not be directly called by library users.
-    """
     trials = []
     for trial in study.trials:
         if trial.state != TrialState.COMPLETE:

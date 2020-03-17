@@ -103,9 +103,7 @@ def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -
     return hp
 
 
-def _check_fanova_availability():
-    # type: () -> None
-
+def _check_fanova_availability() -> None:
     if not _available:
         raise ImportError(
             "fanova is not available. Please install automl/fanova to use this feature. "
