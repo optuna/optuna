@@ -1,5 +1,7 @@
 from collections import OrderedDict
 from typing import Dict
+from typing import List
+from typing import Optional
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
@@ -7,8 +9,8 @@ from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.importance._base import _get_search_space
-from optuna.importance._base import _get_trial_data
+from optuna.importance._base import get_study_data
+from optuna.importance._base import get_distributions
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
 
@@ -32,10 +34,17 @@ except ImportError as e:
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
 
-    def get_param_importances(self, study: Study) -> Dict[str, float]:
+    def __init__(self):
         _check_fanova_availability()
 
-        evaluator = _get_evaluator(study)
+    def evaluate(self, study: Study, params: Optional[List[str]]) -> Dict[str, float]:
+        distributions = get_distributions(study, params)
+        params_data, values_data = get_study_data(study, distributions)
+
+        evaluator = fANOVA(
+            X=params_data, Y=values_data,
+            config_space=_get_configuration_space(distributions),
+            max_features=max(1, int(params_data.shape[1] * 0.7)))
 
         individual_importances = {}
         for i, name in enumerate(evaluator.cs.get_hyperparameter_names()):
@@ -43,9 +52,23 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             imp = imp[(i,)]['individual importance']
             individual_importances[name] = imp
 
-        param_importances = OrderedDict(sorted(individual_importances.items(), key=lambda x: x[1]))
+        tot_importance = sum(v for v in individual_importances.values())
+        for name in individual_importances.keys():
+            individual_importances[name] /= tot_importance
 
+        param_importances = OrderedDict(sorted(
+            individual_importances.items(),
+            key=lambda name_and_importance: name_and_importance[1]))
         return param_importances
+
+
+def _get_configuration_space(search_space: Dict[str, BaseDistribution]) -> ConfigurationSpace:
+    config_space = ConfigurationSpace()
+
+    for name, distribution in search_space.items():
+        config_space.add_hyperparameter(_distribution_to_hyperparameter(name, distribution))
+
+    return config_space
 
 
 def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -> Hyperparameter:
@@ -76,32 +99,6 @@ def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -
     return hp
 
 
-def _get_configuration_space(search_space: Dict[str, BaseDistribution]) -> ConfigurationSpace:
-    config_space = ConfigurationSpace()
-
-    for name, distribution in search_space.items():
-        config_space.add_hyperparameter(_distribution_to_hyperparameter(name, distribution))
-
-    return config_space
-
-
-def _get_evaluator(study: Study) -> fANOVA:
-    # TODO(hvy): Set cutoff based on minimization/maximization of study is needed.
-    # https://github.com/automl/ParameterImportance/blob/master/pimp/evaluator/fanova.py#L44
-
-    search_space = _get_search_space(study)
-    config_space = _get_configuration_space(search_space)
-    params, values = _get_trial_data(study, search_space)
-
-    assert len(search_space) == len(config_space.get_hyperparameters())
-    assert all(name == hyperparameter_name for name, hyperparameter_name in zip(
-        search_space.keys(), config_space.get_hyperparameter_names()))
-
-    evaluator = fANOVA(X=params, Y=values, config_space=config_space, seed=0)
-
-    return evaluator
-
-
 def _check_fanova_availability():
     # type: () -> None
 
@@ -109,4 +106,4 @@ def _check_fanova_availability():
         raise ImportError(
             'fanova is not available. Please install automl/fanova to use this feature. '
             'For further information, please refer to the installation guide of automl/fanova. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            '(The actual import error is as follows: ' + str(_import_error) + ').')
