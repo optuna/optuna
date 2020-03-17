@@ -18,7 +18,7 @@ _lock = threading.Lock()
 _default_handler = None  # type: Optional[logging.Handler]
 
 
-def create_default_formatter() -> "colorlog.ColoredFormatter":
+def create_default_formatter() -> colorlog.ColoredFormatter:
     """Create a default formatter of log messages.
 
     This function is not supposed to be directly accessed by library users.
@@ -34,7 +34,7 @@ def _get_library_name() -> str:
     return __name__.split(".")[0]
 
 
-def _get_library_root_logger() -> "logging.Logger":
+def _get_library_root_logger() -> logging.Logger:
 
     return logging.getLogger(_get_library_name())
 
@@ -71,7 +71,7 @@ def _reset_library_root_logger() -> None:
         _default_handler = None
 
 
-def get_logger(name: str) -> "logging.Logger":
+def get_logger(name: str) -> logging.Logger:
     """Return a logger with the specified name.
 
     This function is not supposed to be directly accessed by library users.
