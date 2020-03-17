@@ -1,6 +1,5 @@
 import math
 from typing import Optional
-import warnings
 
 import optuna
 from optuna.pruners import BasePruner
