@@ -34,31 +34,27 @@ DEVICE = -1  # If you want to use GPU, use DEVICE = 0.
 MAX_DATA_SIZE = 3000
 
 DIR = os.getcwd()
-MODEL_DIR = os.path.join(DIR, 'result')
+MODEL_DIR = os.path.join(DIR, "result")
 
-GLOVE_FILE_PATH = (
-    'https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.50d.txt.gz'
-)
+GLOVE_FILE_PATH = "https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.50d.txt.gz"
 
 
 def prepare_data():
-    glove_indexer = allennlp.data.token_indexers.SingleIdTokenIndexer(
-        lowercase_tokens=True
-    )
+    glove_indexer = allennlp.data.token_indexers.SingleIdTokenIndexer(lowercase_tokens=True)
     tokenizer = allennlp.data.tokenizers.WordTokenizer(
         word_splitter=allennlp.data.tokenizers.word_splitter.JustSpacesWordSplitter(),
     )
 
     reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
-        token_indexers={'tokens': glove_indexer}, tokenizer=tokenizer,
+        token_indexers={"tokens": glove_indexer}, tokenizer=tokenizer,
     )
     train_dataset = reader.read(
-        'https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/train.jsonl'
+        "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/train.jsonl"
     )
     train_dataset = train_dataset[:MAX_DATA_SIZE]
 
     valid_dataset = reader.read(
-        'https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl'
+        "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl"
     )
     valid_dataset = valid_dataset[:MAX_DATA_SIZE]
 
@@ -71,16 +67,14 @@ def create_model(vocab, trial):
         embedding_dim=50,
         trainable=True,
         pretrained_file=GLOVE_FILE_PATH,
-        num_embeddings=vocab.get_vocab_size('tokens'),
+        num_embeddings=vocab.get_vocab_size("tokens"),
     )
 
-    embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(
-        {'tokens': embedding}
-    )
+    embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder({"tokens": embedding})
 
-    output_dim = trial.suggest_int('output_dim', 16, 128)
-    max_filter_size = trial.suggest_int('max_filter_size', 3, 6)
-    num_filters = trial.suggest_int('num_filters', 16, 128)
+    output_dim = trial.suggest_int("output_dim", 16, 128)
+    max_filter_size = trial.suggest_int("max_filter_size", 3, 6)
+    num_filters = trial.suggest_int("num_filters", 16, 128)
     encoder = allennlp.modules.seq2vec_encoders.CnnEncoder(
         ngram_filter_sizes=range(1, max_filter_size),
         num_filters=num_filters,
@@ -88,12 +82,9 @@ def create_model(vocab, trial):
         output_dim=output_dim,
     )
 
-    dropout = trial.suggest_uniform('dropout', 0, 0.5)
+    dropout = trial.suggest_uniform("dropout", 0, 0.5)
     model = allennlp.models.BasicClassifier(
-        text_field_embedder=embedder,
-        seq2vec_encoder=encoder,
-        dropout=dropout,
-        vocab=vocab,
+        text_field_embedder=embedder, seq2vec_encoder=encoder, dropout=dropout, vocab=vocab,
     )
 
     return model
@@ -106,15 +97,13 @@ def objective(trial):
     if DEVICE > -1:
         model.cuda(DEVICE)
 
-    lr = trial.suggest_loguniform('lr', 1e-1, 1e0)
+    lr = trial.suggest_loguniform("lr", 1e-1, 1e0)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
-    iterator = allennlp.data.iterators.BasicIterator(
-        batch_size=10,
-    )
+    iterator = allennlp.data.iterators.BasicIterator(batch_size=10,)
     iterator.index_with(vocab)
 
-    serialization_dir = os.path.join(MODEL_DIR, 'trial_{}'.format(trial.number))
+    serialization_dir = os.path.join(MODEL_DIR, "trial_{}".format(trial.number))
     trainer = allennlp.training.Trainer(
         model=model,
         optimizer=optimizer,
@@ -127,20 +116,20 @@ def objective(trial):
         serialization_dir=serialization_dir,
     )
     metrics = trainer.train()
-    return metrics['best_validation_accuracy']
+    return metrics["best_validation_accuracy"]
 
 
-if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize')
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=80, timeout=600)
 
-    print('Number of finished trials: ', len(study.trials))
-    print('Best trial:')
+    print("Number of finished trials: ", len(study.trials))
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: ', trial.value)
-    print('  Params: ')
+    print("  Value: ", trial.value)
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))
 
     shutil.rmtree(MODEL_DIR)
