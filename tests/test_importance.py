@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import math
 from typing import Callable
 from typing import List
 
@@ -47,6 +48,7 @@ def test_get_param_importances(storage_init_func: Callable[[], storages.BaseStor
     for param_name, importance in param_importance.items():
         assert isinstance(param_name, str)
         assert isinstance(importance, float)
+    assert math.isclose(1.0, sum(i for i in param_importance.values()))
 
 
 @parametrize_storage
@@ -79,6 +81,8 @@ def test_get_param_importances_with_params(
     for param_name, importance in param_importance.items():
         assert isinstance(param_name, str)
         assert isinstance(importance, float)
+    if len(param_importance) > 0:
+        assert math.isclose(1.0, sum(i for i in param_importance.values()))
 
 
 def test_get_param_importances_invalid_empty_study() -> None:
