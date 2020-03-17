@@ -124,6 +124,10 @@ def test_get_param_importances_invalid_no_completed_trials_params() -> None:
     with pytest.raises(ValueError):
         get_param_importances(study, evaluator=FanovaImportanceEvaluator(), params=["x2"])
 
+    # None of the trials with `x2` are completed. Adding "x1" should not matter.
+    with pytest.raises(ValueError):
+        get_param_importances(study, evaluator=FanovaImportanceEvaluator(), params=["x1", "x2"])
+
     # None of the trials contain `x3`.
     with pytest.raises(ValueError):
         get_param_importances(study, evaluator=FanovaImportanceEvaluator(), params=["x3"])

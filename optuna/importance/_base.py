@@ -113,15 +113,12 @@ def _check_evaluate_args(study: Study, params: Optional[List[str]]):
 
         if len(params) > 0:
             at_least_one_trial = False
-            for param in params:
-                for trial in completed_trials:
-                    if param in trial.distributions:
-                        at_least_one_trial = True
-                        break
-                if not at_least_one_trial:
+            for trial in completed_trials:
+                if all(p in trial.distributions for p in params):
+                    at_least_one_trial = True
                     break
             if not at_least_one_trial:
                 raise ValueError(
-                    "Study must contain completed trials with specified parameters. "
+                    "Study must contain completed trials with all specified parameters. "
                     "Specified parameters: {}.".format(params)
                 )
