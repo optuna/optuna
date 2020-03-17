@@ -59,18 +59,18 @@ def _get_optimization_history_plot(study):
     # type: (Study) -> go.Figure
 
     layout = go.Layout(
-        title='Optimization History Plot',
-        xaxis={'title': '#Trials'},
-        yaxis={'title': 'Objective Value'},
+        title="Optimization History Plot",
+        xaxis={"title": "#Trials"},
+        yaxis={"title": "Objective Value"},
     )
 
     trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
     if len(trials) == 0:
-        logger.warning('Study instance does not contain trials.')
+        logger.warning("Study instance does not contain trials.")
         return go.Figure(data=[], layout=layout)
 
-    best_values = [float('inf')] if study.direction == StudyDirection.MINIMIZE else [-float('inf')]
+    best_values = [float("inf")] if study.direction == StudyDirection.MINIMIZE else [-float("inf")]
     comp = min if study.direction == StudyDirection.MINIMIZE else max
     for trial in trials:
         trial_value = trial.value
@@ -78,9 +78,13 @@ def _get_optimization_history_plot(study):
         best_values.append(comp(best_values[-1], trial_value))
     best_values.pop(0)
     traces = [
-        go.Scatter(x=[t.number for t in trials], y=[t.value for t in trials],
-                   mode='markers', name='Objective Value'),
-        go.Scatter(x=[t.number for t in trials], y=best_values, name='Best Value')
+        go.Scatter(
+            x=[t.number for t in trials],
+            y=[t.value for t in trials],
+            mode="markers",
+            name="Objective Value",
+        ),
+        go.Scatter(x=[t.number for t in trials], y=best_values, name="Best Value"),
     ]
 
     figure = go.Figure(data=traces, layout=layout)

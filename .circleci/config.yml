@@ -57,10 +57,10 @@ jobs:
             pip install --progress-bar off .[checking]
 
       - run:
-          name: autopep8
+          name: black
           command: |
             . venv/bin/activate
-            autopep8 . -r --diff --exit-code
+            black . --line-length 99 --check --exclude="docs"
 
       - run:
           name: flake8
