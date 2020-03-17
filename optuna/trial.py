@@ -19,8 +19,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
 
     FloatingPointDistributionType = Union[
-        distributions.UniformDistribution,
-        distributions.LogUniformDistribution
+        distributions.UniformDistribution, distributions.LogUniformDistribution
     ]
 
 
@@ -219,7 +218,9 @@ class Trial(BaseTrial):
         """
 
         if log:
-            distribution = distributions.LogUniformDistribution(low=low, high=high)  # type: FloatingPointDistributionType  # NOQA
+            distribution = distributions.LogUniformDistribution(
+                low=low, high=high
+            )  # type: FloatingPointDistributionType
         else:
             distribution = distributions.UniformDistribution(low=low, high=high)
 
