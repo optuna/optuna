@@ -35,6 +35,12 @@ def plot_intermediate_values(study):
 
             optuna.visualization.plot_intermediate_values(study)
 
+        .. raw:: html
+
+            <iframe src="../_static/plot_intermediate_values.html"
+             width="100%" height="500px" frameborder="0">
+            </iframe>
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their intermediate
@@ -52,17 +58,17 @@ def _get_intermediate_plot(study):
     # type: (Study) -> go.Figure
 
     layout = go.Layout(
-        title='Intermediate Values Plot',
-        xaxis={'title': 'Step'},
-        yaxis={'title': 'Intermediate Value'},
-        showlegend=False
+        title="Intermediate Values Plot",
+        xaxis={"title": "Step"},
+        yaxis={"title": "Intermediate Value"},
+        showlegend=False,
     )
 
     target_state = [TrialState.PRUNED, TrialState.COMPLETE, TrialState.RUNNING]
     trials = [trial for trial in study.trials if trial.state in target_state]
 
     if len(trials) == 0:
-        logger.warning('Study instance does not contain trials.')
+        logger.warning("Study instance does not contain trials.")
         return go.Figure(data=[], layout=layout)
 
     traces = []
@@ -72,17 +78,16 @@ def _get_intermediate_plot(study):
             trace = go.Scatter(
                 x=tuple((x for x, _ in sorted_intermediate_values)),
                 y=tuple((y for _, y in sorted_intermediate_values)),
-                mode='lines+markers',
-                marker={
-                    'maxdisplayed': 10
-                },
-                name='Trial{}'.format(trial.number)
+                mode="lines+markers",
+                marker={"maxdisplayed": 10},
+                name="Trial{}".format(trial.number),
             )
             traces.append(trace)
 
     if not traces:
         logger.warning(
-            'You need to set up the pruning feature to utilize `plot_intermediate_values()`')
+            "You need to set up the pruning feature to utilize `plot_intermediate_values()`"
+        )
         return go.Figure(data=[], layout=layout)
 
     figure = go.Figure(data=traces, layout=layout)

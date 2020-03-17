@@ -13,6 +13,7 @@ from optuna._experimental import experimental
 
 try:
     import pandas as pd  # NOQA
+
     _pandas_available = True
 except ImportError as e:
     _pandas_import_error = e
@@ -153,14 +154,18 @@ class BaseStudy(object):
             A storage object.
         """
 
-        warnings.warn("The direct use of storage is deprecated. "
-                      "Please access to storage via study's public methods "
-                      "(e.g., `Study.set_user_attr`)",
-                      DeprecationWarning)
+        warnings.warn(
+            "The direct use of storage is deprecated. "
+            "Please access to storage via study's public methods "
+            "(e.g., `Study.set_user_attr`)",
+            DeprecationWarning,
+        )
 
-        _logger.warning("The direct use of storage is deprecated. "
-                        "Please access to storage via study's public methods "
-                        "(e.g., `Study.set_user_attr`)")
+        _logger.warning(
+            "The direct use of storage is deprecated. "
+            "Please access to storage via study's public methods "
+            "(e.g., `Study.set_user_attr`)"
+        )
 
         return self._storage
 
@@ -178,11 +183,11 @@ class Study(BaseStudy):
     """
 
     def __init__(
-            self,
-            study_name,  # type: str
-            storage,  # type: Union[str, storages.BaseStorage]
-            sampler=None,  # type: samplers.BaseSampler
-            pruner=None  # type: pruners.BasePruner
+        self,
+        study_name,  # type: str
+        storage,  # type: Union[str, storages.BaseStorage]
+        sampler=None,  # type: samplers.BaseSampler
+        pruner=None,  # type: pruners.BasePruner
     ):
         # type: (...) -> None
 
@@ -200,7 +205,7 @@ class Study(BaseStudy):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
-        del state['_optimize_lock']
+        del state["_optimize_lock"]
         return state
 
     def __setstate__(self, state):
@@ -222,8 +227,9 @@ class Study(BaseStudy):
             The study ID.
         """
 
-        message = 'The use of `Study.study_id` is deprecated. ' \
-                  'Please use `Study.study_name` instead.'
+        message = (
+            "The use of `Study.study_id` is deprecated. Please use `Study.study_name` instead."
+        )
         warnings.warn(message, DeprecationWarning)
         _logger.warning(message)
 
@@ -252,15 +258,15 @@ class Study(BaseStudy):
         return self._storage.get_study_system_attrs(self._study_id)
 
     def optimize(
-            self,
-            func,  # type: ObjectiveFuncType
-            n_trials=None,  # type: Optional[int]
-            timeout=None,  # type: Optional[float]
-            n_jobs=1,  # type: int
-            catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            gc_after_trial=True,  # type: bool
-            show_progress_bar=False  # type: bool
+        self,
+        func,  # type: ObjectiveFuncType
+        n_trials=None,  # type: Optional[int]
+        timeout=None,  # type: Optional[float]
+        n_jobs=1,  # type: int
+        catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+        gc_after_trial=True,  # type: bool
+        show_progress_bar=False,  # type: bool
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -292,7 +298,9 @@ class Study(BaseStudy):
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
                 exception except for :class:`~optuna.exceptions.TrialPruned`.
             callbacks:
-                List of callback functions that are invoked at the end of each trial.
+                List of callback functions that are invoked at the end of each trial. Each function
+                must accept two parameters with the following types in this order:
+                :class:`~optuna.study.Study` and :class:`~optuna.structs.FrozenTrial`.
             gc_after_trial:
                 Flag to execute garbage collection at the end of each trial. By default, garbage
                 collection is enabled, just in case. You can turn it off with this argument if
@@ -304,22 +312,27 @@ class Study(BaseStudy):
         """
 
         if not isinstance(catch, tuple):
-            raise TypeError("The catch argument is of type \'{}\' but must be a tuple.".format(
-                type(catch).__name__))
+            raise TypeError(
+                "The catch argument is of type '{}' but must be a tuple.".format(
+                    type(catch).__name__
+                )
+            )
 
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
         # TODO(crcrpar): Make progress bar work when n_jobs != 1.
         self._progress_bar = pbar_module._ProgressBar(
-            show_progress_bar and n_jobs == 1, n_trials, timeout)
+            show_progress_bar and n_jobs == 1, n_trials, timeout
+        )
         try:
             if n_jobs == 1:
-                self._optimize_sequential(func, n_trials, timeout, catch, callbacks,
-                                          gc_after_trial, None)
+                self._optimize_sequential(
+                    func, n_trials, timeout, catch, callbacks, gc_after_trial, None
+                )
             else:
                 if show_progress_bar:
-                    msg = 'Progress bar only supports serial execution (`n_jobs=1`).'
+                    msg = "Progress bar only supports serial execution (`n_jobs=1`)."
                     warnings.warn(msg)
                     _logger.warning(msg)
 
@@ -330,25 +343,32 @@ class Study(BaseStudy):
                 elif timeout is not None:
                     # This is needed for mypy
                     actual_timeout = timeout  # type: float
-                    _iter = iter(lambda: (datetime.datetime.now() -
-                                          time_start).total_seconds() > actual_timeout, True)
+                    _iter = iter(
+                        lambda: (datetime.datetime.now() - time_start).total_seconds()
+                        > actual_timeout,
+                        True,
+                    )
                 else:
                     # The following expression makes an iterator that never ends.
                     _iter = iter(int, 1)
 
                 with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
-                    if not isinstance(parallel._backend, joblib.parallel.ThreadingBackend) and \
-                       isinstance(self._storage, storages.InMemoryStorage):
-                        msg = 'The default storage cannot be shared by multiple processes. ' \
-                              'Please use an RDB (RDBStorage) when you use joblib for ' \
-                              'multi-processing. The usage of RDBStorage can be found in ' \
-                              'https://optuna.readthedocs.io/en/stable/tutorial/rdb.html.'
+                    if not isinstance(
+                        parallel._backend, joblib.parallel.ThreadingBackend
+                    ) and isinstance(self._storage, storages.InMemoryStorage):
+                        msg = (
+                            "The default storage cannot be shared by multiple processes. "
+                            "Please use an RDB (RDBStorage) when you use joblib for "
+                            "multi-processing. The usage of RDBStorage can be found in "
+                            "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html."
+                        )
                         warnings.warn(msg, UserWarning)
                         _logger.warning(msg)
 
                     parallel(
-                        delayed(self._optimize_sequential)
-                        (func, 1, timeout, catch, callbacks, gc_after_trial, time_start)
+                        delayed(self._optimize_sequential)(
+                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start
+                        )
                         for _ in _iter
                     )
         finally:
@@ -385,9 +405,17 @@ class Study(BaseStudy):
 
     def trials_dataframe(
         self,
-        attrs=('number', 'value', 'datetime_start', 'datetime_complete', 'params', 'user_attrs',
-               'system_attrs', 'state'),  # type: Tuple[str, ...]
-        multi_index=False  # type: bool
+        attrs=(
+            "number",
+            "value",
+            "datetime_start",
+            "datetime_complete",
+            "params",
+            "user_attrs",
+            "system_attrs",
+            "state",
+        ),  # type: Tuple[str, ...]
+        multi_index=False,  # type: bool
     ):
         # type: (...) -> pd.DataFrame
         """Export trials as a pandas DataFrame_.
@@ -442,7 +470,7 @@ class Study(BaseStudy):
         assert all(isinstance(trial, structs.FrozenTrial) for trial in trials)
         attrs_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
         for attr in attrs:
-            if attr.startswith('_'):
+            if attr.startswith("_"):
                 # Python conventional underscores are omitted in the dataframe.
                 df_column = attr[1:]
             else:
@@ -453,7 +481,7 @@ class Study(BaseStudy):
         # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
         # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
-        non_nested_attr = ''
+        non_nested_attr = ""
 
         def _create_record_and_aggregate_column(trial):
             # type: (structs.FrozenTrial) -> Dict[Tuple[str, str], Any]
@@ -463,7 +491,7 @@ class Study(BaseStudy):
                 value = getattr(trial, attr)
                 if isinstance(value, structs.TrialState):
                     # Convert TrialState to str and remove the common prefix.
-                    value = str(value).split('.')[-1]
+                    value = str(value).split(".")[-1]
                 if isinstance(value, dict):
                     for nested_attr, nested_value in value.items():
                         record[(df_column, nested_attr)] = nested_value
@@ -476,8 +504,8 @@ class Study(BaseStudy):
         records = list([_create_record_and_aggregate_column(trial) for trial in trials])
 
         columns = sum(
-            (sorted(column_agg[k]) for k in attrs if k in column_agg),
-            [])  # type: List[Tuple[str, str]]
+            (sorted(column_agg[k]) for k in attrs if k in column_agg), []
+        )  # type: List[Tuple[str, str]]
 
         df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
@@ -486,11 +514,12 @@ class Study(BaseStudy):
             # Filtering is required to omit non-nested columns avoiding unwanted trailing
             # underscores.
             df.columns = [
-                '_'.join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns]
+                "_".join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns
+            ]
 
         return df
 
-    @experimental('1.2.0')
+    @experimental("1.2.0")
     def enqueue_trial(self, params):
         # type: (Dict[str, Any]) -> None
         """Enqueue a trial with given parameter values.
@@ -521,21 +550,20 @@ class Study(BaseStudy):
                 Parameter values to pass your objective function.
         """
 
-        system_attrs = {'fixed_params': params}
-        self._append_trial(state=structs.TrialState.WAITING,
-                           system_attrs=system_attrs)
+        system_attrs = {"fixed_params": params}
+        self._append_trial(state=structs.TrialState.WAITING, system_attrs=system_attrs)
 
     def _append_trial(
-            self,
-            value=None,  # type: Optional[float]
-            params=None,  # type: Optional[Dict[str, Any]]
-            distributions=None,  # type: Optional[Dict[str, BaseDistribution]]
-            user_attrs=None,  # type: Optional[Dict[str, Any]]
-            system_attrs=None,  # type: Optional[Dict[str, Any]]
-            intermediate_values=None,  # type: Optional[Dict[int, float]]
-            state=structs.TrialState.COMPLETE,  # type: structs.TrialState
-            datetime_start=None,  # type: Optional[datetime.datetime]
-            datetime_complete=None  # type: Optional[datetime.datetime]
+        self,
+        value=None,  # type: Optional[float]
+        params=None,  # type: Optional[Dict[str, Any]]
+        distributions=None,  # type: Optional[Dict[str, BaseDistribution]]
+        user_attrs=None,  # type: Optional[Dict[str, Any]]
+        system_attrs=None,  # type: Optional[Dict[str, Any]]
+        intermediate_values=None,  # type: Optional[Dict[int, float]]
+        state=structs.TrialState.COMPLETE,  # type: structs.TrialState
+        datetime_start=None,  # type: Optional[datetime.datetime]
+        datetime_complete=None,  # type: Optional[datetime.datetime]
     ):
         # type: (...) -> None
 
@@ -560,21 +588,22 @@ class Study(BaseStudy):
             distributions=distributions,
             user_attrs=user_attrs,
             system_attrs=system_attrs,
-            intermediate_values=intermediate_values)
+            intermediate_values=intermediate_values,
+        )
 
         trial._validate()
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
     def _optimize_sequential(
-            self,
-            func,  # type: ObjectiveFuncType
-            n_trials,  # type: Optional[int]
-            timeout,  # type: Optional[float]
-            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            gc_after_trial,  # type: bool
-            time_start  # type: Optional[datetime.datetime]
+        self,
+        func,  # type: ObjectiveFuncType
+        n_trials,  # type: Optional[int]
+        timeout,  # type: Optional[float]
+        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+        gc_after_trial,  # type: bool
+        time_start,  # type: Optional[datetime.datetime]
     ):
         # type: (...) -> None
 
@@ -616,11 +645,11 @@ class Study(BaseStudy):
         return None
 
     def _run_trial_and_callbacks(
-            self,
-            func,  # type: ObjectiveFuncType
-            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
-            gc_after_trial  # type: bool
+        self,
+        func,  # type: ObjectiveFuncType
+        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+        gc_after_trial,  # type: bool
     ):
         # type: (...) -> None
 
@@ -631,10 +660,10 @@ class Study(BaseStudy):
                 callback(self, frozen_trial)
 
     def _run_trial(
-            self,
-            func,  # type: ObjectiveFuncType
-            catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-            gc_after_trial  # type: bool
+        self,
+        func,  # type: ObjectiveFuncType
+        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        gc_after_trial,  # type: bool
     ):
         # type: (...) -> trial_module.Trial
 
@@ -647,9 +676,9 @@ class Study(BaseStudy):
         try:
             result = func(trial)
         except exceptions.TrialPruned as e:
-            message = 'Setting status of trial#{} as {}. {}'.format(trial_number,
-                                                                    structs.TrialState.PRUNED,
-                                                                    str(e))
+            message = "Setting status of trial#{} as {}. {}".format(
+                trial_number, structs.TrialState.PRUNED, str(e)
+            )
             _logger.info(message)
 
             # Register the last intermediate value if present as the value of the trial.
@@ -658,14 +687,16 @@ class Study(BaseStudy):
             last_step = frozen_trial.last_step
             if last_step is not None:
                 self._storage.set_trial_value(
-                    trial_id, frozen_trial.intermediate_values[last_step])
+                    trial_id, frozen_trial.intermediate_values[last_step]
+                )
             self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
             return trial
         except Exception as e:
-            message = 'Setting status of trial#{} as {} because of the following error: {}'\
-                .format(trial_number, structs.TrialState.FAIL, repr(e))
+            message = "Setting status of trial#{} as {} because of the following error: {}".format(
+                trial_number, structs.TrialState.FAIL, repr(e)
+            )
             _logger.warning(message, exc_info=True)
-            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
 
             if isinstance(e, catch):
@@ -682,22 +713,26 @@ class Study(BaseStudy):
         try:
             result = float(result)
         except (
-                ValueError,
-                TypeError,
+            ValueError,
+            TypeError,
         ):
-            message = 'Setting status of trial#{} as {} because the returned value from the ' \
-                      'objective function cannot be casted to float. Returned value is: ' \
-                      '{}'.format(trial_number, structs.TrialState.FAIL, repr(result))
+            message = (
+                "Setting status of trial#{} as {} because the returned value from the "
+                "objective function cannot be casted to float. Returned value is: "
+                "{}".format(trial_number, structs.TrialState.FAIL, repr(result))
+            )
             _logger.warning(message)
-            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
         if math.isnan(result):
-            message = 'Setting status of trial#{} as {} because the objective function ' \
-                      'returned {}.'.format(trial_number, structs.TrialState.FAIL, result)
+            message = (
+                "Setting status of trial#{} as {} because the objective function "
+                "returned {}.".format(trial_number, structs.TrialState.FAIL, result)
+            )
             _logger.warning(message)
-            self._storage.set_trial_system_attr(trial_id, 'fail_reason', message)
+            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
             self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
             return trial
 
@@ -710,18 +745,21 @@ class Study(BaseStudy):
     def _log_completed_trial(self, trial_number, value):
         # type: (int, float) -> None
 
-        _logger.info('Finished trial#{} resulted in value: {}. '
-                     'Current best value is {} with parameters: {}.'.format(
-                         trial_number, value, self.best_value, self.best_params))
+        _logger.info(
+            "Finished trial#{} resulted in value: {}. "
+            "Current best value is {} with parameters: {}.".format(
+                trial_number, value, self.best_value, self.best_params
+            )
+        )
 
 
 def create_study(
-        storage=None,  # type: Union[None, str, storages.BaseStorage]
-        sampler=None,  # type: samplers.BaseSampler
-        pruner=None,  # type: pruners.BasePruner
-        study_name=None,  # type: Optional[str]
-        direction='minimize',  # type: str
-        load_if_exists=False,  # type: bool
+    storage=None,  # type: Union[None, str, storages.BaseStorage]
+    sampler=None,  # type: samplers.BaseSampler
+    pruner=None,  # type: pruners.BasePruner
+    study_name=None,  # type: Optional[str]
+    direction="minimize",  # type: str
+    load_if_exists=False,  # type: bool
 ):
     # type: (...) -> Study
     """Create a new :class:`~optuna.study.Study`.
@@ -775,25 +813,23 @@ def create_study(
         if load_if_exists:
             assert study_name is not None
 
-            _logger.info("Using an existing study with name '{}' instead of "
-                         "creating a new one.".format(study_name))
+            _logger.info(
+                "Using an existing study with name '{}' instead of "
+                "creating a new one.".format(study_name)
+            )
             study_id = storage.get_study_id_from_name(study_name)
         else:
             raise
 
     study_name = storage.get_study_name_from_id(study_id)
-    study = Study(
-        study_name=study_name,
-        storage=storage,
-        sampler=sampler,
-        pruner=pruner)
+    study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
-    if direction == 'minimize':
+    if direction == "minimize":
         _direction = structs.StudyDirection.MINIMIZE
-    elif direction == 'maximize':
+    elif direction == "maximize":
         _direction = structs.StudyDirection.MAXIMIZE
     else:
-        raise ValueError('Please set either \'minimize\' or \'maximize\' to direction.')
+        raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
 
     study._storage.set_study_direction(study_id, _direction)
 
@@ -801,10 +837,10 @@ def create_study(
 
 
 def load_study(
-        study_name,  # type: str
-        storage,  # type: Union[str, storages.BaseStorage]
-        sampler=None,  # type: samplers.BaseSampler
-        pruner=None,  # type: pruners.BasePruner
+    study_name,  # type: str
+    storage,  # type: Union[str, storages.BaseStorage]
+    sampler=None,  # type: samplers.BaseSampler
+    pruner=None,  # type: pruners.BasePruner
 ):
     # type: (...) -> Study
     """Load the existing :class:`~optuna.study.Study` that has the specified name.
@@ -830,8 +866,8 @@ def load_study(
 
 
 def delete_study(
-        study_name,  # type: str
-        storage,  # type: Union[str, storages.BaseStorage]
+    study_name,  # type: str
+    storage,  # type: Union[str, storages.BaseStorage]
 ):
     # type: (...) -> None
     """Delete a :class:`~optuna.study.Study` object.
@@ -873,7 +909,8 @@ def _check_pandas_availability():
 
     if not _pandas_available:
         raise ImportError(
-            'pandas is not available. Please install pandas to use this feature. '
-            'pandas can be installed by executing `$ pip install pandas`. '
-            'For further information, please refer to the installation guide of pandas. '
-            '(The actual import error is as follows: ' + str(_pandas_import_error) + ')')
+            "pandas is not available. Please install pandas to use this feature. "
+            "pandas can be installed by executing `$ pip install pandas`. "
+            "For further information, please refer to the installation guide of pandas. "
+            "(The actual import error is as follows: " + str(_pandas_import_error) + ")"
+        )
