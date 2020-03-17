@@ -183,7 +183,7 @@ class Trial(BaseTrial):
 
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -242,7 +242,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -307,7 +307,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -366,7 +366,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
 
@@ -423,7 +423,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
 
@@ -493,7 +493,7 @@ class Trial(BaseTrial):
 
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
 
@@ -589,7 +589,7 @@ class Trial(BaseTrial):
 
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
                 assert 'BATCHSIZE' in study.best_trial.user_attrs.keys()
                 assert study.best_trial.user_attrs['BATCHSIZE'] == 128
