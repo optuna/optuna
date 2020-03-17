@@ -88,10 +88,10 @@ def _get_parallel_coordinate_plot(study, params=None):
 
     if any(len(p_name) > 10 for p_name in sorted_params):
         labelangle = 30
-        labelside = 'bottom'
+        labelside = "bottom"
     else:
         labelangle = 0
-        labelside = 'top'
+        labelside = "top"
 
     dims = [
         {
@@ -114,9 +114,9 @@ def _get_parallel_coordinate_plot(study, params=None):
             values = [vocab[v] for v in values]
             is_categorical = True
         dim = {
-            'label': p_name if len(p_name) < 20 else '{}...'.format(p_name[:17]),
-            'values': tuple(values),
-            'range': (min(values), max(values))
+            "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+            "values": tuple(values),
+            "range": (min(values), max(values)),
         }  # type: Dict[str, object]
         if is_categorical:
             dim["tickvals"] = list(range(len(vocab)))
