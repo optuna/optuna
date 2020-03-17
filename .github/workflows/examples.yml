@@ -1,0 +1,66 @@
+name: examples
+
+on:
+  schedule:
+    - cron: '0 15 * * *'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup-python${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install openmpi-bin libopenmpi-dev
+        python -m pip install --upgrade pip
+        pip install --progress-bar off -U setuptools
+        python setup.py sdist
+
+        # Install minimal dependencies and confirm that `import optuna` is successful.
+        pip install --progress-bar off $(ls dist/*.tar.gz)
+        python -c 'import optuna'
+
+        # Install all dependencies needed for examples.
+        pip install --progress-bar off $(ls dist/*.tar.gz)[example]
+    - name: Run examples
+      run: |
+        if [ ${{ matrix.python-version }} = 3.5 ]; then
+          IGNORES='chainermn_.*|pytorch_lightning.*|fastai_.*'
+        elif [ ${{ matrix.python-version }} = 3.8 ]; then
+          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|pytorch_lightning_.*|tensorflow_.*|tfkeras_.*|fastai_.*'
+        else
+          IGNORES='chainermn_.*'
+        fi
+
+        for file in `find examples -name '*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`
+        do
+          echo $file
+          python $file > /dev/null
+          if grep -e '\-\-pruning' $file > /dev/null; then
+            echo $file --pruning
+            python $file --pruning > /dev/null
+          fi
+        done
+      env:
+        OMP_NUM_THREADS: 1
+    - name: Run multi-node examples
+      run: |
+        STORAGE_URL=sqlite:///example.db
+        for file in `find examples -name 'chainermn_*.py'`
+        do
+          echo $file
+          STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
+          mpirun -n 2 -- python $file $STUDY_NAME $STORAGE_URL > /dev/null
+        done
+      env:
+        OMP_NUM_THREADS: 1
