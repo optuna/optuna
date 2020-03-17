@@ -480,6 +480,14 @@ class RDBStorage(BaseStorage):
 
         return trial.trial_id
 
+    def clean_running_trials(self):
+        # type: () -> bool
+
+        session = self.scoped_session()
+        models.TrialModel.delete_running_trials(session)
+
+        return self._commit_with_integrity_check(session)
+
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> bool
 

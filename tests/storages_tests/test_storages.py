@@ -701,3 +701,33 @@ def _check_example_trial_static_attributes(trial_1, trial_2):
         for field in FrozenTrial._ordered_fields
         if field not in ["_trial_id", "number", "datetime_start", "datetime_complete"]
     )
+
+
+@parametrize_storage
+def test_clean_running_trials(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+    storage = storage_init_func()
+    study_id = storage.create_new_study()
+
+    trial_id_0 = storage.create_new_trial(study_id)
+    storage.set_trial_state(trial_id_0, TrialState.COMPLETE)
+
+    trial_id_1 = storage.create_new_trial(study_id)
+    storage.set_trial_state(trial_id_1, TrialState.RUNNING)
+
+    trials = storage.get_all_trials(study_id)
+    assert len(trials) == 2
+
+    clean_success = storage.clean_running_trials()
+    assert clean_success is True
+
+    trials = storage.get_all_trials(study_id)
+
+    if isinstance(storage, optuna.storages.InMemoryStorage):
+        # In `in_memory` running trials' state are set to FAIL.
+        assert len(trials) == 2
+        assert storage.get_trial(trial_id_1).state == TrialState.FAIL
+    else:
+        # In `storage` running trials are deleted.
+        assert len(trials) == 1
+        assert storage.get_trial(trial_id_0).state == TrialState.COMPLETE

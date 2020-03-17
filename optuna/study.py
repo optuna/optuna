@@ -371,6 +371,8 @@ class Study(BaseStudy):
                         )
                         for _ in _iter
                     )
+        except KeyboardInterrupt:
+            self._storage.clean_running_trials()
         finally:
             self._optimize_lock.release()
             self._progress_bar.close()

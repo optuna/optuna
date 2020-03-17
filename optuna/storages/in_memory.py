@@ -189,6 +189,14 @@ class InMemoryStorage(base.BaseStorage):
             datetime_complete=None,
         )
 
+    def clean_running_trials(self):
+        # type: () -> bool
+
+        for trial_id in range(len(self.trials)):
+            if self.trials[trial_id].state == structs.TrialState.RUNNING:
+                self.set_trial_state(trial_id, structs.TrialState.FAIL)
+        return True
+
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> bool
 

@@ -177,6 +177,13 @@ class TrialModel(BaseModel):
         return trial
 
     @classmethod
+    def delete_running_trials(cls, session):
+        # type: (orm.Session) -> int
+
+        n_trials_deleted = session.query(cls).filter(cls.state == TrialState.RUNNING).delete()
+        return n_trials_deleted
+
+    @classmethod
     def find_max_value_trial(cls, study_id, session):
         # type: (int, orm.Session) -> TrialModel
 

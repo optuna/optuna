@@ -2,8 +2,10 @@ import copy
 import itertools
 import multiprocessing
 import pickle
+import signal
 import threading
 import time
+import types
 import uuid
 import warnings
 
@@ -892,3 +894,40 @@ def test_study_id():
 
     with pytest.warns(DeprecationWarning):
         study.study_id
+
+
+@pytest.mark.parametrize(
+    'n_jobs, storage_mode',
+    itertools.product(
+        (1, 2),  # n_jobs
+        STORAGE_MODES,  # storage_mode
+    ))
+def test_interrupt_study(n_jobs, storage_mode):
+    # type: (int, str)-> None
+
+    sec_func = 2
+    f = Func(sleep_sec=sec_func)
+
+    def handler(signum, frame):
+        # type: (int, types.FrameType)-> None
+
+        raise KeyboardInterrupt()
+
+    signal.signal(signal.SIGALRM, handler)
+    signal.alarm(int(sec_func * 1.5))
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        study.optimize(f, n_jobs=n_jobs)
+        trials = study._storage.get_all_trials(study._study_id)
+        if isinstance(study._storage, optuna.storages.RDBStorage):
+            assert len(trials) == n_jobs
+            for trial in trials:
+                assert trial.state == optuna.structs.TrialState.COMPLETE
+        else:
+            assert len(trials) == n_jobs * 2
+            for i, trial in enumerate(trials):
+                if i < n_jobs:
+                    assert trial.state == optuna.structs.TrialState.COMPLETE
+                else:
+                    assert trial.state == optuna.structs.TrialState.FAIL

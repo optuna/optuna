@@ -109,6 +109,12 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def clean_running_trials(self):
+        # type: () -> bool
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def set_trial_state(self, trial_id, state):
         # type: (int, structs.TrialState) -> bool
 
