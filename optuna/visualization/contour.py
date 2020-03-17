@@ -50,6 +50,11 @@ def plot_contour(study, params=None):
 
             optuna.visualization.plot_contour(study, params=['x', 'y'])
 
+        .. raw:: html
+
+            <iframe src="../_static/plot_contour.html" width="100%" height="500px" frameborder="0">
+            </iframe>
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
