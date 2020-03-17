@@ -9,9 +9,9 @@ from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.importance._base import get_study_data
-from optuna.importance._base import get_distributions
 from optuna.importance._base import BaseImportanceEvaluator
+from optuna.importance._base import get_distributions
+from optuna.importance._base import get_study_data
 from optuna.study import Study
 
 try:
@@ -33,7 +33,7 @@ except ImportError as e:
 
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
-    def __init__(self):
+    def __init__(self) -> None:
         _check_fanova_availability()
 
     def evaluate(self, study: Study, params: Optional[List[str]]) -> Dict[str, float]:
