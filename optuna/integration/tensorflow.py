@@ -7,6 +7,7 @@ try:
     import tensorflow as tf
     from tensorflow.estimator import SessionRunHook
     from tensorflow_estimator.python.estimator.early_stopping import read_eval_metrics
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -66,9 +67,11 @@ class TensorFlowPruningHook(SessionRunHook):
         self._timer = tf.estimator.SecondOrStepTimer(every_secs=None, every_steps=run_every_steps)
 
         if is_higher_better is not None:
-            raise ValueError('Please do not use is_higher_better argument of '
-                             'TensorFlowPruningHook.__init__(). is_higher_better argument '
-                             'is obsolete since Optuna 0.9.0.')
+            raise ValueError(
+                "Please do not use is_higher_better argument of "
+                "TensorFlowPruningHook.__init__(). is_higher_better argument "
+                "is obsolete since Optuna 0.9.0."
+            )
 
     def begin(self):
         # type: () -> None
@@ -98,7 +101,7 @@ class TensorFlowPruningHook(SessionRunHook):
             if summary_step > self._current_summary_step:
                 current_score = latest_eval_metrics[self._metric]
                 if current_score is None:
-                    current_score = float('nan')
+                    current_score = float("nan")
                 self._trial.report(float(current_score), step=summary_step)
                 self._current_summary_step = summary_step
             if self._trial.should_prune():
@@ -111,7 +114,8 @@ def _check_tensorflow_availability():
 
     if not _available:
         raise ImportError(
-            'TensorFlow is not available. Please install TensorFlow to use this feature. '
-            'TensorFlow can be installed by executing `$ pip install tensorflow`. '
-            'For further information, please refer to the installation guide of TensorFlow. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "TensorFlow is not available. Please install TensorFlow to use this feature. "
+            "TensorFlow can be installed by executing `$ pip install tensorflow`. "
+            "For further information, please refer to the installation guide of TensorFlow. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )
