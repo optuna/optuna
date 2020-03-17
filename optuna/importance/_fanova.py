@@ -33,7 +33,6 @@ except ImportError as e:
 
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
-
     def __init__(self):
         _check_fanova_availability()
 
@@ -42,23 +41,28 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         params_data, values_data = get_study_data(study, distributions)
 
         evaluator = fANOVA(
-            X=params_data, Y=values_data,
+            X=params_data,
+            Y=values_data,
             config_space=_get_configuration_space(distributions),
-            max_features=max(1, int(params_data.shape[1] * 0.7)))
+            max_features=max(1, int(params_data.shape[1] * 0.7)),
+        )
 
         individual_importances = {}
         for i, name in enumerate(evaluator.cs.get_hyperparameter_names()):
             imp = evaluator.quantify_importance((i,))
-            imp = imp[(i,)]['individual importance']
+            imp = imp[(i,)]["individual importance"]
             individual_importances[name] = imp
 
         tot_importance = sum(v for v in individual_importances.values())
         for name in individual_importances.keys():
             individual_importances[name] /= tot_importance
 
-        param_importances = OrderedDict(sorted(
-            individual_importances.items(),
-            key=lambda name_and_importance: name_and_importance[1]))
+        param_importances = OrderedDict(
+            sorted(
+                individual_importances.items(),
+                key=lambda name_and_importance: name_and_importance[1],
+            )
+        )
         return param_importances
 
 
@@ -83,19 +87,19 @@ def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -
     elif isinstance(d, IntUniformDistribution):
         hp = UniformIntegerHyperparameter(name, lower=d.low, upper=d.high)
     elif isinstance(d, CategoricalDistribution):
-        hp = CategoricalHyperparameter(
-            name, choices=[d.to_internal_repr(c) for c in d.choices])
+        hp = CategoricalHyperparameter(name, choices=[d.to_internal_repr(c) for c in d.choices])
     else:
         distribution_list = [
             UniformDistribution.__name__,
             LogUniformDistribution.__name__,
             DiscreteUniformDistribution.__name__,
             IntUniformDistribution.__name__,
-            CategoricalDistribution.__name__
+            CategoricalDistribution.__name__,
         ]
-        raise NotImplementedError('The distribution {} is not implemented. '
-                                  'The parameter distribution should be one of the {}'.format(
-                                      d, distribution_list))
+        raise NotImplementedError(
+            "The distribution {} is not implemented. "
+            "The parameter distribution should be one of the {}".format(d, distribution_list)
+        )
     return hp
 
 
@@ -104,6 +108,7 @@ def _check_fanova_availability():
 
     if not _available:
         raise ImportError(
-            'fanova is not available. Please install automl/fanova to use this feature. '
-            'For further information, please refer to the installation guide of automl/fanova. '
-            '(The actual import error is as follows: ' + str(_import_error) + ').')
+            "fanova is not available. Please install automl/fanova to use this feature. "
+            "For further information, please refer to the installation guide of automl/fanova. "
+            "(The actual import error is as follows: " + str(_import_error) + ")."
+        )

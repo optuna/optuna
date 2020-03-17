@@ -15,7 +15,6 @@ from optuna.study import Study
 
 
 class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
-
     @abc.abstractmethod
     def evaluate(self, study: Study, params: Optional[List[str]]) -> Dict[str, float]:
         """
@@ -27,8 +26,7 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-def get_distributions(
-        study: Study, params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
+def get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
     """
 
     .. note::
@@ -51,25 +49,33 @@ def get_distributions(
             continue
 
         if distributions is None:
-            distributions = dict(filter(
-                lambda name_and_distribution: name_and_distribution[0] in params,
-                trial_distributions.items()))
+            distributions = dict(
+                filter(
+                    lambda name_and_distribution: name_and_distribution[0] in params,
+                    trial_distributions.items(),
+                )
+            )
             continue
 
-        if any(trial_distributions[name] != distribution
-                for name, distribution in distributions.items()):
+        if any(
+            trial_distributions[name] != distribution
+            for name, distribution in distributions.items()
+        ):
             raise ValueError(
-                'Parameters importances cannot be assessed with dynamic search spaces if '
-                'parameters are specified. Specified parameters: {}.'.format(params))
+                "Parameters importances cannot be assessed with dynamic search spaces if "
+                "parameters are specified. Specified parameters: {}.".format(params)
+            )
 
     assert distributions is not None
     distributions = OrderedDict(
-        sorted(distributions.items(), key=lambda name_and_distribution: name_and_distribution[0]))
+        sorted(distributions.items(), key=lambda name_and_distribution: name_and_distribution[0])
+    )
     return distributions
 
 
 def get_study_data(
-        study: Study, distributions: Dict[str, BaseDistribution]) -> Tuple[np.ndarray, np.ndarray]:
+    study: Study, distributions: Dict[str, BaseDistribution]
+) -> Tuple[np.ndarray, np.ndarray]:
     """
 
     .. note::
@@ -105,16 +111,18 @@ def get_study_data(
 def _check_evaluate_args(study: Study, params: Optional[List[str]]):
     completed_trials = list(filter(lambda t: t.state == TrialState.COMPLETE, study.trials))
     if len(completed_trials) == 0:
-        raise ValueError('Cannot evaluate parameter importances without completed trials.')
+        raise ValueError("Cannot evaluate parameter importances without completed trials.")
 
     if params is not None:
         if not isinstance(params, (list, tuple)):
             raise TypeError(
-                'Parameters must be specified as a list. Actual parameters: {}.'.format(params))
+                "Parameters must be specified as a list. Actual parameters: {}.".format(params)
+            )
         if any(not isinstance(p, str) for p in params):
             raise TypeError(
-                'Parameters must be specified by their names with strings. Actual parameters: '
-                '{}.'.format(params))
+                "Parameters must be specified by their names with strings. Actual parameters: "
+                "{}.".format(params)
+            )
 
         if len(params) > 0:
             at_least_one_trial = False
@@ -127,5 +135,6 @@ def _check_evaluate_args(study: Study, params: Optional[List[str]]):
                     break
             if not at_least_one_trial:
                 raise ValueError(
-                    'Study must contain completed trials with specified parameters. '
-                    'Specified parameters: {}.'.format(params))
+                    "Study must contain completed trials with specified parameters. "
+                    "Specified parameters: {}.".format(params)
+                )
