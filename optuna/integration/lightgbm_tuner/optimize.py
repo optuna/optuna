@@ -202,6 +202,7 @@ class OptunaObjective(BaseTuner):
             lgbm_kwargs,  # type: Dict[str, Any]
             best_score,  # type: float
             pbar=None,  # type: Optional[tqdm.tqdm]
+            step_id="",  # type: str
     ):
 
         self.target_param_names = target_param_names
@@ -215,6 +216,7 @@ class OptunaObjective(BaseTuner):
         self.best_score = best_score
         self.best_booster = None
         self.action = 'tune_' + '_and_'.join(self.target_param_names)
+        self.step_id = step_id
 
         self._check_target_names_supported()
 
@@ -295,6 +297,7 @@ class OptunaObjective(BaseTuner):
         trial.set_user_attr('trial_count', self.trial_count)
         trial.set_user_attr('elapsed_secs', elapsed_secs)
         trial.set_user_attr('average_iteration_time', average_iteration_time)
+        trial.set_user_attr('step_id', self.step_id)
 
         self.trial_count += 1
 
@@ -487,19 +490,20 @@ class LightGBMTuner(BaseTuner):
         param_name = 'feature_fraction'
         param_values = list(np.linspace(0.4, 1.0, n_trials))
         sampler = _GridSamplerUniform1D(param_name, param_values)
-        self.tune_params([param_name], len(param_values), sampler)
+        self.tune_params([param_name], len(param_values), sampler, 'feature_fraction')
 
     def tune_num_leaves(self, n_trials=20):
         # type: (int) -> None
 
-        self.tune_params(['num_leaves'], n_trials, optuna.samplers.TPESampler())
+        self.tune_params(['num_leaves'], n_trials, optuna.samplers.TPESampler(), 'num_leaves')
 
     def tune_bagging(self, n_trials=10):
         # type: (int) -> None
 
         self.tune_params(['bagging_fraction', 'bagging_freq'],
                          n_trials,
-                         optuna.samplers.TPESampler())
+                         optuna.samplers.TPESampler(),
+                         'bagging')
 
     def tune_feature_fraction_stage2(self, n_trials=6):
         # type: (int) -> None
@@ -511,12 +515,13 @@ class LightGBMTuner(BaseTuner):
             n_trials))
         param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
         sampler = _GridSamplerUniform1D(param_name, param_values)
-        self.tune_params([param_name], len(param_values), sampler)
+        self.tune_params([param_name], len(param_values), sampler, 'feature_fraction_stage2')
 
     def tune_regularization_factors(self, n_trials=20):
         # type: (int) -> None
 
-        self.tune_params(['lambda_l1', 'lambda_l2'], n_trials, optuna.samplers.TPESampler())
+        self.tune_params(['lambda_l1', 'lambda_l2'], n_trials, optuna.samplers.TPESampler(),
+                         'regularization_factors')
 
     def tune_min_data_in_leaf(self):
         # type: () -> None
@@ -524,10 +529,10 @@ class LightGBMTuner(BaseTuner):
         param_name = 'min_child_samples'
         param_values = [5, 10, 25, 50, 100]
         sampler = _GridSamplerUniform1D(param_name, param_values)
-        self.tune_params([param_name], len(param_values), sampler)
+        self.tune_params([param_name], len(param_values), sampler, 'min_data_in_leaf')
 
-    def tune_params(self, target_param_names, n_trials, sampler):
-        # type: (List[str], int, optuna.samplers.BaseSampler) -> None
+    def tune_params(self, target_param_names, n_trials, sampler, step_id=""):
+        # type: (List[str], int, optuna.samplers.BaseSampler, str) -> None
 
         pbar = tqdm.tqdm(total=n_trials, ascii=True)
 
@@ -545,8 +550,10 @@ class LightGBMTuner(BaseTuner):
             self.lgbm_kwargs,
             self.best_score,
             pbar=pbar,
+            step_id=step_id,
         )
-        study = self.study
+
+        study = self._create_stepwise_study(self.study, step_id)
         study.sampler = sampler
         study.optimize(objective, n_trials=n_trials, catch=())
 
@@ -556,10 +563,67 @@ class LightGBMTuner(BaseTuner):
         # Add tuning history.
         self.tuning_history += objective.report
 
-        if self.compare_validation_metrics(study.best_value, self.best_score):
-            self.best_score = study.best_value
+        best_trial = study.best_trial
+
+        # The values of complete trials are not None. The assertion is just for mypy.
+        assert best_trial.value is not None
+
+        if self.compare_validation_metrics(best_trial.value, self.best_score):
+            self.best_score = best_trial.value
             self.best_booster = objective.best_booster
 
-            updated_params = {p: study.best_trial.params[p] for p in target_param_names}
+            updated_params = {p: best_trial.params[p] for p in target_param_names}
             self.lgbm_params.update(updated_params)
             self.best_params.update(updated_params)
+
+    def _create_stepwise_study(
+        self,
+        study: 'optuna.study.Study',
+        step_id: str
+    ) -> 'optuna.study.Study':
+
+        # This class is assumed to be passed to a sampler and a pruner corresponding to the step.
+        class _StepwiseStudy(optuna.study.Study):
+
+            def __init__(self, study, step_id):
+                # type: (optuna.study.Study, str) -> None
+
+                super().__init__(
+                    study_name=study.study_name,
+                    storage=study._storage,
+                    sampler=study.sampler,
+                    pruner=study.pruner
+                )
+                self._step_id = step_id
+
+            def get_trials(self, deepcopy=True):
+                # type: (bool) -> List[optuna.structs.FrozenTrial]
+
+                trials = super().get_trials(deepcopy=deepcopy)
+                return [
+                    t for t in trials
+                    if t.user_attrs.get('step_id') == self._step_id
+                ]
+
+            @property
+            def best_trial(self):
+                # type: () -> optuna.structs.FrozenTrial
+                """Return the best trial in the study.
+
+                Returns:
+                    A :class:`~optuna.structs.FrozenTrial` object of the best trial.
+                """
+
+                trials = self.get_trials(deepcopy=False)
+                trials = [t for t in trials if t.state is optuna.structs.TrialState.COMPLETE]
+
+                if len(trials) == 0:
+                    raise ValueError('No trials are completed yet.')
+
+                if self.direction == StudyDirection.MINIMIZE:
+                    best_trial = min(trials, key=lambda t: t.value)
+                else:
+                    best_trial = max(trials, key=lambda t: t.value)
+                return copy.deepcopy(best_trial)
+
+        return _StepwiseStudy(study, step_id)
