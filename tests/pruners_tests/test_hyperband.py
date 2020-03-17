@@ -19,9 +19,7 @@ def test_hyperband_experimental_warning() -> None:
 
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         optuna.pruners.HyperbandPruner(
-            min_resource=MIN_RESOURCE,
-            reduction_factor=REDUCTION_FACTOR,
-            n_brackets=N_BRACKETS
+            min_resource=MIN_RESOURCE, reduction_factor=REDUCTION_FACTOR, n_brackets=N_BRACKETS
         )
 
 
@@ -29,9 +27,7 @@ def test_hyperband_pruner_intermediate_values():
     # type: () -> None
 
     pruner = optuna.pruners.HyperbandPruner(
-        min_resource=MIN_RESOURCE,
-        reduction_factor=REDUCTION_FACTOR,
-        n_brackets=N_BRACKETS
+        min_resource=MIN_RESOURCE, reduction_factor=REDUCTION_FACTOR, n_brackets=N_BRACKETS
     )
 
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
@@ -54,9 +50,7 @@ def test_bracket_study():
     # type: () -> None
 
     pruner = optuna.pruners.HyperbandPruner(
-        min_resource=MIN_RESOURCE,
-        reduction_factor=REDUCTION_FACTOR,
-        n_brackets=N_BRACKETS
+        min_resource=MIN_RESOURCE, reduction_factor=REDUCTION_FACTOR, n_brackets=N_BRACKETS
     )
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
     bracket_study = pruner._create_bracket_study(study, 0)
@@ -64,11 +58,11 @@ def test_bracket_study():
     with pytest.raises(AttributeError):
         bracket_study.optimize(lambda *args: 1.0)
 
-    for attr in ('set_user_attr', 'set_system_attr'):
+    for attr in ("set_user_attr", "set_system_attr"):
         with pytest.raises(AttributeError):
-            getattr(bracket_study, attr)('abc', 100)
+            getattr(bracket_study, attr)("abc", 100)
 
-    for attr in ('user_attrs', 'system_attrs'):
+    for attr in ("user_attrs", "system_attrs"):
         with pytest.raises(AttributeError):
             getattr(bracket_study, attr)
 

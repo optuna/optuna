@@ -32,11 +32,11 @@ PRUNER_INTERVAL = 3
 
 def create_model(trial):
     # We optimize the numbers of layers and their units.
-    n_layers = trial.suggest_int('n_layers', 1, 3)
+    n_layers = trial.suggest_int("n_layers", 1, 3)
 
     layers = []
     for i in range(n_layers):
-        n_units = int(trial.suggest_loguniform('n_units_l{}'.format(i), 4, 128))
+        n_units = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
         layers.append(L.Linear(None, n_units))
         layers.append(F.relu)
     layers.append(L.Linear(None, 10))
@@ -59,9 +59,11 @@ def objective(trial, comm):
         train, test = chainer.datasets.get_mnist()
         rng = np.random.RandomState(0)
         train = chainer.datasets.SubDataset(
-            train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
+            train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))
+        )
         test = chainer.datasets.SubDataset(
-            test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
+            test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test))
+        )
     else:
         train, test = None, None
 
@@ -73,12 +75,14 @@ def objective(trial, comm):
 
     # Setup trainer.
     updater = chainer.training.StandardUpdater(train_iter, optimizer)
-    trainer = chainer.training.Trainer(updater, (EPOCH, 'epoch'))
+    trainer = chainer.training.Trainer(updater, (EPOCH, "epoch"))
 
     # Add Chainer extension for pruners.
     trainer.extend(
-        optuna.integration.ChainerPruningExtension(trial, 'validation/main/accuracy',
-                                                   (PRUNER_INTERVAL, 'epoch')))
+        optuna.integration.ChainerPruningExtension(
+            trial, "validation/main/accuracy", (PRUNER_INTERVAL, "epoch")
+        )
+    )
     evaluator = chainer.training.extensions.Evaluator(test_iter, model)
     trainer.extend(chainermn.create_multi_node_evaluator(evaluator, comm))
     log_report_extension = chainer.training.extensions.LogReport(log_name=None)
@@ -98,20 +102,20 @@ def objective(trial, comm):
     evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
     report = evaluator()
 
-    return report['main/accuracy']
+    return report["main/accuracy"]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Please make sure common study and storage are shared among nodes.
     study_name = sys.argv[1]
     storage_url = sys.argv[2]
 
     study = optuna.load_study(study_name, storage_url, pruner=optuna.pruners.MedianPruner())
-    comm = chainermn.create_communicator('naive')
+    comm = chainermn.create_communicator("naive")
     if comm.rank == 0:
-        print('Study name:', study_name)
-        print('Storage URL:', storage_url)
-        print('Number of nodes:', comm.size)
+        print("Study name:", study_name)
+        print("Storage URL:", storage_url)
+        print("Number of nodes:", comm.size)
 
     # Run optimization!
     chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
@@ -119,16 +123,17 @@ if __name__ == '__main__':
 
     if comm.rank == 0:
         pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
-        complete_trials = \
-            [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
-        print('Study statistics: ')
-        print('  Number of finished trials: ', len(study.trials))
-        print('  Number of pruned trials: ', len(pruned_trials))
-        print('  Number of complete trials: ', len(complete_trials))
+        complete_trials = [
+            t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE
+        ]
+        print("Study statistics: ")
+        print("  Number of finished trials: ", len(study.trials))
+        print("  Number of pruned trials: ", len(pruned_trials))
+        print("  Number of complete trials: ", len(complete_trials))
 
-        print('Best trial:')
+        print("Best trial:")
         trial = study.best_trial
-        print('  Value: ', trial.value)
-        print('  Params: ')
+        print("  Value: ", trial.value)
+        print("  Params: ")
         for key, value in trial.params.items():
-            print('    {}: {}'.format(key, value))
+            print("    {}: {}".format(key, value))

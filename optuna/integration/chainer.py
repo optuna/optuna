@@ -5,6 +5,7 @@ try:
     import chainer
     from chainer.training.extension import Extension
     from chainer.training import triggers
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -17,8 +18,9 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple
     from typing import Union
 
-    TriggerType = Union[Tuple[(int,
-                               str)], triggers.IntervalTrigger, triggers.ManualScheduleTrigger]
+    TriggerType = Union[
+        Tuple[(int, str)], triggers.IntervalTrigger, triggers.ManualScheduleTrigger
+    ]
 
 
 class ChainerPruningExtension(Extension):
@@ -63,12 +65,16 @@ class ChainerPruningExtension(Extension):
         self._trial = trial
         self._observation_key = observation_key
         self._pruner_trigger = chainer.training.get_trigger(pruner_trigger)
-        if not (isinstance(self._pruner_trigger, triggers.IntervalTrigger)
-                or isinstance(self._pruner_trigger, triggers.ManualScheduleTrigger)):
+        if not (
+            isinstance(self._pruner_trigger, triggers.IntervalTrigger)
+            or isinstance(self._pruner_trigger, triggers.ManualScheduleTrigger)
+        ):
             pruner_type = type(self._pruner_trigger)
-            raise TypeError("Invalid trigger class: " + str(pruner_type) + "\n"
-                            "Pruner trigger is supposed to be an instance of "
-                            "IntervalTrigger or ManualScheduleTrigger.")
+            raise TypeError(
+                "Invalid trigger class: " + str(pruner_type) + "\n"
+                "Pruner trigger is supposed to be an instance of "
+                "IntervalTrigger or ManualScheduleTrigger."
+            )
 
     @staticmethod
     def _get_float_value(observation_value):
@@ -83,8 +89,9 @@ class ChainerPruningExtension(Extension):
             observation_value = float(observation_value)
         except TypeError:
             raise TypeError(
-                'Type of observation value is not supported by ChainerPruningExtension.\n'
-                '{} cannot be casted to float.'.format(type(observation_value)))
+                "Type of observation value is not supported by ChainerPruningExtension.\n"
+                "{} cannot be casted to float.".format(type(observation_value))
+            )
 
         return observation_value
 
@@ -112,7 +119,8 @@ def _check_chainer_availability():
 
     if not _available:
         raise ImportError(
-            'Chainer is not available. Please install Chainer to use this feature. '
-            'Chainer can be installed by executing `$ pip install chainer`. '
-            'For further information, please refer to the installation guide of Chainer. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "Chainer is not available. Please install Chainer to use this feature. "
+            "Chainer can be installed by executing `$ pip install chainer`. "
+            "For further information, please refer to the installation guide of Chainer. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )

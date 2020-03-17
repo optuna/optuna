@@ -46,6 +46,12 @@ def plot_parallel_coordinate(study, params=None):
 
             optuna.visualization.plot_parallel_coordinate(study, params=['x', 'y'])
 
+        .. raw:: html
+
+            <iframe src="../_static/plot_parallel_coordinate.html"
+             width="100%" height="500px" frameborder="0">
+            </iframe>
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
@@ -64,21 +70,19 @@ def plot_parallel_coordinate(study, params=None):
 def _get_parallel_coordinate_plot(study, params=None):
     # type: (Study, Optional[List[str]]) -> go.Figure
 
-    layout = go.Layout(
-        title='Parallel Coordinate Plot',
-    )
+    layout = go.Layout(title="Parallel Coordinate Plot",)
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
     if len(trials) == 0:
-        logger.warning('Your study does not have any completed trials.')
+        logger.warning("Your study does not have any completed trials.")
         return go.Figure(data=[], layout=layout)
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
     if params is not None:
         for input_p_name in params:
             if input_p_name not in all_params:
-                ValueError('Parameter {} does not exist in your study.'.format(input_p_name))
+                ValueError("Parameter {} does not exist in your study.".format(input_p_name))
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
@@ -89,11 +93,14 @@ def _get_parallel_coordinate_plot(study, params=None):
         labelangle = 0
         labelside = 'top'
 
-    dims = [{
-        'label': 'Objective Value',
-        'values': tuple([t.value for t in trials]),
-        'range': (min([t.value for t in trials]), max([t.value for t in trials]))
-    }]  # type: List[Dict[str, Any]]
+    dims = [
+        {
+            "label": "Objective Value",
+            "values": tuple([t.value for t in trials]),
+            "range": (min([t.value for t in trials]), max([t.value for t in trials])),
+        }
+    ]  # type: List[Dict[str, Any]]
+
     for p_name in sorted_params:
         values = []
         for t in trials:
@@ -112,8 +119,8 @@ def _get_parallel_coordinate_plot(study, params=None):
             'range': (min(values), max(values))
         }  # type: Dict[str, object]
         if is_categorical:
-            dim['tickvals'] = list(range(len(vocab)))
-            dim['ticktext'] = list(sorted(vocab.items(), key=lambda x: x[1]))
+            dim["tickvals"] = list(range(len(vocab)))
+            dim["ticktext"] = list(sorted(vocab.items(), key=lambda x: x[1]))
         dims.append(dim)
 
     traces = [
@@ -122,12 +129,12 @@ def _get_parallel_coordinate_plot(study, params=None):
             labelangle=labelangle,
             labelside=labelside,
             line={
-                'color': dims[0]['values'],
-                'colorscale': 'blues',
-                'colorbar': {'title': 'Objective Value'},
-                'showscale': True,
-                'reversescale': study.direction == StudyDirection.MINIMIZE,
-            }
+                "color": dims[0]["values"],
+                "colorscale": "blues",
+                "colorbar": {"title": "Objective Value"},
+                "showscale": True,
+                "reversescale": study.direction == StudyDirection.MINIMIZE,
+            },
         )
     ]
 
