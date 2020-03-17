@@ -67,36 +67,38 @@ class ThresholdPruner(BasePruner):
     """
 
     def __init__(
-            self,
-            lower: Optional[float] = None,
-            upper: Optional[float] = None,
-            n_warmup_steps: int = 0,
-            interval_steps: int = 1
+        self,
+        lower: Optional[float] = None,
+        upper: Optional[float] = None,
+        n_warmup_steps: int = 0,
+        interval_steps: int = 1,
     ) -> None:
 
         if isinstance(lower, bool) or isinstance(upper, bool):
-            raise ValueError('lower and upper should be either None, integers or floating points')
+            raise ValueError("lower and upper should be either None, integers or floating points")
         if (lower is not None) and (not isinstance(lower, int)) and (not isinstance(lower, float)):
-            raise ValueError('lower should be either None, integer or floating point.')
+            raise ValueError("lower should be either None, integer or floating point.")
         if (upper is not None) and (not isinstance(upper, int)) and (not isinstance(upper, float)):
-            raise ValueError('upper should be either None, integer or floating point.')
+            raise ValueError("upper should be either None, integer or floating point.")
         if lower is None and upper is None:
-            raise ValueError('Either lower or upper must be specified.')
+            raise ValueError("Either lower or upper must be specified.")
         if lower is not None and upper is not None and lower > upper:
-            raise ValueError('lower should be smaller than upper.')
+            raise ValueError("lower should be smaller than upper.")
         if n_warmup_steps < 0:
             raise ValueError(
-                'Number of warmup steps cannot be negative but got {}.'.format(n_warmup_steps))
+                "Number of warmup steps cannot be negative but got {}.".format(n_warmup_steps)
+            )
         if interval_steps < 1:
             raise ValueError(
-                'Pruning interval steps must be at least 1 but got {}.'.format(interval_steps))
+                "Pruning interval steps must be at least 1 but got {}.".format(interval_steps)
+            )
 
         self.lower = lower
         self.upper = upper
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
 
-    def prune(self, study: 'optuna.study.Study', trial: optuna.structs.FrozenTrial) -> bool:
+    def prune(self, study: "optuna.study.Study", trial: optuna.structs.FrozenTrial) -> bool:
 
         step = trial.last_step
         if step is None:
@@ -107,8 +109,8 @@ class ThresholdPruner(BasePruner):
             return False
 
         if not _is_first_in_interval_step(
-            step, trial.intermediate_values.keys(), n_warmup_steps,
-                self._interval_steps):
+            step, trial.intermediate_values.keys(), n_warmup_steps, self._interval_steps
+        ):
             return False
 
         latest_value = trial.intermediate_values[step]
