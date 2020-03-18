@@ -95,7 +95,7 @@ def objective(trial):
     model = create_model(vocab, trial)
 
     if DEVICE > -1:
-        model.cuda(DEVICE)
+        model.to(torch.device("cuda:{}".format(DEVICE)))
 
     lr = trial.suggest_loguniform("lr", 1e-1, 1e0)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
