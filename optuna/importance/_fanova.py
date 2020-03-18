@@ -58,9 +58,11 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             individual_importances[name] /= tot_importance
 
         param_importances = OrderedDict(
-            sorted(
-                individual_importances.items(),
-                key=lambda name_and_importance: name_and_importance[1],
+            reversed(
+                sorted(
+                    individual_importances.items(),
+                    key=lambda name_and_importance: name_and_importance[1],
+                )
             )
         )
         return param_importances
