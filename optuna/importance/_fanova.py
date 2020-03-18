@@ -3,6 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -32,7 +33,20 @@ except ImportError as e:
     _available = False
 
 
+@experimental("1.3.0")
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
+    """fANOVA parameter importance evaluator.
+
+    .. note::
+
+        Requires the `fanova <https://github.com/automl/fanova>`_ Python package.
+
+    .. seealso::
+
+        `An Efficient Approach for Assessing Hyperparameter Importance
+        <http://proceedings.mlr.press/v32/hutter14.html>`_.
+    """
+
     def __init__(self) -> None:
         _check_fanova_availability()
 

@@ -7,6 +7,7 @@ from typing import Tuple
 
 import numpy as np
 
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.samplers import intersection_search_space
@@ -14,14 +15,36 @@ from optuna.structs import TrialState
 from optuna.study import Study
 
 
+@experimental("1.3.0")
 class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
+    """Abstract parameter importance evaluator.
+
+    """
+
     @abc.abstractmethod
     def evaluate(self, study: Study, params: Optional[List[str]]) -> Dict[str, float]:
-        """Assess hyperparameter importances.
+        """Evaluate parameter importances based on completed trials in the given study.
 
         .. note::
 
-            This method should not be directly called by library users.
+            This method is not meant to be called by library users.
+
+        .. seealso::
+
+            Please refer to :func:`~optuna.importance.get_param_importances` for how a concrete
+            evaluator should implement this method.
+
+        Args:
+            study:
+                An optimized study.
+            params:
+                A list of names of parameters to assess.
+                If :obj:`None`, all parameters that are present in all of the completed trials are
+                assessed.
+
+        Returns:
+            An :class:`collections.OrderedDict` where the keys are parameter names and the values
+            are assessed importances.
         """
         raise NotImplementedError
 
