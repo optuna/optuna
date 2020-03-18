@@ -84,7 +84,7 @@ def _check_fit_params(
             fit_params_validated[key] = value
         else:
             fit_params_validated[key] = _make_indexable(value)
-            fit_params_validated[key] = _safe_indexing(fit_params_validated[key], indices)
+            fit_params_validated[key] = sklearn_safe_indexing(fit_params_validated[key], indices)
     return fit_params_validated
 
 
@@ -876,9 +876,9 @@ class OptunaSearchCV(BaseEstimator):
 
             self.sample_indices_.sort()
 
-        X_res = _safe_indexing(X, self.sample_indices_)
-        y_res = _safe_indexing(y, self.sample_indices_)
-        groups_res = _safe_indexing(groups, self.sample_indices_)
+        X_res = sklearn_safe_indexing(X, self.sample_indices_)
+        y_res = sklearn_safe_indexing(y, self.sample_indices_)
+        groups_res = sklearn_safe_indexing(groups, self.sample_indices_)
         fit_params_res = fit_params
 
         if fit_params_res is not None:
