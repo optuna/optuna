@@ -170,9 +170,7 @@ def test_optimize_with_direction():
 
 @pytest.mark.parametrize(
     "n_trials, n_jobs, storage_mode",
-    itertools.product(
-        (0, 1, 20), (1, 2, -1), STORAGE_MODES,  # n_trials  # n_jobs  # storage_mode
-    ),
+    itertools.product((0, 1, 20), (1, 2, -1), STORAGE_MODES),  # n_trials  # n_jobs  # storage_mode
 )
 def test_optimize_parallel(n_trials, n_jobs, storage_mode):
     # type: (int, int, str)-> None
@@ -189,7 +187,7 @@ def test_optimize_parallel(n_trials, n_jobs, storage_mode):
 @pytest.mark.parametrize(
     "n_trials, n_jobs, storage_mode",
     itertools.product(
-        (0, 1, 20, None), (1, 2, -1), STORAGE_MODES,  # n_trials  # n_jobs  # storage_mode
+        (0, 1, 20, None), (1, 2, -1), STORAGE_MODES  # n_trials  # n_jobs  # storage_mode
     ),
 )
 def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
@@ -897,11 +895,8 @@ def test_study_id():
 
 
 @pytest.mark.parametrize(
-    'n_jobs, storage_mode',
-    itertools.product(
-        (1, 2),  # n_jobs
-        STORAGE_MODES,  # storage_mode
-    ))
+    "n_jobs, storage_mode", itertools.product((1, 2), STORAGE_MODES)  # n_jobs  # storage_mode
+)
 def test_interrupt_study(n_jobs, storage_mode):
     # type: (int, str)-> None
 
