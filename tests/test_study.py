@@ -900,8 +900,12 @@ def test_study_id():
 def test_interrupt_study(n_jobs, storage_mode):
     # type: (int, str)-> None
 
-    sec_func = 2
-    f = Func(sleep_sec=sec_func)
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+        time.sleep(4)
+        x = trial.suggest_int("x", -10, 10)
+        y = trial.suggest_int("y", -10, 10)
+        return x ** 2 + y ** 2
 
     def handler(signum, frame):
         # type: (int, types.FrameType)-> None
@@ -909,11 +913,11 @@ def test_interrupt_study(n_jobs, storage_mode):
         raise KeyboardInterrupt()
 
     signal.signal(signal.SIGALRM, handler)
-    signal.alarm(int(sec_func * 1.5))
+    signal.alarm(7)
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
-        study.optimize(f, n_jobs=n_jobs)
+        study.optimize(objective, n_jobs=n_jobs)
         trials = study._storage.get_all_trials(study._study_id)
         if isinstance(study._storage, optuna.storages.RDBStorage):
             assert len(trials) == n_jobs
