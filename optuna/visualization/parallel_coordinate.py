@@ -86,13 +86,6 @@ def _get_parallel_coordinate_plot(study, params=None):
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
-    if any(len(p_name) > 10 for p_name in sorted_params):
-        labelangle = 30
-        labelside = "bottom"
-    else:
-        labelangle = 0
-        labelside = "top"
-
     dims = [
         {
             "label": "Objective Value",
@@ -126,8 +119,8 @@ def _get_parallel_coordinate_plot(study, params=None):
     traces = [
         go.Parcoords(
             dimensions=dims,
-            labelangle=labelangle,
-            labelside=labelside,
+            labelangle=30,
+            labelside="bottom",
             line={
                 "color": dims[0]["values"],
                 "colorscale": "blues",
