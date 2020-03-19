@@ -39,12 +39,12 @@ class MlflowCallback(object):
               locally at the provided file (or ``./mlruns`` if empty).
             - An HTTP URI like ``https://my-tracking-server:5000``.
             - A Databricks workspace, provided as the string ``databricks`` or, to use a
-              Databricks CLI
+              Databricks CLI.
               `profile <https://github.com/databricks/databricks-cli#installation>`_,
               ``databricks://<profileName>``.
         experiment:
             Name of experiment to be activated.
-            Either ``experiment`` or ``study.study_name`` must be set
+            Either ``experiment`` or ``study.study_name`` must be set.
         metric_name:
             Name of the metric. If not provided this will be called ``trial_value``.
     """
