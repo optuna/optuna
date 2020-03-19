@@ -93,6 +93,7 @@ def _get_parallel_coordinate_plot(study, params=None):
             "range": (min([t.value for t in trials]), max([t.value for t in trials])),
         }
     ]  # type: List[Dict[str, Any]]
+
     for p_name in sorted_params:
         values = []
         for t in trials:
@@ -105,7 +106,11 @@ def _get_parallel_coordinate_plot(study, params=None):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
             values = [vocab[v] for v in values]
             is_categorical = True
-        dim = {"label": p_name, "values": tuple(values), "range": (min(values), max(values))}
+        dim = {
+            "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+            "values": tuple(values),
+            "range": (min(values), max(values)),
+        }  # type: Dict[str, object]
         if is_categorical:
             dim["tickvals"] = list(range(len(vocab)))
             dim["ticktext"] = list(sorted(vocab.items(), key=lambda x: x[1]))
@@ -114,6 +119,8 @@ def _get_parallel_coordinate_plot(study, params=None):
     traces = [
         go.Parcoords(
             dimensions=dims,
+            labelangle=30,
+            labelside="bottom",
             line={
                 "color": dims[0]["values"],
                 "colorscale": "blues",

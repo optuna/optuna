@@ -67,7 +67,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision>=0.5.0",
             "xgboost",
         ]
-        + (["fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (["allennlp", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (
             [
                 "dask[dataframe]",
