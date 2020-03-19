@@ -198,7 +198,7 @@ class OptunaObjective(BaseTuner):
         train_set,  # type: lgb.Dataset
         lgbm_kwargs,  # type: Dict[str, Any]
         best_score,  # type: float
-        action,  # type: str
+        step_name,  # type: str
         pbar=None,  # type: Optional[tqdm.tqdm]
     ):
 
@@ -212,7 +212,7 @@ class OptunaObjective(BaseTuner):
         self.trial_count = 0
         self.best_score = best_score
         self.best_booster = None
-        self.action = action
+        self.step_name = step_name
 
         self._check_target_names_supported()
 
@@ -238,7 +238,7 @@ class OptunaObjective(BaseTuner):
         pbar_fmt = "{}, val_score: {:.6f}"
 
         if self.pbar is not None:
-            self.pbar.set_description(pbar_fmt.format(self.action, self.best_score))
+            self.pbar.set_description(pbar_fmt.format(self.step_name, self.best_score))
 
         if "lambda_l1" in self.target_param_names:
             self.lgbm_params["lambda_l1"] = trial.suggest_loguniform("lambda_l1", 1e-8, 10.0)
@@ -277,12 +277,12 @@ class OptunaObjective(BaseTuner):
             self.best_booster = booster
 
         if self.pbar is not None:
-            self.pbar.set_description(pbar_fmt.format(self.action, self.best_score))
+            self.pbar.set_description(pbar_fmt.format(self.step_name, self.best_score))
             self.pbar.update(1)
 
         self.report.append(
             dict(
-                action=self.action,
+                action=self.step_name,
                 trial=self.trial_count,
                 value=str(trial.params),
                 val_score=val_score,
@@ -291,11 +291,11 @@ class OptunaObjective(BaseTuner):
             )
         )
 
-        trial.set_user_attr("action", self.action)
+        trial.set_user_attr("action", self.step_name)
         trial.set_user_attr("trial_count", self.trial_count)
         trial.set_user_attr("elapsed_secs", elapsed_secs)
         trial.set_user_attr("average_iteration_time", average_iteration_time)
-        trial.set_user_attr("step_id", self.action)
+        trial.set_user_attr("step_name", self.step_name)
 
         self.trial_count += 1
 
@@ -537,7 +537,7 @@ class LightGBMTuner(BaseTuner):
         sampler = _GridSamplerUniform1D(param_name, param_values)
         self.tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
 
-    def tune_params(self, target_param_names, n_trials, sampler, action):
+    def tune_params(self, target_param_names, n_trials, sampler, step_name):
         # type: (List[str], int, optuna.samplers.BaseSampler, str) -> None
 
         pbar = tqdm.tqdm(total=n_trials, ascii=True)
@@ -555,11 +555,11 @@ class LightGBMTuner(BaseTuner):
             train_set,
             self.lgbm_kwargs,
             self.best_score,
-            action=action,
+            step_name=step_name,
             pbar=pbar,
         )
 
-        study = self._create_stepwise_study(self.study, action)
+        study = self._create_stepwise_study(self.study, step_name)
         study.sampler = sampler
         study.optimize(objective, n_trials=n_trials, catch=())
 
@@ -583,12 +583,12 @@ class LightGBMTuner(BaseTuner):
             self.best_params.update(updated_params)
 
     def _create_stepwise_study(
-        self, study: "optuna.study.Study", step_id: str
+        self, study: "optuna.study.Study", step_name: str
     ) -> "optuna.study.Study":
 
         # This class is assumed to be passed to a sampler and a pruner corresponding to the step.
         class _StepwiseStudy(optuna.study.Study):
-            def __init__(self, study, step_id):
+            def __init__(self, study, step_name):
                 # type: (optuna.study.Study, str) -> None
 
                 super().__init__(
@@ -597,13 +597,13 @@ class LightGBMTuner(BaseTuner):
                     sampler=study.sampler,
                     pruner=study.pruner,
                 )
-                self._step_id = step_id
+                self._step_name = step_name
 
             def get_trials(self, deepcopy=True):
                 # type: (bool) -> List[optuna.structs.FrozenTrial]
 
                 trials = super().get_trials(deepcopy=deepcopy)
-                return [t for t in trials if t.user_attrs.get("step_id") == self._step_id]
+                return [t for t in trials if t.user_attrs.get("step_name") == self._step_name]
 
             @property
             def best_trial(self):
@@ -626,4 +626,4 @@ class LightGBMTuner(BaseTuner):
                     best_trial = max(trials, key=lambda t: t.value)
                 return copy.deepcopy(best_trial)
 
-        return _StepwiseStudy(study, step_id)
+        return _StepwiseStudy(study, step_name)
