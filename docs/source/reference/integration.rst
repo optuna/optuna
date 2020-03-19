@@ -28,6 +28,9 @@ Integration
 
 .. autofunction:: optuna.integration.lightgbm.train
 
+.. autoclass:: MlflowCallback
+    :members:
+
 .. autoclass:: MXNetPruningCallback
     :members:
 
