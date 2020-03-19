@@ -291,8 +291,6 @@ class OptunaObjective(BaseTuner):
             )
         )
 
-        trial.set_user_attr("action", self.step_name)
-        trial.set_user_attr("trial_count", self.trial_count)
         trial.set_user_attr("elapsed_secs", elapsed_secs)
         trial.set_user_attr("average_iteration_time", average_iteration_time)
         trial.set_user_attr("step_name", self.step_name)
