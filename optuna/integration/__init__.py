@@ -10,6 +10,7 @@ _import_structure = {
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
     "cma": ["CmaEsSampler"],
+    "mlflow": ["MlflowCallback"],
     "keras": ["KerasPruningCallback"],
     "lightgbm": ["LightGBMPruningCallback", "LightGBMTuner"],
     "pytorch_ignite": ["PyTorchIgnitePruningHandler"],
