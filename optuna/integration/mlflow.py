@@ -92,6 +92,6 @@ class MlflowCallback(object):
             tags["trial_state"] = str(trial.state)
             tags["study_direction"] = str(study.direction)
             tags.update(trial.user_attrs)
-            distributions = {k: str(v) * 2 for (k, v) in trial.distributions.items()}
+            distributions = {k: str(v) for (k, v) in trial.distributions.items()}
             tags.update(distributions)
             mlflow.set_tags(tags)
