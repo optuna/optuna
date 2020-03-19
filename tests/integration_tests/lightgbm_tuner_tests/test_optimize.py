@@ -54,7 +54,7 @@ class TestOptunaObjective(object):
         target_param_names = ["learning_rate"]  # Invalid parameter name.
 
         with pytest.raises(NotImplementedError) as execinfo:
-            OptunaObjective(target_param_names, {}, None, {}, 0)
+            OptunaObjective(target_param_names, {}, None, {}, 0, "tune_learning_rate")
 
         assert execinfo.type is NotImplementedError
 
@@ -71,7 +71,12 @@ class TestOptunaObjective(object):
 
         with turnoff_train():
             objective = OptunaObjective(
-                target_param_names, lgbm_params, train_set, lgbm_kwargs, best_score,
+                target_param_names,
+                lgbm_params,
+                train_set,
+                lgbm_kwargs,
+                best_score,
+                "tune_lambda_l1",
             )
             study = optuna.create_study(direction="minimize")
             study.optimize(objective, n_trials=10)

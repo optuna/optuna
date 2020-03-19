@@ -198,8 +198,8 @@ class OptunaObjective(BaseTuner):
         train_set,  # type: lgb.Dataset
         lgbm_kwargs,  # type: Dict[str, Any]
         best_score,  # type: float
+        action,  # type: str
         pbar=None,  # type: Optional[tqdm.tqdm]
-        step_id="",  # type: str
     ):
 
         self.target_param_names = target_param_names
@@ -212,8 +212,7 @@ class OptunaObjective(BaseTuner):
         self.trial_count = 0
         self.best_score = best_score
         self.best_booster = None
-        self.action = "tune_" + "_and_".join(self.target_param_names)
-        self.step_id = step_id
+        self.action = action
 
         self._check_target_names_supported()
 
@@ -296,7 +295,7 @@ class OptunaObjective(BaseTuner):
         trial.set_user_attr("trial_count", self.trial_count)
         trial.set_user_attr("elapsed_secs", elapsed_secs)
         trial.set_user_attr("average_iteration_time", average_iteration_time)
-        trial.set_user_attr("step_id", self.step_id)
+        trial.set_user_attr("step_id", self.action)
 
         self.trial_count += 1
 
@@ -538,7 +537,7 @@ class LightGBMTuner(BaseTuner):
         sampler = _GridSamplerUniform1D(param_name, param_values)
         self.tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
 
-    def tune_params(self, target_param_names, n_trials, sampler, step_id=""):
+    def tune_params(self, target_param_names, n_trials, sampler, action):
         # type: (List[str], int, optuna.samplers.BaseSampler, str) -> None
 
         pbar = tqdm.tqdm(total=n_trials, ascii=True)
@@ -556,11 +555,11 @@ class LightGBMTuner(BaseTuner):
             train_set,
             self.lgbm_kwargs,
             self.best_score,
+            action=action,
             pbar=pbar,
-            step_id=step_id,
         )
 
-        study = self._create_stepwise_study(self.study, step_id)
+        study = self._create_stepwise_study(self.study, action)
         study.sampler = sampler
         study.optimize(objective, n_trials=n_trials, catch=())
 
