@@ -94,6 +94,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fakeredis",
             "fanova",
             "lightgbm",
+            "mlflow",
             "mock",
             "mpi4py",
             "mxnet",
