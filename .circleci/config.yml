@@ -57,10 +57,10 @@ jobs:
             pip install --progress-bar off .[checking]
 
       - run:
-          name: autopep8
+          name: black
           command: |
             . venv/bin/activate
-            autopep8 . -r --diff --exit-code
+            black . --line-length 99 --check --exclude="docs"
 
       - run:
           name: flake8
@@ -300,7 +300,7 @@ jobs:
           <<: *examples
           environment:
             OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_lightning_.*|tensorflow_.*|tfkeras_.*|fastai_.*
+            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_lightning_.*|tensorflow_.*|tfkeras_.*|fastai_.*|allennlp_.*
 
       - run: *examples-mn
 
@@ -326,6 +326,6 @@ jobs:
           <<: *examples
           environment:
             OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|pytorch_lightning.*|fastai_.*
+            IGNORES: chainermn_.*|pytorch_lightning.*|fastai_.*|allennlp_.*
 
       - run: *examples-mn

@@ -15,7 +15,6 @@ if type_checking.TYPE_CHECKING:
 
 
 class Model(pl.LightningModule):
-
     def __init__(self):
         # type: () -> None
 
@@ -33,7 +32,7 @@ class Model(pl.LightningModule):
         data, target = batch
         output = self.forward(data)
         loss = F.nll_loss(output, target)
-        return {'loss': loss}
+        return {"loss": loss}
 
     def validation_step(self, batch, batch_nb):
         # type: (List[torch.Tensor], int) -> Dict[str, torch.Tensor]
@@ -43,13 +42,13 @@ class Model(pl.LightningModule):
         pred = output.argmax(dim=1, keepdim=True)
         correct = pred.eq(target.view_as(pred)).sum()
         accuracy = correct.double() / data.size(0)
-        return {'validation_accuracy': accuracy}
+        return {"validation_accuracy": accuracy}
 
     def validation_end(self, outputs):
         # type: (List[Dict[str, torch.Tensor]]) -> Dict[str, Union[torch.Tensor, float]]
 
-        accuracy = sum(x['validation_accuracy'] for x in outputs) / len(outputs)
-        return {'accuracy': accuracy}
+        accuracy = sum(x["validation_accuracy"] for x in outputs) / len(outputs)
+        return {"accuracy": accuracy}
 
     def configure_optimizers(self):
         # type: () -> torch.optim.Optimizer
@@ -84,7 +83,7 @@ def test_pytorch_lightning_pruning_callback():
         # type: (optuna.trial.Trial) -> float
 
         trainer = pl.Trainer(
-            early_stop_callback=PyTorchLightningPruningCallback(trial, monitor='accuracy'),
+            early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="accuracy"),
             min_nb_epochs=0,  # Required to fire the callback after the first epoch.
             max_nb_epochs=2,
         )
