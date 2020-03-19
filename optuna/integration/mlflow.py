@@ -31,18 +31,19 @@ class MlflowCallback(object):
     Args:
         tracking_uri:
             Set the tracking server URI.
+
             - An empty string, or a local file path, prefixed with ``file:/``. Data is stored
               locally at the provided file (or ``./mlruns`` if empty).
             - An HTTP URI like ``https://my-tracking-server:5000``.
-            - A Databricks workspace, provided as the string "databricks" or, to use a
+            - A Databricks workspace, provided as the string ``databricks`` or, to use a
               Databricks CLI
               `profile <https://github.com/databricks/databricks-cli#installation>`_,
-              "databricks://<profileName>".
+              ``databricks://<profileName>``.
         experiment:
             Name of experiment to be activated.
-            Either 'experiment' or 'study.study_name' must be set
+            Either ``experiment`` or ``study.study_name`` must be set
         metric_name:
-            Name of the metric. If not provided this will be called 'trial_value'.
+            Name of the metric. If not provided this will be called ``trial_value``.
     """
 
     def __init__(self, tracking_uri=None, experiment=None, metric_name=None):
