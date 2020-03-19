@@ -510,3 +510,37 @@ class TestLightGBMTuner(object):
         # `num_leaves` should be same as default.
         assert tuner.best_params["num_leaves"] == 31
         assert tuner.best_score == 0.9
+
+    @pytest.mark.parametrize("direction, overall_best", [("minimize", 1), ("maximize", 2),])
+    def test_create_stepwise_study(self, direction: str, overall_best: int) -> None:
+
+        tuner = LightGBMTuner({}, None, valid_sets=lgb.Dataset(np.zeros((10, 10))))
+
+        def objective(trial: optuna.trial.Trial, value: float) -> float:
+
+            trial.set_user_attr("step_id", "step{:.0f}".format(value))
+            return trial.suggest_uniform("x", value, value)
+
+        study = optuna.create_study(direction=direction)
+        study_step1 = tuner._create_stepwise_study(study, "step1")
+
+        with pytest.raises(ValueError):
+            study_step1.best_trial
+
+        study_step1.optimize(lambda t: objective(t, 1), n_trials=1)
+
+        study_step2 = tuner._create_stepwise_study(study, "step2")
+
+        # `study` has a trial, but `study_step2` has no trials.
+        with pytest.raises(ValueError):
+            study_step2.best_trial
+
+        study_step2.optimize(lambda t: objective(t, 2), n_trials=2)
+
+        assert len(study_step1.trials) == 1
+        assert len(study_step2.trials) == 2
+        assert len(study.trials) == 3
+
+        assert study_step1.best_trial.value == 1
+        assert study_step2.best_trial.value == 2
+        assert study.best_trial.value == overall_best
