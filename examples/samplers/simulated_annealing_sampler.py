@@ -64,14 +64,16 @@ class SimulatedAnnealingSampler(BaseSampler):
         for param_name, param_distribution in search_space.items():
             if isinstance(param_distribution, distributions.UniformDistribution):
                 current_value = self._current_trial.params[param_name]
-                width = (param_distribution.high -
-                         param_distribution.low) * self.neighbor_range_factor
+                width = (
+                    param_distribution.high - param_distribution.low
+                ) * self.neighbor_range_factor
                 neighbor_low = max(current_value - width, param_distribution.low)
                 neighbor_high = min(current_value + width, param_distribution.high)
                 params[param_name] = self._rng.uniform(neighbor_low, neighbor_high)
             else:
                 raise NotImplementedError(
-                    'Unsupported distribution {}.'.format(param_distribution))
+                    "Unsupported distribution {}.".format(param_distribution)
+                )
 
         return params
 
@@ -100,25 +102,26 @@ class SimulatedAnnealingSampler(BaseSampler):
     def sample_independent(self, study, trial, param_name, param_distribution):
         # In this example, this method is invoked only in the first trial of a study.
         # The parameters of the trial are sampled by using `RandomSampler` as follows.
-        return self._independent_sampler.sample_independent(study, trial, param_name,
-                                                            param_distribution)
+        return self._independent_sampler.sample_independent(
+            study, trial, param_name, param_distribution
+        )
 
 
 # Define a simple 2-dimensional objective function whose minimum value is -1 when (x, y) = (0, -1).
 def objective(trial):
-    x = trial.suggest_uniform('x', -100, 100)
-    y = trial.suggest_uniform('y', -1, 1)
-    return x**2 + y
+    x = trial.suggest_uniform("x", -100, 100)
+    y = trial.suggest_uniform("y", -1, 1)
+    return x ** 2 + y
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Run optimization by using `SimulatedAnnealingSampler`.
     sampler = SimulatedAnnealingSampler()
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=100)
 
-    print('Best trial:')
-    print('  Value: ', study.best_trial.value)
-    print('  Params: ')
+    print("Best trial:")
+    print("  Value: ", study.best_trial.value)
+    print("  Params: ")
     for key, value in study.best_trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

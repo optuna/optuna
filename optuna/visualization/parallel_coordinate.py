@@ -42,6 +42,12 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
 
             optuna.visualization.plot_parallel_coordinate(study, params=['x', 'y'])
 
+        .. raw:: html
+
+            <iframe src="../_static/plot_parallel_coordinate.html"
+             width="100%" height="500px" frameborder="0">
+            </iframe>
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
@@ -103,6 +109,8 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
     traces = [
         go.Parcoords(
             dimensions=dims,
+            labelangle=30,
+            labelside="bottom",
             line={
                 "color": dims[0]["values"],
                 "colorscale": "blues",

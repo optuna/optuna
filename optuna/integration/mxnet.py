@@ -2,6 +2,7 @@ import optuna
 
 try:
     import mxnet as mx  # NOQA
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -50,9 +51,12 @@ class MXNetPruningCallback(object):
             elif metric_names == self._eval_metric:
                 current_score = metric_values
             else:
-                raise ValueError('The entry associated with the metric name "{}" '
-                                 'is not found in the evaluation result list {}.'.format(
-                                     self._eval_metric, str(metric_names)))
+                raise ValueError(
+                    'The entry associated with the metric name "{}" '
+                    "is not found in the evaluation result list {}.".format(
+                        self._eval_metric, str(metric_names)
+                    )
+                )
             self._trial.report(current_score, step=param.epoch)
             if self._trial.should_prune():
                 message = "Trial was pruned at epoch {}.".format(param.epoch)
@@ -64,7 +68,8 @@ def _check_mxnet_availability():
 
     if not _available:
         raise ImportError(
-            'MXNet is not available. Please install MXNet to use this feature. '
-            'MXNet can be installed by executing `$ pip install mxnet`. '
-            'For further information, please refer to the installation guide of MXNet. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "MXNet is not available. Please install MXNet to use this feature. "
+            "MXNet can be installed by executing `$ pip install mxnet`. "
+            "For further information, please refer to the installation guide of MXNet. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )

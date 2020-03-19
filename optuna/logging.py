@@ -4,7 +4,6 @@ from logging import CRITICAL  # NOQA
 from logging import DEBUG  # NOQA
 from logging import ERROR  # NOQA
 from logging import FATAL  # NOQA
-from logging import FATAL  # NOQA
 from logging import INFO  # NOQA
 from logging import WARN  # NOQA
 from logging import WARNING  # NOQA
@@ -27,13 +26,14 @@ def create_default_formatter():
     """
 
     return colorlog.ColoredFormatter(
-        '%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s')
+        "%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s"
+    )
 
 
 def _get_library_name():
     # type: () -> str
 
-    return __name__.split('.')[0]
+    return __name__.split(".")[0]
 
 
 def _get_library_root_logger():

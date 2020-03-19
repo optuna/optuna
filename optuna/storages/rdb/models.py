@@ -33,13 +33,13 @@ MAX_INDEXED_STRING_LENGTH = 512
 MAX_STRING_LENGTH = 2048
 MAX_VERSION_LENGTH = 256
 
-NOT_FOUND_MSG = 'Record does not exist.'
+NOT_FOUND_MSG = "Record does not exist."
 
 BaseModel = declarative_base()  # type: Any
 
 
 class StudyModel(BaseModel):
-    __tablename__ = 'studies'
+    __tablename__ = "studies"
     study_id = Column(Integer, primary_key=True)
     study_name = Column(String(MAX_INDEXED_STRING_LENGTH), index=True, unique=True, nullable=False)
     direction = Column(Enum(StudyDirection), nullable=False)
@@ -88,23 +88,27 @@ class StudyModel(BaseModel):
 
 
 class StudyUserAttributeModel(BaseModel):
-    __tablename__ = 'study_user_attributes'
-    __table_args__ = (UniqueConstraint('study_id', 'key'), )  # type: Any
+    __tablename__ = "study_user_attributes"
+    __table_args__ = (UniqueConstraint("study_id", "key"),)  # type: Any
     study_user_attribute_id = Column(Integer, primary_key=True)
-    study_id = Column(Integer, ForeignKey('studies.study_id'))
+    study_id = Column(Integer, ForeignKey("studies.study_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
     study = orm.relationship(
-        StudyModel,
-        backref=orm.backref("user_attributes", cascade="all, delete-orphan"))
+        StudyModel, backref=orm.backref("user_attributes", cascade="all, delete-orphan")
+    )
 
     @classmethod
     def find_by_study_and_key(cls, study, key, session):
         # type: (StudyModel, str, orm.Session) -> Optional[StudyUserAttributeModel]
 
-        attribute = session.query(cls). \
-            filter(cls.study_id == study.study_id).filter(cls.key == key).one_or_none()
+        attribute = (
+            session.query(cls)
+            .filter(cls.study_id == study.study_id)
+            .filter(cls.key == key)
+            .one_or_none()
+        )
 
         return attribute
 
@@ -116,23 +120,27 @@ class StudyUserAttributeModel(BaseModel):
 
 
 class StudySystemAttributeModel(BaseModel):
-    __tablename__ = 'study_system_attributes'
-    __table_args__ = (UniqueConstraint('study_id', 'key'), )  # type: Any
+    __tablename__ = "study_system_attributes"
+    __table_args__ = (UniqueConstraint("study_id", "key"),)  # type: Any
     study_system_attribute_id = Column(Integer, primary_key=True)
-    study_id = Column(Integer, ForeignKey('studies.study_id'))
+    study_id = Column(Integer, ForeignKey("studies.study_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
     study = orm.relationship(
-        StudyModel,
-        backref=orm.backref("system_attributes", cascade="all, delete-orphan"))
+        StudyModel, backref=orm.backref("system_attributes", cascade="all, delete-orphan")
+    )
 
     @classmethod
     def find_by_study_and_key(cls, study, key, session):
         # type: (StudyModel, str, orm.Session) -> Optional[StudySystemAttributeModel]
 
-        attribute = session.query(cls). \
-            filter(cls.study_id == study.study_id).filter(cls.key == key).one_or_none()
+        attribute = (
+            session.query(cls)
+            .filter(cls.study_id == study.study_id)
+            .filter(cls.key == key)
+            .one_or_none()
+        )
 
         return attribute
 
@@ -144,21 +152,21 @@ class StudySystemAttributeModel(BaseModel):
 
 
 class TrialModel(BaseModel):
-    __tablename__ = 'trials'
+    __tablename__ = "trials"
     trial_id = Column(Integer, primary_key=True)
     # No `UniqueConstraint` is put on the `number` columns although it in practice is constrained
     # to be unique. This is to reduce code complexity as table-level locking would be required
     # otherwise. See https://github.com/optuna/optuna/pull/939#discussion_r387447632.
     number = Column(Integer)
-    study_id = Column(Integer, ForeignKey('studies.study_id'))
+    study_id = Column(Integer, ForeignKey("studies.study_id"))
     state = Column(Enum(TrialState), nullable=False)
     value = Column(Float)
     datetime_start = Column(DateTime, default=datetime.now)
     datetime_complete = Column(DateTime)
 
     study = orm.relationship(
-        StudyModel,
-        backref=orm.backref("trials", cascade="all, delete-orphan"))
+        StudyModel, backref=orm.backref("trials", cascade="all, delete-orphan")
+    )
 
     @classmethod
     def find_by_id(cls, trial_id, session):
@@ -172,10 +180,14 @@ class TrialModel(BaseModel):
     def find_max_value_trial(cls, study_id, session):
         # type: (int, orm.Session) -> TrialModel
 
-        trial = session.query(cls) \
-            .filter(cls.study_id == study_id)\
-            .filter(cls.state == TrialState.COMPLETE) \
-            .order_by(desc(cls.value)).limit(1).one_or_none()
+        trial = (
+            session.query(cls)
+            .filter(cls.study_id == study_id)
+            .filter(cls.state == TrialState.COMPLETE)
+            .order_by(desc(cls.value))
+            .limit(1)
+            .one_or_none()
+        )
         if trial is None:
             raise ValueError(NOT_FOUND_MSG)
         return trial
@@ -184,10 +196,14 @@ class TrialModel(BaseModel):
     def find_min_value_trial(cls, study_id, session):
         # type: (int, orm.Session) -> TrialModel
 
-        trial = session.query(cls) \
-            .filter(cls.study_id == study_id) \
-            .filter(cls.state == TrialState.COMPLETE) \
-            .order_by(asc(cls.value)).limit(1).one_or_none()
+        trial = (
+            session.query(cls)
+            .filter(cls.study_id == study_id)
+            .filter(cls.state == TrialState.COMPLETE)
+            .order_by(asc(cls.value))
+            .limit(1)
+            .one_or_none()
+        )
         if trial is None:
             raise ValueError(NOT_FOUND_MSG)
         return trial
@@ -206,9 +222,9 @@ class TrialModel(BaseModel):
     def where_study(cls, study, session):
         # type: (StudyModel, orm.Session) -> List[TrialModel]
 
-        trials = session.query(cls) \
-            .filter(cls.study_id == study.study_id) \
-            .order_by(cls.trial_id).all()
+        trials = (
+            session.query(cls).filter(cls.study_id == study.study_id).order_by(cls.trial_id).all()
+        )
 
         return trials
 
@@ -227,9 +243,9 @@ class TrialModel(BaseModel):
     def count_past_trials(self, session):
         # type: (orm.Session) -> int
 
-        trial_count = session.query(func.count(TrialModel.trial_id))\
-            .filter(TrialModel.study_id == self.study_id,
-                    TrialModel.trial_id < self.trial_id)
+        trial_count = session.query(func.count(TrialModel.trial_id)).filter(
+            TrialModel.study_id == self.study_id, TrialModel.trial_id < self.trial_id
+        )
         return trial_count.scalar()
 
     @classmethod
@@ -242,31 +258,38 @@ class TrialModel(BaseModel):
     def get_all_trial_ids_where_study(cls, study, session):
         # type: (StudyModel, orm.Session) -> List[int]
 
-        trials = session.query(cls.trial_id) \
-            .filter(cls.study_id == study.study_id) \
-            .order_by(cls.trial_id).all()
+        trials = (
+            session.query(cls.trial_id)
+            .filter(cls.study_id == study.study_id)
+            .order_by(cls.trial_id)
+            .all()
+        )
 
         return [t.trial_id for t in trials]
 
 
 class TrialUserAttributeModel(BaseModel):
-    __tablename__ = 'trial_user_attributes'
-    __table_args__ = (UniqueConstraint('trial_id', 'key'), )  # type: Any
+    __tablename__ = "trial_user_attributes"
+    __table_args__ = (UniqueConstraint("trial_id", "key"),)  # type: Any
     trial_user_attribute_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
     trial = orm.relationship(
-        TrialModel,
-        backref=orm.backref("user_attributes", cascade="all, delete-orphan"))
+        TrialModel, backref=orm.backref("user_attributes", cascade="all, delete-orphan")
+    )
 
     @classmethod
     def find_by_trial_and_key(cls, trial, key, session):
         # type: (TrialModel, str, orm.Session) -> Optional[TrialUserAttributeModel]
 
-        attribute = session.query(cls). \
-            filter(cls.trial_id == trial.trial_id).filter(cls.key == key).one_or_none()
+        attribute = (
+            session.query(cls)
+            .filter(cls.trial_id == trial.trial_id)
+            .filter(cls.key == key)
+            .one_or_none()
+        )
 
         return attribute
 
@@ -274,8 +297,9 @@ class TrialUserAttributeModel(BaseModel):
     def where_study(cls, study, session):
         # type: (StudyModel, orm.Session) -> List[TrialUserAttributeModel]
 
-        trial_user_attributes = session.query(cls).join(TrialModel). \
-            filter(TrialModel.study_id == study.study_id).all()
+        trial_user_attributes = (
+            session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
+        )
 
         return trial_user_attributes
 
@@ -299,23 +323,27 @@ class TrialUserAttributeModel(BaseModel):
 
 
 class TrialSystemAttributeModel(BaseModel):
-    __tablename__ = 'trial_system_attributes'
-    __table_args__ = (UniqueConstraint('trial_id', 'key'), )  # type: Any
+    __tablename__ = "trial_system_attributes"
+    __table_args__ = (UniqueConstraint("trial_id", "key"),)  # type: Any
     trial_system_attribute_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
     value_json = Column(String(MAX_STRING_LENGTH))
 
     trial = orm.relationship(
-        TrialModel,
-        backref=orm.backref("system_attributes", cascade="all, delete-orphan"))
+        TrialModel, backref=orm.backref("system_attributes", cascade="all, delete-orphan")
+    )
 
     @classmethod
     def find_by_trial_and_key(cls, trial, key, session):
         # type: (TrialModel, str, orm.Session) -> Optional[TrialSystemAttributeModel]
 
-        attribute = session.query(cls). \
-            filter(cls.trial_id == trial.trial_id).filter(cls.key == key).one_or_none()
+        attribute = (
+            session.query(cls)
+            .filter(cls.trial_id == trial.trial_id)
+            .filter(cls.key == key)
+            .one_or_none()
+        )
 
         return attribute
 
@@ -323,8 +351,9 @@ class TrialSystemAttributeModel(BaseModel):
     def where_study(cls, study, session):
         # type: (StudyModel, orm.Session) -> List[TrialSystemAttributeModel]
 
-        trial_system_attributes = session.query(cls).join(TrialModel). \
-            filter(TrialModel.study_id == study.study_id).all()
+        trial_system_attributes = (
+            session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
+        )
 
         return trial_system_attributes
 
@@ -348,17 +377,17 @@ class TrialSystemAttributeModel(BaseModel):
 
 
 class TrialParamModel(BaseModel):
-    __tablename__ = 'trial_params'
-    __table_args__ = (UniqueConstraint('trial_id', 'param_name'), )  # type: Any
+    __tablename__ = "trial_params"
+    __table_args__ = (UniqueConstraint("trial_id", "param_name"),)  # type: Any
     param_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     param_name = Column(String(MAX_INDEXED_STRING_LENGTH))
     param_value = Column(Float)
     distribution_json = Column(String(MAX_STRING_LENGTH))
 
     trial = orm.relationship(
-        TrialModel,
-        backref=orm.backref("params", cascade="all, delete-orphan"))
+        TrialModel, backref=orm.backref("params", cascade="all, delete-orphan")
+    )
 
     def check_and_add(self, session):
         # type: (orm.Session) -> None
@@ -371,21 +400,29 @@ class TrialParamModel(BaseModel):
 
         trial = TrialModel.find_or_raise_by_id(self.trial_id, session)
 
-        previous_record = session.query(TrialParamModel).join(TrialModel). \
-            filter(TrialModel.study_id == trial.study_id). \
-            filter(TrialParamModel.param_name == self.param_name).first()
+        previous_record = (
+            session.query(TrialParamModel)
+            .join(TrialModel)
+            .filter(TrialModel.study_id == trial.study_id)
+            .filter(TrialParamModel.param_name == self.param_name)
+            .first()
+        )
         if previous_record is not None:
             distributions.check_distribution_compatibility(
                 distributions.json_to_distribution(previous_record.distribution_json),
-                distributions.json_to_distribution(self.distribution_json))
+                distributions.json_to_distribution(self.distribution_json),
+            )
 
     @classmethod
     def find_by_trial_and_param_name(cls, trial, param_name, session):
         # type: (TrialModel, str, orm.Session) -> Optional[TrialParamModel]
 
-        param_distribution = session.query(cls). \
-            filter(cls.trial_id == trial.trial_id). \
-            filter(cls.param_name == param_name).one_or_none()
+        param_distribution = (
+            session.query(cls)
+            .filter(cls.trial_id == trial.trial_id)
+            .filter(cls.param_name == param_name)
+            .one_or_none()
+        )
 
         return param_distribution
 
@@ -404,8 +441,9 @@ class TrialParamModel(BaseModel):
     def where_study(cls, study, session):
         # type: (StudyModel, orm.Session) -> List[TrialParamModel]
 
-        trial_params = session.query(cls).join(TrialModel). \
-            filter(TrialModel.study_id == study.study_id).all()
+        trial_params = (
+            session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
+        )
 
         return trial_params
 
@@ -425,24 +463,27 @@ class TrialParamModel(BaseModel):
 
 
 class TrialValueModel(BaseModel):
-    __tablename__ = 'trial_values'
-    __table_args__ = (UniqueConstraint('trial_id', 'step'), )  # type: Any
+    __tablename__ = "trial_values"
+    __table_args__ = (UniqueConstraint("trial_id", "step"),)  # type: Any
     trial_value_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey('trials.trial_id'))
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     step = Column(Integer)
     value = Column(Float)
 
     trial = orm.relationship(
-        TrialModel,
-        backref=orm.backref("values", cascade="all, delete-orphan"))
+        TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
+    )
 
     @classmethod
     def find_by_trial_and_step(cls, trial, step, session):
         # type: (TrialModel, int, orm.Session) -> Optional[TrialValueModel]
 
-        trial_value = session.query(cls). \
-            filter(cls.trial_id == trial.trial_id). \
-            filter(cls.step == step).one_or_none()
+        trial_value = (
+            session.query(cls)
+            .filter(cls.trial_id == trial.trial_id)
+            .filter(cls.step == step)
+            .one_or_none()
+        )
 
         return trial_value
 
@@ -450,8 +491,9 @@ class TrialValueModel(BaseModel):
     def where_study(cls, study, session):
         # type: (StudyModel, orm.Session) -> List[TrialValueModel]
 
-        trial_values = session.query(cls).join(TrialModel). \
-            filter(TrialModel.study_id == study.study_id).all()
+        trial_values = (
+            session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
+        )
 
         return trial_values
 
@@ -471,9 +513,9 @@ class TrialValueModel(BaseModel):
 
 
 class VersionInfoModel(BaseModel):
-    __tablename__ = 'version_info'
+    __tablename__ = "version_info"
     # setting check constraint to ensure the number of rows is at most 1
-    __table_args__ = (CheckConstraint('version_info_id=1'), )  # type: Any
+    __table_args__ = (CheckConstraint("version_info_id=1"),)  # type: Any
     version_info_id = Column(Integer, primary_key=True, autoincrement=False, default=1)
     schema_version = Column(Integer)
     library_version = Column(String(MAX_VERSION_LENGTH))
