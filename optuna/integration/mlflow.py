@@ -43,8 +43,8 @@ class MlflowCallback(object):
               `profile <https://github.com/databricks/databricks-cli#installation>`_,
               ``databricks://<profileName>``.
         experiment:
-            Name of experiment to be activated.
-            Either ``experiment`` or ``study.study_name`` must be set.
+            Name of experiment to be activated. If not set ``study.study_name``
+            will be taken. Either ``experiment`` or ``study.study_name`` must be set.
         metric_name:
             Name of the metric. If not provided this will be called ``trial_value``.
     """
