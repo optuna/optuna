@@ -447,6 +447,8 @@ class LGBMModel(lgb.LGBMModel):
     @property
     def best_index_(self) -> int:
         """Get the best trial's number."""
+        self._check_is_fitted()
+
         return self.study_.best_trial.number
 
     def __init__(
