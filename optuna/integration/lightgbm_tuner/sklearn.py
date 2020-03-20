@@ -1108,6 +1108,18 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
         objective:
             Objective function.
 
+        class_weight:
+            Weights associated with classes in the form
+            ``{class_label: weight}``. This parameter is used only for
+            multi-class classification task. For binary classification task you
+            may use ``is_unbalance`` or ``scale_pos_weight`` parameters. The
+            'balanced' mode uses the values of y to automatically adjust
+            weights inversely proportional to class frequencies in the input
+            data as ``n_samples  (n_classes * np.bincount(y))``. If None, all
+            classes are supposed to have weight one. Note, that these weights
+            will be multiplied with ``sample_weight`` if ``sample_weight`` is
+            specified.
+
         min_split_gain:
             Minimum loss reduction required to make a further partition on a
             leaf node of the tree.
@@ -1232,66 +1244,6 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
         LGBMRegressor(...)
         >>> y_pred = reg.predict(X)
     """
-
-    def __init__(
-        self,
-        boosting_type: str = "gbdt",
-        num_leaves: int = 31,
-        max_depth: int = -1,
-        learning_rate: float = 0.1,
-        n_estimators: int = 1000,
-        subsample_for_bin: int = 200000,
-        objective: Optional[Union[Callable, str]] = None,
-        min_split_gain: float = 0.0,
-        min_child_weight: float = 1e-03,
-        min_child_samples: int = 20,
-        subsample: float = 1.0,
-        subsample_freq: int = 0,
-        colsample_bytree: float = 1.0,
-        reg_alpha: float = 0.0,
-        reg_lambda: float = 0.0,
-        random_state: Optional[RandomStateType] = None,
-        n_jobs: int = 1,
-        importance_type: str = "split",
-        cv: CVType = 5,
-        enable_pruning: bool = False,
-        n_trials: int = 20,
-        param_distributions: Optional[
-            Dict[str, distributions.BaseDistribution]
-        ] = None,
-        refit: bool = False,
-        study: Optional[study_module.Study] = None,
-        timeout: Optional[float] = None,
-        **kwargs: Any
-    ) -> None:
-        super().__init__(
-            boosting_type=boosting_type,
-            colsample_bytree=colsample_bytree,
-            cv=cv,
-            enable_pruning=enable_pruning,
-            importance_type=importance_type,
-            learning_rate=learning_rate,
-            max_depth=max_depth,
-            min_child_samples=min_child_samples,
-            min_child_weight=min_child_weight,
-            min_split_gain=min_split_gain,
-            num_leaves=num_leaves,
-            n_estimators=n_estimators,
-            n_jobs=n_jobs,
-            n_trials=n_trials,
-            objective=objective,
-            param_distributions=param_distributions,
-            random_state=random_state,
-            refit=refit,
-            reg_alpha=reg_alpha,
-            reg_lambda=reg_lambda,
-            study=study,
-            subsample=subsample,
-            subsample_freq=subsample_freq,
-            subsample_for_bin=subsample_for_bin,
-            timeout=timeout,
-            **kwargs
-        )
 
     def predict(
         self,
