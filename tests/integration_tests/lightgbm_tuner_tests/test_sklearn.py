@@ -159,6 +159,24 @@ def test_fit_with_params(
         clf.fit(X, y)
 
 
+def test_fit_with_empty_param_distributions() -> None:
+    X, y = load_breast_cancer(return_X_y=True)
+
+    clf = OGBMClassifier(
+        colsample_bytree=0.1,
+        n_estimators=n_estimators,
+        n_trials=n_trials,
+        param_distributions={},
+    )
+
+    clf.fit(X, y)
+
+    df = clf.study_.trials_dataframe()
+    values = df["value"]
+
+    assert values.nunique() == 1
+
+
 @pytest.mark.parametrize("callbacks", [None, [callback]])
 @pytest.mark.parametrize("eval_metric", [None, "auc", zero_one_loss])
 def test_fit_with_fit_params(
