@@ -162,11 +162,13 @@ class Trial(BaseTrial):
     @experimental("1.2.0")
     def suggest_float(self, name, low, high, log=False):
         # type: (str, float, float, bool) -> float
-        """Wrapper method for suggest_uniform and suggest_loguniform.
+        """Wrapper method for ``suggest_uniform`` and ``suggest_loguniform``.
+
+        .. versionadded:: 1.2.0
 
         .. seealso::
-            Please refer to :class:`~optuna.trial.Trial.suggest_uniform` and
-            `~optuna.trial.Trial.suggest_loguniform`.
+            Please see also :func:`~optuna.trial.Trial.suggest_uniform` and
+            :func:`~optuna.trial.Trial.suggest_loguniform`.
 
         Example:
 
