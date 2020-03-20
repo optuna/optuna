@@ -20,7 +20,7 @@ parametrize_sampler = pytest.mark.parametrize(
     "sampler_class",
     [
         lambda: SkoptSampler(
-            independent_sampler=FirstTrialOnlyRandomSampler(), skopt_kwargs={"n_initial_points": 5}
+            independent_sampler=FirstTrialOnlyRandomSampler(), skopt_kwargs={"n_initial_points": 1}
         ),
         lambda: CmaEsSampler(independent_sampler=FirstTrialOnlyRandomSampler()),
     ],

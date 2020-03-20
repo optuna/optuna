@@ -101,6 +101,18 @@ class SkoptSampler(BaseSampler):
         if "dimensions" in self._skopt_kwargs:
             del self._skopt_kwargs["dimensions"]
 
+        if "n_initial_points" in self._skopt_kwargs:
+            n_initial_points = self._skopt_kwargs["n_initial_points"]
+            if n_initial_points > n_startup_trials:
+                raise ValueError(
+                    "The n_initial_points should smaller or equal to n_startup_trials to get expect"
+                    "behavior, but the value is {}.".format(self._skopt_kwargs["n_initial_points"])
+                )
+        else:
+            logger = optuna.logging.get_logger(__name__)
+            logger.warning("The n_initial_points in skopt_kwargs would be set to zero.")
+            self._skopt_kwargs["n_initial_points"] = 0
+
         self._independent_sampler = independent_sampler or samplers.RandomSampler()
         self._warn_independent_sampling = warn_independent_sampling
         self._n_startup_trials = n_startup_trials

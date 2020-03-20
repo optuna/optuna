@@ -43,7 +43,7 @@ def test_conversion_from_distribution_to_dimension():
             # Original: trial.suggest_categorical('p9', ['9', '3', '0', '8'])
             space.Categorical(("9", "3", "0", "8")),
         ]
-        assert mock_object.mock_calls[0] == call(dimensions)
+        assert mock_object.mock_calls[0] == call(dimensions, n_initial_points=0)
 
 
 def test_skopt_kwargs():
@@ -56,7 +56,9 @@ def test_skopt_kwargs():
         study.optimize(lambda t: t.suggest_int("x", -10, 10), n_trials=2)
 
         dimensions = [space.Integer(-10, 10)]
-        assert mock_object.mock_calls[0] == call(dimensions, base_estimator="GBRT")
+        assert mock_object.mock_calls[0] == call(
+            dimensions, base_estimator="GBRT", n_initial_points=0
+        )
 
 
 def test_skopt_kwargs_dimensions():
@@ -70,7 +72,7 @@ def test_skopt_kwargs_dimensions():
         study.optimize(lambda t: t.suggest_int("x", -10, 10), n_trials=2)
 
         expected_dimensions = [space.Integer(-10, 10)]
-        assert mock_object.mock_calls[0] == call(expected_dimensions)
+        assert mock_object.mock_calls[0] == call(expected_dimensions, n_initial_points=0)
 
 
 def test_is_compatible():
@@ -157,13 +159,48 @@ def test_sample_relative_n_startup_trials():
     # The independent sampler is used for Trial#0 and Trial#1.
     # SkoptSampler is used for Trial#2.
     with patch.object(
-        independent_sampler, "sample_independent", wraps=independent_sampler.sample_independent
+        independent_sampler, "sample_independent", wraps=independent_sampler.sample_independent,
     ) as mock_independent, patch.object(
         sampler, "sample_relative", wraps=sampler.sample_relative
     ) as mock_relative:
         study.optimize(lambda t: t.suggest_int("x", -1, 1) + t.suggest_int("y", -1, 1), n_trials=3)
         assert mock_independent.call_count == 4  # The objective function has two parameters.
         assert mock_relative.call_count == 3
+
+
+def test_init_skopt_sampler():
+    # type: () -> None
+
+    independent_sampler = DeterministicRelativeSampler({}, {})
+
+    try:
+        optuna.integration.SkoptSampler(
+            n_startup_trials=5, independent_sampler=independent_sampler
+        )
+    except Exception:
+        pytest.fail("The optuna.integration.SkoptSampler cannot be initialized")
+
+    try:
+        skopt_kwargs = {"n_initial_points": 0}
+        optuna.integration.SkoptSampler(
+            n_startup_trials=5, independent_sampler=independent_sampler, skopt_kwargs=skopt_kwargs
+        )
+    except Exception:
+        pytest.fail("The optuna.integration.SkoptSampler cannot be initialized")
+
+    try:
+        skopt_kwargs = {"n_initial_points": 5}
+        optuna.integration.SkoptSampler(
+            n_startup_trials=5, independent_sampler=independent_sampler, skopt_kwargs=skopt_kwargs
+        )
+    except Exception:
+        pytest.fail("The optuna.integration.SkoptSampler cannot be initialized")
+
+    with pytest.raises(ValueError):
+        skopt_kwargs = {"n_initial_points": 10}
+        optuna.integration.SkoptSampler(
+            n_startup_trials=5, independent_sampler=independent_sampler, skopt_kwargs=skopt_kwargs
+        )
 
 
 def _create_frozen_trial(params, param_distributions):
