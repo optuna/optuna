@@ -364,32 +364,32 @@ class _Objective(object):
         params = self.params.copy()  # type: Dict[str, Any]
 
         if self.param_distributions is None:
-            params["colsample_bytree"] = trial.suggest_discrete_uniform(
-                "colsample_bytree", 0.1, 1.0, 0.05
+            params["feature_fraction"] = trial.suggest_discrete_uniform(
+                "feature_fraction", 0.1, 1.0, 0.05
             )
             params["max_depth"] = trial.suggest_int("max_depth", 1, 7)
             params["num_leaves"] = trial.suggest_int(
                 "num_leaves", 2, 2 ** params["max_depth"]
             )
             # See https://github.com/Microsoft/LightGBM/issues/907
-            params["min_child_samples"] = trial.suggest_int(
-                "min_child_samples",
+            params["min_data_in_leaf"] = trial.suggest_int(
+                "min_data_in_leaf",
                 1,
                 max(1, int(self.n_samples / params["num_leaves"])),
             )
-            params["reg_alpha"] = trial.suggest_loguniform(
-                "reg_alpha", 1e-09, 10.0
+            params["lambda_l1"] = trial.suggest_loguniform(
+                "lambda_l1", 1e-09, 10.0
             )
-            params["reg_lambda"] = trial.suggest_loguniform(
-                "reg_lambda", 1e-09, 10.0
+            params["lambda_l2"] = trial.suggest_loguniform(
+                "lambda_l2", 1e-09, 10.0
             )
 
             if params["boosting_type"] != "goss":
-                params["subsample"] = trial.suggest_discrete_uniform(
-                    "subsample", 0.5, 0.95, 0.05
+                params["bagging_fraction"] = trial.suggest_discrete_uniform(
+                    "bagging_fraction", 0.5, 0.95, 0.05
                 )
-                params["subsample_freq"] = trial.suggest_int(
-                    "subsample_freq", 1, 10
+                params["bagging_freq"] = trial.suggest_int(
+                    "bagging_freq", 1, 10
                 )
 
             return params

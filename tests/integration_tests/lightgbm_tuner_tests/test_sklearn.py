@@ -224,18 +224,21 @@ def test_fit_twice_without_study(n_jobs: int) -> None:
 
     clf.fit(X, y)
 
-    best_params = clf.best_params_
+    df = clf.study_.trials_dataframe()
+    values = df["value"]
 
     clf = OGBMClassifier(
         n_estimators=n_estimators,
         n_jobs=n_jobs,
         n_trials=n_trials,
-        random_state=random_state
+        random_state=random_state,
     )
 
     clf.fit(X, y)
 
-    assert best_params == clf.best_params_
+    df = clf.study_.trials_dataframe()
+
+    np.testing.assert_array_equal(values, df["value"])
 
 
 @pytest.mark.parametrize("storage", [None, "sqlite:///:memory:"])
