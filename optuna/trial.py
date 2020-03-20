@@ -3,6 +3,7 @@ from datetime import datetime
 import decimal
 import warnings
 
+from optuna._experimental import experimental
 from optuna import distributions
 from optuna import logging
 from optuna import type_checking
@@ -158,6 +159,7 @@ class Trial(BaseTrial):
             self.study, trial, self.relative_search_space
         )
 
+    @experimental("1.2.0")
     def suggest_float(self, name, low, high, log=False):
         # type: (str, float, float, bool) -> float
         """Wrapper method for suggest_uniform and suggest_loguniform.
