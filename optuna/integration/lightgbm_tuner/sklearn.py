@@ -277,6 +277,7 @@ class _Objective(object):
         feature_name: Union[List[str], str] = "auto",
         feval: Optional[Callable] = None,
         fobj: Optional[Callable] = None,
+        init_model: Optional[Union[lgb.Booster, lgb.LGBMModel, str]] = None,
         n_estimators: int = 100,
         param_distributions: Optional[
             Dict[str, distributions.BaseDistribution]
@@ -292,6 +293,7 @@ class _Objective(object):
         self.feature_name = feature_name
         self.feval = feval
         self.fobj = fobj
+        self.init_model = init_model
         self.is_higher_better = is_higher_better
         self.n_estimators = n_estimators
         self.n_samples = n_samples
@@ -312,6 +314,7 @@ class _Objective(object):
             feval=self.feval,
             fobj=self.fobj,
             folds=self.cv,
+            init_model=self.init_model,
             num_boost_round=self.n_estimators,
         )  # Dict[str, List[float]]
         value = eval_hist["{}-mean".format(self.eval_name)][-1]  # type: float
@@ -542,46 +545,22 @@ class LGBMModel(lgb.LGBMModel):
         callbacks: Optional[List[Callable]] = None,
         categorical_feature: Union[List[int], List[str], str] = "auto",
         feature_name: Union[List[str], str] = "auto",
+        fobj: Optional[Callable] = None,
+        init_model: Optional[Union[lgb.Booster, lgb.LGBMModel, str]] = None,
     ) -> lgb.Booster:
-        """Refit the estimator with the best found hyperparameters.
-
-        Args:
-            X:
-                Training data.
-
-            y:
-                Target.
-
-            sample_weight:
-                Weights of training data.
-
-            callbacks:
-                List of callback functions that are applied at each iteration.
-
-            categorical_feature:
-                Categorical features. If list of int, interpreted as indices.
-                If list of strings, interpreted as feature names. If 'auto' and
-                data is pandas DataFrame, pandas categorical columns are used.
-                All values in categorical features should be less than int32
-                max value (2147483647). Large values could be memory consuming.
-                Consider using consecutive integers starting from zero. All
-                negative values in categorical features will be treated as
-                missing values.
-
-            feature_name:
-                Feature names. If 'auto' and data is pandas DataFrame, data
-                columns names are used.
-
-        Returns:
-            booster:
-                Trained booster.
-        """
         self._check_is_fitted()
 
         params = self.best_params_.copy()
         dataset = lgb.Dataset(X, label=y, weight=sample_weight)
         booster = lgb.train(
-            params, dataset, num_boost_round=self._best_iteration
+            params,
+            dataset,
+            callbacks=callbacks,
+            categorical_feature=categorical_feature,
+            feature_name=feature_name,
+            fobj=fobj,
+            init_model=init_model,
+            num_boost_round=self._best_iteration,
         )
 
         booster.free_dataset()
@@ -599,6 +578,7 @@ class LGBMModel(lgb.LGBMModel):
         feature_name: Union[List[str], str] = "auto",
         categorical_feature: Union[List[int], List[str], str] = "auto",
         callbacks: Optional[List[Callable]] = None,
+        init_model: Optional[Union[lgb.Booster, lgb.LGBMModel, str]] = None,
         groups: Optional[OneDimArrayLikeType] = None,
         **fit_params: Any
     ) -> "LGBMModel":
@@ -641,6 +621,10 @@ class LGBMModel(lgb.LGBMModel):
 
             callbacks:
                 List of callback functions that are applied at each iteration.
+
+            init_model:
+                Filename of LightGBM model, Booster instance or LGBMModel
+                instance used for continue training.
 
             groups:
                 Group labels for the samples used while splitting the dataset
@@ -725,6 +709,9 @@ class LGBMModel(lgb.LGBMModel):
             eval_name = params["metric"]
             is_higher_better = _is_higher_better(params["metric"])
 
+        if isinstance(init_model, lgb.LGBMModel):
+            init_model = init_model.booster_
+
         if self.study is None:
             sampler = samplers.TPESampler(seed=seed)
 
@@ -761,6 +748,7 @@ class LGBMModel(lgb.LGBMModel):
             feature_name=feature_name,
             feval=feval,
             fobj=fobj,
+            init_model=init_model,
             n_estimators=self.n_estimators,
             param_distributions=self.param_distributions,
         )
@@ -794,6 +782,8 @@ class LGBMModel(lgb.LGBMModel):
                 callbacks=callbacks,
                 categorical_feature=categorical_feature,
                 feature_name=feature_name,
+                fobj=fobj,
+                init_model=init_model,
             )
             self.refit_time_ = time.perf_counter() - start_time
 
