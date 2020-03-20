@@ -1086,20 +1086,45 @@ def delete_study(
     storage.delete_study(study_id)
 
 
-def import_study_add_parameters(
+def _check_param(
+    params,  # type: Dict[str, Any]
+    modify_distributions,  # type: Dict[str, BaseDistribution]
+):
+    # type: (...) -> bool
+    for param_name, modify_distribution in modify_distributions.items():
+        if modify_distribution.isinclude(params[param_name]) is False:
+            return False
+    return True
+
+
+def import_study(
         study,  # type: Study
-        add_parameters,  # type: List[Tuple[str, BaseDistribution, Any]]
+        new_objective,  # type: ObjectiveFuncType
+        add_default_values,  # type: Dict[str, Any]
 ):
     # type: (...) -> Study
-    new_study = create_study()
+    tmp_study = create_study()
+    tmp_study.optimize(new_objective, n_trials=1, n_jobs=1)
+    new_distributions = tmp_study.trials[0].distributions
     new_params = {}
-    new_distributions = {}
-    for variable_name, new_distribution, default in add_parameters:
-        new_params[variable_name] = default
-        new_distributions[variable_name] = new_distribution
+    modify_distributions = new_distributions.copy()
+    for variable_name, default_value in add_default_values.items():
+        new_params[variable_name] = default_value
+        modify_distributions.pop(variable_name)
+
+    new_study = create_study()
     for trial in study.trials:
+        if _check_param(trial.params, modify_distributions) is False:
+            continue
         new_params.update(trial.params)
-        new_distributions.update(trial.distributions)
+        new_study._append_trial(
+            value=trial.value,
+            params=new_params,
+            distributions=new_distributions,
+            user_attrs=trial.user_attrs,
+            system_attrs=trial.system_attrs
+        )
+    for trial in tmp_study.trials:
         new_study._append_trial(
             value=trial.value,
             params=new_params,
@@ -1110,46 +1135,30 @@ def import_study_add_parameters(
     return new_study
 
 
-def import_study_modify_distributions(
+def import_study_new_trial(
         study,  # type: Study
-        modify_distributions,  # type: Dict[str, BaseDistribution]
+        new_trial,  # type: Dict[str, Any]
 ):
     # type: (...) -> Study
-    new_study = create_study()
+    new_distributions = {}
+    new_params = {}
+    modify_distributions = {}
 
-    def _check_param(
-        params,  # type: Dict[str, Any]
-        new_distributions,  # type: Dict[str, BaseDistribution]
-    ):
-        # type: (...) -> bool
-        for variable_name, modify_distribution in modify_distributions.items():
-            if modify_distribution.isinclude(params[variable_name]) is False:
-                return False
-        return True
+    for param_name, distribution in new_trial.items():
+        if isinstance(distribution, list):
+            new_distributions[param_name] = distribution[0]
+            new_params[param_name] = distribution[1]
+        else:
+            new_distributions[param_name] = distribution
+            modify_distributions[param_name] = distribution
+
+    new_study = create_study()
 
     for trial in study.trials:
         if _check_param(trial.params, modify_distributions) is False:
             continue
-        new_study._append_trial(
-            value=trial.value,
-            params=trial.params,
-            distributions=trial.distributions,
-            user_attrs=trial.user_attrs,
-            system_attrs=trial.system_attrs
-        )
-    return new_study
-
-
-def import_study_modify_objective(
-        study,  # type: Study
-        modify_objective,  # type: ObjectiveFuncType
-):
-    # type: (...) -> Study
-    tmp_study = create_study()
-    tmp_study.optimize(modify_objective, n_trials=1, n_jobs=1)
-    modify_distributions = tmp_study.trials[0].distributions
-    new_study = import_study_modify_distributions(study, modify_distributions)
-    for trial in tmp_study.trials:
+        trial.params.update(new_params)
+        trial.distributions.update(new_distributions)
         new_study._append_trial(
             value=trial.value,
             params=trial.params,
