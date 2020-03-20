@@ -105,8 +105,9 @@ class SkoptSampler(BaseSampler):
             n_initial_points = self._skopt_kwargs["n_initial_points"]
             if n_initial_points > n_startup_trials:
                 raise ValueError(
-                    "The n_initial_points should smaller or equal to n_startup_trials to get expect"
-                    "behavior, but the value is {}.".format(self._skopt_kwargs["n_initial_points"])
+                    "The n_initial_points should smaller or equal to n_startup_trials "
+                    "to get expect behavior, but the value "
+                    "is {}.".format(self._skopt_kwargs["n_initial_points"])
                 )
         else:
             logger = optuna.logging.get_logger(__name__)
