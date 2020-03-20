@@ -982,9 +982,9 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             ``refit`` is set to True.
 
     Examples:
-        >>> from optuna.integration.lightgbm_tuner import LGBMClassifier
+        >>> import optuna.integration.lightgbm as lgb
         >>> from sklearn.datasets import load_iris
-        >>> clf = LGBMClassifier(random_state=0)
+        >>> clf = lgb.LGBMClassifier(random_state=0)
         >>> X, y = load_iris(return_X_y=True)
         >>> clf.fit(X, y)
         LGBMClassifier(...)
@@ -1236,9 +1236,9 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
             ``refit`` is set to True.
 
     Examples:
-        >>> from optuna.integration.lightgbm_tuner import LGBMRegressor
+        >>> import optuna.integration.lightgbm as lgb
         >>> from sklearn.datasets import load_boston
-        >>> reg = LGBMRegressor(random_state=0)
+        >>> reg = lgb.LGBMRegressor(random_state=0)
         >>> X, y = load_boston(return_X_y=True)
         >>> reg.fit(X, y)
         LGBMRegressor(...)
