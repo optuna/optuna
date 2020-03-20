@@ -134,25 +134,21 @@ def test_hasattr(refit: bool) -> None:
 
 
 @pytest.mark.parametrize("boosting_type", ["dart", "gbdt", "goss", "rf"])
-@pytest.mark.parametrize("is_unbalance", [False, True])
 @pytest.mark.parametrize("objective", [None, "binary", log_likelihood])
 def test_fit_with_params(
-    boosting_type: str,
-    is_unbalance: bool,
-    objective: Optional[Union[Callable, str]],
+    boosting_type: str, objective: Optional[Union[Callable, str]],
 ) -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
     clf = OGBMClassifier(
         boosting_type=boosting_type,
-        is_unbalance=is_unbalance,
         n_estimators=n_estimators,
         n_trials=n_trials,
         objective=objective,
     )
 
+    # See https://github.com/microsoft/LightGBM/issues/2328
     if boosting_type == "rf" and callable(objective):
-        # See https://github.com/microsoft/LightGBM/issues/2328
         with pytest.raises(lgb.basic.LightGBMError):
             clf.fit(X, y)
     else:
@@ -175,6 +171,23 @@ def test_fit_with_empty_param_distributions() -> None:
     values = df["value"]
 
     assert values.nunique() == 1
+
+
+def test_fit_with_pruning() -> None:
+    X, y = load_breast_cancer(return_X_y=True)
+
+    clf = OGBMClassifier(enable_pruning=True)
+
+    clf.fit(X, y)
+
+    if hasattr(clf.study_, "get_trials"):
+        trials = clf.study_.get_trials()
+    else:
+        trials = clf.study_.trials
+
+    pruned_trials = [t for t in trials if t.state == structs.TrialState.PRUNED]
+
+    assert len(pruned_trials) > 0
 
 
 @pytest.mark.parametrize("callbacks", [None, [callback]])
@@ -208,25 +221,6 @@ def test_fit_with_group_k_fold() -> None:
     groups = np.random.choice(10, size=n_samples)
 
     clf.fit(X, y, groups=groups)
-
-
-def test_fit_with_pruning() -> None:
-    X, y = load_breast_cancer(return_X_y=True)
-
-    clf = OGBMClassifier(enable_pruning=True)
-
-    clf.fit(X, y)
-
-    if hasattr(clf.study_, "get_trials"):
-        trials = clf.study_.get_trials()
-    else:
-        trials = clf.study_.trials
-
-    pruned_trials = [
-        t for t in trials if t.state == structs.TrialState.PRUNED
-    ]
-
-    assert len(pruned_trials) > 0
 
 
 @pytest.mark.parametrize("n_jobs", [-1, 1])
@@ -325,7 +319,7 @@ def test_refit(early_stopping_rounds: Optional[int]) -> None:
 
     clf.fit(X, y)
 
-    assert np.array_equal(y_pred, clf.predict(X))
+    np.testing.assert_array_equal(y_pred, clf.predict(X))
 
 
 @pytest.mark.parametrize(
