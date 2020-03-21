@@ -943,6 +943,14 @@ class FixedTrial(BaseTrial):
         self._system_attrs = {}  # type: Dict[str, Any]
         self._datetime_start = datetime.now()
 
+    def suggest_float(self, name, low, high, log=False):
+        # type: (str, float, float, bool) -> float
+
+        if log:
+            return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
+        else:
+            return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
+
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 

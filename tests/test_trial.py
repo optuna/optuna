@@ -288,6 +288,16 @@ def test_trial_should_prune():
     assert trial.should_prune()
 
 
+def test_fixed_trial_suggest_float():
+    # type: () -> None
+
+    trial = FixedTrial({"x": 1.0})
+    assert trial.suggest_float("x", -100.0, 100.0) == 1.0
+
+    with pytest.raises(ValueError):
+        trial.suggest_uniform("y", -100.0, 100.0)
+
+
 def test_fixed_trial_suggest_uniform():
     # type: () -> None
 
