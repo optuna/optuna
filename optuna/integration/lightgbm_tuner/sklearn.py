@@ -30,7 +30,6 @@ from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import _assert_all_finite
 from sklearn.utils.validation import _num_samples
-from sklearn.utils.validation import check_is_fitted
 from sklearn.utils.validation import column_or_1d
 
 from optuna import distributions
@@ -516,7 +515,7 @@ class LGBMModel(lgb.LGBMModel):
         self.timeout = timeout
 
     def _check_is_fitted(self) -> None:
-        check_is_fitted(self, "n_features_")
+        getattr(self, "n_features_")
 
     def _get_objective(self) -> str:
         if isinstance(self.objective, str):
