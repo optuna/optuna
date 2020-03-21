@@ -77,3 +77,22 @@ def test_log_metric_with_metric_name(log_metric, tmpdir):
     call_args = log_metric.call_args_list[0][0]
     assert call_args[0] == 'my_metric'
     assert call_args[1] == 0.2
+
+@patch('mlflow.log_metric')
+def test_log_metric_with_default_metric_name(log_metric, tmpdir):
+    # type: (unittest.mock.MagicMock, py.path.local) -> None
+
+    db_file_name = "sqlite:///{}/example.db".format(tmpdir)
+
+    mlflc = MlflowCallback(
+        tracking_uri=db_file_name, experiment="my_experiment"
+    )
+    study = optuna.create_study()
+    ft = _create_frozen_trial()
+    mlflc(study, ft)
+
+    assert log_metric.called
+    assert log_metric.call_count == 1
+    call_args = log_metric.call_args_list[0][0]
+    assert call_args[0] == 'trial_value'
+    assert call_args[1] == 0.2
