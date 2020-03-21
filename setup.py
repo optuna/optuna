@@ -52,7 +52,14 @@ def get_extras_require() -> Dict[str, List[str]]:
     requirements = {
         "checking": ["black", "hacking", "mypy",],
         "codecov": ["codecov", "pytest-cov",],
-        "doctest": ["cma", "pandas", "plotly>=4.0.0", "scikit-learn>=0.19.0", "scikit-optimize", "mlflow",],
+        "doctest": [
+            "cma",
+            "pandas",
+            "plotly>=4.0.0",
+            "scikit-learn>=0.19.0",
+            "scikit-optimize",
+            "mlflow",
+        ],
         "document": ["sphinx", "sphinx_rtd_theme", "mlflow",],
         "example": [
             "catboost",
