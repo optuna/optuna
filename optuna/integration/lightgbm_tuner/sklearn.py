@@ -49,8 +49,7 @@ if lgb.__version__ >= "2.3":
     from lightgbm.sklearn import _ObjectiveFunctionWrapper
 else:
     from lightgbm.sklearn import _eval_function_wrapper as _EvalFunctionWrapper
-    from lightgbm.sklearn import \
-        _objective_function_wrapper as _ObjectiveFunctionWrapper
+    from lightgbm.sklearn import _objective_function_wrapper as _ObjectiveFunctionWrapper
 
 if sklearn.__version__ >= "0.22":
     from sklearn.utils import _safe_indexing
@@ -118,9 +117,7 @@ OBJECTIVE2METRIC = {
 
 
 def check_cv(
-    cv: CVType = 5,
-    y: Optional[OneDimArrayLikeType] = None,
-    classifier: bool = False,
+    cv: CVType = 5, y: Optional[OneDimArrayLikeType] = None, classifier: bool = False,
 ) -> BaseCrossValidator:
     """Check ``cv``.
 
@@ -147,9 +144,7 @@ def check_cv(
 
 
 def check_X(
-    X: TwoDimArrayLikeType,
-    estimator: Optional[BaseEstimator] = None,
-    **kwargs: Any
+    X: TwoDimArrayLikeType, estimator: Optional[BaseEstimator] = None, **kwargs: Any
 ) -> TwoDimArrayLikeType:
     """Check ``X``.
 
@@ -175,9 +170,7 @@ def check_X(
 
     if actual_n_features != expected_n_features:
         raise ValueError(
-            "`n_features` must be {} but was {}.".format(
-                expected_n_features, actual_n_features
-            )
+            "`n_features` must be {} but was {}.".format(expected_n_features, actual_n_features)
         )
 
     return X
@@ -276,9 +269,7 @@ class _Objective(object):
         fobj: Optional[Callable] = None,
         init_model: Optional[Union[lgb.Booster, lgb.LGBMModel, str]] = None,
         n_estimators: int = 100,
-        param_distributions: Optional[
-            Dict[str, distributions.BaseDistribution]
-        ] = None,
+        param_distributions: Optional[Dict[str, distributions.BaseDistribution]] = None,
     ) -> None:
         self.callbacks = callbacks
         self.categorical_feature = categorical_feature
@@ -322,9 +313,7 @@ class _Objective(object):
         is_best_trial = True  # type: bool
 
         try:
-            is_best_trial = (
-                value < trial.study.best_value
-            ) ^ self.is_higher_better
+            is_best_trial = (value < trial.study.best_value) ^ self.is_higher_better
         except ValueError:
             pass
 
@@ -341,9 +330,7 @@ class _Objective(object):
         return value
 
     def _get_callbacks(self, trial: trial_module.Trial) -> List[Callable]:
-        extraction_callback = (
-            _LightGBMExtractionCallback()
-        )  # type: _LightGBMExtractionCallback
+        extraction_callback = _LightGBMExtractionCallback()  # type: _LightGBMExtractionCallback
         callbacks = [extraction_callback]  # type: List[Callable]
 
         if self.enable_pruning:
@@ -366,29 +353,19 @@ class _Objective(object):
                 "feature_fraction", 0.1, 1.0, 0.05
             )
             params["max_depth"] = trial.suggest_int("max_depth", 1, 7)
-            params["num_leaves"] = trial.suggest_int(
-                "num_leaves", 2, 2 ** params["max_depth"]
-            )
+            params["num_leaves"] = trial.suggest_int("num_leaves", 2, 2 ** params["max_depth"])
             # See https://github.com/Microsoft/LightGBM/issues/907
             params["min_data_in_leaf"] = trial.suggest_int(
-                "min_data_in_leaf",
-                1,
-                max(1, int(self.n_samples / params["num_leaves"])),
+                "min_data_in_leaf", 1, max(1, int(self.n_samples / params["num_leaves"])),
             )
-            params["lambda_l1"] = trial.suggest_loguniform(
-                "lambda_l1", 1e-09, 10.0
-            )
-            params["lambda_l2"] = trial.suggest_loguniform(
-                "lambda_l2", 1e-09, 10.0
-            )
+            params["lambda_l1"] = trial.suggest_loguniform("lambda_l1", 1e-09, 10.0)
+            params["lambda_l2"] = trial.suggest_loguniform("lambda_l2", 1e-09, 10.0)
 
             if params["boosting_type"] != "goss":
                 params["bagging_fraction"] = trial.suggest_discrete_uniform(
                     "bagging_fraction", 0.5, 0.95, 0.05
                 )
-                params["bagging_freq"] = trial.suggest_int(
-                    "bagging_freq", 1, 10
-                )
+                params["bagging_freq"] = trial.suggest_int("bagging_freq", 1, 10)
 
             return params
 
@@ -403,9 +380,7 @@ class _VotingBooster(object):
     def feature_name(self) -> List[str]:
         return self.boosters[0].feature_name
 
-    def __init__(
-        self, boosters: List[lgb.Booster], weights: Optional[np.ndarray] = None
-    ) -> None:
+    def __init__(self, boosters: List[lgb.Booster], weights: Optional[np.ndarray] = None) -> None:
         self.boosters = boosters
         self.weights = weights
 
@@ -415,13 +390,11 @@ class _VotingBooster(object):
     ) -> "_VotingBooster":
         if lgb.__version__ >= "2.3":
             boosters = [
-                lgb.Booster(model_str=model_str, silent=True)
-                for model_str in representations
+                lgb.Booster(model_str=model_str, silent=True) for model_str in representations
             ]
         else:
             boosters = [
-                lgb.Booster(params={"model_str": model_str})
-                for model_str in representations
+                lgb.Booster(params={"model_str": model_str}) for model_str in representations
             ]
 
         return cls(boosters, weights=weights)
@@ -472,9 +445,7 @@ class LGBMModel(lgb.LGBMModel):
         cv: CVType = 5,
         enable_pruning: bool = False,
         n_trials: int = 20,
-        param_distributions: Optional[
-            Dict[str, distributions.BaseDistribution]
-        ] = None,
+        param_distributions: Optional[Dict[str, distributions.BaseDistribution]] = None,
         study: Optional[study_module.Study] = None,
         timeout: Optional[float] = None,
         **kwargs: Any
@@ -562,13 +533,9 @@ class LGBMModel(lgb.LGBMModel):
             return booster
 
         sample_weight = dataset.get_weight()
-        weights = np.array(
-            [np.sum(sample_weight[train]) for train, _ in folds]
-        )
+        weights = np.array([np.sum(sample_weight[train]) for train, _ in folds])
 
-        booster = _VotingBooster.from_representations(
-            representations, weights=weights
-        )
+        booster = _VotingBooster.from_representations(representations, weights=weights)
 
         return booster
 
@@ -710,8 +677,7 @@ class LGBMModel(lgb.LGBMModel):
             sampler = samplers.TPESampler(seed=seed)
 
             self.study_ = study_module.create_study(
-                direction="maximize" if is_higher_better else "minimize",
-                sampler=sampler,
+                direction="maximize" if is_higher_better else "minimize", sampler=sampler,
             )
 
         else:
@@ -753,15 +719,11 @@ class LGBMModel(lgb.LGBMModel):
 
         start_time = time.perf_counter()
 
-        self.study_.optimize(
-            objective, catch=(), n_trials=self.n_trials, timeout=self.timeout
-        )
+        self.study_.optimize(objective, catch=(), n_trials=self.n_trials, timeout=self.timeout)
 
         elapsed_time = time.perf_counter() - start_time
 
-        self._best_iteration = self.study_.best_trial.user_attrs[
-            "best_iteration"
-        ]
+        self._best_iteration = self.study_.best_trial.user_attrs["best_iteration"]
         self._best_score = self.study_.best_value
         self._objective = params["objective"]
         self.best_params_ = {**params, **self.study_.best_params}
@@ -770,9 +732,7 @@ class LGBMModel(lgb.LGBMModel):
         logger.info(
             "Finished hyperparemeter search! "
             "(elapsed time: {:.3f} sec.) "
-            "The best_iteration is {}.".format(
-                elapsed_time, self._best_iteration
-            )
+            "The best_iteration is {}.".format(elapsed_time, self._best_iteration)
         )
 
         folds = cv.split(X, y, groups=groups)
@@ -798,8 +758,7 @@ class LGBMModel(lgb.LGBMModel):
         elapsed_time = time.perf_counter() - start_time
 
         logger.info(
-            "Finished making booster(s)! "
-            "(elapsed time: {:.3f} sec.)".format(elapsed_time)
+            "Finished making booster(s)! " "(elapsed time: {:.3f} sec.)".format(elapsed_time)
         )
 
         if self.refit:
@@ -1090,10 +1049,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
         )
 
     def predict(
-        self,
-        X: TwoDimArrayLikeType,
-        num_iteration: Optional[int] = None,
-        **predict_params: Any
+        self, X: TwoDimArrayLikeType, num_iteration: Optional[int] = None, **predict_params: Any
     ) -> np.ndarray:
         """Predict using the fitted model.
 
@@ -1113,18 +1069,13 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             y_pred:
                 Predicted values.
         """
-        probas = self.predict_proba(
-            X, num_iteration=num_iteration, **predict_params
-        )
+        probas = self.predict_proba(X, num_iteration=num_iteration, **predict_params)
         class_index = np.argmax(probas, axis=1)
 
         return self.encoder_.inverse_transform(class_index)
 
     def predict_proba(
-        self,
-        X: TwoDimArrayLikeType,
-        num_iteration: Optional[int] = None,
-        **predict_params: Any
+        self, X: TwoDimArrayLikeType, num_iteration: Optional[int] = None, **predict_params: Any
     ) -> np.ndarray:
         """Predict class probabilities for data.
 
@@ -1144,9 +1095,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             p:
                 Class probabilities of data.
         """
-        X = check_X(
-            X, accept_sparse=True, estimator=self, force_all_finite=False
-        )
+        X = check_X(X, accept_sparse=True, estimator=self, force_all_finite=False)
         preds = self.booster_.predict(X, num_iteration=num_iteration)
 
         if self._n_classes > 2:
@@ -1330,10 +1279,7 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
     """
 
     def predict(
-        self,
-        X: TwoDimArrayLikeType,
-        num_iteration: Optional[int] = None,
-        **predict_params: Any
+        self, X: TwoDimArrayLikeType, num_iteration: Optional[int] = None, **predict_params: Any
     ) -> np.ndarray:
         """Predict using the fitted model.
 
@@ -1353,9 +1299,7 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
             y_pred:
                 Predicted values.
         """
-        X = check_X(
-            X, accept_sparse=True, estimator=self, force_all_finite=False
-        )
+        X = check_X(X, accept_sparse=True, estimator=self, force_all_finite=False)
 
         return self.booster_.predict(X, num_iteration=num_iteration)
 

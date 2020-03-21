@@ -28,22 +28,16 @@ from optuna import study as study_module
 n_estimators = 10
 n_trials = 5
 random_state = 0
-callback = lgb.reset_parameter(
-    learning_rate=lambda iteration: 0.05 * (0.99 ** iteration)
-)
+callback = lgb.reset_parameter(learning_rate=lambda iteration: 0.05 * (0.99 ** iteration))
 
 
-def log_likelihood(
-    y_true: np.ndarray, y_pred: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+def log_likelihood(y_true: np.ndarray, y_pred: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     y_pred = 1.0 / (1.0 + np.exp(-y_pred))
 
     return y_pred - y_true, y_pred * (1.0 - y_pred)
 
 
-def zero_one_loss(
-    y_true: np.ndarray, y_pred: np.ndarray
-) -> Tuple[str, float, bool]:
+def zero_one_loss(y_true: np.ndarray, y_pred: np.ndarray) -> Tuple[str, float, bool]:
     return "zero_one_loss", np.mean(y_true != y_pred), False
 
 
@@ -99,9 +93,7 @@ def test_ogbm_regressor() -> None:
 def test_hasattr(refit: bool) -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
-    clf = OGBMClassifier(
-        n_estimators=n_estimators, n_trials=n_trials, refit=refit
-    )
+    clf = OGBMClassifier(n_estimators=n_estimators, n_trials=n_trials, refit=refit)
 
     attrs = {
         "classes_": np.ndarray,
@@ -135,9 +127,7 @@ def test_hasattr(refit: bool) -> None:
 
 @pytest.mark.parametrize("boosting_type", ["dart", "gbdt", "goss", "rf"])
 @pytest.mark.parametrize("objective", [None, "binary", log_likelihood])
-def test_fit_with_params(
-    boosting_type: str, objective: Optional[Union[Callable, str]],
-) -> None:
+def test_fit_with_params(boosting_type: str, objective: Optional[Union[Callable, str]],) -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
     clf = OGBMClassifier(
@@ -159,10 +149,7 @@ def test_fit_with_empty_param_distributions() -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
     clf = OGBMClassifier(
-        colsample_bytree=0.1,
-        n_estimators=n_estimators,
-        n_trials=n_trials,
-        param_distributions={},
+        colsample_bytree=0.1, n_estimators=n_estimators, n_trials=n_trials, param_distributions={},
     )
 
     clf.fit(X, y)
@@ -213,9 +200,7 @@ def test_fit_with_unused_fit_params() -> None:
 def test_fit_with_group_k_fold() -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
-    clf = OGBMClassifier(
-        cv=GroupKFold(5), n_estimators=n_estimators, n_trials=n_trials
-    )
+    clf = OGBMClassifier(cv=GroupKFold(5), n_estimators=n_estimators, n_trials=n_trials)
 
     n_samples, _ = X.shape
     groups = np.random.choice(10, size=n_samples)
@@ -228,10 +213,7 @@ def test_fit_twice_without_study(n_jobs: int) -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
     clf = OGBMClassifier(
-        n_estimators=n_estimators,
-        n_jobs=n_jobs,
-        n_trials=n_trials,
-        random_state=random_state,
+        n_estimators=n_estimators, n_jobs=n_jobs, n_trials=n_trials, random_state=random_state,
     )
 
     clf.fit(X, y)
@@ -264,9 +246,7 @@ def test_fit_twice_with_study(storage: Optional[str]) -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
     study = study_module.create_study(storage=storage)
-    clf = OGBMClassifier(
-        n_estimators=n_estimators, n_trials=n_trials, study=study
-    )
+    clf = OGBMClassifier(n_estimators=n_estimators, n_trials=n_trials, study=study)
 
     clf.fit(X, y)
 
@@ -309,33 +289,24 @@ def test_refit(early_stopping_rounds: Optional[int]) -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
     clf = OGBMClassifier(
-        n_estimators=n_estimators,
-        n_trials=n_trials,
-        random_state=random_state,
-        refit=True,
+        n_estimators=n_estimators, n_trials=n_trials, random_state=random_state, refit=True,
     )
 
     clf.fit(X, y, early_stopping_rounds=early_stopping_rounds)
 
     y_pred = clf.predict(X)
 
-    clf = lgb.LGBMClassifier(
-        n_estimators=clf.best_iteration_, **clf.best_params_
-    )
+    clf = lgb.LGBMClassifier(n_estimators=clf.best_iteration_, **clf.best_params_)
 
     clf.fit(X, y)
 
     np.testing.assert_array_equal(y_pred, clf.predict(X))
 
 
-@pytest.mark.parametrize(
-    "load_function", [load_breast_cancer, load_digits, load_iris, load_wine]
-)
+@pytest.mark.parametrize("load_function", [load_breast_cancer, load_digits, load_iris, load_wine])
 def test_score(load_function: Callable) -> None:
     X, y = load_function(return_X_y=True)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, random_state=random_state
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state)
 
     clf = lgb.LGBMClassifier(random_state=random_state)
 
@@ -354,9 +325,7 @@ def test_score(load_function: Callable) -> None:
 def test_plot_importance(n_jobs: int) -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
-    clf = OGBMClassifier(
-        n_estimators=n_estimators, n_jobs=n_jobs, n_trials=n_trials
-    )
+    clf = OGBMClassifier(n_estimators=n_estimators, n_jobs=n_jobs, n_trials=n_trials)
 
     clf.fit(X, y)
 
