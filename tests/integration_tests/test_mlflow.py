@@ -1,9 +1,8 @@
-import pytest
 import py
 
 import optuna
-from optuna.integration.mlflow import MlflowCallback
 from ..test_structs import _create_frozen_trial
+from optuna.integration.mlflow import MlflowCallback
 
 
 def test_happy_case(tmpdir):
