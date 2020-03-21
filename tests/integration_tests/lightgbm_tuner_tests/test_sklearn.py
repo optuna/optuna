@@ -240,6 +240,12 @@ def test_fit_twice_without_study(n_jobs: int) -> None:
     values = df["value"]
 
     clf = OGBMClassifier(
+        bagging_fraction=1.0,
+        bagging_freq=0,
+        feature_fraction=1.0,
+        lambda_l1=0.0,
+        lambda_l2=0.0,
+        min_data_in_leaf=20,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
         n_trials=n_trials,
