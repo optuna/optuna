@@ -16,15 +16,16 @@ def test_keras_pruning_callback():
         # type: (optuna.trial.Trial) -> float
 
         model = Sequential()
-        model.add(Dense(1, activation='sigmoid', input_dim=20))
-        model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
+        model.add(Dense(1, activation="sigmoid", input_dim=20))
+        model.compile(optimizer="rmsprop", loss="binary_crossentropy", metrics=["accuracy"])
         model.fit(
             np.zeros((16, 20), np.float32),
-            np.zeros((16, ), np.int32),
+            np.zeros((16,), np.int32),
             batch_size=1,
             epochs=1,
-            callbacks=[KerasPruningCallback(trial, 'accuracy')],
-            verbose=0)
+            callbacks=[KerasPruningCallback(trial, "accuracy")],
+            verbose=0,
+        )
 
         return 1.0
 
@@ -43,10 +44,10 @@ def test_keras_pruning_callback_observation_isnan():
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)
-    callback = KerasPruningCallback(trial, 'loss')
+    callback = KerasPruningCallback(trial, "loss")
 
     with pytest.raises(optuna.exceptions.TrialPruned):
-        callback.on_epoch_end(0, {'loss': 1.0})
+        callback.on_epoch_end(0, {"loss": 1.0})
 
     with pytest.raises(optuna.exceptions.TrialPruned):
-        callback.on_epoch_end(0, {'loss': float('nan')})
+        callback.on_epoch_end(0, {"loss": float("nan")})

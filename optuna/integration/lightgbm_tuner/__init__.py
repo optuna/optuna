@@ -4,8 +4,11 @@ from optuna._experimental import experimental
 from optuna import type_checking
 
 try:
-    from optuna.integration.lightgbm_tuner.sklearn import *  # NOQA
     from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
+    from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
+    from optuna.integration.lightgbm_tuner.sklearn import LGBMModel  # NOQA
+    from optuna.integration.lightgbm_tuner.sklearn import LGBMRegressor  # NOQA
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -37,7 +40,8 @@ def _check_lightgbm_availability():
 
     if not _available:
         raise ImportError(
-            'LightGBM is not available. Please install LightGBM to use this feature. '
-            'LightGBM can be installed by executing `$ pip install lightgbm`. '
-            'For further information, please refer to the installation guide of LightGBM. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "LightGBM is not available. Please install LightGBM to use this feature. "
+            "LightGBM can be installed by executing `$ pip install lightgbm`. "
+            "For further information, please refer to the installation guide of LightGBM. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )
