@@ -43,8 +43,8 @@ class MlflowCallback(object):
               `profile <https://github.com/databricks/databricks-cli#installation>`_,
               ``databricks://<profileName>``.
         experiment:
-            Name of experiment to be activated. If not set ``study.study_name``
-            will be taken. Either ``experiment`` or ``study.study_name`` must be set.
+            Name of Mlflow experiment to be activated. If not set ``study.study_name``
+            will be taken. If ``study.study_name`` is not set the Mlflow default will be used.
         metric_name:
             Name of the metric. If not provided this will be called ``trial_value``.
     """
@@ -63,19 +63,13 @@ class MlflowCallback(object):
         if self._tracking_uri is not None:
             mlflow.set_tracking_uri(self._tracking_uri)
 
-        with mlflow.start_run(run_name=trial.number):
+        # This sets the experiment of Mlflow.
+        if self._experiment is not None:
+            mlflow.set_experiment(self._experiment)
+        elif study.study_name is not None:
+            mlflow.set_experiment(study.study_name)
 
-            # This sets the experiment of Mlflow.
-            if self._experiment is None:
-                if (
-                    study.study_name is None
-                    or study.study_name == "no-name-00000000-0000-0000-0000-000000000000"
-                ):
-                    raise ValueError("Either 'experiment' or 'study.study_name' must be set!")
-                else:
-                    mlflow.set_experiment(study.study_name)
-            else:
-                mlflow.set_experiment(self._experiment)
+        with mlflow.start_run(run_name=trial.number):
 
             # This sets the metric for Mlflow.
             trial_value = trial.value if trial.value is not None else float("nan")
