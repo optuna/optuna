@@ -10,7 +10,7 @@ if type_checking.TYPE_CHECKING:
 class MlflowCallback(object):
     """Callback to track optuna trials with Mlflow.
 
-    This callback adds all relevant information that is
+    This callback adds relevant information that is
     tracked by Optuna to Mlflow.
 
     Example:
