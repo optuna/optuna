@@ -17,7 +17,7 @@ class MlflowCallback(object):
 
         Add Mlflow callback to optuna optimization.
 
-        .. testcode::
+        .. code::
 
             def objective(trial):
                 x = trial.suggest_uniform('x', -10, 10)
