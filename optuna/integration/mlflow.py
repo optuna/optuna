@@ -1,10 +1,30 @@
-import mlflow
-
 import optuna
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
+
+try:
+    import mlflow
+    _available = True
+except ImportError as e:
+    _import_error = e
+    _available = False
+    mlflow = object
+
+
+def _check_mlflow_availability():
+    # type: () -> None
+
+    if not _available:
+        raise ImportError(
+            "Mlflow is not available. Please install Mlflow to use this "
+            "feature. It can be installed by executing `$ pip install "
+            "mlflow`. For further information, please refer to the installation guide "
+            "of Mlflow. (The actual import error is as follows: "
+            + str(_import_error)
+            + ")"
+        )
 
 
 class MlflowCallback(object):
@@ -51,6 +71,8 @@ class MlflowCallback(object):
 
     def __init__(self, tracking_uri=None, experiment=None, metric_name=None):
         # type: (str, str, str) -> None
+
+        _check_mlflow_availability()
 
         self._tracking_uri = tracking_uri
         self._experiment = experiment
