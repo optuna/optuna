@@ -66,7 +66,10 @@ class MlflowCallback(object):
         # This sets the experiment of Mlflow.
         if self._experiment is not None:
             mlflow.set_experiment(self._experiment)
-        elif study.study_name is not None:
+        elif (
+            study.study_name is not None
+            and study.study_name != "no-name-00000000-0000-0000-0000-000000000000"
+        ):
             mlflow.set_experiment(study.study_name)
 
         with mlflow.start_run(run_name=trial.number):
