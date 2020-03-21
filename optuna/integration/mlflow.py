@@ -59,12 +59,13 @@ class MlflowCallback(object):
     def __call__(self, study, trial):
         # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
 
-        # set tracking_uri
+        # This sets the tracking_uri for Mlflow.
         if self._tracking_uri is not None:
             mlflow.set_tracking_uri(self._tracking_uri)
 
         with mlflow.start_run(run_name=trial.number):
-            # set experiment
+
+            # This sets the experiment of Mlflow.
             if self._experiment is None:
                 if (
                     study.study_name is None
@@ -76,15 +77,15 @@ class MlflowCallback(object):
             else:
                 mlflow.set_experiment(self._experiment)
 
-            # set metric
+            # This sets the metric for Mlflow.
             trial_value = trial.value if trial.value is not None else float("nan")
             metric_name = self._metric_name if self._metric_name is not None else "trial_value"
             mlflow.log_metric(metric_name, trial_value)
 
-            # set params
+            # This sets the params for Mlflow.
             mlflow.log_params(trial.params)
 
-            # set tags
+            # This sets the tags for Mlflow.
             tags = {}  # type: Dict[str, str]
             tags["trial_number"] = str(trial.number)
             tags["trial_datetime_start"] = str(trial.datetime_start)
