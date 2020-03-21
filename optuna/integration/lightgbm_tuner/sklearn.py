@@ -317,6 +317,10 @@ class _Objective(object):
             init_model=self.init_model,
             num_boost_round=self.n_estimators,
         )  # Dict[str, List[float]]
+        best_iteration = callbacks[0]._best_iteration  # type: ignore
+
+        trial.set_user_attr("best_iteration", best_iteration)
+
         value = eval_hist["{}-mean".format(self.eval_name)][-1]  # type: float
         is_best_trial = True  # type: bool
 
@@ -328,17 +332,13 @@ class _Objective(object):
             pass
 
         if is_best_trial:
-            best_iteration = callbacks[0]._best_iteration  # type: ignore
-            boosters = (
-                callbacks[0]._boosters  # type: ignore
-            )  # type: List[lgb.Booster]
+            boosters = callbacks[0]._boosters  # type: ignore
             representations = []  # type: List[str]
 
             for b in boosters:
                 b.free_dataset()
                 representations.append(b.model_to_string())
 
-            trial.study.set_user_attr("best_iteration", best_iteration)
             trial.study.set_user_attr("representations", representations)
 
         return value
@@ -764,7 +764,9 @@ class LGBMModel(lgb.LGBMModel):
         logger.info("Finished hyperparemeter search!")
 
         self.best_params_ = {**params, **self.study_.best_params}
-        self._best_iteration = self.study_.user_attrs["best_iteration"]
+        self._best_iteration = self.study_.best_trial.user_attrs[
+            "best_iteration"
+        ]
         self._best_score = self.study_.best_value
         self.n_splits_ = cv.get_n_splits(X, y, groups=groups)
 
