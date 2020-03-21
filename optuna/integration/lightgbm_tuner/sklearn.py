@@ -189,9 +189,7 @@ def check_fit_params(
     sample_weight: Optional[OneDimArrayLikeType] = None,
     estimator: Optional[BaseEstimator] = None,
     **kwargs: Any
-) -> Tuple[
-    TwoDimArrayLikeType, OneDimArrayLikeType, OneDimArrayLikeType
-]:
+) -> Tuple[TwoDimArrayLikeType, OneDimArrayLikeType, OneDimArrayLikeType]:
     """Check ``X``, ``y`` and ``sample_weight``.
 
     Args:
@@ -349,10 +347,8 @@ class _Objective(object):
         callbacks = [extraction_callback]  # type: List[Callable]
 
         if self.enable_pruning:
-            pruning_callback = (
-                integration.LightGBMPruningCallback(
-                    trial, self.eval_name
-                )
+            pruning_callback = integration.LightGBMPruningCallback(
+                trial, self.eval_name
             )  # type: integration.LightGBMPruningCallback
 
             callbacks.append(pruning_callback)
