@@ -33,6 +33,10 @@ To format code with [black](https://github.com/psf/black)
 you have to install it first. This can be done with
 `pip install black`. The command to format a certain file
 is `black <filename_with_path> --line-length 99 --exclude="docs"`.
+To just check the file you can use 
+`black <filename_with_path> --line-length 99 --check --exclude="docs"`.
+You can also apply these operations to all files by replacing
+`<filename_with_path>` with a simple `.`.
 
 For more information about code syle see the 
 ["Coding Style Conventions" Optuna wiki page](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
