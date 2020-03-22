@@ -34,6 +34,9 @@ you have to install it first. This can be done with
 `pip install black`. The command to format a certain file
 is `black <filename_with_path> --line-length 99 --exclude="docs"`.
 
+For more information about code syle see the 
+["Coding Style Conventions" Optuna wiki page](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
+
 ## Testing
 
 When adding a new feature or fixing a bug, you also need to write sufficient test code.
