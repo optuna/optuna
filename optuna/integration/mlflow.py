@@ -6,6 +6,7 @@ if type_checking.TYPE_CHECKING:
 
 try:
     import mlflow
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -21,9 +22,7 @@ def _check_mlflow_availability():
             "Mlflow is not available. Please install Mlflow to use this "
             "feature. It can be installed by executing `$ pip install "
             "mlflow`. For further information, please refer to the installation guide "
-            "of Mlflow. (The actual import error is as follows: "
-            + str(_import_error)
-            + ")"
+            "of Mlflow. (The actual import error is as follows: " + str(_import_error) + ")"
         )
 
 
