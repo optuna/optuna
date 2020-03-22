@@ -36,19 +36,29 @@ class MlflowCallback(object):
 
         Add Mlflow callback to optuna optimization.
 
-        .. code::
+        .. testsetup::
+            import pathlib
+            import tempfile
+            tempdir = tempfile.mkdtemp()
+            YOUR_TRACKING_URI = pathlib.Path(tempdir).as_uri()
+        .. testcode::
+            import optuna
+            from optuna.integration.mlflow import MlflowCallback
 
             def objective(trial):
                 x = trial.suggest_uniform('x', -10, 10)
                 return (x - 2) ** 2
 
             mlflc = MlflowCallback(
-                tracking_uri='https://my-tracking-server:5000',
+                tracking_uri=YOUR_TRACKING_URI,
                 metric_name='my metric score',
-                )
+            )
 
             study = optuna.create_study(study_name='my_study')
             study.optimize(objective, n_trials=10, callbacks=[mlflc])
+        .. testcleanup::
+            import shutil
+            shutil.rmtree(tempdir)
 
     Args:
         tracking_uri:
