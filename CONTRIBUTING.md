@@ -28,6 +28,12 @@ Note that we use comment-style type annotation for compatibility with Python 2.
 
 Please see also our [Coding Style Conventions](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 
+### Code Formatting with Black
+To format code with [black](https://github.com/psf/black) 
+you have to install it first. This can be done with
+`pip install black`. The command to format a certain file
+is `black <filename_with_path> --line-length 99 --exclude="docs"`.
+
 ## Testing
 
 When adding a new feature or fixing a bug, you also need to write sufficient test code.
