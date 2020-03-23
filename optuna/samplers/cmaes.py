@@ -92,27 +92,25 @@ class CmaEsSampler(BaseSampler):
     """
 
     def __init__(
-            self,
-            x0: Optional[Dict[str, Any]] = None,
-            sigma0: Optional[float] = None,
-            n_startup_trials: int = 1,
-            independent_sampler: Optional[BaseSampler] = None,
-            warn_independent_sampling: bool = True,
-            seed: Optional[int] = None,
+        self,
+        x0: Optional[Dict[str, Any]] = None,
+        sigma0: Optional[float] = None,
+        n_startup_trials: int = 1,
+        independent_sampler: Optional[BaseSampler] = None,
+        warn_independent_sampling: bool = True,
+        seed: Optional[int] = None,
     ) -> None:
 
         self._x0 = x0
         self._sigma0 = sigma0
-        self._independent_sampler = (
-            independent_sampler or optuna.samplers.RandomSampler(seed=seed)
-        )
+        self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._n_startup_trials = n_startup_trials
         self._warn_independent_sampling = warn_independent_sampling
         self._logger = optuna.logging.get_logger(__name__)
         self._cma_rng = np.random.RandomState(seed)
 
     def infer_relative_search_space(
-            self, study: 'optuna.Study', trial: 'optuna.structs.FrozenTrial',
+        self, study: "optuna.Study", trial: "optuna.structs.FrozenTrial",
     ) -> Dict[str, BaseDistribution]:
 
         # Import here to avoid circular imports without breaking a backward compatibility.
@@ -127,13 +125,13 @@ class CmaEsSampler(BaseSampler):
                 continue
 
             if not isinstance(
-                    distribution,
-                    (
-                        optuna.distributions.UniformDistribution,
-                        optuna.distributions.LogUniformDistribution,
-                        optuna.distributions.DiscreteUniformDistribution,
-                        optuna.distributions.IntUniformDistribution,
-                    ),
+                distribution,
+                (
+                    optuna.distributions.UniformDistribution,
+                    optuna.distributions.LogUniformDistribution,
+                    optuna.distributions.DiscreteUniformDistribution,
+                    optuna.distributions.IntUniformDistribution,
+                ),
             ):
                 # Categorical distribution is unsupported.
                 continue
@@ -142,19 +140,17 @@ class CmaEsSampler(BaseSampler):
         return search_space
 
     def sample_relative(
-            self,
-            study: 'optuna.Study',
-            trial: 'optuna.structs.FrozenTrial',
-            search_space: Dict[str, BaseDistribution],
+        self,
+        study: "optuna.Study",
+        trial: "optuna.structs.FrozenTrial",
+        search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
 
         if len(search_space) == 0:
             return {}
 
         completed_trials = [
-            t
-            for t in study.get_trials(deepcopy=False)
-            if t.state == TrialState.COMPLETE
+            t for t in study.get_trials(deepcopy=False) if t.state == TrialState.COMPLETE
         ]
         if len(completed_trials) < self._n_startup_trials:
             return {}
@@ -172,9 +168,7 @@ class CmaEsSampler(BaseSampler):
         ordered_keys = [key for key in search_space]
         ordered_keys.sort()
 
-        optimizer = self._restore_or_init_optimizer(
-            completed_trials, search_space, ordered_keys
-        )
+        optimizer = self._restore_or_init_optimizer(completed_trials, search_space, ordered_keys)
 
         if optimizer.dim != len(ordered_keys):
             self._logger.info(
@@ -195,19 +189,15 @@ class CmaEsSampler(BaseSampler):
         ]
         if len(solution_trials) >= optimizer.population_size:
             solutions = []  # type: List[Tuple[np.ndarray, float]]
-            for t in solution_trials[:optimizer.population_size]:
+            for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
-                x = np.array(
-                    [_to_cma_param(search_space[k], t.params[k]) for k in ordered_keys]
-                )
+                x = np.array([_to_cma_param(search_space[k], t.params[k]) for k in ordered_keys])
                 solutions.append((x, t.value))
 
             optimizer.tell(solutions)
 
             optimizer_str = pickle.dumps(optimizer).hex()
-            study._storage.set_trial_system_attr(
-                trial._trial_id, "cma:optimizer", optimizer_str
-            )
+            study._storage.set_trial_system_attr(trial._trial_id, "cma:optimizer", optimizer_str)
 
         # Caution: optimizer should update its seed value
         seed = self._cma_rng.randint(1, 2 ** 16) + trial.number
@@ -218,16 +208,15 @@ class CmaEsSampler(BaseSampler):
             trial._trial_id, "cma:generation", optimizer.generation
         )
         external_values = {
-            k: _to_optuna_param(search_space[k], p)
-            for k, p in zip(ordered_keys, params)
+            k: _to_optuna_param(search_space[k], p) for k, p in zip(ordered_keys, params)
         }
         return external_values
 
     def _restore_or_init_optimizer(
-            self,
-            completed_trials: 'List[optuna.structs.FrozenTrial]',
-            search_space: Dict[str, BaseDistribution],
-            ordered_keys: List[str],
+        self,
+        completed_trials: "List[optuna.structs.FrozenTrial]",
+        search_space: Dict[str, BaseDistribution],
+        ordered_keys: List[str],
     ) -> CMA:
 
         # Restore a previous CMA object.
@@ -260,17 +249,15 @@ class CmaEsSampler(BaseSampler):
         )
 
     def sample_independent(
-            self,
-            study: 'optuna.Study',
-            trial: 'optuna.structs.FrozenTrial',
-            param_name: str,
-            param_distribution: BaseDistribution,
+        self,
+        study: "optuna.Study",
+        trial: "optuna.structs.FrozenTrial",
+        param_name: str,
+        param_distribution: BaseDistribution,
     ) -> Any:
 
         if self._warn_independent_sampling:
-            complete_trials = [
-                t for t in study.trials if t.state == TrialState.COMPLETE
-            ]
+            complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -357,21 +344,22 @@ def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
 
 
 def _get_search_space_bound(
-        keys: List[str], search_space: Dict[str, BaseDistribution],
+    keys: List[str], search_space: Dict[str, BaseDistribution],
 ) -> np.ndarray:
 
     bounds = []
     for param_name in keys:
         dist = search_space[param_name]
-        if isinstance(dist, (
+        if isinstance(
+            dist,
+            (
                 optuna.distributions.UniformDistribution,
                 optuna.distributions.LogUniformDistribution,
                 optuna.distributions.DiscreteUniformDistribution,
                 optuna.distributions.IntUniformDistribution,
-        )):
+            ),
+        ):
             bounds.append([dist.low, dist.high])
         else:
-            raise NotImplementedError(
-                "The distribution {} is not implemented.".format(dist)
-            )
+            raise NotImplementedError("The distribution {} is not implemented.".format(dist))
     return np.array(bounds)
