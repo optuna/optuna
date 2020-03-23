@@ -69,8 +69,8 @@ class MlflowCallback(object):
         tracking_uri:
             Set the tracking server URI.
 
-            - An empty string, or a local file path, prefixed with ``file:/``. Data is stored
-              locally at the provided file (or ``./mlruns`` if empty).
+            - An empty string, or a local directory path, prefixed with ``file:``. Data is stored
+              locally in the provided directory (or ``./mlruns`` if empty).
             - An HTTP URI like ``https://my-tracking-server:5000``.
             - A Databricks workspace, provided as the string ``databricks`` or, to use a
               Databricks CLI.
