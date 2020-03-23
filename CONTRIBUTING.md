@@ -21,10 +21,9 @@ The above job contains following checkers:
 
 If any warnings or errors are emitted, please fix them.
 
-Note that we use comment-style type annotation for compatibility with Python 2.
+Optuna embraces type hints described in the following PEP.
 
 * [PEP484](https://www.python.org/dev/peps/pep-0484/)
-* [Syntax cheat sheet](http://mypy.readthedocs.io/en/latest/cheat_sheet.html)
 
 Please see also our [Coding Style Conventions](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 
