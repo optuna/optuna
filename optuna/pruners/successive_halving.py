@@ -104,10 +104,10 @@ class SuccessiveHalvingPruner(BasePruner):
             referred to as :math:`s`).
     """
 
-    def __init__(self, min_resource='auto', reduction_factor=4, min_early_stopping_rate=0):
+    def __init__(self, min_resource="auto", reduction_factor=4, min_early_stopping_rate=0):
         # type: (Union[str, int], int, int) -> None
 
-        if isinstance(min_resource, str) and min_resource != 'auto':
+        if isinstance(min_resource, str) and min_resource != "auto":
             raise ValueError(
                 "The value of `min_resource` is {}, "
                 "but must be either `min_resource` >= 1 or 'auto'".format(min_resource)
@@ -115,18 +115,21 @@ class SuccessiveHalvingPruner(BasePruner):
 
         if isinstance(min_resource, int) and min_resource < 1:
             raise ValueError(
-                'The value of `min_resource` is {}, '
-                "but must be either `min_resource >= 1` or 'auto'".format(min_resource))
+                "The value of `min_resource` is {}, "
+                "but must be either `min_resource >= 1` or 'auto'".format(min_resource)
+            )
 
         if reduction_factor < 2:
-            raise ValueError('The value of `reduction_factor` is {}, '
-                             'but must be `reduction_factor >= 2`'.format(reduction_factor))
+            raise ValueError(
+                "The value of `reduction_factor` is {}, "
+                "but must be `reduction_factor >= 2`".format(reduction_factor)
+            )
 
         if min_early_stopping_rate < 0:
             raise ValueError(
-                'The value of `min_early_stopping_rate` is {}, '
-                "but must be `min_early_stopping_rate >= 0`".format(
-                    min_early_stopping_rate))
+                "The value of `min_early_stopping_rate` is {}, "
+                "but must be `min_early_stopping_rate >= 0`".format(min_early_stopping_rate)
+            )
 
         self._min_resource = None  # type: Optional[int]
         if isinstance(min_resource, int):
@@ -154,8 +157,9 @@ class SuccessiveHalvingPruner(BasePruner):
                     return False
 
             assert self._min_resource is not None
-            rung_promotion_step = self._min_resource * \
-                (self._reduction_factor ** (self._min_early_stopping_rate + rung))
+            rung_promotion_step = self._min_resource * (
+                self._reduction_factor ** (self._min_early_stopping_rate + rung)
+            )
             if step < rung_promotion_step:
                 return False
 
@@ -170,8 +174,11 @@ class SuccessiveHalvingPruner(BasePruner):
             study._storage.set_trial_system_attr(trial._trial_id, rung_key, value)
 
             if not _is_trial_promotable_to_next_rung(
-                    value, _get_competing_values(trials, value, rung_key),
-                    self._reduction_factor, study.direction):
+                value,
+                _get_competing_values(trials, value, rung_key),
+                self._reduction_factor,
+                study.direction,
+            ):
                 return True
 
             rung += 1
@@ -181,8 +188,7 @@ def _estimate_min_resource(trials):
     # type: (List[FrozenTrial]) -> Optional[int]
 
     n_steps = [
-        t.last_step for t in trials
-        if t.state == TrialState.COMPLETE and t.last_step is not None
+        t.last_step for t in trials if t.state == TrialState.COMPLETE and t.last_step is not None
     ]
 
     if not n_steps:
@@ -206,7 +212,7 @@ def _get_current_rung(trial):
 def _completed_rung_key(rung):
     # type: (int) -> str
 
-    return 'completed_rung_{}'.format(rung)
+    return "completed_rung_{}".format(rung)
 
 
 def _get_competing_values(trials, value, rung_key):

@@ -41,37 +41,35 @@ def test_tensorflow_pruning_hook():
             config=tf.estimator.RunConfig(save_summary_steps=10, save_checkpoints_steps=10),
         )
         hook = TensorFlowPruningHook(
-            trial=trial,
-            estimator=clf,
-            metric="accuracy",
-            run_every_steps=5,
+            trial=trial, estimator=clf, metric="accuracy", run_every_steps=5,
         )
         train_spec = tf.estimator.TrainSpec(
-            input_fn=fixed_value_input_fn, max_steps=100, hooks=[hook])
+            input_fn=fixed_value_input_fn, max_steps=100, hooks=[hook]
+        )
         eval_spec = tf.estimator.EvalSpec(input_fn=fixed_value_input_fn, steps=1, hooks=[])
         tf.estimator.train_and_evaluate(estimator=clf, train_spec=train_spec, eval_spec=eval_spec)
         return 1.0
 
-    study = optuna.create_study(pruner=DeterministicPruner(True), direction='maximize')
+    study = optuna.create_study(pruner=DeterministicPruner(True), direction="maximize")
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.structs.TrialState.PRUNED
 
-    study = optuna.create_study(pruner=DeterministicPruner(False), direction='maximize')
+    study = optuna.create_study(pruner=DeterministicPruner(False), direction="maximize")
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
     # Check if eval_metrics returns the None value.
-    value = OrderedDict([(10, {'accuracy': None})])
-    with patch('optuna.integration.tensorflow.read_eval_metrics', return_value=value) as mock_obj:
-        study = optuna.create_study(pruner=DeterministicPruner(True), direction='maximize')
+    value = OrderedDict([(10, {"accuracy": None})])
+    with patch("optuna.integration.tensorflow.read_eval_metrics", return_value=value) as mock_obj:
+        study = optuna.create_study(pruner=DeterministicPruner(True), direction="maximize")
         study.optimize(objective, n_trials=1)
         assert mock_obj.call_count == 1
         assert math.isnan(study.trials[0].intermediate_values[10])
         assert study.trials[0].state == optuna.structs.TrialState.PRUNED
 
 
-@pytest.mark.parametrize('is_higher_better', [True, False])
+@pytest.mark.parametrize("is_higher_better", [True, False])
 def test_init_with_is_higher_better(is_higher_better):
     # type: (bool) -> None
 
@@ -92,4 +90,5 @@ def test_init_with_is_higher_better(is_higher_better):
             estimator=clf,
             metric="accuracy",
             run_every_steps=5,
-            is_higher_better=is_higher_better)
+            is_higher_better=is_higher_better,
+        )
