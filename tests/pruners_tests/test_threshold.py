@@ -117,3 +117,13 @@ def test_threshold_pruner_interval_steps() -> None:
 
     trial.report(1000.0, 5)
     assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
+
+
+def test_accessors() -> None:
+    pruner = optuna.pruners.ThresholdPruner(lower=None, upper=1.0)
+    assert pruner.lower is None
+    assert pruner.upper == 1.0
+
+    pruner = optuna.pruners.ThresholdPruner(lower=-1.0, upper=None)
+    assert pruner.lower == -1.0
+    assert pruner.upper is None

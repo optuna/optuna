@@ -89,8 +89,8 @@ class ThresholdPruner(BasePruner):
                 "Pruning interval steps must be at least 1 but got {}.".format(interval_steps)
             )
 
-        self.lower = lower
-        self.upper = upper
+        self._lower = lower if lower is not None else -float("inf")
+        self._upper = upper if upper is not None else float("inf")
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
 
@@ -113,10 +113,24 @@ class ThresholdPruner(BasePruner):
         if math.isnan(latest_value):
             return True
 
-        if self.lower is not None and latest_value < self.lower:
+        if latest_value < self._lower:
             return True
 
-        if self.upper is not None and latest_value > self.upper:
+        if latest_value > self._upper:
             return True
 
         return False
+
+    @property
+    def lower(self) -> Optional[float]:
+
+        if self._lower == -float("inf"):
+            return None
+        return self._lower
+
+    @property
+    def upper(self) -> Optional[float]:
+
+        if self._upper == float("inf"):
+            return None
+        return self._upper
