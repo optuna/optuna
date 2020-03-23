@@ -65,6 +65,12 @@ class MlflowCallback(object):
             import shutil
             shutil.rmtree(tempdir)
 
+        .. testoutput::
+            :hide:
+            :options: +NORMALIZE_WHITESPACE
+
+            INFO: 'my_study' does not exist. Creating a new experiment
+
     Args:
         tracking_uri:
             Set the tracking server URI.
