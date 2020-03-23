@@ -72,13 +72,17 @@ class ThresholdPruner(BasePruner):
         interval_steps: int = 1,
     ) -> None:
 
-        if lower is not None and not isinstance(lower, (float)):
+        if lower is not None and not isinstance(lower, float):
             raise TypeError("lower should be either None or a floating point.")
-        if upper is not None and not isinstance(upper, (float)):
+        if upper is not None and not isinstance(upper, float):
             raise TypeError("upper should be either None or a floating point.")
         if lower is None and upper is None:
             raise ValueError("Either lower or upper must be specified.")
-        if lower is not None and upper is not None and lower > upper:
+
+        lower = lower if lower is not None else -float("inf")
+        upper = upper if upper is not None else float("inf")
+
+        if lower > upper:
             raise ValueError("lower should be smaller than upper.")
         if n_warmup_steps < 0:
             raise ValueError(
@@ -89,8 +93,8 @@ class ThresholdPruner(BasePruner):
                 "Pruning interval steps must be at least 1 but got {}.".format(interval_steps)
             )
 
-        self._lower = lower if lower is not None else -float("inf")
-        self._upper = upper if upper is not None else float("inf")
+        self._lower = lower
+        self._upper = upper
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
 
