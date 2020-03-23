@@ -173,6 +173,9 @@ class TrialModel(BaseModel):
         # type: (int, orm.Session, bool) -> Optional[TrialModel]
 
         query = session.query(cls).filter(cls.trial_id == trial_id)
+
+        # "FOR UPDATE" clause is used for row-level locking.
+        # Please note that SQLite3 doesn't support this clause.
         if for_update:
             query = query.with_for_update()
 
