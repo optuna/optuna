@@ -77,6 +77,18 @@ def test_threshold_pruner_with_invalid_inputs() -> None:
         optuna.pruners.ThresholdPruner(lower=None, upper=None)
 
 
+def test_threshold_pruner_with_nan() -> None:
+
+    study = optuna.study.create_study()
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    pruner = optuna.pruners.ThresholdPruner(
+        lower=0.0, upper=1.0, n_warmup_steps=0, interval_steps=1
+    )
+
+    trial.report(float("nan"), 1)
+    assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
+
+
 def test_threshold_pruner_n_warmup_steps() -> None:
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
