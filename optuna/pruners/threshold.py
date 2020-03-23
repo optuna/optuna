@@ -9,8 +9,8 @@ from optuna.pruners.percentile import _is_first_in_interval_step
 class ThresholdPruner(BasePruner):
     """Pruner to detect outlying metrics of the trials.
 
-    Prune if a metric exceeds upper bound threshold or
-    falls behind lower bound threshold.
+    Prune if a metric exceeds upper threshold,
+    falls behind lower threshold or reaches ``nan``.
 
     Example:
         .. testcode::
