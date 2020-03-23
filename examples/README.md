@@ -26,6 +26,7 @@ This page contains a list of example codes written with Optuna.
 * [Tensorflow(eager)](./tensorflow_eager_simple.py)
 * [Keras](./keras_simple.py)
 * [FastAI](./fastai_simple.py)
+* [AllenNLP](./allennlp_simple.py)
 
 ### An example where an objective function uses additional arguments
 

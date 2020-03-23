@@ -12,7 +12,7 @@ if type_checking.TYPE_CHECKING:
 
     from optuna import distributions  # NOQA
 
-DEFAULT_STUDY_NAME_PREFIX = 'no-name-'
+DEFAULT_STUDY_NAME_PREFIX = "no-name-"
 
 
 class BaseStorage(object, metaclass=abc.ABCMeta):
@@ -183,7 +183,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         all_trials = [t for t in all_trials if t.state is structs.TrialState.COMPLETE]
 
         if len(all_trials) == 0:
-            raise ValueError('No trials are completed yet.')
+            raise ValueError("No trials are completed yet.")
 
         if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
             best_trial = max(all_trials, key=lambda t: t.value)
@@ -218,4 +218,5 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         if trial_state.is_finished():
             trial = self.get_trial(trial_id)
             raise RuntimeError(
-                "Trial#{} has already finished and can not be updated.".format(trial.number))
+                "Trial#{} has already finished and can not be updated.".format(trial.number)
+            )
