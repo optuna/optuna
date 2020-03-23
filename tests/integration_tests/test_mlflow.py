@@ -1,4 +1,5 @@
 import py
+import unittest
 from unittest.mock import patch
 
 import optuna
