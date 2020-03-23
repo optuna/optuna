@@ -19,7 +19,6 @@ class ThresholdPruner(BasePruner):
             from optuna.exceptions import TrialPruned
             from optuna.pruners import ThresholdPruner
 
-
             def objective_for_upper(trial):
                 for step, y in enumerate(ys_for_upper):
                     trial.report(y, step)
