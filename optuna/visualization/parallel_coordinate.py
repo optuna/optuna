@@ -1,4 +1,9 @@
 from collections import defaultdict
+from typing import Any
+from typing import DefaultDict
+from typing import Dict
+from typing import List
+from typing import Optional
 
 from optuna.logging import get_logger
 from optuna.structs import StudyDirection
@@ -6,12 +11,6 @@ from optuna.structs import TrialState
 from optuna.study import Study
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import is_available
-
-from typing import Any
-from typing import DefaultDict
-from typing import Dict
-from typing import List
-from typing import Optional
 
 if is_available():
     from optuna.visualization.plotly_imports import go
@@ -100,7 +99,11 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
             values = [vocab[v] for v in values]
             is_categorical = True
-        dim = {"label": p_name, "values": tuple(values), "range": (min(values), max(values))}
+        dim = {
+            "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+            "values": tuple(values),
+            "range": (min(values), max(values)),
+        }
         if is_categorical:
             dim["tickvals"] = list(range(len(vocab)))
             dim["ticktext"] = list(sorted(vocab.items(), key=lambda x: x[1]))
