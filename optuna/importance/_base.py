@@ -87,7 +87,7 @@ def get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, Ba
                 "parameters are specified. Specified parameters: {}.".format(params)
             )
 
-    assert distributions is not None  # Requires to pass mypy.
+    assert distributions is not None  # Required to pass mypy.
     distributions = OrderedDict(
         sorted(distributions.items(), key=lambda name_and_distribution: name_and_distribution[0])
     )
