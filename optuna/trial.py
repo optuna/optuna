@@ -557,20 +557,19 @@ class Trial(BaseTrial):
 
             Save fixed hyperparameters of neural network training.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
                 import optuna
+
+                import numpy as np
+
                 from sklearn.neural_network import MLPClassifier
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_test, y_train, y_test = train_test_split(X, y)
+                classes = np.unique(y)
 
                 def objective(trial):
                     trial.set_user_attr('BATCHSIZE', 128)
