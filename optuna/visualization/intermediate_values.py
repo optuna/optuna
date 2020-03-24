@@ -28,9 +28,9 @@ def plot_intermediate_values(study):
             # Derivative function for x**2
             def df(x):
                 return 2*x
-                
+
             def objective(trial):
-                
+
                 next_x = 1  # We start the search at x=1
                 gamma = trial.suggest_loguniform('alpha', 1e-5, 1e-1)  # Step size multiplier
 
@@ -41,12 +41,12 @@ def plot_intermediate_values(study):
 
                     delta = next_x - current_x
                     trial.report(current_x, step)
-                    
+
                 return delta
 
             study = optuna.create_study()
             study.optimize(objective, n_trials=5)
-            
+
             optuna.visualization.plot_intermediate_values(study)
 
         .. raw:: html
