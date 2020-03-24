@@ -60,7 +60,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-optimize",
             "mlflow",
         ],
-        "document": ["sphinx", "sphinx_rtd_theme", "mlflow",],
+        "document": ["sphinx", "sphinx_rtd_theme",],
         "example": [
             "catboost",
             "chainer",
