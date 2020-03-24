@@ -1,9 +1,21 @@
 import math
+from typing import Any
 from typing import Optional
 
 import optuna
 from optuna.pruners import BasePruner
 from optuna.pruners.percentile import _is_first_in_interval_step
+
+
+def _check_value(value: Any) -> None:
+    try:
+        # For convenience, we allow users to report a value that can be cast to `float`.
+        value = float(value)
+    except (TypeError, ValueError):
+        message = "The `value` argument is of type '{}' but supposed to be a float.".format(
+            type(value).__name__
+        )
+        raise TypeError(message)
 
 
 class ThresholdPruner(BasePruner):
@@ -71,12 +83,12 @@ class ThresholdPruner(BasePruner):
         interval_steps: int = 1,
     ) -> None:
 
-        if lower is not None and not isinstance(lower, float):
-            raise TypeError("lower should be either None or a floating point.")
-        if upper is not None and not isinstance(upper, float):
-            raise TypeError("upper should be either None or a floating point.")
         if lower is None and upper is None:
-            raise ValueError("Either lower or upper must be specified.")
+            raise TypeError("Either lower or upper must be specified.")
+        if lower is not None:
+            _check_value(lower)
+        if upper is not None:
+            _check_value(upper)
 
         lower = lower if lower is not None else -float("inf")
         upper = upper if upper is not None else float("inf")
