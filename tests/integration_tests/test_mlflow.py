@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 import optuna
-from optuna.integration.mlflow import MlflowCallback
+from optuna.integration.mlflow import MLflowCallback
 from tests.test_structs import _create_frozen_trial
 
 
@@ -12,7 +12,7 @@ def test_happy_case(tmpdir):
 
     db_file_name = "file:{}".format(tmpdir)
 
-    mlflc = MlflowCallback(
+    mlflc = MLflowCallback(
         tracking_uri=db_file_name, metric_name="my_metric", experiment="my_experiment"
     )
     study = optuna.create_study()
@@ -26,7 +26,7 @@ def test_set_tags(set_tags, tmpdir):
 
     db_file_name = "file:{}".format(tmpdir)
 
-    mlflc = MlflowCallback(
+    mlflc = MLflowCallback(
         tracking_uri=db_file_name, metric_name="my_metric", experiment="my_experiment"
     )
     study = optuna.create_study()
@@ -47,7 +47,7 @@ def test_log_params(log_params, tmpdir):
 
     db_file_name = "file:{}".format(tmpdir)
 
-    mlflc = MlflowCallback(
+    mlflc = MLflowCallback(
         tracking_uri=db_file_name, metric_name="my_metric", experiment="my_experiment"
     )
     study = optuna.create_study()
@@ -66,7 +66,7 @@ def test_log_metric_with_metric_name(log_metric, tmpdir):
 
     db_file_name = "file:{}".format(tmpdir)
 
-    mlflc = MlflowCallback(
+    mlflc = MLflowCallback(
         tracking_uri=db_file_name, metric_name="my_metric", experiment="my_experiment"
     )
     study = optuna.create_study()
@@ -86,7 +86,7 @@ def test_log_metric_with_default_metric_name(log_metric, tmpdir):
 
     db_file_name = "file:{}".format(tmpdir)
 
-    mlflc = MlflowCallback(tracking_uri=db_file_name, experiment="my_experiment")
+    mlflc = MLflowCallback(tracking_uri=db_file_name, experiment="my_experiment")
     study = optuna.create_study()
     ft = _create_frozen_trial()
     mlflc(study, ft)

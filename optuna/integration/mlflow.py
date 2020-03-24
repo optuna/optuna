@@ -19,22 +19,22 @@ def _check_mlflow_availability():
 
     if not _available:
         raise ImportError(
-            "Mlflow is not available. Please install Mlflow to use this "
+            "MLflow is not available. Please install MLflow to use this "
             "feature. It can be installed by executing `$ pip install "
             "mlflow`. For further information, please refer to the installation guide "
-            "of Mlflow. (The actual import error is as follows: " + str(_import_error) + ")"
+            "of MLflow. (The actual import error is as follows: " + str(_import_error) + ")"
         )
 
 
-class MlflowCallback(object):
-    """Callback to track optuna trials with Mlflow.
+class MLflowCallback(object):
+    """Callback to track optuna trials with MLflow.
 
     This callback adds relevant information that is
-    tracked by Optuna to Mlflow.
+    tracked by Optuna to MLflow.
 
     Example:
 
-        Add Mlflow callback to optuna optimization.
+        Add MLflow callback to optuna optimization.
 
         .. testsetup::
 
@@ -46,13 +46,13 @@ class MlflowCallback(object):
         .. testcode::
 
             import optuna
-            from optuna.integration.mlflow import MlflowCallback
+            from optuna.integration.mlflow import MLflowCallback
 
             def objective(trial):
                 x = trial.suggest_uniform('x', -10, 10)
                 return (x - 2) ** 2
 
-            mlflc = MlflowCallback(
+            mlflc = MLflowCallback(
                 tracking_uri=YOUR_TRACKING_URI,
                 metric_name='my metric score',
             )
@@ -83,8 +83,8 @@ class MlflowCallback(object):
               `profile <https://github.com/databricks/databricks-cli#installation>`_,
               ``databricks://<profileName>``.
         experiment:
-            Name of Mlflow experiment to be activated. If not set ``study.study_name``
-            will be taken. If ``study.study_name`` is not set the Mlflow default will be used.
+            Name of MLflow experiment to be activated. If not set ``study.study_name``
+            will be taken. If ``study.study_name`` is not set the MLflow default will be used.
         metric_name:
             Name of the metric. If not provided this will be called ``trial_value``.
     """
@@ -101,11 +101,11 @@ class MlflowCallback(object):
     def __call__(self, study, trial):
         # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
 
-        # This sets the tracking_uri for Mlflow.
+        # This sets the tracking_uri for MLflow.
         if self._tracking_uri is not None:
             mlflow.set_tracking_uri(self._tracking_uri)
 
-        # This sets the experiment of Mlflow.
+        # This sets the experiment of MLflow.
         if self._experiment is not None:
             mlflow.set_experiment(self._experiment)
         elif (
@@ -116,15 +116,15 @@ class MlflowCallback(object):
 
         with mlflow.start_run(run_name=trial.number):
 
-            # This sets the metric for Mlflow.
+            # This sets the metric for MLflow.
             trial_value = trial.value if trial.value is not None else float("nan")
             metric_name = self._metric_name if self._metric_name is not None else "trial_value"
             mlflow.log_metric(metric_name, trial_value)
 
-            # This sets the params for Mlflow.
+            # This sets the params for MLflow.
             mlflow.log_params(trial.params)
 
-            # This sets the tags for Mlflow.
+            # This sets the tags for MLflow.
             tags = {}  # type: Dict[str, str]
             tags["trial_number"] = str(trial.number)
             tags["trial_datetime_start"] = str(trial.datetime_start)
