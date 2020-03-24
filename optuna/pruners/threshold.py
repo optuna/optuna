@@ -124,17 +124,3 @@ class ThresholdPruner(BasePruner):
             return True
 
         return False
-
-    @property
-    def lower(self) -> Optional[float]:
-
-        if self._lower == -float("inf"):
-            return None
-        return self._lower
-
-    @property
-    def upper(self) -> Optional[float]:
-
-        if self._upper == float("inf"):
-            return None
-        return self._upper
