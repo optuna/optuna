@@ -96,20 +96,18 @@ class Trial(BaseTrial):
             Suggest a momentum, learning rate and scaling factor of learning rate
             for neural network training.
 
-            .. testsetup::
+
+            .. testcode::
 
                 import numpy as np
-                import optuna
+                from sklearn.datasets import load_iris
                 from sklearn.model_selection import train_test_split
                 from sklearn.neural_network import MLPClassifier
 
-                np.random.seed(seed=0)
-                X = np.random.randn(200).reshape(-1, 1)
-                y = np.random.randint(0, 2, 200)
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
                 X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
-
-            .. testcode::
 
                 def objective(trial):
                     momentum = trial.suggest_float('momentum', 0.0, 1.0)
@@ -171,20 +169,17 @@ class Trial(BaseTrial):
 
             Suggest a momentum for neural network training.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(200).reshape(-1, 1)
-                y = np.random.randint(0, 2, 200)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
                 from sklearn.neural_network import MLPClassifier
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     momentum = trial.suggest_uniform('momentum', 0.0, 1.0)
@@ -232,20 +227,17 @@ class Trial(BaseTrial):
             Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/
             generated/sklearn.svm.SVC.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
                 from sklearn.svm import SVC
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     c = trial.suggest_loguniform('c', 1e-5, 1e2)
@@ -297,20 +289,17 @@ class Trial(BaseTrial):
             `GradientBoostingClassifier <https://scikit-learn.org/stable/modules/generated/
             sklearn.ensemble.GradientBoostingClassifier.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
                 from sklearn.ensemble import GradientBoostingClassifier
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
@@ -356,20 +345,17 @@ class Trial(BaseTrial):
             Suggest the number of trees in `RandomForestClassifier <https://scikit-learn.org/
             stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
                 from sklearn.ensemble import RandomForestClassifier
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     n_estimators = trial.suggest_int('n_estimators', 50, 400)
@@ -429,20 +415,17 @@ class Trial(BaseTrial):
             Suggest a kernel function of `SVC <https://scikit-learn.org/stable/modules/generated/
             sklearn.svm.SVC.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
                 from sklearn.svm import SVC
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     kernel = trial.suggest_categorical('kernel', ['linear', 'poly', 'rbf'])
@@ -494,20 +477,17 @@ class Trial(BaseTrial):
             Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
             generated/sklearn.linear_model.SGDClassifier.html>`_ training.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
                 from sklearn.linear_model import SGDClassifier
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     clf = SGDClassifier(random_state=0)
@@ -591,20 +571,17 @@ class Trial(BaseTrial):
 
             Save fixed hyperparameters of neural network training.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
                 from sklearn.neural_network import MLPClassifier
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
                 def objective(trial):
                     trial.set_user_attr('BATCHSIZE', 128)
