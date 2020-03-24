@@ -37,7 +37,9 @@ class SkoptSampler(BaseSampler):
 
         Optimize a simple quadratic function by using :class:`~optuna.integration.SkoptSampler`.
 
-        .. code::
+        .. testcode::
+
+                import optuna
 
                 def objective(trial):
                     x = trial.suggest_uniform('x', -10, 10)
@@ -46,7 +48,7 @@ class SkoptSampler(BaseSampler):
 
                 sampler = optuna.integration.SkoptSampler()
                 study = optuna.create_study(sampler=sampler)
-                study.optimize(objective, n_trials=100)
+                study.optimize(objective, n_trials=10)
 
     Args:
         independent_sampler:
@@ -70,6 +72,7 @@ class SkoptSampler(BaseSampler):
 
             Note that the parameters of the first trial in a study are always sampled
             via an independent sampler, so no warning messages are emitted in this case.
+
         skopt_kwargs:
             Keyword arguments passed to the constructor of
             `skopt.Optimizer <https://scikit-optimize.github.io/#skopt.Optimizer>`_
@@ -78,20 +81,29 @@ class SkoptSampler(BaseSampler):
             Note that ``dimensions`` argument in ``skopt_kwargs`` will be ignored
             because it is added by :class:`~optuna.integration.SkoptSampler` automatically.
 
+        n_startup_trials:
+            The independent sampling is used until the given number of trials finish in the
+            same study.
     """
 
-    def __init__(self, independent_sampler=None, warn_independent_sampling=True,
-                 skopt_kwargs=None):
-        # type: (Optional[BaseSampler], bool, Optional[Dict[str, Any]]) -> None
+    def __init__(
+        self,
+        independent_sampler=None,
+        warn_independent_sampling=True,
+        skopt_kwargs=None,
+        n_startup_trials=1,
+    ):
+        # type: (Optional[BaseSampler], bool, Optional[Dict[str, Any]], int) -> None
 
         _check_skopt_availability()
 
         self._skopt_kwargs = skopt_kwargs or {}
-        if 'dimensions' in self._skopt_kwargs:
-            del self._skopt_kwargs['dimensions']
+        if "dimensions" in self._skopt_kwargs:
+            del self._skopt_kwargs["dimensions"]
 
         self._independent_sampler = independent_sampler or samplers.RandomSampler()
         self._warn_independent_sampling = warn_independent_sampling
+        self._n_startup_trials = n_startup_trials
 
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
@@ -116,8 +128,12 @@ class SkoptSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
+        complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
+        if len(complete_trials) < self._n_startup_trials:
+            return {}
+
         optimizer = _Optimizer(search_space, self._skopt_kwargs)
-        optimizer.tell(study)
+        optimizer.tell(study, complete_trials)
         return optimizer.ask()
 
     def sample_independent(self, study, trial, param_name, param_distribution):
@@ -125,23 +141,27 @@ class SkoptSampler(BaseSampler):
 
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
-            if len(complete_trials) >= 1:
+            if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
-        return self._independent_sampler.sample_independent(study, trial, param_name,
-                                                            param_distribution)
+        return self._independent_sampler.sample_independent(
+            study, trial, param_name, param_distribution
+        )
 
     def _log_independent_sampling(self, trial, param_name):
         # type: (FrozenTrial, str) -> None
 
         logger = optuna.logging.get_logger(__name__)
-        logger.warning("The parameter '{}' in trial#{} is sampled independently "
-                       "by using `{}` instead of `SkoptSampler` "
-                       "(optimization performance may be degraded). "
-                       "You can suppress this warning by setting `warn_independent_sampling` "
-                       "to `False` in the constructor of `SkoptSampler`, "
-                       "if this independent sampling is intended behavior.".format(
-                           param_name, trial.number, self._independent_sampler.__class__.__name__))
+        logger.warning(
+            "The parameter '{}' in trial#{} is sampled independently "
+            "by using `{}` instead of `SkoptSampler` "
+            "(optimization performance may be degraded). "
+            "You can suppress this warning by setting `warn_independent_sampling` "
+            "to `False` in the constructor of `SkoptSampler`, "
+            "if this independent sampling is intended behavior.".format(
+                param_name, trial.number, self._independent_sampler.__class__.__name__
+            )
+        )
 
 
 class _Optimizer(object):
@@ -154,12 +174,12 @@ class _Optimizer(object):
         for name, distribution in sorted(self._search_space.items()):
             if isinstance(distribution, distributions.UniformDistribution):
                 # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
-                high = np.nextafter(distribution.high, float('-inf'))
+                high = np.nextafter(distribution.high, float("-inf"))
                 dimension = space.Real(distribution.low, high)
             elif isinstance(distribution, distributions.LogUniformDistribution):
                 # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
-                high = np.nextafter(distribution.high, float('-inf'))
-                dimension = space.Real(distribution.low, high, prior='log-uniform')
+                high = np.nextafter(distribution.high, float("-inf"))
+                dimension = space.Real(distribution.low, high, prior="log-uniform")
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 dimension = space.Integer(distribution.low, distribution.high)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
@@ -169,21 +189,20 @@ class _Optimizer(object):
                 dimension = space.Categorical(distribution.choices)
             else:
                 raise NotImplementedError(
-                    "The distribution {} is not implemented.".format(distribution))
+                    "The distribution {} is not implemented.".format(distribution)
+                )
 
             dimensions.append(dimension)
 
         self._optimizer = skopt.Optimizer(dimensions, **skopt_kwargs)
 
-    def tell(self, study):
-        # type: (Study) -> None
+    def tell(self, study, complete_trials):
+        # type: (Study, List[FrozenTrial]) -> None
 
         xs = []
         ys = []
-        for trial in study.trials:
-            if trial.state != structs.TrialState.COMPLETE:
-                continue
 
+        for trial in complete_trials:
             if not self._is_compatible(trial):
                 continue
 
@@ -253,7 +272,8 @@ def _check_skopt_availability():
 
     if not _available:
         raise ImportError(
-            'Scikit-Optimize is not available. Please install it to use this feature. '
-            'Scikit-Optimize can be installed by executing `$ pip install scikit-optimize`. '
-            'For further information, please refer to the installation guide of Scikit-Optimize. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "Scikit-Optimize is not available. Please install it to use this feature. "
+            "Scikit-Optimize can be installed by executing `$ pip install scikit-optimize`. "
+            "For further information, please refer to the installation guide of Scikit-Optimize. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )
