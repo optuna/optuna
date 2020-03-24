@@ -5,6 +5,7 @@ from unittest.mock import patch
 import optuna
 from optuna.integration.mlflow import MLflowCallback
 from tests.test_structs import _create_frozen_trial
+from tests.test_study import func
 
 
 def test_happy_case(tmpdir):
@@ -96,3 +97,34 @@ def test_log_metric_with_default_metric_name(log_metric, tmpdir):
     call_args = log_metric.call_args_list[0][0]
     assert call_args[0] == "trial_value"
     assert call_args[1] == 0.2
+
+
+@patch("mlflow.log_metric")
+@patch("mlflow.log_params")
+@patch("mlflow.set_tags")
+def test_end_to_end(set_tags, log_params, log_metric, tmpdir):
+    # type: (unittest.mock.MagicMock, unittest.mock.MagicMock, unittest.mock.MagicMock, py.path.local) -> None
+
+    db_file_name = "file:{}".format(tmpdir)
+
+    mlflc = MLflowCallback(tracking_uri=db_file_name)
+    study = optuna.create_study(study_name='my_study')
+    study.optimize(func, n_trials=10, callbacks=[mlflc])
+
+    assert set_tags.called
+    assert set_tags.call_count == 10
+    call_arg = set_tags.call_args_list[0][0][0]
+    assert call_arg["trial_state"] == "TrialState.COMPLETE"
+    assert call_arg["trial_number"] == "0"
+
+    assert log_params.called
+    assert log_params.call_count == 10
+    call_arg = log_params.call_args_list[0][0][0]
+    assert "x" in call_arg
+    assert "y" in call_arg
+    assert "z" in call_arg
+
+    assert log_metric.called
+    assert log_metric.call_count == 10
+    call_args = log_metric.call_args_list[0][0]
+    assert call_args[0] == "trial_value"
