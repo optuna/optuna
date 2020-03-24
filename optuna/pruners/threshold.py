@@ -7,7 +7,7 @@ from optuna.pruners import BasePruner
 from optuna.pruners.percentile import _is_first_in_interval_step
 
 
-def _check_value(value: Any) -> None:
+def _check_value(value: Any) -> float:
     try:
         # For convenience, we allow users to report a value that can be cast to `float`.
         value = float(value)
@@ -16,6 +16,8 @@ def _check_value(value: Any) -> None:
             type(value).__name__
         )
         raise TypeError(message)
+
+    return value
 
 
 class ThresholdPruner(BasePruner):
@@ -86,9 +88,9 @@ class ThresholdPruner(BasePruner):
         if lower is None and upper is None:
             raise TypeError("Either lower or upper must be specified.")
         if lower is not None:
-            _check_value(lower)
+            lower = _check_value(lower)
         if upper is not None:
-            _check_value(upper)
+            upper = _check_value(upper)
 
         lower = lower if lower is not None else -float("inf")
         upper = upper if upper is not None else float("inf")
