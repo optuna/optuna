@@ -1,5 +1,6 @@
 import py
 import unittest
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import optuna
@@ -23,7 +24,7 @@ def test_happy_case(tmpdir):
 
 @patch("mlflow.set_tags")
 def test_set_tags(set_tags, tmpdir):
-    # type: (unittest.mock.MagicMock, py.path.local) -> None
+    # type: (MagicMock, py.path.local) -> None
 
     tracking_file_name = "file:{}".format(tmpdir)
 
@@ -44,7 +45,7 @@ def test_set_tags(set_tags, tmpdir):
 
 @patch("mlflow.log_params")
 def test_log_params(log_params, tmpdir):
-    # type: (unittest.mock.MagicMock, py.path.local) -> None
+    # type: (MagicMock, py.path.local) -> None
 
     tracking_file_name = "file:{}".format(tmpdir)
 
@@ -63,7 +64,7 @@ def test_log_params(log_params, tmpdir):
 
 @patch("mlflow.log_metric")
 def test_log_metric_with_metric_name(log_metric, tmpdir):
-    # type: (unittest.mock.MagicMock, py.path.local) -> None
+    # type: (MagicMock, py.path.local) -> None
 
     tracking_file_name = "file:{}".format(tmpdir)
 
@@ -83,7 +84,7 @@ def test_log_metric_with_metric_name(log_metric, tmpdir):
 
 @patch("mlflow.log_metric")
 def test_log_metric_with_default_metric_name(log_metric, tmpdir):
-    # type: (unittest.mock.MagicMock, py.path.local) -> None
+    # type: (MagicMock, py.path.local) -> None
 
     tracking_file_name = "file:{}".format(tmpdir)
 
@@ -103,7 +104,7 @@ def test_log_metric_with_default_metric_name(log_metric, tmpdir):
 @patch("mlflow.log_params")
 @patch("mlflow.set_tags")
 def test_end_to_end(set_tags, log_params, log_metric, tmpdir):
-    # type: (unittest.mock.MagicMock, unittest.mock.MagicMock, unittest.mock.MagicMock, py.path.local) -> None
+    # type: (MagicMock, MagicMock, MagicMock, py.path.local) -> None
 
     tracking_file_name = "file:{}".format(tmpdir)
 
