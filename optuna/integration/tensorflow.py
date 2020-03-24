@@ -21,23 +21,10 @@ class TensorFlowPruningHook(SessionRunHook):
 
     Example:
 
-        Add a pruning SessionRunHook for a TensorFlow's Estimator.
+        See `the example <https://github.com/optuna/optuna/blob/30dba8814d332ff4
+        0d9c7465ee660a8ecf499547/examples/tensorflow_estimator_simple.py>`_
+        if you want to add a pruning SessionRunHook for TensorFlow's Estimator.
 
-        .. code::
-
-                pruning_hook = TensorFlowPruningHook(
-                    trial=trial,
-                    estimator=clf,
-                    metric="accuracy",
-                    is_higher_better=True,
-                    run_every_steps=10,
-                )
-                hooks = [pruning_hook]
-                tf.estimator.train_and_evaluate(
-                    clf,
-                    tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=500, hooks=hooks),
-                    eval_spec
-                )
     Args:
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of
