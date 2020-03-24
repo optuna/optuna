@@ -11,10 +11,10 @@ from tests.test_study import func
 def test_happy_case(tmpdir):
     # type: (py.path.local) -> None
 
-    db_file_name = "file:{}".format(tmpdir)
+    tracking_file_name = "file:{}".format(tmpdir)
 
     mlflc = MLflowCallback(
-        tracking_uri=db_file_name, metric_name="my_metric", experiment="my_experiment"
+        tracking_uri=tracking_file_name, metric_name="my_metric", experiment="my_experiment"
     )
     study = optuna.create_study()
     ft = _create_frozen_trial()
@@ -25,10 +25,10 @@ def test_happy_case(tmpdir):
 def test_set_tags(set_tags, tmpdir):
     # type: (unittest.mock.MagicMock, py.path.local) -> None
 
-    db_file_name = "file:{}".format(tmpdir)
+    tracking_file_name = "file:{}".format(tmpdir)
 
     mlflc = MLflowCallback(
-        tracking_uri=db_file_name, metric_name="my_metric", experiment="my_experiment"
+        tracking_uri=tracking_file_name, metric_name="my_metric", experiment="my_experiment"
     )
     study = optuna.create_study()
     ft = _create_frozen_trial()
@@ -46,10 +46,10 @@ def test_set_tags(set_tags, tmpdir):
 def test_log_params(log_params, tmpdir):
     # type: (unittest.mock.MagicMock, py.path.local) -> None
 
-    db_file_name = "file:{}".format(tmpdir)
+    tracking_file_name = "file:{}".format(tmpdir)
 
     mlflc = MLflowCallback(
-        tracking_uri=db_file_name, metric_name="my_metric", experiment="my_experiment"
+        tracking_uri=tracking_file_name, metric_name="my_metric", experiment="my_experiment"
     )
     study = optuna.create_study()
     ft = _create_frozen_trial()
@@ -65,10 +65,10 @@ def test_log_params(log_params, tmpdir):
 def test_log_metric_with_metric_name(log_metric, tmpdir):
     # type: (unittest.mock.MagicMock, py.path.local) -> None
 
-    db_file_name = "file:{}".format(tmpdir)
+    tracking_file_name = "file:{}".format(tmpdir)
 
     mlflc = MLflowCallback(
-        tracking_uri=db_file_name, metric_name="my_metric", experiment="my_experiment"
+        tracking_uri=tracking_file_name, metric_name="my_metric", experiment="my_experiment"
     )
     study = optuna.create_study()
     ft = _create_frozen_trial()
@@ -85,9 +85,9 @@ def test_log_metric_with_metric_name(log_metric, tmpdir):
 def test_log_metric_with_default_metric_name(log_metric, tmpdir):
     # type: (unittest.mock.MagicMock, py.path.local) -> None
 
-    db_file_name = "file:{}".format(tmpdir)
+    tracking_file_name = "file:{}".format(tmpdir)
 
-    mlflc = MLflowCallback(tracking_uri=db_file_name, experiment="my_experiment")
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, experiment="my_experiment")
     study = optuna.create_study()
     ft = _create_frozen_trial()
     mlflc(study, ft)
@@ -105,9 +105,9 @@ def test_log_metric_with_default_metric_name(log_metric, tmpdir):
 def test_end_to_end(set_tags, log_params, log_metric, tmpdir):
     # type: (unittest.mock.MagicMock, unittest.mock.MagicMock, unittest.mock.MagicMock, py.path.local) -> None
 
-    db_file_name = "file:{}".format(tmpdir)
+    tracking_file_name = "file:{}".format(tmpdir)
 
-    mlflc = MLflowCallback(tracking_uri=db_file_name)
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name)
     study = optuna.create_study(study_name='my_study')
     study.optimize(func, n_trials=10, callbacks=[mlflc])
 
