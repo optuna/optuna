@@ -30,7 +30,8 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     Note that this class is not supposed to be directly accessed by library users.
     """
 
-    def suggest_float(self, name, low, high, log):
+    @experimental("1.2.0")
+    def suggest_float(self, name, low, high, *, log=False):
         # type: (str, float, float, bool) -> float
 
         raise NotImplementedError
@@ -160,7 +161,7 @@ class Trial(BaseTrial):
         )
 
     @experimental("1.2.0")
-    def suggest_float(self, name, low, high, log=False):
+    def suggest_float(self, name, low, high, *, log=False):
         # type: (str, float, float, bool) -> float
         """Wrapper method for ``suggest_uniform`` and ``suggest_loguniform``.
 
@@ -943,7 +944,8 @@ class FixedTrial(BaseTrial):
         self._system_attrs = {}  # type: Dict[str, Any]
         self._datetime_start = datetime.now()
 
-    def suggest_float(self, name, low, high, log=False):
+    @experimental("1.2.0")
+    def suggest_float(self, name, low, high, *, log=False):
         # type: (str, float, float, bool) -> float
 
         if log:
