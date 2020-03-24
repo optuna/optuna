@@ -108,7 +108,7 @@ def test_end_to_end(set_tags, log_params, log_metric, tmpdir):
     tracking_file_name = "file:{}".format(tmpdir)
 
     mlflc = MLflowCallback(tracking_uri=tracking_file_name)
-    study = optuna.create_study(study_name='my_study')
+    study = optuna.create_study(study_name="my_study")
     study.optimize(func, n_trials=10, callbacks=[mlflc])
 
     assert set_tags.called
