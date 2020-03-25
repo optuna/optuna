@@ -172,8 +172,8 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import numpy as np
-                from sklearn.neural_network import MLPClassifier
                 from sklearn.datasets import load_iris
+                from sklearn.neural_network import MLPClassifier
                 from sklearn.model_selection import train_test_split
 
                 import optuna
@@ -230,8 +230,8 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import numpy as np
-                from sklearn.svm import SVC
                 from sklearn.datasets import load_iris
+                from sklearn.svm import SVC
                 from sklearn.model_selection import train_test_split
 
                 import optuna
