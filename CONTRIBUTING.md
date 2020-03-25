@@ -56,7 +56,7 @@ To just check the file you can use
 You can also apply these operations to all files by replacing
 `<filename_with_path>` with a simple `.`.
 
-## Unit tests
+## Unit Tests
 
 When adding a new feature or fixing a bug, you also need to write sufficient test code.
 We use [pytest](https://pytest.org/) as the testing framework and
