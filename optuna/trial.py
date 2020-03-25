@@ -161,12 +161,11 @@ class Trial(BaseTrial):
             Suggest a momentum for neural network training.
 
             .. testcode::
+
                 import optuna
-
                 import numpy as np
-
-                from sklearn.neural_network import MLPClassifier
                 from sklearn.datasets import load_iris
+                from sklearn.neural_network import MLPClassifier
                 from sklearn.model_selection import train_test_split
 
                 X, y = load_iris(return_X_y=True)
@@ -222,11 +221,9 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import optuna
-
                 import numpy as np
-
-                from sklearn.svm import SVC
                 from sklearn.datasets import load_iris
+                from sklearn.svm import SVC
                 from sklearn.model_selection import train_test_split
 
                 X, y = load_iris(return_X_y=True)
@@ -286,9 +283,7 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import optuna
-
                 import numpy as np
-
                 from sklearn.ensemble import GradientBoostingClassifier
                 from sklearn.datasets import load_iris
                 from sklearn.model_selection import train_test_split
@@ -344,9 +339,7 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import optuna
-
                 import numpy as np
-
                 from sklearn.ensemble import RandomForestClassifier
                 from sklearn.datasets import load_iris
                 from sklearn.model_selection import train_test_split
@@ -400,9 +393,7 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import optuna
-
                 import numpy as np
-
                 from sklearn.svm import SVC
                 from sklearn.datasets import load_iris
                 from sklearn.model_selection import train_test_split
@@ -464,9 +455,7 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import optuna
-
                 import numpy as np
-
                 from sklearn.linear_model import SGDClassifier
                 from sklearn.datasets import load_iris
                 from sklearn.model_selection import train_test_split
@@ -560,12 +549,10 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import optuna
-
                 import numpy as np
-
-                from sklearn.neural_network import MLPClassifier
                 from sklearn.datasets import load_iris
                 from sklearn.model_selection import train_test_split
+                from sklearn.neural_network import MLPClassifier
 
                 X, y = load_iris(return_X_y=True)
                 X_train, X_test, y_train, y_test = train_test_split(X, y)
