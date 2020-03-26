@@ -6,6 +6,7 @@ API Reference
 
     distributions
     exceptions
+    importance
     integration
     logging
     pruners
