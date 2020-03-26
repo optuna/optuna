@@ -127,6 +127,8 @@ def _check_evaluate_args(study: Study, params: Optional[List[str]]) -> None:
     completed_trials = list(filter(lambda t: t.state == TrialState.COMPLETE, study.trials))
     if len(completed_trials) == 0:
         raise ValueError("Cannot evaluate parameter importances without completed trials.")
+    if len(completed_trials) == 1:
+        raise ValueError("Cannot evaluate parameter importances with only a single trial.")
 
     if params is not None:
         if not isinstance(params, (list, tuple)):

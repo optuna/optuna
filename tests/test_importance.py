@@ -101,6 +101,18 @@ def test_get_param_importances_invalid_empty_study() -> None:
         get_param_importances(study, evaluator=FanovaImportanceEvaluator())
 
 
+def test_get_param_importances_invalid_single_trial() -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_uniform("x1", 0.1, 3)
+        return x1 ** 2
+
+    study = create_study()
+    study.optimize(objective, n_trials=1)
+
+    with pytest.raises(ValueError):
+        get_param_importances(study, evaluator=FanovaImportanceEvaluator())
+
+
 def test_get_param_importances_invalid_evaluator_type() -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_uniform("x1", 0.1, 3)
