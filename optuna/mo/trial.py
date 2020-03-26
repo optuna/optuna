@@ -89,7 +89,7 @@ class MoTrial(object):
 
     @property
     def _values(self) -> List[Optional[float]]:
-        trial = self._trial.study.storage.get_trial(self._trial.trial_id)
+        trial = self._trial.study._storage.get_trial(self._trial._trial_id)
         return [trial.intermediate_values.get(i) for i in range(self._n_objectives)]
 
 
@@ -149,6 +149,23 @@ class FrozenMoTrial(object):
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
         return self._trial.distributions
+
+    def _dominates(self, other: "mo.trial.FrozenMoTrial") -> bool:
+        if self.state != TrialState.COMPLETE:
+            return False
+
+        if other.state != TrialState.COMPLETE:
+            return True
+
+        values0 = self.values
+        values1 = other.values
+        if len(values0) != len(values1):
+            raise ValueError("Trials with different numbers of objectives cannot be compared.")
+
+        if values0 == values1:
+            return False
+
+        return all([v0 <= v1 for v0, v1 in zip(values0, values1)])
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, FrozenMoTrial):

@@ -14,6 +14,7 @@ from optuna import mo
 from optuna import logging
 from optuna.storages import BaseStorage
 from optuna.structs import StudyDirection
+from optuna.structs import TrialState
 from optuna.study import Study
 from optuna.trial import Trial
 
@@ -151,19 +152,32 @@ class MoStudy(object):
     def get_trials(self, deepcopy: bool = True) -> List["mo.trial.FrozenMoTrial"]:
         return [
             mo.trial.FrozenMoTrial(self.n_objectives, t)
-            for t in self._study.get_trial(deepcopy=deepcopy)
+            for t in self._study.get_trials(deepcopy=deepcopy)
         ]
 
     @property
     def pareto_front_trials(self) -> List["mo.trial.FrozenMoTrial"]:
-        raise NotImplemented
+        pareto_front = []
+        trials = [t for t in self.trials if t.state == TrialState.COMPLETE]
+
+        # TODO(ohta): Optimize (use the fast non dominated sort defined in the NSGA-II paper).
+        for trial in trials:
+            dominated = False
+            for other in trials:
+                if other._dominates(trial):
+                    dominated = True
+                    break
+
+            if not dominated:
+                pareto_front.append(trial)
+
+        return pareto_front
 
 
-def _log_completed_trial(study: Study, trial: Trial, result: float) -> None:
+def _log_completed_trial(trial: Trial, result: float) -> None:
     values = mo.trial.MoTrial(trial)._values
     _logger.info(
-        "Finished trial#{} with values: {} with parameters: {}.",
-        trial.number,
-        values,
-        trial.params,
+        "Finished trial#{} with values: {} with parameters: {}.".format(
+            trial.number, values, trial.params,
+        )
     )
