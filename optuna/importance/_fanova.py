@@ -10,9 +10,9 @@ from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+from optuna.importance._base import _get_distributions
+from optuna.importance._base import _get_study_data
 from optuna.importance._base import BaseImportanceEvaluator
-from optuna.importance._base import get_distributions
-from optuna.importance._base import get_study_data
 from optuna.study import Study
 
 try:
@@ -51,8 +51,8 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         _check_fanova_availability()
 
     def evaluate(self, study: Study, params: Optional[List[str]]) -> Dict[str, float]:
-        distributions = get_distributions(study, params)
-        params_data, values_data = get_study_data(study, distributions)
+        distributions = _get_distributions(study, params)
+        params_data, values_data = _get_study_data(study, distributions)
 
         evaluator = fANOVA(
             X=params_data,

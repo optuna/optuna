@@ -49,7 +49,7 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-def get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
+def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
     _check_evaluate_args(study, params)
 
     if params is None:
@@ -94,7 +94,7 @@ def get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, Ba
     return distributions
 
 
-def get_study_data(
+def _get_study_data(
     study: Study, distributions: Dict[str, BaseDistribution]
 ) -> Tuple[np.ndarray, np.ndarray]:
     trials = []
