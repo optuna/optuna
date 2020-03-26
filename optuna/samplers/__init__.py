@@ -23,7 +23,14 @@ def intersection_search_space(study, ordered_dict=False):
     neither is included in the resulting search space
     (i.e., the parameters with dynamic value ranges are excluded).
 
-    TODO(hvy): Document arguments.
+    Args:
+        study:
+            A study with completed trials.
+        ordered_dict:
+            A boolean flag determining the return type.
+            If :obj:`False`, the returned object will be a :obj:`dict`.
+            If :obj:`True`, the returned object will be an :obj:`collections.OrderedDict` sorted by
+            keys, i.e. parameter names.
 
     Returns:
         A dictionary containing the parameter names and parameter's distributions.
