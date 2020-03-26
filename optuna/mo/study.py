@@ -31,7 +31,7 @@ def create_mo_study(
     load_if_exists: bool = False,
 ):
     # TODO(ohta): Support pruner.
-    mo_sampler = sampler or mo.samplers.RandomSampler()
+    mo_sampler = sampler or mo.samplers.RandomMoSampler()
     sampler = mo.samplers._MoSamplerAdapter(mo_sampler)
 
     if directions is None:
@@ -67,7 +67,7 @@ def load_mo_study(
 
 @experimental("1.14.0")
 class MoStudy(object):
-    def __init__(study: Study):
+    def __init__(self, study: Study):
         self._study = study
         self._n_objectives = study.system_attrs["mo.study.n_objectives"]
 
@@ -112,7 +112,7 @@ class MoStudy(object):
             return 0.0  # Dummy value.
 
         self._study.optimize(
-            objective=mo_objective,
+            mo_objective,
             timeout=timeout,
             n_trials=n_trials,
             n_jobs=n_jobs,

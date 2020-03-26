@@ -1,12 +1,15 @@
+from typing import Any
+from typing import Dict
 from typing import Optional
 
 import optuna
+from optuna.distributions import BaseDistribution
 from optuna import mo
 from optuna.mo.samplers import BaseMoSampler
 
 
-class RandomSampler(BaseMoSampler):
-    def __init__(self, seed: Optional[int]) -> None:
+class RandomMoSampler(BaseMoSampler):
+    def __init__(self, seed: Optional[int] = None) -> None:
         self._sampler = optuna.samplers.RandomSampler(seed=seed)
 
     def infer_relative_search_space(
@@ -15,7 +18,6 @@ class RandomSampler(BaseMoSampler):
         # TODO(ohta): Convert `study` and `trial` to single objective versions before passing.
         return self._sampler.infer_relative_search_space(study, trial)
 
-    @abc.abstractmethod
     def sample_relative(
         self,
         study: "mo.study.MoStudy",
@@ -25,7 +27,6 @@ class RandomSampler(BaseMoSampler):
         # TODO(ohta): Convert `study` and `trial` to single objective versions before passing.
         return self._sampler.sample_relative(study, trial, search_space)
 
-    @abc.abstractmethod
     def sample_independent(
         self,
         study: "mo.study.MoStudy",
