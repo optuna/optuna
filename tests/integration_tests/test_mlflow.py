@@ -1,11 +1,41 @@
+import datetime
 import py
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import optuna
+from optuna.distributions import UniformDistribution
 from optuna.integration.mlflow import MLflowCallback
-from tests.test_structs import _create_frozen_trial
-from tests.test_study import func
+from optuna.structs import FrozenTrial
+from optuna.structs import TrialState
+
+
+def _create_frozen_trial():
+    # type: () -> FrozenTrial
+
+    return FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 10},
+        distributions={"x": UniformDistribution(5, 12)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+
+
+def _objective_func(trial, x_max=1.0):
+    # type: (optuna.trial.Trial, float) -> float
+
+    x = trial.suggest_uniform("x", -x_max, x_max)
+    y = trial.suggest_loguniform("y", 20, 30)
+    z = trial.suggest_categorical("z", (-1.0, 1.0))
+    assert isinstance(z, float)
+    return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
 def test_happy_case(tmpdir):
@@ -109,7 +139,7 @@ def test_end_to_end(set_tags, log_params, log_metric, tmpdir):
 
     mlflc = MLflowCallback(tracking_uri=tracking_file_name)
     study = optuna.create_study(study_name="my_study")
-    study.optimize(func, n_trials=10, callbacks=[mlflc])
+    study.optimize(_objective_func, n_trials=10, callbacks=[mlflc])
 
     assert set_tags.called
     assert set_tags.call_count == 10
