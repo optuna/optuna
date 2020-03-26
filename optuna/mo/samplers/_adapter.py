@@ -14,14 +14,14 @@ class _MoSamplerAdapter(BaseSampler):
 
     def infer_relative_search_space(self, study: Study, trial: FrozenTrial):
         mo_study = mo.study.MoStudy(study)
-        mo_trial = mo.trial.FrozenMoTrial(study, trial)
+        mo_trial = mo.trial.FrozenMoTrial(mo_study.n_objectives, trial)
         return self._mo_sampler.infer_relative_search_space(mo_study, mo_trial)
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         mo_study = mo.study.MoStudy(study)
-        mo_trial = mo.trial.FrozenMoTrial(study, trial)
+        mo_trial = mo.trial.FrozenMoTrial(mo_study.n_objectives, trial)
         return self._mo_sampler.sample_relative(mo_study, mo_trial, search_space)
 
     def sample_independent(
@@ -32,7 +32,7 @@ class _MoSamplerAdapter(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
         mo_study = mo.study.MoStudy(study)
-        mo_trial = mo.trial.FrozenMoTrial(study, trial)
+        mo_trial = mo.trial.FrozenMoTrial(mo_study.n_objectives, trial)
         return self._mo_sampler.sample_independent(
             mo_study, mo_trial, param_name, param_distribution
         )

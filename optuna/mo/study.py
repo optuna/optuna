@@ -11,6 +11,7 @@ from typing import Union
 import optuna
 from optuna._experimental import experimental
 from optuna import mo
+from optuna import logging
 from optuna.storages import BaseStorage
 from optuna.structs import StudyDirection
 from optuna.study import Study
@@ -19,6 +20,8 @@ from optuna.trial import Trial
 
 ObjectiveFuncType = Callable[["mo.trial.MoTrial"], List[float]]
 CallbackFuncType = Callable[["mo.study.MoStudy", "mo.trial.FrozenMoTrial"], None]
+
+_logger = logging.get_logger(__name__)
 
 
 @experimental("1.14.0")
@@ -86,6 +89,8 @@ class MoStudy(object):
         if self._n_objectives != len(self._directions):
             raise ValueError("Objective and direction numbers don't match.")
 
+        self._study._log_completed_trial = _log_completed_trial
+
     @property
     def n_objectives(self) -> int:
         return self._n_objectives
@@ -108,7 +113,7 @@ class MoStudy(object):
         def mo_objective(trial: Trial) -> float:
             mo_trial = mo.trial.MoTrial(trial)
             values = objective(mo_trial)
-            mo_trial._report_values(values)
+            mo_trial._report_complete_values(values)
             return 0.0  # Dummy value.
 
         self._study.optimize(
@@ -144,8 +149,21 @@ class MoStudy(object):
         return self.get_trials()
 
     def get_trials(self, deepcopy: bool = True) -> List["mo.trial.FrozenMoTrial"]:
-        return [mo.trial.FrozenMoTrial(t) for t in self._study.get_trial(deepcopy=deepcopy)]
+        return [
+            mo.trial.FrozenMoTrial(self.n_objectives, t)
+            for t in self._study.get_trial(deepcopy=deepcopy)
+        ]
 
     @property
     def pareto_front_trials(self) -> List["mo.trial.FrozenMoTrial"]:
         raise NotImplemented
+
+
+def _log_completed_trial(study: Study, trial: Trial, result: float) -> None:
+    values = mo.trial.MoTrial(trial)._values
+    _logger.info(
+        "Finished trial#{} with values: {} with parameters: {}.",
+        trial.number,
+        values,
+        trial.params,
+    )
