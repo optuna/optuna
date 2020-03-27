@@ -27,7 +27,7 @@ _logger = logging.get_logger(__name__)
 
 @experimental("1.14.0")
 def create_mo_study(
-    n_objectives: int,
+    n_objectives: int,  # TODO(ohta): Consider removing this arg and make `directions` a positional arg instead.
     study_name: Optional[str] = None,
     storage: Union[None, str, BaseStorage] = None,
     sampler: Optional["mo.samplers.BaseMoSampler"] = None,
