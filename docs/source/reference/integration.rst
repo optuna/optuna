@@ -28,10 +28,6 @@ Integration
 
 .. autofunction:: optuna.integration.lightgbm.train
 
-.. autoclass:: optuna.integration.lightgbm.LightGBMTuner
-    :members:
-    :exclude-members: sample_train_set
-
 .. autoclass:: MXNetPruningCallback
     :members:
 
