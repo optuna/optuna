@@ -320,8 +320,8 @@ class LightGBMTuner(BaseTuner):
         study:
             A :class:`~optuna.study.Study` instance to store optimization results. The
             :class:`~optuna.trial.Trial` instances in it has the following user attributes:
-            ``elapsed_secs`` shows the elapsed time since the optimization starts.
-            ``average_iteration_time`` shows the average time of iteration to train the booster
+            ``elapsed_secs`` is the elapsed time since the optimization starts.
+            ``average_iteration_time`` is the average time of iteration to train the booster
             model in the trial.
     """
 
