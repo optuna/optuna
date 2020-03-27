@@ -41,6 +41,9 @@ def create_mo_study(
     if directions is None:
         directions = ["minimize" for _ in range(n_objectives)]
 
+    if n_objectives != len(directions):
+        raise ValueError("Objective and direction numbers don't match.")
+
     study = optuna.create_study(
         study_name=study_name,
         storage=storage,
@@ -49,7 +52,6 @@ def create_mo_study(
         load_if_exists=load_if_exists,
     )
 
-    study.set_system_attr("mo.study.n_objectives", n_objectives)
     study.set_system_attr("mo.study.directions", directions)
 
     return MoStudy(study)
@@ -73,7 +75,6 @@ def load_mo_study(
 class MoStudy(object):
     def __init__(self, study: Study):
         self._study = study
-        self._n_objectives = study.system_attrs["mo.study.n_objectives"]
 
         self._directions = []
         for d in study.system_attrs["mo.study.directions"]:
@@ -83,12 +84,10 @@ class MoStudy(object):
                 self._directions.append(StudyDirection.MAXIMIZE)
             else:
                 raise ValueError("Unknown direction ({}) is specified.".format(d))
+        self._n_objectives = len(self._directions)
 
         if self._n_objectives < 1:
             raise ValueError("The number of objectives must be greater than 0.")
-
-        if self._n_objectives != len(self._directions):
-            raise ValueError("Objective and direction numbers don't match.")
 
         self._study._log_completed_trial = _log_completed_trial
 
@@ -164,7 +163,7 @@ class MoStudy(object):
         for trial in trials:
             dominated = False
             for other in trials:
-                if other._dominates(trial):
+                if other._dominates(trial, self.directions):
                     dominated = True
                     break
 

@@ -9,6 +9,7 @@ from typing import Union
 from optuna.distributions import BaseDistribution
 from optuna import mo
 from optuna.structs import FrozenTrial
+from optuna.structs import StudyDirection
 from optuna.structs import TrialState
 from optuna.trial import Trial
 
@@ -87,6 +88,9 @@ class MoTrial(object):
     def datetime_start(self) -> Optional[datetime]:
         return self._trial.datetime_start
 
+    # TODO(ohta): Add `to_single_objective` method.
+    # This method would be helpful to use the existing pruning integrations for multi-objective optimization.
+
     @property
     def _values(self) -> List[Optional[float]]:
         trial = self._trial.study._storage.get_trial(self._trial._trial_id)
@@ -150,17 +154,29 @@ class FrozenMoTrial(object):
     def distributions(self) -> Dict[str, BaseDistribution]:
         return self._trial.distributions
 
-    def _dominates(self, other: "mo.trial.FrozenMoTrial") -> bool:
+    def _dominates(
+        self, other: "mo.trial.FrozenMoTrial", directions: List[StudyDirection]
+    ) -> bool:
+        if len(self.values) != len(other.values):
+            raise ValueError("Trials with different numbers of objectives cannot be compared.")
+
+        if len(self.values) != len(directions):
+            raise ValueError(
+                "The number of the values and the number of the objectives are mismatched."
+            )
+
+        values0 = [
+            v if d == StudyDirection.MINIMIZE else -v for v, d in zip(self.values, directions)
+        ]
+        values1 = [
+            v if d == StudyDirection.MINIMIZE else -v for v, d in zip(other.values, directions)
+        ]
+
         if self.state != TrialState.COMPLETE:
             return False
 
         if other.state != TrialState.COMPLETE:
             return True
-
-        values0 = self.values
-        values1 = other.values
-        if len(values0) != len(values1):
-            raise ValueError("Trials with different numbers of objectives cannot be compared.")
 
         if values0 == values1:
             return False
