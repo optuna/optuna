@@ -27,9 +27,6 @@ def train(*args: Any, **kwargs: Any) -> Any:
     It tunes important hyperparameters (e.g., `min_child_samples` and `feature_fraction`) in a
     stepwise manner. Arguments and keyword arguments for `lightgbm.train()
     <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
-
-    Note that this method also has inherent arguments. For instance, the ``study`` argument can
-    be used to access optimization results via a :class:`~optuna.study.Study` instance.
     """
     _check_lightgbm_availability()
 
