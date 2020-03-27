@@ -54,6 +54,10 @@ class TrialPruned(OptunaError):
     pass
 
 
+class TrialStopOpt(OptunaError):
+    pass
+
+
 class CLIUsageError(OptunaError):
     """Exception for CLI.
 

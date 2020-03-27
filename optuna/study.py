@@ -174,6 +174,7 @@ class Study(BaseStudy):
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
 
+        self._stop_opt = 0
         self._optimize_lock = threading.Lock()
         self._stop_flag = False
 
@@ -236,6 +237,11 @@ class Study(BaseStudy):
         """
 
         return copy.deepcopy(self._storage.get_study_system_attrs(self._study_id))
+
+    def set_stop_opt(self):
+        # type: () -> None
+
+        self._stop_opt = 1
 
     def optimize(
         self,
@@ -795,8 +801,17 @@ class Study(BaseStudy):
         trial = trial_module.Trial(self, trial_id)
         trial_number = trial.number
 
+        if self._stop_opt == 1:
+            trial._stop_opt = 1
+
         try:
             result = func(trial)
+        except exceptions.TrialStopOpt as e:
+            message = "Setting status of trial#{} as {}. {}".format(
+                trial_number, structs.TrialState.STOPPED, str(e)
+            )
+            _logger.info(message)
+            return trial
         except exceptions.TrialPruned as e:
             message = "Trial {} pruned. {}".format(trial_number, str(e))
             _logger.info(message)
@@ -1098,16 +1113,28 @@ def _check_param(
 
 
 def import_study(
-        study,  # type: Study
-        new_objective,  # type: ObjectiveFuncType
-        add_default_values,  # type: Dict[str, Any]
+    study,  # type: Study
+    new_objective,  # type: ObjectiveFuncType
+    add_default_values,  # type: Dict[str, Any]
 ):
     # type: (...) -> Study
-    tmp_study = create_study()
-    tmp_study.optimize(new_objective, n_trials=1, n_jobs=1)
-    new_distributions = tmp_study.trials[0].distributions
-    new_params = {}
+    dummy_study = create_study()
+    dummy_study.set_stop_opt()
+    dummy_study.optimize(new_objective, n_trials=1, n_jobs=1)
+    old_params = study.trials[0].params
+    new_params = dummy_study.trials[0].params
+    new_distributions = dummy_study.trials[0].distributions
     modify_distributions = new_distributions.copy()
+
+    diff_params1 = set(old_params.keys()) - set(new_params.keys())
+    if len(diff_params1) != 0:
+        raise ValueError("Parameter {} is disappered".format(diff_params1))
+
+    diff_params2 = set(new_params.keys()) - set(old_params.keys()) - set(add_default_values.keys())
+
+    if len(diff_params2) != 0:
+        raise ValueError("add parameter {} is not defined default value ".format(diff_params2))
+
     for variable_name, default_value in add_default_values.items():
         new_params[variable_name] = default_value
         modify_distributions.pop(variable_name)
@@ -1122,50 +1149,10 @@ def import_study(
             params=new_params,
             distributions=new_distributions,
             user_attrs=trial.user_attrs,
-            system_attrs=trial.system_attrs
+            system_attrs=trial.system_attrs,
         )
-    for trial in tmp_study.trials:
-        new_study._append_trial(
-            value=trial.value,
-            params=new_params,
-            distributions=new_distributions,
-            user_attrs=trial.user_attrs,
-            system_attrs=trial.system_attrs
-        )
-    return new_study
-
-
-def import_study_new_trial(
-        study,  # type: Study
-        new_trial,  # type: Dict[str, Any]
-):
-    # type: (...) -> Study
-    new_distributions = {}
-    new_params = {}
-    modify_distributions = {}
-
-    for param_name, distribution in new_trial.items():
-        if isinstance(distribution, list):
-            new_distributions[param_name] = distribution[0]
-            new_params[param_name] = distribution[1]
-        else:
-            new_distributions[param_name] = distribution
-            modify_distributions[param_name] = distribution
-
-    new_study = create_study()
-
-    for trial in study.trials:
-        if _check_param(trial.params, modify_distributions) is False:
-            continue
-        trial.params.update(new_params)
-        trial.distributions.update(new_distributions)
-        new_study._append_trial(
-            value=trial.value,
-            params=trial.params,
-            distributions=trial.distributions,
-            user_attrs=trial.user_attrs,
-            system_attrs=trial.system_attrs
-        )
+    message = "Import {} trials".format(len(new_study.trials))
+    _logger.info(message)
     return new_study
 
 

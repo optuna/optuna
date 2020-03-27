@@ -9,6 +9,7 @@ import warnings
 
 import optuna
 from optuna import distributions
+from optuna import exceptions
 from optuna import logging
 from optuna import pruners
 from optuna.distributions import BaseDistribution
@@ -54,6 +55,7 @@ class Trial(BaseTrial):
         self.storage = self.study._storage
 
         self._init_relative_params()
+        self._stop_opt = 0
 
     def _init_relative_params(self) -> None:
 
@@ -668,6 +670,11 @@ class Trial(BaseTrial):
         """
 
         self.storage.set_trial_system_attr(self._trial_id, key, value)
+
+    def set_suggest_end(self):
+        # type: () -> None
+        if self._stop_opt == 1:
+            raise exceptions.TrialStopOpt()
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
 
