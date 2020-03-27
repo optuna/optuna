@@ -66,7 +66,7 @@ def load_mo_study(
     mo_sampler = sampler or mo.samplers.RandomSampler()
     sampler = mo.samplers._MoSamplerAdapter(mo_sampler)
 
-    study = optuna.create_study(study_name=study_name, storage=storage, sampler=sampler)
+    study = optuna.load_study(study_name=study_name, storage=storage, sampler=sampler)
 
     return MoStudy(study)
 
