@@ -124,5 +124,5 @@ if __name__ == "__main__":
 
     for trial in trials:
         print("  Trial#{}".format(trial.number))
-        print("    Values: {}".format(trial.values))
+        print("    Values: FLOPS={}, accuracy={}".format(trial.values[0], trial.values[1]))
         print("    Params: {}".format(trial.params))
