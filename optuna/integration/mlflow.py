@@ -84,7 +84,7 @@ class MLflowCallback(object):
               ``databricks://<profileName>``.
         experiment:
             Name of MLflow experiment to be activated. If not set ``study.study_name``
-            will be taken. If ``study.study_name`` is not set the MLflow default will be used.
+            will be taken. Either ``experiment`` or ``study.study_name`` must be set.
         metric_name:
             Name of the metric. If not provided this will be called ``trial_value``.
     """
@@ -113,6 +113,8 @@ class MLflowCallback(object):
             and study.study_name != "no-name-00000000-0000-0000-0000-000000000000"
         ):
             mlflow.set_experiment(study.study_name)
+        else:
+            raise ValueError("Either 'experiment' or 'study.study_name' must be set!")
 
         with mlflow.start_run(run_name=trial.number):
 
@@ -132,6 +134,8 @@ class MLflowCallback(object):
             tags["trial_state"] = str(trial.state)
             tags["study_direction"] = str(study.direction)
             tags.update(trial.user_attrs)
-            distributions = {k: str(v) for (k, v) in trial.distributions.items()}
+            distributions = {
+                (k + "_distribution"): str(v) for (k, v) in trial.distributions.items()
+            }
             tags.update(distributions)
             mlflow.set_tags(tags)
