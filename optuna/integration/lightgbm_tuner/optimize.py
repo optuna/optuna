@@ -282,6 +282,8 @@ class OptunaObjective(BaseTuner):
 
         self.report.append(
             dict(
+                # Since v1.2.0, action was concatenation of parameter names. Currently, it is
+                # explicitly given to distinguish steps which tune the same parameters.
                 action=self.step_name,
                 trial=self.trial_count,
                 value=str(trial.params),
@@ -301,7 +303,27 @@ class OptunaObjective(BaseTuner):
 
 
 class LightGBMTuner(BaseTuner):
-    """Hyperparameter-tuning with Optuna for LightGBM."""
+    """Hyperparameter-tuning with Optuna for LightGBM.
+
+    Arguments and keyword arguments for `lightgbm.train()
+    <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
+    The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTuner` has are listed
+    below:
+
+    Args:
+        time_budget:
+            A time budget for parameter tuning in seconds.
+        best_params:
+            A dictionary to store the best parameters.
+        tuning_history:
+            A List to store the history of parameter tuning.
+        study:
+            A :class:`~optuna.study.Study` instance to store optimization results. The
+            :class:`~optuna.trial.Trial` instances in it has the following user attributes:
+            ``elapsed_secs`` shows the elapsed time since the optimization starts.
+            ``average_iteration_time`` shows the average time of iteration to train the booster
+            model in the trial.
+    """
 
     def __init__(
         self,
@@ -327,6 +349,8 @@ class LightGBMTuner(BaseTuner):
         study=None,  # type: Optional[Study]
         verbosity=1,  # type: Optional[int]
     ):
+        # type: (...) -> None
+
         params = copy.deepcopy(params)
 
         # Handling alias metrics.
@@ -423,8 +447,8 @@ class LightGBMTuner(BaseTuner):
 
         Returns:
 
-            booster : Booster
-                The trained Booster model.
+            lightgbm.Booster : Booster
+                The trained booster model.
         """
         # Surpress log messages.
         if self.auto_options["verbosity"] == 0:
