@@ -1121,29 +1121,28 @@ def import_study(
     dummy_study = create_study()
     dummy_study.set_stop_opt()
     dummy_study.optimize(new_objective, n_trials=1, n_jobs=1)
+
     old_params = study.trials[0].params
     new_params = dummy_study.trials[0].params
     new_distributions = dummy_study.trials[0].distributions
-    modify_distributions = new_distributions.copy()
 
     diff_params1 = set(old_params.keys()) - set(new_params.keys())
     if len(diff_params1) != 0:
-        raise ValueError("Parameter {} is disappered".format(diff_params1))
+        raise ValueError("Parameter {} is disappered in new objective".format(diff_params1))
 
     diff_params2 = set(new_params.keys()) - set(old_params.keys()) - set(add_default_values.keys())
-
     if len(diff_params2) != 0:
-        raise ValueError("add parameter {} is not defined default value ".format(diff_params2))
+        raise ValueError(
+            "Parameter {} added in new objective is not defined default value".format(diff_params2)
+        )
 
-    for variable_name, default_value in add_default_values.items():
-        new_params[variable_name] = default_value
-        modify_distributions.pop(variable_name)
-
+    modify_distributions = {param: new_distributions[param] for param in old_params.keys()}
     new_study = create_study()
     for trial in study.trials:
         if _check_param(trial.params, modify_distributions) is False:
             continue
-        new_params.update(trial.params)
+        new_params = trial.params.copy()
+        new_params.update(add_default_values)
         new_study._append_trial(
             value=trial.value,
             params=new_params,
