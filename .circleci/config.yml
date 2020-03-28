@@ -59,6 +59,12 @@ jobs:
             . venv/bin/activate
             mypy .
 
+      - run:
+          name: darglint
+          command: |
+            . venv/bin/activate
+            darglint optuna
+
   document:
     docker:
       - image: readthedocs/build:latest
