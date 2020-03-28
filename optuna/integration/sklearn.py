@@ -43,31 +43,29 @@ from optuna import study as study_module  # NOQA
 from optuna import trial as trial_module  # NOQA
 from optuna import type_checking  # NOQA
 
-if type_checking.TYPE_CHECKING:
-    import pandas as pd  # NOQA
-    from scipy.sparse import spmatrix  # NOQA
-    from typing import Any  # NOQA
-    from typing import Callable  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Iterable  # NOQA
-    from typing import List  # NOQA
-    from typing import Mapping  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Union  # NOQA
+# if type_checking.TYPE_CHECKING:
+import pandas as pd  # NOQA
+from scipy.sparse import spmatrix  # NOQA
+from typing import Any  # NOQA
+from typing import Callable  # NOQA
+from typing import Dict  # NOQA
+from typing import Iterable  # NOQA
+from typing import List  # NOQA
+from typing import Mapping  # NOQA
+from typing import Optional  # NOQA
+from typing import Union  # NOQA
 
-    ArrayLikeType = Union[List, np.ndarray, pd.Series, spmatrix]
-    OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
-    TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
-    IterableType = Union[List, pd.DataFrame, np.ndarray, pd.Series, spmatrix, None]
-    IndexableType = Union[Iterable, None]
+ArrayLikeType = Union[List, np.ndarray, pd.Series, spmatrix]
+OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
+TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
+IterableType = Union[List, pd.DataFrame, np.ndarray, pd.Series, spmatrix, None]
+IndexableType = Union[Iterable, None]
 
 _logger = logging.get_logger(__name__)
 
 
 def _check_fit_params(
-    X: TwoDimArrayLikeType,
-    fit_params: Dict,
-    indices: OneDimArrayLikeType,
+    X: TwoDimArrayLikeType, fit_params: Dict, indices: OneDimArrayLikeType,
 ) -> Dict:
 
     fit_params_validated = {}
@@ -139,8 +137,7 @@ def _num_samples(x: ArrayLikeType) -> int:
 
 
 def _safe_indexing(
-    X: Union[OneDimArrayLikeType, TwoDimArrayLikeType],
-    indices: OneDimArrayLikeType,
+    X: Union[OneDimArrayLikeType, TwoDimArrayLikeType], indices: OneDimArrayLikeType,
 ) -> Union[OneDimArrayLikeType, TwoDimArrayLikeType]:
     if X is None:
         return X
@@ -261,9 +258,7 @@ class _Objective(object):
         return trial.user_attrs["mean_test_score"]
 
     def _cross_validate_with_pruning(
-        self,
-        trial: trial_module.Trial,
-        estimator: BaseEstimator,
+        self, trial: trial_module.Trial, estimator: BaseEstimator,
     ) -> Dict[str, OneDimArrayLikeType]:
 
         if is_classifier(estimator):
@@ -365,7 +360,9 @@ class _Objective(object):
 
         return ret
 
-    def _store_scores(self, trial: trial_module.Trial, scores: Dict[str, OneDimArrayLikeType]) -> None:
+    def _store_scores(
+        self, trial: trial_module.Trial, scores: Dict[str, OneDimArrayLikeType]
+    ) -> None:
 
         for name, array in scores.items():
             if name in ["test_score", "train_score"]:
@@ -763,7 +760,7 @@ class OptunaSearchCV(BaseEstimator):
         X: TwoDimArrayLikeType,
         y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]] = None,
         **fit_params: Any
-    ) -> 'OptunaSearchCV':
+    ) -> "OptunaSearchCV":
 
         n_samples = _num_samples(X)
 
@@ -792,7 +789,7 @@ class OptunaSearchCV(BaseEstimator):
         y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]] = None,
         groups: Optional[OneDimArrayLikeType] = None,
         **fit_params: Any
-    ) -> 'OptunaSearchCV':
+    ) -> "OptunaSearchCV":
         """Run fit with all sets of parameters.
 
         Args:
