@@ -20,8 +20,8 @@ from sklearn.preprocessing import LabelEncoder
 from optuna.integration.lightgbm_tuner.sklearn import _VotingBooster
 from optuna.integration.lightgbm_tuner.sklearn import check_fit_params
 from optuna.integration.lightgbm_tuner.sklearn import check_X
-from optuna.integration.lightgbm_tuner.sklearn import OGBMClassifier
-from optuna.integration.lightgbm_tuner.sklearn import OGBMRegressor
+from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier as OGBMClassifier
+from optuna.integration.lightgbm_tuner.sklearn import LGBMRegressor as OGBMRegressor
 from optuna import structs
 from optuna import study as study_module
 
@@ -60,14 +60,11 @@ def test_check_fit_params() -> None:
 def test_ogbm_classifier() -> None:
     pytest.importorskip("sklearn", minversion="0.20.0")
 
-    # from sklearn.utils.estimator_checks import check_estimator
     from sklearn.utils.estimator_checks import check_estimators_pickle
     from sklearn.utils.estimator_checks import check_set_params
 
     clf = OGBMClassifier()
     name = clf.__class__.__name__
-
-    # check_estimator(clf)
 
     check_estimators_pickle(name, clf)
     check_set_params(name, clf)
@@ -76,14 +73,11 @@ def test_ogbm_classifier() -> None:
 def test_ogbm_regressor() -> None:
     pytest.importorskip("sklearn", minversion="0.20.0")
 
-    # from sklearn.utils.estimator_checks import check_estimator
     from sklearn.utils.estimator_checks import check_estimators_pickle
     from sklearn.utils.estimator_checks import check_set_params
 
     reg = OGBMRegressor()
     name = reg.__class__.__name__
-
-    # check_estimator(reg)
 
     check_estimators_pickle(name, reg)
     check_set_params(name, reg)

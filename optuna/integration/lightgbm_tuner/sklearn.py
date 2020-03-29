@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import sklearn
 
+from lightgbm.engine import _CVBooster
 from scipy.sparse import spmatrix
 from sklearn.base import BaseEstimator
 from sklearn.base import ClassifierMixin
@@ -38,11 +39,6 @@ from optuna import logging
 from optuna import samplers
 from optuna import study as study_module
 from optuna import trial as trial_module
-
-if lgb.__version__ >= "2.2.2":
-    from lightgbm.engine import _CVBooster
-else:
-    from lightgbm.engine import CVBooster as _CVBooster
 
 if lgb.__version__ >= "2.3":
     from lightgbm.sklearn import _EvalFunctionWrapper
@@ -411,7 +407,7 @@ class _VotingBooster(object):
 
 
 class LGBMModel(lgb.LGBMModel):
-    """Base class for models in OptGBM."""
+    """Base class for models."""
 
     @property
     def best_index_(self) -> int:
@@ -1302,8 +1298,3 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
         X = check_X(X, accept_sparse=True, estimator=self, force_all_finite=False)
 
         return self.booster_.predict(X, num_iteration=num_iteration)
-
-
-# alias classes
-OGBMClassifier = LGBMClassifier
-OGBMRegressor = LGBMRegressor
