@@ -165,7 +165,7 @@ class Trial(BaseTrial):
         # type: (str, float, float, bool) -> float
         """Wrapper method for ``suggest_uniform`` and ``suggest_loguniform``.
 
-        .. versionadded:: 1.2.0
+        .. versionadded:: 1.3.0
 
         .. seealso::
             Please see also :func:`~optuna.trial.Trial.suggest_uniform` and
