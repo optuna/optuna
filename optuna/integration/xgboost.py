@@ -2,6 +2,7 @@ import optuna
 
 try:
     import xgboost as xgb  # NOQA
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -19,9 +20,9 @@ def _get_callback_context(env):
     """
 
     if env.model is None and env.cvfolds is not None:
-        context = 'cv'
+        context = "cv"
     else:
-        context = 'train'
+        context = "train"
     return context
 
 
@@ -63,11 +64,9 @@ class XGBoostPruningCallback(object):
 
         context = _get_callback_context(env)
         evaluation_result_list = env.evaluation_result_list
-        if context == 'cv':
+        if context == "cv":
             # Remove a third element: the stddev of the metric across the cross-valdation folds.
-            evaluation_result_list = [
-                (key, metric) for key, metric, _ in evaluation_result_list
-            ]
+            evaluation_result_list = [(key, metric) for key, metric, _ in evaluation_result_list]
         current_score = dict(evaluation_result_list)[self._observation_key]
         self._trial.report(current_score, step=env.iteration)
         if self._trial.should_prune():
@@ -80,7 +79,8 @@ def _check_xgboost_availability():
 
     if not _available:
         raise ImportError(
-            'XGBoost is not available. Please install XGBoost to use this feature. '
-            'XGBoost can be installed by executing `$ pip install xgboost`. '
-            'For further information, please refer to the installation guide of XGBoost. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "XGBoost is not available. Please install XGBoost to use this feature. "
+            "XGBoost can be installed by executing `$ pip install xgboost`. "
+            "For further information, please refer to the installation guide of XGBoost. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )

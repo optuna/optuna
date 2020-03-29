@@ -12,22 +12,22 @@ if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
 EXAMPLE_DISTRIBUTIONS = {
-    'u': distributions.UniformDistribution(low=1., high=2.),
-    'l': distributions.LogUniformDistribution(low=0.001, high=100),
-    'du': distributions.DiscreteUniformDistribution(low=1., high=10., q=2.),
-    'iu': distributions.IntUniformDistribution(low=1, high=10, step=2),
-    'c1': distributions.CategoricalDistribution(choices=(2.71, -float('inf'))),
-    'c2': distributions.CategoricalDistribution(choices=('Roppongi', 'Azabu'))
+    "u": distributions.UniformDistribution(low=1.0, high=2.0),
+    "l": distributions.LogUniformDistribution(low=0.001, high=100),
+    "du": distributions.DiscreteUniformDistribution(low=1.0, high=10.0, q=2.0),
+    "iu": distributions.IntUniformDistribution(low=1, high=10, step=2),
+    "c1": distributions.CategoricalDistribution(choices=(2.71, -float("inf"))),
+    "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
 }  # type: Dict[str, Any]
 
 EXAMPLE_JSONS = {
-    'u': '{"name": "UniformDistribution", "attributes": {"low": 1.0, "high": 2.0}}',
-    'l': '{"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}}',
-    'du': '{"name": "DiscreteUniformDistribution",'
+    "u": '{"name": "UniformDistribution", "attributes": {"low": 1.0, "high": 2.0}}',
+    "l": '{"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}}',
+    "du": '{"name": "DiscreteUniformDistribution",'
     '"attributes": {"low": 1.0, "high": 10.0, "q": 2.0}}',
-    'iu': '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10, "step": 2}}',
-    'c1': '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
-    'c2': '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}'
+    "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10, "step": 2}}',
+    "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
+    "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
 }
 
 
@@ -64,36 +64,47 @@ def test_check_distribution_compatibility():
 
     # test the same distribution
     for key in EXAMPLE_JSONS.keys():
-        distributions.check_distribution_compatibility(EXAMPLE_DISTRIBUTIONS[key],
-                                                       EXAMPLE_DISTRIBUTIONS[key])
+        distributions.check_distribution_compatibility(
+            EXAMPLE_DISTRIBUTIONS[key], EXAMPLE_DISTRIBUTIONS[key]
+        )
 
     # test different distribution classes
     pytest.raises(
-        ValueError, lambda: distributions.check_distribution_compatibility(
-            EXAMPLE_DISTRIBUTIONS['u'], EXAMPLE_DISTRIBUTIONS['l']))
+        ValueError,
+        lambda: distributions.check_distribution_compatibility(
+            EXAMPLE_DISTRIBUTIONS["u"], EXAMPLE_DISTRIBUTIONS["l"]
+        ),
+    )
 
     # test dynamic value range (CategoricalDistribution)
     pytest.raises(
-        ValueError, lambda: distributions.check_distribution_compatibility(
-            EXAMPLE_DISTRIBUTIONS['c2'],
-            distributions.CategoricalDistribution(choices=('Roppongi', 'Akasaka'))))
+        ValueError,
+        lambda: distributions.check_distribution_compatibility(
+            EXAMPLE_DISTRIBUTIONS["c2"],
+            distributions.CategoricalDistribution(choices=("Roppongi", "Akasaka")),
+        ),
+    )
 
     # test dynamic value range (except CategoricalDistribution)
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['u'], distributions.UniformDistribution(low=-3.0, high=-2.0))
+        EXAMPLE_DISTRIBUTIONS["u"], distributions.UniformDistribution(low=-3.0, high=-2.0)
+    )
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['l'], distributions.LogUniformDistribution(low=-0.1, high=1.0))
+        EXAMPLE_DISTRIBUTIONS["l"], distributions.LogUniformDistribution(low=-0.1, high=1.0)
+    )
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['du'],
-        distributions.DiscreteUniformDistribution(low=-1.0, high=10.0, q=3.))
+        EXAMPLE_DISTRIBUTIONS["du"],
+        distributions.DiscreteUniformDistribution(low=-1.0, high=10.0, q=3.0),
+    )
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS['iu'], distributions.IntUniformDistribution(low=-1, high=1))
+        EXAMPLE_DISTRIBUTIONS["iu"], distributions.IntUniformDistribution(low=-1, high=1)
+    )
 
 
 def test_contains():
     # type: () -> None
 
-    u = distributions.UniformDistribution(low=1., high=2.)
+    u = distributions.UniformDistribution(low=1.0, high=2.0)
     assert not u._contains(0.9)
     assert u._contains(1)
     assert u._contains(1.5)
@@ -105,7 +116,7 @@ def test_contains():
     assert lu._contains(12.3)
     assert not lu._contains(100)
 
-    du = distributions.DiscreteUniformDistribution(low=1., high=10., q=2.)
+    du = distributions.DiscreteUniformDistribution(low=1.0, high=10.0, q=2.0)
     assert not du._contains(0.9)
     assert du._contains(1.0)
     assert du._contains(3.5)
@@ -132,7 +143,7 @@ def test_contains():
     assert not iuq._contains(10.1)
     assert not iuq._contains(11)
 
-    c = distributions.CategoricalDistribution(choices=('Roppongi', 'Azabu'))
+    c = distributions.CategoricalDistribution(choices=("Roppongi", "Azabu"))
     assert not c._contains(-1)
     assert c._contains(0)
     assert c._contains(1)
@@ -177,7 +188,7 @@ def test_single():
         distributions.LogUniformDistribution(low=7.3, high=7.3),
         distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
         distributions.IntUniformDistribution(low=-123, high=-123),
-        distributions.CategoricalDistribution(choices=('foo', ))
+        distributions.CategoricalDistribution(choices=("foo",)),
     ]  # type: List[distributions.BaseDistribution]
     for distribution in single_distributions:
         assert distribution.single()
@@ -187,7 +198,7 @@ def test_single():
         distributions.LogUniformDistribution(low=7.3, high=10),
         distributions.DiscreteUniformDistribution(low=-30, high=-20, q=2),
         distributions.IntUniformDistribution(low=-123, high=0),
-        distributions.CategoricalDistribution(choices=('foo', 'bar'))
+        distributions.CategoricalDistribution(choices=("foo", "bar")),
     ]  # type: List[distributions.BaseDistribution]
     for distribution in nonsingle_distributions:
         assert not distribution.single()
@@ -220,7 +231,7 @@ def test_invalid_distribution():
     # type: () -> None
 
     with pytest.warns(UserWarning):
-        distributions.CategoricalDistribution(choices=({'foo': 'bar'},))  # type: ignore
+        distributions.CategoricalDistribution(choices=({"foo": "bar"},))  # type: ignore
 
 
 def test_eq_ne_hash():
@@ -249,8 +260,8 @@ def test_eq_ne_hash():
     # Different types.
     assert d0 != 1
     assert not d0 == 1
-    assert d0 != 'foo'
-    assert not d0 == 'foo'
+    assert d0 != "foo"
+    assert not d0 == "foo"
 
 
 def test_repr():
@@ -258,31 +269,31 @@ def test_repr():
 
     # The following variable is needed to apply `eval` to distribution
     # instances that contain `float('inf')` as a field value.
-    inf = float('inf')  # NOQA
+    inf = float("inf")  # NOQA
 
     for d in EXAMPLE_DISTRIBUTIONS.values():
-        assert d == eval('distributions.' + repr(d))
+        assert d == eval("distributions." + repr(d))
 
 
 def test_uniform_distribution_asdict():
     # type: () -> None
 
-    assert EXAMPLE_DISTRIBUTIONS['u']._asdict() == {'low': 1.0, 'high': 2.0}
+    assert EXAMPLE_DISTRIBUTIONS["u"]._asdict() == {"low": 1.0, "high": 2.0}
 
 
 def test_log_uniform_distribution_asdict():
     # type: () -> None
 
-    assert EXAMPLE_DISTRIBUTIONS['l']._asdict() == {'low': 0.001, 'high': 100}
+    assert EXAMPLE_DISTRIBUTIONS["l"]._asdict() == {"low": 0.001, "high": 100}
 
 
 def test_discrete_uniform_distribution_asdict():
     # type: () -> None
 
-    assert EXAMPLE_DISTRIBUTIONS['du']._asdict() == {'low': 1.0, 'high': 10.0, 'q': 2.0}
+    assert EXAMPLE_DISTRIBUTIONS["du"]._asdict() == {"low": 1.0, "high": 10.0, "q": 2.0}
 
 
 def test_int_uniform_distribution_asdict():
     # type: () -> None
 
-    assert EXAMPLE_DISTRIBUTIONS['iu']._asdict() == {'low': 1, 'high': 10, 'step': 2}
+    assert EXAMPLE_DISTRIBUTIONS["iu"]._asdict() == {"low": 1, "high": 10, "step": 2}
