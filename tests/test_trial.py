@@ -182,6 +182,9 @@ def test_suggest_low_equals_high(storage_init_func):
         assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting a param.
         assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting the same param.
         assert mock_object.call_count == 0
+        assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting a param.
+        assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting the same param.
+        assert mock_object.call_count == 0
 
 
 @parametrize_storage
