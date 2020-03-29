@@ -223,18 +223,9 @@ class Trial(BaseTrial):
         """
 
         if log:
-            distribution = distributions.LogUniformDistribution(
-                low=low, high=high
-            )  # type: FloatingPointDistributionType
+            return self.suggest_loguniform(name, low, high)
         else:
-            distribution = distributions.UniformDistribution(low=low, high=high)
-
-        self._check_distribution(name, distribution)
-
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
-
-        return self._suggest(name, distribution)
+            return self.suggest_uniform(name, low, high)
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
