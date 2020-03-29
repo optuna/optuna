@@ -7,6 +7,7 @@ import numpy as np
 import tqdm
 
 import optuna
+from optuna.integration.lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
 from optuna import type_checking
 
@@ -101,6 +102,10 @@ class BaseTuner(object):
     def __init__(self, lgbm_params=None, lgbm_kwargs=None):
         # type: (Dict[str, Any], Dict[str,Any]) -> None
 
+        # Handling alias metrics.
+        if lgbm_params is not None:
+            _handling_alias_metrics(lgbm_params)
+
         self.lgbm_params = lgbm_params or {}
         self.lgbm_kwargs = lgbm_kwargs or {}
 
@@ -172,7 +177,7 @@ class BaseTuner(object):
         # type: () -> bool
 
         metric_name = self.lgbm_params.get("metric", "binary_logloss")
-        return metric_name.startswith(("auc", "ndcg", "map", "accuracy"))
+        return metric_name.startswith(("auc", "ndcg", "map"))
 
     def compare_validation_metrics(self, val_score, best_score):
         # type: (float, float) -> bool
@@ -317,6 +322,10 @@ class LightGBMTuner(BaseTuner):
         verbosity=1,  # type: Optional[int]
     ):
         params = copy.deepcopy(params)
+
+        # Handling alias metrics.
+        _handling_alias_metrics(params)
+
         args = [params, train_set]
         kwargs = dict(
             num_boost_round=num_boost_round,

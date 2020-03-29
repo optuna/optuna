@@ -187,7 +187,7 @@ class FrozenTrial(object):
         else:
             if self.datetime_complete is not None:
                 raise ValueError(
-                    "`datetime_complete` is supposed to not be set for a finished trial."
+                    "`datetime_complete` is supposed to be None for an unfinished trial."
                 )
 
         if self.state == TrialState.COMPLETE and self.value is None:
@@ -206,9 +206,8 @@ class FrozenTrial(object):
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)
             if not distribution._contains(param_value_in_internal_repr):
                 raise ValueError(
-                    "The value {} of parameter '{}' isn't contained in the distribution {}.".format(
-                        param_value, param_name, distribution
-                    )
+                    "The value {} of parameter '{}' isn't contained in the distribution "
+                    "{}.".format(param_value, param_name, distribution)
                 )
 
     @property

@@ -22,10 +22,17 @@ class RandomSampler(BaseSampler):
 
     Example:
 
-        .. code::
+        .. testcode::
 
-            >>> study = optuna.create_study(sampler=RandomSampler())
-            >>> study.optimize(objective, direction='minimize')
+            import optuna
+            from optuna.samplers import RandomSampler
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -5, 5)
+                return x**2
+
+            study = optuna.create_study(sampler=RandomSampler())
+            study.optimize(objective, n_trials=10)
 
         Args:
             seed: Seed for random number generator.

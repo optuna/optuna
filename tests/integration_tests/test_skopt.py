@@ -31,7 +31,7 @@ def test_conversion_from_distribution_to_dimension():
             # Original: trial.suggest_loguniform('p3', 1.1, 1.1)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
             # Original: trial.suggest_int('p4', -100, 8)
-            space.Integer(0, 108),
+            space.Integer(-100, 8),
             # Original: trial.suggest_int('p5', -20, -20)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
             # Original: trial.suggest_discrete_uniform('p6', 10, 20, 2)

@@ -36,6 +36,12 @@ def plot_optimization_history(study):
 
             optuna.visualization.plot_optimization_history(study)
 
+        .. raw:: html
+
+            <iframe src="../_static/plot_optimization_history.html"
+             width="100%" height="500px" frameborder="0">
+            </iframe>
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective

@@ -73,7 +73,7 @@ class TPESampler(base.BaseSampler):
 
     Example:
 
-        .. code::
+        .. testcode::
 
             import optuna
             from optuna.samplers import TPESampler
@@ -83,7 +83,7 @@ class TPESampler(base.BaseSampler):
                 return x**2
 
             study = optuna.create_study(sampler=TPESampler())
-            study.optimize(objective, n_trials=100)
+            study.optimize(objective, n_trials=10)
 
     """
 
@@ -517,7 +517,7 @@ class TPESampler(base.BaseSampler):
             Create a :class:`~optuna.samplers.TPESampler` instance with the default
             parameters of `hyperopt <https://github.com/hyperopt/hyperopt/tree/0.1.2>`_.
 
-            .. code::
+            .. testcode::
 
                     import optuna
                     from optuna.samplers import TPESampler
@@ -528,7 +528,7 @@ class TPESampler(base.BaseSampler):
 
                     sampler = TPESampler(**TPESampler.hyperopt_parameters())
                     study = optuna.create_study(sampler=sampler)
-                    study.optimize(objective, n_trials=100)
+                    study.optimize(objective, n_trials=10)
 
         Returns:
             A dictionary containing the default parameters of hyperopt.

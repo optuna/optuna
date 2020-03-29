@@ -4,12 +4,10 @@ from optuna._experimental import experimental
 from optuna import type_checking
 
 try:
-    from optuna.integration.lightgbm_tuner.sklearn import (
-        LGBMClassifier,
-        LGBMModel,
-        LGBMRegressor,
-    )  # NOQA
     from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
+    from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
+    from optuna.integration.lightgbm_tuner.sklearn import LGBMModel  # NOQA
+    from optuna.integration.lightgbm_tuner.sklearn import LGBMRegressor  # NOQA
 
     _available = True
 except ImportError as e:

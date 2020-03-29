@@ -12,21 +12,6 @@ workflows:
       - tests-python36
       - tests-python35
       - codecov
-  daily-build:
-    triggers:
-      - schedule:
-          cron: "0 15 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - checks
-      - document
-      - examples-python38
-      - examples-python37
-      - examples-python36
-      - examples-python35
 
 jobs:
 
@@ -57,10 +42,10 @@ jobs:
             pip install --progress-bar off .[checking]
 
       - run:
-          name: autopep8
+          name: black
           command: |
             . venv/bin/activate
-            autopep8 . -r --diff --exit-code
+            black . --line-length 99 --check --exclude="docs"
 
       - run:
           name: flake8
@@ -96,6 +81,9 @@ jobs:
             . venv/bin/activate
             cd docs
             make html
+
+      - store_artifacts:
+          path: ./docs/build
 
   doctest:
     docker:
@@ -135,6 +123,17 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get -y install openmpi-bin libopenmpi-dev
+
+            # Install swig which is required by pyrfr which is required by fanova.
+            wget http://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz
+            tar -zxvf swig-3.0.12.tar.gz
+            pushd swig-3.0.12
+            ./configure
+            make
+            sudo make install
+            popd
+            swig -version
+
             python -m venv venv || virtualenv venv
             . venv/bin/activate
             pip install -U pip
@@ -234,95 +233,3 @@ jobs:
             codecov
           environment:
             OMP_NUM_THREADS: 1
-
-  # Examples
-
-  examples-python37:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
-
-      - run: *checkout-merge-master
-
-      - run: *install
-
-      - run: &install-examples
-          name: install-examples
-          command: |
-            . venv/bin/activate
-            pip install --progress-bar off $(ls dist/*.tar.gz)[example]
-
-      - run: &examples
-          name: examples
-          command: |
-            . venv/bin/activate
-            for file in `find examples -name '*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`
-            do
-               python $file
-               if grep -e '\-\-pruning' $file > /dev/null; then
-                  python $file --pruning
-               fi
-            done
-          environment:
-            OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*
-
-      - run: &examples-mn
-          name: examples-mn
-          command: |
-            . venv/bin/activate
-            STORAGE_URL=sqlite:///example.db
-            for file in `find examples -name 'chainermn_*.py'`
-            do
-                STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
-                mpirun -n 2 -- python $file $STUDY_NAME $STORAGE_URL
-            done
-          environment:
-            OMP_NUM_THREADS: 1
-
-  examples-python38:
-    docker:
-      - image: circleci/python:3.8
-    steps:
-      - checkout
-
-      - run: *checkout-merge-master
-
-      - run: *install
-
-      - run: *install-examples
-
-      - run:
-          <<: *examples
-          environment:
-            OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|dask_ml_.*|keras_.*|pytorch_lightning_.*|tensorflow_.*|tfkeras_.*|fastai_.*
-
-      - run: *examples-mn
-
-  examples-python36:
-    docker:
-      - image: circleci/python:3.6
-    steps:
-      [checkout, run: *checkout-merge-master, run: *install, run: *install-examples, run: *examples, run: *examples-mn]
-
-  examples-python35:
-    docker:
-      - image: circleci/python:3.5
-    steps:
-      - checkout
-
-      - run: *checkout-merge-master
-
-      - run: *install
-
-      - run: *install-examples
-
-      - run:
-          <<: *examples
-          environment:
-            OMP_NUM_THREADS: 1
-            IGNORES: chainermn_.*|pytorch_lightning.*|fastai_.*
-
-      - run: *examples-mn

@@ -131,6 +131,9 @@ class GridSampler(BaseSampler):
             message = "The parameter name, {}, is not found in the given grid.".format(param_name)
             raise ValueError(message)
 
+        # TODO(c-bata): Reduce the number of duplicated evaluations on multiple workers.
+        # Current selection logic may evaluate the same parameters multiple times.
+        # See https://gist.github.com/c-bata/f759f64becb24eea2040f4b2e3afce8f for details.
         grid_id = trial.system_attrs["grid_id"]
         param_value = self._all_grids[grid_id][self._param_names.index(param_name)]
         contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))

@@ -71,6 +71,8 @@ class RDBStorage(BaseStorage):
         engine_kwargs:
             A dictionary of keyword arguments that is passed to
             `sqlalchemy.engine.create_engine`_ function.
+        skip_compatibility_check:
+            Flag to skip schema compatibility check if set to True.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -88,8 +90,6 @@ class RDBStorage(BaseStorage):
 
     def __init__(self, url, engine_kwargs=None, skip_compatibility_check=False):
         # type: (str, Optional[Dict[str, Any]], bool) -> None
-
-        self._check_python_version()
 
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
@@ -127,6 +127,7 @@ class RDBStorage(BaseStorage):
 
     def __setstate__(self, state):
         # type: (Dict[Any, Any]) -> None
+
         self.__dict__.update(state)
         try:
             self.engine = create_engine(self.url, **self.engine_kwargs)
@@ -142,19 +143,6 @@ class RDBStorage(BaseStorage):
         if not self.skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
         self._finished_trials_cache = _FinishedTrialsCache()
-
-    @staticmethod
-    def _check_python_version():
-        # type: () -> None
-
-        if sys.version_info.major != 3:
-            return
-
-        if sys.version_info.minor != 4:
-            return
-
-        if 0 <= sys.version_info.micro < 4:
-            raise RuntimeError("RDBStorage does not support Python 3.4.0 to 3.4.3.")
 
     def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
@@ -497,10 +485,15 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+        trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
+        if trial is None:
+            session.rollback()
+            raise ValueError(models.NOT_FOUND_MSG)
+
         self.check_trial_is_updatable(trial_id, trial.state)
 
         if state == structs.TrialState.RUNNING and trial.state != structs.TrialState.WAITING:
+            session.rollback()
             return False
 
         trial.state = state

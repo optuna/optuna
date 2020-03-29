@@ -255,8 +255,7 @@ class TestChainerMNStudy(object):
         }
         relative_params = {"x": 1.0, "y": 25.0, "z": -1.0}
         sampler = DeterministicRelativeSampler(
-            relative_search_space,  # type: ignore
-            relative_params,
+            relative_search_space, relative_params  # type: ignore
         )
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:

@@ -154,6 +154,9 @@ class StudySystemAttributeModel(BaseModel):
 class TrialModel(BaseModel):
     __tablename__ = "trials"
     trial_id = Column(Integer, primary_key=True)
+    # No `UniqueConstraint` is put on the `number` columns although it in practice is constrained
+    # to be unique. This is to reduce code complexity as table-level locking would be required
+    # otherwise. See https://github.com/optuna/optuna/pull/939#discussion_r387447632.
     number = Column(Integer)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     state = Column(Enum(TrialState), nullable=False)
@@ -166,12 +169,17 @@ class TrialModel(BaseModel):
     )
 
     @classmethod
-    def find_by_id(cls, trial_id, session):
-        # type: (int, orm.Session) -> Optional[TrialModel]
+    def find_by_id(cls, trial_id, session, for_update=False):
+        # type: (int, orm.Session, bool) -> Optional[TrialModel]
 
-        trial = session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
+        query = session.query(cls).filter(cls.trial_id == trial_id)
 
-        return trial
+        # "FOR UPDATE" clause is used for row-level locking.
+        # Please note that SQLite3 doesn't support this clause.
+        if for_update:
+            query = query.with_for_update()
+
+        return query.one_or_none()
 
     @classmethod
     def find_max_value_trial(cls, study_id, session):

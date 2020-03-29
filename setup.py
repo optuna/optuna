@@ -33,11 +33,11 @@ def get_install_requires() -> List[str]:
         "alembic",
         "cliff",
         "colorlog",
+        "joblib",
         "numpy",
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
-        "joblib",
     ]
 
 
@@ -49,15 +49,16 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["autopep8", "hacking", "mypy",],
+        "checking": ["black", "hacking", "mypy",],
         "codecov": ["codecov", "pytest-cov",],
-        "doctest": ["pandas", "cma", "scikit-learn>=0.19.0", "plotly>=4.0.0",],
+        "doctest": ["cma", "pandas", "plotly>=4.0.0", "scikit-learn>=0.19.0", "scikit-optimize",],
         "document": ["sphinx", "sphinx_rtd_theme",],
         "example": [
             "catboost",
             "chainer",
             "lightgbm",
             "mlflow",
+            "mpi4py",
             "mxnet",
             "pytorch-ignite",
             "scikit-image",
@@ -66,7 +67,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision>=0.5.0",
             "xgboost",
         ]
-        + (["fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (["allennlp", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (
             [
                 "dask[dataframe]",
@@ -74,8 +75,9 @@ def get_extras_require() -> Dict[str, List[str]]:
                 "keras",
                 # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
                 # https://github.com/optuna/optuna/issues/997.
-                "pytorch-lightning<0.6.0",
+                "pytorch-lightning<0.7.0",
                 "tensorflow>=2.0.0",
+                "tensorflow-datasets",
             ]
             if sys.version_info[:2] < (3, 8)
             else []
@@ -86,6 +88,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "bokeh<2.0.0",
             "chainer>=5.0.0",
             "cma",
+            "fanova",
             "lightgbm",
             "mock",
             "mpi4py",
@@ -106,7 +109,7 @@ def get_extras_require() -> Dict[str, List[str]]:
                 "keras",
                 # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
                 # https://github.com/optuna/optuna/issues/997.
-                "pytorch-lightning<0.6.0",
+                "pytorch-lightning<0.7.0",
                 "tensorflow",
                 "tensorflow-datasets",
             ]

@@ -183,7 +183,7 @@ class Trial(BaseTrial):
 
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -242,7 +242,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -307,7 +307,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -366,7 +366,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
 
@@ -425,7 +425,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
 
@@ -495,7 +495,7 @@ class Trial(BaseTrial):
 
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
 
@@ -591,7 +591,7 @@ class Trial(BaseTrial):
 
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
                 assert 'BATCHSIZE' in study.best_trial.user_attrs.keys()
                 assert study.best_trial.user_attrs['BATCHSIZE'] == 128
@@ -730,12 +730,12 @@ class Trial(BaseTrial):
         """
 
         warnings.warn(
-            "The use of `Trial.trial_id` is deprecated. " "Please use `Trial.number` instead.",
+            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead.",
             DeprecationWarning,
         )
 
         self.logger.warning(
-            "The use of `Trial.trial_id` is deprecated. " "Please use `Trial.number` instead."
+            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead."
         )
 
         return self._trial_id
@@ -807,7 +807,7 @@ class Trial(BaseTrial):
             The study ID.
         """
 
-        message = "The use of `Trial.study_id` is deprecated. " "Please use `Trial.study` instead."
+        message = "The use of `Trial.study_id` is deprecated. Please use `Trial.study` instead."
         warnings.warn(message, DeprecationWarning)
         self.logger.warning(message)
 
