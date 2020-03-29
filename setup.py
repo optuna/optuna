@@ -89,6 +89,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "bokeh<2.0.0",
             "chainer>=5.0.0",
             "cma",
+            "fanova",
             "lightgbm",
             "mock",
             "mpi4py",

@@ -86,6 +86,32 @@ If you want to save and resume studies,  it's handy to use SQLite as the local s
 Please see :ref:`rdb` for more details.
 
 
+How can I save and resume studies?
+----------------------------------------------------
+
+There are two ways of persisting studies, which depends if you are using
+in-memory storage (default) or remote databases (RDB). In-memory studies can be
+saved and loaded like usual Python objects using ``pickle`` or ``joblib``. For
+example, using ``joblib``:
+
+.. code-block:: python
+
+    study = optuna.create_study()
+    joblib.dump(study, 'study.pkl')
+
+And to resume the study:
+
+.. code-block:: python
+
+    study = joblib.load('study.pkl')
+    print('Best trial until now:')
+    print(' Value: ', study.best_trial.value)
+    print(' Params: ')
+    for key, value in study.best_trial.params.items():
+        print(f'    {key}: {value}')
+
+If you are using RDBs, see :ref:`rdb` for more details.
+
 How to suppress log messages of Optuna?
 ---------------------------------------
 

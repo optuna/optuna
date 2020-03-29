@@ -169,12 +169,17 @@ class TrialModel(BaseModel):
     )
 
     @classmethod
-    def find_by_id(cls, trial_id, session):
-        # type: (int, orm.Session) -> Optional[TrialModel]
+    def find_by_id(cls, trial_id, session, for_update=False):
+        # type: (int, orm.Session, bool) -> Optional[TrialModel]
 
-        trial = session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
+        query = session.query(cls).filter(cls.trial_id == trial_id)
 
-        return trial
+        # "FOR UPDATE" clause is used for row-level locking.
+        # Please note that SQLite3 doesn't support this clause.
+        if for_update:
+            query = query.with_for_update()
+
+        return query.one_or_none()
 
     @classmethod
     def find_max_value_trial(cls, study_id, session):

@@ -12,10 +12,15 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
+    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
+
+    FloatingPointDistributionType = Union[
+        distributions.UniformDistribution, distributions.LogUniformDistribution
+    ]
 
 
 class BaseTrial(object, metaclass=abc.ABCMeta):
@@ -23,6 +28,11 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
     Note that this class is not supposed to be directly accessed by library users.
     """
+
+    def suggest_float(self, name, low, high, *, log=False):
+        # type: (str, float, float, bool) -> float
+
+        raise NotImplementedError
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -39,8 +49,8 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
+    def suggest_int(self, name, low, high, step=1):
+        # type: (str, int, int, int) -> int
 
         raise NotImplementedError
 
@@ -147,6 +157,75 @@ class Trial(BaseTrial):
         self.relative_params = self.study.sampler.sample_relative(
             self.study, trial, self.relative_search_space
         )
+
+    def suggest_float(self, name, low, high, *, log=False):
+        # type: (str, float, float, bool) -> float
+        """Suggest a value for the floating point parameter.
+
+        Note that this is a wrapper method for :func:`~optuna.trial.Trial.suggest_uniform`
+        and :func:`~optuna.trial.Trial.suggest_loguniform`.
+
+        .. versionadded:: 1.3.0
+
+        .. seealso::
+            Please see also :func:`~optuna.trial.Trial.suggest_uniform` and
+            :func:`~optuna.trial.Trial.suggest_loguniform`.
+
+        Example:
+
+            Suggest a momentum and learning rate for neural network training.
+
+            .. testsetup::
+
+                import numpy as np
+                import optuna
+                from sklearn.model_selection import train_test_split
+                from sklearn.neural_network import MLPClassifier
+
+                np.random.seed(seed=0)
+                X = np.random.randn(200).reshape(-1, 1)
+                y = np.random.randint(0, 2, 200)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+
+            .. testcode::
+
+                def objective(trial):
+                    momentum = trial.suggest_float('momentum', 0.0, 1.0)
+                    learning_rate_init = trial.suggest_float('learning_rate_init',
+                                                             1e-5, 1e-3, log=True)
+                    clf = MLPClassifier(hidden_layer_sizes=(100, 50), momentum=momentum,
+                                        learning_rate_init=learning_rate_init,
+                                        solver='sgd', random_state=0)
+                    clf.fit(X_train, y_train)
+
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study(direction='maximize')
+                study.optimize(objective, n_trials=3)
+
+        Args:
+            name:
+                A parameter name.
+            low:
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
+            high:
+                Upper endpoint of the range of suggested values. ``high`` is excluded from the
+                range.
+            log:
+                A flag to sample the value from the log domain or not.
+                If ``log`` is true, the value is sampled from the range in the log domain.
+                Otherwise, the value is sampled from the range in the linear domain.
+                See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
+
+        Returns:
+            A suggested float value.
+        """
+
+        if log:
+            return self.suggest_loguniform(name, low, high)
+        else:
+            return self.suggest_uniform(name, low, high)
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -334,8 +413,8 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
+    def suggest_int(self, name, low, high, step=1):
+        # type: (str, int, int, int) -> int
         """Suggest a value for the integer parameter.
 
         The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
@@ -377,12 +456,14 @@ class Trial(BaseTrial):
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
+            step:
+                A step of spacing between values.
 
         Returns:
             A suggested integer value.
         """
 
-        distribution = distributions.IntUniformDistribution(low=low, high=high)
+        distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
 
@@ -856,6 +937,14 @@ class FixedTrial(BaseTrial):
         self._system_attrs = {}  # type: Dict[str, Any]
         self._datetime_start = datetime.now()
 
+    def suggest_float(self, name, low, high, *, log=False):
+        # type: (str, float, float, bool) -> float
+
+        if log:
+            return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
+        else:
+            return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
+
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
@@ -873,10 +962,12 @@ class FixedTrial(BaseTrial):
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
-
-        return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
+    def suggest_int(self, name, low, high, step=1):
+        # type: (str, int, int, int) -> int
+        sample = self._suggest(
+            name, distributions.IntUniformDistribution(low=low, high=high, step=step)
+        )
+        return int(sample)
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType

@@ -25,3 +25,7 @@ Pruners
 .. autoclass:: HyperbandPruner
     :members:
     :exclude-members: prune
+
+.. autoclass:: ThresholdPruner
+    :members:
+    :exclude-members: prune
