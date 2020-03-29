@@ -79,7 +79,7 @@ def redis_with_flushdb():
 
     # The redis url is not going to be used, but it has to be valid.
     storage = RedisStorage("redis://localhost")
-    storage.redis = fakeredis.FakeStrictRedis()
+    storage._redis = fakeredis.FakeStrictRedis()
     return storage
 
 

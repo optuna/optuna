@@ -71,25 +71,25 @@ class RedisStorage(base.BaseStorage):
                 "(The actual import error is as follows: " + str(_import_error) + ")"
             )
 
-        self.redis = redis.Redis.from_url(url)
+        self._redis = redis.Redis.from_url(url)
 
     def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
 
-        if study_name is not None and self.redis.exists(self._key_study_name(study_name)):
+        if study_name is not None and self._redis.exists(self._key_study_name(study_name)):
             raise exceptions.DuplicatedStudyError
 
-        if not self.redis.exists("study_counter"):
+        if not self._redis.exists("study_counter"):
             # We need the counter to start with 0.
-            self.redis.set("study_counter", -1)
-        study_id = self.redis.incr("study_counter", 1)
+            self._redis.set("study_counter", -1)
+        study_id = self._redis.incr("study_counter", 1)
         # We need the trial_number counter to start with 0.
-        self.redis.set("study_id:{:010d}:trial_number".format(study_id), -1)
+        self._redis.set("study_id:{:010d}:trial_number".format(study_id), -1)
 
         if study_name is None:
             study_name = "{}{:010d}".format(DEFAULT_STUDY_NAME_PREFIX, study_id)
 
-        with self.redis.pipeline() as pipe:
+        with self._redis.pipeline() as pipe:
             pipe.multi()
             pipe.set(self._key_study_name(study_name), pickle.dumps(study_id))
             pipe.set("study_id:{:010d}:study_name".format(study_id), pickle.dumps(study_name))
@@ -119,7 +119,7 @@ class RedisStorage(base.BaseStorage):
 
         self._check_study_id(study_id)
 
-        with self.redis.pipeline() as pipe:
+        with self._redis.pipeline() as pipe:
             pipe.multi()
             # Sumaries
             pipe.delete(self._key_study_summary(study_id))
@@ -155,19 +155,19 @@ class RedisStorage(base.BaseStorage):
     def _set_study_summary(self, study_id, study_summary):
         # type: (int, structs.StudySummary) -> None
 
-        self.redis.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
+        self._redis.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
 
     def _get_study_summary(self, study_id):
         # type: (int) -> structs.StudySummary
 
-        summary_pkl = self.redis.get(self._key_study_summary(study_id))
+        summary_pkl = self._redis.get(self._key_study_summary(study_id))
         assert summary_pkl is not None
         return pickle.loads(summary_pkl)
 
     def _del_study_summary(self, study_id):
         # type: (int) -> None
 
-        self.redis.delete(self._key_study_summary(study_id))
+        self._redis.delete(self._key_study_summary(study_id))
 
     @staticmethod
     def _key_study_direction(study_id):
@@ -178,8 +178,8 @@ class RedisStorage(base.BaseStorage):
     def set_study_direction(self, study_id, direction):
         # type: (int, structs.StudyDirection) -> None
 
-        if self.redis.exists(self._key_study_direction(study_id)):
-            direction_pkl = self.redis.get(self._key_study_direction(study_id))
+        if self._redis.exists(self._key_study_direction(study_id)):
+            direction_pkl = self._redis.get(self._key_study_direction(study_id))
             assert direction_pkl is not None
             current_direction = pickle.loads(direction_pkl)
             if (
@@ -192,7 +192,7 @@ class RedisStorage(base.BaseStorage):
                     )
                 )
 
-        with self.redis.pipeline() as pipe:
+        with self._redis.pipeline() as pipe:
             pipe.multi()
             pipe.set(self._key_study_direction(study_id), pickle.dumps(direction))
             study_summary = self._get_study_summary(study_id)
@@ -217,16 +217,16 @@ class RedisStorage(base.BaseStorage):
     def get_study_id_from_name(self, study_name):
         # type: (str) -> int
 
-        if not self.redis.exists(self._key_study_name(study_name)):
+        if not self._redis.exists(self._key_study_name(study_name)):
             raise ValueError("No such study {}.".format(study_name))
-        study_id_pkl = self.redis.get(self._key_study_name(study_name))
+        study_id_pkl = self._redis.get(self._key_study_name(study_name))
         assert study_id_pkl is not None
         return pickle.loads(study_id_pkl)
 
     def get_study_id_from_trial_id(self, trial_id):
         # type: (int) -> int
 
-        study_id_pkl = self.redis.get("trial_id:{:010d}:study_id".format(trial_id))
+        study_id_pkl = self._redis.get("trial_id:{:010d}:study_id".format(trial_id))
         assert study_id_pkl is not None
         return pickle.loads(study_id_pkl)
 
@@ -235,14 +235,14 @@ class RedisStorage(base.BaseStorage):
 
         self._check_study_id(study_id)
 
-        study_name_pkl = self.redis.get("study_id:{:010d}:study_name".format(study_id))
+        study_name_pkl = self._redis.get("study_id:{:010d}:study_name".format(study_id))
         assert study_name_pkl is not None
         return pickle.loads(study_name_pkl)
 
     def get_study_direction(self, study_id):
         # type: (int) -> structs.StudyDirection
 
-        direction_pkl = self.redis.get("study_id:{:010d}:direction".format(study_id))
+        direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
         assert direction_pkl is not None
         return pickle.loads(direction_pkl)
 
@@ -267,8 +267,8 @@ class RedisStorage(base.BaseStorage):
     def _get_study_param_distribution(self, study_id):
         # type: (int) -> Dict
 
-        if self.redis.exists(self._key_study_param_distribution(study_id)):
-            param_distribution_pkl = self.redis.get(self._key_study_param_distribution(study_id))
+        if self._redis.exists(self._key_study_param_distribution(study_id)):
+            param_distribution_pkl = self._redis.get(self._key_study_param_distribution(study_id))
             assert param_distribution_pkl is not None
             return pickle.loads(param_distribution_pkl)
         else:
@@ -277,7 +277,7 @@ class RedisStorage(base.BaseStorage):
     def _set_study_param_distribution(self, study_id, param_distribution):
         # type: (int, Dict) -> None
 
-        self.redis.set(
+        self._redis.set(
             self._key_study_param_distribution(study_id), pickle.dumps(param_distribution)
         )
 
@@ -285,7 +285,7 @@ class RedisStorage(base.BaseStorage):
         # type: () -> List[structs.StudySummary]
 
         study_summaries = []
-        study_ids = [pickle.loads(sid) for sid in self.redis.lrange("study_list", 0, -1)]
+        study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]
         for study_id in study_ids:
             study_summary = self._get_study_summary(study_id)
             study_summaries.append(study_summary)
@@ -302,15 +302,15 @@ class RedisStorage(base.BaseStorage):
         else:
             trial = copy.deepcopy(template_trial)
 
-        if not self.redis.exists("trial_counter"):
-            self.redis.set("trial_counter", -1)
+        if not self._redis.exists("trial_counter"):
+            self._redis.set("trial_counter", -1)
 
-        trial_id = self.redis.incr("trial_counter", 1)
-        trial_number = self.redis.incr("study_id:{:010d}:trial_number".format(study_id))
+        trial_id = self._redis.incr("trial_counter", 1)
+        trial_number = self._redis.incr("study_id:{:010d}:trial_number".format(study_id))
         trial.number = trial_number
         trial._trial_id = trial_id
 
-        with self.redis.pipeline() as pipe:
+        with self._redis.pipeline() as pipe:
             pipe.multi()
             pipe.set(self._key_trial(trial_id), pickle.dumps(trial))
             pipe.set("trial_id:{:010d}:study_id".format(trial_id), pickle.dumps(study_id))
@@ -357,10 +357,10 @@ class RedisStorage(base.BaseStorage):
         trial.state = state
         if state.is_finished():
             trial.datetime_complete = datetime.now()
-            self.redis.set(self._key_trial(trial_id), pickle.dumps(trial))
+            self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
             self._update_cache(trial_id)
         else:
-            self.redis.set(self._key_trial(trial_id), pickle.dumps(trial))
+            self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
         return True
 
@@ -382,7 +382,7 @@ class RedisStorage(base.BaseStorage):
         if param_name in trial.params:
             return False
 
-        with self.redis.pipeline() as pipe:
+        with self._redis.pipeline() as pipe:
             pipe.multi()
             # Set study param distribution.
             param_distribution[param_name] = distribution
@@ -412,7 +412,7 @@ class RedisStorage(base.BaseStorage):
     def get_best_trial(self, study_id):
         # type: (int) -> structs.FrozenTrial
 
-        if not self.redis.exists(self._key_best_trial(study_id)):
+        if not self._redis.exists(self._key_best_trial(study_id)):
             all_trials = self.get_all_trials(study_id, deepcopy=False)
             all_trials = [t for t in all_trials if t.state is structs.TrialState.COMPLETE]
 
@@ -426,7 +426,7 @@ class RedisStorage(base.BaseStorage):
 
             self._set_best_trial(study_id, best_trial.number)
         else:
-            best_trial_id_pkl = self.redis.get(self._key_best_trial(study_id))
+            best_trial_id_pkl = self._redis.get(self._key_best_trial(study_id))
             assert best_trial_id_pkl is not None
             best_trial_id = pickle.loads(best_trial_id_pkl)
             best_trial = self.get_trial(best_trial_id)
@@ -436,7 +436,7 @@ class RedisStorage(base.BaseStorage):
     def _set_best_trial(self, study_id, trial_id):
         # type: (int, int) -> None
 
-        with self.redis.pipeline() as pipe:
+        with self._redis.pipeline() as pipe:
             pipe.multi()
             pipe.set(self._key_best_trial(study_id), pickle.dumps(trial_id))
 
@@ -458,7 +458,7 @@ class RedisStorage(base.BaseStorage):
         self.check_trial_is_updatable(trial_id, trial.state)
 
         trial.value = value
-        self.redis.set(self._key_trial(trial_id), pickle.dumps(trial))
+        self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
     def _update_cache(self, trial_id):
         # type: (int) -> None
@@ -467,7 +467,7 @@ class RedisStorage(base.BaseStorage):
         if trial.state != structs.TrialState.COMPLETE:
             return
         study_id = self.get_study_id_from_trial_id(trial_id)
-        if not self.redis.exists("study_id:{:010d}:best_trial_id".format(study_id)):
+        if not self._redis.exists("study_id:{:010d}:best_trial_id".format(study_id)):
             self._set_best_trial(study_id, trial_id)
             return
 
@@ -528,19 +528,19 @@ class RedisStorage(base.BaseStorage):
     def get_trial(self, trial_id):
         # type: (int) -> structs.FrozenTrial
 
-        frozen_trial_pkl = self.redis.get(self._key_trial(trial_id))
+        frozen_trial_pkl = self._redis.get(self._key_trial(trial_id))
         assert frozen_trial_pkl is not None
         return pickle.loads(frozen_trial_pkl)
 
     def _set_trial(self, trial_id, trial):
         # type: (int, structs.FrozenTrial) -> None
 
-        self.redis.set(self._key_trial(trial_id), pickle.dumps(trial))
+        self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
     def _del_trial(self, trial_id):
         # type: (int) -> None
 
-        with self.redis.pipeline() as pipe:
+        with self._redis.pipeline() as pipe:
             pipe.multi()
             pipe.delete(self._key_trial(trial_id))
             pipe.delete("trial_id:{:010d}:study_id".format(trial_id))
@@ -552,7 +552,7 @@ class RedisStorage(base.BaseStorage):
         self._check_study_id(study_id)
 
         study_trial_list_key = "study_id:{:010d}:trial_list".format(study_id)
-        return [int(tid) for tid in self.redis.lrange(study_trial_list_key, 0, -1)]
+        return [int(tid) for tid in self._redis.lrange(study_trial_list_key, 0, -1)]
 
     def get_all_trials(self, study_id, deepcopy=True):
         # type: (int, bool) -> List[structs.FrozenTrial]
@@ -582,5 +582,5 @@ class RedisStorage(base.BaseStorage):
     def _check_study_id(self, study_id):
         # type: (int) -> None
 
-        if not self.redis.exists("study_id:{:010d}:study_name".format(study_id)):
+        if not self._redis.exists("study_id:{:010d}:study_name".format(study_id)):
             raise ValueError("study_id {} does not exist.".format(study_id))
