@@ -77,7 +77,7 @@ STORAGE_MODES = [
 def redis_with_flushdb():
     # type: () -> BaseStorage
 
-    # the redis url is not going to be used, but it has to be valid
+    # The redis url is not going to be used, but it has to be valid.
     storage = RedisStorage("redis://localhost")
     storage.redis = fakeredis.FakeStrictRedis()
     return storage
@@ -113,6 +113,16 @@ def test_create_new_study(storage_init_func):
     assert len(summaries) == 1
     assert summaries[0]._study_id == study_id
     assert summaries[0].study_name.startswith(DEFAULT_STUDY_NAME_PREFIX)
+
+
+@parametrize_storage
+def test_create_and_delete_anonymous_study(storage_init_func):
+    # type: (Callable[[], BaseStorage]) -> None
+
+    storage = storage_init_func()
+    study_id = storage.create_new_study()
+    study_name = storage.get_study_name_from_id(study_id)
+    assert study_id == storage.get_study_id_from_name(study_name)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

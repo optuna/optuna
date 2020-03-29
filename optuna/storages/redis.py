@@ -35,7 +35,7 @@ class RedisStorage(base.BaseStorage):
     Example:
 
         We create an :class:`~optuna.storages.redis.RedisStorage` instance using
-        the given redis database URL
+        the given redis database URL.
 
         .. code::
 
@@ -52,8 +52,7 @@ class RedisStorage(base.BaseStorage):
             >>> study.optimize(objective)
 
     Args:
-        url: URL of the redis storage. password and db are optional
-                   (ie: redis://localhost:6379)
+        url: URL of the redis storage, password and db are optional. (ie: redis://localhost:6379)
 
     .. note::
         If you use plan to use Redis as a storage mechanism for optuna,
@@ -77,15 +76,14 @@ class RedisStorage(base.BaseStorage):
     def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
 
-        key_study_name = "study_name:{}:study_id".format(study_name)
-        if study_name is not None and self.redis.exists(key_study_name):
+        if study_name is not None and self.redis.exists(self._key_study_name(study_name)):
             raise exceptions.DuplicatedStudyError
 
         if not self.redis.exists("study_counter"):
-            # we need the counter to start with 0
+            # We need the counter to start with 0.
             self.redis.set("study_counter", -1)
         study_id = self.redis.incr("study_counter", 1)
-        # we need the trial_number counter to start with 0
+        # We need the trial_number counter to start with 0.
         self.redis.set("study_id:{:010d}:trial_number".format(study_id), -1)
 
         if study_name is None:
@@ -93,7 +91,7 @@ class RedisStorage(base.BaseStorage):
 
         with self.redis.pipeline() as pipe:
             pipe.multi()
-            pipe.set(key_study_name, pickle.dumps(study_id))
+            pipe.set(self._key_study_name(study_name), pickle.dumps(study_id))
             pipe.set("study_id:{:010d}:study_name".format(study_id), pickle.dumps(study_name))
             pipe.set(
                 "study_id:{:010d}:direction".format(study_id),
@@ -141,6 +139,12 @@ class RedisStorage(base.BaseStorage):
             pipe.delete("study_id:{:010d}:best_trial_id".format(study_id))
             pipe.delete("study_id:{:010d}:params_distribution".format(study_id))
             pipe.execute()
+
+    @staticmethod
+    def _key_study_name(study_name):
+        # type: (str) -> str
+
+        return "study_name:{}:study_id".format(study_name)
 
     @staticmethod
     def _key_study_summary(study_id):
@@ -213,9 +217,9 @@ class RedisStorage(base.BaseStorage):
     def get_study_id_from_name(self, study_name):
         # type: (str) -> int
 
-        if not self.redis.exists("study_name:{}:study_id".format(study_name)):
+        if not self.redis.exists(self._key_study_name(study_name)):
             raise ValueError("No such study {}.".format(study_name))
-        study_id_pkl = self.redis.get("study_name:{}:study_id".format(study_name))
+        study_id_pkl = self.redis.get(self._key_study_name(study_name))
         assert study_id_pkl is not None
         return pickle.loads(study_id_pkl)
 
