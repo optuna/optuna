@@ -160,7 +160,10 @@ class Trial(BaseTrial):
 
     def suggest_float(self, name, low, high, *, log=False):
         # type: (str, float, float, bool) -> float
-        """Wrapper method for ``suggest_uniform`` and ``suggest_loguniform``.
+        """Suggest a value for the floating point parameter.
+
+        Note that this is a wrapper method for :func:`~optuna.trial.Trial.suggest_uniform`
+        and :func:`~optuna.trial.Trial.suggest_loguniform`.
 
         .. versionadded:: 1.3.0
 
