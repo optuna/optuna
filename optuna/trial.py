@@ -188,7 +188,7 @@ class Trial(BaseTrial):
                 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
 
-            ..testcode::
+            .. testcode::
 
                 def objective(trial):
                     momentum = trial.suggest_float('momentum', 0.0, 1.0)
