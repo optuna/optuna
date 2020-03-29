@@ -377,13 +377,27 @@ class TestChainerMNTrial(object):
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             low = 0
             high = 10
+            step = 1
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_int("x", low, high)
+                x1 = mn_trial.suggest_int("x", low, high, step)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_int("x", low, high)
+                x2 = mn_trial.suggest_int("x", low, high, step)
+                assert x1 == x2
+
+                with pytest.raises(ValueError):
+                    mn_trial.suggest_uniform("x", low, high)
+
+            step = 2
+            for _ in range(10):
+                mn_trial = _create_new_chainermn_trial(study, comm)
+
+                x1 = mn_trial.suggest_int("x", low, high, step)
+                assert low <= x1 <= high
+
+                x2 = mn_trial.suggest_int("x", low, high, step)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):

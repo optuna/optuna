@@ -86,8 +86,12 @@ class RandomSampler(BaseSampler):
             # v may slightly exceed range due to round-off errors.
             return float(min(max(v, param_distribution.low), param_distribution.high))
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
+            # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
+            r = (param_distribution.high - param_distribution.low) / param_distribution.step
             # numpy.random.randint includes low but excludes high.
-            return self._rng.randint(param_distribution.low, param_distribution.high + 1)
+            s = self._rng.randint(0, r + 1)
+            v = s * param_distribution.step + param_distribution.low
+            return int(v)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             choices = param_distribution.choices
             index = self._rng.randint(0, len(choices))
