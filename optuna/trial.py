@@ -3,7 +3,6 @@ from datetime import datetime
 import decimal
 import warnings
 
-from optuna._experimental import experimental
 from optuna import distributions
 from optuna import logging
 from optuna import type_checking
@@ -30,7 +29,6 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     Note that this class is not supposed to be directly accessed by library users.
     """
 
-    @experimental("1.2.0")
     def suggest_float(self, name, low, high, *, log=False):
         # type: (str, float, float, bool) -> float
 
@@ -160,7 +158,6 @@ class Trial(BaseTrial):
             self.study, trial, self.relative_search_space
         )
 
-    @experimental("1.2.0")
     def suggest_float(self, name, low, high, *, log=False):
         # type: (str, float, float, bool) -> float
         """Wrapper method for ``suggest_uniform`` and ``suggest_loguniform``.
@@ -944,7 +941,6 @@ class FixedTrial(BaseTrial):
         self._system_attrs = {}  # type: Dict[str, Any]
         self._datetime_start = datetime.now()
 
-    @experimental("1.2.0")
     def suggest_float(self, name, low, high, *, log=False):
         # type: (str, float, float, bool) -> float
 
