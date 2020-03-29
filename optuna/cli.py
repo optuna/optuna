@@ -3,7 +3,7 @@
 This module are implemented by cliff. And we follow
 [the demoapp](https://docs.openstack.org/cliff/latest/user/demoapp.html) to implement it.
 
-If you want to add a new command, you also need to update `entry_points` in `setup.py`. 
+If you want to add a new command, you also need to update `entry_points` in `setup.py`.
 c.f. https://docs.openstack.org/cliff/latest/user/demoapp.html#setup-py
 """
 
