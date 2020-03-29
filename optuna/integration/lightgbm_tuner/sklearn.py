@@ -52,13 +52,7 @@ if sklearn.__version__ >= "0.22":
 else:
     from sklearn.utils import safe_indexing as _safe_indexing
 
-__all__ = [
-    "LGBMModel",
-    "LGBMClassifier",
-    "LGBMRegressor",
-    "OGBMClassifier",
-    "OGBMRegressor",
-]
+__all__ = ["LGBMModel", "LGBMClassifier", "LGBMRegressor"]
 
 CVType = Union[BaseCrossValidator, int, List[Tuple]]
 
