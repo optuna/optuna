@@ -25,7 +25,7 @@ def plot_intermediate_values(study):
 
             import optuna
 
-            # Derivative function for x**2
+            # Derivative function for x ** 2
             def df(x):
                 return 2 * x
 
