@@ -1,0 +1,17 @@
+optuna.integration:
+  - optuna/integration/**/*
+
+optuna.pruners:
+  - optuna/pruners/**/*
+
+optuna.samplers:
+  - optuna/samplers/**/*
+
+optuna.storages:
+  - optuna/storages/**/*
+
+optuna.testing:
+  - optuna/testing/**/*
+
+optuna.visualization:
+  - optuna/visualization/**/*
