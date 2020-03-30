@@ -27,7 +27,7 @@ def plot_intermediate_values(study):
 
             # Derivative function for x**2
             def df(x):
-                return 2*x
+                return 2 * x
 
             def objective(trial):
 
