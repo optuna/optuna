@@ -41,13 +41,10 @@ class LightGBMPruningCallback(object):
 
     Example:
 
-        Add a pruning callback which observes validation scores to training of a LightGBM model.
-
-        .. code::
-
-                param = {'objective': 'binary', 'metric': 'binary_error'}
-                pruning_callback = LightGBMPruningCallback(trial, 'binary_error')
-                gbm = lgb.train(param, dtrain, valid_sets=[dtest], callbacks=[pruning_callback])
+        See `the example <https://github.com/optuna/optuna/blob/30dba8814d332ff4
+        0d9c7465ee660a8ecf499547/examples/pruning/lightgbm_integration.py>`_
+        if you want to add a pruning callback which observes AUC to training
+        of a LightGBM model.
 
     Args:
         trial:

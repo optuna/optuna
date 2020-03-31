@@ -14,12 +14,9 @@ class MXNetPruningCallback(object):
 
     Example:
 
-        Add a pruning callback which observes validation accuracy.
-
-        .. code::
-
-            model.fit(train_data=X, eval_data=Y,
-                      eval_end_callback=MXNetPruningCallback(trial, eval_metric='accuracy'))
+        See `the example <https://github.com/optuna/optuna/blob/30dba8814d332ff4
+        0d9c7465ee660a8ecf499547/examples/pruning/mxnet_integration.py>`_
+        if you want to add a pruning callback which observes accuracy.
 
     Args:
         trial:

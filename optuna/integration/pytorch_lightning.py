@@ -22,12 +22,9 @@ class PyTorchLightningPruningCallback(EarlyStopping):
 
     Example:
 
-        Add a pruning callback which observes validation accuracy.
-
-        .. code::
-
-            trainer.pytorch_lightning.Trainer(
-                early_stop_callback=PyTorchLightningPruningCallback(trial, monitor='avg_val_acc'))
+        See `the example <https://github.com/optuna/optuna/blob/30dba8814d332ff4
+        0d9c7465ee660a8ecf499547/examples/pytorch_lightning_simple.py>`_
+        if you want to add a pruning callback which observes accuracy.
 
     Args:
         trial:

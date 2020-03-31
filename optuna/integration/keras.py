@@ -21,11 +21,9 @@ class KerasPruningCallback(Callback):
 
     Example:
 
-        Add a pruning callback which observes validation losses.
-
-        .. code::
-
-            model.fit(X, y, callbacks=[KerasPruningCallback(trial, 'val_loss')])
+        See `the example <https://github.com/optuna/optuna/blob/30dba8814d332ff4
+        0d9c7465ee660a8ecf499547/examples/pruning/keras_integration.py>`_
+        if you want to add a pruning callback which observes validation accuracy.
 
     Args:
         trial:

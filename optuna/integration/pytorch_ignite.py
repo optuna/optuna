@@ -19,19 +19,9 @@ class PyTorchIgnitePruningHandler(object):
 
     Example:
 
-        Add a pruning handler which observes validation accuracy.
-
-        .. code::
-
-                evaluator = create_supervised_evaluator(model,
-                                                        metrics={'accuracy': Accuracy()},
-                                                        device=device)
-                handler = PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
-                evaluator.add_event_handler(Events.COMPLETED, handler)
-
-                @trainer.on(Events.EPOCH_COMPLETED)
-                def log_validation_results(engine):
-                    evaluator.run(val_loader)
+        See `the example <https://github.com/optuna/optuna/blob/30dba8814d332ff4
+        0d9c7465ee660a8ecf499547/examples/pytorch_ignite_simple.py>`_
+        if you want to add a pruning handler which observes validation accuracy.
 
     Args:
         trial:

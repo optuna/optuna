@@ -24,11 +24,9 @@ class TFKerasPruningCallback(Callback):
 
     Example:
 
-        Add a pruning callback which observes validation losses.
-
-        .. code::
-
-            model.fit(x, y, callbacks=[TFKerasPruningCallback(trial, 'val_loss')])
+        See `the example <https://github.com/optuna/optuna/blob/30dba8814d332ff4
+        0d9c7465ee660a8ecf499547/examples/pruning/tfkeras_integration.py>`_
+        if you want to add a pruning callback which observes validation accuracy.
 
     Args:
         trial:
