@@ -162,6 +162,7 @@ class CmaEsSampler(BaseSampler):
             self._warn_independent_sampling = False
             return {}
 
+        # TODO(c-bata): Remove `ordered_keys` by passing `ordered_dict=True` to `intersection_search_space`.
         ordered_keys = [key for key in search_space]
         ordered_keys.sort()
 
