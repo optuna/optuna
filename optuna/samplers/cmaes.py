@@ -33,7 +33,7 @@ class CmaEsSampler(BaseSampler):
             def objective(trial):
                 x = trial.suggest_uniform('x', -1, 1)
                 y = trial.suggest_int('y', -1, 1)
-                return x**2 + y
+                return x ** 2 + y
 
             sampler = optuna.samplers.CmaEsSampler()
             study = optuna.create_study(sampler=sampler)
@@ -272,7 +272,7 @@ class CmaEsSampler(BaseSampler):
             "by using `{}` instead of `CmaEsSampler` "
             "(optimization performance may be degraded). "
             "You can suppress this warning by setting `warn_independent_sampling` "
-            "to `False` in the constructor of `CMASampler`, "
+            "to `False` in the constructor of `CmaEsSampler`, "
             "if this independent sampling is intended behavior.".format(
                 param_name, trial.number, self._independent_sampler.__class__.__name__
             )
