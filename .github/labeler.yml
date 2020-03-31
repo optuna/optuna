@@ -15,3 +15,9 @@ optuna.testing:
 
 optuna.visualization:
   - optuna/visualization/**/*
+
+optuna.study:
+  - optuna/study.py
+
+optuna.trial:
+  - optuna/trial.py
