@@ -113,11 +113,8 @@ class CmaEsSampler(BaseSampler):
         self, study: "optuna.Study", trial: "optuna.structs.FrozenTrial",
     ) -> Dict[str, BaseDistribution]:
 
-        # Import here to avoid circular imports without breaking a backward compatibility.
-        from optuna.samplers import intersection_search_space
-
         search_space = {}  # type: Dict[str, BaseDistribution]
-        for name, distribution in intersection_search_space(study).items():
+        for name, distribution in optuna.samplers.intersection_search_space(study).items():
             if distribution.single():
                 # `cma` cannot handle distributions that contain just a single value, so we skip
                 # them. Note that the parameter values for such distributions are sampled in
