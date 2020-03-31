@@ -40,6 +40,8 @@ class _BaseCommand(Command):
 
 
 class _CreateStudy(_BaseCommand):
+    """Create a new study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -81,6 +83,8 @@ class _CreateStudy(_BaseCommand):
 
 
 class _DeleteStudy(_BaseCommand):
+    """Delete a specified study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -102,6 +106,8 @@ class _DeleteStudy(_BaseCommand):
 
 
 class _StudySetUserAttribute(_BaseCommand):
+    """Set a user attribute to a study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -122,6 +128,7 @@ class _StudySetUserAttribute(_BaseCommand):
 
 
 class _Studies(Lister):
+    """Show a list of studies."""
 
     _datetime_format = "%Y-%m-%d %H:%M:%S"
     _study_list_header = ("NAME", "DIRECTION", "N_TRIALS", "DATETIME_START")
@@ -152,6 +159,8 @@ class _Studies(Lister):
 
 
 class _Dashboard(_BaseCommand):
+    """Launch web dashboard (beta)."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -191,6 +200,8 @@ class _Dashboard(_BaseCommand):
 
 
 class _StudyOptimize(_BaseCommand):
+    """Start optimization of a study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -254,6 +265,8 @@ class _StudyOptimize(_BaseCommand):
 
 
 class _StorageUpgrade(_BaseCommand):
+    """Upgrade the schema of a storage."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
