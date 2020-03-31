@@ -1,3 +1,6 @@
+# Label pull requests using https://github.com/actions/labeler.
+# Note that once added to a pull request, a label will not removed, even when changes are reverted.
+
 name: labeler
 
 on:
