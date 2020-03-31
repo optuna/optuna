@@ -27,6 +27,25 @@ parametrize_storage = pytest.mark.parametrize(
 
 
 @parametrize_storage
+def test_check_distribution_suggest_float(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    x1 = trial.suggest_float("x1", 10, 20)
+    x2 = trial.suggest_uniform("x1", 10, 20)
+
+    assert x1 == x2
+
+    x3 = trial.suggest_float("x2", 1e-5, 1e-3, log=True)
+    x4 = trial.suggest_loguniform("x2", 1e-5, 1e-3)
+
+    assert x3 == x4
+
+
+@parametrize_storage
 def test_check_distribution_suggest_uniform(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
 
@@ -157,6 +176,15 @@ def test_suggest_low_equals_high(storage_init_func):
         assert trial.suggest_int("d", 1, 1) == 1  # Suggesting a param.
         assert trial.suggest_int("d", 1, 1) == 1  # Suggesting the same param.
         assert mock_object.call_count == 0
+        assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting the same param.
+        assert mock_object.call_count == 0
+        assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting a param.
+        assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting the same param.
+        assert mock_object.call_count == 0
+        assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting a param.
+        assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting the same param.
+        assert mock_object.call_count == 0
 
 
 @parametrize_storage
@@ -261,6 +289,16 @@ def test_trial_should_prune():
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
     trial.report(1, 1)
     assert trial.should_prune()
+
+
+def test_fixed_trial_suggest_float():
+    # type: () -> None
+
+    trial = FixedTrial({"x": 1.0})
+    assert trial.suggest_float("x", -100.0, 100.0) == 1.0
+
+    with pytest.raises(ValueError):
+        trial.suggest_uniform("y", -100.0, 100.0)
 
 
 def test_fixed_trial_suggest_uniform():
