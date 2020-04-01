@@ -6,6 +6,7 @@ from typing import List
 from typing import Sequence
 from typing import Union
 
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna import mo
 from optuna.structs import FrozenTrial
@@ -16,6 +17,7 @@ from optuna.trial import Trial
 CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
+@experimental("1.4.0")
 class MoTrial(object):
     def __init__(self, trial: Trial):
         self._trial = trial
@@ -97,6 +99,7 @@ class MoTrial(object):
         return [trial.intermediate_values.get(i) for i in range(self._n_objectives)]
 
 
+@experimental("1.4.0")
 class FrozenMoTrial(object):
     def __init__(self, n_objectives: int, trial: FrozenTrial):
         self.n_objectives = n_objectives

@@ -3,11 +3,13 @@ from typing import Dict
 from typing import Optional
 
 import optuna
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna import mo
 from optuna.mo.samplers import BaseMoSampler
 
 
+@experimental("1.4.0")
 class RandomMoSampler(BaseMoSampler):
     def __init__(self, seed: Optional[int] = None) -> None:
         self._sampler = optuna.samplers.RandomSampler(seed=seed)

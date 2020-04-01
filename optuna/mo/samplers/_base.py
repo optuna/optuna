@@ -2,10 +2,12 @@ import abc
 from typing import Any
 from typing import Dict
 
+from optuna._experimental import experimental
 from optuna import mo
 from optuna.distributions import BaseDistribution
 
 
+@experimental("1.4.0")
 class BaseMoSampler(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def infer_relative_search_space(
