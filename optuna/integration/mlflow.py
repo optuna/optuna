@@ -116,7 +116,7 @@ class MLflowCallback(object):
         else:
             raise ValueError("Either 'experiment' or 'study.study_name' must be set!")
 
-        with mlflow.start_run(run_name=trial.number):
+        with mlflow.start_run(run_name=str(trial.number)):
 
             # This sets the metric for MLflow.
             trial_value = trial.value if trial.value is not None else float("nan")
