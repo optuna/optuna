@@ -1,5 +1,6 @@
 import collections
 import datetime
+import enum
 import gc
 import math
 import threading
@@ -42,11 +43,124 @@ if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
 _logger = logging.get_logger(__name__)
+
+
+class StudyDirection(enum.Enum):
+    """Direction of a :class:`~optuna.study.Study`.
+
+    Attributes:
+        NOT_SET:
+            Direction has not been set.
+        MINIMIZE:
+            :class:`~optuna.study.Study` minimizes the objective function.
+        MAXIMIZE:
+            :class:`~optuna.study.Study` maximizes the objective function.
+    """
+
+    NOT_SET = 0
+    MINIMIZE = 1
+    MAXIMIZE = 2
+
+
+class StudySummary(object):
+    """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
+
+    See also :func:`optuna.study.get_all_study_summaries`.
+
+    Attributes:
+        study_name:
+            Name of the :class:`~optuna.study.Study`.
+        direction:
+            :class:`StudyDirection` of the :class:`~optuna.study.Study`.
+        best_trial:
+            :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
+        user_attrs:
+            Dictionary that contains the attributes of the :class:`~optuna.study.Study` set with
+            :func:`optuna.study.Study.set_user_attr`.
+        system_attrs:
+            Dictionary that contains the attributes of the :class:`~optuna.study.Study` internally
+            set by Optuna.
+        n_trials:
+            The number of trials ran in the :class:`~optuna.study.Study`.
+        datetime_start:
+            Datetime where the :class:`~optuna.study.Study` started.
+    """
+
+    def __init__(
+        self,
+        study_name,  # type: str
+        direction,  # type: StudyDirection
+        best_trial,  # type: Optional[FrozenTrial]
+        user_attrs,  # type: Dict[str, Any]
+        system_attrs,  # type: Dict[str, Any]
+        n_trials,  # type: int
+        datetime_start,  # type: Optional[datetime]
+        study_id,  # type: int
+    ):
+        # type: (...) -> None
+
+        self.study_name = study_name
+        self.direction = direction
+        self.best_trial = best_trial
+        self.user_attrs = user_attrs
+        self.system_attrs = system_attrs
+        self.n_trials = n_trials
+        self.datetime_start = datetime_start
+        self._study_id = study_id
+
+    def __eq__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, StudySummary):
+            return NotImplemented
+
+        return other.__dict__ == self.__dict__
+
+    def __lt__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, StudySummary):
+            return NotImplemented
+
+        return self._study_id < other._study_id
+
+    def __le__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, StudySummary):
+            return NotImplemented
+
+        return self._study_id <= other._study_id
+
+    @property
+    def study_id(self):
+        # type: () -> int
+        """Return the study ID.
+
+        .. deprecated:: 0.20.0
+            The direct use of this attribute is deprecated and it is recommended that you use
+            :attr:`~optuna.structs.StudySummary.study_name` instead.
+
+        Returns:
+            The study ID.
+        """
+
+        message = (
+            "The use of `StudySummary.study_id` is deprecated. "
+            "Please use `StudySummary.study_name` instead."
+        )
+        warnings.warn(message, DeprecationWarning)
+
+        logger = logging.get_logger(__name__)
+        logger.warning(message)
+
+        return self._study_id
 
 
 class BaseStudy(object):
