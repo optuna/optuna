@@ -25,7 +25,7 @@ CallbackFuncType = Callable[["mo.study.MoStudy", "mo.trial.FrozenMoTrial"], None
 _logger = logging.get_logger(__name__)
 
 
-@experimental("1.14.0")
+@experimental("1.4.0")
 def create_mo_study(
     n_objectives: int,  # TODO(ohta): Consider removing this arg and make `directions` a positional arg instead.
     study_name: Optional[str] = None,
@@ -57,7 +57,7 @@ def create_mo_study(
     return MoStudy(study)
 
 
-@experimental("1.14.0")
+@experimental("1.4.0")
 def load_mo_study(
     study_name: str,
     storage: Union[str, BaseStorage],
@@ -71,7 +71,7 @@ def load_mo_study(
     return MoStudy(study)
 
 
-@experimental("1.14.0")
+@experimental("1.4.0")
 class MoStudy(object):
     def __init__(self, study: Study):
         self._study = study
