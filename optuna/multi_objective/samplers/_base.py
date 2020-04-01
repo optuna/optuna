@@ -3,7 +3,7 @@ from typing import Any
 from typing import Dict
 
 from optuna._experimental import experimental
-from optuna import mo
+from optuna import multi_objective
 from optuna.distributions import BaseDistribution
 
 
@@ -11,15 +11,15 @@ from optuna.distributions import BaseDistribution
 class BaseMoSampler(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def infer_relative_search_space(
-        self, study: "mo.study.MoStudy", trial: "mo.trial.FrozenMoTrial"
+        self, study: "multi_objective.study.MoStudy", trial: "multi_objective.trial.FrozenMoTrial"
     ):
         raise NotImplementedError
 
     @abc.abstractmethod
     def sample_relative(
         self,
-        study: "mo.study.MoStudy",
-        trial: "mo.trial.FrozenMoTrial",
+        study: "multi_objective.study.MoStudy",
+        trial: "multi_objective.trial.FrozenMoTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         raise NotImplementedError
@@ -27,8 +27,8 @@ class BaseMoSampler(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def sample_independent(
         self,
-        study: "mo.study.MoStudy",
-        trial: "mo.trial.FrozenMoTrial",
+        study: "multi_objective.study.MoStudy",
+        trial: "multi_objective.trial.FrozenMoTrial",
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:

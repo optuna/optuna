@@ -8,7 +8,7 @@ from typing import Union
 
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
-from optuna import mo
+from optuna import multi_objective
 from optuna.structs import FrozenTrial
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
@@ -21,7 +21,7 @@ CategoricalChoiceType = Union[None, bool, int, float, str]
 class MoTrial(object):
     def __init__(self, trial: Trial):
         self._trial = trial
-        self._n_objectives = mo.study.MoStudy(trial.study).n_objectives
+        self._n_objectives = multi_objective.study.MoStudy(trial.study).n_objectives
 
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         return self._trial.suggest_uniform(name, low, high)
@@ -158,7 +158,7 @@ class FrozenMoTrial(object):
         return self._trial.distributions
 
     def _dominates(
-        self, other: "mo.trial.FrozenMoTrial", directions: List[StudyDirection]
+        self, other: "multi_objective.trial.FrozenMoTrial", directions: List[StudyDirection]
     ) -> bool:
         if len(self.values) != len(other.values):
             raise ValueError("Trials with different numbers of objectives cannot be compared.")
