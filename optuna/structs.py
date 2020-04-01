@@ -271,14 +271,17 @@ class FrozenTrial(object):
 
     @property
     def duration(self):
-        # type: () -> timedelta
+        # type: () -> Optional[timedelta]
         """Return the elapsed time taken to complete the trial.
 
         Returns:
             The duration.
         """
 
-        return self.datetime_complete - self.datetime_start
+        if self.datetime_start and self.datetime_complete:
+            return self.datetime_complete - self.datetime_start
+        else:
+            return None
 
 
 class StudySummary(object):
@@ -289,7 +292,7 @@ class StudySummary(object):
     Attributes:
         study_name:
             Name of the :class:`~optuna.study.Study`.
-        direction:
+        # direction:
             :class:`StudyDirection` of the :class:`~optuna.study.Study`.
         best_trial:
             :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
