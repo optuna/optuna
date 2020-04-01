@@ -19,9 +19,13 @@ from optuna.study import Study
 from optuna.trial import Trial
 
 
-ObjectiveFuncType = Callable[["multi_objective.trial.MoTrial"], List[float]]
+ObjectiveFuncType = Callable[["multi_objective.trial.MultiObjectiveTrial"], List[float]]
 CallbackFuncType = Callable[
-    ["multi_objective.study.MoStudy", "multi_objective.trial.FrozenMoTrial"], None
+    [
+        "multi_objective.study.MultiObjectiveStudy",
+        "multi_objective.trial.FrozenMultiObjectiveTrial",
+    ],
+    None,
 ]
 
 _logger = logging.get_logger(__name__)
@@ -32,13 +36,13 @@ def create_study(
     n_objectives: int,  # TODO(ohta): Consider removing this arg and make `directions` a positional arg instead.
     study_name: Optional[str] = None,
     storage: Union[None, str, BaseStorage] = None,
-    sampler: Optional["multi_objective.samplers.BaseMoSampler"] = None,
+    sampler: Optional["multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
     directions: Optional[List[str]] = None,
     load_if_exists: bool = False,
 ):
     # TODO(ohta): Support pruner.
-    mo_sampler = sampler or multi_objective.samplers.RandomMoSampler()
-    sampler = multi_objective.samplers._MoSamplerAdapter(mo_sampler)
+    mo_sampler = sampler or multi_objective.samplers.RandomMultiObjectiveSampler()
+    sampler = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
     if directions is None:
         directions = ["minimize" for _ in range(n_objectives)]
@@ -56,25 +60,25 @@ def create_study(
 
     study.set_system_attr("multi_objective.study.directions", directions)
 
-    return MoStudy(study)
+    return MultiObjectiveStudy(study)
 
 
 @experimental("1.4.0")
 def load_study(
     study_name: str,
     storage: Union[str, BaseStorage],
-    sampler: Optional["multi_objective.samplers.BaseMoSampler"] = None,
+    sampler: Optional["multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
 ):
     mo_sampler = sampler or multi_objective.samplers.RandomSampler()
-    sampler = multi_objective.samplers._MoSamplerAdapter(mo_sampler)
+    sampler = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
     study = optuna.create_study(study_name=study_name, storage=storage, sampler=sampler)
 
-    return MoStudy(study)
+    return MultiObjectiveStudy(study)
 
 
 @experimental("1.4.0")
-class MoStudy(object):
+class MultiObjectiveStudy(object):
     def __init__(self, study: Study):
         self._study = study
 
@@ -113,7 +117,7 @@ class MoStudy(object):
         show_progress_bar: bool = False,
     ) -> None:
         def mo_objective(trial: Trial) -> float:
-            mo_trial = multi_objective.trial.MoTrial(trial)
+            mo_trial = multi_objective.trial.MultiObjectiveTrial(trial)
             values = objective(mo_trial)
             mo_trial._report_complete_values(values)
             return 0.0  # Dummy value.
@@ -147,17 +151,19 @@ class MoStudy(object):
         self._study.enqueue_trial(params)
 
     @property
-    def trials(self) -> List["multi_objective.trial.FrozenMoTrial"]:
+    def trials(self) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
         return self.get_trials()
 
-    def get_trials(self, deepcopy: bool = True) -> List["multi_objective.trial.FrozenMoTrial"]:
+    def get_trials(
+        self, deepcopy: bool = True
+    ) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
         return [
-            multi_objective.trial.FrozenMoTrial(self.n_objectives, t)
+            multi_objective.trial.FrozenMultiObjectiveTrial(self.n_objectives, t)
             for t in self._study.get_trials(deepcopy=deepcopy)
         ]
 
     @property
-    def pareto_front_trials(self) -> List["multi_objective.trial.FrozenMoTrial"]:
+    def pareto_front_trials(self) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
         pareto_front = []
         trials = [t for t in self.trials if t.state == TrialState.COMPLETE]
 
@@ -176,7 +182,7 @@ class MoStudy(object):
 
 
 def _log_completed_trial(trial: Trial, result: float) -> None:
-    values = multi_objective.trial.MoTrial(trial)._values
+    values = multi_objective.trial.MultiObjectiveTrial(trial)._values
     _logger.info(
         "Finished trial#{} with values: {} with parameters: {}.".format(
             trial.number, values, trial.params,

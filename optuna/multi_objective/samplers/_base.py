@@ -8,18 +8,20 @@ from optuna.distributions import BaseDistribution
 
 
 @experimental("1.4.0")
-class BaseMoSampler(object, metaclass=abc.ABCMeta):
+class BaseMultiObjectiveSampler(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def infer_relative_search_space(
-        self, study: "multi_objective.study.MoStudy", trial: "multi_objective.trial.FrozenMoTrial"
+        self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
     ):
         raise NotImplementedError
 
     @abc.abstractmethod
     def sample_relative(
         self,
-        study: "multi_objective.study.MoStudy",
-        trial: "multi_objective.trial.FrozenMoTrial",
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         raise NotImplementedError
@@ -27,8 +29,8 @@ class BaseMoSampler(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def sample_independent(
         self,
-        study: "multi_objective.study.MoStudy",
-        trial: "multi_objective.trial.FrozenMoTrial",
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:

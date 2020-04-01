@@ -6,24 +6,26 @@ import optuna
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna import multi_objective
-from optuna.multi_objective.samplers import BaseMoSampler
+from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
 
 @experimental("1.4.0")
-class RandomMoSampler(BaseMoSampler):
+class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
     def __init__(self, seed: Optional[int] = None) -> None:
         self._sampler = optuna.samplers.RandomSampler(seed=seed)
 
     def infer_relative_search_space(
-        self, study: "multi_objective.study.MoStudy", trial: "multi_objective.trial.FrozenMoTrial"
+        self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
     ):
         # TODO(ohta): Convert `study` and `trial` to single objective versions before passing.
         return self._sampler.infer_relative_search_space(study, trial)
 
     def sample_relative(
         self,
-        study: "multi_objective.study.MoStudy",
-        trial: "multi_objective.trial.FrozenMoTrial",
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         # TODO(ohta): Convert `study` and `trial` to single objective versions before passing.
@@ -31,8 +33,8 @@ class RandomMoSampler(BaseMoSampler):
 
     def sample_independent(
         self,
-        study: "multi_objective.study.MoStudy",
-        trial: "multi_objective.trial.FrozenMoTrial",
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:

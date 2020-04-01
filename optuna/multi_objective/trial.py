@@ -18,10 +18,10 @@ CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
 @experimental("1.4.0")
-class MoTrial(object):
+class MultiObjectiveTrial(object):
     def __init__(self, trial: Trial):
         self._trial = trial
-        self._n_objectives = multi_objective.study.MoStudy(trial.study).n_objectives
+        self._n_objectives = multi_objective.study.MultiObjectiveStudy(trial.study).n_objectives
 
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         return self._trial.suggest_uniform(name, low, high)
@@ -100,7 +100,7 @@ class MoTrial(object):
 
 
 @experimental("1.4.0")
-class FrozenMoTrial(object):
+class FrozenMultiObjectiveTrial(object):
     def __init__(self, n_objectives: int, trial: FrozenTrial):
         self.n_objectives = n_objectives
         self._trial = trial
@@ -158,7 +158,9 @@ class FrozenMoTrial(object):
         return self._trial.distributions
 
     def _dominates(
-        self, other: "multi_objective.trial.FrozenMoTrial", directions: List[StudyDirection]
+        self,
+        other: "multi_objective.trial.FrozenMultiObjectiveTrial",
+        directions: List[StudyDirection],
     ) -> bool:
         if len(self.values) != len(other.values):
             raise ValueError("Trials with different numbers of objectives cannot be compared.")
@@ -187,18 +189,18 @@ class FrozenMoTrial(object):
         return all([v0 <= v1 for v0, v1 in zip(values0, values1)])
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, FrozenMoTrial):
+        if not isinstance(other, FrozenMultiObjectiveTrial):
             return NotImplemented
         return self._trial == other._trial
 
     def __lt__(self, other: Any) -> bool:
-        if not isinstance(other, FrozenMoTrial):
+        if not isinstance(other, FrozenMultiObjectiveTrial):
             return NotImplemented
 
         return self._trial < other._trial
 
     def __le__(self, other: Any) -> bool:
-        if not isinstance(other, FrozenMoTrial):
+        if not isinstance(other, FrozenMultiObjectiveTrial):
             return NotImplemented
 
         return self._trial <= other._trial
