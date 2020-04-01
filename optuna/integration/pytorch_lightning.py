@@ -23,7 +23,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
     Example:
 
         See `the example <https://github.com/optuna/optuna/blob/30dba8814d332ff4
-        0d9c7465ee660a8ecf499547/examples/pytorch_lightning_simple.py>`_
+        0d9c7465ee660a8ecf499547/examples/pytorch_lightning_simple.py>`__
         if you want to add a pruning callback which observes accuracy.
 
     Args:

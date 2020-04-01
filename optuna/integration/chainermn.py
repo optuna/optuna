@@ -70,7 +70,7 @@ class ChainerMNStudy(object):
     Example:
 
         See `the example <https://github.com/optuna/optuna/blob/30dba8814d332ff4
-        0d9c7465ee660a8ecf499547/examples/pruning/chainermn_integration.py>`_
+        0d9c7465ee660a8ecf499547/examples/pruning/chainermn_integration.py>`__
         if you want to optimize an objective function that trains neural network
         written with ChainerMN.
 

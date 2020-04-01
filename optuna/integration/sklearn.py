@@ -517,7 +517,7 @@ class OptunaSearchCV(BaseEstimator):
                 import optuna
                 from sklearn.datasets import load_iris
                 from sklearn.svm import SVC
-        
+
                 clf = SVC(gamma='auto')
                 param_distributions = {
                     'C': optuna.distributions.LogUniformDistribution(1e-10, 1e+10)
