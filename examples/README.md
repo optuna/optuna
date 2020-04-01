@@ -26,6 +26,7 @@ This page contains a list of example codes written with Optuna.
 * [Tensorflow(eager)](./tensorflow_eager_simple.py)
 * [Keras](./keras_simple.py)
 * [FastAI](./fastai_simple.py)
+* [AllenNLP](./allennlp_simple.py)
 
 ### An example where an objective function uses additional arguments
 
@@ -42,6 +43,7 @@ In addition, integration modules are available for the following libraries, prov
 
 * [Pruning with Chainer integration module](./pruning/chainer_integration.py)
 * [Pruning with XGBoost integration module](./pruning/xgboost_integration.py)
+* [Pruning with XGBoost integration module (cross validation, XGBoost.cv)](./pruning/xgboost_cv_integration.py)
 * [Pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
 * [Pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
 * [Pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)

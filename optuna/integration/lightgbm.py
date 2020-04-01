@@ -2,8 +2,11 @@ import sys
 
 import optuna
 
+from optuna.integration import lightgbm_tuner as tuner
+
 try:
     import lightgbm as lgb  # NOQA
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -13,25 +16,24 @@ except ImportError as e:
 
 # Attach lightgbm API.
 if _available:
-    # API from optuna integration.
-    from optuna.integration import lightgbm_tuner as tuner
-
-    # Workaround for mypy.
+    # To pass tests/integration_tests/lightgbm_tuner_tests/test_optimize.py.
     from lightgbm import Dataset  # NOQA
     from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
 
-    _names_from_tuners = ['train', 'LGBMModel', 'LGBMClassifier', 'LGBMRegressor']
+    _names_from_tuners = ["train", "LGBMModel", "LGBMClassifier", "LGBMRegressor"]
 
     # API from lightgbm.
-    for api_name in lgb.__dict__['__all__']:
+    for api_name in lgb.__dict__["__all__"]:
         if api_name in _names_from_tuners:
             continue
         setattr(sys.modules[__name__], api_name, lgb.__dict__[api_name])
 
+    # API from lightgbm_tuner.
     for api_name in _names_from_tuners:
         setattr(sys.modules[__name__], api_name, tuner.__dict__[api_name])
 else:
-    LightGBMTuner = object  # type: ignore
+    # To create docstring of train.
+    setattr(sys.modules[__name__], "train", tuner.__dict__["train"])
 
 
 class LightGBMPruningCallback(object):
@@ -68,7 +70,7 @@ class LightGBMPruningCallback(object):
             instead of train method.
     """
 
-    def __init__(self, trial, metric, valid_name='valid_0'):
+    def __init__(self, trial, metric, valid_name="valid_0"):
         # type: (optuna.trial.Trial, str, str) -> None
 
         _check_lightgbm_availability()
@@ -86,7 +88,7 @@ class LightGBMPruningCallback(object):
         # Note that `5` is not the number of folds but the length of sequence.
         is_cv = len(env.evaluation_result_list) > 0 and len(env.evaluation_result_list[0]) == 5
         if is_cv:
-            target_valid_name = 'cv_agg'
+            target_valid_name = "cv_agg"
         else:
             target_valid_name = self._valid_name
 
@@ -96,19 +98,25 @@ class LightGBMPruningCallback(object):
                 continue
 
             if is_higher_better:
-                if self._trial.storage.get_study_direction(self._trial.study._study_id) != \
-                        optuna.structs.StudyDirection.MAXIMIZE:
+                if (
+                    self._trial.storage.get_study_direction(self._trial.study._study_id)
+                    != optuna.structs.StudyDirection.MAXIMIZE
+                ):
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
                         "terms of study directions. Please specify a metric to be minimized for "
-                        "LightGBMPruningCallback.")
+                        "LightGBMPruningCallback."
+                    )
             else:
-                if self._trial.storage.get_study_direction(self._trial.study._study_id) != \
-                        optuna.structs.StudyDirection.MINIMIZE:
+                if (
+                    self._trial.storage.get_study_direction(self._trial.study._study_id)
+                    != optuna.structs.StudyDirection.MINIMIZE
+                ):
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
                         "terms of study directions. Please specify a metric to be maximized for "
-                        "LightGBMPruningCallback.")
+                        "LightGBMPruningCallback."
+                    )
 
             self._trial.report(current_score, step=env.iteration)
             if self._trial.should_prune():
@@ -119,8 +127,10 @@ class LightGBMPruningCallback(object):
 
         raise ValueError(
             'The entry associated with the validation name "{}" and the metric name "{}" '
-            'is not found in the evaluation result list {}.'.format(
-                target_valid_name, self._metric, str(env.evaluation_result_list)))
+            "is not found in the evaluation result list {}.".format(
+                target_valid_name, self._metric, str(env.evaluation_result_list)
+            )
+        )
 
 
 def _check_lightgbm_availability():
@@ -128,7 +138,8 @@ def _check_lightgbm_availability():
 
     if not _available:
         raise ImportError(
-            'LightGBM is not available. Please install LightGBM to use this feature. '
-            'LightGBM can be installed by executing `$ pip install lightgbm`. '
-            'For further information, please refer to the installation guide of LightGBM. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "LightGBM is not available. Please install LightGBM to use this feature. "
+            "LightGBM can be installed by executing `$ pip install lightgbm`. "
+            "For further information, please refer to the installation guide of LightGBM. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )

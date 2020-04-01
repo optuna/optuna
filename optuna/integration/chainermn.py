@@ -26,6 +26,7 @@ if type_checking.TYPE_CHECKING:
 
 try:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -86,36 +87,38 @@ class ChainerMNStudy(object):
     """
 
     def __init__(
-            self,
-            study,  # type: Study
-            comm,  # type: CommunicatorBase
+        self,
+        study,  # type: Study
+        comm,  # type: CommunicatorBase
     ):
         # type: (...) -> None
 
         _check_chainermn_availability()
 
         if isinstance(study._storage, InMemoryStorage):
-            raise ValueError('ChainerMN integration is not available with InMemoryStorage.')
+            raise ValueError("ChainerMN integration is not available with InMemoryStorage.")
 
         if isinstance(study._storage, RDBStorage):
-            if study._storage.engine.dialect.name == 'sqlite':
+            if study._storage.engine.dialect.name == "sqlite":
                 logger = get_logger(__name__)
-                logger.warning('SQLite may cause synchronization problems when used with '
-                               'ChainerMN integration. Please use other DBs like PostgreSQL.')
+                logger.warning(
+                    "SQLite may cause synchronization problems when used with "
+                    "ChainerMN integration. Please use other DBs like PostgreSQL."
+                )
 
         study_names = comm.mpi_comm.allgather(study.study_name)
         if len(set(study_names)) != 1:
-            raise ValueError('Please make sure an identical study name is shared among workers.')
+            raise ValueError("Please make sure an identical study name is shared among workers.")
 
-        super(ChainerMNStudy, self).__setattr__('delegate', study)
-        super(ChainerMNStudy, self).__setattr__('comm', comm)
+        super(ChainerMNStudy, self).__setattr__("delegate", study)
+        super(ChainerMNStudy, self).__setattr__("comm", comm)
 
     def optimize(
-            self,
-            func,  # type: Callable[[ChainerMNTrial, CommunicatorBase], float]
-            n_trials=None,  # type: Optional[int]
-            timeout=None,  # type: Optional[float]
-            catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        self,
+        func,  # type: Callable[[ChainerMNTrial, CommunicatorBase], float]
+        n_trials=None,  # type: Optional[int]
+        timeout=None,  # type: Optional[float]
+        catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -219,14 +222,14 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
+    def suggest_int(self, name, low, high, step=1):
+        # type: (str, int, int, int) -> int
 
         def func():
             # type: () -> int
 
             assert self.delegate is not None
-            return self.delegate.suggest_int(name, low, high)
+            return self.delegate.suggest_int(name, low, high, step)
 
         return self._call_with_mpi(func)
 
@@ -293,8 +296,10 @@ class ChainerMNTrial(BaseTrial):
         # type: () -> int
 
         warnings.warn(
-            'The use of `ChainerMNTrial.trial_id` is deprecated. '
-            'Please use `ChainerMNTrial.number` instead.', DeprecationWarning)
+            "The use of `ChainerMNTrial.trial_id` is deprecated. "
+            "Please use `ChainerMNTrial.number` instead.",
+            DeprecationWarning,
+        )
         return self._trial_id
 
     @property
@@ -392,7 +397,8 @@ def _check_chainermn_availability():
 
     if not _available:
         raise ImportError(
-            'ChainerMN is not available. Please install ChainerMN to use this feature. '
-            'ChainerMN can be installed by executing `$ pip install chainermn`. '
-            'For further information, please refer to the installation guide of ChainerMN. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "ChainerMN is not available. Please install ChainerMN to use this feature. "
+            "ChainerMN can be installed by executing `$ pip install chainermn`. "
+            "For further information, please refer to the installation guide of ChainerMN. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )

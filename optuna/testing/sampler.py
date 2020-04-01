@@ -61,5 +61,6 @@ class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):
         if len(study.trials) > 1:
             raise RuntimeError("`FirstTrialOnlyRandomSampler` only works on the first trial.")
 
-        return super(FirstTrialOnlyRandomSampler,
-                     self).sample_independent(study, trial, param_name, param_distribution)
+        return super(FirstTrialOnlyRandomSampler, self).sample_independent(
+            study, trial, param_name, param_distribution
+        )

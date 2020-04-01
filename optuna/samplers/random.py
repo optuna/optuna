@@ -22,10 +22,17 @@ class RandomSampler(BaseSampler):
 
     Example:
 
-        .. code::
+        .. testcode::
 
-            >>> study = optuna.create_study(sampler=RandomSampler())
-            >>> study.optimize(objective, direction='minimize')
+            import optuna
+            from optuna.samplers import RandomSampler
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -5, 5)
+                return x**2
+
+            study = optuna.create_study(sampler=RandomSampler())
+            study.optimize(objective, n_trials=10)
 
         Args:
             seed: Seed for random number generator.
@@ -40,7 +47,7 @@ class RandomSampler(BaseSampler):
         # type: () -> Dict[Any, Any]
 
         state = self.__dict__.copy()
-        del state['_rng']
+        del state["_rng"]
         return state
 
     def __setstate__(self, state):
@@ -79,8 +86,12 @@ class RandomSampler(BaseSampler):
             # v may slightly exceed range due to round-off errors.
             return float(min(max(v, param_distribution.low), param_distribution.high))
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
+            # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
+            r = (param_distribution.high - param_distribution.low) / param_distribution.step
             # numpy.random.randint includes low but excludes high.
-            return self._rng.randint(param_distribution.low, param_distribution.high + 1)
+            s = self._rng.randint(0, r + 1)
+            v = s * param_distribution.step + param_distribution.low
+            return int(v)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             choices = param_distribution.choices
             index = self._rng.randint(0, len(choices))
