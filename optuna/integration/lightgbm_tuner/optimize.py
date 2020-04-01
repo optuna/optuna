@@ -49,37 +49,6 @@ DEFAULT_LIGHTGBM_PARAMETERS = {
 }
 
 
-class _GridSamplerUniform1D(optuna.samplers.BaseSampler):
-    def __init__(self, param_name, param_values):
-        # type: (str, Any) -> None
-
-        self.param_name = param_name
-        self.param_values = tuple(param_values)
-        self.value_idx = 0
-
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
-
-        # todo (g-votte): Take care of distributed optimization.
-        assert self.value_idx < len(self.param_values)
-        param_value = self.param_values[self.value_idx]
-        self.value_idx += 1
-        return {self.param_name: param_value}
-
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> None
-
-        raise ValueError(
-            "Suggest method is called for an invalid parameter: {}.".format(param_name)
-        )
-
-    def infer_relative_search_space(self, study, trial):
-        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
-
-        distribution = optuna.distributions.UniformDistribution(-float("inf"), float("inf"))
-        return {self.param_name: distribution}
-
-
 class _TimeKeeper(object):
     def __init__(self):
         # type: () -> None
@@ -213,7 +182,7 @@ class OptunaObjective(BaseTuner):
         self.report = []  # type: List[Dict[str, Any]]
         self.trial_count = 0
         self.best_score = best_score
-        self.best_booster = None
+        self.best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
         self.step_name = step_name
 
         self._check_target_names_supported()
@@ -276,7 +245,7 @@ class OptunaObjective(BaseTuner):
         average_iteration_time = elapsed_secs / booster.current_iteration()
         if self.compare_validation_metrics(val_score, self.best_score):
             self.best_score = val_score
-            self.best_booster = booster
+            self.best_booster_with_trial_number = (booster, trial.number)
 
         if self.pbar is not None:
             self.pbar.set_description(pbar_fmt.format(self.step_name, self.best_score))
@@ -389,7 +358,7 @@ class LightGBMTuner(BaseTuner):
             sample_size=sample_size,
         )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
-        self.best_booster = None
+        self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
 
         if best_params is not None:
             warnings.warn(
@@ -456,6 +425,34 @@ class LightGBMTuner(BaseTuner):
             # self.lgbm_params may contain parameters given by users.
             params.update(self.lgbm_params)
             return params
+
+    @property
+    def best_booster(self) -> lgb.Booster:
+        """Return the best booster."""
+        if self._best_booster_with_trial_number is not None:
+            if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
+                return self._best_booster_with_trial_number[0]
+
+        # No booster is available because the optimization is resumed or run in parallel.
+        # Recreate the best booster using the best parameters.
+        lgbm_params = copy.deepcopy(self.lgbm_params)
+        lgbm_params.update(self.best_params)
+
+        train_set = self.train_set
+        if self.train_subset is not None:
+            train_set = self.train_subset
+
+        objective = OptunaObjective(
+            [],
+            lgbm_params,
+            train_set,
+            self.lgbm_kwargs,
+            -np.inf if self.higher_is_better() else np.inf,
+            step_name="best_booster",
+        )
+        optuna.create_study().optimize(objective, n_trials=1)
+        assert objective.best_booster_with_trial_number is not None
+        return objective.best_booster_with_trial_number[0]
 
     def _get_params(self):
         # type: () -> Dict[str, Any]
@@ -560,7 +557,7 @@ class LightGBMTuner(BaseTuner):
 
         param_name = "feature_fraction"
         param_values = list(np.linspace(0.4, 1.0, n_trials))
-        sampler = _GridSamplerUniform1D(param_name, param_values)
+        sampler = optuna.samplers.GridSampler({param_name: param_values})
         self.tune_params([param_name], len(param_values), sampler, "feature_fraction")
 
     def tune_num_leaves(self, n_trials=20):
@@ -584,7 +581,7 @@ class LightGBMTuner(BaseTuner):
             np.linspace(best_feature_fraction - 0.08, best_feature_fraction + 0.08, n_trials)
         )
         param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
-        sampler = _GridSamplerUniform1D(param_name, param_values)
+        sampler = optuna.samplers.GridSampler({param_name: param_values})
         self.tune_params([param_name], len(param_values), sampler, "feature_fraction_stage2")
 
     def tune_regularization_factors(self, n_trials=20):
@@ -602,7 +599,7 @@ class LightGBMTuner(BaseTuner):
 
         param_name = "min_child_samples"
         param_values = [5, 10, 25, 50, 100]
-        sampler = _GridSamplerUniform1D(param_name, param_values)
+        sampler = optuna.samplers.GridSampler({param_name: param_values})
         self.tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
 
     def tune_params(self, target_param_names, n_trials, sampler, step_name):
@@ -629,7 +626,19 @@ class LightGBMTuner(BaseTuner):
 
         study = self._create_stepwise_study(self.study, step_name)
         study.sampler = sampler
-        study.optimize(objective, n_trials=n_trials, catch=())
+
+        complete_trials = [
+            t
+            for t in study.trials
+            if t.state in (optuna.structs.TrialState.COMPLETE, optuna.structs.TrialState.PRUNED)
+        ]
+        _n_trials = n_trials - len(complete_trials)
+        if _n_trials > 0:
+            try:
+                study.optimize(objective, n_trials=_n_trials, catch=())
+            except ValueError:
+                # ValueError is rased by GridSampler when all combinations were examined.
+                pass
 
         pbar.close()
         del pbar
@@ -637,9 +646,8 @@ class LightGBMTuner(BaseTuner):
         # Add tuning history.
         self.tuning_history += objective.report
 
-        # Note that this implementation may not return the best booster in parallel environment.
-        if objective.best_booster is not None:
-            self.best_booster = objective.best_booster
+        if objective.best_booster_with_trial_number is not None:
+            self._best_booster_with_trial_number = objective.best_booster_with_trial_number
             self._best_params.update(self.best_params)
 
     def _create_stepwise_study(

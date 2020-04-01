@@ -15,6 +15,7 @@ import optuna.integration.lightgbm as lgb
 from optuna.integration.lightgbm_tuner.optimize import _TimeKeeper
 from optuna.integration.lightgbm_tuner.optimize import _timer
 from optuna.integration.lightgbm_tuner.optimize import BaseTuner
+from optuna.integration.lightgbm_tuner.optimize import DEFAULT_LIGHTGBM_PARAMETERS
 from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration.lightgbm_tuner.optimize import OptunaObjective
 from optuna import type_checking
@@ -592,9 +593,54 @@ class TestLightGBMTuner(object):
         ):
             tuner.tune_num_leaves()
 
-        # `num_leaves` should be same as default.
-        assert tuner.best_params["num_leaves"] == 31
-        assert tuner.best_score == 0.9
+    def test_resume_run(self) -> None:
+        params = {"verbose": -1}  # type: Dict
+        valid_data = np.zeros((10, 10))
+        valid_sets = lgb.Dataset(valid_data)
+
+        study = optuna.create_study()
+        tuner = LightGBMTuner(params, valid_sets, valid_sets=valid_sets, study=study)
+
+        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
+            tuner.run()
+
+        n_trials = len(study.trials)
+        assert n_trials == len(study.trials)
+
+        tuner2 = LightGBMTuner(params, valid_sets, valid_sets=valid_sets, study=study)
+        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
+            tuner2.run()
+        assert n_trials == len(study.trials)
+
+    def test_best_booster(self) -> None:
+        params = {"verbose": -1}  # type: Dict
+        valid_data = np.zeros((10, 10))
+        valid_sets = lgb.Dataset(valid_data)
+
+        study = optuna.create_study()
+        tuner = LightGBMTuner(params, valid_sets, valid_sets=valid_sets, study=study)
+
+        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
+            initial_best_booster = tuner.best_booster
+
+        # If no trial have been finished, the booster trained with the default parameters returns.
+        for key, value in DEFAULT_LIGHTGBM_PARAMETERS.items():
+            initial_best_booster.params[key] == value
+
+        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=0.0):
+            tuner.run()
+
+        best_booster = tuner.best_booster
+        assert best_booster.params == initial_best_booster.params
+
+        tuner2 = LightGBMTuner(params, valid_sets, valid_sets=valid_sets, study=study)
+
+        # If the best booster is None and study has trials, the tuner retrain the booster with
+        # the best parameters.
+        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=0.0):
+            best_booster2 = tuner2.best_booster
+
+        assert best_booster.params == best_booster2.params
 
     @pytest.mark.parametrize("direction, overall_best", [("minimize", 1), ("maximize", 2),])
     def test_create_stepwise_study(self, direction: str, overall_best: int) -> None:
