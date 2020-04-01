@@ -1,8 +1,11 @@
 import contextlib
-
 import mock
 import numpy as np
 import pytest
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import optuna
 import optuna.integration.lightgbm as lgb
@@ -14,10 +17,7 @@ from optuna.integration.lightgbm_tuner.optimize import OptunaObjective
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
     from typing import Generator  # NOQA
-    from typing import List  # NOQA
     from typing import Union  # NOQA
 
 
@@ -275,6 +275,24 @@ class TestLightGBMTuner(object):
 
         assert excinfo.type == ValueError
         assert str(excinfo.value) == "`valid_sets` is required."
+
+    @pytest.mark.parametrize(
+        "best_params, tuning_history", [({}, None), (None, []),],
+    )
+    def test_deprecated_args(
+        self, best_params: Optional[Dict[str, Any]], tuning_history: Optional[List[Dict[str, Any]]]
+    ) -> None:
+        # Required keyword arguments.
+        params = {}  # type: Dict[str, Any]
+        train_set = lgb.Dataset(None)
+        with pytest.warns(DeprecationWarning):
+            lgb.LightGBMTuner(
+                params,
+                train_set,
+                valid_sets=[train_set],
+                best_params=best_params,
+                tuning_history=tuning_history,
+            )
 
     @pytest.mark.parametrize(
         "metric, study_direction",

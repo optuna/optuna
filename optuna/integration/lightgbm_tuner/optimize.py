@@ -1,6 +1,7 @@
 import contextlib
 import copy
 import time
+import warnings
 
 import lightgbm as lgb
 import numpy as np
@@ -315,8 +316,17 @@ class LightGBMTuner(BaseTuner):
             A time budget for parameter tuning in seconds.
         best_params:
             A dictionary to store the best parameters.
+
+            .. deprecated:: 1.3.0
+                Please get the parameter values via the ``params`` property of the
+                :class:`~optuna.integration.lightgbm.LightGBMTuner.best_booster`.
+
         tuning_history:
             A List to store the history of parameter tuning.
+
+            .. deprecated:: 1.3.0
+                Please use the ``study`` argument to access optimization history.
+
         study:
             A :class:`~optuna.study.Study` instance to store optimization results. The
             :class:`~optuna.trial.Trial` instances in it has the following user attributes:
@@ -378,6 +388,20 @@ class LightGBMTuner(BaseTuner):
         self._parse_args(*args, **kwargs)
         self.best_booster = None
 
+        if best_params is not None:
+            warnings.warn(
+                "The `best_params` argument is deprecated. "
+                "Please get the parameter values via `lightgbm.basic.Booster.params`.",
+                DeprecationWarning,
+            )
+
+        if tuning_history is not None:
+            warnings.warn(
+                "The `tuning_history` argument is deprecated. "
+                "Please use the `study` argument to access optimization history.",
+                DeprecationWarning,
+            )
+
         self.best_score = -np.inf if self.higher_is_better() else np.inf
         self.best_params = {} if best_params is None else best_params
         self.tuning_history = [] if tuning_history is None else tuning_history
@@ -397,14 +421,14 @@ class LightGBMTuner(BaseTuner):
                 metric_name = self.lgbm_params.get("metric", "binary_logloss")
                 raise ValueError(
                     "Study direction is inconsistent with the metric {}. "
-                    "Please set 'maximize' to the direction.".format(metric_name)
+                    "Please set 'maximize' as the direction.".format(metric_name)
                 )
         else:
             if self.study.direction != optuna.structs.StudyDirection.MINIMIZE:
                 metric_name = self.lgbm_params.get("metric", "binary_logloss")
                 raise ValueError(
                     "Study direction is inconsistent with the metric {}. "
-                    "Please set 'minimize' to the direction.".format(metric_name)
+                    "Please set 'minimize' as the direction.".format(metric_name)
                 )
 
         if valid_sets is None:
