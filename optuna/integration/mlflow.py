@@ -1,5 +1,6 @@
 import optuna
 from optuna import type_checking
+from optuna._experimental import experimental
 
 if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
@@ -26,6 +27,7 @@ def _check_mlflow_availability():
         )
 
 
+@experimental("1.3.0")
 class MLflowCallback(object):
     """Callback to track optuna trials with MLflow.
 
