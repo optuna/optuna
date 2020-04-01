@@ -82,7 +82,7 @@ class MLflowCallback(object):
               Databricks CLI.
               `profile <https://github.com/databricks/databricks-cli#installation>`_,
               ``databricks://<profileName>``.
-        experiment:
+        experiment_name:
             Name of MLflow experiment to be activated. If not set ``study.study_name``
             will be taken. Either ``experiment`` or ``study.study_name`` must be set.
         metric_name:
@@ -95,7 +95,7 @@ class MLflowCallback(object):
         _check_mlflow_availability()
 
         self._tracking_uri = tracking_uri
-        self._experiment = experiment
+        self._experiment_name = experiment_name
         self._metric_name = metric_name
 
     def __call__(self, study, trial):
@@ -106,8 +106,8 @@ class MLflowCallback(object):
             mlflow.set_tracking_uri(self._tracking_uri)
 
         # This sets the experiment of MLflow.
-        if self._experiment is not None:
-            mlflow.set_experiment(self._experiment)
+        if self._experiment_name is not None:
+            mlflow.set_experiment(self._experiment_name)
         elif (
             study.study_name is not None
             and study.study_name != "no-name-00000000-0000-0000-0000-000000000000"
