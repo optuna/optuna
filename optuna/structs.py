@@ -292,7 +292,7 @@ class StudySummary(object):
     Attributes:
         study_name:
             Name of the :class:`~optuna.study.Study`.
-        # direction:
+        direction:
             :class:`StudyDirection` of the :class:`~optuna.study.Study`.
         best_trial:
             :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
