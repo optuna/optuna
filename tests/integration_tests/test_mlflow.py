@@ -47,7 +47,7 @@ def test_study_name(tmpdir):
     assert "y" in first_run_dict["data"]["params"]
     assert "z" in first_run_dict["data"]["params"]
     assert first_run_dict["data"]["tags"]["study_direction"] == "StudyDirection.MINIMIZE"
-    assert first_run_dict["data"]["tags"]["trial_state"] == "TrialState.COMPLETE"
+    assert first_run_dict["data"]["tags"]["trial_state"] == "COMPLETE"
     assert (
         first_run_dict["data"]["tags"]["x_distribution"]
         == "UniformDistribution(high=1.0, low=-1.0)"
@@ -93,7 +93,7 @@ def test_experiment_name(tmpdir):
     assert "y" in first_run_dict["data"]["params"]
     assert "z" in first_run_dict["data"]["params"]
     assert first_run_dict["data"]["tags"]["study_direction"] == "StudyDirection.MINIMIZE"
-    assert first_run_dict["data"]["tags"]["trial_state"] == "TrialState.COMPLETE"
+    assert first_run_dict["data"]["tags"]["trial_state"] == "COMPLETE"
     assert (
         first_run_dict["data"]["tags"]["x_distribution"]
         == "UniformDistribution(high=1.0, low=-1.0)"
@@ -155,7 +155,7 @@ def test_metric_name(tmpdir):
     assert "y" in first_run_dict["data"]["params"]
     assert "z" in first_run_dict["data"]["params"]
     assert first_run_dict["data"]["tags"]["study_direction"] == "StudyDirection.MINIMIZE"
-    assert first_run_dict["data"]["tags"]["trial_state"] == "TrialState.COMPLETE"
+    assert first_run_dict["data"]["tags"]["trial_state"] == "COMPLETE"
     assert (
         first_run_dict["data"]["tags"]["x_distribution"]
         == "UniformDistribution(high=1.0, low=-1.0)"

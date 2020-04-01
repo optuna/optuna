@@ -1,4 +1,5 @@
 import optuna
+from optuna import structs
 from optuna import type_checking
 from optuna._experimental import experimental
 
@@ -129,7 +130,13 @@ class MLflowCallback(object):
             tags["trial_number"] = str(trial.number)
             tags["trial_datetime_start"] = str(trial.datetime_start)
             tags["trial_datetime_complete"] = str(trial.datetime_complete)
-            tags["trial_state"] = str(trial.state)
+
+            # Set TrialState and convert it to str and remove the common prefix.
+            trial_state = trial.state
+            if isinstance(trial_state, structs.TrialState):
+                trial_state = str(trial_state).split(".")[-1]
+                tags["trial_state"] = str(trial_state)
+
             tags["study_direction"] = str(study.direction)
             tags.update(trial.user_attrs)
             distributions = {
