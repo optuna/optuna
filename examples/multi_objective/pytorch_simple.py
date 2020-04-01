@@ -111,7 +111,7 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    study = optuna.multi_objective.create_mo_study(2, directions=["minimize", "maximize"])
+    study = optuna.multi_objective.create_study(2, directions=["minimize", "maximize"])
     study.optimize(objective, n_trials=100)
 
     print("Number of finished trials: ", len(study.trials))
