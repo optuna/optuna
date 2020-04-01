@@ -18,9 +18,9 @@ class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
         self,
         study: "multi_objective.study.MultiObjectiveStudy",
         trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
-    ):
+    ) -> Dict[str, BaseDistribution]:
         # TODO(ohta): Convert `study` and `trial` to single objective versions before passing.
-        return self._sampler.infer_relative_search_space(study, trial)
+        return self._sampler.infer_relative_search_space(study, trial)  # type: ignore
 
     def sample_relative(
         self,
@@ -29,7 +29,7 @@ class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         # TODO(ohta): Convert `study` and `trial` to single objective versions before passing.
-        return self._sampler.sample_relative(study, trial, search_space)
+        return self._sampler.sample_relative(study, trial, search_space)  # type: ignore
 
     def sample_independent(
         self,
@@ -39,4 +39,6 @@ class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
         # TODO(ohta): Convert `study` and `trial` to single objective versions before passing.
-        return self._sampler.sample_independent(study, trial, param_name, param_distribution)
+        return self._sampler.sample_independent(
+            study, trial, param_name, param_distribution  # type: ignore
+        )

@@ -38,10 +38,10 @@ def create_study(
     storage: Union[None, str, BaseStorage] = None,
     sampler: Optional["multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
     load_if_exists: bool = False,
-):
+) -> "multi_objective.study.MultiObjectiveStudy":
     # TODO(ohta): Support pruner.
     mo_sampler = sampler or multi_objective.samplers.RandomMultiObjectiveSampler()
-    sampler = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
+    sampler_adapter = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
     if not isinstance(directions, list):
         raise ValueError("`directions` must be a list.")
@@ -52,7 +52,7 @@ def create_study(
     study = optuna.create_study(
         study_name=study_name,
         storage=storage,
-        sampler=sampler,
+        sampler=sampler_adapter,
         pruner=optuna.pruners.NopPruner(),
         load_if_exists=load_if_exists,
     )
@@ -67,11 +67,11 @@ def load_study(
     study_name: str,
     storage: Union[str, BaseStorage],
     sampler: Optional["multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
-):
-    mo_sampler = sampler or multi_objective.samplers.RandomSampler()
-    sampler = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
+) -> "multi_objective.study.MultiObjectiveStudy":
+    mo_sampler = sampler or multi_objective.samplers.RandomMultiObjectiveSampler()
+    sampler_adapter = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
-    study = optuna.load_study(study_name=study_name, storage=storage, sampler=sampler)
+    study = optuna.load_study(study_name=study_name, storage=storage, sampler=sampler_adapter)
 
     return MultiObjectiveStudy(study)
 
@@ -94,7 +94,7 @@ class MultiObjectiveStudy(object):
         if self._n_objectives < 1:
             raise ValueError("The number of objectives must be greater than 0.")
 
-        self._study._log_completed_trial = _log_completed_trial
+        self._study._log_completed_trial = _log_completed_trial  # type: ignore
 
     @property
     def n_objectives(self) -> int:
@@ -121,13 +121,23 @@ class MultiObjectiveStudy(object):
             mo_trial._report_complete_values(values)
             return 0.0  # Dummy value.
 
+        mo_callbacks = None
+        if callbacks is not None:
+            mo_callbacks = [
+                lambda study, trial: callback(
+                    MultiObjectiveStudy(study),
+                    multi_objective.trial.FrozenMultiObjectiveTrial(self.n_objectives, trial),
+                )
+                for callback in callbacks
+            ]
+
         self._study.optimize(
             mo_objective,
             timeout=timeout,
             n_trials=n_trials,
             n_jobs=n_jobs,
             catch=catch,
-            callbacks=callbacks,
+            callbacks=mo_callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
         )
@@ -143,7 +153,7 @@ class MultiObjectiveStudy(object):
     def set_user_attr(self, key: str, value: Any) -> None:
         self._study.set_user_attr(key, value)
 
-    def set_system_attr(self, key: str, value: Any):
+    def set_system_attr(self, key: str, value: Any) -> None:
         self._study.set_system_attr(key, value)
 
     def enqueue_trial(self, params: Dict[str, Any]) -> None:

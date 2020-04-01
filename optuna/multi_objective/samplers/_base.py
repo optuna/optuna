@@ -14,7 +14,7 @@ class BaseMultiObjectiveSampler(object, metaclass=abc.ABCMeta):
         self,
         study: "multi_objective.study.MultiObjectiveStudy",
         trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
-    ):
+    ) -> Dict[str, BaseDistribution]:
         raise NotImplementedError
 
     @abc.abstractmethod

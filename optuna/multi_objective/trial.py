@@ -108,16 +108,16 @@ class FrozenMultiObjectiveTrial(object):
 
         self.values = [trial.intermediate_values.get(i) for i in range(n_objectives)]
 
-        self.intermediate_values = {}
+        self.intermediate_values = {}  # type: Dict[int, List[Optional[float]]]
         for key, value in trial.intermediate_values.items():
             if key < n_objectives:
                 continue
 
             step = key // n_objectives - 1
             if step not in trial.intermediate_values:
-                trial.intermediate_values[step] = list(None for _ in range(n_objectives))
+                self.intermediate_values[step] = list(None for _ in range(n_objectives))
 
-            trial.intermediate_values[step][key % n_objectives] = value
+            self.intermediate_values[step][key % n_objectives] = value
 
     @property
     def number(self) -> int:
@@ -128,11 +128,11 @@ class FrozenMultiObjectiveTrial(object):
         return self._trial.state
 
     @property
-    def datetime_start(self) -> datetime:
+    def datetime_start(self) -> Optional[datetime]:
         return self._trial.datetime_start
 
     @property
-    def datetime_complete(self) -> datetime:
+    def datetime_complete(self) -> Optional[datetime]:
         return self._trial.datetime_complete
 
     @property
@@ -171,12 +171,8 @@ class FrozenMultiObjectiveTrial(object):
                 "The number of the values and the number of the objectives are mismatched."
             )
 
-        values0 = [
-            v if d == StudyDirection.MINIMIZE else -v for v, d in zip(self.values, directions)
-        ]
-        values1 = [
-            v if d == StudyDirection.MINIMIZE else -v for v, d in zip(other.values, directions)
-        ]
+        values0 = [_normalize_value(v, d) for v, d in zip(self.values, directions)]
+        values1 = [_normalize_value(v, d) for v, d in zip(other.values, directions)]
 
         if self.state != TrialState.COMPLETE:
             return False
@@ -210,3 +206,13 @@ class FrozenMultiObjectiveTrial(object):
         return hash(self._trial)
 
     # TODO(ohta): Implement `__repr__` method.
+
+
+def _normalize_value(value: Optional[float], direction: StudyDirection) -> float:
+    if value is None:
+        value = float("inf")
+
+    if direction is StudyDirection.MAXIMIZE:
+        value = -value
+
+    return value
