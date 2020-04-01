@@ -33,22 +33,21 @@ _logger = logging.get_logger(__name__)
 
 @experimental("1.4.0")
 def create_study(
-    n_objectives: int,  # TODO(ohta): Consider removing this arg and make `directions` a positional arg instead.
+    directions: List[str],
     study_name: Optional[str] = None,
     storage: Union[None, str, BaseStorage] = None,
     sampler: Optional["multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
-    directions: Optional[List[str]] = None,
     load_if_exists: bool = False,
 ):
     # TODO(ohta): Support pruner.
     mo_sampler = sampler or multi_objective.samplers.RandomMultiObjectiveSampler()
     sampler = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
-    if directions is None:
-        directions = ["minimize" for _ in range(n_objectives)]
+    if not isinstance(directions, list):
+        raise ValueError("`directions` must be a list.")
 
-    if n_objectives != len(directions):
-        raise ValueError("Objective and direction numbers don't match.")
+    if not all(d in ["minimize", "maximize"] for d in directions):
+        raise ValueError("`directions` includes unknown direction names.")
 
     study = optuna.create_study(
         study_name=study_name,
