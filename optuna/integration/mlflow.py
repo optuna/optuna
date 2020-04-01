@@ -75,15 +75,11 @@ class MLflowCallback(object):
 
     Args:
         tracking_uri:
-            Set the tracking server URI.
+            The URI of the MLflow tracking server.
 
-            - An empty string, or a local directory path, prefixed with ``file:``. Data is stored
-              locally in the provided directory (or ``./mlruns`` if empty).
-            - An HTTP URI like ``https://my-tracking-server:5000``.
-            - A Databricks workspace, provided as the string ``databricks`` or, to use a
-              Databricks CLI.
-              `profile <https://github.com/databricks/databricks-cli#installation>`_,
-              ``databricks://<profileName>``.
+            Please refer to `mlflow.set_tracking_uri
+            <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri>`_
+            for more details.
         experiment_name:
             Name of MLflow experiment to be activated. If not set ``study.study_name``
             will be taken. Either ``experiment`` or ``study.study_name`` must be set.
