@@ -110,7 +110,7 @@ class SkoptSampler(BaseSampler):
 
         search_space = {}
         for name, distribution in samplers.intersection_search_space(
-            study, trial._trial_id
+            study, trial_id=trial._trial_id,
         ).items():
             if distribution.single():
                 if not isinstance(distribution, distributions.CategoricalDistribution):
