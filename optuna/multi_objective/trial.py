@@ -91,7 +91,8 @@ class MultiObjectiveTrial(object):
         return self._trial.datetime_start
 
     # TODO(ohta): Add `to_single_objective` method.
-    # This method would be helpful to use the existing pruning integrations for multi-objective optimization.
+    # This method would be helpful to use the existing pruning
+    # integrations for multi-objective optimization.
 
     @property
     def _values(self) -> List[Optional[float]]:
