@@ -89,7 +89,7 @@ class MLflowCallback(object):
     """
 
     def __init__(self, tracking_uri=None, experiment_name=None, metric_name=None):
-        # type: (str, str, str) -> None
+        # type: (Optional[str], Optional[str], Optional[str]) -> None
 
         _check_mlflow_availability()
 
