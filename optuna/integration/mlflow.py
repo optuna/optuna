@@ -89,7 +89,7 @@ class MLflowCallback(object):
             Name of the metric. If not provided this will be called ``trial_value``.
     """
 
-    def __init__(self, tracking_uri=None, experiment=None, metric_name=None):
+    def __init__(self, tracking_uri=None, experiment_name=None, metric_name=None):
         # type: (str, str, str) -> None
 
         _check_mlflow_availability()
