@@ -71,7 +71,7 @@ def load_study(
     mo_sampler = sampler or multi_objective.samplers.RandomSampler()
     sampler = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
-    study = optuna.create_study(study_name=study_name, storage=storage, sampler=sampler)
+    study = optuna.load_study(study_name=study_name, storage=storage, sampler=sampler)
 
     return MultiObjectiveStudy(study)
 
