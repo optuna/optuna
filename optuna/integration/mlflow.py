@@ -119,7 +119,7 @@ class MLflowCallback(object):
 
             # This sets the metric for MLflow.
             trial_value = trial.value if trial.value is not None else float("nan")
-            metric_name = self._metric_name if self._metric_name is not None else "trial_value"
+            metric_name = self._metric_name if self._metric_name is not None else "value"
             mlflow.log_metric(metric_name, trial_value)
 
             # This sets the params for MLflow.
@@ -127,17 +127,17 @@ class MLflowCallback(object):
 
             # This sets the tags for MLflow.
             tags = {}  # type: Dict[str, str]
-            tags["trial_number"] = str(trial.number)
-            tags["trial_datetime_start"] = str(trial.datetime_start)
-            tags["trial_datetime_complete"] = str(trial.datetime_complete)
+            tags["number"] = str(trial.number)
+            tags["datetime_start"] = str(trial.datetime_start)
+            tags["datetime_complete"] = str(trial.datetime_complete)
 
             # Set TrialState and convert it to str and remove the common prefix.
             trial_state = trial.state
             if isinstance(trial_state, structs.TrialState):
                 trial_state = str(trial_state).split(".")[-1]
-                tags["trial_state"] = str(trial_state)
+                tags["state"] = str(trial_state)
 
-            tags["study_direction"] = str(study.direction)
+            tags["direction"] = str(study.direction)
             tags.update(trial.user_attrs)
             distributions = {
                 (k + "_distribution"): str(v) for (k, v) in trial.distributions.items()
