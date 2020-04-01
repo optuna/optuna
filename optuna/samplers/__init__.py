@@ -85,9 +85,9 @@ def intersection_search_space(study, ordered_dict=False, trial_id=None):
         break
 
     if trial_id is not None and search_space is not None:
-        json_str = json.dumps({
-            name: distribution_to_dict(search_space[name]) for name in search_space
-        })
+        json_str = json.dumps(
+            {name: distribution_to_dict(search_space[name]) for name in search_space}
+        )
         study._storage.set_trial_system_attr(
             trial_id, "intersection_search_space", json_str,
         )

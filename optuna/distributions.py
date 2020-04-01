@@ -404,7 +404,7 @@ def distribution_to_dict(dist):
 
     """
 
-    return {'name': dist.__class__.__name__, 'attributes': dist._asdict()}
+    return {"name": dist.__class__.__name__, "attributes": dist._asdict()}
 
 
 def distribution_to_json(dist):

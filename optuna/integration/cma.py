@@ -153,7 +153,8 @@ class CmaEsSampler(BaseSampler):
 
         search_space = {}
         for name, distribution in optuna.samplers.intersection_search_space(
-                study, trial_id=trial._trial_id).items():
+            study, trial_id=trial._trial_id
+        ).items():
             if distribution.single():
                 # `cma` cannot handle distributions that contain just a single value, so we skip
                 # them. Note that the parameter values for such distributions are sampled in
