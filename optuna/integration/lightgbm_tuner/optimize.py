@@ -1,6 +1,9 @@
 import contextlib
 import copy
+import json
 import time
+from typing import Any
+from typing import Dict
 import warnings
 
 import lightgbm as lgb
@@ -13,9 +16,7 @@ from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
     from typing import Callable  # NOQA
-    from typing import Dict  # NOQA
     from typing import Generator  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
@@ -297,6 +298,7 @@ class OptunaObjective(BaseTuner):
         trial.set_user_attr("elapsed_secs", elapsed_secs)
         trial.set_user_attr("average_iteration_time", average_iteration_time)
         trial.set_user_attr("step_name", self.step_name)
+        trial.set_user_attr("lgbm_params", json.dumps(self.lgbm_params))
 
         self.trial_count += 1
 
@@ -332,7 +334,8 @@ class LightGBMTuner(BaseTuner):
             :class:`~optuna.trial.Trial` instances in it has the following user attributes:
             ``elapsed_secs`` is the elapsed time since the optimization starts.
             ``average_iteration_time`` is the average time of iteration to train the booster
-            model in the trial.
+            model in the trial. ``lgbm_params`` is a JSON-serialized dictionary of LightGBM
+            parameters used in the trial.
     """
 
     def __init__(
@@ -402,12 +405,11 @@ class LightGBMTuner(BaseTuner):
                 DeprecationWarning,
             )
 
-        self.best_score = -np.inf if self.higher_is_better() else np.inf
-        self.best_params = {} if best_params is None else best_params
+        self._best_params = {} if best_params is None else best_params
         self.tuning_history = [] if tuning_history is None else tuning_history
 
         # Set default parameters as best.
-        self.best_params.update(DEFAULT_LIGHTGBM_PARAMETERS)
+        self._best_params.update(DEFAULT_LIGHTGBM_PARAMETERS)
 
         if study is None:
             self.study = optuna.create_study(
@@ -433,6 +435,27 @@ class LightGBMTuner(BaseTuner):
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
+
+    @property
+    def best_score(self) -> float:
+        """"Return the score of the best booster."""
+        try:
+            return self.study.best_value
+        except ValueError:
+            # Return the default score because no trials have completed.
+            return -np.inf if self.higher_is_better() else np.inf
+
+    @property
+    def best_params(self) -> Dict[str, Any]:
+        """Return parameters of the best booster."""
+        try:
+            return json.loads(self.study.best_trial.user_attrs["lgbm_params"])
+        except ValueError:
+            # Return the default score because no trials have completed.
+            params = copy.deepcopy(DEFAULT_LIGHTGBM_PARAMETERS)
+            # self.lgbm_params may contain parameters given by users.
+            params.update(self.lgbm_params)
+            return params
 
     def _get_params(self):
         # type: () -> Dict[str, Any]
@@ -556,10 +579,9 @@ class LightGBMTuner(BaseTuner):
         # type: (int) -> None
 
         param_name = "feature_fraction"
+        best_feature_fraction = self.best_params[param_name]
         param_values = list(
-            np.linspace(
-                self.lgbm_params[param_name] - 0.08, self.lgbm_params[param_name] + 0.08, n_trials
-            )
+            np.linspace(best_feature_fraction - 0.08, best_feature_fraction + 0.08, n_trials)
         )
         param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
         sampler = _GridSamplerUniform1D(param_name, param_values)
@@ -615,18 +637,10 @@ class LightGBMTuner(BaseTuner):
         # Add tuning history.
         self.tuning_history += objective.report
 
-        best_trial = study.best_trial
-
-        # The values of complete trials are not None. The assertion is just for mypy.
-        assert best_trial.value is not None
-
-        if self.compare_validation_metrics(best_trial.value, self.best_score):
-            self.best_score = best_trial.value
+        # Note that this implementation may not return the best booster in parallel environment.
+        if objective.best_booster is not None:
             self.best_booster = objective.best_booster
-
-            updated_params = {p: best_trial.params[p] for p in target_param_names}
-            self.lgbm_params.update(updated_params)
-            self.best_params.update(updated_params)
+            self._best_params.update(self.best_params)
 
     def _create_stepwise_study(
         self, study: "optuna.study.Study", step_name: str
