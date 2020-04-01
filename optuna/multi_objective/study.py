@@ -10,8 +10,8 @@ from typing import Union
 
 import optuna
 from optuna._experimental import experimental
-from optuna import multi_objective
 from optuna import logging
+from optuna import multi_objective
 from optuna.storages import BaseStorage
 from optuna.structs import StudyDirection
 from optuna.structs import TrialState
