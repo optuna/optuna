@@ -1,10 +1,11 @@
 import optuna
+from optuna._experimental import experimental
 from optuna import structs
 from optuna import type_checking
-from optuna._experimental import experimental
 
 if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
+from typing import Optional
 
 try:
     import mlflow
