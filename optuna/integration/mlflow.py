@@ -135,8 +135,7 @@ class MLflowCallback(object):
             # Set TrialState and convert it to str and remove the common prefix.
             trial_state = trial.state
             if isinstance(trial_state, structs.TrialState):
-                trial_state = str(trial_state).split(".")[-1]
-                tags["state"] = str(trial_state)
+                tags["state"] = str(trial_state).split(".")[-1]
 
             tags["direction"] = str(study.direction)
             tags.update(trial.user_attrs)
