@@ -1,6 +1,6 @@
+from collections import OrderedDict
 import copy
 import json
-from collections import OrderedDict
 
 import optuna
 from optuna.distributions import dict_to_distribution
