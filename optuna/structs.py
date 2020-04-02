@@ -17,6 +17,10 @@ if type_checking.TYPE_CHECKING:
 class TrialState(enum.Enum):
     """State of a :class:`~optuna.trial.Trial`.
 
+    .. deprecated:: 1.3.0
+        The direct use of this attribute is deprecated and it is recommended that you use
+        :attr:`~optuna.trial.TrialState` instead.
+
     Attributes:
         RUNNING:
             The :class:`~optuna.trial.Trial` is running.
@@ -28,6 +32,15 @@ class TrialState(enum.Enum):
         FAIL:
             The :class:`~optuna.trial.Trial` has failed due to an uncaught error.
     """
+
+    message = (
+        "The use of `structs.TrialState` is deprecated. "
+        "Please use `trial.TrialState` instead."
+    )
+    warnings.warn(message, DeprecationWarning)
+
+    logger = logging.get_logger(__name__)
+    logger.warning(message)
 
     RUNNING = 0
     COMPLETE = 1
@@ -49,6 +62,10 @@ class TrialState(enum.Enum):
 class StudyDirection(enum.Enum):
     """Direction of a :class:`~optuna.study.Study`.
 
+    .. deprecated:: 1.3.0
+        The direct use of this attribute is deprecated and it is recommended that you use
+        :attr:`~optuna.study.StudyDirection` instead.
+
     Attributes:
         NOT_SET:
             Direction has not been set.
@@ -58,6 +75,15 @@ class StudyDirection(enum.Enum):
             :class:`~optuna.study.Study` maximizes the objective function.
     """
 
+    message = (
+        "The use of `structs.StudyDirection` is deprecated. "
+        "Please use `study.StudyDirection` instead."
+    )
+    warnings.warn(message, DeprecationWarning)
+
+    logger = logging.get_logger(__name__)
+    logger.warning(message)
+
     NOT_SET = 0
     MINIMIZE = 1
     MAXIMIZE = 2
@@ -65,6 +91,10 @@ class StudyDirection(enum.Enum):
 
 class FrozenTrial(object):
     """Status and results of a :class:`~optuna.trial.Trial`.
+
+    .. deprecated:: 1.3.0
+        The direct use of this attribute is deprecated and it is recommended that you use
+        :attr:`~optuna.trial.FrozenTrial` instead.
 
     Attributes:
         number:
@@ -104,6 +134,15 @@ class FrozenTrial(object):
         trial_id,  # type: int
     ):
         # type: (...) -> None
+
+        message = (
+            "The use of `structs.FrozenTrial` is deprecated. "
+            "Please use `trial.FrozenTrial` instead."
+        )
+        warnings.warn(message, DeprecationWarning)
+
+        logger = logging.get_logger(__name__)
+        logger.warning(message)
 
         self.number = number
         self.state = state
@@ -274,6 +313,10 @@ class StudySummary(object):
 
     See also :func:`optuna.study.get_all_study_summaries`.
 
+    .. deprecated:: 1.3.0
+        The direct use of this attribute is deprecated and it is recommended that you use
+        :attr:`~optuna.study.StudySummary` instead.
+
     Attributes:
         study_name:
             Name of the :class:`~optuna.study.Study`.
@@ -305,6 +348,15 @@ class StudySummary(object):
         study_id,  # type: int
     ):
         # type: (...) -> None
+
+        message = (
+            "The use of `structs.StudySummary` is deprecated. "
+            "Please use `trial.StudySummary` instead."
+        )
+        warnings.warn(message, DeprecationWarning)
+
+        logger = logging.get_logger(__name__)
+        logger.warning(message)
 
         self.study_name = study_name
         self.direction = direction
