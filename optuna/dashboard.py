@@ -55,16 +55,16 @@ if _available:
 
     class _CompleteTrialsWidget(object):
         def __init__(self, trials, direction):
-            # type: (List[optuna.structs.FrozenTrial], optuna.structs.StudyDirection) -> None
+            # type: (List[optuna.trial.FrozenTrial], optuna.study.StudyDirection) -> None
 
             complete_trials = [
-                trial for trial in trials if trial.state == optuna.structs.TrialState.COMPLETE
+                trial for trial in trials if trial.state == optuna.trial.TrialState.COMPLETE
             ]
             self.trial_ids = set([trial._trial_id for trial in complete_trials])
 
             self.direction = direction
             values = [trial.value for trial in complete_trials]
-            if direction == optuna.structs.StudyDirection.MINIMIZE:
+            if direction == optuna.study.StudyDirection.MINIMIZE:
                 best_values = np.minimum.accumulate(values, axis=0)
             else:
                 best_values = np.maximum.accumulate(values, axis=0)
@@ -90,18 +90,18 @@ if _available:
             return figure
 
         def update(self, new_trials):
-            # type: (List[optuna.structs.FrozenTrial]) -> None
+            # type: (List[optuna.trial.FrozenTrial]) -> None
 
             stream_dict = collections.defaultdict(list)  # type: Dict[str, List[Any]]
 
             for trial in new_trials:
-                if trial.state != optuna.structs.TrialState.COMPLETE:
+                if trial.state != optuna.trial.TrialState.COMPLETE:
                     continue
                 if trial._trial_id in self.trial_ids:
                     continue
                 stream_dict["#"].append(len(self.trial_ids))
                 stream_dict["value"].append(trial.value)
-                if self.direction == optuna.structs.StudyDirection.MINIMIZE:
+                if self.direction == optuna.study.StudyDirection.MINIMIZE:
                     self.best_value = min(self.best_value, trial.value)
                 else:
                     self.best_value = max(self.best_value, trial.value)
@@ -113,7 +113,7 @@ if _available:
 
     class _AllTrialsWidget(object):
         def __init__(self, trials):
-            # type: (List[optuna.structs.FrozenTrial]) -> None
+            # type: (List[optuna.trial.FrozenTrial]) -> None
 
             self.cds = bokeh.models.ColumnDataSource(self.trials_to_dict(trials))
 
@@ -137,8 +137,8 @@ if _available:
 
         def update(
             self,
-            old_trials,  # type: List[optuna.structs.FrozenTrial]
-            new_trials,  # type: List[optuna.structs.FrozenTrial]
+            old_trials,  # type: List[optuna.trial.FrozenTrial]
+            new_trials,  # type: List[optuna.trial.FrozenTrial]
         ):
             # type: (...) -> None
 
@@ -158,7 +158,7 @@ if _available:
 
         @staticmethod
         def trials_to_dict(trials):
-            # type: (List[optuna.structs.FrozenTrial]) -> Dict[str, List[Any]]
+            # type: (List[optuna.trial.FrozenTrial]) -> Dict[str, List[Any]]
 
             return {
                 "number": [trial.number for trial in trials],
@@ -193,8 +193,8 @@ if _available:
             self.doc = doc
             self.current_trials = (
                 self.study.trials
-            )  # type: Optional[List[optuna.structs.FrozenTrial]]
-            self.new_trials = None  # type: Optional[List[optuna.structs.FrozenTrial]]
+            )  # type: Optional[List[optuna.trial.FrozenTrial]]
+            self.new_trials = None  # type: Optional[List[optuna.trial.FrozenTrial]]
             self.complete_trials_widget = _CompleteTrialsWidget(
                 self.current_trials, self.study.direction
             )

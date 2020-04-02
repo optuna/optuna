@@ -37,7 +37,7 @@ class TensorFlowPruningHook(SessionRunHook):
            An interval to watch the summary file.
         is_higher_better:
            Please do not use this argument because this class refers to
-           :class:`~optuna.structs.StudyDirection` to check whether the current study is
+           :class:`~optuna.study.StudyDirection` to check whether the current study is
            ``minimize`` or ``maximize``.
     """
 

@@ -565,7 +565,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def best_trial_(self):
-        # type: () -> structs.FrozenTrial
+        # type: () -> trial.FrozenTrial
         """Best trial in the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()
@@ -590,7 +590,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def trials_(self):
-        # type: () -> List[structs.FrozenTrial]
+        # type: () -> List[trial.FrozenTrial]
         """All trials in the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()
@@ -784,7 +784,7 @@ class OptunaSearchCV(BaseEstimator):
         if self.max_iter <= 0:
             raise ValueError("max_iter must be > 0, got {}.".format(self.max_iter))
 
-        if self.study is not None and self.study.direction != structs.StudyDirection.MAXIMIZE:
+        if self.study is not None and self.study.direction != study.StudyDirection.MAXIMIZE:
             raise ValueError("direction of study must be 'maximize'.")
 
     def _more_tags(self):

@@ -577,9 +577,9 @@ def _get_observation_pairs(study, param_name, trial):
         if param_name not in trial.params:
             continue
 
-        if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
+        if trial.state is trial.TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
-        elif trial.state is structs.TrialState.PRUNED:
+        elif trial.state is trial.TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
                 if math.isnan(intermediate_value):

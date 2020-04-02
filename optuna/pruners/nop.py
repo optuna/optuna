@@ -50,6 +50,6 @@ class NopPruner(BasePruner):
     """
 
     def prune(self, study, trial):
-        # type: (Study, structs.FrozenTrial) -> bool
+        # type: (Study, trial.FrozenTrial) -> bool
 
         return False

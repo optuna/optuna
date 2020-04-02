@@ -145,7 +145,7 @@ class StudySummary(object):
 
         .. deprecated:: 0.20.0
             The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.structs.StudySummary.study_name` instead.
+            :attr:`~optuna.study.StudySummary.study_name` instead.
 
         Returns:
             The study ID.
@@ -197,29 +197,29 @@ class BaseStudy(object):
 
     @property
     def best_trial(self):
-        # type: () -> structs.FrozenTrial
+        # type: () -> trial.FrozenTrial
         """Return the best trial in the study.
 
         Returns:
-            A :class:`~optuna.structs.FrozenTrial` object of the best trial.
+            A :class:`~optuna.trial.FrozenTrial` object of the best trial.
         """
 
         return self._storage.get_best_trial(self._study_id)
 
     @property
     def direction(self):
-        # type: () -> structs.StudyDirection
+        # type: () -> study.StudyDirection
         """Return the direction of the study.
 
         Returns:
-            A :class:`~optuna.structs.StudyDirection` object.
+            A :class:`~optuna.study.StudyDirection` object.
         """
 
         return self._storage.get_study_direction(self._study_id)
 
     @property
     def trials(self):
-        # type: () -> List[structs.FrozenTrial]
+        # type: () -> List[trial.FrozenTrial]
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
@@ -227,13 +227,13 @@ class BaseStudy(object):
         This is a short form of ``self.get_trials(deepcopy=True)``.
 
         Returns:
-            A list of :class:`~optuna.structs.FrozenTrial` objects.
+            A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
 
         return self.get_trials()
 
     def get_trials(self, deepcopy=True):
-        # type: (bool) -> List[structs.FrozenTrial]
+        # type: (bool) -> List[trial.FrozenTrial]
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
@@ -249,7 +249,7 @@ class BaseStudy(object):
                 the study may corrupt and unexpected behavior may happen.
 
         Returns:
-            A list of :class:`~optuna.structs.FrozenTrial` objects.
+            A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
 
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
@@ -378,7 +378,7 @@ class Study(BaseStudy):
         timeout=None,  # type: Optional[float]
         n_jobs=1,  # type: int
         catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-        callbacks=None,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+        callbacks=None,  # type: Optional[List[Callable[[Study, trial.FrozenTrial], None]]]
         gc_after_trial=True,  # type: bool
         show_progress_bar=False,  # type: bool
     ):
@@ -414,7 +414,7 @@ class Study(BaseStudy):
             callbacks:
                 List of callback functions that are invoked at the end of each trial. Each function
                 must accept two parameters with the following types in this order:
-                :class:`~optuna.study.Study` and :class:`~optuna.structs.FrozenTrial`.
+                :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
             gc_after_trial:
                 Flag to execute garbage collection at the end of each trial. By default, garbage
                 collection is enabled, just in case. You can turn it off with this argument if
@@ -559,7 +559,7 @@ class Study(BaseStudy):
 
         Args:
             attrs:
-                Specifies field names of :class:`~optuna.structs.FrozenTrial` to include them to a
+                Specifies field names of :class:`~optuna.trial.FrozenTrial` to include them to a
                 DataFrame of trials.
             multi_index:
                 Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that
@@ -581,7 +581,7 @@ class Study(BaseStudy):
         if not len(trials):
             return pd.DataFrame()
 
-        assert all(isinstance(trial, structs.FrozenTrial) for trial in trials)
+        assert all(isinstance(trial, trial.FrozenTrial) for trial in trials)
         attrs_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
         for attr in attrs:
             if attr.startswith("_"):
@@ -598,12 +598,12 @@ class Study(BaseStudy):
         non_nested_attr = ""
 
         def _create_record_and_aggregate_column(trial):
-            # type: (structs.FrozenTrial) -> Dict[Tuple[str, str], Any]
+            # type: (trial.FrozenTrial) -> Dict[Tuple[str, str], Any]
 
             record = {}
             for attr, df_column in attrs_to_df_columns.items():
                 value = getattr(trial, attr)
-                if isinstance(value, structs.TrialState):
+                if isinstance(value, trial.TrialState):
                     # Convert TrialState to str and remove the common prefix.
                     value = str(value).split(".")[-1]
                 if isinstance(value, dict):
@@ -665,7 +665,7 @@ class Study(BaseStudy):
         """
 
         system_attrs = {"fixed_params": params}
-        self._append_trial(state=structs.TrialState.WAITING, system_attrs=system_attrs)
+        self._append_trial(state=trial.TrialState.WAITING, system_attrs=system_attrs)
 
     def _append_trial(
         self,
@@ -675,7 +675,7 @@ class Study(BaseStudy):
         user_attrs=None,  # type: Optional[Dict[str, Any]]
         system_attrs=None,  # type: Optional[Dict[str, Any]]
         intermediate_values=None,  # type: Optional[Dict[int, float]]
-        state=structs.TrialState.COMPLETE,  # type: structs.TrialState
+        state=trial.TrialState.COMPLETE,  # type: trial.TrialState
         datetime_start=None,  # type: Optional[datetime.datetime]
         datetime_complete=None,  # type: Optional[datetime.datetime]
     ):
@@ -691,7 +691,7 @@ class Study(BaseStudy):
         if state.is_finished():
             datetime_complete = datetime_complete or datetime.datetime.now()
 
-        trial = structs.FrozenTrial(
+        trial = trial.FrozenTrial(
             number=-1,  # dummy value.
             trial_id=-1,  # dummy value.
             state=state,
@@ -715,7 +715,7 @@ class Study(BaseStudy):
         n_trials,  # type: Optional[int]
         timeout,  # type: Optional[float]
         catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-        callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+        callbacks,  # type: Optional[List[Callable[[Study, trial.FrozenTrial], None]]]
         gc_after_trial,  # type: bool
         time_start,  # type: Optional[datetime.datetime]
     ):
@@ -747,10 +747,10 @@ class Study(BaseStudy):
 
         # TODO(c-bata): Reduce database query counts for extracting waiting trials.
         for trial in self.trials:
-            if trial.state != structs.TrialState.WAITING:
+            if trial.state != trial.TrialState.WAITING:
                 continue
 
-            if not self._storage.set_trial_state(trial._trial_id, structs.TrialState.RUNNING):
+            if not self._storage.set_trial_state(trial._trial_id, trial.TrialState.RUNNING):
                 continue
 
             _logger.debug("Trial#{} is popped from the trial queue.".format(trial.number))
@@ -762,7 +762,7 @@ class Study(BaseStudy):
         self,
         func,  # type: ObjectiveFuncType
         catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-        callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+        callbacks,  # type: Optional[List[Callable[[Study, trial.FrozenTrial], None]]]
         gc_after_trial,  # type: bool
     ):
         # type: (...) -> None
@@ -791,7 +791,7 @@ class Study(BaseStudy):
             result = func(trial)
         except exceptions.TrialPruned as e:
             message = "Setting status of trial#{} as {}. {}".format(
-                trial_number, structs.TrialState.PRUNED, str(e)
+                trial_number, trial.TrialState.PRUNED, str(e)
             )
             _logger.info(message)
 
@@ -803,15 +803,15 @@ class Study(BaseStudy):
                 self._storage.set_trial_value(
                     trial_id, frozen_trial.intermediate_values[last_step]
                 )
-            self._storage.set_trial_state(trial_id, structs.TrialState.PRUNED)
+            self._storage.set_trial_state(trial_id, trial.TrialState.PRUNED)
             return trial
         except Exception as e:
             message = "Setting status of trial#{} as {} because of the following error: {}".format(
-                trial_number, structs.TrialState.FAIL, repr(e)
+                trial_number, trial.TrialState.FAIL, repr(e)
             )
             _logger.warning(message, exc_info=True)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self._storage.set_trial_state(trial_id, trial.TrialState.FAIL)
 
             if isinstance(e, catch):
                 return trial
@@ -833,25 +833,25 @@ class Study(BaseStudy):
             message = (
                 "Setting status of trial#{} as {} because the returned value from the "
                 "objective function cannot be casted to float. Returned value is: "
-                "{}".format(trial_number, structs.TrialState.FAIL, repr(result))
+                "{}".format(trial_number, trial.TrialState.FAIL, repr(result))
             )
             _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self._storage.set_trial_state(trial_id, trial.TrialState.FAIL)
             return trial
 
         if math.isnan(result):
             message = (
                 "Setting status of trial#{} as {} because the objective function "
-                "returned {}.".format(trial_number, structs.TrialState.FAIL, result)
+                "returned {}.".format(trial_number, trial.TrialState.FAIL, result)
             )
             _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-            self._storage.set_trial_state(trial_id, structs.TrialState.FAIL)
+            self._storage.set_trial_state(trial_id, trial.TrialState.FAIL)
             return trial
 
         self._storage.set_trial_value(trial_id, result)
-        self._storage.set_trial_state(trial_id, structs.TrialState.COMPLETE)
+        self._storage.set_trial_state(trial_id, trial.TrialState.COMPLETE)
         self._log_completed_trial(trial, result)
 
         return trial
@@ -939,9 +939,9 @@ def create_study(
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
     if direction == "minimize":
-        _direction = structs.StudyDirection.MINIMIZE
+        _direction = study.StudyDirection.MINIMIZE
     elif direction == "maximize":
-        _direction = structs.StudyDirection.MAXIMIZE
+        _direction = study.StudyDirection.MAXIMIZE
     else:
         raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
 
@@ -1001,7 +1001,7 @@ def delete_study(
 
 
 def get_all_study_summaries(storage):
-    # type: (Union[str, storages.BaseStorage]) -> List[structs.StudySummary]
+    # type: (Union[str, storages.BaseStorage]) -> List[study.StudySummary]
     """Get all history of studies stored in a specified storage.
 
     Args:
@@ -1010,7 +1010,7 @@ def get_all_study_summaries(storage):
             :func:`~optuna.study.create_study` for further details.
 
     Returns:
-        List of study history summarized as :class:`~optuna.structs.StudySummary` objects.
+        List of study history summarized as :class:`~optuna.study.StudySummary` objects.
 
     """
 

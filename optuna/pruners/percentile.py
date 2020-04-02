@@ -15,23 +15,23 @@ if type_checking.TYPE_CHECKING:
 
 
 def _get_best_intermediate_result_over_steps(trial, direction):
-    # type: (structs.FrozenTrial, structs.StudyDirection) -> float
+    # type: (trial.FrozenTrial, study.StudyDirection) -> float
 
     values = np.array(list(trial.intermediate_values.values()), np.float)
-    if direction == structs.StudyDirection.MAXIMIZE:
+    if direction == study.StudyDirection.MAXIMIZE:
         return np.nanmax(values)
     return np.nanmin(values)
 
 
 def _get_percentile_intermediate_result_over_trials(all_trials, direction, step, percentile):
-    # type: (List[structs.FrozenTrial], structs.StudyDirection, int, float) -> float
+    # type: (List[trial.FrozenTrial], study.StudyDirection, int, float) -> float
 
-    completed_trials = [t for t in all_trials if t.state == structs.TrialState.COMPLETE]
+    completed_trials = [t for t in all_trials if t.state == trial.TrialState.COMPLETE]
 
     if len(completed_trials) == 0:
         raise ValueError("No trials have been completed.")
 
-    if direction == structs.StudyDirection.MAXIMIZE:
+    if direction == study.StudyDirection.MAXIMIZE:
         percentile = 100 - percentile
 
     return float(
@@ -152,10 +152,10 @@ class PercentilePruner(BasePruner):
         self._interval_steps = interval_steps
 
     def prune(self, study, trial):
-        # type: (Study, structs.FrozenTrial) -> bool
+        # type: (Study, trial.FrozenTrial) -> bool
 
         all_trials = study.get_trials(deepcopy=False)
-        n_trials = len([t for t in all_trials if t.state == structs.TrialState.COMPLETE])
+        n_trials = len([t for t in all_trials if t.state == trial.TrialState.COMPLETE])
 
         if n_trials == 0:
             return False
@@ -187,6 +187,6 @@ class PercentilePruner(BasePruner):
         if math.isnan(p):
             return False
 
-        if direction == structs.StudyDirection.MAXIMIZE:
+        if direction == study.StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p

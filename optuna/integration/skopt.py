@@ -128,7 +128,7 @@ class SkoptSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
+        complete_trials = [t for t in study.trials if t.state == trial.TrialState.COMPLETE]
         if len(complete_trials) < self._n_startup_trials:
             return {}
 
@@ -140,7 +140,7 @@ class SkoptSampler(BaseSampler):
         # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
 
         if self._warn_independent_sampling:
-            complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
+            complete_trials = [t for t in study.trials if t.state == trial.TrialState.COMPLETE]
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
