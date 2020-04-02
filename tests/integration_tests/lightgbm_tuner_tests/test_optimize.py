@@ -360,13 +360,9 @@ class TestLightGBMTuner(object):
     )
     def test_best_score(self, metric: str, study_direction: str, expected: float) -> None:
         with turnoff_train(metric=metric):
-            tuning_history = []  # type: List[Dict[str, float]]
-
             study = optuna.create_study(direction=study_direction)
             runner = self._get_tuner_object(
-                params=dict(lambda_l1=0.0, metric=metric),
-                kwargs_options=dict(tuning_history=tuning_history, best_params={},),
-                study=study,
+                params=dict(lambda_l1=0.0, metric=metric), kwargs_options={}, study=study,
             )
             assert runner.best_score == expected
             runner.tune_regularization_factors()
@@ -376,13 +372,9 @@ class TestLightGBMTuner(object):
         unexpected_value = 20  # out of scope.
 
         with turnoff_train():
-            tuning_history = []  # type: List[Dict[str, float]]
-
             study = optuna.create_study()
             runner = self._get_tuner_object(
-                params=dict(lambda_l1=unexpected_value,),
-                kwargs_options=dict(tuning_history=tuning_history, best_params={},),
-                study=study,
+                params=dict(lambda_l1=unexpected_value,), kwargs_options={}, study=study,
             )
             assert runner.best_params["lambda_l1"] == unexpected_value
             runner.tune_regularization_factors()
