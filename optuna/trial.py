@@ -927,8 +927,8 @@ class FixedTrial(BaseTrial):
 
     """
 
-    def __init__(self, params):
-        # type: (Dict[str, Any]) -> None
+    def __init__(self, params, number=0):
+        # type: (Dict[str, Any], int) -> None
 
         self._params = params
         self._suggested_params = {}  # type: Dict[str, Any]
@@ -936,6 +936,7 @@ class FixedTrial(BaseTrial):
         self._user_attrs = {}  # type: Dict[str, Any]
         self._system_attrs = {}  # type: Dict[str, Any]
         self._datetime_start = datetime.now()
+        self._number = number
 
     def suggest_float(self, name, low, high, *, log=False):
         # type: (str, float, float, bool) -> float
@@ -1049,6 +1050,12 @@ class FixedTrial(BaseTrial):
         # type: () -> Optional[datetime]
 
         return self._datetime_start
+
+    @property
+    def number(self):
+        # type: () -> int
+
+        return self._number
 
 
 def _adjust_discrete_uniform_high(name, low, high, q):
