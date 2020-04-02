@@ -109,6 +109,12 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
+    @property
+    def number(self):
+        # type: () -> int
+
+        raise NotImplementedError
+
 
 class Trial(BaseTrial):
     """A trial is a process of evaluating an objective function.
