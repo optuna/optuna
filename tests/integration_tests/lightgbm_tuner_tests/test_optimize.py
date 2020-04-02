@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from typing import Any
 from typing import Dict
+from typing import Generator
 from typing import List
 from typing import Optional
 
@@ -17,13 +18,13 @@ from optuna.integration.lightgbm_tuner.optimize import OptunaObjective
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from typing import Generator  # NOQA
     from typing import Union  # NOQA
+
+    from optuna.study import Study  # NOQA
 
 
 @contextlib.contextmanager
-def turnoff_train():
-    # type: () -> Generator[None, None, None]
+def turnoff_train(metric: Optional[str] = "binary_logloss") -> Generator[None, None, None]:
 
     unexpected_value = 0.5
     dummy_num_iterations = 1234
@@ -33,7 +34,7 @@ def turnoff_train():
             # type: () -> None
 
             self.best_score = {
-                "valid_0": {"binary_logloss": unexpected_value},
+                "valid_0": {metric: unexpected_value},
             }
 
         def current_iteration(self):
@@ -253,13 +254,15 @@ class TestBaseTuner(object):
 
 
 class TestLightGBMTuner(object):
-    def _get_tuner_object(self, params={}, train_set=None, kwargs_options={}):
-        # type: (Dict[str, Any], lgb.Dataset, Dict[str, Any]) -> lgb.LightGBMTuner
+    def _get_tuner_object(self, params={}, train_set=None, kwargs_options={}, study=None):
+        # type: (Dict[str, Any], lgb.Dataset, Dict[str, Any], Optional[Study]) -> lgb.LightGBMTuner
 
         # Required keyword arguments.
         dummy_dataset = lgb.Dataset(None)
 
-        kwargs = dict(num_boost_round=5, early_stopping_rounds=2, valid_sets=dummy_dataset,)
+        kwargs = dict(
+            num_boost_round=5, early_stopping_rounds=2, valid_sets=dummy_dataset, study=study
+        )
         kwargs.update(kwargs_options)
 
         runner = lgb.LightGBMTuner(params, train_set, **kwargs)
@@ -350,6 +353,24 @@ class TestLightGBMTuner(object):
         for new_arg in new_args:
             assert new_arg not in runner.lgbm_kwargs
             assert new_arg in runner.auto_options
+
+    @pytest.mark.parametrize(
+        "metric, study_direction, expected",
+        [("auc", "maximize", -np.inf), ("mse", "minimize", np.inf),],
+    )
+    def test_best_score(self, metric: str, study_direction: str, expected: float) -> None:
+        with turnoff_train(metric=metric):
+            tuning_history = []  # type: List[Dict[str, float]]
+
+            study = optuna.create_study(direction=study_direction)
+            runner = self._get_tuner_object(
+                params=dict(lambda_l1=0.0, metric=metric),
+                kwargs_options=dict(tuning_history=tuning_history, best_params={},),
+                study=study,
+            )
+            assert runner.best_score == expected
+            runner.tune_regularization_factors()
+            assert runner.best_score == 0.5
 
     def test_sample_train_set(self):
         # type: () -> None
