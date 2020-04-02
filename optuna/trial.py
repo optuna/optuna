@@ -30,8 +30,8 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def suggest_float(self, name, low, high, *, log=False):
-        # type: (str, float, float, bool) -> float
+    def suggest_float(self, name, low, high, *, log=False, step=None):
+        # type: (str, float, float, bool, Optional[float])-> float
 
         raise NotImplementedError
 
@@ -178,8 +178,8 @@ class Trial(BaseTrial):
             self.study, trial, self.relative_search_space
         )
 
-    def suggest_float(self, name, low, high, *, log=False):
-        # type: (str, float, float, bool) -> float
+    def suggest_float(self, name, low, high, *, log=False, step=None):
+        # type: (str, float, float, bool, Optional[float]) -> float
         """Suggest a value for the floating point parameter.
 
         Note that this is a wrapper method for :func:`~optuna.trial.Trial.suggest_uniform`
@@ -237,15 +237,23 @@ class Trial(BaseTrial):
                 If ``log`` is true, the value is sampled from the range in the log domain.
                 Otherwise, the value is sampled from the range in the linear domain.
                 See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
+            step:
+                xxx
 
         Returns:
             A suggested float value.
         """
+        if step:
+            if log:
+                raise NotImplementedError()  # TODO
+            else:
+                return self.suggest_discrete_uniform(name, low, high, step)
 
-        if log:
-            return self.suggest_loguniform(name, low, high)
         else:
-            return self.suggest_uniform(name, low, high)
+            if log:
+                return self.suggest_loguniform(name, low, high)
+            else:
+                return self.suggest_uniform(name, low, high)
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -960,13 +968,22 @@ class FixedTrial(BaseTrial):
         self._datetime_start = datetime.now()
         self._number = number
 
-    def suggest_float(self, name, low, high, *, log=False):
-        # type: (str, float, float, bool) -> float
+    def suggest_float(self, name, low, high, *, log=False, step=None):
+        # type: (str, float, float, bool, Optional[float]) -> float
 
-        if log:
-            return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
+        if log and step != 1:
+            raise NotImplementedError()
+
+        if step is None:
+            if log:
+                return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
+            else:
+                return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
         else:
-            return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
+            if not log:
+                return self._suggest(name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step))  # NOQA
+            else:
+                raise NotImplementedError()  # TODO (himkt)
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
