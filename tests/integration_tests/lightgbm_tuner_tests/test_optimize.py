@@ -595,30 +595,28 @@ class TestLightGBMTuner(object):
 
     def test_resume_run(self) -> None:
         params = {"verbose": -1}  # type: Dict
-        valid_data = np.zeros((10, 10))
-        valid_sets = lgb.Dataset(valid_data)
+        dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
-        tuner = LightGBMTuner(params, valid_sets, valid_sets=valid_sets, study=study)
+        tuner = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
         with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
-            tuner.run()
+            tuner.tune_regularization_factors()
 
         n_trials = len(study.trials)
         assert n_trials == len(study.trials)
 
-        tuner2 = LightGBMTuner(params, valid_sets, valid_sets=valid_sets, study=study)
+        tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
         with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
-            tuner2.run()
+            tuner2.tune_regularization_factors()
         assert n_trials == len(study.trials)
 
     def test_best_booster(self) -> None:
         params = {"verbose": -1}  # type: Dict
-        valid_data = np.zeros((10, 10))
-        valid_sets = lgb.Dataset(valid_data)
+        dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
-        tuner = LightGBMTuner(params, valid_sets, valid_sets=valid_sets, study=study)
+        tuner = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
         with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
             initial_best_booster = tuner.best_booster
@@ -628,12 +626,12 @@ class TestLightGBMTuner(object):
             initial_best_booster.params[key] == value
 
         with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=0.0):
-            tuner.run()
+            tuner.tune_regularization_factors()
 
         best_booster = tuner.best_booster
-        assert best_booster.params == initial_best_booster.params
+        assert best_booster.params != initial_best_booster.params
 
-        tuner2 = LightGBMTuner(params, valid_sets, valid_sets=valid_sets, study=study)
+        tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
         # If the best booster is None and study has trials, the tuner retrain the booster with
         # the best parameters.
