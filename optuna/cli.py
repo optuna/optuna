@@ -121,7 +121,7 @@ class _StudySetUserAttribute(_BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(_StudySetUserAttribute, self).get_parser(prog_name)
-        parser.add_argument("--study", required=True, help="Study name.")
+        parser.add_argument("--study-name", required=True, help="Study name.")
         parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
         parser.add_argument("--value", "-v", required=True, help="Value to be set.")
         return parser
@@ -174,7 +174,7 @@ class _Dashboard(_BaseCommand):
         # type: (str) -> ArgumentParser
 
         parser = super(_Dashboard, self).get_parser(prog_name)
-        parser.add_argument("--study", required=True, help="Study name.")
+        parser.add_argument("--study-name", required=True, help="Study name.")
         parser.add_argument(
             "--out",
             "-o",
@@ -234,7 +234,7 @@ class _StudyOptimize(_BaseCommand):
             help="The number of parallel jobs. If this argument is set to -1, the "
             "number is set to CPU counts.",
         )
-        parser.add_argument("--study", required=True, help="Study name.")
+        parser.add_argument("--study-name", required=True, help="Study name.")
         parser.add_argument(
             "file", help="Python script file where the objective function resides."
         )
