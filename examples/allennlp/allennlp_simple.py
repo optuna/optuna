@@ -18,6 +18,10 @@ We have the following two ways to execute this example:
 
 """
 
+import json
+import os.path
+import subprocess
+
 import optuna
 
 
@@ -28,7 +32,6 @@ def objective(trial):
     num_filters = trial.suggest_int("num_filters", 16, 128)
     num_output_layers = trial.suggest_int("num_output_layers", 1, 3)
     hidden_size = trial.suggest_int("hidden_size", 16, 128)
-    import subprocess
 
     env = {
         "LEARNING_RATE": str(learning_rate),
@@ -39,13 +42,17 @@ def objective(trial):
         "HIDDEN_SIZE": str(hidden_size),
         "PATH": "/usr/bin"
     }
-    subprocess.run('/opt/brew/bin/poetry run allennlp train -s test classifier.jsonnet', stdout=True, env=env, shell=True)
-    return 0.1
+
+    allennlp_command = "/home/ubuntu/.poetry/bin/poetry run allennlp train"
+    serialization_dir = f"test/test_{trial.number}"
+    subprocess.run(f"{allennlp_command} -s {serialization_dir} classifier.jsonnet", stdout=True, env=env, shell=True)
+    metrics = json.load(open(os.path.join(serialization_dir, "metrics.json")))["best_validation_accuracy"]
+    return metrics
 
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=80, timeout=600)
+    study.optimize(objective, n_trials=50)
 
     print("Number of finished trials: ", len(study.trials))
     print("Best trial:")
@@ -55,5 +62,3 @@ if __name__ == "__main__":
     print("  Params: ")
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
-
-    shutil.rmtree(MODEL_DIR)
