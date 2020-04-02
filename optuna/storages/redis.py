@@ -25,7 +25,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
 
-@experimental("1.3.0")
+@experimental("1.4.0")
 class RedisStorage(base.BaseStorage):
     """Storage class for Redis backend.
 
