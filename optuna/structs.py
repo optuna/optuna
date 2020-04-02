@@ -351,7 +351,7 @@ class StudySummary(object):
 
         message = (
             "The use of `structs.StudySummary` is deprecated. "
-            "Please use `trial.StudySummary` instead."
+            "Please use `study.StudySummary` instead."
         )
         warnings.warn(message, DeprecationWarning)
 
