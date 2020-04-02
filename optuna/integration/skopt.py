@@ -4,8 +4,7 @@ import optuna
 from optuna import distributions
 from optuna import samplers
 from optuna.samplers import BaseSampler
-from optuna import structs
-from optuna.structs import StudyDirection
+from optuna.study import StudyDirection
 from optuna import type_checking
 
 try:
@@ -26,8 +25,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
 
 class SkoptSampler(BaseSampler):

@@ -1,6 +1,5 @@
 import collections
 import datetime
-import enum
 import gc
 import math
 import threading
@@ -27,7 +26,6 @@ from optuna import progress_bar as pbar_module
 from optuna import pruners
 from optuna import samplers
 from optuna import storages
-from optuna import structs
 from optuna import trial as trial_module
 from optuna import type_checking
 
@@ -43,124 +41,11 @@ if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 
 _logger = logging.get_logger(__name__)
-
-
-class StudyDirection(enum.Enum):
-    """Direction of a :class:`~optuna.study.Study`.
-
-    Attributes:
-        NOT_SET:
-            Direction has not been set.
-        MINIMIZE:
-            :class:`~optuna.study.Study` minimizes the objective function.
-        MAXIMIZE:
-            :class:`~optuna.study.Study` maximizes the objective function.
-    """
-
-    NOT_SET = 0
-    MINIMIZE = 1
-    MAXIMIZE = 2
-
-
-class StudySummary(object):
-    """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
-
-    See also :func:`optuna.study.get_all_study_summaries`.
-
-    Attributes:
-        study_name:
-            Name of the :class:`~optuna.study.Study`.
-        direction:
-            :class:`StudyDirection` of the :class:`~optuna.study.Study`.
-        best_trial:
-            :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
-        user_attrs:
-            Dictionary that contains the attributes of the :class:`~optuna.study.Study` set with
-            :func:`optuna.study.Study.set_user_attr`.
-        system_attrs:
-            Dictionary that contains the attributes of the :class:`~optuna.study.Study` internally
-            set by Optuna.
-        n_trials:
-            The number of trials ran in the :class:`~optuna.study.Study`.
-        datetime_start:
-            Datetime where the :class:`~optuna.study.Study` started.
-    """
-
-    def __init__(
-        self,
-        study_name,  # type: str
-        direction,  # type: StudyDirection
-        best_trial,  # type: Optional[FrozenTrial]
-        user_attrs,  # type: Dict[str, Any]
-        system_attrs,  # type: Dict[str, Any]
-        n_trials,  # type: int
-        datetime_start,  # type: Optional[datetime]
-        study_id,  # type: int
-    ):
-        # type: (...) -> None
-
-        self.study_name = study_name
-        self.direction = direction
-        self.best_trial = best_trial
-        self.user_attrs = user_attrs
-        self.system_attrs = system_attrs
-        self.n_trials = n_trials
-        self.datetime_start = datetime_start
-        self._study_id = study_id
-
-    def __eq__(self, other):
-        # type: (Any) -> bool
-
-        if not isinstance(other, StudySummary):
-            return NotImplemented
-
-        return other.__dict__ == self.__dict__
-
-    def __lt__(self, other):
-        # type: (Any) -> bool
-
-        if not isinstance(other, StudySummary):
-            return NotImplemented
-
-        return self._study_id < other._study_id
-
-    def __le__(self, other):
-        # type: (Any) -> bool
-
-        if not isinstance(other, StudySummary):
-            return NotImplemented
-
-        return self._study_id <= other._study_id
-
-    @property
-    def study_id(self):
-        # type: () -> int
-        """Return the study ID.
-
-        .. deprecated:: 0.20.0
-            The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.study.StudySummary.study_name` instead.
-
-        Returns:
-            The study ID.
-        """
-
-        message = (
-            "The use of `StudySummary.study_id` is deprecated. "
-            "Please use `StudySummary.study_name` instead."
-        )
-        warnings.warn(message, DeprecationWarning)
-
-        logger = logging.get_logger(__name__)
-        logger.warning(message)
-
-        return self._study_id
 
 
 class BaseStudy(object):
@@ -603,7 +488,7 @@ class Study(BaseStudy):
             record = {}
             for attr, df_column in attrs_to_df_columns.items():
                 value = getattr(trial, attr)
-                if isinstance(value, trial.TrialState):
+                if isinstance(value, trial_module.TrialState):
                     # Convert TrialState to str and remove the common prefix.
                     value = str(value).split(".")[-1]
                 if isinstance(value, dict):
@@ -665,7 +550,7 @@ class Study(BaseStudy):
         """
 
         system_attrs = {"fixed_params": params}
-        self._append_trial(state=trial.TrialState.WAITING, system_attrs=system_attrs)
+        self._append_trial(state=trial_module.TrialState.WAITING, system_attrs=system_attrs)
 
     def _append_trial(
         self,
@@ -675,7 +560,7 @@ class Study(BaseStudy):
         user_attrs=None,  # type: Optional[Dict[str, Any]]
         system_attrs=None,  # type: Optional[Dict[str, Any]]
         intermediate_values=None,  # type: Optional[Dict[int, float]]
-        state=trial.TrialState.COMPLETE,  # type: trial.TrialState
+        state=trial_module.TrialState.COMPLETE,  # type: trial_module.TrialState
         datetime_start=None,  # type: Optional[datetime.datetime]
         datetime_complete=None,  # type: Optional[datetime.datetime]
     ):
@@ -747,10 +632,10 @@ class Study(BaseStudy):
 
         # TODO(c-bata): Reduce database query counts for extracting waiting trials.
         for trial in self.trials:
-            if trial.state != trial.TrialState.WAITING:
+            if trial.state != trial_module.TrialState.WAITING:
                 continue
 
-            if not self._storage.set_trial_state(trial._trial_id, trial.TrialState.RUNNING):
+            if not self._storage.set_trial_state(trial._trial_id, trial_module.TrialState.RUNNING):
                 continue
 
             _logger.debug("Trial#{} is popped from the trial queue.".format(trial.number))
@@ -791,7 +676,7 @@ class Study(BaseStudy):
             result = func(trial)
         except exceptions.TrialPruned as e:
             message = "Setting status of trial#{} as {}. {}".format(
-                trial_number, trial.TrialState.PRUNED, str(e)
+                trial_number, trial_module.TrialState.PRUNED, str(e)
             )
             _logger.info(message)
 
@@ -803,15 +688,15 @@ class Study(BaseStudy):
                 self._storage.set_trial_value(
                     trial_id, frozen_trial.intermediate_values[last_step]
                 )
-            self._storage.set_trial_state(trial_id, trial.TrialState.PRUNED)
+            self._storage.set_trial_state(trial_id, trial_module.TrialState.PRUNED)
             return trial
         except Exception as e:
             message = "Setting status of trial#{} as {} because of the following error: {}".format(
-                trial_number, trial.TrialState.FAIL, repr(e)
+                trial_number, trial_module.TrialState.FAIL, repr(e)
             )
             _logger.warning(message, exc_info=True)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-            self._storage.set_trial_state(trial_id, trial.TrialState.FAIL)
+            self._storage.set_trial_state(trial_id, trial_module.TrialState.FAIL)
 
             if isinstance(e, catch):
                 return trial
@@ -833,25 +718,25 @@ class Study(BaseStudy):
             message = (
                 "Setting status of trial#{} as {} because the returned value from the "
                 "objective function cannot be casted to float. Returned value is: "
-                "{}".format(trial_number, trial.TrialState.FAIL, repr(result))
+                "{}".format(trial_number, trial_module.TrialState.FAIL, repr(result))
             )
             _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-            self._storage.set_trial_state(trial_id, trial.TrialState.FAIL)
+            self._storage.set_trial_state(trial_id, trial_module.TrialState.FAIL)
             return trial
 
         if math.isnan(result):
             message = (
                 "Setting status of trial#{} as {} because the objective function "
-                "returned {}.".format(trial_number, trial.TrialState.FAIL, result)
+                "returned {}.".format(trial_number, trial_module.TrialState.FAIL, result)
             )
             _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-            self._storage.set_trial_state(trial_id, trial.TrialState.FAIL)
+            self._storage.set_trial_state(trial_id, trial_module.TrialState.FAIL)
             return trial
 
         self._storage.set_trial_value(trial_id, result)
-        self._storage.set_trial_state(trial_id, trial.TrialState.COMPLETE)
+        self._storage.set_trial_state(trial_id, trial_module.TrialState.COMPLETE)
         self._log_completed_trial(trial, result)
 
         return trial

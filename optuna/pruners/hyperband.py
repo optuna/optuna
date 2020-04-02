@@ -8,7 +8,7 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
-    from optuna import structs  # NOQA
+    from optuna import trial as trial_module  # NOQA
 
 _logger = logging.get_logger(__name__)
 
@@ -104,7 +104,7 @@ class HyperbandPruner(BasePruner):
             self._pruners.append(pruner)
 
     def prune(self, study, trial):
-        # type: (optuna.study.Study, trial.FrozenTrial) -> bool
+        # type: (optuna.study.Study, trial_module.FrozenTrial) -> bool
 
         i = self._get_bracket_id(study, trial)
         _logger.debug("{}th bracket is selected".format(i))
@@ -119,7 +119,7 @@ class HyperbandPruner(BasePruner):
         return n + (n / 2) * (n_brackets - 1 - pruner_index)
 
     def _get_bracket_id(self, study, trial):
-        # type: (optuna.study.Study, trial.FrozenTrial) -> int
+        # type: (optuna.study.Study, trial_module.FrozenTrial) -> int
         """Computes the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
@@ -166,7 +166,7 @@ class HyperbandPruner(BasePruner):
                 self._bracket_id = bracket_id
 
             def get_trials(self, deepcopy=True):
-                # type: (bool) -> List[trial.FrozenTrial]
+                # type: (bool) -> List[trial_module.FrozenTrial]
 
                 trials = super().get_trials(deepcopy=deepcopy)
                 pruner = self.pruner
