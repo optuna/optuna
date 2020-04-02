@@ -319,14 +319,14 @@ class LightGBMTuner(BaseTuner):
         best_params:
             A dictionary to store the best parameters.
 
-            .. deprecated:: 1.3.0
+            .. deprecated:: 1.4.0
                 Please get the parameter values via the ``params`` property of the
                 :class:`~optuna.integration.lightgbm.LightGBMTuner.best_booster`.
 
         tuning_history:
             A List to store the history of parameter tuning.
 
-            .. deprecated:: 1.3.0
+            .. deprecated:: 1.4.0
                 Please use the ``study`` argument to access optimization history.
 
         study:
