@@ -302,7 +302,7 @@ class TestLightGBMTuner(object):
             (None, "maximize"),  # The default metric is binary_logloss.
         ],
     )
-    def test_inconsitent_study_direction(self, metric: str, study_direction: str) -> None:
+    def test_inconsistent_study_direction(self, metric: str, study_direction: str) -> None:
 
         params = {}  # type: Dict[str, Any]
         if metric is not None:
