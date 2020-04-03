@@ -929,8 +929,8 @@ class FixedTrial(BaseTrial):
     Args:
         params:
             A dictionary containing all parameters.
-        number (optional):
-            A trial ID.
+        number:
+            A trial number. Defaults to ``0``.
 
     """
 
