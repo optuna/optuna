@@ -29,7 +29,7 @@ def _check_mlflow_availability():
         )
 
 
-@experimental("1.3.0")
+@experimental("1.4.0")
 class MLflowCallback(object):
     """Callback to track optuna trials with MLflow.
 
