@@ -84,9 +84,7 @@ def test_metric_name(tmpdir):
     metric_name = "my_metric_name"
     n_trials = 3
 
-    mlflc = MLflowCallback(
-        tracking_uri=tracking_file_name, metric_name=metric_name
-    )
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
     study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
 
