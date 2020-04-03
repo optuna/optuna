@@ -44,7 +44,7 @@ def create_study(
     sampler_adapter = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
     if not isinstance(directions, list):
-        raise ValueError("`directions` must be a list.")
+        raise TypeError("`directions` must be a list.")
 
     if not all(d in ["minimize", "maximize"] for d in directions):
         raise ValueError("`directions` includes unknown direction names.")
