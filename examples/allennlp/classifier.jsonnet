@@ -1,7 +1,7 @@
 local USE_LAZY_DATASET_READER = true;
 
 // GPU to use. Setting this to -1 will mean that we'll use the CPU.
-local CUDA_DEVICE = -1;
+local CUDA_DEVICE = 0;
 
 // Paths to data.
 local TRAIN_PATH = "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/train.jsonl";
