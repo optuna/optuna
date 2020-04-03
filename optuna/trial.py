@@ -110,8 +110,7 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @property
-    def number(self):
-        # type: () -> int
+    def number(self) -> int:
 
         raise NotImplementedError
 
@@ -1058,8 +1057,7 @@ class FixedTrial(BaseTrial):
         return self._datetime_start
 
     @property
-    def number(self):
-        # type: () -> int
+    def number(self) -> int:
 
         return self._number
 

@@ -421,8 +421,7 @@ def test_fixed_trial_datetime_start():
     assert trial.datetime_start is not None
 
 
-def test_fixed_trial_number():
-    # type: () -> None
+def test_fixed_trial_number() -> None:
 
     params = {"x": 1}
     trial = FixedTrial(params, 2)
