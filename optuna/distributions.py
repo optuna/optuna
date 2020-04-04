@@ -293,7 +293,7 @@ class CategoricalDistribution(BaseDistribution):
     .. note::
 
         Not all types are guaranteed to be compatible with all storages. It is recommended to
-        restrict the types of the choices to :obj:`None`, :class:`bool`, :class"`int`,
+        restrict the types of the choices to :obj:`None`, :class:`bool`, :class:`int`,
         :class:`float` and :class:`str`.
 
     Attributes:
