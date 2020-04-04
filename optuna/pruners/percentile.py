@@ -5,6 +5,7 @@ import numpy as np
 
 from optuna.pruners import BasePruner
 from optuna import structs
+from optuna import study_direction
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -15,23 +16,23 @@ if type_checking.TYPE_CHECKING:
 
 
 def _get_best_intermediate_result_over_steps(trial, direction):
-    # type: (structs.FrozenTrial, structs.StudyDirection) -> float
+    # type: (structs.FrozenTrial, study_direction.StudyDirection) -> float
 
     values = np.array(list(trial.intermediate_values.values()), np.float)
-    if direction == structs.StudyDirection.MAXIMIZE:
+    if direction == study_direction.StudyDirection.MAXIMIZE:
         return np.nanmax(values)
     return np.nanmin(values)
 
 
 def _get_percentile_intermediate_result_over_trials(all_trials, direction, step, percentile):
-    # type: (List[structs.FrozenTrial], structs.StudyDirection, int, float) -> float
+    # type: (List[structs.FrozenTrial], study_direction.StudyDirection, int, float) -> float
 
     completed_trials = [t for t in all_trials if t.state == structs.TrialState.COMPLETE]
 
     if len(completed_trials) == 0:
         raise ValueError("No trials have been completed.")
 
-    if direction == structs.StudyDirection.MAXIMIZE:
+    if direction == study_direction.StudyDirection.MAXIMIZE:
         percentile = 100 - percentile
 
     return float(
@@ -187,6 +188,6 @@ class PercentilePruner(BasePruner):
         if math.isnan(p):
             return False
 
-        if direction == structs.StudyDirection.MAXIMIZE:
+        if direction == study_direction.StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p

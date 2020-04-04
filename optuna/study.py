@@ -1,6 +1,5 @@
 import collections
 import datetime
-import enum
 import gc
 import math
 import threading
@@ -28,6 +27,7 @@ from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import structs
+from optuna import study_direction
 from optuna import trial as trial_module
 from optuna import type_checking
 
@@ -49,23 +49,6 @@ if type_checking.TYPE_CHECKING:
 
 
 _logger = logging.get_logger(__name__)
-
-
-class StudyDirection(enum.Enum):
-    """Direction of a :class:`~optuna.study.Study`.
-
-    Attributes:
-        NOT_SET:
-            Direction has not been set.
-        MINIMIZE:
-            :class:`~optuna.study.Study` minimizes the objective function.
-        MAXIMIZE:
-            :class:`~optuna.study.Study` maximizes the objective function.
-    """
-
-    NOT_SET = 0
-    MINIMIZE = 1
-    MAXIMIZE = 2
 
 
 class StudySummary(object):
@@ -95,7 +78,7 @@ class StudySummary(object):
     def __init__(
         self,
         study_name,  # type: str
-        direction,  # type: StudyDirection
+        direction,  # type: study_direction.StudyDirection
         best_trial,  # type: Optional[FrozenTrial]
         user_attrs,  # type: Dict[str, Any]
         system_attrs,  # type: Dict[str, Any]
@@ -208,11 +191,11 @@ class BaseStudy(object):
 
     @property
     def direction(self):
-        # type: () -> structs.StudyDirection
+        # type: () -> study_direction.StudyDirection
         """Return the direction of the study.
 
         Returns:
-            A :class:`~optuna.structs.StudyDirection` object.
+            A :class:`~optuna.study_direction.StudyDirection` object.
         """
 
         return self._storage.get_study_direction(self._study_id)
@@ -939,9 +922,9 @@ def create_study(
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
     if direction == "minimize":
-        _direction = structs.StudyDirection.MINIMIZE
+        _direction = study_direction.StudyDirection.MINIMIZE
     elif direction == "maximize":
-        _direction = structs.StudyDirection.MAXIMIZE
+        _direction = study_direction.StudyDirection.MAXIMIZE
     else:
         raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
 

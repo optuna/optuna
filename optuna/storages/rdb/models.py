@@ -16,7 +16,7 @@ from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
 
 from optuna import distributions
-from optuna.structs import StudyDirection
+from optuna.study_direction import StudyDirection
 from optuna.structs import TrialState
 from optuna import type_checking
 

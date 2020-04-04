@@ -85,9 +85,9 @@ class SimulatedAnnealingSampler(BaseSampler):
         current_value = self._current_trial.value
 
         # `prev_trial` is always accepted if it has a better value than the current trial.
-        if study.direction == structs.StudyDirection.MINIMIZE and prev_value <= current_value:
+        if study.direction == study_direction.StudyDirection.MINIMIZE and prev_value <= current_value:
             return 1.0
-        elif study.direction == structs.StudyDirection.MAXIMIZE and prev_value >= current_value:
+        elif study.direction == study_direction.StudyDirection.MAXIMIZE and prev_value >= current_value:
             return 1.0
 
         # Calculate the probability of accepting `prev_trial` that has a worse value than

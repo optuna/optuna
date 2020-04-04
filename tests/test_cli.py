@@ -76,12 +76,12 @@ def test_create_study_command_with_direction():
         command = ["optuna", "create-study", "--storage", storage_url, "--direction", "minimize"]
         study_name = str(subprocess.check_output(command).decode().strip())
         study_id = storage.get_study_id_from_name(study_name)
-        assert storage.get_study_direction(study_id) == optuna.structs.StudyDirection.MINIMIZE
+        assert storage.get_study_direction(study_id) == optuna.study_direction.StudyDirection.MINIMIZE
 
         command = ["optuna", "create-study", "--storage", storage_url, "--direction", "maximize"]
         study_name = str(subprocess.check_output(command).decode().strip())
         study_id = storage.get_study_id_from_name(study_name)
-        assert storage.get_study_direction(study_id) == optuna.structs.StudyDirection.MAXIMIZE
+        assert storage.get_study_direction(study_id) == optuna.study_direction.StudyDirection.MAXIMIZE
 
         command = ["optuna", "create-study", "--storage", storage_url, "--direction", "test"]
 

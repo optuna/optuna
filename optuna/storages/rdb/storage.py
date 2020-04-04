@@ -25,6 +25,7 @@ from optuna.storages.base import BaseStorage
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.rdb import models
 from optuna import structs
+from optuna import study_direction
 from optuna import type_checking
 from optuna import version
 
@@ -152,7 +153,7 @@ class RDBStorage(BaseStorage):
         if study_name is None:
             study_name = self._create_unique_study_name(session)
 
-        study = models.StudyModel(study_name=study_name, direction=structs.StudyDirection.NOT_SET)
+        study = models.StudyModel(study_name=study_name, direction=study_direction.StudyDirection.NOT_SET)
         session.add(study)
         if not self._commit_with_integrity_check(session):
             raise optuna.exceptions.DuplicatedStudyError(
@@ -191,13 +192,13 @@ class RDBStorage(BaseStorage):
 
     # TODO(sano): Prevent simultaneously setting different direction in distributed environments.
     def set_study_direction(self, study_id, direction):
-        # type: (int, structs.StudyDirection) -> None
+        # type: (int, study_direction.StudyDirection) -> None
 
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        if study.direction != structs.StudyDirection.NOT_SET and study.direction != direction:
+        if study.direction != study_direction.StudyDirection.NOT_SET and study.direction != direction:
             raise ValueError(
                 "Cannot overwrite study direction from {} to {}.".format(
                     study.direction, direction
@@ -276,7 +277,7 @@ class RDBStorage(BaseStorage):
         return study.study_name
 
     def get_study_direction(self, study_id):
-        # type: (int) -> structs.StudyDirection
+        # type: (int) -> study_direction.StudyDirection
 
         session = self.scoped_session()
 
@@ -358,7 +359,7 @@ class RDBStorage(BaseStorage):
             ]
             best_trial = None
             if len(completed_trial_models) > 0:
-                if study_model.direction == structs.StudyDirection.MAXIMIZE:
+                if study_model.direction == study_direction.StudyDirection.MAXIMIZE:
                     best_trial_model = max(completed_trial_models, key=lambda t: t.value)
                 else:
                     best_trial_model = min(completed_trial_models, key=lambda t: t.value)
@@ -716,7 +717,7 @@ class RDBStorage(BaseStorage):
         # type: (int) -> structs.FrozenTrial
 
         session = self.scoped_session()
-        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+        if self.get_study_direction(study_id) == study_direction.StudyDirection.MAXIMIZE:
             trial = models.TrialModel.find_max_value_trial(study_id, session)
         else:
             trial = models.TrialModel.find_min_value_trial(study_id, session)

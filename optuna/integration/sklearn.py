@@ -40,6 +40,7 @@ from optuna import logging  # NOQA
 from optuna import samplers  # NOQA
 from optuna import structs  # NOQA
 from optuna import study as study_module  # NOQA
+from optuna import study_direction  # NOQA
 from optuna import trial as trial_module  # NOQA
 from optuna import type_checking  # NOQA
 
@@ -784,7 +785,7 @@ class OptunaSearchCV(BaseEstimator):
         if self.max_iter <= 0:
             raise ValueError("max_iter must be > 0, got {}.".format(self.max_iter))
 
-        if self.study is not None and self.study.direction != structs.StudyDirection.MAXIMIZE:
+        if self.study is not None and self.study.direction != study_direction.StudyDirection.MAXIMIZE:
             raise ValueError("direction of study must be 'maximize'.")
 
     def _more_tags(self):
