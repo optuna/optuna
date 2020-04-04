@@ -975,12 +975,16 @@ class FixedTrial(BaseTrial):
 
         if step is not None:
             if log:
-                return self._suggest(name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step))  # NOQA
+                return self._suggest(
+                    name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step)
+                )  # NOQA
             else:
                 raise NotImplementedError()
         else:
             if log:
-                return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
+                return self._suggest(
+                    name, distributions.LogUniformDistribution(low=low, high=high)
+                )
             else:
                 return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
 
