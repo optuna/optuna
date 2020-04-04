@@ -1,7 +1,8 @@
 import json
 import os
-import subprocess
 from typing import Optional
+
+import allennlp.commands
 
 import optuna
 
@@ -52,27 +53,8 @@ class AllenNLPExecutor(object):
         self.use_pipenv = use_pipenv
 
     def run(self) -> float:
-
-        if self.use_poetry:
-            allennlp_command = "poetry run allennlp"
-        elif self.use_pipenv:
-            allennlp_command = "pipenv run allennlp"
-        elif self.allennlp_executable_path is not None:
-            allennlp_command = self.allennlp_executable_path
-        else:
-            allennlp_command = "allennlp"
-
-        command = "{} train --serialization-dir={} {}".format(
-            allennlp_command,
-            self.serialization_dir,
-            self.config_file,
-        )
-
-        env = {k: str(v) for k, v in self.params.items()}
-        current_path = os.getenv("PATH")
-        if current_path is None:
-            raise ValueError("PATH is empty")
-        env["PATH"] = current_path
-        subprocess.run(command, env=env, shell=True)
+        for key, value in self.params.items():
+            os.environ[key] = str(value)
+        allennlp.commands.train.train_model_from_file(self.config_file, self.serialization_dir)
         metrics = json.load(open(os.path.join(self.serialization_dir, "metrics.json")))
         return metrics[self.metrics]
