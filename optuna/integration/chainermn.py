@@ -196,7 +196,7 @@ class ChainerMNTrial(BaseTrial):
             # type: () -> float
 
             assert self.delegate is not None
-            return self.delegate.suggest_float(name, low, high)
+            return self.delegate.suggest_float(name, low, high, log)
 
         return self._call_with_mpi(func)
 
