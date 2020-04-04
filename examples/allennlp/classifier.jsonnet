@@ -1,8 +1,5 @@
 local USE_LAZY_DATASET_READER = true;
 
-// GPU to use. Setting this to -1 will mean that we'll use the CPU.
-local CUDA_DEVICE = 0;
-
 // Paths to data.
 local TRAIN_PATH = "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/train.jsonl";
 local DEV_PATH =  "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl";
@@ -94,7 +91,7 @@ local BASE_READER(TOKEN_INDEXERS) = {
    },
 
    "trainer": {
-      "cuda_device": CUDA_DEVICE,
+      "cuda_device": -1,
       "num_epochs": 50,
       "optimizer": {
          "lr": LEARNING_RATE,

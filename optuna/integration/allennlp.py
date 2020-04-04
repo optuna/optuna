@@ -34,15 +34,15 @@ class AllenNLPExecutor(object):
     """
 
     def __init__(
-            self,
-            trial: optuna.Trial,
-            config_file: str,
-            serialization_dir: str,
-            metrics: str = "best_validation_accuracy",
-            *,
-            allennlp_executable_path: Optional[str] = None,
-            use_poetry: bool = False,
-            use_pipenv: bool = False
+        self,
+        trial: optuna.Trial,
+        config_file: str,
+        serialization_dir: str,
+        metrics: str = "best_validation_accuracy",
+        *,
+        allennlp_executable_path: Optional[str] = None,
+        use_poetry: bool = False,
+        use_pipenv: bool = False
     ):
         self.params = trial.params
         self.config_file = config_file

@@ -2,7 +2,8 @@
 Optuna example that optimizes a classifier configuration for IMDB movie review dataset.
 This script is based on the example of allentune (https://github.com/allenai/allentune).
 
-In this example, we optimize the validation accuracy of sentiment classification using AllenNLP cli.
+In this example, we optimize the validation accuracy of
+sentiment classification using AllenNLP cli.
 Since it is too time-consuming to use the entire dataset, we here use a small subset of it.
 
 We have the following two ways to execute this example:
@@ -18,10 +19,8 @@ We have the following two ways to execute this example:
 
 """
 
-import json
 import os.path
 import shutil
-import subprocess
 
 import optuna
 from optuna.integration import AllenNLPExecutor
@@ -31,8 +30,8 @@ MODEL_DIR = "result"
 
 
 def objective(trial):
-    trial.suggest_uniform('LEARNING_RATE', 1e-2, 1e-1)
-    trial.suggest_uniform('DROPOUT', 0.0, 0.5)
+    trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
+    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
     trial.suggest_int("MAX_FILTER_SIZE", 3, 6)
     trial.suggest_int("NUM_FILTERS", 16, 128)
     trial.suggest_int("NUM_OUTPUT_LAYERS", 1, 3)
