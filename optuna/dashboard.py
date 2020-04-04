@@ -19,10 +19,11 @@ import time
 
 import numpy as np
 
-import optuna.logging
-import optuna.structs
-import optuna.study
-import optuna.study_direction
+import optuna
+from optuna import logging
+from optuna import structs
+from optuna import study
+from optuna.study_direction import StudyDirection
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -32,7 +33,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
 _mode = None  # type: Optional[str]
-_study = None  # type: Optional[optuna.study.Study]
+_study = None  # type: Optional[study.Study]
 
 _HEADER_FORMAT = """
 <style>
@@ -56,16 +57,16 @@ if _available:
 
     class _CompleteTrialsWidget(object):
         def __init__(self, trials, direction):
-            # type: (List[optuna.structs.FrozenTrial], optuna.study_direction.StudyDirection) -> None
+            # type: (List[structs.FrozenTrial], StudyDirection) -> None
 
             complete_trials = [
-                trial for trial in trials if trial.state == optuna.structs.TrialState.COMPLETE
+                trial for trial in trials if trial.state == structs.TrialState.COMPLETE
             ]
             self.trial_ids = set([trial._trial_id for trial in complete_trials])
 
             self.direction = direction
             values = [trial.value for trial in complete_trials]
-            if direction == optuna.study_direction.StudyDirection.MINIMIZE:
+            if direction == StudyDirection.MINIMIZE:
                 best_values = np.minimum.accumulate(values, axis=0)
             else:
                 best_values = np.maximum.accumulate(values, axis=0)
@@ -91,18 +92,18 @@ if _available:
             return figure
 
         def update(self, new_trials):
-            # type: (List[optuna.structs.FrozenTrial]) -> None
+            # type: (List[structs.FrozenTrial]) -> None
 
             stream_dict = collections.defaultdict(list)  # type: Dict[str, List[Any]]
 
             for trial in new_trials:
-                if trial.state != optuna.structs.TrialState.COMPLETE:
+                if trial.state != structs.TrialState.COMPLETE:
                     continue
                 if trial._trial_id in self.trial_ids:
                     continue
                 stream_dict["#"].append(len(self.trial_ids))
                 stream_dict["value"].append(trial.value)
-                if self.direction == optuna.study_direction.StudyDirection.MINIMIZE:
+                if self.direction == StudyDirection.MINIMIZE:
                     self.best_value = min(self.best_value, trial.value)
                 else:
                     self.best_value = max(self.best_value, trial.value)
@@ -114,7 +115,7 @@ if _available:
 
     class _AllTrialsWidget(object):
         def __init__(self, trials):
-            # type: (List[optuna.structs.FrozenTrial]) -> None
+            # type: (List[structs.FrozenTrial]) -> None
 
             self.cds = bokeh.models.ColumnDataSource(self.trials_to_dict(trials))
 
@@ -138,8 +139,8 @@ if _available:
 
         def update(
             self,
-            old_trials,  # type: List[optuna.structs.FrozenTrial]
-            new_trials,  # type: List[optuna.structs.FrozenTrial]
+            old_trials,  # type: List[structs.FrozenTrial]
+            new_trials,  # type: List[structs.FrozenTrial]
         ):
             # type: (...) -> None
 
@@ -159,7 +160,7 @@ if _available:
 
         @staticmethod
         def trials_to_dict(trials):
-            # type: (List[optuna.structs.FrozenTrial]) -> Dict[str, List[Any]]
+            # type: (List[structs.FrozenTrial]) -> Dict[str, List[Any]]
 
             return {
                 "number": [trial.number for trial in trials],
@@ -182,7 +183,7 @@ if _available:
 
     class _DashboardApp(object):
         def __init__(self, study, launch_update_thread):
-            # type: (optuna.study.Study, bool) -> None
+            # type: (study.Study, bool) -> None
 
             self.study = study
             self.launch_update_thread = launch_update_thread
@@ -194,8 +195,8 @@ if _available:
             self.doc = doc
             self.current_trials = (
                 self.study.trials
-            )  # type: Optional[List[optuna.structs.FrozenTrial]]
-            self.new_trials = None  # type: Optional[List[optuna.structs.FrozenTrial]]
+            )  # type: Optional[List[structs.FrozenTrial]]
+            self.new_trials = None  # type: Optional[List[structs.FrozenTrial]]
             self.complete_trials_widget = _CompleteTrialsWidget(
                 self.current_trials, self.study.direction
             )
@@ -262,7 +263,7 @@ def _check_bokeh_availability():
 def _show_experimental_warning():
     # type: () -> None
 
-    logger = optuna.logging.get_logger(__name__)
+    logger = logging.get_logger(__name__)
     logger.warning("Optuna dashboard is still highly experimental. Please use with caution!")
 
 
@@ -278,7 +279,7 @@ def _get_this_source_path():
 
 
 def _serve(study, bokeh_allow_websocket_origins):
-    # type: (optuna.study.Study, List[str]) -> None
+    # type: (study.Study, List[str]) -> None
 
     global _mode, _study
 
@@ -307,7 +308,7 @@ def _serve(study, bokeh_allow_websocket_origins):
 
 
 def _write(study, out_path):
-    # type: (optuna.study.Study, str) -> None
+    # type: (study.Study, str) -> None
 
     global _mode, _study
 
