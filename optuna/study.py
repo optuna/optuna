@@ -83,7 +83,7 @@ class StudySummary(object):
         user_attrs,  # type: Dict[str, Any]
         system_attrs,  # type: Dict[str, Any]
         n_trials,  # type: int
-        datetime_start,  # type: Optional[datetime]
+        datetime_start,  # type: Optional[datetime.datetime]
         study_id,  # type: int
     ):
         # type: (...) -> None

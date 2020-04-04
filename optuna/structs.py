@@ -3,6 +3,7 @@ import warnings
 
 from optuna import exceptions
 from optuna import logging
+from optuna import study_direction
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -278,7 +279,7 @@ class StudySummary(object):
         study_name:
             Name of the :class:`~optuna.study.Study`.
         direction:
-            :class:`StudyDirection` of the :class:`~optuna.study.Study`.
+            :class:`~optuna.study_direction.StudyDirection` of the :class:`~optuna.study.Study`.
         best_trial:
             :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
         user_attrs:
@@ -296,7 +297,7 @@ class StudySummary(object):
     def __init__(
         self,
         study_name,  # type: str
-        direction,  # type: StudyDirection
+        direction,  # type: study_direction.StudyDirection
         best_trial,  # type: Optional[FrozenTrial]
         user_attrs,  # type: Dict[str, Any]
         system_attrs,  # type: Dict[str, Any]
