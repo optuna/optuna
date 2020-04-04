@@ -245,12 +245,12 @@ class Trial(BaseTrial):
         Returns:
             A suggested float value.
         """
-        if step:
+
+        if step is not None:
             if log:
-                raise NotImplementedError()  # TODO
+                raise NotImplementedError()
             else:
                 return self.suggest_discrete_uniform(name, low, high, step)
-
         else:
             if log:
                 return self.suggest_loguniform(name, low, high)
@@ -973,19 +973,16 @@ class FixedTrial(BaseTrial):
     def suggest_float(self, name, low, high, *, log=False, step=None):
         # type: (str, float, float, bool, Optional[float]) -> float
 
-        if log and step != 1:
-            raise NotImplementedError()
-
-        if step is None:
+        if step is not None:
+            if log:
+                return self._suggest(name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step))  # NOQA
+            else:
+                raise NotImplementedError()
+        else:
             if log:
                 return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
             else:
                 return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
-        else:
-            if not log:
-                return self._suggest(name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step))  # NOQA
-            else:
-                raise NotImplementedError()  # TODO (himkt)
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
