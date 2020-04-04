@@ -13,8 +13,8 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.integration.cma import _Optimizer
 from optuna.structs import FrozenTrial
-from optuna.structs import StudyDirection
 from optuna.structs import TrialState
+from optuna.study_direction import StudyDirection
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 
