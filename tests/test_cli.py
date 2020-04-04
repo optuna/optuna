@@ -10,6 +10,7 @@ from optuna.cli import _Studies
 from optuna.exceptions import CLIUsageError
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
+from optuna.study_direction import StudyDirection
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 
@@ -76,12 +77,12 @@ def test_create_study_command_with_direction():
         command = ["optuna", "create-study", "--storage", storage_url, "--direction", "minimize"]
         study_name = str(subprocess.check_output(command).decode().strip())
         study_id = storage.get_study_id_from_name(study_name)
-        assert storage.get_study_direction(study_id) == optuna.study_direction.StudyDirection.MINIMIZE
+        assert storage.get_study_direction(study_id) == StudyDirection.MINIMIZE
 
         command = ["optuna", "create-study", "--storage", storage_url, "--direction", "maximize"]
         study_name = str(subprocess.check_output(command).decode().strip())
         study_id = storage.get_study_id_from_name(study_name)
-        assert storage.get_study_direction(study_id) == optuna.study_direction.StudyDirection.MAXIMIZE
+        assert storage.get_study_direction(study_id) == StudyDirection.MAXIMIZE
 
         command = ["optuna", "create-study", "--storage", storage_url, "--direction", "test"]
 
