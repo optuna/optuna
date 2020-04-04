@@ -189,6 +189,17 @@ class ChainerMNTrial(BaseTrial):
         self.delegate = trial
         self.comm = comm
 
+    def suggest_float(self, name, low, high, *, log=False):
+        # type: (str, float, float, bool) -> float
+
+        def func():
+            # type: () -> float
+
+            assert self.delegate is not None
+            return self.delegate.suggest_float(name, low, high)
+
+        return self._call_with_mpi(func)
+
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
