@@ -5,7 +5,7 @@ In this example, we optimize the validation accuracy of object recognition using
 scikit-learn and Fashion-MNIST. We optimize a neural network. As it is too time
 consuming to use the whole Fashion-MNIST dataset, we here use a small subset of it.
 
-We have can execute this example as follows.
+We can execute this example as follows.
 
     $ python plot_study.py
 
