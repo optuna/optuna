@@ -28,6 +28,7 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
     Note that this class is not supposed to be directly accessed by library users.
     """
+
     @abc.abstractmethod
     def suggest_float(self, name, low, high, *, log=False):
         # type: (str, float, float, bool) -> float
