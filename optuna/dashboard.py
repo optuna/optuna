@@ -19,10 +19,9 @@ import time
 
 import numpy as np
 
-import optuna
-from optuna import logging
-from optuna import structs
-from optuna import study
+import optuna.logging
+import optuna.structs
+import optuna.study
 from optuna.study_direction import StudyDirection
 from optuna import type_checking
 
@@ -33,7 +32,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
 _mode = None  # type: Optional[str]
-_study = None  # type: Optional[study.Study]
+_study = None  # type: Optional[optuna.study.Study]
 
 _HEADER_FORMAT = """
 <style>
@@ -57,10 +56,10 @@ if _available:
 
     class _CompleteTrialsWidget(object):
         def __init__(self, trials, direction):
-            # type: (List[structs.FrozenTrial], StudyDirection) -> None
+            # type: (List[optuna.structs.FrozenTrial], StudyDirection) -> None
 
             complete_trials = [
-                trial for trial in trials if trial.state == structs.TrialState.COMPLETE
+                trial for trial in trials if trial.state == optuna.structs.TrialState.COMPLETE
             ]
             self.trial_ids = set([trial._trial_id for trial in complete_trials])
 
@@ -92,12 +91,12 @@ if _available:
             return figure
 
         def update(self, new_trials):
-            # type: (List[structs.FrozenTrial]) -> None
+            # type: (List[optuna.structs.FrozenTrial]) -> None
 
             stream_dict = collections.defaultdict(list)  # type: Dict[str, List[Any]]
 
             for trial in new_trials:
-                if trial.state != structs.TrialState.COMPLETE:
+                if trial.state != optuna.structs.TrialState.COMPLETE:
                     continue
                 if trial._trial_id in self.trial_ids:
                     continue
@@ -115,7 +114,7 @@ if _available:
 
     class _AllTrialsWidget(object):
         def __init__(self, trials):
-            # type: (List[structs.FrozenTrial]) -> None
+            # type: (List[optuna.structs.FrozenTrial]) -> None
 
             self.cds = bokeh.models.ColumnDataSource(self.trials_to_dict(trials))
 
@@ -139,8 +138,8 @@ if _available:
 
         def update(
             self,
-            old_trials,  # type: List[structs.FrozenTrial]
-            new_trials,  # type: List[structs.FrozenTrial]
+            old_trials,  # type: List[optuna.structs.FrozenTrial]
+            new_trials,  # type: List[optuna.structs.FrozenTrial]
         ):
             # type: (...) -> None
 
@@ -160,7 +159,7 @@ if _available:
 
         @staticmethod
         def trials_to_dict(trials):
-            # type: (List[structs.FrozenTrial]) -> Dict[str, List[Any]]
+            # type: (List[optuna.structs.FrozenTrial]) -> Dict[str, List[Any]]
 
             return {
                 "number": [trial.number for trial in trials],
@@ -183,7 +182,7 @@ if _available:
 
     class _DashboardApp(object):
         def __init__(self, study, launch_update_thread):
-            # type: (study.Study, bool) -> None
+            # type: (optuna.study.Study, bool) -> None
 
             self.study = study
             self.launch_update_thread = launch_update_thread
@@ -195,8 +194,8 @@ if _available:
             self.doc = doc
             self.current_trials = (
                 self.study.trials
-            )  # type: Optional[List[structs.FrozenTrial]]
-            self.new_trials = None  # type: Optional[List[structs.FrozenTrial]]
+            )  # type: Optional[List[optuna.structs.FrozenTrial]]
+            self.new_trials = None  # type: Optional[List[optuna.structs.FrozenTrial]]
             self.complete_trials_widget = _CompleteTrialsWidget(
                 self.current_trials, self.study.direction
             )
@@ -263,7 +262,7 @@ def _check_bokeh_availability():
 def _show_experimental_warning():
     # type: () -> None
 
-    logger = logging.get_logger(__name__)
+    logger = optuna.logging.get_logger(__name__)
     logger.warning("Optuna dashboard is still highly experimental. Please use with caution!")
 
 
@@ -279,7 +278,7 @@ def _get_this_source_path():
 
 
 def _serve(study, bokeh_allow_websocket_origins):
-    # type: (study.Study, List[str]) -> None
+    # type: (optuna.study.Study, List[str]) -> None
 
     global _mode, _study
 
@@ -308,7 +307,7 @@ def _serve(study, bokeh_allow_websocket_origins):
 
 
 def _write(study, out_path):
-    # type: (study.Study, str) -> None
+    # type: (optuna.study.Study, str) -> None
 
     global _mode, _study
 
