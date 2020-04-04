@@ -32,6 +32,9 @@ jobs:
 
         # Install all dependencies needed for examples.
         pip install --progress-bar off $(ls dist/*.tar.gz)[example]
+
+        # Install additional test-specific dependencies
+        pip install --progress-bar off nbval
     - name: Run examples
       run: |
         if [ ${{ matrix.python-version }} = 3.5 ]; then
@@ -50,6 +53,12 @@ jobs:
             echo $file --pruning
             python $file --pruning > /dev/null
           fi
+        done
+
+        for file in `find examples -name '*.ipynb'`
+        do
+          echo $file
+          pytest --nbval-lax $file > /dev/null
         done
       env:
         OMP_NUM_THREADS: 1
