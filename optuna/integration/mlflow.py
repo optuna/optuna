@@ -110,7 +110,8 @@ class MLflowCallback(object):
             mlflow.set_experiment(study.study_name)
         else:
             raise ValueError(
-                "You must set 'study.study_name' inside Optuna! This is needed to set the MLflow experiment name."
+                "You must set 'study.study_name' inside Optuna! This "
+                "is needed to set the MLflow experiment name."
             )
 
         with mlflow.start_run(run_name=str(trial.number)):
