@@ -59,6 +59,15 @@ class StudyDirection(enum.Enum):
             :class:`~optuna.study.Study` maximizes the objective function.
     """
 
+    message = (
+        "The use of `structs.StudyDirection` is deprecated. " 
+        "Please use `study_direction.StudyDirection` instead."
+    )
+    warnings.warn(message, DeprecationWarning)
+
+    logger = logging.get_logger(__name__)
+    logger.warning(message)
+
     NOT_SET = 0
     MINIMIZE = 1
     MAXIMIZE = 2
