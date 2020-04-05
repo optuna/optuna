@@ -50,6 +50,11 @@ class TrialState(enum.Enum):
 class StudyDirection(enum.Enum):
     """Direction of a :class:`~optuna.study.Study`.
 
+    .. deprecated:: 1.3.0
+
+        This class was moved to :mod:`~optuna.study_direction`. Please use
+        :class:`~optuna.study_direction.StudyDirection` instead.
+
     Attributes:
         NOT_SET:
             Direction has not been set.
@@ -60,11 +65,10 @@ class StudyDirection(enum.Enum):
     """
 
     message = (
-        "The use of `structs.StudyDirection` is deprecated. " 
+        "The use of `structs.StudyDirection` is deprecated. "
         "Please use `study_direction.StudyDirection` instead."
     )
     warnings.warn(message, DeprecationWarning)
-
     logger = logging.get_logger(__name__)
     logger.warning(message)
 
