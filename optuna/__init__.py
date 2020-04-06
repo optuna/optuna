@@ -27,7 +27,6 @@ from optuna.type_checking import TYPE_CHECKING  # NOQA
 
 if TYPE_CHECKING:
     from optuna import dashboard  # NOQA
-    from typing import Any  # NOQA
 else:
     from typing import Any  # NOQA
 
