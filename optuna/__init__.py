@@ -29,22 +29,20 @@ if TYPE_CHECKING:
     from optuna import dashboard  # NOQA
     from typing import Any  # NOQA
 else:
+    from typing import Any  # NOQA
 
     class _LazyImport(types.ModuleType):
-        def __init__(self, name):
-            # type: (str) -> None
+        def __init__(self, name: str) -> None:
             super(_LazyImport, self).__init__(name)
             self._name = name
 
-        def _load(self):
-            # type: () -> types.ModuleType
+        def _load(self) -> types.ModuleType:
             module = importlib.import_module(self._name)
             globals()[self._name] = module
             self.__dict__.update(module.__dict__)
             return module
 
-        def __getattr__(self, item):
-            # type: (str) -> Any
+        def __getattr__(self, item: str) -> Any:
             return getattr(self._load(), item)
 
     dashboard = _LazyImport("optuna.dashboard")
