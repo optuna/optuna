@@ -1,3 +1,6 @@
+optuna.importance:
+  - optuna/importance/**/*
+
 optuna.integration:
   - optuna/integration/**/*
 
