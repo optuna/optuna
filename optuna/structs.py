@@ -376,7 +376,7 @@ class StudySummary(object):
 
         .. deprecated:: 0.20.0
             The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.structs.StudySummary.study_name` instead.
+            :attr:`~optuna.study.StudySummary.study_name` instead.
 
         Returns:
             The study ID.
