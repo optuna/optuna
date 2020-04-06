@@ -410,6 +410,7 @@ class Study(BaseStudy):
             "value",
             "datetime_start",
             "datetime_complete",
+            "duration",
             "params",
             "user_attrs",
             "system_attrs",

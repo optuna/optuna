@@ -32,7 +32,7 @@ def get_install_requires() -> List[str]:
     return [
         "alembic",
         "cliff",
-        "cmaes",
+        "cmaes>=0.3.2",
         "colorlog",
         "joblib",
         "numpy",
