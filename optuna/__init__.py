@@ -36,6 +36,8 @@ else:
         This class wrap specified module and lazily import it when they are actually accessed.
         Otherwise, `import optuna` becomes slower because it imports all submodules and
         their dependencies (e.g., bokeh) all at once.
+        Within this project's usage, importlib override this module's attribute on the first
+        access and the imported submodule is directly accessed from the second access.
 
         Args:
             name: name of module to apply lazy import
@@ -47,7 +49,6 @@ else:
 
         def _load(self) -> types.ModuleType:
             module = importlib.import_module(self._name)
-            globals()[self._name] = module
             self.__dict__.update(module.__dict__)
             return module
 
