@@ -26,6 +26,7 @@ from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.rdb import models
 from optuna import structs
 from optuna.study import StudyDirection
+from optuna.study import StudySummary
 from optuna import type_checking
 from optuna import version
 
@@ -337,7 +338,7 @@ class RDBStorage(BaseStorage):
 
     # TODO(sano): Optimize this method to reduce the number of queries.
     def get_all_study_summaries(self):
-        # type: () -> List[structs.StudySummary]
+        # type: () -> List[StudySummary]
 
         session = self.scoped_session()
 
@@ -402,7 +403,7 @@ class RDBStorage(BaseStorage):
 
             # Consolidate StudySummary.
             study_summaries.append(
-                structs.StudySummary(
+                StudySummary(
                     study_name=study_model.study_name,
                     direction=self.get_study_direction(study_model.study_id),
                     best_trial=best_trial,
