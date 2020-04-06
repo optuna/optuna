@@ -289,6 +289,11 @@ class FrozenTrial(object):
 class StudySummary(object):
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
 
+    .. deprecated:: 1.3.0
+
+        This class was moved to :mod:`~optuna.study`. Please use
+        :class:`~optuna.study.StudySummary` instead.
+
     See also :func:`optuna.study.get_all_study_summaries`.
 
     Attributes:
@@ -322,6 +327,14 @@ class StudySummary(object):
         study_id,  # type: int
     ):
         # type: (...) -> None
+
+        message = (
+            "The use of `structs.StudySummary` is deprecated. "
+            "Please use `study.StudySummary` instead."
+        )
+        warnings.warn(message, DeprecationWarning)
+        logger = logging.get_logger(__name__)
+        logger.warning(message)
 
         self.study_name = study_name
         self.direction = direction
