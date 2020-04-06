@@ -1,7 +1,6 @@
 import abc
 from datetime import datetime
 import decimal
-import enum
 import warnings
 
 from optuna import distributions
