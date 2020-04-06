@@ -25,7 +25,8 @@ from optuna.visualization import plot_parallel_coordinate
 from optuna.visualization import plot_slice
 
 
-def build_objective():
+def objective(trial):
+
     fmnist = fetch_openml(name="Fashion-MNIST", version=1)
     classes = list(set(fmnist.target))
 
@@ -36,35 +37,30 @@ def build_objective():
 
     x_train, x_test, y_train, y_test = train_test_split(data, target)
 
-    def objective(trial):
+    clf = MLPClassifier(
+        hidden_layer_sizes=tuple(
+            [trial.suggest_int("n_units_l{}".format(i), 32, 64) for i in range(3)]
+        ),
+        learning_rate_init=trial.suggest_loguniform("lr_init", 1e-5, 1e-1),
+    )
 
-        clf = MLPClassifier(
-            hidden_layer_sizes=tuple(
-                [trial.suggest_int("n_units_l{}".format(i), 32, 64) for i in range(3)]
-            ),
-            learning_rate_init=trial.suggest_loguniform("lr_init", 1e-5, 1e-1),
-        )
+    for step in range(100):
+        clf.partial_fit(x_train, y_train, classes=classes)
+        value = clf.score(x_test, y_test)
 
-        for step in range(100):
-            clf.partial_fit(x_train, y_train, classes=classes)
-            value = clf.score(x_test, y_test)
+        # Report intermediate objective value.
+        trial.report(value, step)
 
-            # Report intermediate objective value.
-            trial.report(value, step)
+        # Handle pruning based on the intermediate value.
+        if trial.should_prune(step):
+            raise optuna.exceptions.TrialPruned()
 
-            # Handle pruning based on the intermediate value.
-            if trial.should_prune(step):
-                raise optuna.exceptions.TrialPruned()
-
-        return value
-
-    return objective
+    return value
 
 
 if __name__ == "__main__":
 
     study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
-    objective = build_objective()
     study.optimize(objective, n_trials=100, timeout=600)
 
     # Visualize the Optimization History
