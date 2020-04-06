@@ -306,6 +306,25 @@ class TestChainerMNTrial(object):
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+    def test_suggest_float(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            mn_trial = _create_new_chainermn_trial(study, comm)
+
+            x1 = mn_trial.suggest_float("x1", 10, 20)
+            x2 = mn_trial.suggest_uniform("x1", 10, 20)
+
+            assert x1 == x2
+
+            x3 = mn_trial.suggest_float("x2", 1e-5, 1e-3, log=True)
+            x4 = mn_trial.suggest_loguniform("x2", 1e-5, 1e-3)
+
+            assert x3 == x4
+
+    @staticmethod
+    @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_suggest_uniform(storage_mode, comm):
         # type: (str, CommunicatorBase) -> None
 
