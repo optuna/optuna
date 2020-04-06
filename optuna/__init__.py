@@ -32,6 +32,15 @@ else:
     from typing import Any  # NOQA
 
     class _LazyImport(types.ModuleType):
+        """Module Wrapper for lazy import.
+
+        This class wrap specified module and lazily import it when they are actually accessed.
+        Otherwise, `import optuna` becomes slower because it imports all submodules and
+        their dependencies (e.g., bokeh) all at once.
+
+        Args:
+            name: name of module to apply lazy import
+        """
         def __init__(self, name: str) -> None:
             super(_LazyImport, self).__init__(name)
             self._name = name
