@@ -40,6 +40,7 @@ else:
         Args:
             name: name of module to apply lazy import
         """
+
         def __init__(self, name: str) -> None:
             super(_LazyImport, self).__init__(name)
             self._name = name
