@@ -311,8 +311,8 @@ class TestChainerMNTrial(object):
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
-            low=0.5
-            high=10
+            low = 0.5
+            high = 10
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
