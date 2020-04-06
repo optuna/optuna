@@ -63,19 +63,6 @@ def test_study_name(tmpdir):
     assert first_run_dict["data"]["tags"]["my_user_attr"] == "my_user_attr_value"
 
 
-def test_study_name_must_be_set(tmpdir):
-    # type: (py.path.local) -> None
-
-    tracking_file_name = "file:{}".format(tmpdir)
-    n_trials = 3
-
-    mlflc = MLflowCallback(tracking_uri=tracking_file_name)
-    study = optuna.create_study()
-
-    with pytest.raises(ValueError):
-        study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
-
-
 def test_metric_name(tmpdir):
     # type: (py.path.local) -> None
 

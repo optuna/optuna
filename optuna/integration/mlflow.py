@@ -103,16 +103,7 @@ class MLflowCallback(object):
             mlflow.set_tracking_uri(self._tracking_uri)
 
         # This sets the experiment of MLflow.
-        if (
-            study.study_name is not None
-            and study.study_name != "no-name-00000000-0000-0000-0000-000000000000"
-        ):
-            mlflow.set_experiment(study.study_name)
-        else:
-            raise ValueError(
-                "You must set 'study.study_name' inside Optuna! This "
-                "is needed to set the MLflow experiment name."
-            )
+        mlflow.set_experiment(study.study_name)
 
         with mlflow.start_run(run_name=str(trial.number)):
 
