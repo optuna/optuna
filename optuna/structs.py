@@ -212,8 +212,7 @@ class FrozenTrial(object):
     @property
     def distributions(self):
         # type: () -> Dict[str, BaseDistribution]
-        """Dictionary that contains the distributions of :attr:`params`.
-        """
+        """Dictionary that contains the distributions of :attr:`params`."""
 
         return self._distributions
 
