@@ -54,7 +54,10 @@ jobs:
             python $file --pruning > /dev/null
           fi
         done
-
+      env:
+        OMP_NUM_THREADS: 1
+    - name: Run examples
+      run: |
         for file in `find examples -name '*.ipynb'`
         do
           echo $file
