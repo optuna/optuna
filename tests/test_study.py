@@ -495,6 +495,7 @@ def test_study_trials_dataframe_with_no_trials():
             "value",
             "datetime_start",
             "datetime_complete",
+            "duration",
             "params",
             "user_attrs",
             "system_attrs",
@@ -535,8 +536,8 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
             df.set_index("number", inplace=True, drop=False)
         assert len(df) == 3
 
-        # Number columns are as follows (total of 12):
-        #   non-nested: 5 (number, value, state, datetime_start, datetime_complete)
+        # Number columns are as follows (total of 13):
+        #   non-nested: 6 (number, value, state, datetime_start, datetime_complete, duration)
         #   params: 2
         #   distributions: 2
         #   user_attrs: 1
@@ -562,6 +563,8 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
                     assert ("distributions", "y") in df.columns
                 if "_trial_id" in attrs:
                     assert ("trial_id", "") in df.columns  # trial_id depends on other tests.
+                if "duration" in attrs:
+                    assert ("duration", "") in df.columns
 
                 assert df.params.x[i] == 1
                 assert df.params.y[i] == 2.5
@@ -573,6 +576,8 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
                     assert "distributions_y" in df.columns
                 if "_trial_id" in attrs:
                     assert "trial_id" in df.columns  # trial_id depends on other tests.
+                if "duration" in attrs:
+                    assert "duration" in df.columns
 
                 assert df.params_x[i] == 1
                 assert df.params_y[i] == 2.5
@@ -600,14 +605,15 @@ def test_trials_dataframe_with_failure(storage_mode):
         # Change index to access rows via trial number.
         df.set_index("number", inplace=True, drop=False)
         assert len(df) == 3
-        # non-nested: 5, params: 2, user_attrs: 1 system_attrs: 1
-        assert len(df.columns) == 9
+        # non-nested: 6, params: 2, user_attrs: 1 system_attrs: 1
+        assert len(df.columns) == 10
         for i in range(3):
             assert df.number[i] == i
             assert df.state[i] == "FAIL"
             assert df.value[i] is None
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
+            assert isinstance(df.duration[i], pd.Timedelta)
             assert df.params_x[i] == 1
             assert df.params_y[i] == 2.5
             assert df.user_attrs_train_loss[i] == 3
