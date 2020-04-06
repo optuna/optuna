@@ -61,6 +61,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow",
             "mpi4py",
             "mxnet",
+            "nbeval",
             "pytorch-ignite",
             "scikit-image",
             "scikit-learn",
