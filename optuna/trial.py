@@ -1,6 +1,7 @@
 import abc
 from datetime import datetime
 import decimal
+import math
 import warnings
 
 from optuna import distributions
@@ -248,7 +249,10 @@ class Trial(BaseTrial):
 
         if step is not None:
             if log:
-                raise NotImplementedError()
+                if step <= 1:
+                    raise NotImplementedError("Invalid value of step is specified")
+
+                return self.suggest_discrete_uniform(name, low, high, math.log(step))
             else:
                 return self.suggest_discrete_uniform(name, low, high, step)
         else:
@@ -975,8 +979,14 @@ class FixedTrial(BaseTrial):
 
         if step is not None:
             if log:
+                if step <= 1:
+                    raise NotImplementedError("Invalid value of step is specified")
+
                 return self._suggest(
-                    name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step)
+                    name,
+                    distributions.DiscreteUniformDistribution(
+                        low=low, high=high, q=math.log(step)
+                    ),
                 )  # NOQA
             else:
                 raise NotImplementedError()
