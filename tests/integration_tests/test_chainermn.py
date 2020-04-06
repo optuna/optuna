@@ -314,13 +314,13 @@ class TestChainerMNTrial(object):
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_float("x1", 0.5, 10)
-                x2 = mn_trial.suggest_uniform("x1", 0.5, 10)
+                x1 = mn_trial.suggest_float("x1", 0.5, 1.0)
+                x2 = mn_trial.suggest_uniform("x1", 0.5, 1.0)
 
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_loguniform("x", 0.5, 10)
+                    mn_trial.suggest_loguniform("x", 0.5, 1.0)
 
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
