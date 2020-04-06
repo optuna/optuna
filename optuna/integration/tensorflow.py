@@ -35,14 +35,10 @@ class TensorFlowPruningHook(SessionRunHook):
             An evaluation metric for pruning, e.g., ``accuracy`` and ``loss``.
         run_every_steps:
            An interval to watch the summary file.
-        is_higher_better:
-           Please do not use this argument because this class refers to
-           :class:`~optuna.study.StudyDirection` to check whether the current study is
-           ``minimize`` or ``maximize``.
     """
 
-    def __init__(self, trial, estimator, metric, run_every_steps, is_higher_better=None):
-        # type: (optuna.trial.Trial, tf.estimator.Estimator, str, int, Optional[bool]) -> None
+    def __init__(self, trial, estimator, metric, run_every_steps):
+        # type: (optuna.trial.Trial, tf.estimator.Estimator, str, int) -> None
 
         _check_tensorflow_availability()
 
@@ -52,13 +48,6 @@ class TensorFlowPruningHook(SessionRunHook):
         self._metric = metric
         self._global_step_tensor = None
         self._timer = tf.estimator.SecondOrStepTimer(every_secs=None, every_steps=run_every_steps)
-
-        if is_higher_better is not None:
-            raise ValueError(
-                "Please do not use is_higher_better argument of "
-                "TensorFlowPruningHook.__init__(). is_higher_better argument "
-                "is obsolete since Optuna 0.9.0."
-            )
 
     def begin(self):
         # type: () -> None
