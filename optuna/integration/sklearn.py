@@ -527,7 +527,7 @@ class OptunaSearchCV(BaseEstimator):
                     param_distributions
                 )
                 X, y = load_iris(return_X_y=True)
-                optuna_search.fit(X, y) # doctest: +ELLIPSIS
+                optuna_search.fit(X, y)
                 y_pred = optuna_search.predict(X)
     """
 
