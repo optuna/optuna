@@ -2,7 +2,7 @@ import pytest
 
 from optuna.distributions import LogUniformDistribution
 from optuna.study import create_study
-from optuna.study_direction import StudyDirection
+from optuna.study import StudyDirection
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna import type_checking
 from optuna.visualization.contour import _generate_contour_subplot

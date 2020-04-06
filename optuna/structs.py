@@ -1,9 +1,9 @@
 import enum
 import warnings
 
+from optuna import _study_direction
 from optuna import exceptions
 from optuna import logging
-from optuna import study_direction
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -52,8 +52,8 @@ class StudyDirection(enum.Enum):
 
     .. deprecated:: 1.3.0
 
-        This class was moved to :mod:`~optuna.study_direction`. Please use
-        :class:`~optuna.study_direction.StudyDirection` instead.
+        This class was moved to :mod:`~optuna.study`. Please use
+        :class:`~optuna.study.StudyDirection` instead.
 
     Attributes:
         NOT_SET:
@@ -66,7 +66,7 @@ class StudyDirection(enum.Enum):
 
     message = (
         "The use of `structs.StudyDirection` is deprecated. "
-        "Please use `study_direction.StudyDirection` instead."
+        "Please use `study.StudyDirection` instead."
     )
     warnings.warn(message, DeprecationWarning)
     logger = logging.get_logger(__name__)
@@ -292,7 +292,7 @@ class StudySummary(object):
         study_name:
             Name of the :class:`~optuna.study.Study`.
         direction:
-            :class:`~optuna.study_direction.StudyDirection` of the :class:`~optuna.study.Study`.
+            :class:`~optuna.study.StudyDirection` of the :class:`~optuna.study.Study`.
         best_trial:
             :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
         user_attrs:
@@ -310,7 +310,7 @@ class StudySummary(object):
     def __init__(
         self,
         study_name,  # type: str
-        direction,  # type: study_direction.StudyDirection
+        direction,  # type: _study_direction.StudyDirection
         best_trial,  # type: Optional[FrozenTrial]
         user_attrs,  # type: Dict[str, Any]
         system_attrs,  # type: Dict[str, Any]

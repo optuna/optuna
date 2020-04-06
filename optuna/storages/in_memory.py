@@ -6,7 +6,7 @@ from optuna import distributions  # NOQA
 from optuna.storages import base
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna import structs
-from optuna.study_direction import StudyDirection
+from optuna.study import StudyDirection
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

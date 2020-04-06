@@ -13,7 +13,7 @@ from optuna.storages.rdb.models import TrialSystemAttributeModel
 from optuna.storages.rdb.models import TrialUserAttributeModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.structs import TrialState
-from optuna.study_direction import StudyDirection
+from optuna.study import StudyDirection
 
 
 @pytest.fixture

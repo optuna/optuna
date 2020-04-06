@@ -15,7 +15,7 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.structs import FrozenTrial
 from optuna.structs import TrialState
-from optuna.study_direction import StudyDirection
+from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 

@@ -40,7 +40,7 @@ from optuna import logging  # NOQA
 from optuna import samplers  # NOQA
 from optuna import structs  # NOQA
 from optuna import study as study_module  # NOQA
-from optuna.study_direction import StudyDirection  # NOQA
+from optuna.study import StudyDirection  # NOQA
 from optuna import trial as trial_module  # NOQA
 from optuna import type_checking  # NOQA
 

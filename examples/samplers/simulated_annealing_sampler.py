@@ -19,7 +19,7 @@ import optuna
 from optuna import distributions
 from optuna.samplers import BaseSampler
 from optuna import structs
-from optuna.study_direction import StudyDirection
+from optuna.study import StudyDirection
 
 
 class SimulatedAnnealingSampler(BaseSampler):
