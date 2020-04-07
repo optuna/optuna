@@ -16,6 +16,9 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
 
 
+# The use of the structs.StudyDirectino is deprecated and
+# it is recommended that you use study.StudyDirection instead.
+# See the API reference for more details.
 StudyDirection = _study_direction.StudyDirection
 
 
