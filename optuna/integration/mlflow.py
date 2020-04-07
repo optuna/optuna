@@ -84,7 +84,7 @@ class MLflowCallback(object):
             <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri>`_
             for more details.
         metric_name:
-            Name of the metric. If not provided this will be called ``value``.
+            Name of the metric.
     """
 
     def __init__(self, tracking_uri=None, metric_name="value"):
