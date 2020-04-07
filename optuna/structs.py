@@ -16,6 +16,9 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
 
 
+StudyDirection = _study_direction.StudyDirection
+
+
 class TrialState(enum.Enum):
     """State of a :class:`~optuna.trial.Trial`.
 
@@ -46,36 +49,6 @@ class TrialState(enum.Enum):
         # type: () -> bool
 
         return self != TrialState.RUNNING and self != TrialState.WAITING
-
-
-class StudyDirection(enum.Enum):
-    """Direction of a :class:`~optuna.study.Study`.
-
-    .. deprecated:: 1.3.0
-
-        This class was moved to :mod:`~optuna.study`. Please use
-        :class:`~optuna.study.StudyDirection` instead.
-
-    Attributes:
-        NOT_SET:
-            Direction has not been set.
-        MINIMIZE:
-            :class:`~optuna.study.Study` minimizes the objective function.
-        MAXIMIZE:
-            :class:`~optuna.study.Study` maximizes the objective function.
-    """
-
-    message = (
-        "The use of `structs.StudyDirection` is deprecated. "
-        "Please use `study.StudyDirection` instead."
-    )
-    warnings.warn(message, DeprecationWarning)
-    logger = logging.get_logger(__name__)
-    logger.warning(message)
-
-    NOT_SET = 0
-    MINIMIZE = 1
-    MAXIMIZE = 2
 
 
 class FrozenTrial(object):
