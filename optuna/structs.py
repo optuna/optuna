@@ -16,6 +16,8 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
 
 
+_logger = logging.get_logger(__name__)
+
 StudyDirection = _study_direction.StudyDirection
 
 
@@ -227,8 +229,7 @@ class FrozenTrial(object):
             DeprecationWarning,
         )
 
-        logger = logging.get_logger(__name__)
-        logger.warning(
+        _logger.warning(
             "The use of `FrozenTrial.trial_id` is deprecated. "
             "Please use `FrozenTrial.number` instead."
         )
@@ -306,8 +307,7 @@ class StudySummary(object):
             "Please use `study.StudySummary` instead."
         )
         warnings.warn(message, DeprecationWarning)
-        logger = logging.get_logger(__name__)
-        logger.warning(message)
+        _logger.warning(message)
 
         self.study_name = study_name
         self.direction = direction
@@ -361,8 +361,7 @@ class StudySummary(object):
         )
         warnings.warn(message, DeprecationWarning)
 
-        logger = logging.get_logger(__name__)
-        logger.warning(message)
+        _logger.warning(message)
 
         return self._study_id
 
@@ -384,5 +383,4 @@ class TrialPruned(exceptions.TrialPruned):
             "Please use `optuna.exceptions.TrialPruned` instead."
         )
         warnings.warn(message, DeprecationWarning)
-        logger = logging.get_logger(__name__)
-        logger.warning(message)
+        _logger.warning(message)

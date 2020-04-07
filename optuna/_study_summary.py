@@ -1,16 +1,16 @@
 import datetime
+from typing import Any
+from typing import Dict
+from typing import Optional
 import warnings
 
 from optuna._study_direction import StudyDirection
 
 from optuna import logging
 from optuna import structs
-from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
+
+_logger = logging.get_logger(__name__)
 
 
 class StudySummary(object):
@@ -39,16 +39,15 @@ class StudySummary(object):
 
     def __init__(
         self,
-        study_name,  # type: str
-        direction,  # type: StudyDirection
-        best_trial,  # type: Optional[structs.FrozenTrial]
-        user_attrs,  # type: Dict[str, Any]
-        system_attrs,  # type: Dict[str, Any]
-        n_trials,  # type: int
-        datetime_start,  # type: Optional[datetime.datetime]
-        study_id,  # type: int
+        study_name: str,
+        direction: StudyDirection,
+        best_trial: Optional[structs.FrozenTrial],
+        user_attrs: Dict[str, Any],
+        system_attrs: Dict[str, Any],
+        n_trials: int,
+        datetime_start: Optional[datetime.datetime],
+        study_id: int,
     ):
-        # type: (...) -> None
 
         self.study_name = study_name
         self.direction = direction
@@ -59,24 +58,21 @@ class StudySummary(object):
         self.datetime_start = datetime_start
         self._study_id = study_id
 
-    def __eq__(self, other):
-        # type: (Any) -> bool
+    def __eq__(self, other: Any) -> bool:
 
         if not isinstance(other, StudySummary):
             return NotImplemented
 
         return other.__dict__ == self.__dict__
 
-    def __lt__(self, other):
-        # type: (Any) -> bool
+    def __lt__(self, other: Any) -> bool:
 
         if not isinstance(other, StudySummary):
             return NotImplemented
 
         return self._study_id < other._study_id
 
-    def __le__(self, other):
-        # type: (Any) -> bool
+    def __le__(self, other: Any) -> bool:
 
         if not isinstance(other, StudySummary):
             return NotImplemented
@@ -84,8 +80,7 @@ class StudySummary(object):
         return self._study_id <= other._study_id
 
     @property
-    def study_id(self):
-        # type: () -> int
+    def study_id(self) -> int:
         """Return the study ID.
 
         .. deprecated:: 0.20.0
@@ -102,7 +97,6 @@ class StudySummary(object):
         )
         warnings.warn(message, DeprecationWarning)
 
-        logger = logging.get_logger(__name__)
-        logger.warning(message)
+        _logger.warning(message)
 
         return self._study_id

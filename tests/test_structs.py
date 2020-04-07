@@ -8,7 +8,9 @@ import optuna
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.structs import FrozenTrial
+from optuna.structs import StudySummary
 from optuna.structs import TrialState
+from optuna.study import StudyDirection
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -217,3 +219,19 @@ def test_study_summary_lt_le():
     summaries.sort()
     assert summaries[0] == summary_0
     assert summaries[1] == summary_1
+
+
+def test_study_summary_deprecated():
+    # type: () -> None
+
+    with pytest.deprecated_call():
+        StudySummary(
+            study_name="test",
+            direction=StudyDirection.NOT_SET,
+            best_trial=None,
+            user_attrs={},
+            system_attrs={},
+            n_trials=0,
+            datetime_start=datetime.datetime.now(),
+            study_id=0,
+        )
