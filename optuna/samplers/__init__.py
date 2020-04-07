@@ -37,6 +37,9 @@ def intersection_search_space(study, ordered_dict=False, trial_id=None):
             If :obj:`False`, the returned object will be a :obj:`dict`.
             If :obj:`True`, the returned object will be an :obj:`collections.OrderedDict` sorted by
             keys, i.e. parameter names.
+        trial_id:
+            A trial id for building and retrieving an intersection_search_space cache.
+            If you set trial_id, this function will be faster.
 
     Returns:
         A dictionary containing the parameter names and parameter's distributions.
@@ -62,7 +65,7 @@ def intersection_search_space(study, ordered_dict=False, trial_id=None):
         for param_name in delete_list:
             del search_space[param_name]
 
-        # Retrieve cache from trial_system_attrs.
+        # Retrieve an intersection_search_space cache.
         if trial_id is None:
             continue
 
@@ -85,6 +88,7 @@ def intersection_search_space(study, ordered_dict=False, trial_id=None):
         break
 
     if trial_id is not None and search_space is not None:
+        # Store an intersection_search_space cache.
         json_str = json.dumps(
             {name: distribution_to_dict(search_space[name]) for name in search_space}
         )
