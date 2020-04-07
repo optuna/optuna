@@ -47,7 +47,7 @@ def intersection_search_space(study, ordered_dict=False, trial_id=None):
 
     search_space = None  # type: Optional[Dict[str, BaseDistribution]]
 
-    # **How an `intersection_search_space` cache accelerate this function?**
+    # How an `intersection_search_space` cache accelerates this function?
     #
     # | -------- | -------- | ------------------- | ------------------------- |
     # | trial_id | status   | search_space        | intersection_search_space |
@@ -64,7 +64,7 @@ def intersection_search_space(study, ordered_dict=False, trial_id=None):
     # Now we assume that the above trials are store in the storage.
     # `intersection_search_space(study, trial_id=53)` should return `{x1: ...}`.
     #
-    # This function iterates completed trials from the end of trials.
+    # This function iterates completed trials from the last.
     # Thanks to the cache, it is enough to just calculate
     # an intersection of the following three search spaces only.
     #
