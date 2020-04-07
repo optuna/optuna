@@ -48,17 +48,8 @@ def test_check_distribution_suggest_float(storage_init_func):
     x6 = trial.suggest_discrete_uniform("x3", 10, 20, 1.0)
 
     assert x5 == x6
-
-    x7 = trial.suggest_float("x4", 1e-5, 1e-2, log=True, step=2.0)
-    x8 = trial.suggest_discrete_uniform("x4", 1e-5, 1e-2, q=math.log(2.0))
-
-    assert x7 == x8
-
     with pytest.raises(NotImplementedError):
-        trial.suggest_float("x5", 1e-5, 1e-2, log=True, step=1.0)
-
-    with pytest.raises(NotImplementedError):
-        trial.suggest_float("x6", 1e-5, 1e-2, log=True, step=0.0)
+        trial.suggest_float("x4", 1e-5, 1e-2, log=True, step=2.0)
 
 
 @parametrize_storage
@@ -204,12 +195,6 @@ def test_suggest_low_equals_high(storage_init_func):
         assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting a param.
         assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting the same param.
         assert mock_object.call_count == 0
-        assert (
-            trial.suggest_float("i", 1e-5, 1e-5, log=True, step=2.0) == 1e-5
-        )  # Suggesting a param.
-        assert (
-            trial.suggest_float("i", 1e-5, 1e-5, log=True, step=2.0) == 1e-5
-        )  # Suggesting the same param.
 
 
 @parametrize_storage
