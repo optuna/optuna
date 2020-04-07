@@ -18,6 +18,9 @@ if type_checking.TYPE_CHECKING:
 
 _logger = logging.get_logger(__name__)
 
+# The use of the structs.StudyDirectino is deprecated and
+# it is recommended that you use study.StudyDirection instead.
+# See the API reference for more details.
 StudyDirection = _study_direction.StudyDirection
 
 
@@ -263,7 +266,7 @@ class FrozenTrial(object):
 class StudySummary(object):
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
 
-    .. deprecated:: 1.3.0
+    .. deprecated:: 1.4.0
 
         This class was moved to :mod:`~optuna.study`. Please use
         :class:`~optuna.study.StudySummary` instead.
