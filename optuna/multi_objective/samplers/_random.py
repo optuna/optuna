@@ -11,6 +11,34 @@ from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
 @experimental("1.4.0")
 class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
+    """Multi-objective sampler using random sampling.
+
+    This sampler is based on *independent sampling*.
+    See also :class:`~optuna.multi_objective.samplers.BaseMultiObjectiveSampler`
+    for more details of 'independent sampling'.
+
+    Example:
+
+        .. testcode::
+
+            import optuna
+            from optuna.multi_objective.samplers import RandomMultiObjectiveSampler
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -5, 5)
+                y = trial.suggest_uniform('x', -5, 5)
+                return x**2, y+10
+
+            study = optuna.multi_objective.create_study(
+                ["minimize", "minimize"],
+                sampler=RandomMultiObjectiveSampler()
+            )
+            study.optimize(objective, n_trials=10)
+
+        Args:
+            seed: Seed for random number generator.
+    """
+
     def __init__(self, seed: Optional[int] = None) -> None:
         self._sampler = optuna.samplers.RandomSampler(seed=seed)
 

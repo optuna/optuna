@@ -9,6 +9,10 @@ from optuna.study import Study
 
 
 class _MultiObjectiveSamplerAdapter(BaseSampler):
+    """Adapter from :class:`~optuna.samplers.BaseSampler` to
+    :class:`~optuna.multi_objective.samplers.BaseMultiObjectiveSampler`.
+    """
+
     def __init__(self, mo_sampler: "multi_objective.samplers.BaseMultiObjectiveSampler") -> None:
         self._mo_sampler = mo_sampler
 
