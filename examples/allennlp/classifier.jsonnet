@@ -1,5 +1,7 @@
 // Paths to data.
-local DEV_PATH =  "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl";
+
+// use dev data for training due to time consumption
+local TRAIN_PATH =  "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl";
 local TEST_PATH =  "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/test.jsonl";
 
 local DROPOUT = std.extVar("DROPOUT");
@@ -37,8 +39,8 @@ local ENCODER = CNN_FIELDS(
       }
     },
     "datasets_for_vocab_creation": ["train"],
-    "train_data_path": DEV_PATH,// use dev data for training due to time consumption
-    "validation_data_path": TEST_PATH,  // use test data for validating due to time consumption
+    "train_data_path": TRAIN_PATH,
+    "test_data_path": TEST_PATH,
     "model": {
       "type": "basic_classifier",
       "text_field_embedder": {
