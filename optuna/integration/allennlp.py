@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Optional
 
 import allennlp.commands
 
@@ -9,6 +8,10 @@ import optuna
 
 class AllenNLPExecutor(object):
     """Allennlp extension to use optuna with an allennlp config file.
+
+    .. note::
+        AllenNLPExecutor uses environment variables on OS.
+        This could cause problems when AllenNLPExecutor runs in multi-threading.
 
     Args:
         trial:
