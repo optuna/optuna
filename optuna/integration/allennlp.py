@@ -9,7 +9,7 @@ import optuna
 class AllenNLPExecutor(object):
     """Allennlp extension to use optuna with an allennlp config file.
 
-    .. note::
+    .. warning::
         AllenNLPExecutor uses environment variables on OS.
         This could cause problems when AllenNLPExecutor runs in multi-threading.
 
@@ -20,7 +20,7 @@ class AllenNLPExecutor(object):
         config_file:
             An allennlp config file.
             Hyperparameters should be masked with `std.extVar`.
-            Please refer to `the example <https://github.com/allenai/allentune/blob/
+            Please refer to `the config example <https://github.com/allenai/allentune/blob/
             f2b7de2cad2026c2a50625b939b2db3c1d9bc580/examples/classifier.jsonnet>`_.
         serialization_dir:
             A path which model weights and logs are saved.

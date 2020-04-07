@@ -52,3 +52,6 @@ Integration
 
 .. autoclass:: OptunaSearchCV
     :members:
+
+.. autoclass:: AllenNLPExecutor
+    :members:
