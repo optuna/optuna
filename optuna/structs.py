@@ -18,9 +18,8 @@ if type_checking.TYPE_CHECKING:
 
 _logger = logging.get_logger(__name__)
 
-# The use of the structs.StudyDirectino is deprecated and
-# it is recommended that you use study.StudyDirection instead.
-# See the API reference for more details.
+# The use of the structs.StudyDirectino is deprecated and it is recommended that you use
+# study.StudyDirection instead. See the API reference for more details.
 StudyDirection = _study_direction.StudyDirection
 
 
