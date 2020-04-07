@@ -311,27 +311,35 @@ class TestChainerMNTrial(object):
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
+            low = 10
+            high = 20
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_float("x1", 0.5, 1.0)
-                x2 = mn_trial.suggest_uniform("x1", 0.5, 1.0)
+                x1 = mn_trial.suggest_float("x1", low, high)
+                assert low <= x1 <= high
+
+                x2 = mn_trial.suggest_uniform("x1", low, high)
 
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_loguniform("x", 0.5, 1.0)
+                    mn_trial.suggest_loguniform("x", low, high)
 
+            low = 1e-5
+            high = 1e-3
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x3 = mn_trial.suggest_float("x2", 1e-3, 1e-5, log=True)
-                x4 = mn_trial.suggest_loguniform("x2", 1e-3, 1e-5)
+                x3 = mn_trial.suggest_float("x2", low, high, log=True)
+                assert low <= x3 <= high
+
+                x4 = mn_trial.suggest_loguniform("x2", low, high)
 
                 assert x3 == x4
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_uniform("x", 1e-3, 1e-5)
+                    mn_trial.suggest_uniform("x", low, high)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
