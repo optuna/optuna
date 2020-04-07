@@ -64,14 +64,13 @@ def intersection_search_space(study, ordered_dict=False, trial_id=None):
     # Now we assume that the above trials are store in the storage.
     # `intersection_search_space(study, trial_id=53)` should return `{x1: ...}`.
     #
-    # We iterates completed trials from the end of trials.
-    # In this case, we calculates an intersection of the following search spaces.
+    # This function iterates completed trials from the end of trials.
+    # Thanks to the cache, it is enough to just calculate
+    # an intersection of the following three search spaces only.
     #
     # 1. `{x1: ...}` - search_space of trial_id=52
     # 2. `{x1: ..., x2: ...}` - search_space of trial_id=51
     # 3. `{x1: ...}` - intersection_search_space cache of trial_id=50
-    #
-    # Before returning the function, we build an intersection_search_space cache in trial_id=53.
 
     for trial in reversed(study.get_trials(deepcopy=False)):
         if trial.state != optuna.structs.TrialState.COMPLETE:
