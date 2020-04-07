@@ -30,6 +30,7 @@ MODEL_DIR = "result"
 
 
 def objective(trial):
+
     trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
     trial.suggest_uniform("DROPOUT", 0.0, 0.5)
     trial.suggest_int("MAX_FILTER_SIZE", 3, 6)
@@ -37,14 +38,15 @@ def objective(trial):
     trial.suggest_int("NUM_OUTPUT_LAYERS", 1, 3)
     trial.suggest_int("HIDDEN_SIZE", 16, 128)
 
+    config_path = "examples/allennlp/classifier.jsonnet"
     serialization_dir = os.path.join(MODEL_DIR, "test_{}".format(trial.number))
-    executor = AllenNLPExecutor(trial, "classifier.jsonnet", serialization_dir, use_poetry=True)
+    executor = AllenNLPExecutor(trial, config_path, serialization_dir)
     return executor.run()
 
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=50)
+    study.optimize(objective, n_trials=50, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
     print("Best trial:")
