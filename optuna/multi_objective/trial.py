@@ -97,8 +97,7 @@ class MultiObjectiveTrial(object):
     # This method would be helpful to use the existing pruning
     # integrations for multi-objective optimization.
 
-    @property
-    def _values(self) -> List[Optional[float]]:
+    def _get_values(self) -> List[Optional[float]]:
         trial = self._trial.study._storage.get_trial(self._trial._trial_id)
         return [trial.intermediate_values.get(i) for i in range(self._n_objectives)]
 
