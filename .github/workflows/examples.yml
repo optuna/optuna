@@ -53,6 +53,15 @@ jobs:
         done
       env:
         OMP_NUM_THREADS: 1
+    - name: Run examples
+      run: |
+        for file in `find examples -name '*.ipynb'`
+        do
+          echo $file
+          pytest --nbval-lax $file > /dev/null
+        done
+      env:
+        OMP_NUM_THREADS: 1
     - name: Run multi-node examples
       run: |
         STORAGE_URL=sqlite:///example.db

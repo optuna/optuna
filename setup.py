@@ -61,6 +61,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow",
             "mpi4py",
             "mxnet",
+            "nbval",
             "pytorch-ignite",
             "scikit-image",
             "scikit-learn",
@@ -83,12 +84,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             if sys.version_info[:2] < (3, 8)
             else []
         ),
+        "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
             "bokeh<2.0.0",
             "chainer>=5.0.0",
             "cma",
+            "fakeredis",
             "fanova",
             "lightgbm",
             "mock",
