@@ -34,8 +34,8 @@ class MLflowCallback(object):
     """Callback to track optuna trials with MLflow.
 
     This callback adds relevant information that is
-    tracked by Optuna to MLflow. You must set 'study.study_name' inside
-    Optuna because it is needed to set the MLflow experiment name.
+    tracked by Optuna to MLflow. The MLflow experiment
+    will be named after the Optuna study name.
 
     Example:
 
