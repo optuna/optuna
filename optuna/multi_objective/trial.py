@@ -41,6 +41,9 @@ class MultiObjectiveTrial(object):
         return self._trial.suggest_categorical(name, choices)
 
     def report(self, values: List[float], step: int) -> None:
+        # TODO(ohta): Allow users reporting a subset of target values.
+        # See https://github.com/optuna/optuna/pull/1054/files#r401594785 for the detail.
+
         if len(values) != self._n_objectives:
             raise ValueError(
                 "The number of the intermediate values {} at step {} is mismatched with"
