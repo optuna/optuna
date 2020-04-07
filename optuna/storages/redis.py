@@ -8,6 +8,8 @@ from optuna import exceptions
 from optuna.storages import base
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna import structs
+from optuna.study import StudyDirection
+from optuna.study import StudySummary
 from optuna import type_checking
 
 try:
@@ -95,12 +97,12 @@ class RedisStorage(base.BaseStorage):
             pipe.set("study_id:{:010d}:study_name".format(study_id), pickle.dumps(study_name))
             pipe.set(
                 "study_id:{:010d}:direction".format(study_id),
-                pickle.dumps(structs.StudyDirection.NOT_SET),
+                pickle.dumps(StudyDirection.NOT_SET),
             )
 
-            study_summary = structs.StudySummary(
+            study_summary = StudySummary(
                 study_name=study_name,
-                direction=structs.StudyDirection.NOT_SET,
+                direction=StudyDirection.NOT_SET,
                 best_trial=None,
                 user_attrs={},
                 system_attrs={},
@@ -153,12 +155,12 @@ class RedisStorage(base.BaseStorage):
         return "study_id:{:010d}:study_summary".format(study_id)
 
     def _set_study_summary(self, study_id, study_summary):
-        # type: (int, structs.StudySummary) -> None
+        # type: (int, StudySummary) -> None
 
         self._redis.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
 
     def _get_study_summary(self, study_id):
-        # type: (int) -> structs.StudySummary
+        # type: (int) -> StudySummary
 
         summary_pkl = self._redis.get(self._key_study_summary(study_id))
         assert summary_pkl is not None
@@ -176,14 +178,14 @@ class RedisStorage(base.BaseStorage):
         return "study_id:{:010d}:direction".format(study_id)
 
     def set_study_direction(self, study_id, direction):
-        # type: (int, structs.StudyDirection) -> None
+        # type: (int, StudyDirection) -> None
 
         if self._redis.exists(self._key_study_direction(study_id)):
             direction_pkl = self._redis.get(self._key_study_direction(study_id))
             assert direction_pkl is not None
             current_direction = pickle.loads(direction_pkl)
             if (
-                current_direction != structs.StudyDirection.NOT_SET
+                current_direction != StudyDirection.NOT_SET
                 and current_direction != direction
             ):
                 raise ValueError(
@@ -240,7 +242,7 @@ class RedisStorage(base.BaseStorage):
         return pickle.loads(study_name_pkl)
 
     def get_study_direction(self, study_id):
-        # type: (int) -> structs.StudyDirection
+        # type: (int) -> StudyDirection
 
         direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
         assert direction_pkl is not None
@@ -282,7 +284,7 @@ class RedisStorage(base.BaseStorage):
         )
 
     def get_all_study_summaries(self):
-        # type: () -> List[structs.StudySummary]
+        # type: () -> List[StudySummary]
 
         study_summaries = []
         study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]
@@ -419,7 +421,7 @@ class RedisStorage(base.BaseStorage):
             if len(all_trials) == 0:
                 raise ValueError("No trials are completed yet.")
 
-            if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+            if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
                 best_trial = max(all_trials, key=lambda t: t.value)
             else:
                 best_trial = min(all_trials, key=lambda t: t.value)
@@ -480,7 +482,7 @@ class RedisStorage(base.BaseStorage):
         # Complete trials do not have `None` values.
         assert new_value is not None
 
-        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
             if new_value > best_value:
                 self._set_best_trial(study_id, trial_id)
         else:
