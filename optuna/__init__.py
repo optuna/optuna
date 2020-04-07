@@ -28,7 +28,7 @@ from optuna.type_checking import TYPE_CHECKING  # NOQA
 if TYPE_CHECKING:
     from optuna import dashboard  # NOQA
 else:
-    from typing import Any  # NOQA
+    from typing import Any
 
     class _LazyImport(types.ModuleType):
         """Module Wrapper for lazy import.
