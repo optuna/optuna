@@ -19,25 +19,76 @@ CategoricalChoiceType = Union[None, bool, int, float, str]
 
 @experimental("1.4.0")
 class MultiObjectiveTrial(object):
+    """A trial is a process of evaluating an objective function.
+
+    This object is passed to an objective function and provides interfaces to get parameter
+    suggestion, manage the trial's state, and set/get user-defined attributes of the trial.
+
+    Note that the direct use of this constructor is not recommended.
+    This object is seamlessly instantiated and passed to the objective function behind
+    the :func:`optuna.multi_objective.study.MultiObjectiveStudy.optimize()` method;
+    hence library users do not care about instantiation of this object.
+
+    Args:
+        trial:
+            A :class:`~optuna.trial.Trial` object.
+
+    """
+
     def __init__(self, trial: Trial):
         self._trial = trial
         self._n_objectives = multi_objective.study.MultiObjectiveStudy(trial.study).n_objectives
 
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
+        """Suggest a value for the continuous parameter.
+
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_uniform`
+        for further details.
+
+        """
+
         return self._trial.suggest_uniform(name, low, high)
 
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
+        """Suggest a value for the continuous parameter.
+
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_loguniform`
+        for further details.
+
+        """
+
         return self._trial.suggest_loguniform(name, low, high)
 
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
+        """Suggest a value for the discrete parameter.
+
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_discrete_uniform`
+        for further details.
+
+        """
+
         return self._trial.suggest_discrete_uniform(name, low, high, q)
 
     def suggest_int(self, name: str, low: int, high: int) -> int:
+        """Suggest a value for the integer parameter.
+
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_int`
+        for further details.
+
+        """
+
         return self._trial.suggest_int(name, low, high)
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
     ) -> CategoricalChoiceType:
+        """Suggest a value for the categorical parameter.
+
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_categorical`
+        for further details.
+
+        """
+
         return self._trial.suggest_categorical(name, choices)
 
     def report(self, values: List[float], step: int) -> None:
