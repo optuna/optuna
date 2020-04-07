@@ -84,10 +84,10 @@ class MLflowCallback(object):
             <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri>`_
             for more details.
         metric_name:
-            Name of the metric. If not provided this will be called ``trial_value``.
+            Name of the metric. If not provided this will be called ``value``.
     """
 
-    def __init__(self, tracking_uri=None, metric_name=None):
+    def __init__(self, tracking_uri=None, metric_name="value"):
         # type: (Optional[str], Optional[str]) -> None
 
         _check_mlflow_availability()
@@ -109,8 +109,7 @@ class MLflowCallback(object):
 
             # This sets the metric for MLflow.
             trial_value = trial.value if trial.value is not None else float("nan")
-            metric_name = self._metric_name if self._metric_name is not None else "value"
-            mlflow.log_metric(metric_name, trial_value)
+            mlflow.log_metric(self._metric_name, trial_value)
 
             # This sets the params for MLflow.
             mlflow.log_params(trial.params)
