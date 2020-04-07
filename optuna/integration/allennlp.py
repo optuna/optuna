@@ -36,9 +36,31 @@ class AllenNLPExecutor(object):
         metrics: str = "best_validation_accuracy",
     ):
 
-    def run(self) -> float:
-        for key, value in self.params.items():
+        self._params = trial.params
+        self._config_file = config_file
+        self._serialization_dir = serialization_dir
+        self._metrics = metrics
+
+    def _set_params(self) -> None:
+        """Register hyperparameters as environment variables."""
+
+        for key, value in self._params.items():
             os.environ[key] = str(value)
-        allennlp.commands.train.train_model_from_file(self.config_file, self.serialization_dir)
-        metrics = json.load(open(os.path.join(self.serialization_dir, "metrics.json")))
-        return metrics[self.metrics]
+
+    def _clean_params(self) -> None:
+        """Clear registered hyperparameters."""
+
+        for key, value in self._params.items():
+            if key not in os.environ:
+                continue
+            os.environ.pop(key)
+
+    def run(self) -> float:
+        """Train a model using allennlp."""
+
+        self._set_params()
+        allennlp.commands.train.train_model_from_file(self._config_file, self._serialization_dir)
+        self._clean_params()
+
+        metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
+        return metrics[self._metrics]
