@@ -184,10 +184,7 @@ class RedisStorage(base.BaseStorage):
             direction_pkl = self._redis.get(self._key_study_direction(study_id))
             assert direction_pkl is not None
             current_direction = pickle.loads(direction_pkl)
-            if (
-                current_direction != StudyDirection.NOT_SET
-                and current_direction != direction
-            ):
+            if current_direction != StudyDirection.NOT_SET and current_direction != direction:
                 raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
                         current_direction, direction
