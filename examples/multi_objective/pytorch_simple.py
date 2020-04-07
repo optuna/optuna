@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
     print("Pareto front:")
 
-    trials = {str(trial.values): trial for trial in study.pareto_front_trials}
+    trials = {str(trial.values): trial for trial in study.get_pareto_front_trials()}
     trials = list(trials.values())
     trials.sort(key=lambda t: t.values)
 

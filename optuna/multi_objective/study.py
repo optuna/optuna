@@ -174,8 +174,7 @@ class MultiObjectiveStudy(object):
             for t in self._study.get_trials(deepcopy=deepcopy)
         ]
 
-    @property
-    def pareto_front_trials(self) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
+    def get_pareto_front_trials(self) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
         pareto_front = []
         trials = [t for t in self.trials if t.state == TrialState.COMPLETE]
 
