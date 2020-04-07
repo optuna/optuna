@@ -1,3 +1,4 @@
+import types
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -94,7 +95,9 @@ class MultiObjectiveStudy(object):
         if self._n_objectives < 1:
             raise ValueError("The number of objectives must be greater than 0.")
 
-        self._study._log_completed_trial = _log_completed_trial  # type: ignore
+        self._study._log_completed_trial = types.MethodType(  # type: ignore
+            _log_completed_trial, self._study
+        )
 
     @property
     def n_objectives(self) -> int:
@@ -190,7 +193,7 @@ class MultiObjectiveStudy(object):
         return pareto_front
 
 
-def _log_completed_trial(trial: Trial, result: float) -> None:
+def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:
     values = multi_objective.trial.MultiObjectiveTrial(trial)._values
     _logger.info(
         "Finished trial#{} with values: {} with parameters: {}.".format(
