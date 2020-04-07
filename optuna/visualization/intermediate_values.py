@@ -40,7 +40,11 @@ def plot_intermediate_values(study):
                     next_x = current_x - gamma * df(current_x)
 
                     delta = next_x - current_x
+<<<<<<< HEAD
                     trial.report(current_x ** 2, step)
+=======
+                    trial.report(current_x, step)
+>>>>>>> 9f13dcad3aeb9fdb9ab4cfe5ec4c1c919b30a2af
 
                 return delta
 
