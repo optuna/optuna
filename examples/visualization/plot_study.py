@@ -63,26 +63,26 @@ if __name__ == "__main__":
     study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
     study.optimize(objective, n_trials=100, timeout=600)
 
-    # Visualize the Optimization History
+    # Visualize the optimization history.
     plot_optimization_history(study).show()
 
-    # Visualize the Learning Curves of the Trials
+    # Visualize the learning curves of the trials.
     plot_intermediate_values(study).show()
 
-    # Visualize High-dimensional Parameter Relationships
+    # Visualize high-dimensional parameter relationships.
     plot_parallel_coordinate(study).show()
 
-    # Select Parameters to Visualize
+    # Select parameters to visualize.
     plot_parallel_coordinate(study, params=["lr_init", "n_units_l0"]).show()
 
-    # Visualize Hyperparameter Relationships
+    # Visualize hyperparameter relationships.
     plot_contour(study).show()
 
-    # Select Parameters to Visualize
+    # Select parameters to visualize.
     plot_contour(study, params=["n_units_l0", "n_units_l1"]).show()
 
-    # Visualize Individual Hyperparameters
+    # Visualize individual hyperparameters.
     plot_slice(study).show()
 
-    # Select Parameters to Visualize
+    # Select parameters to visualize.
     plot_slice(study, params=["n_units_l0", "n_units_l1"]).show()
