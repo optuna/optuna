@@ -47,6 +47,32 @@ def intersection_search_space(study, ordered_dict=False, trial_id=None):
 
     search_space = None  # type: Optional[Dict[str, BaseDistribution]]
 
+    # **How an `intersection_search_space` cache accelerate this function?**
+    #
+    # | -------- | -------- | ------------------- | ------------------------- |
+    # | trial_id | status   | search_space        | intersection_search_space |
+    # | -------- | -------- | ------------------- | ------------------------- |
+    # |        1 | COMPLETE | {x1: ..., x2: ... } | {x1: ..., x2: ... }       |
+    # |        2 | COMPLETE | {x1: ... }          | {x1: ... }                |
+    # ~          ~          ~                     ~                           ~
+    # |       50 | COMPLETE | {x1: ... }          | {x1: ... }                |
+    # |       51 | COMPLETE | {x1: ..., x2: ... } |                           |
+    # |       52 | COMPLETE | {x1: ... }          |                           |
+    # |       53 | RUNNING  |                     |                           |
+    # | -------- | -------- | ------------------- | ------------------------- |
+    #
+    # Now we assume that the above trials are store in the storage.
+    # `intersection_search_space(study, trial_id=53)` should return `{x1: ...}`.
+    #
+    # We iterates completed trials from the end of trials.
+    # In this case, we calculates an intersection of the following search spaces.
+    #
+    # 1. `{x1: ...}` - search_space of trial_id=52
+    # 2. `{x1: ..., x2: ...}` - search_space of trial_id=51
+    # 3. `{x1: ...}` - intersection_search_space cache of trial_id=50
+    #
+    # Before returning the function, we build an intersection_search_space cache in trial_id=53.
+
     for trial in reversed(study.get_trials(deepcopy=False)):
         if trial.state != optuna.structs.TrialState.COMPLETE:
             continue
