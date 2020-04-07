@@ -31,12 +31,11 @@ MODEL_DIR = "result"
 
 def objective(trial):
 
-    trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
     trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    trial.suggest_int("EMBEDDING_DIM", 20, 50)
     trial.suggest_int("MAX_FILTER_SIZE", 3, 6)
-    trial.suggest_int("NUM_FILTERS", 16, 128)
-    trial.suggest_int("NUM_OUTPUT_LAYERS", 1, 3)
-    trial.suggest_int("HIDDEN_SIZE", 16, 128)
+    trial.suggest_int("NUM_FILTERS", 16, 32)
+    trial.suggest_int("HIDDEN_SIZE", 16, 32)
 
     config_path = "examples/allennlp/classifier.jsonnet"
     serialization_dir = os.path.join(MODEL_DIR, "test_{}".format(trial.number))
