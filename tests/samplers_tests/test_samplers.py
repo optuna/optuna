@@ -303,14 +303,16 @@ def test_intersection_search_space_with_cache():
 
     # First trial.
     study.optimize(lambda t: t.suggest_int("x", 0, 10) + t.suggest_uniform("y", -3, 3), n_trials=1)
-    assert optuna.samplers.intersection_search_space(study) == {
+    trial_id = study._storage.create_new_trial(study.study_id)
+    assert optuna.samplers.intersection_search_space(study, trial_id=trial_id) == {
         "x": IntUniformDistribution(low=0, high=10),
         "y": UniformDistribution(low=-3, high=3),
     }
 
     # Second trial (only 'y' parameter is suggested in this trial).
     study.optimize(lambda t: t.suggest_uniform("y", -3, 3), n_trials=1)
-    assert optuna.samplers.intersection_search_space(study) == {
+    trial_id = study._storage.create_new_trial(study.study_id)
+    assert optuna.samplers.intersection_search_space(study, trial_id=trial_id) == {
         "y": UniformDistribution(low=-3, high=3)
     }
 
@@ -324,14 +326,16 @@ def test_intersection_search_space_with_cache():
 
     study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
     study.optimize(lambda t: objective(t, optuna.exceptions.TrialPruned()), n_trials=1)
-    assert optuna.samplers.intersection_search_space(study) == {
+    trial_id = study._storage.create_new_trial(study.study_id)
+    assert optuna.samplers.intersection_search_space(study, trial_id=trial_id) == {
         "y": UniformDistribution(low=-3, high=3)
     }
 
     # If two parameters have the same name but different distributions,
     # those are regarded as different trials.
     study.optimize(lambda t: t.suggest_uniform("y", -1, 1), n_trials=1)
-    assert optuna.samplers.intersection_search_space(study) == {}
+    trial_id = study._storage.create_new_trial(study.study_id)
+    assert optuna.samplers.intersection_search_space(study, trial_id=trial_id) == {}
 
 
 @parametrize_sampler
