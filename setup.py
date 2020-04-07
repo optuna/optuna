@@ -63,6 +63,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-ignite",
             "scikit-image",
             "scikit-learn",
+            "thop",
             "torch",
             "torchvision>=0.5.0",
             "xgboost",
