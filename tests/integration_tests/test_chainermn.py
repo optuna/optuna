@@ -311,8 +311,8 @@ class TestChainerMNTrial(object):
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
-            low1 = 10
-            high1 = 20
+            low1 = 0.5
+            high1 = 1.0
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
@@ -326,8 +326,8 @@ class TestChainerMNTrial(object):
                 with pytest.raises(ValueError):
                     mn_trial.suggest_loguniform("x", low1, high1)
 
-            low2 = 1e-5
-            high2 = 1e-3
+            low2 = 1e-7
+            high2 = 1e-2
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
