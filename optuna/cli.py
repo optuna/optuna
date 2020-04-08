@@ -1,7 +1,7 @@
 """Optuna CLI module.
 
-This module are implemented by cliff. And we follow
-[the demoapp](https://docs.openstack.org/cliff/latest/user/demoapp.html) to implement it.
+This module is implemented using cliff. It follows
+[the demoapp](https://docs.openstack.org/cliff/latest/user/demoapp.html).
 
 If you want to add a new command, you also need to update `entry_points` in `setup.py`.
 c.f. https://docs.openstack.org/cliff/latest/user/demoapp.html#setup-py
