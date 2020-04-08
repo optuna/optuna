@@ -11,8 +11,8 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
-from optuna.trial import TrialState
 from optuna.study import StudyDirection
+from optuna.trial import TrialState
 from optuna import type_checking
 
 try:

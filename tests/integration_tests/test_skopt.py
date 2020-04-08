@@ -5,8 +5,9 @@ from skopt.space import space
 
 import optuna
 from optuna import distributions
-from optuna.trial import FrozenTrial
 from optuna.testing.sampler import DeterministicRelativeSampler
+from optuna.trial import FrozenTrial
+
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -172,7 +173,7 @@ def _create_frozen_trial(params, param_distributions):
     return FrozenTrial(
         number=0,
         value=1.0,
-        state=optuna.structs.TrialState.COMPLETE,
+        state=optuna.trial.TrialState.COMPLETE,
         user_attrs={},
         system_attrs={},
         params=params,

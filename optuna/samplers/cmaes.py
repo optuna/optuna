@@ -110,7 +110,7 @@ class CmaEsSampler(BaseSampler):
         self._cma_rng = np.random.RandomState(seed)
 
     def infer_relative_search_space(
-        self, study: "optuna.Study", trial: "optuna.structs.FrozenTrial",
+        self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial",
     ) -> Dict[str, BaseDistribution]:
 
         search_space = {}  # type: Dict[str, BaseDistribution]
@@ -139,7 +139,7 @@ class CmaEsSampler(BaseSampler):
     def sample_relative(
         self,
         study: "optuna.Study",
-        trial: "optuna.structs.FrozenTrial",
+        trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
 
@@ -213,7 +213,7 @@ class CmaEsSampler(BaseSampler):
 
     def _restore_or_init_optimizer(
         self,
-        completed_trials: "List[optuna.structs.FrozenTrial]",
+        completed_trials: "List[optuna.trial.FrozenTrial]",
         search_space: Dict[str, BaseDistribution],
         ordered_keys: List[str],
     ) -> CMA:
@@ -250,7 +250,7 @@ class CmaEsSampler(BaseSampler):
     def sample_independent(
         self,
         study: "optuna.Study",
-        trial: "optuna.structs.FrozenTrial",
+        trial: "optuna.trial.FrozenTrial",
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:

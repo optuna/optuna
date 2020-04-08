@@ -12,11 +12,11 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.integration.cma import _Optimizer
-from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
 from optuna.study import StudyDirection
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
