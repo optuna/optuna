@@ -31,7 +31,7 @@ def _check_mlflow_availability():
 
 @experimental("1.4.0")
 class MLflowCallback(object):
-    """Callback to track optuna trials with MLflow.
+    """Callback to track Optuna trials with MLflow.
 
     This callback adds relevant information that is
     tracked by Optuna to MLflow. The MLflow experiment
@@ -39,7 +39,7 @@ class MLflowCallback(object):
 
     Example:
 
-        Add MLflow callback to optuna optimization.
+        Add MLflow callback to Optuna optimization.
 
         .. testsetup::
 
