@@ -11,7 +11,6 @@ from joblib import Parallel
 
 from optuna._experimental import experimental
 from optuna._study_direction import StudyDirection
-from optuna._study_summary import StudySummary
 
 try:
     import pandas as pd  # NOQA
@@ -44,6 +43,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+    from optuna._study_summary import StudySummary  # NOQA
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
