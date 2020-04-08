@@ -69,3 +69,39 @@ def test_pareto_front() -> None:
 
     study.optimize(lambda t: [1, 3], n_trials=1)
     assert {tuple(t.values) for t in study.get_pareto_front_trials()} == {(1, 3)}
+
+
+def test_study_user_attrs() -> None:
+    study = optuna.multi_objective.create_study(["minimize", "maximize"])
+    assert study.user_attrs == {}
+
+    study.set_user_attr("foo", "bar")
+    assert study.user_attrs == {"foo": "bar"}
+
+
+def test_study_system_attrs() -> None:
+    study = optuna.multi_objective.create_study(["minimize", "maximize"])
+    assert study.system_attrs == {"multi_objective.study.directions": ["minimize", "maximize"]}
+
+    study.set_system_attr("foo", "bar")
+    assert study.system_attrs == {
+        "multi_objective.study.directions": ["minimize", "maximize"],
+        "foo": "bar",
+    }
+
+
+def test_enqueue_trial() -> None:
+    study = optuna.multi_objective.create_study(["minimize", "maximize"])
+
+    study.enqueue_trial({"x": 2})
+    study.enqueue_trial({"x": 3})
+
+    def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
+        if trial.number == 0:
+            assert trial.suggest_uniform("x", 0, 100) == 2
+        elif trial.number == 1:
+            assert trial.suggest_uniform("x", 0, 100) == 3
+
+        return [0, 0]
+
+    study.optimize(objective, n_trials=2)
