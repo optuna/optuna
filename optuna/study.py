@@ -11,7 +11,7 @@ from joblib import Parallel
 
 from optuna._experimental import experimental
 from optuna._study_direction import StudyDirection
-from optuna._study_summary import StudySummary
+from optuna._study_summary import StudySummary  # NOQA
 
 try:
     import pandas as pd  # NOQA
