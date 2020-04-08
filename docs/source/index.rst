@@ -1,10 +1,4 @@
-.. raw:: html
-
-   <div align="center">
-
-.. raw:: html
-
-   </div>
+|optunalogo|
 
 Optuna: A hyperparameter optimization framework
 ===============================================
@@ -84,12 +78,12 @@ Contribution
 ------------
 
 Any contributions to Optuna are welcome! When you send a pull request,
-please follow the `contribution guide <./CONTRIBUTING.md>`__.
+please follow the `contribution guide <https://github.com/optuna/optuna/blob/master/CONTRIBUTING.md>`__.
 
 License
 -------
 
-MIT License (see `LICENSE <./LICENSE>`__).
+MIT License (see `LICENSE <https://github.com/optuna/optuna/blob/master/LICENSE>`__).
 
 Reference
 ---------
@@ -97,32 +91,6 @@ Reference
 Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, and Masanori
 Koyama. 2019. Optuna: A Next-generation Hyperparameter Optimization
 Framework. In KDD (`arXiv <https://arxiv.org/abs/1907.10902>`__).
-
-.. |Python| image:: https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7%20%7C%203.8-blue
-   :target: https://www.python.org
-.. |pypi| image:: https://img.shields.io/pypi/v/optuna.svg
-   :target: https://pypi.python.org/pypi/optuna
-.. |conda| image:: https://img.shields.io/conda/vn/conda-forge/optuna.svg
-   :target: https://anaconda.org/conda-forge/optuna
-.. |GitHub license| image:: https://img.shields.io/badge/license-MIT-blue.svg
-   :target: https://github.com/optuna/optuna
-.. |CircleCI| image:: https://circleci.com/gh/optuna/optuna.svg?style=svg
-   :target: https://circleci.com/gh/optuna/optuna
-.. |Read the Docs| image:: https://readthedocs.org/projects/optuna/badge/?version=stable
-   :target: https://optuna.readthedocs.io/en/stable/
-.. |Codecov| image:: https://codecov.io/gh/optuna/optuna/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/optuna/optuna/branch/master
-.. |Gitter chat| image:: https://badges.gitter.im/optuna/gitter.svg
-   :target: https://gitter.im/optuna/optuna
-.. |Open in Colab| image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: http://colab.research.google.com/github/optuna/optuna/blob/master/examples/quickstart.ipynb
-.. Optuna documentation master file, created by
-   sphinx-quickstart on Thu Oct 25 16:03:47 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Documentation Contents
-==================================
 
 .. toctree::
    :maxdepth: 2
@@ -139,3 +107,9 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. |optunalogo| image:: https://raw.githubusercontent.com/optuna/optuna/master/docs/image/optuna-logo.png
+  :width: 800
+  :alt: OPTUNA
+.. |Open in Colab| image:: https://colab.research.google.com/assets/colab-badge.svg
+  :target: http://colab.research.google.com/github/optuna/optuna/blob/master/examples/quickstart.ipynb
