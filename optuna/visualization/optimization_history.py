@@ -1,5 +1,5 @@
 from optuna.logging import get_logger
-from optuna.structs import TrialState
+from optuna.trial import TrialState
 from optuna.study import StudyDirection
 from optuna import type_checking
 from optuna.visualization.utils import _check_plotly_availability

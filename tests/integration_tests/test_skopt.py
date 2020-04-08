@@ -5,7 +5,7 @@ from skopt.space import space
 
 import optuna
 from optuna import distributions
-from optuna.structs import FrozenTrial
+from optuna.trial import FrozenTrial
 from optuna.testing.sampler import DeterministicRelativeSampler
 
 if optuna.type_checking.TYPE_CHECKING:

@@ -10,7 +10,7 @@ from optuna.integration import ChainerMNStudy
 from optuna import pruners
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.structs import TrialState
+from optuna.trial import TrialState
 from optuna import Study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler

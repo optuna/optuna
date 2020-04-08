@@ -5,7 +5,7 @@ from optuna.visualization import plotly_imports
 if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
-    from optuna.structs import FrozenTrial  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
 
 __all__ = ["is_available"]

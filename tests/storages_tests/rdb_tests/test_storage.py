@@ -16,7 +16,7 @@ from optuna.storages.rdb.models import TrialModel
 from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
-from optuna.structs import TrialState
+from optuna.trial import TrialState
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
 from optuna import type_checking
@@ -29,7 +29,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
 
 def test_init():

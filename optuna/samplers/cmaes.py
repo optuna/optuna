@@ -12,8 +12,8 @@ import numpy as np
 import optuna
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
-from optuna.structs import FrozenTrial
-from optuna.structs import TrialState
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 # Minimum value of sigma0 to avoid ZeroDivisionError.
 _MIN_SIGMA0 = 1e-10

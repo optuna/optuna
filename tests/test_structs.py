@@ -6,9 +6,9 @@ import pytest
 import optuna
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.structs import FrozenTrial
+from optuna.trial import FrozenTrial
 from optuna.structs import StudySummary
-from optuna.structs import TrialState
+from optuna.trial import TrialState
 from optuna.study import StudyDirection
 
 if optuna.type_checking.TYPE_CHECKING:
