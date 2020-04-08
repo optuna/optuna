@@ -19,13 +19,13 @@ if type_checking.TYPE_CHECKING:
 _logger = logging.get_logger(__name__)
 
 message = (
-            "The use of `structs` module is deprecated. "
-            "Please use the following way for each class. \n"
-            "`structs.StudyDirection` -> `study.StudyDirection`, \n"
-            "`structs.StudySummary`   -> `study.StudySummary`, \n"
-            "`structs.FrozenTrial`    -> `trial.FrozenTrial`, \n"
-            "`structs.TrialState`     -> `trial.TrialState`, \n"
-            "`structs.TrialPruned`    -> `exceptions.TrialPruned`."
+    "The use of `structs` module is deprecated. "
+    "Please use the following way for each class. \n"
+    "`structs.StudyDirection` -> `study.StudyDirection`, \n"
+    "`structs.StudySummary`   -> `study.StudySummary`, \n"
+    "`structs.FrozenTrial`    -> `trial.FrozenTrial`, \n"
+    "`structs.TrialState`     -> `trial.TrialState`, \n"
+    "`structs.TrialPruned`    -> `exceptions.TrialPruned`."
 )
 warnings.warn(message, DeprecationWarning)
 _logger.warning(message)
