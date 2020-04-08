@@ -151,7 +151,7 @@ class CmaEsSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
 
-        self._cma_opts['seed'] = random.randint(1, 2**32)
+        self._cma_opts["seed"] = random.randint(1, 2 ** 32)
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(self, study, trial):
