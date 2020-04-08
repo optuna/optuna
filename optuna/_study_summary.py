@@ -35,6 +35,7 @@ class StudySummary(object):
             The number of trials ran in the :class:`~optuna.study.Study`.
         datetime_start:
             Datetime where the :class:`~optuna.study.Study` started.
+
     """
 
     def __init__(
@@ -89,6 +90,7 @@ class StudySummary(object):
 
         Returns:
             The study ID.
+
         """
 
         message = (
