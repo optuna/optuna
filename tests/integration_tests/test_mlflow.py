@@ -12,7 +12,6 @@ def _objective_func(trial):
     x = trial.suggest_uniform("x", -x_max, x_max)
     y = trial.suggest_loguniform("y", 20, 30)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
-    assert isinstance(z, float)
     trial.set_user_attr("my_user_attr", "my_user_attr_value")
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
