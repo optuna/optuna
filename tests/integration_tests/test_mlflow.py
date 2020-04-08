@@ -45,7 +45,7 @@ def test_study_name(tmpdir):
     assert "x" in first_run_dict["data"]["params"]
     assert "y" in first_run_dict["data"]["params"]
     assert "z" in first_run_dict["data"]["params"]
-    assert first_run_dict["data"]["tags"]["direction"] == "StudyDirection.MINIMIZE"
+    assert first_run_dict["data"]["tags"]["direction"] == "MINIMIZE"
     assert first_run_dict["data"]["tags"]["state"] == "COMPLETE"
     assert (
         first_run_dict["data"]["tags"]["x_distribution"]
@@ -92,7 +92,7 @@ def test_metric_name(tmpdir):
     assert "x" in first_run_dict["data"]["params"]
     assert "y" in first_run_dict["data"]["params"]
     assert "z" in first_run_dict["data"]["params"]
-    assert first_run_dict["data"]["tags"]["direction"] == "StudyDirection.MINIMIZE"
+    assert first_run_dict["data"]["tags"]["direction"] == "MINIMIZE"
     assert first_run_dict["data"]["tags"]["state"] == "COMPLETE"
     assert (
         first_run_dict["data"]["tags"]["x_distribution"]

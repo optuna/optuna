@@ -120,12 +120,16 @@ class MLflowCallback(object):
             tags["datetime_start"] = str(trial.datetime_start)
             tags["datetime_complete"] = str(trial.datetime_complete)
 
-            # Set TrialState and convert it to str and remove the common prefix.
+            # Set state and convert it to str and remove the common prefix.
             trial_state = trial.state
             if isinstance(trial_state, structs.TrialState):
                 tags["state"] = str(trial_state).split(".")[-1]
 
-            tags["direction"] = str(study.direction)
+            # Set direction and convert it to str and remove the common prefix.
+            study_direction = study.direction
+            if isinstance(study_direction, structs.StudyDirection):
+                tags["direction"] = str(study_direction).split(".")[-1]
+
             tags.update(trial.user_attrs)
             distributions = {
                 (k + "_distribution"): str(v) for (k, v) in trial.distributions.items()
