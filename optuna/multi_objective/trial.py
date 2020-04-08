@@ -151,6 +151,16 @@ class MultiObjectiveTrial(object):
         self._trial.set_system_attr(key, value)
 
     @property
+    def number(self) -> int:
+        """Return trial's number which is consecutive and unique in a study.
+
+        Returns:
+            A trial number.
+        """
+
+        return self._trial.number
+
+    @property
     def params(self) -> Dict[str, Any]:
         """Return parameters to be optimized.
 
