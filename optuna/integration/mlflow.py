@@ -84,7 +84,9 @@ class MLflowCallback(object):
             <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri>`_
             for more details.
         metric_name:
-            Name of the metric.
+            Name of the metric. Since the metric itself is just a number,
+            `metric_name` can be used to give it a name. So you know later
+            if it was roc-auc or accuracy.
     """
 
     def __init__(self, tracking_uri=None, metric_name="value"):
