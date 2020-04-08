@@ -5,9 +5,10 @@ import optuna
 from optuna.integration.mlflow import MLflowCallback
 
 
-def _objective_func(trial, x_max=1.0):
-    # type: (optuna.trial.Trial, float) -> float
+def _objective_func(trial):
+    # type: (optuna.trial.Trial) -> float
 
+    x_max = 1.0
     x = trial.suggest_uniform("x", -x_max, x_max)
     y = trial.suggest_loguniform("y", 20, 30)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
