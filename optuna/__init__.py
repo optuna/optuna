@@ -31,7 +31,7 @@ else:
     from typing import Any
 
     class _LazyImport(types.ModuleType):
-        """Module Wrapper for lazy import.
+        """Module wrapper for lazy import.
 
         This class wraps specified module and lazily import it when they are actually accessed.
         Otherwise, `import optuna` becomes slower because it imports all submodules and
