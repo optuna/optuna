@@ -220,7 +220,7 @@ class OptunaObjective(BaseTuner):
             max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** DEFAULT_TUNER_TREE_DEPTH
             self.lgbm_params["num_leaves"] = trial.suggest_int("num_leaves", 2, max_num_leaves)
         if "feature_fraction" in self.target_param_names:
-            # `_GridSamplerUniform1D` is used for sampling feature_fraction value.
+            # `GridSampler` is used for sampling feature_fraction value.
             # The value 1.0 for the hyperparameter is always sampled.
             param_value = min(trial.suggest_uniform("feature_fraction", 0.4, 1.0 + EPS), 1.0)
             self.lgbm_params["feature_fraction"] = param_value
@@ -232,7 +232,7 @@ class OptunaObjective(BaseTuner):
         if "bagging_freq" in self.target_param_names:
             self.lgbm_params["bagging_freq"] = trial.suggest_int("bagging_freq", 1, 7)
         if "min_child_samples" in self.target_param_names:
-            # `_GridSamplerUniform1D` is used for sampling min_child_samples value.
+            # `GridSampler` is used for sampling min_child_samples value.
             # The value 1.0 for the hyperparameter is always sampled.
             param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + EPS))
             self.lgbm_params["min_child_samples"] = param_value
