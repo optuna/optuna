@@ -1,6 +1,7 @@
 import enum
 import warnings
 
+from optuna import _study_direction
 from optuna import exceptions
 from optuna import logging
 from optuna import type_checking
@@ -13,6 +14,11 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+
+
+# The use of the structs.StudyDirection is deprecated and it is recommended that you use
+# study.StudyDirection instead. See the API reference for more details.
+StudyDirection = _study_direction.StudyDirection
 
 
 class TrialState(enum.Enum):
@@ -45,23 +51,6 @@ class TrialState(enum.Enum):
         # type: () -> bool
 
         return self != TrialState.RUNNING and self != TrialState.WAITING
-
-
-class StudyDirection(enum.Enum):
-    """Direction of a :class:`~optuna.study.Study`.
-
-    Attributes:
-        NOT_SET:
-            Direction has not been set.
-        MINIMIZE:
-            :class:`~optuna.study.Study` minimizes the objective function.
-        MAXIMIZE:
-            :class:`~optuna.study.Study` maximizes the objective function.
-    """
-
-    NOT_SET = 0
-    MINIMIZE = 1
-    MAXIMIZE = 2
 
 
 class FrozenTrial(object):
@@ -281,7 +270,7 @@ class StudySummary(object):
         study_name:
             Name of the :class:`~optuna.study.Study`.
         direction:
-            :class:`StudyDirection` of the :class:`~optuna.study.Study`.
+            :class:`~optuna.study.StudyDirection` of the :class:`~optuna.study.Study`.
         best_trial:
             :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
         user_attrs:
@@ -299,7 +288,7 @@ class StudySummary(object):
     def __init__(
         self,
         study_name,  # type: str
-        direction,  # type: StudyDirection
+        direction,  # type: _study_direction.StudyDirection
         best_trial,  # type: Optional[FrozenTrial]
         user_attrs,  # type: Dict[str, Any]
         system_attrs,  # type: Dict[str, Any]

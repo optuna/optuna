@@ -2,6 +2,7 @@ import abc
 import copy
 
 from optuna import structs
+from optuna import study
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -46,7 +47,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_study_direction(self, study_id, direction):
-        # type: (int, structs.StudyDirection) -> None
+        # type: (int, study.StudyDirection) -> None
 
         raise NotImplementedError
 
@@ -78,7 +79,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_study_direction(self, study_id):
-        # type: (int) -> structs.StudyDirection
+        # type: (int) -> study.StudyDirection
 
         raise NotImplementedError
 
@@ -185,7 +186,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         if len(all_trials) == 0:
             raise ValueError("No trials are completed yet.")
 
-        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+        if self.get_study_direction(study_id) == study.StudyDirection.MAXIMIZE:
             best_trial = max(all_trials, key=lambda t: t.value)
         else:
             best_trial = min(all_trials, key=lambda t: t.value)

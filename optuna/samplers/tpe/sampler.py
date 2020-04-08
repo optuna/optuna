@@ -10,7 +10,7 @@ from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers.tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna import structs
-from optuna.structs import StudyDirection
+from optuna.study import StudyDirection
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
