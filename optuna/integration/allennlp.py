@@ -1,9 +1,16 @@
 import json
 import os
 
-import allennlp.commands
-
 import optuna
+
+try:
+    import allennlp.commands
+
+    _available = True
+except ImportError as e:
+    _import_error = e
+    _available = False
+    TrackerCallback = object
 
 
 class AllenNLPExecutor(object):
@@ -64,3 +71,15 @@ class AllenNLPExecutor(object):
 
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]
+
+
+def _check_allennlp_availability():
+    # type: () -> None
+
+    if not _available:
+        raise ImportError(
+            "allennlp is not available. Please install allennlp to use this feature. "
+            "allennlp can be installed by executing `$ pip install allennlp`. "
+            "For further information, please refer to the installation guide of allennlp. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )
