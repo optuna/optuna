@@ -2,7 +2,7 @@
 
 // use dev data for training due to time consumption
 local TRAIN_PATH =  "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl";
-local TEST_PATH =  "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/test.jsonl";
+local VALIDATION_PATH =  "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/test.jsonl";
 
 local DROPOUT = std.extVar("DROPOUT");
 local EMBEDDING_DIM = std.extVar("EMBEDDING_DIM");
@@ -40,7 +40,7 @@ local ENCODER = CNN_FIELDS(
     },
     "datasets_for_vocab_creation": ["train"],
     "train_data_path": TRAIN_PATH,
-    "test_data_path": TEST_PATH,
+    "validation_data_path": VALIDATION_PATH,
     "model": {
       "type": "basic_classifier",
       "text_field_embedder": {
