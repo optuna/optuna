@@ -33,6 +33,7 @@ class AllenNLPExecutor(object):
             A path which model weights and logs are saved.
         metrics:
             An evaluation metric for the result of ``objective``.
+
     """
 
     def __init__(
@@ -50,13 +51,11 @@ class AllenNLPExecutor(object):
 
     def _set_params(self) -> None:
         """Register hyperparameters as environment variables."""
-
         for key, value in self._params.items():
             os.environ[key] = str(value)
 
     def _clean_params(self) -> None:
         """Clear registered hyperparameters."""
-
         for key, value in self._params.items():
             if key not in os.environ:
                 continue
@@ -64,7 +63,6 @@ class AllenNLPExecutor(object):
 
     def run(self) -> float:
         """Train a model using allennlp."""
-
         self._set_params()
         allennlp.commands.train.train_model_from_file(self._config_file, self._serialization_dir)
         self._clean_params()
