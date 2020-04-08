@@ -421,6 +421,16 @@ def test_fixed_trial_datetime_start():
     assert trial.datetime_start is not None
 
 
+def test_fixed_trial_number() -> None:
+
+    params = {"x": 1}
+    trial = FixedTrial(params, 2)
+    assert trial.number == 2
+
+    trial = FixedTrial(params)
+    assert trial.number == 0
+
+
 @parametrize_storage
 def test_relative_parameters(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
