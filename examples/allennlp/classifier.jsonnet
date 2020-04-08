@@ -1,6 +1,6 @@
-// Paths to data.
 
-// use dev data for training due to time consumption
+
+// use dev.jsonl for training to reduce computation time.
 local TRAIN_PATH =  "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl";
 local VALIDATION_PATH =  "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/test.jsonl";
 
