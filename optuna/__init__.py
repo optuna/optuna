@@ -33,7 +33,7 @@ else:
     class _LazyImport(types.ModuleType):
         """Module Wrapper for lazy import.
 
-        This class wrap specified module and lazily import it when they are actually accessed.
+        This class wraps specified module and lazily import it when they are actually accessed.
         Otherwise, `import optuna` becomes slower because it imports all submodules and
         their dependencies (e.g., bokeh) all at once.
         Within this project's usage, importlib override this module's attribute on the first
