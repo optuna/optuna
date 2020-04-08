@@ -10,6 +10,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
+    from typing import Mapping  # NOQA
+    from typing import Sequence  # NOQA
     from typing import Union
 
     from optuna.distributions import BaseDistribution  # NOQA
@@ -79,7 +81,7 @@ class GridSampler(BaseSampler):
     """
 
     def __init__(self, search_space):
-        # type: (Dict[str, List[GridValueType]]) -> None
+        # type: (Mapping[str, Sequence[GridValueType]]) -> None
 
         for param_name, param_values in search_space.items():
             for value in param_values:
@@ -180,7 +182,7 @@ class GridSampler(BaseSampler):
         return list(unvisited_grids)
 
     def _same_search_space(self, search_space):
-        # type: (Dict[str, List[GridValueType]]) -> bool
+        # type: (Mapping[str, Sequence[GridValueType]]) -> bool
 
         if set(search_space.keys()) != set(self._search_space.keys()):
             return False
