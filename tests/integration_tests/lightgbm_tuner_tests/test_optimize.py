@@ -602,7 +602,7 @@ class TestLightGBMTuner(object):
 
         def objective(trial: optuna.trial.Trial, value: float) -> float:
 
-            trial.set_user_attr("step_name", "step{:.0f}".format(value))
+            trial.set_user_attr("lightgbm_tuner:step_name", "step{:.0f}".format(value))
             return trial.suggest_uniform("x", value, value)
 
         study = optuna.create_study(direction=direction)

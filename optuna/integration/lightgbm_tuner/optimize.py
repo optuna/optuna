@@ -295,10 +295,10 @@ class OptunaObjective(BaseTuner):
             )
         )
 
-        trial.set_user_attr("elapsed_secs", elapsed_secs)
-        trial.set_user_attr("average_iteration_time", average_iteration_time)
-        trial.set_user_attr("step_name", self.step_name)
-        trial.set_user_attr("lgbm_params", json.dumps(self.lgbm_params))
+        trial.set_user_attr("lightgbm_tuner:elapsed_secs", elapsed_secs)
+        trial.set_user_attr("lightgbm_tuner:average_iteration_time", average_iteration_time)
+        trial.set_user_attr("lightgbm_tuner:step_name", self.step_name)
+        trial.set_user_attr("lightgbm_tuner:lgbm_params", json.dumps(self.lgbm_params))
 
         self.trial_count += 1
 
@@ -449,7 +449,7 @@ class LightGBMTuner(BaseTuner):
     def best_params(self) -> Dict[str, Any]:
         """Return parameters of the best booster."""
         try:
-            return json.loads(self.study.best_trial.user_attrs["lgbm_params"])
+            return json.loads(self.study.best_trial.user_attrs["lightgbm_tuner:lgbm_params"])
         except ValueError:
             # Return the default score because no trials have completed.
             params = copy.deepcopy(DEFAULT_LIGHTGBM_PARAMETERS)
@@ -663,7 +663,11 @@ class LightGBMTuner(BaseTuner):
                 # type: (bool) -> List[optuna.structs.FrozenTrial]
 
                 trials = super().get_trials(deepcopy=deepcopy)
-                return [t for t in trials if t.user_attrs.get("step_name") == self._step_name]
+                return [
+                    t
+                    for t in trials
+                    if t.user_attrs.get("lightgbm_tuner:step_name") == self._step_name
+                ]
 
             @property
             def best_trial(self):
