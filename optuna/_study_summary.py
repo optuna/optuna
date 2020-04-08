@@ -5,7 +5,6 @@ from typing import Optional
 import warnings
 
 from optuna._study_direction import StudyDirection
-
 from optuna import logging
 from optuna import trial
 
