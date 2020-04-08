@@ -976,6 +976,10 @@ class FixedTrial(BaseTrial):
         if step is not None:
             if log:
                 raise NotImplementedError("The parameter step is not supported when log=True")
+            else:
+                return self._suggest(
+                    name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step)
+                )
         else:
             if log:
                 return self._suggest(
