@@ -9,6 +9,8 @@ from optuna import samplers
 
 if optuna.type_checking.TYPE_CHECKING:
     from collections import ValuesView  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
     from typing import Mapping  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
@@ -160,7 +162,7 @@ def test_cast_value():
 def test_has_same_search_space():
     # type: () -> None
 
-    search_space = {"x": [3, 2, 1], "y": ["a", "b", "c"]}
+    search_space = {"x": [3, 2, 1], "y": ["a", "b", "c"]}  # type: Dict[str, List[Union[int, str]]]
     sampler = samplers.GridSampler(search_space)
     assert sampler._same_search_space(search_space)
     assert sampler._same_search_space({"x": np.array([3, 2, 1]), "y": ["a", "b", "c"]})
