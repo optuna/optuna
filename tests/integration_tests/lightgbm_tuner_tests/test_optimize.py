@@ -1,14 +1,14 @@
 import contextlib
-
-import mock
-import numpy as np
-import pytest
 from typing import Any
 from typing import Dict
 from typing import Generator
 from typing import List
 from typing import Optional
 import warnings
+
+import mock
+import numpy as np
+import pytest
 
 import optuna
 import optuna.integration.lightgbm as lgb
