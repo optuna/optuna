@@ -90,7 +90,7 @@ def test_check_distribution_compatibility():
         EXAMPLE_DISTRIBUTIONS["u"], distributions.UniformDistribution(low=-3.0, high=-2.0)
     )
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["l"], distributions.LogUniformDistribution(low=-0.1, high=1.0)
+        EXAMPLE_DISTRIBUTIONS["l"], distributions.LogUniformDistribution(low=0.1, high=1.0)
     )
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["du"],

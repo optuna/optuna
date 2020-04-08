@@ -134,6 +134,32 @@ def test_suggest_uniform(storage_init_func):
 
 
 @parametrize_storage
+def test_suggest_loguniform(storage_init_func):
+    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+
+    with pytest.raises(ValueError):
+        distributions.LogUniformDistribution(low=1.0, high=0.9)
+
+    with pytest.raises(ValueError):
+        distributions.LogUniformDistribution(low=0.0, high=0.9)
+
+    mock = Mock()
+    mock.side_effect = [1.0, 2.0, 3.0]
+    sampler = samplers.RandomSampler()
+
+    with patch.object(sampler, "sample_independent", mock) as mock_object:
+        study = create_study(storage_init_func(), sampler=sampler)
+        trial = Trial(study, study._storage.create_new_trial(study._study_id))
+        distribution = distributions.LogUniformDistribution(low=0.1, high=3.0)
+
+        assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
+        assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
+        assert trial._suggest("y", distribution) == 3.0  # Test suggesting a different param.
+        assert trial.params == {"x": 1.0, "y": 3.0}
+        assert mock_object.call_count == 3
+
+
+@parametrize_storage
 def test_suggest_discrete_uniform(storage_init_func):
     # type: (typing.Callable[[], storages.BaseStorage]) -> None
 
@@ -315,7 +341,7 @@ def test_fixed_trial_suggest_loguniform():
     # type: () -> None
 
     trial = FixedTrial({"x": 0.99})
-    assert trial.suggest_loguniform("x", 0.0, 1.0) == 0.99
+    assert trial.suggest_loguniform("x", 0.1, 1.0) == 0.99
 
     with pytest.raises(ValueError):
         trial.suggest_loguniform("y", 0.0, 1.0)

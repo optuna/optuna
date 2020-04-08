@@ -57,7 +57,7 @@ def test_frozen_trial_validate():
         # `params` has an extra element.
         ({"x": 0.1, "y": 0.5}, {"x": UniformDistribution(0, 1)}),
         # `distributions` has an extra element.
-        ({"x": 0.1}, {"x": UniformDistribution(0, 1), "y": LogUniformDistribution(0, 1)}),
+        ({"x": 0.1}, {"x": UniformDistribution(0, 1), "y": LogUniformDistribution(0.1, 1.0)}),
         # The value of `x` isn't contained in the distribution.
         ({"x": -0.5}, {"x": UniformDistribution(0, 1)}),
     ]  # type: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]]

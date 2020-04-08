@@ -167,6 +167,11 @@ class LogUniformDistribution(BaseDistribution):
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}).".format(low, high)
             )
+        if low <= 0.0:
+            raise ValueError(
+                "The `low` value must be larger than 0 for a log distribution "
+                "(low={}, high={}).".format(low, high)
+            )
 
         self.low = low
         self.high = high
