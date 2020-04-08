@@ -32,7 +32,6 @@ class MultiObjectiveTrial(object):
     Args:
         trial:
             A :class:`~optuna.trial.Trial` object.
-
     """
 
     def __init__(self, trial: Trial):
@@ -44,7 +43,6 @@ class MultiObjectiveTrial(object):
 
         Please refer to the documentation of :func:`optuna.trial.Trial.suggest_uniform`
         for further details.
-
         """
 
         return self._trial.suggest_uniform(name, low, high)
@@ -54,7 +52,6 @@ class MultiObjectiveTrial(object):
 
         Please refer to the documentation of :func:`optuna.trial.Trial.suggest_loguniform`
         for further details.
-
         """
 
         return self._trial.suggest_loguniform(name, low, high)
@@ -64,7 +61,6 @@ class MultiObjectiveTrial(object):
 
         Please refer to the documentation of :func:`optuna.trial.Trial.suggest_discrete_uniform`
         for further details.
-
         """
 
         return self._trial.suggest_discrete_uniform(name, low, high, q)
@@ -74,7 +70,6 @@ class MultiObjectiveTrial(object):
 
         Please refer to the documentation of :func:`optuna.trial.Trial.suggest_int`
         for further details.
-
         """
 
         return self._trial.suggest_int(name, low, high)
@@ -86,12 +81,31 @@ class MultiObjectiveTrial(object):
 
         Please refer to the documentation of :func:`optuna.trial.Trial.suggest_categorical`
         for further details.
-
         """
 
         return self._trial.suggest_categorical(name, choices)
 
     def report(self, values: List[float], step: int) -> None:
+        """Report intermediate objective function values for a given step.
+
+        The reported values are used by the pruners to determine whether this trial should be
+        pruned.
+
+        .. seealso::
+            Please refer to :class:`~optuna.pruners.BasePruner`.
+
+        .. note::
+            The reported values are converted to ``float`` type by applying ``float()``
+            function internally. Thus, it accepts all float-like types (e.g., ``numpy.float32``).
+            If the conversion fails, a ``TypeError`` is raised.
+
+        Args:
+            values:
+                Intermediate objective function values for a given step.
+            step:
+                Step of the trial (e.g., Epoch of neural network training).
+        """
+
         # TODO(ohta): Allow users reporting a subset of target values.
         # See https://github.com/optuna/optuna/pull/1054/files#r401594785 for the detail.
 
@@ -119,29 +133,71 @@ class MultiObjectiveTrial(object):
             self._trial.report(value, i)
 
     def set_user_attr(self, key: str, value: Any) -> None:
+        """Set user attributes to the trial.
+
+        Please refer to the documentation of :func:`optuna.trial.Trial.set_user_attr`
+        for further details.
+        """
+
         self._trial.set_user_attr(key, value)
 
     def set_system_attr(self, key: str, value: Any) -> None:
+        """Set system attributes to the trial.
+
+        Please refer to the documentation of :func:`optuna.trial.Trial.set_system_attr`
+        for further details.
+        """
+
         self._trial.set_system_attr(key, value)
 
     @property
     def params(self) -> Dict[str, Any]:
+        """Return parameters to be optimized.
+
+        Returns:
+            A dictionary containing all parameters.
+        """
+
         return self._trial.params
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
+        """Return distributions of parameters to be optimized.
+
+        Returns:
+            A dictionary containing all distributions.
+        """
+
         return self._trial.distributions
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
+        """Return user attributes.
+
+        Returns:
+            A dictionary containing all user attributes.
+        """
+
         return self._trial.user_attrs
 
     @property
     def system_attrs(self) -> Dict[str, Any]:
+        """Return system attributes.
+
+        Returns:
+            A dictionary containing all system attributes.
+        """
+
         return self._trial.system_attrs
 
     @property
     def datetime_start(self) -> Optional[datetime]:
+        """Return start datetime.
+
+        Returns:
+            Datetime where the :class:`~optuna.trial.Trial` started.
+        """
+
         return self._trial.datetime_start
 
     # TODO(ohta): Add `to_single_objective` method.
@@ -155,6 +211,36 @@ class MultiObjectiveTrial(object):
 
 @experimental("1.4.0")
 class FrozenMultiObjectiveTrial(object):
+    """Status and results of a :class:`~optuna.multi_objective.trial.MultiObjectiveTrial`.
+
+    Attributes:
+        number:
+            Unique and consecutive number of
+            :class:`~optuna.multi_objective.trial.MultiObjectiveTrial` for each
+            :class:`~optuna.multi_objective.study.MultiObjectiveStudy`.
+            Note that this field uses zero-based numbering.
+        state:
+            :class:`~optuna.structs.TrialState` of the
+            :class:`~optuna.multi_objective.trial.MultiObjectiveTrial`.
+        values:
+            Objective values of the :class:`~optuna.multi_objective.trial.MultiObjectiveTrial`.
+        datetime_start:
+            Datetime where the :class:`~optuna.multi_objective.trial.MultiObjectiveTrial` started.
+        datetime_complete:
+            Datetime where the :class:`~optuna.multi_objective.trial.MultiObjectiveTrial` finished.
+        params:
+            Dictionary that contains suggested parameters.
+        distributions:
+            Dictionary that contains the distributions of :attr:`params`.
+        user_attrs:
+            Dictionary that contains the attributes of the
+            :class:`~optuna.multi_objective.trial.MultiObjectiveTrial` set with
+            :func:`optuna.multi_objective.trial.MultiObjectiveTrial.set_user_attr`.
+        intermediate_values:
+            Intermediate objective values set with
+            :func:`optuna.multi_objective.trial.MultiObjectiveTrial.report`.
+    """
+
     def __init__(self, n_objectives: int, trial: FrozenTrial):
         self.n_objectives = n_objectives
         self._trial = trial
