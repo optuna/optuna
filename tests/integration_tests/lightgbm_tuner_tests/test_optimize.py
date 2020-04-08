@@ -1,4 +1,5 @@
 import contextlib
+
 import mock
 import numpy as np
 import pytest
