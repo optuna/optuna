@@ -9,8 +9,11 @@ from optuna.study import Study
 
 
 class _MultiObjectiveSamplerAdapter(BaseSampler):
-    """Adapter from :class:`~optuna.samplers.BaseSampler` to
-    :class:`~optuna.multi_objective.samplers.BaseMultiObjectiveSampler`.
+    """Adapter for to :class:`~optuna.multi_objective.samplers.BaseMultiObjectiveSampler`.
+
+    This class implements the :class:`~optuna.samplers.BaseSampler` interface.
+    When a method is invoked, the handling will be delegated to to the given
+    :class:`~optuna.multi_objective.samplers.BaseMultiObjectiveSampler` instance.
     """
 
     def __init__(self, mo_sampler: "multi_objective.samplers.BaseMultiObjectiveSampler") -> None:

@@ -110,8 +110,7 @@ def load_study(
     storage: Union[str, BaseStorage],
     sampler: Optional["multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
 ) -> "multi_objective.study.MultiObjectiveStudy":
-    """Load the existing :class:`~optuna.multi_objective.study.MultiObjectiveStudy`
-       that has the specified name.
+    """Load the existing :class:`MultiObjectiveStudy` that has the specified name.
 
     Args:
         study_name:
@@ -163,7 +162,8 @@ class MultiObjectiveStudy(object):
             else:
                 raise ValueError("Unknown direction ({}) is specified.".format(d))
 
-        if self._n_objectives < 1:
+        n_objectives = len(self._directions)
+        if n_objectives < 1:
             raise ValueError("The number of objectives must be greater than 0.")
 
         self._study._log_completed_trial = types.MethodType(  # type: ignore
