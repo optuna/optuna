@@ -40,7 +40,7 @@ else:
         access and the imported submodule is directly accessed from the second access.
 
         Args:
-            name: name of module to apply lazy import
+            name: Name of module to apply lazy import.
         """
 
         def __init__(self, name: str) -> None:
