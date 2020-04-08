@@ -295,7 +295,7 @@ class MultiObjectiveStudy(object):
         This is a short form of ``self.get_trials(deepcopy=True)``.
 
         Returns:
-            A list of :class:`~optuna.multi_objective.structs.FrozenMultiObjectiveTrial` objects.
+            A list of :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` objects.
         """
 
         return self.get_trials()
@@ -319,7 +319,7 @@ class MultiObjectiveStudy(object):
                 the study may corrupt and unexpected behavior may happen.
 
         Returns:
-            A list of :class:`~optuna.multi_objective.structs.FrozenMultiObjectiveTrial` objects.
+            A list of :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` objects.
         """
 
         return [
@@ -336,7 +336,7 @@ class MultiObjectiveStudy(object):
         ``any(v0 < v1) for v0, v1 in zip(t0.values, t1.values)`` are held.
 
         Returns:
-            A list of :class:`~optuna.multi_objective.structs.FrozenMultiObjectiveTrial` objects.
+            A list of :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` objects.
         """
 
         pareto_front = []
