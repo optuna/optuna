@@ -598,7 +598,7 @@ class LightGBMTuner(BaseTuner):
         # type: () -> None
 
         param_name = "min_child_samples"
-        param_values = [5, 10, 25, 50, 100]  # type: List[Union[str, float, int, bool, None]]
+        param_values = [5, 10, 25, 50, 100]
         sampler = optuna.samplers.GridSampler({param_name: param_values})
         self.tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
 
