@@ -11,6 +11,8 @@ if optuna.type_checking.TYPE_CHECKING:
     from collections import ValuesView  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
+    from typing import Mapping  # NOQA
+    from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
     from optuna.samplers.grid import GridValueType  # NOQA
@@ -18,7 +20,7 @@ if optuna.type_checking.TYPE_CHECKING:
 
 
 def _n_grids(search_space):
-    # type: (Dict[str, List[Union[str, float, None]]]) -> int
+    # type: (Mapping[str, Sequence[Union[str, float, None]]]) -> int
 
     return int(np.prod([len(v) for v in search_space.values()]))
 
@@ -60,7 +62,7 @@ def test_study_optimize_with_single_search_space():
     study.optimize(objective, n_trials=n_grids)
 
     def sorted_values(d):
-        # type: (Dict[str, List[GridValueType]]) -> ValuesView[List[GridValueType]]
+        # type: (Mapping[str, Sequence[GridValueType]]) -> ValuesView[Sequence[GridValueType]]
 
         return OrderedDict(sorted(d.items())).values()
 
@@ -106,7 +108,7 @@ def test_study_optimize_with_multiple_search_spaces():
         return a * b
 
     # Run 3 trials with a search space.
-    search_space_0 = {"a": [0, 50], "b": [-50, 0, 50]}  # type: Dict[str, List[GridValueType]]
+    search_space_0 = {"a": [0, 50], "b": [-50, 0, 50]}
     sampler_0 = samplers.GridSampler(search_space_0)
     study = optuna.create_study(sampler=sampler_0)
     study.optimize(objective, n_trials=3)
@@ -116,7 +118,7 @@ def test_study_optimize_with_multiple_search_spaces():
         assert sampler_0._same_search_space(t.system_attrs["search_space"])
 
     # Run 2 trials with another space.
-    search_space_1 = {"a": [0, 25], "b": [-50]}  # type: Dict[str, List[GridValueType]]
+    search_space_1 = {"a": [0, 25], "b": [-50]}
     sampler_1 = samplers.GridSampler(search_space_1)
     study.sampler = sampler_1
     study.optimize(objective, n_trials=2)
@@ -160,7 +162,7 @@ def test_cast_value():
 def test_has_same_search_space():
     # type: () -> None
 
-    search_space = {"x": [3, 2, 1], "y": ["a", "b", "c"]}  # type: Dict[str, List[GridValueType]]
+    search_space = {"x": [3, 2, 1], "y": ["a", "b", "c"]}  # type: Dict[str, List[Union[int, str]]]
     sampler = samplers.GridSampler(search_space)
     assert sampler._same_search_space(search_space)
     assert sampler._same_search_space({"x": np.array([3, 2, 1]), "y": ["a", "b", "c"]})
