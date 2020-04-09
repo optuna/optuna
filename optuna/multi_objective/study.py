@@ -190,6 +190,19 @@ class MultiObjectiveStudy(object):
 
         return self._directions
 
+    @property
+    def sampler(self) -> "multi_objective.samplers.BaseMultiObjectiveSampler":
+        """Return the sampler.
+
+        Returns:
+            A :class:`~multi_objective.samplers.BaseMultiObjectiveSampler` object.
+        """
+
+        adapter = self._study.sampler
+        assert isinstance(adapter, multi_objective.samplers._MultiObjectiveSamplerAdapter)
+
+        return adapter._mo_sampler
+
     def optimize(
         self,
         objective: ObjectiveFuncType,
@@ -239,10 +252,22 @@ class MultiObjectiveStudy(object):
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
+        """Return user attributes.
+
+        Returns:
+            A dictionary containing all user attributes.
+        """
+
         return self._study.user_attrs
 
     @property
     def system_attrs(self) -> Dict[str, Any]:
+        """Return system attributes.
+
+        Returns:
+            A dictionary containing all system attributes.
+        """
+
         return self._study.system_attrs
 
     def set_user_attr(self, key: str, value: Any) -> None:
