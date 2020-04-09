@@ -182,14 +182,16 @@ class Trial(BaseTrial):
         # type: (str, float, float, bool, Optional[float]) -> float
         """Suggest a value for the floating point parameter.
 
-        Note that this is a wrapper method for :func:`~optuna.trial.Trial.suggest_uniform`
-        and :func:`~optuna.trial.Trial.suggest_loguniform`.
+        Note that this is a wrapper method for :func:`~optuna.trial.Trial.suggest_uniform`,
+        :func:`~optuna.trial.Trial.suggest_loguniform` and
+        :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
 
         .. versionadded:: 1.3.0
 
         .. seealso::
-            Please see also :func:`~optuna.trial.Trial.suggest_uniform` and
-            :func:`~optuna.trial.Trial.suggest_loguniform`.
+            Please see also :func:`~optuna.trial.Trial.suggest_uniform`,
+            :func:`~optuna.trial.Trial.suggest_loguniform` and
+            :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
 
         Example:
 
