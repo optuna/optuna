@@ -27,6 +27,9 @@ import optuna
 from optuna.integration import AllenNLPExecutor
 
 
+# This path trick is used since this example is also
+# run from the root of this repository by CI
+EXAMPLE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = "result"
 
 
@@ -38,7 +41,7 @@ def objective(trial):
     trial.suggest_int("NUM_FILTERS", 16, 32)
     trial.suggest_int("HIDDEN_SIZE", 16, 32)
 
-    config_path = "examples/allennlp/classifier.jsonnet"
+    config_path = os.path.join(EXAMPLE_DIR, "classifier.jsonnet")
     serialization_dir = os.path.join(MODEL_DIR, "test_{}".format(trial.number))
     executor = AllenNLPExecutor(trial, config_path, serialization_dir)
     return executor.run()
