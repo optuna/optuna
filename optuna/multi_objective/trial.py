@@ -38,6 +38,15 @@ class MultiObjectiveTrial(object):
         self._trial = trial
         self._n_objectives = multi_objective.study.MultiObjectiveStudy(trial.study).n_objectives
 
+    def suggest_float(self, name: str, low: float, high: float, *, log: bool = False) -> float:
+        """Suggest a value for the floating point parameter.
+
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_float`
+        for further details.
+        """
+
+        return self._trial.suggest_float(name, low, high, log=log)
+
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -263,7 +272,7 @@ class FrozenMultiObjectiveTrial(object):
                 continue
 
             step = key // n_objectives - 1
-            if step not in trial.intermediate_values:
+            if step not in self.intermediate_values:
                 self.intermediate_values[step] = list(None for _ in range(n_objectives))
 
             self.intermediate_values[step][key % n_objectives] = value
