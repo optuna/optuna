@@ -21,8 +21,8 @@ class TensorFlowPruningHook(SessionRunHook):
 
     Example:
 
-        See `the example <https://github.com/optuna/optuna/blob/30dba8814d332ff4
-        0d9c7465ee660a8ecf499547/examples/tensorflow_estimator_simple.py>`_
+        See `the example <https://github.com/optuna/optuna/blob/master/
+        examples/tensorflow_estimator_simple.py>`_
         if you want to add a pruning SessionRunHook for TensorFlow's Estimator.
 
     Args:

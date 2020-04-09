@@ -28,8 +28,8 @@ class ChainerPruningExtension(Extension):
 
     Example:
 
-        See `the example <https://github.com/optuna/optuna/blob/30dba8814d332ff4
-        0d9c7465ee660a8ecf499547/examples/pruning/chainer_integration.py>`__
+        See `the example <https://github.com/optuna/optuna/blob/master/
+        examples/pruning/chainer_integration.py>`__
         if you want to add a pruning extension which observes validation accuracy to
         `Chainer Trainer <https://docs.chainer.org/en/stable/reference/generated/
         chainer.training.Trainer.html>`_.
