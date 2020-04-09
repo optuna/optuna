@@ -11,6 +11,7 @@ from joblib import Parallel
 
 from optuna._experimental import experimental
 from optuna._study_direction import StudyDirection
+from optuna._study_summary import StudySummary  # NOQA
 
 try:
     import pandas as pd  # NOQA
@@ -889,7 +890,7 @@ def delete_study(
 
 
 def get_all_study_summaries(storage):
-    # type: (Union[str, storages.BaseStorage]) -> List[structs.StudySummary]
+    # type: (Union[str, storages.BaseStorage]) -> List[StudySummary]
     """Get all history of studies stored in a specified storage.
 
     Args:
@@ -898,7 +899,7 @@ def get_all_study_summaries(storage):
             :func:`~optuna.study.create_study` for further details.
 
     Returns:
-        List of study history summarized as :class:`~optuna.structs.StudySummary` objects.
+        List of study history summarized as :class:`~optuna.study.StudySummary` objects.
 
     """
 

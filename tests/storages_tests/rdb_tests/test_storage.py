@@ -16,9 +16,9 @@ from optuna.storages.rdb.models import TrialModel
 from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
-from optuna.structs import StudySummary
 from optuna.structs import TrialState
 from optuna.study import StudyDirection
+from optuna.study import StudySummary
 from optuna import type_checking
 from optuna import version
 

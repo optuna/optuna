@@ -27,6 +27,7 @@ from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.rdb import models
 from optuna import structs
 from optuna.study import StudyDirection
+from optuna.study import StudySummary
 from optuna import type_checking
 from optuna import version
 
@@ -337,7 +338,7 @@ class RDBStorage(BaseStorage):
 
         return system_attrs
 
-    def get_all_study_summaries(self) -> List[structs.StudySummary]:
+    def get_all_study_summaries(self) -> List[StudySummary]:
 
         session = self.scoped_session()
 
@@ -415,7 +416,7 @@ class RDBStorage(BaseStorage):
                 models.StudySystemAttributeModel.study_id == study.study_id
             )
             study_summaries.append(
-                structs.StudySummary(
+                StudySummary(
                     study_name=study.study_name,
                     direction=study.direction,
                     best_trial=best_trial,
