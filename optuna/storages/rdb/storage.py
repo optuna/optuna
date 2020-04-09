@@ -17,6 +17,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.sql import functions
 from sqlalchemy import orm
 
 import optuna
@@ -29,10 +30,11 @@ from optuna.study import StudyDirection
 from optuna import type_checking
 from optuna import version
 
+from typing import List
+
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import List  # NOQA
     from typing import Optional  # NOQA
 
 _logger = optuna.logging.get_logger(__name__)
@@ -335,82 +337,93 @@ class RDBStorage(BaseStorage):
 
         return system_attrs
 
-    # TODO(sano): Optimize this method to reduce the number of queries.
-    def get_all_study_summaries(self):
-        # type: () -> List[structs.StudySummary]
+    def get_all_study_summaries(self) -> List[structs.StudySummary]:
 
         session = self.scoped_session()
 
-        study_models = models.StudyModel.all(session)
-        trial_models = models.TrialModel.all(session)
-        param_models = models.TrialParamModel.all(session)
-        value_models = models.TrialValueModel.all(session)
-        trial_user_attribute_models = models.TrialUserAttributeModel.all(session)
-        trial_system_attribute_models = models.TrialSystemAttributeModel.all(session)
-
-        study_summaries = []
-        for study_model in study_models:
-            # Filter model objects by study.
-            study_trial_models = [t for t in trial_models if t.study_id == study_model.study_id]
-
-            # Get best trial.
-            completed_trial_models = [
-                t for t in study_trial_models if t.state is structs.TrialState.COMPLETE
-            ]
-            best_trial = None
-            if len(completed_trial_models) > 0:
-                if study_model.direction == StudyDirection.MAXIMIZE:
-                    best_trial_model = max(completed_trial_models, key=lambda t: t.value)
-                else:
-                    best_trial_model = min(completed_trial_models, key=lambda t: t.value)
-
-                best_param_models = [
-                    p for p in param_models if p.trial_id == best_trial_model.trial_id
-                ]
-                best_value_models = [
-                    v for v in value_models if v.trial_id == best_trial_model.trial_id
-                ]
-                best_trial_user_models = [
-                    u
-                    for u in trial_user_attribute_models
-                    if u.trial_id == best_trial_model.trial_id
-                ]
-                best_trial_system_models = [
-                    s
-                    for s in trial_system_attribute_models
-                    if s.trial_id == best_trial_model.trial_id
-                ]
-
-                # Merge model objects related to the best trial.
-                best_trial = self._merge_trials_orm(
-                    [best_trial_model],
-                    best_param_models,
-                    best_value_models,
-                    best_trial_user_models,
-                    best_trial_system_models,
-                )[0]
-
-            # Find datetime_start.
-            datetime_start = None
-            if len(study_trial_models) > 0:
-                datetime_start = min([t.datetime_start for t in study_trial_models])
-
-            attributes = models.StudySystemAttributeModel.where_study_id(
-                study_model.study_id, session
+        summarized_trial = (
+            session.query(
+                models.TrialModel.study_id,
+                functions.min(models.TrialModel.datetime_start).label("datetime_start"),
+                functions.count(models.TrialModel.trial_id).label("n_trial"),
             )
-            system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
+            .group_by(models.TrialModel.study_id)
+            .with_labels()
+            .subquery()
+        )
+        study_summary_stmt = session.query(
+            models.StudyModel.study_id,
+            models.StudyModel.study_name,
+            models.StudyModel.direction,
+            summarized_trial.c.datetime_start,
+            functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
+        ).select_from(orm.outerjoin(models.StudyModel, summarized_trial))
 
-            # Consolidate StudySummary.
+        study_summary = study_summary_stmt.all()
+        study_summaries = []
+        for study in study_summary:
+            try:
+                if study.direction == StudyDirection.MAXIMIZE:
+                    best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
+                else:
+                    best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
+            except ValueError:
+                best_trial = None
+            if best_trial:
+                params = (
+                    session.query(
+                        models.TrialParamModel.param_name,
+                        models.TrialParamModel.param_value,
+                        models.TrialParamModel.distribution_json,
+                    )
+                    .filter(models.TrialParamModel.trial_id == best_trial.trial_id)
+                    .all()
+                )
+                param_dict = {}
+                param_distributions = {}
+                for param in params:
+                    distribution = distributions.json_to_distribution(param.distribution_json)
+                    param_dict[param.param_name] = distribution.to_external_repr(param.param_value)
+                    param_distributions[param.param_name] = distribution
+                user_attrs = session.query(models.TrialUserAttributeModel).filter(
+                    models.TrialUserAttributeModel.trial_id == best_trial.trial_id
+                )
+                system_attrs = session.query(models.TrialSystemAttributeModel).filter(
+                    models.TrialSystemAttributeModel.trial_id == best_trial.trial_id
+                )
+                intermediate = session.query(models.TrialValueModel).filter(
+                    models.TrialValueModel.trial_id == best_trial.trial_id
+                )
+                best_trial = structs.FrozenTrial(
+                    best_trial.number,
+                    structs.TrialState.COMPLETE,
+                    best_trial.value,
+                    best_trial.datetime_start,
+                    best_trial.datetime_complete,
+                    param_dict,
+                    param_distributions,
+                    {i.key: json.loads(i.value_json) for i in user_attrs},
+                    {i.key: json.loads(i.value_json) for i in system_attrs},
+                    # Use Value-Models here
+                    {value.step: value.value for value in intermediate},
+                    best_trial.trial_id,
+                )
+            user_attrs = session.query(models.StudyUserAttributeModel).filter(
+                models.StudyUserAttributeModel.study_id == study.study_id
+            )
+            system_attrs = session.query(models.StudySystemAttributeModel).filter(
+                models.StudySystemAttributeModel.study_id == study.study_id
+            )
             study_summaries.append(
                 structs.StudySummary(
-                    study_name=study_model.study_name,
-                    direction=self.get_study_direction(study_model.study_id),
+                    study_name=study.study_name,
+                    direction=study.direction,
                     best_trial=best_trial,
-                    user_attrs=self.get_study_user_attrs(study_model.study_id),
-                    system_attrs=system_attrs,
-                    n_trials=len(study_trial_models),
-                    datetime_start=datetime_start,
-                    study_id=study_model.study_id,
+                    user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
+                    system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
+                    n_trials=study.n_trial,
+                    datetime_start=study.datetime_start,
+                    study_id=study.study_id,
                 )
             )
 
