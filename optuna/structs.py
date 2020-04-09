@@ -16,6 +16,8 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
 
 
+_logger = logging.get_logger(__name__)
+
 # The use of the structs.StudyDirection is deprecated and it is recommended that you use
 # study.StudyDirection instead. See the API reference for more details.
 StudyDirection = _study_direction.StudyDirection
@@ -229,8 +231,7 @@ class FrozenTrial(object):
             DeprecationWarning,
         )
 
-        logger = logging.get_logger(__name__)
-        logger.warning(
+        _logger.warning(
             "The use of `FrozenTrial.trial_id` is deprecated. "
             "Please use `FrozenTrial.number` instead."
         )
@@ -263,6 +264,11 @@ class FrozenTrial(object):
 
 class StudySummary(object):
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
+
+    .. deprecated:: 1.4.0
+
+        This class was moved to :mod:`~optuna.study`. Please use
+        :class:`~optuna.study.StudySummary` instead.
 
     See also :func:`optuna.study.get_all_study_summaries`.
 
@@ -297,6 +303,13 @@ class StudySummary(object):
         study_id,  # type: int
     ):
         # type: (...) -> None
+
+        message = (
+            "The use of `structs.StudySummary` is deprecated. "
+            "Please use `study.StudySummary` instead."
+        )
+        warnings.warn(message, DeprecationWarning)
+        _logger.warning(message)
 
         self.study_name = study_name
         self.direction = direction
@@ -338,7 +351,7 @@ class StudySummary(object):
 
         .. deprecated:: 0.20.0
             The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.structs.StudySummary.study_name` instead.
+            :attr:`~optuna.study.StudySummary.study_name` instead.
 
         Returns:
             The study ID.
@@ -350,8 +363,7 @@ class StudySummary(object):
         )
         warnings.warn(message, DeprecationWarning)
 
-        logger = logging.get_logger(__name__)
-        logger.warning(message)
+        _logger.warning(message)
 
         return self._study_id
 
@@ -373,5 +385,4 @@ class TrialPruned(exceptions.TrialPruned):
             "Please use `optuna.exceptions.TrialPruned` instead."
         )
         warnings.warn(message, DeprecationWarning)
-        logger = logging.get_logger(__name__)
-        logger.warning(message)
+        _logger.warning(message)

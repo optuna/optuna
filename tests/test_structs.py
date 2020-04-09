@@ -1,6 +1,5 @@
 import copy
 import datetime
-import warnings
 
 import pytest
 
@@ -8,7 +7,9 @@ import optuna
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.structs import FrozenTrial
+from optuna.structs import StudySummary
 from optuna.structs import TrialState
+from optuna.study import StudyDirection
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -148,72 +149,17 @@ def test_frozen_trial_repr():
     assert trial == eval(repr(trial))
 
 
-def test_study_summary_study_id():
+def test_study_summary_deprecated():
     # type: () -> None
 
-    study = optuna.create_study()
-    summaries = study._storage.get_all_study_summaries()
-    assert len(summaries) == 1
-
-    summary = summaries[0]
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=DeprecationWarning)
-        assert summary.study_id == summary._study_id
-
-    with pytest.warns(DeprecationWarning):
-        summary.study_id
-
-
-def test_study_summary_eq_ne():
-    # type: () -> None
-
-    storage = optuna.storages.RDBStorage("sqlite:///:memory:")
-
-    optuna.create_study(storage=storage)
-    study = optuna.create_study(storage=storage)
-
-    summaries = study._storage.get_all_study_summaries()
-    assert len(summaries) == 2
-
-    assert summaries[0] == copy.deepcopy(summaries[0])
-    assert not summaries[0] != copy.deepcopy(summaries[0])
-
-    assert not summaries[0] == summaries[1]
-    assert summaries[0] != summaries[1]
-
-    assert not summaries[0] == 1
-    assert summaries[0] != 1
-
-
-def test_study_summary_lt_le():
-    # type: () -> None
-
-    storage = optuna.storages.RDBStorage("sqlite:///:memory:")
-
-    optuna.create_study(storage=storage)
-    study = optuna.create_study(storage=storage)
-
-    summaries = study._storage.get_all_study_summaries()
-    assert len(summaries) == 2
-
-    summary_0 = summaries[0]
-    summary_1 = summaries[1]
-
-    assert summary_0 < summary_1
-    assert not summary_1 < summary_0
-
-    with pytest.raises(TypeError):
-        summary_0 < 1
-
-    assert summary_0 <= summary_0
-    assert not summary_1 <= summary_0
-
-    with pytest.raises(TypeError):
-        summary_0 <= 1
-
-    # A list of StudySummaries is sortable.
-    summaries.reverse()
-    summaries.sort()
-    assert summaries[0] == summary_0
-    assert summaries[1] == summary_1
+    with pytest.deprecated_call():
+        StudySummary(
+            study_name="test",
+            direction=StudyDirection.NOT_SET,
+            best_trial=None,
+            user_attrs={},
+            system_attrs={},
+            n_trials=0,
+            datetime_start=datetime.datetime.now(),
+            study_id=0,
+        )

@@ -97,7 +97,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_all_study_summaries(self):
-        # type: () -> List[structs.StudySummary]
+        # type: () -> List[study.StudySummary]
 
         raise NotImplementedError
 

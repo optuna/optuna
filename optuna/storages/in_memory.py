@@ -7,6 +7,7 @@ from optuna.storages import base
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna import structs
 from optuna.study import StudyDirection
+from optuna.study import StudySummary
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -131,7 +132,7 @@ class InMemoryStorage(base.BaseStorage):
             return copy.deepcopy(self.study_system_attrs)
 
     def get_all_study_summaries(self):
-        # type: () -> List[structs.StudySummary]
+        # type: () -> List[StudySummary]
 
         best_trial = None
         if any(t for t in self.trials if t.state == structs.TrialState.COMPLETE):
@@ -142,7 +143,7 @@ class InMemoryStorage(base.BaseStorage):
             datetime_start = min([t.datetime_start for t in self.trials])
 
         return [
-            structs.StudySummary(
+            StudySummary(
                 study_name=self.study_name,
                 direction=self.direction,
                 best_trial=best_trial,
