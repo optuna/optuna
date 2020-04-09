@@ -1,6 +1,5 @@
 import abc
-from datetime import datetime
-from datetime import timedelta
+import datetime
 import decimal
 import enum
 import warnings
@@ -88,8 +87,8 @@ class FrozenTrial(object):
         number,  # type: int
         state,  # type: TrialState
         value,  # type: Optional[float]
-        datetime_start,  # type: Optional[datetime]
-        datetime_complete,  # type: Optional[datetime]
+        datetime_start,  # type: Optional[datetime.datetime]
+        datetime_complete,  # type: Optional[datetime.datetime]
         params,  # type: Dict[str, Any]
         distributions,  # type: Dict[str, BaseDistribution]
         user_attrs,  # type: Dict[str, Any]
@@ -253,7 +252,7 @@ class FrozenTrial(object):
 
     @property
     def duration(self):
-        # type: () -> Optional[timedelta]
+        # type: () -> Optional[datetime.timedelta]
         """Return the elapsed time taken to complete the trial.
 
         Returns:
@@ -348,7 +347,7 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
     @property
     def datetime_start(self):
-        # type: () -> Optional[datetime]
+        # type: () -> Optional[datetime.datetime]
 
         raise NotImplementedError
 
@@ -1113,7 +1112,7 @@ class Trial(BaseTrial):
 
     @property
     def datetime_start(self):
-        # type: () -> Optional[datetime]
+        # type: () -> Optional[datetime.datetime]
         """Return start datetime.
 
         Returns:
@@ -1185,7 +1184,7 @@ class FixedTrial(BaseTrial):
         self._distributions = {}  # type: Dict[str, BaseDistribution]
         self._user_attrs = {}  # type: Dict[str, Any]
         self._system_attrs = {}  # type: Dict[str, Any]
-        self._datetime_start = datetime.now()
+        self._datetime_start = datetime.datetime.now()
         self._number = number
 
     def suggest_float(self, name, low, high, *, log=False):
@@ -1297,7 +1296,7 @@ class FixedTrial(BaseTrial):
 
     @property
     def datetime_start(self):
-        # type: () -> Optional[datetime]
+        # type: () -> Optional[datetime.datetime]
 
         return self._datetime_start
 
