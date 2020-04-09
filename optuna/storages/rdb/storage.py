@@ -17,8 +17,8 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.sql import functions
 from sqlalchemy import orm
+from sqlalchemy.sql import functions
 
 import optuna
 from optuna import distributions
@@ -363,13 +363,14 @@ class RDBStorage(BaseStorage):
         study_summary = study_summary_stmt.all()
         study_summaries = []
         for study in study_summary:
+            best_trial = None  # type: Optional[models.TrialModel]
             try:
                 if study.direction == StudyDirection.MAXIMIZE:
                     best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
                 else:
                     best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
             except ValueError:
-                best_trial = None
+                best_trial_frozen = None  # type: Optional[structs.FrozenTrial]
             if best_trial:
                 params = (
                     session.query(
@@ -395,7 +396,7 @@ class RDBStorage(BaseStorage):
                 intermediate = session.query(models.TrialValueModel).filter(
                     models.TrialValueModel.trial_id == best_trial.trial_id
                 )
-                best_trial = structs.FrozenTrial(
+                best_trial_frozen = structs.FrozenTrial(
                     best_trial.number,
                     structs.TrialState.COMPLETE,
                     best_trial.value,
@@ -419,7 +420,7 @@ class RDBStorage(BaseStorage):
                 StudySummary(
                     study_name=study.study_name,
                     direction=study.direction,
-                    best_trial=best_trial,
+                    best_trial=best_trial_frozen,
                     user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
                     system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
                     n_trials=study.n_trial,
