@@ -326,7 +326,6 @@ class TestChainerMNTrial(object):
                 with pytest.raises(ValueError):
                     mn_trial.suggest_loguniform("x1", low1, high1)
 
-
             low2 = 1e-7
             high2 = 1e-2
             for _ in range(10):
@@ -338,7 +337,7 @@ class TestChainerMNTrial(object):
                 x4 = mn_trial.suggest_loguniform("x2", low2, high2)
 
                 assert x3 == x4
-                
+
                 with pytest.raises(ValueError):
                     mn_trial.suggest_uniform("x2", low2, high2)
 
