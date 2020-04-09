@@ -113,6 +113,7 @@ jobs:
   tests-python37:
     docker:
       - image: circleci/python:3.7
+      - image: circleci/redis:5.0.7
     steps:
       - checkout
 
@@ -166,6 +167,7 @@ jobs:
   tests-python38:
     docker:
       - image: circleci/python:3.8
+      - image: circleci/redis:5.0.7
     steps:
       - checkout
 
@@ -188,12 +190,14 @@ jobs:
   tests-python36:
     docker:
       - image: circleci/python:3.6
+      - image: circleci/redis:5.0.7
     steps:
       [checkout, run: *checkout-merge-master, run: *install, run: *tests, run: *tests-mn]
 
   tests-python35:
     docker:
       - image: circleci/python:3.5
+      - image: circleci/redis:5.0.7
     steps:
       - checkout
 
@@ -212,6 +216,7 @@ jobs:
   codecov:
     docker:
       - image: circleci/python:3.7
+      - image: circleci/redis:5.0.7
     steps:
       - checkout
 

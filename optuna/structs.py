@@ -1,17 +1,24 @@
 import enum
 import warnings
 
+from optuna import _study_direction
 from optuna import exceptions
 from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from datetime import datetime  # NOQA
+    from datetime import timedelta  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+
+
+# The use of the structs.StudyDirection is deprecated and it is recommended that you use
+# study.StudyDirection instead. See the API reference for more details.
+StudyDirection = _study_direction.StudyDirection
 
 
 class TrialState(enum.Enum):
@@ -46,23 +53,6 @@ class TrialState(enum.Enum):
         return self != TrialState.RUNNING and self != TrialState.WAITING
 
 
-class StudyDirection(enum.Enum):
-    """Direction of a :class:`~optuna.study.Study`.
-
-    Attributes:
-        NOT_SET:
-            Direction has not been set.
-        MINIMIZE:
-            :class:`~optuna.study.Study` minimizes the objective function.
-        MAXIMIZE:
-            :class:`~optuna.study.Study` maximizes the objective function.
-    """
-
-    NOT_SET = 0
-    MINIMIZE = 1
-    MAXIMIZE = 2
-
-
 class FrozenTrial(object):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
@@ -80,8 +70,6 @@ class FrozenTrial(object):
             Datetime where the :class:`~optuna.trial.Trial` finished.
         params:
             Dictionary that contains suggested parameters.
-        distributions:
-            Dictionary that contains the distributions of :attr:`params`.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
@@ -213,23 +201,13 @@ class FrozenTrial(object):
     @property
     def distributions(self):
         # type: () -> Dict[str, BaseDistribution]
-        """Return the distributions for this trial.
-
-        Returns:
-            The distributions.
-        """
+        """Dictionary that contains the distributions of :attr:`params`."""
 
         return self._distributions
 
     @distributions.setter
     def distributions(self, value):
         # type: (Dict[str, BaseDistribution]) -> None
-        """Set the distributions for this trial.
-
-        Args:
-            value: The distributions.
-        """
-
         self._distributions = value
 
     @property
@@ -268,6 +246,20 @@ class FrozenTrial(object):
         else:
             return max(self.intermediate_values.keys())
 
+    @property
+    def duration(self):
+        # type: () -> Optional[timedelta]
+        """Return the elapsed time taken to complete the trial.
+
+        Returns:
+            The duration.
+        """
+
+        if self.datetime_start and self.datetime_complete:
+            return self.datetime_complete - self.datetime_start
+        else:
+            return None
+
 
 class StudySummary(object):
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
@@ -278,7 +270,7 @@ class StudySummary(object):
         study_name:
             Name of the :class:`~optuna.study.Study`.
         direction:
-            :class:`StudyDirection` of the :class:`~optuna.study.Study`.
+            :class:`~optuna.study.StudyDirection` of the :class:`~optuna.study.Study`.
         best_trial:
             :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
         user_attrs:
@@ -296,7 +288,7 @@ class StudySummary(object):
     def __init__(
         self,
         study_name,  # type: str
-        direction,  # type: StudyDirection
+        direction,  # type: _study_direction.StudyDirection
         best_trial,  # type: Optional[FrozenTrial]
         user_attrs,  # type: Dict[str, Any]
         system_attrs,  # type: Dict[str, Any]

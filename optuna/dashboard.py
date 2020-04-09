@@ -22,6 +22,7 @@ import numpy as np
 import optuna.logging
 import optuna.structs
 import optuna.study
+from optuna.study import StudyDirection
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -55,7 +56,7 @@ if _available:
 
     class _CompleteTrialsWidget(object):
         def __init__(self, trials, direction):
-            # type: (List[optuna.structs.FrozenTrial], optuna.structs.StudyDirection) -> None
+            # type: (List[optuna.structs.FrozenTrial], StudyDirection) -> None
 
             complete_trials = [
                 trial for trial in trials if trial.state == optuna.structs.TrialState.COMPLETE
@@ -64,7 +65,7 @@ if _available:
 
             self.direction = direction
             values = [trial.value for trial in complete_trials]
-            if direction == optuna.structs.StudyDirection.MINIMIZE:
+            if direction == StudyDirection.MINIMIZE:
                 best_values = np.minimum.accumulate(values, axis=0)
             else:
                 best_values = np.maximum.accumulate(values, axis=0)
@@ -101,7 +102,7 @@ if _available:
                     continue
                 stream_dict["#"].append(len(self.trial_ids))
                 stream_dict["value"].append(trial.value)
-                if self.direction == optuna.structs.StudyDirection.MINIMIZE:
+                if self.direction == StudyDirection.MINIMIZE:
                     self.best_value = min(self.best_value, trial.value)
                 else:
                     self.best_value = max(self.best_value, trial.value)

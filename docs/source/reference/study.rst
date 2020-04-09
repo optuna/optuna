@@ -12,3 +12,5 @@ Study
 .. autofunction:: load_study
 .. autofunction:: delete_study
 .. autofunction:: get_all_study_summaries
+
+.. autoclass:: StudyDirection

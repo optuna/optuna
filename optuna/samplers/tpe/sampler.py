@@ -10,7 +10,7 @@ from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers.tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna import structs
-from optuna.structs import StudyDirection
+from optuna.study import StudyDirection
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -218,10 +218,10 @@ class TPESampler(base.BaseSampler):
     def _sample_int(self, distribution, below, above):
         # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> int
 
-        q = 1.0
-        low = distribution.low - 0.5 * q
-        high = distribution.high + 0.5 * q
-        return int(self._sample_numerical(low, high, below, above, q=q))
+        d = distributions.DiscreteUniformDistribution(
+            low=distribution.low, high=distribution.high, q=distribution.step
+        )
+        return int(self._sample_discrete_uniform(d, below, above))
 
     def _sample_numerical(
         self,

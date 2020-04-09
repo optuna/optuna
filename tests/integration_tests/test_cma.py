@@ -13,8 +13,8 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.integration.cma import _Optimizer
 from optuna.structs import FrozenTrial
-from optuna.structs import StudyDirection
 from optuna.structs import TrialState
+from optuna.study import StudyDirection
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 
@@ -141,6 +141,7 @@ class TestOptimizer(object):
             "c": CategoricalDistribution(("a", "b")),
             "d": DiscreteUniformDistribution(-1, 9, 2),
             "i": IntUniformDistribution(-1, 1),
+            "ii": IntUniformDistribution(-1, 3, 2),
             "l": LogUniformDistribution(0.001, 0.1),
             "u": UniformDistribution(-2, 2),
         }
@@ -154,6 +155,7 @@ class TestOptimizer(object):
             "c": "a",
             "d": -1,
             "i": -1,
+            "ii": -1,
             "l": 0.001,
             "u": -2,
         }
@@ -164,18 +166,18 @@ class TestOptimizer(object):
 
         with patch("cma.CMAEvolutionStrategy") as mock_obj:
             optuna.integration.cma._Optimizer(
-                search_space, x0, 0.2, None, {"popsize": 4, "seed": 1}
+                search_space, x0, 0.2, None, {"popsize": 5, "seed": 1}
             )
             assert mock_obj.mock_calls[0] == call(
-                [0, 0, -1, math.log(0.001), -2],
+                [0, 0, -1, -1, math.log(0.001), -2],
                 0.2,
                 {
                     "BoundaryHandler": cma.BoundTransform,
                     "bounds": [
-                        [-0.5, -1.0, -1.5, math.log(0.001), -2],
-                        [1.5, 11.0, 1.5, math.log(0.1), 2],
+                        [-0.5, -1.0, -1.5, -1.5, math.log(0.001), -2],
+                        [1.5, 11.0, 1.5, 3.5, math.log(0.1), 2],
                     ],
-                    "popsize": 4,
+                    "popsize": 5,
                     "seed": 1,
                 },
             )

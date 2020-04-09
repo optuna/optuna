@@ -10,6 +10,7 @@ from joblib import delayed
 from joblib import Parallel
 
 from optuna._experimental import experimental
+from optuna._study_direction import StudyDirection
 
 try:
     import pandas as pd  # NOQA
@@ -94,11 +95,11 @@ class BaseStudy(object):
 
     @property
     def direction(self):
-        # type: () -> structs.StudyDirection
+        # type: () -> StudyDirection
         """Return the direction of the study.
 
         Returns:
-            A :class:`~optuna.structs.StudyDirection` object.
+            A :class:`~optuna.study.StudyDirection` object.
         """
 
         return self._storage.get_study_direction(self._study_id)
@@ -410,6 +411,7 @@ class Study(BaseStudy):
             "value",
             "datetime_start",
             "datetime_complete",
+            "duration",
             "params",
             "user_attrs",
             "system_attrs",
@@ -825,9 +827,9 @@ def create_study(
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
     if direction == "minimize":
-        _direction = structs.StudyDirection.MINIMIZE
+        _direction = StudyDirection.MINIMIZE
     elif direction == "maximize":
-        _direction = structs.StudyDirection.MAXIMIZE
+        _direction = StudyDirection.MAXIMIZE
     else:
         raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
 

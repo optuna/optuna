@@ -40,6 +40,8 @@ class _BaseCommand(Command):
 
 
 class _CreateStudy(_BaseCommand):
+    """Create a new study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -70,9 +72,9 @@ class _CreateStudy(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
-        storage = optuna.storages.RDBStorage(storage_url)
+        storage = optuna.storages.get_storage(storage_url)
         study_name = optuna.create_study(
-            storage,
+            storage=storage,
             study_name=parsed_args.study_name,
             direction=parsed_args.direction,
             load_if_exists=parsed_args.skip_if_exists,
@@ -81,6 +83,8 @@ class _CreateStudy(_BaseCommand):
 
 
 class _DeleteStudy(_BaseCommand):
+    """Delete a specified study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -96,12 +100,14 @@ class _DeleteStudy(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
-        storage = optuna.storages.RDBStorage(storage_url)
+        storage = optuna.storages.get_storage(storage_url)
         study_id = storage.get_study_id_from_name(parsed_args.study_name)
         storage.delete_study(study_id)
 
 
 class _StudySetUserAttribute(_BaseCommand):
+    """Set a user attribute to a study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -122,6 +128,7 @@ class _StudySetUserAttribute(_BaseCommand):
 
 
 class _Studies(Lister):
+    """Show a list of studies."""
 
     _datetime_format = "%Y-%m-%d %H:%M:%S"
     _study_list_header = ("NAME", "DIRECTION", "N_TRIALS", "DATETIME_START")
@@ -152,6 +159,8 @@ class _Studies(Lister):
 
 
 class _Dashboard(_BaseCommand):
+    """Launch web dashboard (beta)."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -191,6 +200,8 @@ class _Dashboard(_BaseCommand):
 
 
 class _StudyOptimize(_BaseCommand):
+    """Start optimization of a study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -254,6 +265,8 @@ class _StudyOptimize(_BaseCommand):
 
 
 class _StorageUpgrade(_BaseCommand):
+    """Upgrade the schema of a storage."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -264,6 +277,9 @@ class _StorageUpgrade(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
+        if storage_url.startswith("redis"):
+            self.logger.info("This storage does not support upgrade yet.")
+            return
         storage = RDBStorage(storage_url, skip_compatibility_check=True)
         current_version = storage.get_current_version()
         head_version = storage.get_head_version()
