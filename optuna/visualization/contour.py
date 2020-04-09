@@ -13,8 +13,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
 
-    from optuna.trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
     from optuna.visualization.plotly_imports import Contour  # NOQA
     from optuna.visualization.plotly_imports import Scatter  # NOQA
 

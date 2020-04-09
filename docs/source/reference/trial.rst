@@ -10,8 +10,8 @@ Trial
 
 .. autoclass:: FixedTrial
 
-.. autoclass:: TrialState
+.. autoclass:: FrozenTrial
     :members:
 
-.. autoclass:: FrozenTrial
+.. autoclass:: TrialState
     :members:
