@@ -1,6 +1,5 @@
 import abc
-from datetime import datetime
-from datetime import timedelta
+import datetime
 import decimal
 import enum
 import warnings
@@ -88,8 +87,8 @@ class FrozenTrial(object):
         number,  # type: int
         state,  # type: TrialState
         value,  # type: Optional[float]
-        datetime_start,  # type: Optional[datetime]
-        datetime_complete,  # type: Optional[datetime]
+        datetime_start,  # type: Optional[datetime.datetime]
+        datetime_complete,  # type: Optional[datetime.datetime]
         params,  # type: Dict[str, Any]
         distributions,  # type: Dict[str, BaseDistribution]
         user_attrs,  # type: Dict[str, Any]
@@ -253,7 +252,7 @@ class FrozenTrial(object):
 
     @property
     def duration(self):
-        # type: () -> Optional[timedelta]
+        # type: () -> Optional[datetime.timedelta]
         """Return the elapsed time taken to complete the trial.
 
         Returns:
@@ -272,83 +271,98 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     Note that this class is not supposed to be directly accessed by library users.
     """
 
+    @abc.abstractmethod
     def suggest_float(self, name, low, high, *, log=False):
         # type: (str, float, float, bool) -> float
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def suggest_discrete_uniform(self, name, low, high, q):
         # type: (str, float, float, float) -> float
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def suggest_int(self, name, low, high, step=1):
         # type: (str, int, int, int) -> int
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def report(self, value, step):
         # type: (float, int) -> None
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def should_prune(self, step=None):
         # type: (Optional[int]) -> bool
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
 
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def params(self):
         # type: () -> Dict[str, Any]
 
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def distributions(self):
         # type: () -> Dict[str, BaseDistribution]
 
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def user_attrs(self):
         # type: () -> Dict[str, Any]
 
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def system_attrs(self):
         # type: () -> Dict[str, Any]
 
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def datetime_start(self):
-        # type: () -> Optional[datetime]
+        # type: () -> Optional[datetime.datetime]
 
         raise NotImplementedError
 
@@ -1113,7 +1127,7 @@ class Trial(BaseTrial):
 
     @property
     def datetime_start(self):
-        # type: () -> Optional[datetime]
+        # type: () -> Optional[datetime.datetime]
         """Return start datetime.
 
         Returns:
@@ -1185,7 +1199,7 @@ class FixedTrial(BaseTrial):
         self._distributions = {}  # type: Dict[str, BaseDistribution]
         self._user_attrs = {}  # type: Dict[str, Any]
         self._system_attrs = {}  # type: Dict[str, Any]
-        self._datetime_start = datetime.now()
+        self._datetime_start = datetime.datetime.now()
         self._number = number
 
     def suggest_float(self, name, low, high, *, log=False):
@@ -1297,7 +1311,7 @@ class FixedTrial(BaseTrial):
 
     @property
     def datetime_start(self):
-        # type: () -> Optional[datetime]
+        # type: () -> Optional[datetime.datetime]
 
         return self._datetime_start
 

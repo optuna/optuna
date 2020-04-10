@@ -7,8 +7,7 @@ Structs
     :members:
 
     .. deprecated:: 1.4.0
-            The use of this class is deprecated and it is recommended that you use :class:`~optuna.trial.TrialState` instead.
-
+            This class is deprecated. Please use :class:`~optuna.trial.TrialState` instead.
 
 .. autoclass:: StudyDirection
     :members:

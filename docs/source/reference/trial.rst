@@ -10,8 +10,9 @@ Trial
 
 .. autoclass:: FixedTrial
 
-.. autoclass:: TrialState
-    :members:
-
 .. autoclass:: FrozenTrial
+    :members:
+    :exclude-members: system_attrs, trial_id
+
+.. autoclass:: TrialState
     :members:
