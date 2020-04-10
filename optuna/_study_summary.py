@@ -91,7 +91,6 @@ class StudySummary(object):
             The study ID.
 
         """
-
         message = (
             "The use of `StudySummary.study_id` is deprecated. "
             "Please use `StudySummary.study_name` instead."
