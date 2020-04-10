@@ -150,7 +150,7 @@ def test_suggest_loguniform(storage_init_func):
     with patch.object(sampler, "sample_independent", mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = distributions.LogUniformDistribution(low=0.1, high=3.0)
+        distribution = distributions.LogUniformDistribution(low=0.1, high=4.0)
 
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
