@@ -1,8 +1,8 @@
 import math
 
 from optuna.logging import get_logger
-from optuna.structs import TrialState
 from optuna.study import StudyDirection
+from optuna.trial import TrialState
 from optuna import type_checking
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import _is_log_scale
@@ -13,8 +13,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
 
-    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
     from optuna.visualization.plotly_imports import Contour  # NOQA
     from optuna.visualization.plotly_imports import Scatter  # NOQA
 

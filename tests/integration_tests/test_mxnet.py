@@ -54,11 +54,11 @@ def test_mxnet_pruning_callback():
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     study.optimize(lambda trial: objective(trial, "accuracy"), n_trials=1)
-    assert study.trials[0].state == optuna.structs.TrialState.PRUNED
+    assert study.trials[0].state == optuna.trial.TrialState.PRUNED
 
     study = optuna.create_study(pruner=DeterministicPruner(False))
     study.optimize(lambda trial: objective(trial, "accuracy"), n_trials=1)
-    assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
+    assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
     with pytest.raises(ValueError):

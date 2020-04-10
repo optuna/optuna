@@ -15,8 +15,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Union
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
     GridValueType = Union[str, float, int, bool, None]
 

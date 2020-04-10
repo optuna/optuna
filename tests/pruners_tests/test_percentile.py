@@ -4,8 +4,8 @@ import pytest
 
 import optuna
 from optuna.pruners import percentile
-from optuna.structs import TrialState
 from optuna.study import StudyDirection
+from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

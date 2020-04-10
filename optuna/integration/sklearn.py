@@ -38,10 +38,10 @@ from optuna import distributions  # NOQA
 from optuna import exceptions  # NOQA
 from optuna import logging  # NOQA
 from optuna import samplers  # NOQA
-from optuna import structs  # NOQA
 from optuna import study as study_module  # NOQA
 from optuna.study import StudyDirection  # NOQA
 from optuna import trial as trial_module  # NOQA
+from optuna.trial import FrozenTrial  # NOQA
 from optuna import type_checking  # NOQA
 
 if type_checking.TYPE_CHECKING:
@@ -566,7 +566,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def best_trial_(self):
-        # type: () -> structs.FrozenTrial
+        # type: () -> FrozenTrial
         """Best trial in the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()
@@ -591,7 +591,7 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def trials_(self):
-        # type: () -> List[structs.FrozenTrial]
+        # type: () -> List[FrozenTrial]
         """All trials in the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()

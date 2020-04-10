@@ -51,11 +51,11 @@ def test_tensorflow_pruning_hook():
 
     study = optuna.create_study(pruner=DeterministicPruner(True), direction="maximize")
     study.optimize(objective, n_trials=1)
-    assert study.trials[0].state == optuna.structs.TrialState.PRUNED
+    assert study.trials[0].state == optuna.trial.TrialState.PRUNED
 
     study = optuna.create_study(pruner=DeterministicPruner(False), direction="maximize")
     study.optimize(objective, n_trials=1)
-    assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
+    assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
     # Check if eval_metrics returns the None value.
@@ -65,4 +65,4 @@ def test_tensorflow_pruning_hook():
         study.optimize(objective, n_trials=1)
         assert mock_obj.call_count == 1
         assert math.isnan(study.trials[0].intermediate_values[10])
-        assert study.trials[0].state == optuna.structs.TrialState.PRUNED
+        assert study.trials[0].state == optuna.trial.TrialState.PRUNED

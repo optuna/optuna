@@ -15,10 +15,10 @@ from optuna.storages import BaseStorage  # NOQA
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
-from optuna.structs import FrozenTrial
-from optuna.structs import TrialState
 from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
