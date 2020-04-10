@@ -28,7 +28,7 @@ class AllenNLPExecutor(object):
             An allennlp config file.
             Hyperparameters should be masked with `std.extVar`.
             Please refer to `the config example <https://github.com/allenai/allentune/blob/
-            f2b7de2cad2026c2a50625b939b2db3c1d9bc580/examples/classifier.jsonnet>`_.
+            master/examples/classifier.jsonnet>`_.
         serialization_dir:
             A path which model weights and logs are saved.
         metrics:
