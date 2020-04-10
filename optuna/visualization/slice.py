@@ -1,3 +1,5 @@
+import warnings
+
 from optuna.logging import get_logger
 from optuna.trial import TrialState
 from optuna import type_checking
@@ -60,6 +62,11 @@ def plot_slice(study, params=None):
         A :class:`plotly.graph_objs.Figure` object.
     """
 
+    if len(study.trials) > 1000:
+        warnings.warn(
+            "Plotting {} trials, which may cause unstable behavior"
+            " of the visualization feature with too many trials."
+        )
     _check_plotly_availability()
     return _get_slice_plot(study, params)
 
@@ -67,7 +74,7 @@ def plot_slice(study, params=None):
 def _get_slice_plot(study, params=None):
     # type: (Study, Optional[List[str]]) -> go.Figure
 
-    layout = go.Layout(title="Slice Plot",)
+    layout = go.Layout(title="Slice Plot")
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
@@ -88,7 +95,7 @@ def _get_slice_plot(study, params=None):
 
     if n_params == 1:
         figure = go.Figure(
-            data=[_generate_slice_subplot(study, trials, sorted_params[0])], layout=layout
+            data=[_generate_slice_subplot(study, trials, sorted_params[0])], layout=layout,
         )
         figure.update_xaxes(title_text=sorted_params[0])
         figure.update_yaxes(title_text="Objective Value")
@@ -124,7 +131,7 @@ def _generate_slice_subplot(study, trials, param):
         y=[t.value for t in trials if param in t.params],
         mode="markers",
         marker={
-            "line": {"width": 0.5, "color": "Grey",},
+            "line": {"width": 0.5, "color": "Grey"},
             "color": [t.number for t in trials if param in t.params],
             "colorscale": "Blues",
             "colorbar": {

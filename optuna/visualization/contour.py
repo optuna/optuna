@@ -1,4 +1,5 @@
 import math
+import warnings
 
 from optuna.logging import get_logger
 from optuna.study import StudyDirection
@@ -66,6 +67,11 @@ def plot_contour(study, params=None):
         A :class:`plotly.graph_objs.Figure` object.
     """
 
+    if len(study.trials) > 1000:
+        warnings.warn(
+            "Plotting {} trials, which may cause unstable behavior"
+            " of the visualization feature with too many trials."
+        )
     _check_plotly_availability()
     return _get_contour_plot(study, params)
 
@@ -73,7 +79,7 @@ def plot_contour(study, params=None):
 def _get_contour_plot(study, params=None):
     # type: (Study, Optional[List[str]]) -> go.Figure
 
-    layout = go.Layout(title="Contour Plot",)
+    layout = go.Layout(title="Contour Plot")
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
@@ -113,7 +119,7 @@ def _get_contour_plot(study, params=None):
             figure.update_yaxes(range=log_range, type="log")
     else:
         figure = make_subplots(
-            rows=len(sorted_params), cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True
+            rows=len(sorted_params), cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True,
         )
         showscale = True  # showscale option only needs to be specified once
         for x_i, x_param in enumerate(sorted_params):
@@ -200,7 +206,7 @@ def _generate_contour_subplot(trials, x_param, y_param, direction):
     )
 
     scatter = go.Scatter(
-        x=x_values, y=y_values, marker={"color": "black"}, mode="markers", showlegend=False
+        x=x_values, y=y_values, marker={"color": "black"}, mode="markers", showlegend=False,
     )
 
     return (contour, scatter)

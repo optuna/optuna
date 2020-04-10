@@ -1,3 +1,5 @@
+import warnings
+
 from optuna.logging import get_logger
 from optuna.trial import TrialState
 from optuna import type_checking
@@ -50,6 +52,11 @@ def plot_intermediate_values(study):
         A :class:`plotly.graph_objs.Figure` object.
     """
 
+    if len(study.trials) > 1000:
+        warnings.warn(
+            "Plotting {} trials, which may cause unstable behavior"
+            " of the visualization feature with too many trials."
+        )
     _check_plotly_availability()
     return _get_intermediate_plot(study)
 

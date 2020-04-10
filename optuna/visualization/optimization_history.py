@@ -1,3 +1,5 @@
+import warnings
+
 from optuna.logging import get_logger
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
@@ -51,6 +53,11 @@ def plot_optimization_history(study):
         A :class:`plotly.graph_objs.Figure` object.
     """
 
+    if len(study.trials) > 1000:
+        warnings.warn(
+            "Plotting {} trials, which may cause unstable behavior"
+            " of the visualization feature with too many trials."
+        )
     _check_plotly_availability()
     return _get_optimization_history_plot(study)
 

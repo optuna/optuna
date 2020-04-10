@@ -4,6 +4,7 @@ from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
+import warnings
 
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -58,13 +59,18 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
         A :class:`plotly.graph_objs.Figure` object.
     """
 
+    if len(study.trials) > 1000:
+        warnings.warn(
+            "Plotting {} trials, which may cause unstable behavior"
+            " of the visualization feature with too many trials."
+        )
     _check_plotly_availability()
     return _get_parallel_coordinate_plot(study, params)
 
 
 def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
-    layout = go.Layout(title="Parallel Coordinate Plot",)
+    layout = go.Layout(title="Parallel Coordinate Plot")
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 

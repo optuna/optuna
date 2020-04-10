@@ -32,7 +32,6 @@ jobs:
                 git fetch -u origin ${FETCH_REFS}
                 git checkout "pr/${CIRCLE_PR_NUMBER}/merge"
             fi
-
       - run:
           name: install
           command: |
@@ -40,25 +39,21 @@ jobs:
             . venv/bin/activate
             pip install -U pip
             pip install --progress-bar off .[checking]
-
       - run:
           name: black
           command: |
             . venv/bin/activate
             black . --line-length 99 --check --exclude="docs"
-
       - run:
           name: flake8
           command: |
             . venv/bin/activate
             flake8 .
-
       - run:
           name: mypy
           command: |
             . venv/bin/activate
             mypy .
-
   document:
     docker:
       - image: readthedocs/build:latest
@@ -74,13 +69,14 @@ jobs:
             . venv/bin/activate
             pip install -U pip
             pip install --progress-bar off .[document]
-
       - run:
           name: build
           command: |
             . venv/bin/activate
             cd docs
             make html
+      - store_artifacts:
+          path: ./docs/build
 
       - store_artifacts:
           path: ./docs/build
@@ -100,14 +96,12 @@ jobs:
             . venv/bin/activate
             pip install -U pip
             pip install --progress-bar off .[doctest,document]
-
       - run:
           name: build
           command: |
             . venv/bin/activate
             cd docs
             make doctest
-
   # Unit tests
 
   tests-python37:
@@ -124,7 +118,6 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get -y install openmpi-bin libopenmpi-dev
-
             # Install swig which is required by pyrfr which is required by fanova.
             wget http://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz
             tar -zxvf swig-3.0.12.tar.gz
@@ -134,20 +127,16 @@ jobs:
             sudo make install
             popd
             swig -version
-
             python -m venv venv || virtualenv venv
             . venv/bin/activate
             pip install -U pip
             pip install --progress-bar off -U setuptools
             python setup.py sdist
-
             # Install minimal dependencies and confirm that `import optuna` is successful.
             pip install --progress-bar off $(ls dist/*.tar.gz)
             python -c 'import optuna'
-
             # Install all dependencies needed for testing.
             pip install --progress-bar off $(ls dist/*.tar.gz)[testing]
-
       - run: &tests
           name: tests
           command: |
@@ -184,7 +173,6 @@ jobs:
                 --ignore tests/integration_tests/test_pytorch_lightning.py \
                 --ignore tests/integration_tests/test_tensorflow.py \
                 --ignore tests/integration_tests/test_tfkeras.py
-
       - run: *tests-mn
 
   tests-python36:
@@ -210,7 +198,6 @@ jobs:
           command: |
             . venv/bin/activate
             pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_fastai.py
-
       - run: *tests-mn
 
   codecov:
@@ -229,7 +216,6 @@ jobs:
           command: |
             . venv/bin/activate
             pip install --progress-bar off .[codecov]
-
       - run:
           name: codecov
           command: |
