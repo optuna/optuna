@@ -24,7 +24,10 @@ from optuna import distributions
 from optuna.storages.base import BaseStorage
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.rdb import models
-from optuna import structs
+from optuna.study import StudyDirection
+from optuna.study import StudySummary
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 from optuna import type_checking
 from optuna import version
 
@@ -152,7 +155,7 @@ class RDBStorage(BaseStorage):
         if study_name is None:
             study_name = self._create_unique_study_name(session)
 
-        study = models.StudyModel(study_name=study_name, direction=structs.StudyDirection.NOT_SET)
+        study = models.StudyModel(study_name=study_name, direction=StudyDirection.NOT_SET)
         session.add(study)
         if not self._commit_with_integrity_check(session):
             raise optuna.exceptions.DuplicatedStudyError(
@@ -191,13 +194,13 @@ class RDBStorage(BaseStorage):
 
     # TODO(sano): Prevent simultaneously setting different direction in distributed environments.
     def set_study_direction(self, study_id, direction):
-        # type: (int, structs.StudyDirection) -> None
+        # type: (int, StudyDirection) -> None
 
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        if study.direction != structs.StudyDirection.NOT_SET and study.direction != direction:
+        if study.direction != StudyDirection.NOT_SET and study.direction != direction:
             raise ValueError(
                 "Cannot overwrite study direction from {} to {}.".format(
                     study.direction, direction
@@ -276,7 +279,7 @@ class RDBStorage(BaseStorage):
         return study.study_name
 
     def get_study_direction(self, study_id):
-        # type: (int) -> structs.StudyDirection
+        # type: (int) -> StudyDirection
 
         session = self.scoped_session()
 
@@ -336,7 +339,7 @@ class RDBStorage(BaseStorage):
 
     # TODO(sano): Optimize this method to reduce the number of queries.
     def get_all_study_summaries(self):
-        # type: () -> List[structs.StudySummary]
+        # type: () -> List[StudySummary]
 
         session = self.scoped_session()
 
@@ -354,11 +357,11 @@ class RDBStorage(BaseStorage):
 
             # Get best trial.
             completed_trial_models = [
-                t for t in study_trial_models if t.state is structs.TrialState.COMPLETE
+                t for t in study_trial_models if t.state is TrialState.COMPLETE
             ]
             best_trial = None
             if len(completed_trial_models) > 0:
-                if study_model.direction == structs.StudyDirection.MAXIMIZE:
+                if study_model.direction == StudyDirection.MAXIMIZE:
                     best_trial_model = max(completed_trial_models, key=lambda t: t.value)
                 else:
                     best_trial_model = min(completed_trial_models, key=lambda t: t.value)
@@ -401,7 +404,7 @@ class RDBStorage(BaseStorage):
 
             # Consolidate StudySummary.
             study_summaries.append(
-                structs.StudySummary(
+                StudySummary(
                     study_name=study_model.study_name,
                     direction=self.get_study_direction(study_model.study_id),
                     best_trial=best_trial,
@@ -419,20 +422,18 @@ class RDBStorage(BaseStorage):
         return study_summaries
 
     def create_new_trial(self, study_id, template_trial=None):
-        # type: (int, Optional[structs.FrozenTrial]) -> int
+        # type: (int, Optional[FrozenTrial]) -> int
 
         session = self.scoped_session()
 
         if template_trial is None:
-            trial = models.TrialModel(
-                study_id=study_id, number=None, state=structs.TrialState.RUNNING,
-            )
+            trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING,)
         else:
             # Because only `RUNNING` trials can be updated,
             # we temporarily set the state of the new trial to `RUNNING`.
             # After all fields of the trial have been updated,
             # the state is set to `template_trial.state`.
-            temp_state = structs.TrialState.RUNNING
+            temp_state = TrialState.RUNNING
 
             trial = models.TrialModel(
                 study_id=study_id,
@@ -481,7 +482,7 @@ class RDBStorage(BaseStorage):
         return trial.trial_id
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, structs.TrialState) -> bool
+        # type: (int, TrialState) -> bool
 
         session = self.scoped_session()
 
@@ -492,7 +493,7 @@ class RDBStorage(BaseStorage):
 
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        if state == structs.TrialState.RUNNING and trial.state != structs.TrialState.WAITING:
+        if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
             session.rollback()
             return False
 
@@ -665,12 +666,12 @@ class RDBStorage(BaseStorage):
         return trial_number
 
     def get_trial(self, trial_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         return self._get_and_cache_trial(trial_id)
 
     def _get_and_cache_trial(self, trial_id, deepcopy=True):
-        # type: (int, bool) -> structs.FrozenTrial
+        # type: (int, bool) -> FrozenTrial
 
         cached_trial = self._finished_trials_cache.get_cached_trial(trial_id)
         if cached_trial is not None:
@@ -699,7 +700,7 @@ class RDBStorage(BaseStorage):
         return frozen_trial
 
     def get_all_trials(self, study_id, deepcopy=True):
-        # type: (int, bool) -> List[structs.FrozenTrial]
+        # type: (int, bool) -> List[FrozenTrial]
 
         if self._finished_trials_cache.is_empty():
             trials = self._get_all_trials_without_cache(study_id)
@@ -713,10 +714,10 @@ class RDBStorage(BaseStorage):
         return trials
 
     def get_best_trial(self, study_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         session = self.scoped_session()
-        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
             trial = models.TrialModel.find_max_value_trial(study_id, session)
         else:
             trial = models.TrialModel.find_min_value_trial(study_id, session)
@@ -739,7 +740,7 @@ class RDBStorage(BaseStorage):
         return trial_ids
 
     def _get_all_trials_without_cache(self, study_id):
-        # type: (int) -> List[structs.FrozenTrial]
+        # type: (int) -> List[FrozenTrial]
 
         session = self.scoped_session()
 
@@ -759,7 +760,7 @@ class RDBStorage(BaseStorage):
         return all_trials
 
     def get_n_trials(self, study_id, state=None):
-        # type: (int, Optional[structs.TrialState]) -> int
+        # type: (int, Optional[TrialState]) -> int
 
         session = self.scoped_session()
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
@@ -777,7 +778,7 @@ class RDBStorage(BaseStorage):
         trial_user_attrs,  # type: List[models.TrialUserAttributeModel]
         trial_system_attrs,  # type: List[models.TrialSystemAttributeModel]
     ):
-        # type: (...) -> List[structs.FrozenTrial]
+        # type: (...) -> List[FrozenTrial]
 
         id_to_trial = {}
         for trial in trials:
@@ -825,7 +826,7 @@ class RDBStorage(BaseStorage):
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
             result.append(
-                structs.FrozenTrial(
+                FrozenTrial(
                     number=trial.number,
                     state=trial.state,
                     params=params,
@@ -1112,7 +1113,7 @@ class _FinishedTrialsCache(object):
     def __init__(self):
         # type: () -> None
 
-        self._finished_trials = {}  # type: Dict[int, structs.FrozenTrial]
+        self._finished_trials = {}  # type: Dict[int, FrozenTrial]
         self._lock = threading.Lock()
 
     def is_empty(self):
@@ -1122,14 +1123,14 @@ class _FinishedTrialsCache(object):
             return len(self._finished_trials) == 0
 
     def cache_trial_if_finished(self, trial):
-        # type: (structs.FrozenTrial) -> None
+        # type: (FrozenTrial) -> None
 
         if trial.state.is_finished():
             with self._lock:
                 self._finished_trials[trial._trial_id] = trial
 
     def get_cached_trial(self, trial_id):
-        # type: (int) -> Optional[structs.FrozenTrial]
+        # type: (int) -> Optional[FrozenTrial]
 
         with self._lock:
             return self._finished_trials.get(trial_id)

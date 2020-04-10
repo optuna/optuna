@@ -165,5 +165,16 @@ setup(
     install_requires=get_install_requires(),
     tests_require=get_tests_require(),
     extras_require=get_extras_require(),
-    entry_points={"console_scripts": ["optuna = optuna.cli:main"]},
+    entry_points={
+        "console_scripts": ["optuna = optuna.cli:main"],
+        "optuna.command": [
+            "create-study = optuna.cli:_CreateStudy",
+            "delete-study = optuna.cli:_DeleteStudy",
+            "study set-user-attr = optuna.cli:_StudySetUserAttribute",
+            "studies = optuna.cli:_Studies",
+            "dashboard = optuna.cli:_Dashboard",
+            "study optimize = optuna.cli:_StudyOptimize",
+            "storage upgrade = optuna.cli:_StorageUpgrade",
+        ],
+    },
 )

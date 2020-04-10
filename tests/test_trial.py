@@ -1,3 +1,5 @@
+import copy
+import datetime
 import math
 import warnings
 
@@ -6,19 +8,31 @@ from mock import patch
 import numpy as np
 import pytest
 
-from optuna import distributions
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna import samplers
 from optuna import storages
 from optuna.study import create_study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FixedTrial
+from optuna.trial import FrozenTrial
 from optuna.trial import Trial
+from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from datetime import datetime  # NOQA
-    import typing  # NOQA
+    from typing import Any  # NOQA
+    from typing import Callable  # NOQA
+    from typing import Dict  # NOQA
+    from typing import List  # NOQA
+    from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
+
+    from optuna.distributions import BaseDistribution  # NOQA
 
 parametrize_storage = pytest.mark.parametrize(
     "storage_init_func",
@@ -28,7 +42,7 @@ parametrize_storage = pytest.mark.parametrize(
 
 @parametrize_storage
 def test_check_distribution_suggest_float(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     sampler = samplers.RandomSampler()
     study = create_study(storage_init_func(), sampler=sampler)
@@ -47,7 +61,7 @@ def test_check_distribution_suggest_float(storage_init_func):
 
 @parametrize_storage
 def test_check_distribution_suggest_uniform(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     sampler = samplers.RandomSampler()
     study = create_study(storage_init_func(), sampler=sampler)
@@ -64,7 +78,7 @@ def test_check_distribution_suggest_uniform(storage_init_func):
 
 @parametrize_storage
 def test_check_distribution_suggest_loguniform(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     sampler = samplers.RandomSampler()
     study = create_study(storage_init_func(), sampler=sampler)
@@ -81,7 +95,7 @@ def test_check_distribution_suggest_loguniform(storage_init_func):
 
 @parametrize_storage
 def test_check_distribution_suggest_discrete_uniform(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     sampler = samplers.RandomSampler()
     study = create_study(storage_init_func(), sampler=sampler)
@@ -98,7 +112,7 @@ def test_check_distribution_suggest_discrete_uniform(storage_init_func):
 
 @parametrize_storage
 def test_check_distribution_suggest_int(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     sampler = samplers.RandomSampler()
     study = create_study(storage_init_func(), sampler=sampler)
@@ -115,7 +129,7 @@ def test_check_distribution_suggest_int(storage_init_func):
 
 @parametrize_storage
 def test_suggest_uniform(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     mock = Mock()
     mock.side_effect = [1.0, 2.0, 3.0]
@@ -124,7 +138,7 @@ def test_suggest_uniform(storage_init_func):
     with patch.object(sampler, "sample_independent", mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = distributions.UniformDistribution(low=0.0, high=3.0)
+        distribution = UniformDistribution(low=0.0, high=3.0)
 
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
@@ -135,13 +149,13 @@ def test_suggest_uniform(storage_init_func):
 
 @parametrize_storage
 def test_suggest_loguniform(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     with pytest.raises(ValueError):
-        distributions.LogUniformDistribution(low=1.0, high=0.9)
+        LogUniformDistribution(low=1.0, high=0.9)
 
     with pytest.raises(ValueError):
-        distributions.LogUniformDistribution(low=0.0, high=0.9)
+        LogUniformDistribution(low=0.0, high=0.9)
 
     mock = Mock()
     mock.side_effect = [1.0, 2.0, 3.0]
@@ -150,7 +164,7 @@ def test_suggest_loguniform(storage_init_func):
     with patch.object(sampler, "sample_independent", mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = distributions.LogUniformDistribution(low=0.1, high=4.0)
+        distribution = LogUniformDistribution(low=0.1, high=4.0)
 
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
@@ -161,7 +175,7 @@ def test_suggest_loguniform(storage_init_func):
 
 @parametrize_storage
 def test_suggest_discrete_uniform(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     mock = Mock()
     mock.side_effect = [1.0, 2.0, 3.0]
@@ -170,7 +184,7 @@ def test_suggest_discrete_uniform(storage_init_func):
     with patch.object(sampler, "sample_independent", mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = distributions.DiscreteUniformDistribution(low=0.0, high=3.0, q=1.0)
+        distribution = DiscreteUniformDistribution(low=0.0, high=3.0, q=1.0)
 
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
@@ -181,7 +195,7 @@ def test_suggest_discrete_uniform(storage_init_func):
 
 @parametrize_storage
 def test_suggest_low_equals_high(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     study = create_study(storage_init_func(), sampler=samplers.TPESampler(n_startup_trials=0))
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -229,7 +243,7 @@ def test_suggest_low_equals_high(storage_init_func):
     ],
 )
 def test_suggest_discrete_uniform_range(storage_init_func, range_config):
-    # type: (typing.Callable[[], storages.BaseStorage], typing.Dict[str, float]) -> None
+    # type: (Callable[[], storages.BaseStorage], Dict[str, float]) -> None
 
     sampler = samplers.RandomSampler()
 
@@ -262,7 +276,7 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
 
 @parametrize_storage
 def test_suggest_int(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     mock = Mock()
     mock.side_effect = [1, 2, 3]
@@ -271,7 +285,7 @@ def test_suggest_int(storage_init_func):
     with patch.object(sampler, "sample_independent", mock) as mock_object:
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = distributions.IntUniformDistribution(low=0, high=3)
+        distribution = IntUniformDistribution(low=0, high=3)
 
         assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
@@ -282,7 +296,7 @@ def test_suggest_int(storage_init_func):
 
 @parametrize_storage
 def test_distributions(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     def objective(trial):
         # type: (Trial) -> float
@@ -299,11 +313,11 @@ def test_distributions(storage_init_func):
     study.optimize(objective, n_trials=1)
 
     assert study.best_trial.distributions == {
-        "a": distributions.UniformDistribution(low=0, high=10),
-        "b": distributions.LogUniformDistribution(low=0.1, high=10),
-        "c": distributions.DiscreteUniformDistribution(low=0, high=10, q=1),
-        "d": distributions.IntUniformDistribution(low=0, high=10),
-        "e": distributions.CategoricalDistribution(choices=("foo", "bar", "baz")),
+        "a": UniformDistribution(low=0, high=10),
+        "b": LogUniformDistribution(low=0.1, high=10),
+        "c": DiscreteUniformDistribution(low=0, high=10, q=1),
+        "d": IntUniformDistribution(low=0, high=10),
+        "e": CategoricalDistribution(choices=("foo", "bar", "baz")),
     }
 
 
@@ -447,13 +461,23 @@ def test_fixed_trial_datetime_start():
     assert trial.datetime_start is not None
 
 
+def test_fixed_trial_number() -> None:
+
+    params = {"x": 1}
+    trial = FixedTrial(params, 2)
+    assert trial.number == 2
+
+    trial = FixedTrial(params)
+    assert trial.number == 0
+
+
 @parametrize_storage
 def test_relative_parameters(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
     relative_search_space = {
-        "x": distributions.UniformDistribution(low=5, high=6),
-        "y": distributions.UniformDistribution(low=5, high=6),
+        "x": UniformDistribution(low=5, high=6),
+        "y": UniformDistribution(low=5, high=6),
     }
     relative_params = {"x": 5.5, "y": 5.5, "z": 5.5}
 
@@ -467,7 +491,7 @@ def test_relative_parameters(storage_init_func):
 
     # Suggested from `relative_params`.
     trial0 = create_trial()
-    distribution0 = distributions.UniformDistribution(low=0, high=100)
+    distribution0 = UniformDistribution(low=0, high=100)
     assert trial0._suggest("x", distribution0) == 5.5
 
     # Not suggested from `relative_params` (due to unknown parameter name).
@@ -477,27 +501,27 @@ def test_relative_parameters(storage_init_func):
 
     # Not suggested from `relative_params` (due to incompatible value range).
     trial2 = create_trial()
-    distribution2 = distributions.UniformDistribution(low=0, high=5)
+    distribution2 = UniformDistribution(low=0, high=5)
     assert trial2._suggest("x", distribution2) != 5.5
 
     # Error (due to incompatible distribution class).
     trial3 = create_trial()
-    distribution3 = distributions.IntUniformDistribution(low=1, high=100)
+    distribution3 = IntUniformDistribution(low=1, high=100)
     with pytest.raises(ValueError):
         trial3._suggest("y", distribution3)
 
     # Error ('z' is included in `relative_params` but not in `relative_search_space`).
     trial4 = create_trial()
-    distribution4 = distributions.UniformDistribution(low=0, high=10)
+    distribution4 = UniformDistribution(low=0, high=10)
     with pytest.raises(ValueError):
         trial4._suggest("z", distribution4)
 
 
 @parametrize_storage
 def test_datetime_start(storage_init_func):
-    # type: (typing.Callable[[], storages.BaseStorage]) -> None
+    # type: (Callable[[], storages.BaseStorage]) -> None
 
-    trial_datetime_start = [None]  # type: typing.List[typing.Optional[datetime]]
+    trial_datetime_start = [None]  # type: List[Optional[datetime.datetime]]
 
     def objective(trial):
         # type: (Trial) -> float
@@ -554,3 +578,132 @@ def test_study_id():
 
     with pytest.warns(DeprecationWarning):
         trial.study_id
+
+
+def test_frozen_trial_validate():
+    # type: () -> None
+
+    # Valid.
+    valid_trial = _create_frozen_trial()
+    valid_trial._validate()
+
+    # Invalid: `datetime_start` is not set.
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.datetime_start = None
+    with pytest.raises(ValueError):
+        invalid_trial._validate()
+
+    # Invalid: `state` is `RUNNING` and `datetime_complete` is set.
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.state = TrialState.RUNNING
+    with pytest.raises(ValueError):
+        invalid_trial._validate()
+
+    # Invalid: `state` is not `RUNNING` and `datetime_complete` is not set.
+    for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
+        invalid_trial = copy.copy(valid_trial)
+        invalid_trial.state = state
+        invalid_trial.datetime_complete = None
+        with pytest.raises(ValueError):
+            invalid_trial._validate()
+
+    # Invalid: `state` is `COMPLETE` and `value` is not set.
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.value = None
+    with pytest.raises(ValueError):
+        invalid_trial._validate()
+
+    # Invalid: Inconsistent `params` and `distributions`
+    inconsistent_pairs = [
+        # `params` has an extra element.
+        ({"x": 0.1, "y": 0.5}, {"x": UniformDistribution(0, 1)}),
+        # `distributions` has an extra element.
+        ({"x": 0.1}, {"x": UniformDistribution(0, 1), "y": LogUniformDistribution(0.1, 1.0)}),
+        # The value of `x` isn't contained in the distribution.
+        ({"x": -0.5}, {"x": UniformDistribution(0, 1)}),
+    ]  # type: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]]
+
+    for params, distributions in inconsistent_pairs:
+        invalid_trial = copy.copy(valid_trial)
+        invalid_trial.params = params
+        invalid_trial.distributions = distributions
+        with pytest.raises(ValueError):
+            invalid_trial._validate()
+
+
+def test_frozen_trial_eq_ne():
+    # type: () -> None
+
+    trial = _create_frozen_trial()
+
+    trial_other = copy.copy(trial)
+    assert trial == trial_other
+
+    trial_other.value = 0.3
+    assert trial != trial_other
+
+
+def test_frozen_trial_lt():
+    # type: () -> None
+
+    trial = _create_frozen_trial()
+
+    trial_other = copy.copy(trial)
+    assert not trial < trial_other
+
+    trial_other.number = trial.number + 1
+    assert trial < trial_other
+    assert not trial_other < trial
+
+    with pytest.raises(TypeError):
+        trial < 1
+
+    assert trial <= trial_other
+    assert not trial_other <= trial
+
+    with pytest.raises(TypeError):
+        trial <= 1
+
+    # A list of FrozenTrials is sortable.
+    trials = [trial_other, trial]
+    trials.sort()
+    assert trials[0] is trial
+    assert trials[1] is trial_other
+
+
+def _create_frozen_trial():
+    # type: () -> FrozenTrial
+
+    return FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 10},
+        distributions={"x": UniformDistribution(5, 12)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+
+
+def test_frozen_trial_repr():
+    # type: () -> None
+
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 10},
+        distributions={"x": UniformDistribution(5, 12)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+
+    assert trial == eval(repr(trial))
