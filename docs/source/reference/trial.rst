@@ -12,6 +12,7 @@ Trial
 
 .. autoclass:: FrozenTrial
     :members:
+    :exclude-members: system_attrs, trial_id
 
 .. autoclass:: TrialState
     :members:
