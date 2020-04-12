@@ -569,7 +569,7 @@ class Study(BaseStudy):
         datetime_start=None,  # type: Optional[datetime.datetime]
         datetime_complete=None,  # type: Optional[datetime.datetime]
     ):
-        # type: (...) -> None
+        # type: (...) -> int
 
         params = params or {}
         distributions = distributions or {}
@@ -597,7 +597,8 @@ class Study(BaseStudy):
 
         trial._validate()
 
-        self._storage.create_new_trial(self._study_id, template_trial=trial)
+        trial_id = self._storage.create_new_trial(self._study_id, template_trial=trial)
+        return trial_id
 
     def _optimize_sequential(
         self,
