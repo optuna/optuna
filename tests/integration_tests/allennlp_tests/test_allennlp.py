@@ -1,4 +1,3 @@
-import os
 import pytest
 import tempfile
 
@@ -11,19 +10,14 @@ def test__set_param() -> None:
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
     trial.suggest_uniform("DROPOUT", 0.0, 0.5)
-    executor = optuna.integration.AllenNLPExecutor(trial, "test", "test")
-    assert "LEARNING_RATE" not in os.environ
-    assert "DROPOUT" not in os.environ
+    executor = optuna.integration.AllenNLPExecutor(
+        trial, "tests/integration_tests/allennlp_tests/test.jsonnet", "test"
+    )
+    params = executor._build_params()
 
-    # register hyperparameters
-    executor._set_params()
-    assert "LEARNING_RATE" in os.environ
-    assert "DROPOUT" in os.environ
-
-    # clean hyperparameters
-    executor._clean_params()
-    assert "LEARNING_RATE" not in os.environ
-    assert "DROPOUT" not in os.environ
+    assert params["model"]["dropout"] == 0.1
+    assert params["model"]["input_size"] == 100
+    assert params["model"]["hidden_size"] == [100, 200, 300]
 
 
 def test_missing_config_file() -> None:
@@ -38,9 +32,8 @@ def test_missing_config_file() -> None:
     trial.suggest_int("HIDDEN_SIZE", 16, 128)
 
     executor = optuna.integration.AllenNLPExecutor(trial, "undefined.jsonnet", "test")
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(RuntimeError):
         executor.run()
-    executor._clean_params()
 
 
 def test_invalid_config_file() -> None:
@@ -59,7 +52,6 @@ def test_invalid_config_file() -> None:
     )
     with pytest.raises(RuntimeError):
         executor.run()
-    executor._clean_params()
 
 
 def test_invalid_param_name() -> None:
@@ -73,7 +65,6 @@ def test_invalid_param_name() -> None:
     )
     with pytest.raises(RuntimeError):
         executor.run()
-    executor._clean_params()
 
 
 def test_allennlp_executor() -> None:
@@ -88,4 +79,3 @@ def test_allennlp_executor() -> None:
         )
         result = executor.run()
         assert isinstance(result, float)
-        executor._clean_params()
