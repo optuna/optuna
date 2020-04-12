@@ -1,10 +1,15 @@
 import json
 import os
+from typing import Any
+from typing import Dict
+from typing import List
 
 import optuna
 
 try:
+    import _jsonnet
     import allennlp.commands
+    import allennlp.common.util
 
     _available = True
 except ImportError as e:
@@ -15,10 +20,6 @@ except ImportError as e:
 
 class AllenNLPExecutor(object):
     """Allennlp extension to use optuna with an allennlp config file.
-
-    .. warning::
-        AllenNLPExecutor uses environment variables on OS.
-        This could cause problems when AllenNLPExecutor runs in multi-threading.
 
     Args:
         trial:
@@ -42,30 +43,32 @@ class AllenNLPExecutor(object):
         config_file: str,
         serialization_dir: str,
         metrics: str = "best_validation_accuracy",
+        *,
+        include_package: List[str] = []
     ):
 
         self._params = trial.params
         self._config_file = config_file
         self._serialization_dir = serialization_dir
         self._metrics = metrics
+        self._include_package = include_package
 
-    def _set_params(self) -> None:
-        """Register hyperparameters as environment variables."""
-        for key, value in self._params.items():
-            os.environ[key] = str(value)
+    def _build_params(self) -> Dict[str, Any]:
+        """Create a dict of params for allennlp."""
 
-    def _clean_params(self) -> None:
-        """Clear registered hyperparameters."""
         for key, value in self._params.items():
-            if key not in os.environ:
-                continue
-            os.environ.pop(key)
+            self._params[key] = str(value)
+        _params = json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=self._params))
+        return allennlp.common.params.infer_and_cast(_params)
 
     def run(self) -> float:
         """Train a model using allennlp."""
-        self._set_params()
-        allennlp.commands.train.train_model_from_file(self._config_file, self._serialization_dir)
-        self._clean_params()
+
+        for package_name in self._include_package:
+            allennlp.common.util.import_module_and_submodules(package_name)
+
+        params = allennlp.common.params.Params(self._build_params())
+        allennlp.commands.train.train_model(params, self._serialization_dir)
 
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]
