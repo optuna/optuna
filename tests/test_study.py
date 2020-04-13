@@ -713,8 +713,7 @@ def test_append_trial(storage_mode):
         assert len(study.trials) == 0
 
         trial_id = study._append_trial(value=0.8)
-        if isinstance(study._storage, optuna.storages.InMemoryStorage):
-            assert trial_id == 0
+        assert study.trials[0]._trial_id == trial_id
         assert len(study.trials) == 1
         assert study.best_value == 0.8
 
