@@ -1,4 +1,5 @@
 import abc
+import decimal
 import json
 import warnings
 
@@ -219,7 +220,10 @@ class DiscreteUniformDistribution(BaseDistribution):
 
         if self.low == self.high:
             return True
-        if (self.high - self.low) < self.q:
+        high = decimal.Decimal(str(self.high))
+        low = decimal.Decimal(str(self.low))
+        q = decimal.Decimal(str(self.q))
+        if (high - low) < q:
             return True
         return False
 
