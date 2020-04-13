@@ -11,6 +11,14 @@ import torch
 
 @TokenIndexer.register("tiny_single_id")
 class SingleIdTokenIndexer(TokenIndexer):
+    """Tiny implementation of SingleIdTokenIndexer.
+
+    This class if based on allennlp SingleIdTokenIndexer.
+    https://github.com/allenai/allennlp/blob/master/
+    allennlp/data/token_indexers/single_id_token_indexer.py
+
+    """
+
     def __init__(
         self,
         lowercase_tokens: bool = False,
