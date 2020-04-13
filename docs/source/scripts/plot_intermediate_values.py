@@ -1,12 +1,8 @@
 import os
-import random
 
 import plotly
 
 import optuna
-
-_seed = 10
-_rng = random.Random(_seed)
 
 
 def f(x):
@@ -20,8 +16,8 @@ def df(x):
 def objective(trial):
     lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
 
-    x = _rng.uniform(0, 3)
-    for step in range(32):
+    x = 3
+    for step in range(128):
         y = f(x)
 
         trial.report(y, step=step)
@@ -35,9 +31,9 @@ def objective(trial):
 
 
 def main():
-    sampler = optuna.samplers.TPESampler(seed=_seed)
+    sampler = optuna.samplers.TPESampler(seed=10)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=10)
+    study.optimize(objective, n_trials=16)
 
     fig = optuna.visualization.plot_intermediate_values(study)
     fig_html = plotly.offline.plot(fig, output_type="div", include_plotlyjs="cdn", auto_open=False)

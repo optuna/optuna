@@ -23,8 +23,6 @@ def plot_intermediate_values(study):
 
         .. testcode::
 
-            import random
-
             import optuna
 
             def f(x):
@@ -36,8 +34,8 @@ def plot_intermediate_values(study):
             def objective(trial):
                 lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
 
-                x = random.uniform(0, 3)
-                for step in range(32):
+                x = 3
+                for step in range(128):
                     y = f(x)
 
                     trial.report(y, step=step)
@@ -50,7 +48,7 @@ def plot_intermediate_values(study):
                 return y
 
             study = optuna.create_study()
-            study.optimize(objective, n_trials=10)
+            study.optimize(objective, n_trials=16)
 
             optuna.visualization.plot_intermediate_values(study)
 
