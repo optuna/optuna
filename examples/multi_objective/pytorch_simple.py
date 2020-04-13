@@ -53,13 +53,16 @@ def define_model(trial):
 
 def get_mnist():
     # Load MNIST dataset.
+    train_dataset = datasets.MNIST(DIR, train=True, download=True, transform=transforms.ToTensor())
     train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(DIR, train=True, download=True, transform=transforms.ToTensor()),
+        torch.utils.data.Subset(train_dataset, list(range(N_TRAIN_EXAMPLES))),
         batch_size=BATCHSIZE,
         shuffle=True,
     )
+
+    val_dataset = datasets.MNIST(DIR, train=False, transform=transforms.ToTensor())
     val_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(DIR, train=False, transform=transforms.ToTensor()),
+        torch.utils.data.Subset(val_dataset, list(range(N_VAL_EXAMPLES))),
         batch_size=BATCHSIZE,
         shuffle=True,
     )
@@ -84,10 +87,6 @@ def objective(trial):
     model.train()
     for epoch in range(EPOCHS):
         for batch_idx, (data, target) in enumerate(train_loader):
-            # Limiting training data for faster epochs.
-            if batch_idx * BATCHSIZE >= N_TRAIN_EXAMPLES:
-                break
-
             data, target = data.view(-1, 28 * 28).to(DEVICE), target.to(DEVICE)
 
             optimizer.zero_grad()
@@ -101,9 +100,6 @@ def objective(trial):
     correct = 0
     with torch.no_grad():
         for batch_idx, (data, target) in enumerate(val_loader):
-            # Limiting validation data.
-            if batch_idx * BATCHSIZE >= N_VAL_EXAMPLES:
-                break
             data, target = data.view(-1, 28 * 28).to(DEVICE), target.to(DEVICE)
             output = model(data)
             pred = output.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability.
