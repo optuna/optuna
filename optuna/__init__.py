@@ -1,5 +1,6 @@
 import importlib
 import types
+from typing import Any
 
 from optuna import distributions  # NOQA
 from optuna import exceptions  # NOQA
@@ -22,8 +23,6 @@ from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
 from optuna.version import __version__  # NOQA
 from optuna.type_checking import TYPE_CHECKING  # NOQA
-
-from typing import Any
 
 
 class _LazyImport(types.ModuleType):
