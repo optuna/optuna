@@ -12,7 +12,7 @@ class _MultiObjectiveSamplerAdapter(BaseSampler):
     """Adapter for to :class:`~optuna.multi_objective.samplers.BaseMultiObjectiveSampler`.
 
     This class implements the :class:`~optuna.samplers.BaseSampler` interface.
-    When a method is invoked, the handling will be delegated to to the given
+    When a method is invoked, the handling will be delegated to the given
     :class:`~optuna.multi_objective.samplers.BaseMultiObjectiveSampler` instance.
     """
 

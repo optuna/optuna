@@ -27,7 +27,7 @@ class BaseMultiObjectiveSampler(object, metaclass=abc.ABCMeta):
 
         This method is called right before
         :func:`~optuna.multi_objective.samplers.BaseMultiObjectiveSampler.sample_relative`
-        method, and the search space returned by this method is pass to it. The parameters not
+        method, and the search space returned by this method is passed to it. The parameters not
         contained in the search space will be sampled by using
         :func:`~optuna.multi_objective.samplers.BaseMultiObjectiveSampler.sample_independent`
         method.
@@ -60,7 +60,7 @@ class BaseMultiObjectiveSampler(object, metaclass=abc.ABCMeta):
 
         This method is called once at the beginning of each trial, i.e., right before the
         evaluation of the objective function. This method is suitable for sampling algorithms
-        that use relationship between parameters.
+        that use the relationship between parameters.
 
         Args:
             study:
@@ -90,7 +90,7 @@ class BaseMultiObjectiveSampler(object, metaclass=abc.ABCMeta):
 
         This method is called only for the parameters not contained in the search space returned
         by :func:`~optuna.multi_objective.samplers.MultiObjectiveBaseSampler.sample_relative`
-        method. This method is suitable for sampling algorithms that do not use relationship
+        method. This method is suitable for sampling algorithms that do not use the relationship
         between parameters such as random sampling.
 
         Args:
