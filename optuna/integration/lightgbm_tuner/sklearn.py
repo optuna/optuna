@@ -756,6 +756,31 @@ class LGBMModel(lgb.LGBMModel):
 
         return self
 
+    def predict(
+        self, X: TwoDimArrayLikeType, num_iteration: Optional[int] = None, **predict_params: Any
+    ) -> np.ndarray:
+        """Predict using the fitted model.
+
+        Args:
+            X:
+                Data.
+
+            num_iteration:
+                Limit number of iterations in the prediction. If None, if the
+                best iteration exists, it is used; otherwise, all trees are
+                used. If <=0, all trees are used (no limits).
+
+            **predict_params:
+                Always ignored. This parameter exists for compatibility.
+
+        Returns:
+            y_pred:
+                Predicted values.
+        """
+        X = check_X(X, accept_sparse=True, estimator=self, force_all_finite=False)
+
+        return self.booster_.predict(X, num_iteration=num_iteration)
+
 
 class LGBMClassifier(LGBMModel, ClassifierMixin):
     """LightGBM classifier using Optuna.
@@ -1085,8 +1110,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             p:
                 Class probabilities of data.
         """
-        X = check_X(X, accept_sparse=True, estimator=self, force_all_finite=False)
-        preds = self.booster_.predict(X, num_iteration=num_iteration)
+        preds = super().predict(X, num_iteration=num_iteration, **predict_params)
 
         if self._n_classes > 2:
             return preds
@@ -1267,28 +1291,3 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
         LGBMRegressor(...)
         >>> y_pred = reg.predict(X)
     """
-
-    def predict(
-        self, X: TwoDimArrayLikeType, num_iteration: Optional[int] = None, **predict_params: Any
-    ) -> np.ndarray:
-        """Predict using the fitted model.
-
-        Args:
-            X:
-                Data.
-
-            num_iteration:
-                Limit number of iterations in the prediction. If None, if the
-                best iteration exists, it is used; otherwise, all trees are
-                used. If <=0, all trees are used (no limits).
-
-            **predict_params:
-                Always ignored. This parameter exists for compatibility.
-
-        Returns:
-            y_pred:
-                Predicted values.
-        """
-        X = check_X(X, accept_sparse=True, estimator=self, force_all_finite=False)
-
-        return self.booster_.predict(X, num_iteration=num_iteration)
