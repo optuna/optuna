@@ -14,3 +14,7 @@ Study
 .. autofunction:: get_all_study_summaries
 
 .. autoclass:: StudyDirection
+    :members:
+
+.. autoclass:: StudySummary
+    :members:

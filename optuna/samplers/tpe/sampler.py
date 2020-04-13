@@ -9,8 +9,8 @@ from optuna.samplers import base
 from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers.tpe.parzen_estimator import _ParzenEstimatorParameters
-from optuna import structs
 from optuna.study import StudyDirection
+from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -22,8 +22,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
 EPS = 1e-12
 
@@ -577,9 +577,9 @@ def _get_observation_pairs(study, param_name, trial):
         if param_name not in trial.params:
             continue
 
-        if trial.state is structs.TrialState.COMPLETE and trial.value is not None:
+        if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
-        elif trial.state is structs.TrialState.PRUNED:
+        elif trial.state is TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
                 if math.isnan(intermediate_value):

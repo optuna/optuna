@@ -26,7 +26,7 @@ if type_checking.TYPE_CHECKING:
 
     from _pytest.recwarn import WarningsRecorder  # NOQA
 
-    CallbackFuncType = Callable[[optuna.study.Study, optuna.structs.FrozenTrial], None]
+    CallbackFuncType = Callable[[optuna.study.Study, optuna.trial.FrozenTrial], None]
 
 STORAGE_MODES = [
     "none",  # We give `None` to storage argument, so InMemoryStorage is used.
@@ -97,9 +97,9 @@ def check_value(value):
 
 
 def check_frozen_trial(frozen_trial):
-    # type: (optuna.structs.FrozenTrial) -> None
+    # type: (optuna.trial.FrozenTrial) -> None
 
-    if frozen_trial.state == optuna.structs.TrialState.COMPLETE:
+    if frozen_trial.state == optuna.trial.TrialState.COMPLETE:
         check_params(frozen_trial.params)
         check_value(frozen_trial.value)
 
@@ -110,7 +110,7 @@ def check_study(study):
     for trial in study.trials:
         check_frozen_trial(trial)
 
-    complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
+    complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
     if len(complete_trials) == 0:
         with pytest.raises(ValueError):
             study.best_params
@@ -230,18 +230,18 @@ def test_optimize_with_catch(storage_mode):
         with pytest.raises(ValueError):
             study.optimize(func_value_error, n_trials=20)
         assert len(study.trials) == 1
-        assert all(trial.state == optuna.structs.TrialState.FAIL for trial in study.trials)
+        assert all(trial.state == optuna.trial.TrialState.FAIL for trial in study.trials)
 
         # Test acceptable exception.
         study.optimize(func_value_error, n_trials=20, catch=(ValueError,))
         assert len(study.trials) == 21
-        assert all(trial.state == optuna.structs.TrialState.FAIL for trial in study.trials)
+        assert all(trial.state == optuna.trial.TrialState.FAIL for trial in study.trials)
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
             study.optimize(func_value_error, n_trials=20, catch=(ArithmeticError,))
         assert len(study.trials) == 22
-        assert all(trial.state == optuna.structs.TrialState.FAIL for trial in study.trials)
+        assert all(trial.state == optuna.trial.TrialState.FAIL for trial in study.trials)
 
 
 @pytest.mark.parametrize("catch", [[], [Exception], None, 1])
@@ -385,7 +385,7 @@ def test_run_trial(storage_mode):
             "Setting status of trial#1 as TrialState.FAIL because of the "
             "following error: ValueError()"
         )
-        assert frozen_trial.state == optuna.structs.TrialState.FAIL
+        assert frozen_trial.state == optuna.trial.TrialState.FAIL
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
         # Test trial with unacceptable exception.
@@ -406,7 +406,7 @@ def test_run_trial(storage_mode):
             "value from the objective function cannot be casted to float. "
             "Returned value is: None"
         )
-        assert frozen_trial.state == optuna.structs.TrialState.FAIL
+        assert frozen_trial.state == optuna.trial.TrialState.FAIL
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
         # Test trial with invalid objective value: nan
@@ -422,7 +422,7 @@ def test_run_trial(storage_mode):
             "Setting status of trial#4 as TrialState.FAIL because the objective "
             "function returned nan."
         )
-        assert frozen_trial.state == optuna.structs.TrialState.FAIL
+        assert frozen_trial.state == optuna.trial.TrialState.FAIL
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
 
@@ -447,7 +447,7 @@ def test_run_trial_with_trial_pruned(trial_pruned_class, report_value):
     trial = study._run_trial(func_with_trial_pruned, catch=(), gc_after_trial=True)
     frozen_trial = study._storage.get_trial(trial._trial_id)
     assert frozen_trial.value == report_value
-    assert frozen_trial.state == optuna.structs.TrialState.PRUNED
+    assert frozen_trial.state == optuna.trial.TrialState.PRUNED
 
 
 def test_study_pickle():
@@ -805,7 +805,7 @@ def test_callbacks(n_jobs):
         # type: (CallbackFuncType) -> CallbackFuncType
 
         def callback(study, trial):
-            # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
+            # type: (optuna.study.Study, optuna.trial.FrozenTrial) -> None
 
             with lock:
                 f(study, trial)
@@ -850,7 +850,7 @@ def test_callbacks(n_jobs):
         n_jobs=n_jobs,
         catch=(ZeroDivisionError,),
     )
-    assert states == [optuna.structs.TrialState.FAIL] * 10
+    assert states == [optuna.trial.TrialState.FAIL] * 10
 
     # If a trial is failed with an exception and the exception isn't caught by the study,
     # callbacks aren't invoked.
@@ -898,3 +898,74 @@ def test_study_id():
 
     with pytest.warns(DeprecationWarning):
         study.study_id
+
+
+def test_study_summary_study_id():
+    # type: () -> None
+
+    study = optuna.create_study()
+    summaries = study._storage.get_all_study_summaries()
+    assert len(summaries) == 1
+
+    summary = summaries[0]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=DeprecationWarning)
+        assert summary.study_id == summary._study_id
+
+    with pytest.warns(DeprecationWarning):
+        summary.study_id
+
+
+def test_study_summary_eq_ne():
+    # type: () -> None
+
+    storage = optuna.storages.RDBStorage("sqlite:///:memory:")
+
+    optuna.create_study(storage=storage)
+    study = optuna.create_study(storage=storage)
+
+    summaries = study._storage.get_all_study_summaries()
+    assert len(summaries) == 2
+
+    assert summaries[0] == copy.deepcopy(summaries[0])
+    assert not summaries[0] != copy.deepcopy(summaries[0])
+
+    assert not summaries[0] == summaries[1]
+    assert summaries[0] != summaries[1]
+
+    assert not summaries[0] == 1
+    assert summaries[0] != 1
+
+
+def test_study_summary_lt_le():
+    # type: () -> None
+
+    storage = optuna.storages.RDBStorage("sqlite:///:memory:")
+
+    optuna.create_study(storage=storage)
+    study = optuna.create_study(storage=storage)
+
+    summaries = study._storage.get_all_study_summaries()
+    assert len(summaries) == 2
+
+    summary_0 = summaries[0]
+    summary_1 = summaries[1]
+
+    assert summary_0 < summary_1
+    assert not summary_1 < summary_0
+
+    with pytest.raises(TypeError):
+        summary_0 < 1
+
+    assert summary_0 <= summary_0
+    assert not summary_1 <= summary_0
+
+    with pytest.raises(TypeError):
+        summary_0 <= 1
+
+    # A list of StudySummaries is sortable.
+    summaries.reverse()
+    summaries.sort()
+    assert summaries[0] == summary_0
+    assert summaries[1] == summary_1

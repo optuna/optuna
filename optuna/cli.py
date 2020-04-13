@@ -1,3 +1,12 @@
+"""Optuna CLI module.
+
+This module is implemented using cliff. It follows
+[the demoapp](https://docs.openstack.org/cliff/latest/user/demoapp.html).
+
+If you want to add a new command, you also need to update `entry_points` in `setup.py`.
+c.f. https://docs.openstack.org/cliff/latest/user/demoapp.html#setup-py
+"""
+
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
 from importlib.machinery import SourceFileLoader
@@ -298,27 +307,15 @@ class _StorageUpgrade(_BaseCommand):
             )
 
 
-_COMMANDS = {
-    "create-study": _CreateStudy,
-    "delete-study": _DeleteStudy,
-    "study set-user-attr": _StudySetUserAttribute,
-    "studies": _Studies,
-    "dashboard": _Dashboard,
-    "study optimize": _StudyOptimize,
-    "storage upgrade": _StorageUpgrade,
-}
-
-
 class _OptunaApp(App):
     def __init__(self):
         # type: () -> None
 
-        command_manager = CommandManager("optuna.command")
         super(_OptunaApp, self).__init__(
-            description="", version=optuna.__version__, command_manager=command_manager
+            description="",
+            version=optuna.__version__,
+            command_manager=CommandManager("optuna.command"),
         )
-        for name, cls in _COMMANDS.items():
-            command_manager.add_command(name, cls)
 
     def build_option_parser(self, description, version, argparse_kwargs=None):
         # type: (str, str, Optional[Dict]) -> ArgumentParser

@@ -31,11 +31,11 @@ def test_keras_pruning_callback():
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     study.optimize(objective, n_trials=1)
-    assert study.trials[0].state == optuna.structs.TrialState.PRUNED
+    assert study.trials[0].state == optuna.trial.TrialState.PRUNED
 
     study = optuna.create_study(pruner=DeterministicPruner(False))
     study.optimize(objective, n_trials=1)
-    assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
+    assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
 

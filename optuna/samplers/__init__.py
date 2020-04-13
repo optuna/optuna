@@ -39,7 +39,7 @@ def intersection_search_space(study, ordered_dict=False):
 
     search_space = None
     for trial in study.trials:
-        if trial.state != optuna.structs.TrialState.COMPLETE:
+        if trial.state != optuna.trial.TrialState.COMPLETE:
             continue
 
         if search_space is None:
