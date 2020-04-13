@@ -6,8 +6,8 @@ import pytest
 
 import optuna
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
-from optuna.structs import StudyDirection
-from optuna.structs import TrialState
+from optuna.study import StudyDirection
+from optuna.trial import TrialState
 
 
 def test_suggest() -> None:
@@ -130,7 +130,7 @@ def test_dominates() -> None:
         values: List[Optional[float]], state: TrialState = TrialState.COMPLETE,
     ) -> FrozenMultiObjectiveTrial:
         n_objectives = len(values)
-        trial = optuna.structs.FrozenTrial(
+        trial = optuna.trial.FrozenTrial(
             state=state,
             intermediate_values={i: v for i, v in enumerate(values)},
             # The following attributes aren't used in this test case.

@@ -4,8 +4,8 @@ from typing import Dict
 from optuna.distributions import BaseDistribution
 from optuna import multi_objective
 from optuna.samplers import BaseSampler
-from optuna.structs import FrozenTrial
 from optuna.study import Study
+from optuna.trial import FrozenTrial
 
 
 class _MultiObjectiveSamplerAdapter(BaseSampler):

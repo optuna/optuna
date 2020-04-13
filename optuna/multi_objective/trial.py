@@ -9,10 +9,10 @@ from typing import Union
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna import multi_objective
-from optuna.structs import FrozenTrial
-from optuna.structs import StudyDirection
-from optuna.structs import TrialState
+from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import Trial
+from optuna.trial import TrialState
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
 
@@ -239,7 +239,7 @@ class FrozenMultiObjectiveTrial(object):
             :class:`~optuna.multi_objective.study.MultiObjectiveStudy`.
             Note that this field uses zero-based numbering.
         state:
-            :class:`~optuna.structs.TrialState` of the
+            :class:`~optuna.trial.TrialState` of the
             :class:`~optuna.multi_objective.trial.MultiObjectiveTrial`.
         values:
             Objective values of the :class:`~optuna.multi_objective.trial.MultiObjectiveTrial`.

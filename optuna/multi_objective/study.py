@@ -8,17 +8,15 @@ from typing import Tuple
 from typing import Type
 from typing import Union
 
-
 import optuna
 from optuna._experimental import experimental
 from optuna import logging
 from optuna import multi_objective
 from optuna.storages import BaseStorage
-from optuna.structs import StudyDirection
-from optuna.structs import TrialState
 from optuna.study import Study
+from optuna.study import StudyDirection
 from optuna.trial import Trial
-
+from optuna.trial import TrialState
 
 ObjectiveFuncType = Callable[["multi_objective.trial.MultiObjectiveTrial"], List[float]]
 CallbackFuncType = Callable[

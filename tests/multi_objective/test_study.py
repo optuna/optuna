@@ -4,7 +4,7 @@ import uuid
 import pytest
 
 import optuna
-from optuna.structs import StudyDirection
+from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
 
 
