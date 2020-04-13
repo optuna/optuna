@@ -90,15 +90,10 @@ def objective(trial):
 
             data, target = data.view(-1, 28 * 28).to(DEVICE), target.to(DEVICE)
 
-            # Zeroing out gradient buffers.
             optimizer.zero_grad()
-            # Performing a forward pass.
             output = model(data)
-            # Computing negative Log Likelihood loss.
             loss = F.nll_loss(output, target)
-            # Performing a backward pass.
             loss.backward()
-            # Updating the weights.
             optimizer.step()
 
     # Validation of the model.
