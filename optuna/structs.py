@@ -20,11 +20,11 @@ _logger = logging.get_logger(__name__)
 
 _message = (
     "`structs` is deprecated. Classes have moved to the following modules. "
-    "`structs.StudyDirection` -> `study.StudyDirection`, "
-    "`structs.StudySummary`   -> `study.StudySummary`, "
-    "`structs.FrozenTrial`    -> `trial.FrozenTrial`, "
-    "`structs.TrialState`     -> `trial.TrialState`, "
-    "`structs.TrialPruned`    -> `exceptions.TrialPruned`."
+    "`structs.StudyDirection`->`study.StudyDirection`, "
+    "`structs.StudySummary`->`study.StudySummary`, "
+    "`structs.FrozenTrial`->`trial.FrozenTrial`, "
+    "`structs.TrialState`->`trial.TrialState`, "
+    "`structs.TrialPruned`->`exceptions.TrialPruned`."
 )
 warnings.warn(_message, DeprecationWarning)
 _logger.warning(_message)
