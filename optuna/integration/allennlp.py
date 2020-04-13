@@ -3,6 +3,7 @@ import os
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Union
 
 import optuna
 
@@ -34,6 +35,10 @@ class AllenNLPExecutor(object):
             A path which model weights and logs are saved.
         metrics:
             An evaluation metric for the result of ``objective``.
+        include_package:
+            Additional packages to include.
+            For more information, please see
+            `allennlp documentation <https://docs.allennlp.org/master/api/commands/train/>`_.
 
     """
 
@@ -44,14 +49,17 @@ class AllenNLPExecutor(object):
         serialization_dir: str,
         metrics: str = "best_validation_accuracy",
         *,
-        include_package: List[str] = []
+        include_package: Union[str, List[str]] = []
     ):
 
         self._params = trial.params
         self._config_file = config_file
         self._serialization_dir = serialization_dir
         self._metrics = metrics
-        self._include_package = include_package
+        if isinstance(include_package, str):
+            self._include_package = [include_package]
+        else:
+            self._include_package = include_package
 
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for allennlp."""
@@ -65,7 +73,7 @@ class AllenNLPExecutor(object):
         """Train a model using allennlp."""
 
         for package_name in self._include_package:
-            allennlp.common.util.import_module_and_submodules(package_name)
+            allennlp.common.util.import_submodules(package_name)
 
         params = allennlp.common.params.Params(self._build_params())
         allennlp.commands.train.train_model(params, self._serialization_dir)
