@@ -79,3 +79,37 @@ def test_allennlp_executor() -> None:
         )
         result = executor.run()
         assert isinstance(result, float)
+
+
+def test_allennlp_executor_with_include_package() -> None:
+
+    study = optuna.create_study(direction="maximize")
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        executor = optuna.integration.AllenNLPExecutor(
+            trial,
+            "tests/integration_tests/allennlp_tests/example_with_include_package.jsonnet",
+            tmp_dir,
+            include_package="tests.integration_tests.allennlp_tests.tiny_single_id",
+        )
+        result = executor.run()
+        assert isinstance(result, float)
+
+
+def test_allennlp_executor_with_include_package_arr() -> None:
+
+    study = optuna.create_study(direction="maximize")
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        executor = optuna.integration.AllenNLPExecutor(
+            trial,
+            "tests/integration_tests/allennlp_tests/example_with_include_package.jsonnet",
+            tmp_dir,
+            include_package=["tests.integration_tests.allennlp_tests.tiny_single_id"],
+        )
+        result = executor.run()
+        assert isinstance(result, float)
