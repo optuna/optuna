@@ -985,62 +985,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
         groups: Optional[OneDimArrayLikeType] = None,
         **fit_params: Any
     ) -> "LGBMClassifier":
-        """Fit the model according to the given training data.
-
-        Args:
-            X:
-                Training data.
-
-            y:
-                Target.
-
-            sample_weight:
-                Weights of training data.
-
-            group:
-                Group data of training data.
-
-            eval_metric:
-                Evaluation metric. See
-                https:/lightgbm.readthedocs.io/en/latest/Parameters.html#metric.
-
-            early_stopping_rounds
-                Used to activate early stopping. The model will train until the
-                validation score stops improving.
-
-            feature_name:
-                Feature names. If 'auto' and data is pandas DataFrame, data
-                columns names are used.
-
-            categorical_feature:
-                Categorical features. If list of int, interpreted as indices.
-                If list of strings, interpreted as feature names. If 'auto' and
-                data is pandas DataFrame, pandas categorical columns are used.
-                All values in categorical features should be less than int32
-                max value (2147483647). Large values could be memory consuming.
-                Consider using consecutive integers starting from zero. All
-                negative values in categorical features will be treated as
-                missing values.
-
-            callbacks:
-                List of callback functions that are applied at each iteration.
-
-            init_model:
-                Filename of LightGBM model, Booster instance or LGBMModel
-                instance used for continue training.
-
-            groups:
-                Group labels for the samples used while splitting the dataset
-                into traintest set. If ``group`` is not None, this parameter is
-                ignored.
-
-            **fit_params:
-                Always ignored. This parameter exists for compatibility.
-
-        Returns:
-            self:
-                Return self.
-        """
+        """Docstring is inherited from the LGBMModel."""
         self.encoder_ = LabelEncoder()
 
         y = self.encoder_.fit_transform(y)
@@ -1063,31 +1008,18 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             **fit_params
         )
 
+    fit.__doc__ = LGBMModel.fit.__doc__
+
     def predict(
         self, X: TwoDimArrayLikeType, num_iteration: Optional[int] = None, **predict_params: Any
     ) -> np.ndarray:
-        """Predict using the fitted model.
-
-        Args:
-            X:
-                Data.
-
-            num_iteration:
-                Limit number of iterations in the prediction. If None, if the
-                best iteration exists, it is used; otherwise, all trees are
-                used. If <=0, all trees are used (no limits).
-
-            **predict_params:
-                Always ignored. This parameter exists for compatibility.
-
-        Returns:
-            y_pred:
-                Predicted values.
-        """
+        """Docstring is inherited from the LGBMModel."""
         probas = self.predict_proba(X, num_iteration=num_iteration, **predict_params)
         class_index = np.argmax(probas, axis=1)
 
         return self.encoder_.inverse_transform(class_index)
+
+    predict.__doc__ = LGBMModel.predict.__doc__
 
     def predict_proba(
         self, X: TwoDimArrayLikeType, num_iteration: Optional[int] = None, **predict_params: Any
