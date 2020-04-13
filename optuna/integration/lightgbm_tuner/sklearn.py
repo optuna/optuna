@@ -600,6 +600,8 @@ class LGBMModel(lgb.LGBMModel):
             self:
                 Return self.
         """
+        logger = logging.get_logger(__name__)
+
         X, y, sample_weight = check_fit_params(
             X,
             y,
@@ -616,6 +618,9 @@ class LGBMModel(lgb.LGBMModel):
         cv = check_cv(self.cv, y, is_classifier)
 
         seed = self._get_random_state()
+
+        if fit_params:
+            logger.warn("{} are ignored.".format(fit_params))
 
         params = self.get_params()
 
@@ -655,10 +660,7 @@ class LGBMModel(lgb.LGBMModel):
             eval_name = params["metric"]
             is_higher_better = _is_higher_better(params["metric"])
 
-        if callable(self.objective):
-            fobj = _ObjectiveFunctionWrapper(self.objective)
-        else:
-            fobj = None
+        fobj = _ObjectiveFunctionWrapper(self.objective) if callable(self.objective) else None
 
         if isinstance(init_model, lgb.LGBMModel):
             init_model = init_model.booster_
@@ -702,8 +704,6 @@ class LGBMModel(lgb.LGBMModel):
             n_estimators=self.n_estimators,
             param_distributions=self.param_distributions,
         )
-
-        logger = logging.get_logger(__name__)
 
         logger.info("Searching the best hyperparameters...")
 
@@ -777,7 +777,12 @@ class LGBMModel(lgb.LGBMModel):
             y_pred:
                 Predicted values.
         """
+        logger = logging.get_logger(__name__)
+
         X = check_X(X, accept_sparse=True, estimator=self, force_all_finite=False)
+
+        if predict_params:
+            logger.warn("{} are ignored.".format(predict_params))
 
         return self.booster_.predict(X, num_iteration=num_iteration)
 
