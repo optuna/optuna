@@ -1,5 +1,5 @@
-import pytest
 import tempfile
+import pytest
 
 import optuna
 
