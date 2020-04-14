@@ -202,6 +202,7 @@ def test_single():
         distributions.DiscreteUniformDistribution(low=-30, high=-20, q=10),
         # In Python, "0.3 - 0.2 != 0.1" is True.
         distributions.DiscreteUniformDistribution(low=0.2, high=0.3, q=0.1),
+        distributions.DiscreteUniformDistribution(low=0.7, high=0.8, q=0.1),
         distributions.IntUniformDistribution(low=-123, high=0),
         distributions.IntUniformDistribution(low=-123, high=0, step=123),
         distributions.CategoricalDistribution(choices=("foo", "bar")),
