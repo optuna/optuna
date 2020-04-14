@@ -573,7 +573,9 @@ class LightGBMTuner(BaseTuner):
 
         param_name = "feature_fraction"
         param_values = list(np.linspace(0.4, 1.0, n_trials))
-        sampler = optuna.samplers.GridSampler({param_name: param_values})
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
+            sampler = optuna.samplers.GridSampler({param_name: param_values})
         self.tune_params([param_name], len(param_values), sampler, "feature_fraction")
 
     def tune_num_leaves(self, n_trials=20):
@@ -597,7 +599,9 @@ class LightGBMTuner(BaseTuner):
             np.linspace(best_feature_fraction - 0.08, best_feature_fraction + 0.08, n_trials)
         )
         param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
-        sampler = optuna.samplers.GridSampler({param_name: param_values})
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
+            sampler = optuna.samplers.GridSampler({param_name: param_values})
         self.tune_params([param_name], len(param_values), sampler, "feature_fraction_stage2")
 
     def tune_regularization_factors(self, n_trials=20):
@@ -615,7 +619,9 @@ class LightGBMTuner(BaseTuner):
 
         param_name = "min_child_samples"
         param_values = [5, 10, 25, 50, 100]
-        sampler = optuna.samplers.GridSampler({param_name: param_values})
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
+            sampler = optuna.samplers.GridSampler({param_name: param_values})
         self.tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
 
     def tune_params(self, target_param_names, n_trials, sampler, step_name):
@@ -647,7 +653,7 @@ class LightGBMTuner(BaseTuner):
         complete_trials = [
             t
             for t in study.trials
-            if t.state in (optuna.structs.TrialState.COMPLETE, optuna.structs.TrialState.PRUNED)
+            if t.state in (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
         ]
         _n_trials = n_trials - len(complete_trials)
         if _n_trials > 0:
