@@ -1,4 +1,5 @@
 import contextlib
+from tempfile import TemporaryDirectory
 from typing import Any
 from typing import Dict
 from typing import Generator
@@ -15,7 +16,6 @@ import optuna.integration.lightgbm as lgb
 from optuna.integration.lightgbm_tuner.optimize import _TimeKeeper
 from optuna.integration.lightgbm_tuner.optimize import _timer
 from optuna.integration.lightgbm_tuner.optimize import BaseTuner
-from optuna.integration.lightgbm_tuner.optimize import DEFAULT_LIGHTGBM_PARAMETERS
 from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration.lightgbm_tuner.optimize import OptunaObjective
 from optuna import type_checking
@@ -58,7 +58,7 @@ class TestOptunaObjective(object):
         target_param_names = ["learning_rate"]  # Invalid parameter name.
 
         with pytest.raises(NotImplementedError) as execinfo:
-            OptunaObjective(target_param_names, {}, None, {}, 0, "tune_learning_rate")
+            OptunaObjective(target_param_names, {}, None, {}, 0, "tune_learning_rate", None)
 
         assert execinfo.type is NotImplementedError
 
@@ -81,6 +81,7 @@ class TestOptunaObjective(object):
                 lgbm_kwargs,
                 best_score,
                 "tune_lambda_l1",
+                None,
             )
             study = optuna.create_study(direction="minimize")
             study.optimize(objective, n_trials=10)
@@ -612,33 +613,50 @@ class TestLightGBMTuner(object):
         assert n_trials == len(study.trials)
 
     def test_best_booster(self) -> None:
-        params = {"verbose": -1}  # type: Dict
+        unexpected_value = 20  # out of scope.
+
+        params = {"verbose": -1, "lambda_l1": unexpected_value}  # type: Dict
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
         tuner = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
-        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
-            initial_best_booster = tuner.best_booster
-
-        # If no trial have been finished, the booster trained with the default parameters returns.
-        for key, value in DEFAULT_LIGHTGBM_PARAMETERS.items():
-            initial_best_booster.params[key] == value
+        with pytest.raises(ValueError):
+            tuner.best_booster
 
         with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=0.0):
             tuner.tune_regularization_factors()
 
         best_booster = tuner.best_booster
-        assert best_booster.params != initial_best_booster.params
+        assert best_booster.params["lambda_l1"] != unexpected_value
 
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
-        # If the best booster is None and study has trials, the tuner retrain the booster with
-        # the best parameters.
-        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=0.0):
+        # Resumed study does not have the best booster.
+        with pytest.raises(ValueError):
+            tuner2.best_booster
+
+    def test_best_booster_with_model_dir(self) -> None:
+        params = {"verbose": -1}  # type: Dict
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        study = optuna.create_study()
+        with TemporaryDirectory() as tmpdir:
+            tuner = LightGBMTuner(
+                params, dataset, valid_sets=dataset, study=study, model_dir=tmpdir
+            )
+
+            with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=0.0):
+                tuner.tune_regularization_factors()
+
+            best_booster = tuner.best_booster
+
+            tuner2 = LightGBMTuner(
+                params, dataset, valid_sets=dataset, study=study, model_dir=tmpdir
+            )
             best_booster2 = tuner2.best_booster
 
-        assert best_booster.params == best_booster2.params
+            assert best_booster.params == best_booster2.params
 
     @pytest.mark.parametrize("direction, overall_best", [("minimize", 1), ("maximize", 2),])
     def test_create_stepwise_study(self, direction: str, overall_best: int) -> None:

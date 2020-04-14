@@ -1,6 +1,8 @@
 import contextlib
 import copy
 import json
+import os
+import pickle
 import time
 from typing import Any
 from typing import Dict
@@ -170,6 +172,7 @@ class OptunaObjective(BaseTuner):
         lgbm_kwargs,  # type: Dict[str, Any]
         best_score,  # type: float
         step_name,  # type: str
+        model_dir,  # type: Optional[str]
         pbar=None,  # type: Optional[tqdm.tqdm]
     ):
 
@@ -184,6 +187,7 @@ class OptunaObjective(BaseTuner):
         self.best_score = best_score
         self.best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
         self.step_name = step_name
+        self.model_dir = model_dir
 
         self._check_target_names_supported()
 
@@ -243,6 +247,12 @@ class OptunaObjective(BaseTuner):
         val_score = self._get_booster_best_score(booster)
         elapsed_secs = t.elapsed_secs()
         average_iteration_time = elapsed_secs / booster.current_iteration()
+
+        if self.model_dir is not None:
+            path = os.path.join(self.model_dir, "{}.pkl".format(trial.number))
+            with open(path, "wb") as fout:
+                pickle.dump(booster, fout)
+
         if self.compare_validation_metrics(val_score, self.best_score):
             self.best_score = val_score
             self.best_booster_with_trial_number = (booster, trial.number)
@@ -305,6 +315,12 @@ class LightGBMTuner(BaseTuner):
             ``average_iteration_time`` is the average time of iteration to train the booster
             model in the trial. ``lgbm_params`` is a JSON-serialized dictionary of LightGBM
             parameters used in the trial.
+
+        model_dir:
+            A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
+            saved. Please set shared directory (e.g., directories on NFS) if you want to access
+            :meth:`~optuna.integration.LightGBMTuner.best_booster` in distributed environments.
+            Otherwise, it may raise :obj:`ValueError`.
     """
 
     def __init__(
@@ -329,6 +345,7 @@ class LightGBMTuner(BaseTuner):
         best_params=None,  # type: Optional[Dict[str, Any]]
         tuning_history=None,  # type: Optional[List[Dict[str, Any]]]
         study=None,  # type: Optional[Study]
+        model_dir=None,  # type: Optional[str]
         verbosity=1,  # type: Optional[int]
     ):
         # type: (...) -> None
@@ -359,6 +376,10 @@ class LightGBMTuner(BaseTuner):
         )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
         self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
+        self._model_dir = model_dir
+
+        if self._model_dir is not None and not os.path.exists(self._model_dir):
+            os.mkdir(self._model_dir)
 
         if best_params is not None:
             warnings.warn(
@@ -432,27 +453,31 @@ class LightGBMTuner(BaseTuner):
         if self._best_booster_with_trial_number is not None:
             if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
                 return self._best_booster_with_trial_number[0]
+        else:
+            if len(self.study.trials) == 0:
+                raise ValueError("The best booster is not available because no trials completed.")
 
-        # No booster is available because the optimization is resumed or run in parallel.
-        # Recreate the best booster using the best parameters.
-        lgbm_params = copy.deepcopy(self.lgbm_params)
-        lgbm_params.update(self.best_params)
+        if self._model_dir is None:
+            raise ValueError(
+                "The best booster cannot be found. It may be found in the other processes due to "
+                "resuming or distributed computing. Please set the `model_dir` argument of "
+                "`LightGBMTuner.__init__` and make sure that boosters are shared with all "
+                "processes."
+            )
 
-        train_set = self.train_set
-        if self.train_subset is not None:
-            train_set = self.train_subset
+        best_trial = self.study.best_trial
+        path = os.path.join(self._model_dir, "{}.pkl".format(best_trial.number))
+        if not os.path.exists(path):
+            raise ValueError(
+                "The best booster cannot be found in {}. If you execute `LightGBMTuner` in "
+                "distributed environment, please use network file system (e.g., NFS) to share "
+                "models with multiple workers.".format(self._model_dir)
+            )
 
-        objective = OptunaObjective(
-            [],
-            lgbm_params,
-            train_set,
-            self.lgbm_kwargs,
-            -np.inf if self.higher_is_better() else np.inf,
-            step_name="best_booster",
-        )
-        optuna.create_study().optimize(objective, n_trials=1)
-        assert objective.best_booster_with_trial_number is not None
-        return objective.best_booster_with_trial_number[0]
+        with open(path, "rb") as fin:
+            booster = pickle.load(fin)
+
+        return booster
 
     def _get_params(self):
         # type: () -> Dict[str, Any]
@@ -485,15 +510,8 @@ class LightGBMTuner(BaseTuner):
         self.train_subset = None  # Use for sampling.
         self.lgbm_kwargs = kwargs
 
-    def run(self):
-        # type: () -> lgb.Booster
-        """Perform the hyperparameter-tuning with given parameters.
-
-        Returns:
-
-            lightgbm.Booster : Booster
-                The trained booster model.
-        """
+    def run(self) -> None:
+        """Perform the hyperparameter-tuning with given parameters."""
         # Surpress log messages.
         if self.auto_options["verbosity"] == 0:
             optuna.logging.disable_default_handler()
@@ -514,29 +532,27 @@ class LightGBMTuner(BaseTuner):
         with _timer() as t:
             self.tune_feature_fraction()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                return self.best_booster
+                return
 
             self.tune_num_leaves()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                return self.best_booster
+                return
 
             self.tune_bagging()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                return self.best_booster
+                return
 
             self.tune_feature_fraction_stage2()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                return self.best_booster
+                return
 
             self.tune_regularization_factors()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                return self.best_booster
+                return
 
             self.tune_min_data_in_leaf()
             if time_budget is not None and time_budget < t.elapsed_secs():
-                return self.best_booster
-
-        return self.best_booster
+                return
 
     def sample_train_set(self):
         # type: () -> None
@@ -621,6 +637,7 @@ class LightGBMTuner(BaseTuner):
             self.lgbm_kwargs,
             self.best_score,
             step_name=step_name,
+            model_dir=self._model_dir,
             pbar=pbar,
         )
 

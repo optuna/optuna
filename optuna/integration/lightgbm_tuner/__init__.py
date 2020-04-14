@@ -31,8 +31,8 @@ def train(*args: Any, **kwargs: Any) -> Any:
     _check_lightgbm_availability()
 
     auto_booster = LightGBMTuner(*args, **kwargs)
-    booster = auto_booster.run()
-    return booster
+    auto_booster.run()
+    return auto_booster.best_booster
 
 
 def _check_lightgbm_availability():
