@@ -64,9 +64,15 @@ class AllenNLPExecutor(object):
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for allennlp."""
 
+        # _build_params is based on allentune's train_func.
+        # https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
         for key, value in self._params.items():
             self._params[key] = str(value)
         _params = json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=self._params))
+
+        # _params contains a list of string or string as value values.
+        # Some params couldn't be casted correctly.
+        # infer_and_cast converts them into desired values.
         return allennlp.common.params.infer_and_cast(_params)
 
     def run(self) -> float:
