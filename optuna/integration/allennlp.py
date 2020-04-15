@@ -20,14 +20,14 @@ except ImportError as e:
 
 
 class AllenNLPExecutor(object):
-    """Allennlp extension to use optuna with an allennlp config file.
+    """AllenNLP extension to use optuna with a jsonnet config file.
 
     Args:
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation
             of the objective function.
         config_file:
-            An allennlp config file.
+            Config file for AllenNLP.
             Hyperparameters should be masked with `std.extVar`.
             Please refer to `the config example <https://github.com/allenai/allentune/blob/
             master/examples/classifier.jsonnet>`_.
@@ -38,7 +38,7 @@ class AllenNLPExecutor(object):
         include_package:
             Additional packages to include.
             For more information, please see
-            `allennlp documentation <https://docs.allennlp.org/master/api/commands/train/>`_.
+            `AllenNLP documentation <https://docs.allennlp.org/master/api/commands/train/>`_.
 
     """
 
@@ -63,7 +63,7 @@ class AllenNLPExecutor(object):
             self._include_package = include_package
 
     def _build_params(self) -> Dict[str, Any]:
-        """Create a dict of params for allennlp."""
+        """Create a dict of params for AllenNLP."""
 
         # _build_params is based on allentune's train_func.
         # https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
@@ -72,12 +72,12 @@ class AllenNLPExecutor(object):
         _params = json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=self._params))
 
         # _params contains a list of string or string as value values.
-        # Some params couldn't be casted correctly.
+        # Some params couldn't be casted correctly and
         # infer_and_cast converts them into desired values.
         return allennlp.common.params.infer_and_cast(_params)
 
     def run(self) -> float:
-        """Train a model using allennlp."""
+        """Train a model using AllenNLP."""
 
         for package_name in self._include_package:
             allennlp.common.util.import_submodules(package_name)
@@ -94,8 +94,8 @@ def _check_allennlp_availability():
 
     if not _available:
         raise ImportError(
-            "allennlp is not available. Please install allennlp to use this feature. "
-            "allennlp can be installed by executing `$ pip install allennlp`. "
-            "For further information, please refer to the installation guide of allennlp. "
+            "AllenNLP is not available. Please install AllenNLP to use this feature. "
+            "AllenNLP can be installed by executing `$ pip install allennlp`. "
+            "For further information, please refer to the installation guide of AllenNLP. "
             "(The actual import error is as follows: " + str(_import_error) + ")"
         )
