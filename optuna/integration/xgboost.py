@@ -31,8 +31,8 @@ class XGBoostPruningCallback(object):
 
     See `the example <https://github.com/optuna/optuna/blob/master/
     examples/pruning/xgboost_integration.py>`__
-    if you want to add a pruning callback which observes validation AUC to
-    training of an XGBoost model.
+    if you want to add a pruning callback which observes validation AUC of
+    a XGBoost model.
 
     Args:
         trial:
