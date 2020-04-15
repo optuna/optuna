@@ -1,8 +1,8 @@
 import copy
 from datetime import datetime
+from unittest.mock import patch
 
 import fakeredis
-from mock import patch
 import pytest
 
 import optuna

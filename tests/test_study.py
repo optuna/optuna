@@ -4,12 +4,12 @@ import multiprocessing
 import pickle
 import threading
 import time
+from unittest.mock import Mock  # NOQA
+from unittest.mock import patch
 import uuid
 import warnings
 
 import joblib
-from mock import Mock  # NOQA
-from mock import patch
 import pandas as pd
 import pytest
 

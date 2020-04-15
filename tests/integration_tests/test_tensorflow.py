@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import math
+from unittest.mock import patch
 
-from mock import patch
 import numpy as np
 import tensorflow as tf
 

@@ -1,8 +1,8 @@
 import pickle
 import sys
 import tempfile
+from unittest.mock import patch
 
-from mock import patch
 import pytest
 
 from optuna.distributions import CategoricalDistribution
