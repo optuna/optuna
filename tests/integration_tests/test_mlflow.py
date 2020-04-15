@@ -8,8 +8,7 @@ from optuna.integration.mlflow import MLflowCallback
 def _objective_func(trial):
     # type: (optuna.trial.Trial) -> float
 
-    x_max = 1.0
-    x = trial.suggest_uniform("x", -x_max, x_max)
+    x = trial.suggest_uniform("x", -1.0, 1.0)
     y = trial.suggest_loguniform("y", 20, 30)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
     assert isinstance(z, float)
