@@ -1,7 +1,6 @@
-// use dev.jsonl for training to reduce computation time.
+// Use dev.jsonl for training to reduce computation time.
 local TRAIN_PATH = 'https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl';
 local VALIDATION_PATH = 'https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/test.jsonl';
-
 local DROPOUT = std.extVar('DROPOUT');
 local EMBEDDING_DIM = std.extVar('EMBEDDING_DIM');
 local CNN_FIELDS(max_filter_size, embedding_dim, hidden_size, num_filters) = {
@@ -58,7 +57,7 @@ local ENCODER = CNN_FIELDS(
 
   trainer: {
     cuda_device: -1,
-    num_epochs: 6,
+    num_epochs: 5,
     optimizer: {
       lr: 0.1,
       type: 'adam',
