@@ -49,22 +49,40 @@ class HyperbandPruner(BasePruner):
         Thus, for example, if ``HyperbandPruner`` has :math:`4` pruners in it,
         at least :math:`4 \\times 10` pruners are consumed for startup.
 
+    Example:
+
+        We minimize an objective function with Hyperband pruning algorithm.
+
+        .. testcode::
+
+            from optuna import create_study
+            from optuna.pruners import HyperbandPruner
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -1, 1)
+                return x ** 2
+
+            study = create_study(pruner=HyperbandPruner())
+            study.optimize(objective)
+
     Args:
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial noted as :math:`r`
-            in the paper.
+            in the paper. Basically, a smaller :math:`r` will give a result faster, but a larger
+            :math:`r` will give a better guarantee of successful judging between configurations.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
-            :math:`\\eta` in the paper. See the details for
-            :class:`~optuna.pruners.SuccessiveHalvingPruner`.
+            :math:`\\eta` in the paper. Basically, the paper says that results are
+            not very sensitive to the choice of :math:`\\eta`.
+            See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         n_brackets:
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
             Defaults to :math`4`. See
             https://github.com/optuna/optuna/pull/809#discussion_r361363897.
         min_early_stopping_rate_low:
             A parameter for specifying the minimum early-stopping rate.
-            This parameter is related to a parameter that is referred to as :math:`r` and used in
+            This parameter is related to a parameter that is referred to as :math:`s` and used in
             `Asynchronous SuccessiveHalving paper <http://arxiv.org/abs/1810.05934>`_.
             The minimum early stopping rate for :math:`i` th bracket is :math:`i + s`.
     """
