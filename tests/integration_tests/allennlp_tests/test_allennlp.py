@@ -6,7 +6,6 @@ import optuna
 
 
 def test__set_param() -> None:
-
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
@@ -22,7 +21,6 @@ def test__set_param() -> None:
 
 
 def test_missing_config_file() -> None:
-
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
@@ -38,7 +36,6 @@ def test_missing_config_file() -> None:
 
 
 def test_invalid_config_file() -> None:
-
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
@@ -56,7 +53,6 @@ def test_invalid_config_file() -> None:
 
 
 def test_invalid_param_name() -> None:
-
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.suggest_uniform("_____DROPOUT", 0.0, 0.5)
@@ -69,7 +65,6 @@ def test_invalid_param_name() -> None:
 
 
 def test_allennlp_executor() -> None:
-
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.suggest_uniform("DROPOUT", 0.0, 0.5)
@@ -83,7 +78,6 @@ def test_allennlp_executor() -> None:
 
 
 def test_allennlp_executor_with_include_package() -> None:
-
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.suggest_uniform("DROPOUT", 0.0, 0.5)
@@ -100,7 +94,6 @@ def test_allennlp_executor_with_include_package() -> None:
 
 
 def test_allennlp_executor_with_include_package_arr() -> None:
-
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.suggest_uniform("DROPOUT", 0.0, 0.5)

@@ -34,7 +34,6 @@ MODEL_DIR = "result"
 
 
 def objective(trial):
-
     trial.suggest_uniform("DROPOUT", 0.0, 0.5)
     trial.suggest_int("EMBEDDING_DIM", 20, 50)
     trial.suggest_int("MAX_FILTER_SIZE", 3, 6)

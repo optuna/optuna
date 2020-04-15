@@ -51,6 +51,7 @@ class AllenNLPExecutor(object):
         *,
         include_package: Union[str, List[str]] = []
     ):
+
         _check_allennlp_availability()
 
         self._params = trial.params
@@ -64,7 +65,6 @@ class AllenNLPExecutor(object):
 
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP."""
-
         # _build_params is based on allentune's train_func.
         # https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
         for key, value in self._params.items():
@@ -78,7 +78,6 @@ class AllenNLPExecutor(object):
 
     def run(self) -> float:
         """Train a model using AllenNLP."""
-
         for package_name in self._include_package:
             allennlp.common.util.import_submodules(package_name)
 
@@ -89,9 +88,7 @@ class AllenNLPExecutor(object):
         return metrics[self._metrics]
 
 
-def _check_allennlp_availability():
-    # type: () -> None
-
+def _check_allennlp_availability() -> None:
     if not _available:
         raise ImportError(
             "AllenNLP is not available. Please install AllenNLP to use this feature. "
