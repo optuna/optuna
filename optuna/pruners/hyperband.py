@@ -53,17 +53,48 @@ class HyperbandPruner(BasePruner):
 
         We minimize an objective function with Hyperband pruning algorithm.
 
+        .. testsetup::
+
+            import numpy as np
+            from sklearn.model_selection import train_test_split
+
+            np.random.seed(seed=0)
+            X = np.random.randn(200).reshape(-1, 1)
+            y = np.where(X[:, 0] < 0.5, 0, 1)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+            classes = np.unique(y)
+
         .. testcode::
 
-            from optuna import create_study
-            from optuna.pruners import HyperbandPruner
+            import optuna
+            from sklearn.linear_model import SGDClassifier
 
             def objective(trial):
-                x = trial.suggest_uniform('x', -1, 1)
-                return x ** 2
+                alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
+                clf = SGDClassifier(alpha=alpha)
+                n_train_iter = 100
 
-            study = create_study(pruner=HyperbandPruner())
-            study.optimize(objective)
+                for step in range(n_train_iter):
+                    clf.partial_fit(X_train, y_train, classes=classes)
+
+                    intermediate_value = clf.score(X_test, y_test)
+                    trial.report(intermediate_value, step)
+
+                    if trial.should_prune():
+                        raise optuna.exceptions.TrialPruned()
+
+                return clf.score(X_test, y_test)
+
+            study = optuna.create_study(
+                direction='maximize',
+                pruner=optuna.pruners.HyperbandPruner(
+                    min_resource=1,
+                    reduction_factor=3,
+                    n_brackets=4,
+                    min_early_stopping_rate_low=0
+                )
+            )
+            study.optimize(objective, n_trials=20)
 
     Args:
         min_resource:
