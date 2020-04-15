@@ -146,7 +146,7 @@ jobs:
             python -c 'import optuna'
 
             # Install all dependencies needed for testing.
-            pip install --progress-bar off $(ls dist/*.tar.gz)[testing]
+            pip install --progress-bar off $(ls dist/*.tar.gz)[testing] -f https://download.pytorch.org/whl/torch_stable.html
 
       - run: &tests
           name: tests
