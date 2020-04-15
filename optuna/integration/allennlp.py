@@ -6,6 +6,7 @@ from typing import List
 from typing import Union
 
 import optuna
+from optuna._experimental import experimental
 
 try:
     import _jsonnet
@@ -19,8 +20,12 @@ except ImportError as e:
     TrackerCallback = object
 
 
+@experimental("1.4.0")
 class AllenNLPExecutor(object):
     """AllenNLP extension to use optuna with a jsonnet config file.
+
+    This feature is experimental since AllenNLP major release will come soon.
+    The interface may change without prior notice to correspond to the update.
 
     Args:
         trial:
