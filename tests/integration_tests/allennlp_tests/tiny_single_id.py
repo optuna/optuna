@@ -13,7 +13,7 @@ import torch
 class SingleIdTokenIndexer(TokenIndexer):
     """Tiny implementation of SingleIdTokenIndexer.
 
-    This class if based on allennlp SingleIdTokenIndexer.
+    This class is based on allennlp SingleIdTokenIndexer.
     https://github.com/allenai/allennlp/blob/master/
     allennlp/data/token_indexers/single_id_token_indexer.py
 
