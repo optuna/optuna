@@ -29,12 +29,10 @@ def _get_callback_context(env):
 class XGBoostPruningCallback(object):
     """Callback for XGBoost to prune unpromising trials.
 
-    Example:
-
-        See `the example <https://github.com/optuna/optuna/blob/master/
-        examples/pruning/xgboost_integration.py>`__
-        if you want to add a pruning callback which observes validation AUC to
-        training of an XGBoost model.
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/xgboost_integration.py>`__
+    if you want to add a pruning callback which observes validation AUC to
+    training of an XGBoost model.
 
     Args:
         trial:
