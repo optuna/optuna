@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 import scipy.special
+from scipy.stats import truncnorm
 
 from optuna import distributions
 from optuna.pruners import HyperbandPruner
@@ -324,21 +325,24 @@ class TPESampler(base.BaseSampler):
         mus = parzen_estimator.mus
         sigmas = parzen_estimator.sigmas
         weights, mus, sigmas = map(np.asarray, (weights, mus, sigmas))
-        n_samples = np.prod(size)
 
         if low >= high:
             raise ValueError(
                 "The 'low' should be lower than the 'high'. "
                 "But (low, high) = ({}, {}).".format(low, high)
             )
-        samples = np.asarray([], dtype=float)
-        while samples.size < n_samples:
-            active = np.argmax(self._rng.multinomial(1, weights))
-            draw = self._rng.normal(loc=mus[active], scale=sigmas[active])
-            if low <= draw < high:
-                samples = np.append(samples, draw)
 
-        samples = np.reshape(samples, size)
+        active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
+        trunc_low = (low - mus[active]) / sigmas[active]
+        trunc_high = (high - mus[active]) / sigmas[active]
+        samples = truncnorm.rvs(
+            trunc_low,
+            trunc_high,
+            size=size,
+            loc=mus[active],
+            scale=sigmas[active],
+            random_state=self._rng,
+        )
 
         if is_log:
             samples = np.exp(samples)
