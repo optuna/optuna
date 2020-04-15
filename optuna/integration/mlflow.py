@@ -98,7 +98,7 @@ class MLflowCallback(object):
         self._metric_name = metric_name
 
     def __call__(self, study, trial):
-        # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
+        # type: (optuna.study.Study, optuna.trial.FrozenTrial) -> None
 
         # This sets the tracking_uri for MLflow.
         if self._tracking_uri is not None:
