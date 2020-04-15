@@ -51,6 +51,7 @@ class AllenNLPExecutor(object):
         *,
         include_package: Union[str, List[str]] = []
     ):
+        _check_allennlp_availability()
 
         self._params = trial.params
         self._config_file = config_file
