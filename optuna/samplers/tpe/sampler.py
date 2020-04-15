@@ -246,12 +246,7 @@ class TPESampler(base.BaseSampler):
             mus=below, low=low, high=high, parameters=self._parzen_estimator_parameters
         )
         samples_below = self._sample_from_gmm(
-            parzen_estimator=parzen_estimator_below,
-            low=low,
-            high=high,
-            q=q,
-            is_log=is_log,
-            size=size,
+            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size,
         )
         log_likelihoods_below = self._gmm_log_pdf(
             samples=samples_below,
@@ -259,7 +254,6 @@ class TPESampler(base.BaseSampler):
             low=low,
             high=high,
             q=q,
-            is_log=is_log,
         )
 
         parzen_estimator_above = _ParzenEstimator(
@@ -272,14 +266,14 @@ class TPESampler(base.BaseSampler):
             low=low,
             high=high,
             q=q,
-            is_log=is_log,
         )
 
-        return float(
+        ret = float(
             TPESampler._compare(
                 samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above
             )[0]
         )
+        return math.exp(ret) if is_log else ret
 
     def _sample_categorical_index(self, distribution, below, above):
         # type: (distributions.CategoricalDistribution, np.ndarray, np.ndarray) -> int
@@ -316,7 +310,6 @@ class TPESampler(base.BaseSampler):
         high,  # type: float
         q=None,  # type: Optional[float]
         size=(),  # type: Tuple
-        is_log=False,  # type: bool
     ):
         # type: (...) -> np.ndarray
 
@@ -340,9 +333,6 @@ class TPESampler(base.BaseSampler):
 
         samples = np.reshape(samples, size)
 
-        if is_log:
-            samples = np.exp(samples)
-
         if q is None:
             return samples
         else:
@@ -355,7 +345,6 @@ class TPESampler(base.BaseSampler):
         low,  # type: float
         high,  # type: float
         q=None,  # type: Optional[float]
-        is_log=False,  # type: bool
     ):
         # type: (...) -> np.ndarray
 
@@ -390,26 +379,17 @@ class TPESampler(base.BaseSampler):
         )
 
         if q is None:
-            jacobian = samples[:, None] if is_log else np.ones(samples.shape)[:, None]
-            if is_log:
-                distance = np.log(samples[:, None]) - mus
-            else:
-                distance = samples[:, None] - mus
+            distance = samples[:, None] - mus
             mahalanobis = (distance / np.maximum(sigmas, EPS)) ** 2
-            Z = np.sqrt(2 * np.pi) * sigmas * jacobian
+            Z = np.sqrt(2 * np.pi) * sigmas
             coefficient = weights / Z / p_accept
             return_val = TPESampler._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
         else:
             probabilities = np.zeros(samples.shape, dtype=float)
-            cdf_func = TPESampler._log_normal_cdf if is_log else TPESampler._normal_cdf
+            cdf_func = TPESampler._normal_cdf
             for w, mu, sigma in zip(weights, mus, sigmas):
-                if is_log:
-                    upper_bound = np.minimum(samples + q / 2.0, np.exp(high))
-                    lower_bound = np.maximum(samples - q / 2.0, np.exp(low))
-                    lower_bound = np.maximum(0, lower_bound)
-                else:
-                    upper_bound = np.minimum(samples + q / 2.0, high)
-                    lower_bound = np.maximum(samples - q / 2.0, low)
+                upper_bound = np.minimum(samples + q / 2.0, high)
+                lower_bound = np.maximum(samples - q / 2.0, low)
                 inc_amt = w * cdf_func(upper_bound, mu, sigma)
                 inc_amt -= w * cdf_func(lower_bound, mu, sigma)
                 probabilities += inc_amt
