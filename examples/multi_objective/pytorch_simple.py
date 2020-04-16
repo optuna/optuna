@@ -106,7 +106,10 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    study = optuna.create_study()
+    study = optuna.create_study(metrics_directions={
+        'flops': "minimize",
+        'accuracy': "maximize",
+    })
     study.optimize(objective, n_trials=100)
 
     print("Number of finished trials: ", len(study.trials))
