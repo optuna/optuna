@@ -98,6 +98,13 @@ class BaseTuner(object):
             metric = list(metric)[-1]
         else:
             raise NotImplementedError
+
+        metric = self._metric_with_eval_at(metric)
+        valid_name = self._get_valid_name_for_objective()
+        val_score = booster.best_score[valid_name][metric]
+        return val_score
+
+    def _get_valid_name_for_objective(self) -> str:
         valid_sets = self.lgbm_kwargs.get("valid_sets")  # type: Optional[VALID_SET_TYPE]
 
         if self.lgbm_kwargs.get("valid_names") is not None:
@@ -118,9 +125,7 @@ class BaseTuner(object):
         else:
             raise NotImplementedError
 
-        metric = self._metric_with_eval_at(metric)
-        val_score = booster.best_score[valid_name][metric]
-        return val_score
+        return valid_name
 
     def _metric_with_eval_at(self, metric):
         # type: (str) -> str
@@ -243,8 +248,20 @@ class OptunaObjective(BaseTuner):
             param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + EPS))
             self.lgbm_params["min_child_samples"] = param_value
 
+        lgbm_kwargs = copy.copy(self.lgbm_kwargs)
+        if not isinstance(trial.study.pruner, optuna.pruners.NopPruner):
+            if lgbm_kwargs["callbacks"] is None:
+                lgbm_kwargs["callbacks"] = []
+            lgbm_kwargs["callbacks"].append(
+                optuna.integration.LightGBMPruningCallback(
+                    trial,
+                    self.lgbm_params.get("metric", "binary_logloss"),
+                    valid_name=self._get_valid_name_for_objective(),
+                )
+            )
+
         with _timer() as t:
-            booster = lgb.train(self.lgbm_params, self.train_set, **self.lgbm_kwargs)
+            booster = lgb.train(self.lgbm_params, self.train_set, **lgbm_kwargs)
 
         val_score = self._get_booster_best_score(booster)
         elapsed_secs = t.elapsed_secs()
@@ -335,7 +352,7 @@ class LightGBMTuner(BaseTuner):
         train_set,  # type: lgb.Dataset
         num_boost_round=1000,  # type: int
         valid_sets=None,  # type: Optional[VALID_SET_TYPE]
-        valid_names=None,  # type: Optional[Any]
+        valid_names=None,  # type: Optional[List[str]]
         fobj=None,  # type: Optional[Callable[..., Any]]
         feval=None,  # type: Optional[Callable[..., Any]]
         feature_name="auto",  # type: str
@@ -409,7 +426,8 @@ class LightGBMTuner(BaseTuner):
 
         if study is None:
             self.study = optuna.create_study(
-                direction="maximize" if self.higher_is_better() else "minimize"
+                direction="maximize" if self.higher_is_better() else "minimize",
+                pruner=optuna.pruners.NopPruner(),
             )
         else:
             self.study = study

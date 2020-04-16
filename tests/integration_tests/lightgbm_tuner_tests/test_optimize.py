@@ -18,6 +18,7 @@ from optuna.integration.lightgbm_tuner.optimize import _timer
 from optuna.integration.lightgbm_tuner.optimize import BaseTuner
 from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration.lightgbm_tuner.optimize import OptunaObjective
+from optuna.testing.integration import DeterministicPruner
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -403,6 +404,36 @@ class TestLightGBMTuner(object):
         if not type_checking.TYPE_CHECKING:
             runner.train_subset.construct()  # Cannot get label before construct `lgb.Dataset`.
             assert runner.train_subset.get_label().shape[0] == sample_size
+
+    @pytest.mark.parametrize(
+        "pruner, trial_state, prune_count",
+        [
+            (optuna.pruners.NopPruner(), optuna.trial.TrialState.COMPLETE, 0),
+            (DeterministicPruner(True), optuna.trial.TrialState.PRUNED, 20),
+        ],
+    )
+    def test_pruning(
+        self,
+        pruner: Optional[optuna.pruners.BasePruner],
+        trial_state: optuna.trial.TrialState,
+        prune_count: int,
+    ) -> None:
+        params = {
+            "verbose": -1,
+            "objective": "binary",
+        }  # type: Dict
+        dtrain = lgb.Dataset([[1.0], [2.0], [3.0]], label=[1.0, 0.0, 1.0])
+        dvalid = lgb.Dataset([[1.0]], label=[1.0])
+
+        study = optuna.create_study(pruner=pruner)
+        tuner = LightGBMTuner(params, dtrain, valid_sets=dvalid, study=study)
+
+        with mock.patch.object(pruner, "prune", wraps=pruner.prune) as mock_object:
+            tuner.tune_regularization_factors()
+
+            assert len(study.trials) == 20
+            assert study.trials[0].state == trial_state
+            assert mock_object.call_count == prune_count
 
     def test_tune_feature_fraction(self):
         # type: () -> None
