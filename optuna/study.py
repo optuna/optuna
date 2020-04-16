@@ -107,6 +107,16 @@ class BaseStudy(object):
         return self._storage.get_study_direction(self._study_id)
 
     @property
+    def sub_metrics_directions(self) -> Dict[str, StudyDirection]:
+        """Return the metrics direction of the study.
+
+        Returns:
+            A dict object which contains :class:`~optuna.study.StudyDirection`.
+        """
+
+        return self._storage.get_study_metrics_directions(self._study_id)
+
+    @property
     def trials(self):
         # type: () -> List[FrozenTrial]
         """Return all trials in the study.
@@ -523,6 +533,34 @@ class Study(BaseStudy):
 
         return df
 
+    @experimental("1.4.0")
+    def get_pareto_front_trials(self) -> List[FrozenTrial]:
+        """Return trials located at the pareto front in the study.
+
+        A trial is located at the pareto front if there are no trials that dominate the trial.
+        It's called that a trial ``t0`` dominates another trial ``t1`` if
+        ``all(v0 <= v1) for v0, v1 in zip(t0.values, t1.values)`` and
+        ``any(v0 < v1) for v0, v1 in zip(t0.values, t1.values)`` are held.
+
+        Returns:
+            A dict of :class:`~optuna.trial.FrozenTrial` objects.
+        """
+        pareto_front = []
+        trials = [t for t in self.trials if t.state == TrialState.COMPLETE]
+
+        # TODO(ohta): Optimize (use the fast non dominated sort defined in the NSGA-II paper).
+        for trial in trials:
+            dominated = False
+            for other in trials:
+                if other._dominates(trial, self.sub_metrics_directions):
+                    dominated = True
+                    break
+
+            if not dominated:
+                pareto_front.append(trial)
+
+        return pareto_front
+
     @experimental("1.2.0")
     def enqueue_trial(self, params):
         # type: (Dict[str, Any]) -> None
@@ -764,6 +802,7 @@ def create_study(
     pruner=None,  # type: pruners.BasePruner
     study_name=None,  # type: Optional[str]
     direction="minimize",  # type: str
+    metrics_directions=None,  # type: Optional[Dict[str, str]]
     load_if_exists=False,  # type: bool
 ):
     # type: (...) -> Study
@@ -799,6 +838,9 @@ def create_study(
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization.
+        metrics_directions:
+            Optimization direction for sub metrics.
+            Set ``minimize`` for minimization and ``maximize`` for maximization.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
@@ -837,6 +879,20 @@ def create_study(
         raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
 
     study._storage.set_study_direction(study_id, _direction)
+
+    if metrics_directions is not None:
+        directions = {}  # type: Dict[str, StudyDirection]
+        for metric_name in metrics_directions:
+            if metric_name == "":
+                raise ValueError("metric_name should be non empty string.")
+            if metric_name == "minimize":
+                directions[metric_name] = StudyDirection.MINIMIZE
+            elif metric_name == "maximize":
+                directions[metric_name] = StudyDirection.MAXIMIZE
+            else:
+                raise ValueError(
+                    "`metrics_directions` includes unknown direction names.")
+        study._storage.set_sub_metrics_directions(study.study_id, directions)
 
     return study
 

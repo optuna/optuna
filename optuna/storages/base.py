@@ -222,3 +222,31 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             raise RuntimeError(
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
+
+    def set_sub_metrics_directions(self, study_id: int, directions: Dict[str, study.StudyDirection]) -> None:
+        prefix = "sub_metrics:direction:"
+        for name in directions:
+            if name == "":
+                raise ValueError("Metric name should be non empty string.")
+            key = prefix + name
+            self.set_trial_system_attr(study_id, key, directions[name])
+
+    def get_study_metrics_directions(self, study_id: int) -> Dict[str, study.StudyDirection]:
+        prefix = "sub_metrics:direction:"
+        system_attrs = self.get_study_system_attrs(study_id)
+        directions = {}  # type: Dict[str, study.StudyDirection]
+        for key in system_attrs:
+            if not key.startswith(prefix):
+                continue
+            name = key[len(prefix):]
+            directions[name] = study.StudyDirection(system_attrs[key])
+        return directions
+
+    def report_sub_metrics(self, trial_id: int, metrics: Dict[str, float]) -> None:
+        prefix = "sub_metrics:value:"
+        for name in metrics:
+            if name == "":
+                raise ValueError("Metric name should be non empty string.")
+            key = prefix + name
+            metric_value = metrics[name]
+            self.set_trial_system_attr(trial_id, key, metric_value)

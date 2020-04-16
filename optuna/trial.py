@@ -6,6 +6,7 @@ import warnings
 
 from optuna import distributions
 from optuna import logging
+from optuna import study
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -203,6 +204,38 @@ class FrozenTrial(object):
                     "{}.".format(param_value, param_name, distribution)
                 )
 
+    def _dominates(
+        self,
+        other: "FrozenTrial",
+        directions: Dict[str, 'study.StudyDirection'],
+    ) -> bool:
+        self_sub_metrics = self.sub_metrics
+        other_sub_metrics = other.sub_metrics
+        for metric_name in directions:
+            if self.state != TrialState.COMPLETE:
+                return False
+
+            if other.state != TrialState.COMPLETE:
+                return True
+
+            if metric_name not in self_sub_metrics:
+                raise ValueError("Trial {} doesn't contain '{}' metric.".format(
+                    self._trial_id, metric_name))
+
+            if metric_name not in other_sub_metrics:
+                raise ValueError("Trial {} doesn't contain '{}' metric.".format(
+                    other._trial_id, metric_name))
+
+            value0 = self_sub_metrics[metric_name]
+            value1 = other_sub_metrics[metric_name]
+            if directions[metric_name] == study.StudyDirection.MAXIMIZE:
+                value0 = -value0
+                value1 = -value1
+
+            if value0 > value1:
+                return False
+        return True
+
     @property
     def distributions(self):
         # type: () -> Dict[str, BaseDistribution]
@@ -263,6 +296,18 @@ class FrozenTrial(object):
             return self.datetime_complete - self.datetime_start
         else:
             return None
+
+    @property
+    def sub_metrics(self) -> Dict[str, float]:
+        prefix = "sub_metrics:value:"
+        system_attrs = self.system_attrs
+        sub_metrics = {}  # type: Dict[str, float]
+        for key in system_attrs:
+            if not key.startswith(prefix):
+                continue
+            name = key[len(prefix):]
+            sub_metrics[name] = system_attrs[key]
+        return sub_metrics
 
 
 class BaseTrial(object, metaclass=abc.ABCMeta):
@@ -860,6 +905,15 @@ class Trial(BaseTrial):
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
         self.storage.set_trial_intermediate_value(self._trial_id, step, value)
+
+    def report_sub_metrics(self, metrics: Dict[str, float]) -> None:
+        """Report sub metrics for multi-objective optimization.
+
+        Args:
+            metrics:
+                A dict object which contains metrics value.
+        """
+        self.storage.report_sub_metrics(self._trial_id, metrics)
 
     def should_prune(self, step=None):
         # type: (Optional[int]) -> bool
