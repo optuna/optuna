@@ -2,16 +2,16 @@ import abc
 import datetime
 import decimal
 import enum
+from typing import Dict
 import warnings
 
+import optuna
 from optuna import distributions
 from optuna import logging
-from optuna import study
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
-    from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
@@ -205,9 +205,7 @@ class FrozenTrial(object):
                 )
 
     def _dominates(
-        self,
-        other: "FrozenTrial",
-        directions: Dict[str, 'study.StudyDirection'],
+        self, other: "FrozenTrial", directions: Dict[str, "optuna.study.StudyDirection"],
     ) -> bool:
         self_sub_metrics = self.sub_metrics
         other_sub_metrics = other.sub_metrics
@@ -219,16 +217,18 @@ class FrozenTrial(object):
                 return True
 
             if metric_name not in self_sub_metrics:
-                raise ValueError("Trial {} doesn't contain '{}' metric.".format(
-                    self._trial_id, metric_name))
+                raise ValueError(
+                    "Trial {} doesn't contain '{}' metric.".format(self._trial_id, metric_name)
+                )
 
             if metric_name not in other_sub_metrics:
-                raise ValueError("Trial {} doesn't contain '{}' metric.".format(
-                    other._trial_id, metric_name))
+                raise ValueError(
+                    "Trial {} doesn't contain '{}' metric.".format(other._trial_id, metric_name)
+                )
 
             value0 = self_sub_metrics[metric_name]
             value1 = other_sub_metrics[metric_name]
-            if directions[metric_name] == study.StudyDirection.MAXIMIZE:
+            if directions[metric_name] == optuna.study.StudyDirection.MAXIMIZE:
                 value0 = -value0
                 value1 = -value1
 
@@ -305,7 +305,7 @@ class FrozenTrial(object):
         for key in system_attrs:
             if not key.startswith(prefix):
                 continue
-            name = key[len(prefix):]
+            name = key[len(prefix) :]
             sub_metrics[name] = system_attrs[key]
         return sub_metrics
 
@@ -913,7 +913,14 @@ class Trial(BaseTrial):
             metrics:
                 A dict object which contains metrics value.
         """
-        self.storage.report_sub_metrics(self._trial_id, metrics)
+
+        prefix = "sub_metrics:value:"
+        for name in metrics:
+            if name == "":
+                raise ValueError("Metric name should be non empty string.")
+            key = prefix + name
+            metric_value = metrics[name]
+            self.set_system_attr(key, metric_value)
 
     def should_prune(self, step=None):
         # type: (Optional[int]) -> bool

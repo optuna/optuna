@@ -98,29 +98,23 @@ def objective(trial):
 
     flops, _params = thop.profile(model, inputs=(torch.randn(1, 28 * 28),), verbose=False)
 
-    trial.report_sub_metrics({
-        'flops': flops,
-        'accuracy': accuracy,
-    })
+    trial.report_sub_metrics({"flops": flops, "accuracy": accuracy})
     return accuracy
 
 
 if __name__ == "__main__":
-    study = optuna.create_study(metrics_directions={
-        'flops': "minimize",
-        'accuracy': "maximize",
-    })
+    study = optuna.create_study(metrics_directions={"flops": "minimize", "accuracy": "maximize"})
     study.optimize(objective, n_trials=100)
 
     print("Number of finished trials: ", len(study.trials))
 
     print("Pareto front:")
 
-    trials = {str(trial.values): trial for trial in study.get_pareto_front_trials()}
-    trials = list(trials.values())
-    trials.sort(key=lambda t: t.values)
-
-    for trial in trials:
+    for trial in study.get_pareto_front_trials():
         print("  Trial#{}".format(trial.number))
-        print("    Values: FLOPS={}, accuracy={}".format(trial.values[0], trial.values[1]))
+        print(
+            "    Values: FLOPS={}, accuracy={}".format(
+                trial.sub_metrics["flops"], trial.sub_metrics["accuracy"]
+            )
+        )
         print("    Params: {}".format(trial.params))

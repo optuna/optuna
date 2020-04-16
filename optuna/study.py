@@ -3,6 +3,8 @@ import datetime
 import gc
 import math
 import threading
+from typing import Dict
+from typing import List
 import warnings
 
 import joblib
@@ -36,8 +38,6 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Set  # NOQA
     from typing import Tuple  # NOQA
@@ -885,13 +885,12 @@ def create_study(
         for metric_name in metrics_directions:
             if metric_name == "":
                 raise ValueError("metric_name should be non empty string.")
-            if metric_name == "minimize":
+            if metrics_directions[metric_name] == "minimize":
                 directions[metric_name] = StudyDirection.MINIMIZE
-            elif metric_name == "maximize":
+            elif metrics_directions[metric_name] == "maximize":
                 directions[metric_name] = StudyDirection.MAXIMIZE
             else:
-                raise ValueError(
-                    "`metrics_directions` includes unknown direction names.")
+                raise ValueError("`metrics_directions` includes unknown direction names.")
         study._storage.set_sub_metrics_directions(study.study_id, directions)
 
     return study
