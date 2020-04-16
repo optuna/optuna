@@ -320,7 +320,8 @@ class LightGBMTuner(BaseTuner):
             A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
             saved. Please set shared directory (e.g., directories on NFS) if you want to access
             :meth:`~optuna.integration.LightGBMTuner.best_booster` in distributed environments.
-            Otherwise, it may raise :obj:`ValueError`.
+            Otherwise, it may raise :obj:`ValueError`. If the directory does not exist, it will be
+            created.
     """
 
     def __init__(
