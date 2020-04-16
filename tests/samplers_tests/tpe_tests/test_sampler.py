@@ -1,4 +1,3 @@
-import pytest
 import random
 from typing import Callable
 from typing import Dict
@@ -8,6 +7,7 @@ from unittest.mock import Mock
 from unittest.mock import patch
 
 import numpy as np
+import pytest
 
 import optuna
 from optuna.exceptions import TrialPruned
