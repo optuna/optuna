@@ -580,7 +580,7 @@ class LightGBMTuner(BaseTuner):
         # type: (int) -> None
 
         param_name = "feature_fraction"
-        param_values = list(np.linspace(0.4, 1.0, n_trials))
+        param_values = np.linspace(0.4, 1.0, n_trials).tolist()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
             sampler = optuna.samplers.GridSampler({param_name: param_values})
@@ -603,9 +603,9 @@ class LightGBMTuner(BaseTuner):
 
         param_name = "feature_fraction"
         best_feature_fraction = self.best_params[param_name]
-        param_values = list(
-            np.linspace(best_feature_fraction - 0.08, best_feature_fraction + 0.08, n_trials)
-        )
+        param_values = np.linspace(
+            best_feature_fraction - 0.08, best_feature_fraction + 0.08, n_trials
+        ).tolist()
         param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
