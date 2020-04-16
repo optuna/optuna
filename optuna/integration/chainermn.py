@@ -67,16 +67,10 @@ class ChainerMNStudy(object):
         :class:`~optuna.study.Study`. Please refer to :class:`optuna.study.Study` for further
         details.
 
-    Example:
-
-        Optimize an objective function that trains neural network written with ChainerMN.
-
-        .. code::
-
-            comm = chainermn.create_communicator('naive')
-            study = optuna.load_study(study_name, storage_url)
-            chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
-            chainermn_study.optimize(objective, n_trials=25)
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/chainermn_integration.py>`__
+    if you want to optimize an objective function that trains neural network
+    written with ChainerMN.
 
     Args:
         study:
