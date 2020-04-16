@@ -250,15 +250,15 @@ class OptunaObjective(BaseTuner):
 
         lgbm_kwargs = copy.copy(self.lgbm_kwargs)
         if not isinstance(trial.study.pruner, optuna.pruners.NopPruner):
-            if lgbm_kwargs["callbacks"] is None:
-                lgbm_kwargs["callbacks"] = []
-            lgbm_kwargs["callbacks"].append(
+            callbacks = [] if lgbm_kwargs["callbacks"] is None else lgbm_kwargs["callbacks"]
+            callbacks.append(
                 optuna.integration.LightGBMPruningCallback(
                     trial,
                     self.lgbm_params.get("metric", "binary_logloss"),
                     valid_name=self._get_valid_name_for_objective(),
                 )
             )
+            lgbm_kwargs["callbacks"] = callbacks
 
         with _timer() as t:
             booster = lgb.train(self.lgbm_params, self.train_set, **lgbm_kwargs)

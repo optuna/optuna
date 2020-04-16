@@ -84,7 +84,7 @@ class TestOptunaObjective(object):
                 "tune_lambda_l1",
                 None,
             )
-            study = optuna.create_study(direction="minimize")
+            study = optuna.create_study(direction="minimize", pruner=optuna.pruners.NopPruner())
             study.optimize(objective, n_trials=10)
 
             assert study.best_value == 0.5
@@ -317,7 +317,7 @@ class TestLightGBMTuner(object):
             params["metric"] = metric
         train_set = lgb.Dataset(None)
         valid_set = lgb.Dataset(None)
-        study = optuna.create_study(direction=study_direction)
+        study = optuna.create_study(direction=study_direction, pruner=optuna.pruners.NopPruner())
         with pytest.raises(ValueError) as excinfo:
             lgb.LightGBMTuner(
                 params,
@@ -367,7 +367,9 @@ class TestLightGBMTuner(object):
     )
     def test_best_score(self, metric: str, study_direction: str, expected: float) -> None:
         with turnoff_train(metric=metric):
-            study = optuna.create_study(direction=study_direction)
+            study = optuna.create_study(
+                direction=study_direction, pruner=optuna.pruners.NopPruner()
+            )
             runner = self._get_tuner_object(
                 params=dict(lambda_l1=0.0, metric=metric), kwargs_options={}, study=study,
             )
@@ -414,7 +416,7 @@ class TestLightGBMTuner(object):
     )
     def test_pruning(
         self,
-        pruner: Optional[optuna.pruners.BasePruner],
+        pruner: optuna.pruners.BasePruner,
         trial_state: optuna.trial.TrialState,
         prune_count: int,
     ) -> None:
@@ -629,7 +631,7 @@ class TestLightGBMTuner(object):
         params = {"verbose": -1}  # type: Dict
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
-        study = optuna.create_study()
+        study = optuna.create_study(pruner=optuna.pruners.NopPruner())
         tuner = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
         with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
@@ -649,7 +651,7 @@ class TestLightGBMTuner(object):
         params = {"verbose": -1, "lambda_l1": unexpected_value}  # type: Dict
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
-        study = optuna.create_study()
+        study = optuna.create_study(pruner=optuna.pruners.NopPruner())
         tuner = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
         with pytest.raises(ValueError):
@@ -675,7 +677,7 @@ class TestLightGBMTuner(object):
         params = {"verbose": -1}  # type: Dict
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
-        study = optuna.create_study()
+        study = optuna.create_study(pruner=optuna.pruners.NopPruner())
         with TemporaryDirectory() as tmpdir:
             tuner = LightGBMTuner(
                 params, dataset, valid_sets=dataset, study=study, model_dir=tmpdir
