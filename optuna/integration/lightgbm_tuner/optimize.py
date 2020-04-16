@@ -450,14 +450,21 @@ class LightGBMTuner(BaseTuner):
 
     @property
     def best_booster(self) -> lgb.Booster:
-        """Return the best booster."""
+        """Return the best booster.
+
+        If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
+        errors, please save boosters by specifying the `model_dir` arguments of
+        :meth:`~optuna.integration.lightgbm.LightGBMTuner.__init__` when you resume tuning
+        or you run tuning in parallel.
+        """
         if self._best_booster_with_trial_number is not None:
             if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
                 return self._best_booster_with_trial_number[0]
-        else:
-            if len(self.study.trials) == 0:
-                raise ValueError("The best booster is not available because no trials completed.")
+        if len(self.study.trials) == 0:
+            raise ValueError("The best booster is not available because no trials completed.")
 
+        # The best booster exists, but this instance does not have it.
+        # This may be due to resuming or parallelization.
         if self._model_dir is None:
             raise ValueError(
                 "The best booster cannot be found. It may be found in the other processes due to "
@@ -661,7 +668,8 @@ class LightGBMTuner(BaseTuner):
             try:
                 study.optimize(objective, n_trials=_n_trials, catch=())
             except ValueError:
-                # ValueError is rased by GridSampler when all combinations were examined.
+                # ValueError is raised by GridSampler when all combinations were examined.
+                # TODO(toshihikoyanase): Remove this try-except after Study.stop is implemented.
                 pass
 
         pbar.close()
