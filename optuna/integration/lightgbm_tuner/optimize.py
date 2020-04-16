@@ -453,7 +453,7 @@ class LightGBMTuner(BaseTuner):
         """Return the best booster.
 
         If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
-        errors, please save boosters by specifying the `model_dir` arguments of
+        errors, please save boosters by specifying the ``model_dir`` arguments of
         :meth:`~optuna.integration.lightgbm.LightGBMTuner.__init__` when you resume tuning
         or you run tuning in parallel.
         """
