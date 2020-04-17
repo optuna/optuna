@@ -606,7 +606,7 @@ class Study(BaseStudy):
         n_trials,  # type: Optional[int]
         timeout,  # type: Optional[float]
         catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-        callbacks,  # type: Optional[List[Callable[[Study, structs.FrozenTrial], None]]]
+        callbacks,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
         gc_after_trial,  # type: bool
         time_start,  # type: Optional[datetime.datetime]
     ):
