@@ -1,5 +1,6 @@
-from mock import call
-from mock import patch
+from unittest.mock import call
+from unittest.mock import patch
+
 import pytest
 from skopt.space import space
 

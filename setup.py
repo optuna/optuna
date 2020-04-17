@@ -102,7 +102,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fanova",
             "lightgbm",
             "mlflow",
-            "mock",
             "mpi4py",
             "mxnet",
             "pandas",

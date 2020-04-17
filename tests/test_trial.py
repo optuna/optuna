@@ -1,10 +1,10 @@
 import copy
 import datetime
 import math
+from unittest.mock import Mock
+from unittest.mock import patch
 import warnings
 
-from mock import Mock
-from mock import patch
 import numpy as np
 import pytest
 
