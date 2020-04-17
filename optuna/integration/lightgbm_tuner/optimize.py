@@ -324,7 +324,8 @@ class LightGBMTuner(BaseTuner):
             saved. Please set shared directory (e.g., directories on NFS) if you want to access
             :meth:`~optuna.integration.LightGBMTuner.best_booster` in distributed environments.
             Otherwise, it may raise :obj:`ValueError`. If the directory does not exist, it will be
-            created. The filenames of the boosters will be ``model_dir/{trial_number}.pkl``.
+            created. The filenames of the boosters will be ``{model_dir}/{trial_number}.pkl``
+            (e.g., ``./boosters/0.pkl``).
     """
 
     def __init__(
