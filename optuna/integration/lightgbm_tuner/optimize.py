@@ -50,6 +50,8 @@ DEFAULT_LIGHTGBM_PARAMETERS = {
     "min_child_samples": 20,
 }
 
+_logger = optuna.logging.get_logger(__name__)
+
 
 class _TimeKeeper(object):
     def __init__(self):
@@ -252,6 +254,7 @@ class OptunaObjective(BaseTuner):
             path = os.path.join(self.model_dir, "{}.pkl".format(trial.number))
             with open(path, "wb") as fout:
                 pickle.dump(booster, fout)
+            _logger.info("The booster of trial#{} was saved as {}.".format(trial.number, path))
 
         if self.compare_validation_metrics(val_score, self.best_score):
             self.best_score = val_score
@@ -321,7 +324,7 @@ class LightGBMTuner(BaseTuner):
             saved. Please set shared directory (e.g., directories on NFS) if you want to access
             :meth:`~optuna.integration.LightGBMTuner.best_booster` in distributed environments.
             Otherwise, it may raise :obj:`ValueError`. If the directory does not exist, it will be
-            created.
+            created. The filenames of the boosters will be ``model_dir/{trial_number}.pkl``.
     """
 
     def __init__(
@@ -581,6 +584,8 @@ class LightGBMTuner(BaseTuner):
 
         param_name = "feature_fraction"
         param_values = np.linspace(0.4, 1.0, n_trials).tolist()
+
+        # TODO(toshihikoyanase): Remove catch_warnings after GridSampler becomes non-experimental.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
             sampler = optuna.samplers.GridSampler({param_name: param_values})
@@ -607,6 +612,8 @@ class LightGBMTuner(BaseTuner):
             best_feature_fraction - 0.08, best_feature_fraction + 0.08, n_trials
         ).tolist()
         param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
+
+        # TODO(toshihikoyanase): Remove catch_warnings after GridSampler becomes non-experimental.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
             sampler = optuna.samplers.GridSampler({param_name: param_values})
@@ -627,6 +634,8 @@ class LightGBMTuner(BaseTuner):
 
         param_name = "min_child_samples"
         param_values = [5, 10, 25, 50, 100]
+
+        # TODO(toshihikoyanase): Remove catch_warnings after GridSampler becomes non-experimental.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
             sampler = optuna.samplers.GridSampler({param_name: param_values})
