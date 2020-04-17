@@ -272,8 +272,8 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def suggest_float(self, name, low, high, *, log=False):
-        # type: (str, float, float, bool) -> float
+    def suggest_float(self, name, low, high, *, log=False, step=None):
+        # type: (str, float, float, bool, Optional[float])-> float
 
         raise NotImplementedError
 
@@ -420,22 +420,25 @@ class Trial(BaseTrial):
             self.study, trial, self.relative_search_space
         )
 
-    def suggest_float(self, name, low, high, *, log=False):
-        # type: (str, float, float, bool) -> float
+    def suggest_float(self, name, low, high, *, log=False, step=None):
+        # type: (str, float, float, bool, Optional[float]) -> float
         """Suggest a value for the floating point parameter.
 
-        Note that this is a wrapper method for :func:`~optuna.trial.Trial.suggest_uniform`
-        and :func:`~optuna.trial.Trial.suggest_loguniform`.
+        Note that this is a wrapper method for :func:`~optuna.trial.Trial.suggest_uniform`,
+        :func:`~optuna.trial.Trial.suggest_loguniform` and
+        :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
 
         .. versionadded:: 1.3.0
 
         .. seealso::
-            Please see also :func:`~optuna.trial.Trial.suggest_uniform` and
-            :func:`~optuna.trial.Trial.suggest_loguniform`.
+            Please see also :func:`~optuna.trial.Trial.suggest_uniform`,
+            :func:`~optuna.trial.Trial.suggest_loguniform` and
+            :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
 
         Example:
 
-            Suggest a momentum and learning rate for neural network training.
+            Suggest a momentum, learning rate and scaling factor of learning rate
+            for neural network training.
 
             .. testsetup::
 
@@ -456,9 +459,10 @@ class Trial(BaseTrial):
                     momentum = trial.suggest_float('momentum', 0.0, 1.0)
                     learning_rate_init = trial.suggest_float('learning_rate_init',
                                                              1e-5, 1e-3, log=True)
+                    power_t = trial.suggest_float('power_t', 0.2, 0.8, step=0.1)
                     clf = MLPClassifier(hidden_layer_sizes=(100, 50), momentum=momentum,
                                         learning_rate_init=learning_rate_init,
-                                        solver='sgd', random_state=0)
+                                        solver='sgd', random_state=0, power_t=power_t)
                     clf.fit(X_train, y_train)
 
                     return clf.score(X_test, y_test)
@@ -479,15 +483,25 @@ class Trial(BaseTrial):
                 If ``log`` is true, the value is sampled from the range in the log domain.
                 Otherwise, the value is sampled from the range in the linear domain.
                 See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
+            step:
+                A step of discretization.
 
         Returns:
             A suggested float value.
         """
 
-        if log:
-            return self.suggest_loguniform(name, low, high)
+        if step is not None:
+            if log:
+                raise NotImplementedError(
+                    "The parameter `step` is not supported when `log` is True."
+                )
+            else:
+                return self.suggest_discrete_uniform(name, low, high, step)
         else:
-            return self.suggest_uniform(name, low, high)
+            if log:
+                return self.suggest_loguniform(name, low, high)
+            else:
+                return self.suggest_uniform(name, low, high)
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -1202,13 +1216,25 @@ class FixedTrial(BaseTrial):
         self._datetime_start = datetime.datetime.now()
         self._number = number
 
-    def suggest_float(self, name, low, high, *, log=False):
-        # type: (str, float, float, bool) -> float
+    def suggest_float(self, name, low, high, *, log=False, step=None):
+        # type: (str, float, float, bool, Optional[float]) -> float
 
-        if log:
-            return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
+        if step is not None:
+            if log:
+                raise NotImplementedError(
+                    "The parameter `step` is not supported when `log` is True."
+                )
+            else:
+                return self._suggest(
+                    name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step)
+                )
         else:
-            return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
+            if log:
+                return self._suggest(
+                    name, distributions.LogUniformDistribution(low=low, high=high)
+                )
+            else:
+                return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
