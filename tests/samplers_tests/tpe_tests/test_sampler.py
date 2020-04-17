@@ -45,7 +45,7 @@ def test_infer_relative_search_space() -> None:
     assert sampler.infer_relative_search_space(study, frozen_trial) == {}
 
 
-def test_sample_independent() -> None:
+def test_sample_independent_seed_fix() -> None:
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
@@ -55,9 +55,7 @@ def test_sample_independent() -> None:
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch("optuna.Study.get_trials", return_value=past_trials):
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-    assert 1.0 <= suggestion < 101.0
 
-    # Test seed-fix.
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch("optuna.Study.get_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) == suggestion
@@ -66,7 +64,33 @@ def test_sample_independent() -> None:
     with patch("optuna.Study.get_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
-    # Test n_startup_trials.
+
+def test_sample_independent_prior() -> None:
+    study = optuna.create_study()
+    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
+
+    # Prepare a trial and a sample for later checks.
+    trial = frozen_trial_factory(8)
+    sampler = TPESampler(n_startup_trials=5, seed=0)
+    with patch("optuna.Study.get_trials", return_value=past_trials):
+        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+
+    sampler = TPESampler(consider_prior=False, n_startup_trials=5, seed=0)
+    with patch("optuna.Study.get_trials", return_value=past_trials):
+        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
+
+    sampler = TPESampler(prior_weight=0.5, n_startup_trials=5, seed=0)
+    with patch("optuna.Study.get_trials", return_value=past_trials):
+        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
+
+
+def test_sample_independent_n_startup_trial() -> None:
+    study = optuna.create_study()
+    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
+
+    trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch("optuna.Study.get_trials", return_value=past_trials[:4]):
         with patch.object(
@@ -82,16 +106,17 @@ def test_sample_independent() -> None:
             sampler.sample_independent(study, trial, "param-a", dist)
     assert sample_method.call_count == 0
 
-    # Test priors.
-    sampler = TPESampler(consider_prior=False, n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
-        # Turn off prior.
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
-    # Change prior weight.
-    sampler = TPESampler(prior_weight=0.5, n_startup_trials=5, seed=0)
+def test_sample_independent_misc_arguments() -> None:
+    study = optuna.create_study()
+    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
+
+    # Prepare a trial and a sample for later checks.
+    trial = frozen_trial_factory(8)
+    sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch("optuna.Study.get_trials", return_value=past_trials):
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
+        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     # Test misc. parameters.
     sampler = TPESampler(n_ei_candidates=13, n_startup_trials=5, seed=0)
@@ -109,7 +134,7 @@ def test_sample_independent() -> None:
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
-def test_sample_independent_distributions() -> None:
+def test_sample_independent_uniform_distributions() -> None:
     study = optuna.create_study()
 
     # Prepare sample from uniform distribution for cheking other distributions.
@@ -121,6 +146,18 @@ def test_sample_independent_distributions() -> None:
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
     assert 1.0 <= uniform_suggestion <= 100.0
 
+
+def test_sample_independent_log_uniform_distributions() -> None:
+    """Prepare sample from uniform distribution for cheking other distributions."""
+    study = optuna.create_study()
+
+    uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    past_trials = [frozen_trial_factory(i, dist=uni_dist) for i in range(1, 8)]
+    trial = frozen_trial_factory(8)
+    sampler = TPESampler(n_startup_trials=5, seed=0)
+    with patch("optuna.Study.get_trials", return_value=past_trials):
+        uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
+
     # Test sample from log-uniform is different from uniform.
     log_dist = optuna.distributions.LogUniformDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=log_dist) for i in range(1, 8)]
@@ -131,7 +168,11 @@ def test_sample_independent_distributions() -> None:
     assert 1.0 <= loguniform_suggestion <= 100.0
     assert uniform_suggestion != loguniform_suggestion
 
-    # Test sample from discrete is different from others.
+
+def test_sample_independent_disrete_uniform_distributions() -> None:
+    """Test samples from discrete have expected intervals."""
+
+    study = optuna.create_study()
     disc_dist = optuna.distributions.DiscreteUniformDistribution(1.0, 100.0, 0.1)
 
     def value_fn(idx: int) -> float:
@@ -148,7 +189,11 @@ def test_sample_independent_distributions() -> None:
     assert 1.0 <= discrete_uniform_suggestion <= 100.0
     assert abs(int(discrete_uniform_suggestion * 10) - discrete_uniform_suggestion * 10) < 1e-3
 
-    # Test values are sampled from categorical distribution.
+
+def test_sample_independent_categorical_distributions() -> None:
+    """Test samples are drawn from the specified category."""
+
+    study = optuna.create_study()
     categories = [i * 0.3 + 1.0 for i in range(330)]
 
     def cat_value_fn(idx: int) -> float:
@@ -165,7 +210,12 @@ def test_sample_independent_distributions() -> None:
         categorical_suggestion = sampler.sample_independent(study, trial, "param-a", cat_dist)
     assert categorical_suggestion in categories
 
-    # Test sampling from int distribution returns integer.
+
+def test_sample_int_uniform_distributions() -> None:
+    """Test sampling from int distribution returns integer."""
+
+    study = optuna.create_study()
+
     def int_value_fn(idx: int) -> float:
         random.seed(idx)
         return random.randint(0, 100)
@@ -182,7 +232,16 @@ def test_sample_independent_distributions() -> None:
     assert isinstance(int_suggestion, int)
 
 
-def test_sample_independent_trial_states() -> None:
+@pytest.mark.parametrize(
+    "state",
+    [
+        (optuna.trial.TrialState.FAIL,),
+        (optuna.trial.TrialState.PRUNED,),
+        (optuna.trial.TrialState.RUNNING,),
+        (optuna.trial.TrialState.WAITING,),
+    ],
+)
+def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.TrialState) -> None:
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
@@ -193,60 +252,56 @@ def test_sample_independent_trial_states() -> None:
     with patch("optuna.Study.get_trials", return_value=past_trials):
         all_success_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
-    # Test failed trials ignored.
-    def partial_fail(idx: int) -> optuna.trial.TrialState:
-        return [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.FAIL][idx % 2]
-
-    past_trials = [frozen_trial_factory(i, dist=dist, state_fn=partial_fail) for i in range(1, 30)]
+    # Test unsuccessful trials are handled differently
+    state_fn = build_state_fn(state)
+    past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
     trial = frozen_trial_factory(30)
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch("optuna.Study.get_trials", return_value=past_trials):
-        partial_failure_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-    assert partial_failure_suggestion != all_success_suggestion
+        partial_unsuccessful_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+    assert partial_unsuccessful_suggestion != all_success_suggestion
 
-    # Test waiting trials ignored.
-    def partial_waiting(idx: int) -> optuna.trial.TrialState:
-        return [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.WAITING][idx % 2]
 
-    past_trials = [
-        frozen_trial_factory(i, dist=dist, state_fn=partial_waiting) for i in range(1, 30)
-    ]
-    trial = frozen_trial_factory(30)
-    sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
-        partially_waiting_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-    assert partial_failure_suggestion == partially_waiting_suggestion
+def test_sample_independent_ignored_states() -> None:
+    """Tests FAIL, RUNNING, and WAITING states are equally."""
+    study = optuna.create_study()
+    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
-    # Test running trials ignored.
-    def partial_running(idx: int) -> optuna.trial.TrialState:
-        return [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.RUNNING][idx % 2]
+    suggestions = []
+    for state in [
+        optuna.trial.TrialState.FAIL,
+        optuna.trial.TrialState.RUNNING,
+        optuna.trial.TrialState.WAITING,
+    ]:
+        state_fn = build_state_fn(state)
+        past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
+        trial = frozen_trial_factory(30)
+        sampler = TPESampler(n_startup_trials=5, seed=0)
+        with patch("optuna.Study.get_trials", return_value=past_trials):
+            suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
 
-    past_trials = [
-        frozen_trial_factory(i, dist=dist, state_fn=partial_running) for i in range(1, 30)
-    ]
-    trial = frozen_trial_factory(30)
-    sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
-        partially_running_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-    assert partial_failure_suggestion == partially_running_suggestion
+    assert len(set(suggestions)) == 1
 
-    # Test pruned trials neither skipped nor handled in the same way as completed trials.
-    def partial_pruned(idx: int) -> optuna.trial.TrialState:
-        return [optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED][idx % 2]
 
-    def interm_val_fn(idx: int) -> Dict[int, float]:
-        return {1: 0.1} if idx % 2 else {}
+def test_sample_independent_pruned_state() -> None:
+    """Tests PRUNED state is treated differently from both FAIL and COMPLETE."""
+    study = optuna.create_study()
+    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
-    past_trials = [
-        frozen_trial_factory(i, dist=dist, state_fn=partial_pruned, interm_val_fn=interm_val_fn)
-        for i in range(1, 30)
-    ]
-    trial = frozen_trial_factory(30)
-    sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
-        partially_pruned_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-    assert partial_failure_suggestion != partially_pruned_suggestion
-    assert all_success_suggestion != partially_pruned_suggestion
+    suggestions = []
+    for state in [
+        optuna.trial.TrialState.COMPLETE,
+        optuna.trial.TrialState.FAIL,
+        optuna.trial.TrialState.PRUNED,
+    ]:
+        state_fn = build_state_fn(state)
+        past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
+        trial = frozen_trial_factory(30)
+        sampler = TPESampler(n_startup_trials=5, seed=0)
+        with patch("optuna.Study.get_trials", return_value=past_trials):
+            suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
+
+    assert len(set(suggestions)) == 3
 
 
 def test_get_observation_pairs():
@@ -334,3 +389,10 @@ def frozen_trial_factory(
         intermediate_values=interm_val_fn(idx),
         trial_id=idx + 123,
     )
+
+
+def build_state_fn(state: optuna.trial.TrialState) -> Callable[[int], optuna.trial.TrialState]:
+    def state_fn(idx: int) -> optuna.trial.TrialState:
+        return [optuna.trial.TrialState.COMPLETE, state][idx % 2]
+
+    return state_fn
