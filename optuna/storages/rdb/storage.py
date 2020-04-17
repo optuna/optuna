@@ -406,7 +406,6 @@ class RDBStorage(BaseStorage):
                     param_distributions,
                     {i.key: json.loads(i.value_json) for i in user_attrs},
                     {i.key: json.loads(i.value_json) for i in system_attrs},
-                    # Use Value-Models here
                     {value.step: value.value for value in intermediate},
                     best_trial.trial_id,
                 )
