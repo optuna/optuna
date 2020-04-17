@@ -42,7 +42,7 @@ class TestParzenEstimator(object):
         assert len(s_mus) == len(mus) + int(prior)
         assert len(s_sigmas) == len(mus) + int(prior)
 
-    # TODO(ytsmiling): Improve test coverage for weight_funcs
+    # TODO(ytsmiling): Improve test coverage for weights_func.
     @staticmethod
     @pytest.mark.parametrize(
         "mus, flags, expected",
