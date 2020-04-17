@@ -612,7 +612,7 @@ class TestLightGBMTuner(object):
             tuner2.tune_regularization_factors()
         assert n_trials == len(study.trials)
 
-    def test_best_booster(self) -> None:
+    def test_get_best_booster(self) -> None:
         unexpected_value = 20  # out of scope.
 
         params = {"verbose": -1, "lambda_l1": unexpected_value}  # type: Dict
@@ -622,19 +622,23 @@ class TestLightGBMTuner(object):
         tuner = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
         with pytest.raises(ValueError):
-            tuner.best_booster
+            tuner.get_best_booster()
 
         with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=0.0):
             tuner.tune_regularization_factors()
 
-        best_booster = tuner.best_booster
+        best_booster = tuner.get_best_booster()
         assert best_booster.params["lambda_l1"] != unexpected_value
+
+        # TODO(toshihikoyanase): Remove this check when LightGBMTuner.best_booster is removed.
+        with pytest.warns(DeprecationWarning):
+            tuner.best_booster
 
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
         # Resumed study does not have the best booster.
         with pytest.raises(ValueError):
-            tuner2.best_booster
+            tuner2.get_best_booster()
 
     def test_best_booster_with_model_dir(self) -> None:
         params = {"verbose": -1}  # type: Dict
@@ -649,12 +653,12 @@ class TestLightGBMTuner(object):
             with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=0.0):
                 tuner.tune_regularization_factors()
 
-            best_booster = tuner.best_booster
+            best_booster = tuner.get_best_booster()
 
             tuner2 = LightGBMTuner(
                 params, dataset, valid_sets=dataset, study=study, model_dir=tmpdir
             )
-            best_booster2 = tuner2.best_booster
+            best_booster2 = tuner2.get_best_booster()
 
             assert best_booster.params == best_booster2.params
 

@@ -298,12 +298,13 @@ class LightGBMTuner(BaseTuner):
     Args:
         time_budget:
             A time budget for parameter tuning in seconds.
+
         best_params:
             A dictionary to store the best parameters.
 
             .. deprecated:: 1.4.0
-                Please get the parameter values via the ``params`` property of the
-                :class:`~optuna.integration.lightgbm.LightGBMTuner.best_booster`.
+                Please use the ``params`` attribute of the best booster, which is obtained by
+                :meth:`~optuna.integration.lightgbm.LightGBMTuner.get_best_booster`.
 
         tuning_history:
             A List to store the history of parameter tuning.
@@ -322,7 +323,7 @@ class LightGBMTuner(BaseTuner):
         model_dir:
             A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
             saved. Please set shared directory (e.g., directories on NFS) if you want to access
-            :meth:`~optuna.integration.LightGBMTuner.best_booster` in distributed environments.
+            :meth:`~optuna.integration.LightGBMTuner.get_best_booster` in distributed environments.
             Otherwise, it may raise :obj:`ValueError`. If the directory does not exist, it will be
             created. The filenames of the boosters will be ``{model_dir}/{trial_number}.pkl``
             (e.g., ``./boosters/0.pkl``).
@@ -454,6 +455,20 @@ class LightGBMTuner(BaseTuner):
 
     @property
     def best_booster(self) -> lgb.Booster:
+        """Return the best booster.
+
+        .. deprecated:: 1.4.0
+            Please get the best booster via
+            :class:`~optuna.integration.lightgbm.LightGBMTuner.get_best_booster` instead.
+        """
+        warnings.warn(
+            "The `best_booster` attribute is deprecated. Please use `get_best_booster` instead.",
+            DeprecationWarning,
+        )
+
+        return self.get_best_booster()
+
+    def get_best_booster(self) -> lgb.Booster:
         """Return the best booster.
 
         If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
