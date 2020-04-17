@@ -5,9 +5,10 @@ import threading
 from optuna import distributions  # NOQA
 from optuna.storages import base
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
-from optuna import structs
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -28,7 +29,7 @@ class InMemoryStorage(base.BaseStorage):
 
     def __init__(self):
         # type: () -> None
-        self.trials = []  # type: List[structs.FrozenTrial]
+        self.trials = []  # type: List[FrozenTrial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
         self.direction = StudyDirection.NOT_SET
         self.study_user_attrs = {}  # type: Dict[str, Any]
@@ -135,7 +136,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: () -> List[StudySummary]
 
         best_trial = None
-        if any(t for t in self.trials if t.state == structs.TrialState.COMPLETE):
+        if any(t for t in self.trials if t.state == TrialState.COMPLETE):
             best_trial = self.get_best_trial(IN_MEMORY_STORAGE_STUDY_ID)
 
         datetime_start = None
@@ -156,7 +157,7 @@ class InMemoryStorage(base.BaseStorage):
         ]
 
     def create_new_trial(self, study_id, template_trial=None):
-        # type: (int, Optional[structs.FrozenTrial]) -> int
+        # type: (int, Optional[FrozenTrial]) -> int
 
         self._check_study_id(study_id)
 
@@ -175,12 +176,12 @@ class InMemoryStorage(base.BaseStorage):
 
     @staticmethod
     def _create_running_trial():
-        # type: () -> structs.FrozenTrial
+        # type: () -> FrozenTrial
 
-        return structs.FrozenTrial(
+        return FrozenTrial(
             trial_id=-1,  # dummy value.
             number=-1,  # dummy value.
-            state=structs.TrialState.RUNNING,
+            state=TrialState.RUNNING,
             params={},
             distributions={},
             user_attrs={},
@@ -192,13 +193,13 @@ class InMemoryStorage(base.BaseStorage):
         )
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, structs.TrialState) -> bool
+        # type: (int, TrialState) -> bool
 
         with self._lock:
             trial = self.trials[trial_id]
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            if state == structs.TrialState.RUNNING and trial.state != structs.TrialState.WAITING:
+            if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
                 return False
 
             trial.state = state
@@ -241,7 +242,7 @@ class InMemoryStorage(base.BaseStorage):
         return trial_id
 
     def get_best_trial(self, study_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         if self.best_trial_id is None:
             raise ValueError("No trials are completed yet.")
@@ -265,7 +266,7 @@ class InMemoryStorage(base.BaseStorage):
     def _update_cache(self, trial_id):
         # type: (int) -> None
 
-        if self.trials[trial_id].state != structs.TrialState.COMPLETE:
+        if self.trials[trial_id].state != TrialState.COMPLETE:
             return
 
         if self.best_trial_id is None:
@@ -318,13 +319,13 @@ class InMemoryStorage(base.BaseStorage):
             self.trials[trial_id].system_attrs[key] = value
 
     def get_trial(self, trial_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         with self._lock:
             return copy.deepcopy(self.trials[trial_id])
 
     def get_all_trials(self, study_id, deepcopy=True):
-        # type: (int, bool) -> List[structs.FrozenTrial]
+        # type: (int, bool) -> List[FrozenTrial]
 
         self._check_study_id(study_id)
         with self._lock:
@@ -334,7 +335,7 @@ class InMemoryStorage(base.BaseStorage):
                 return self.trials
 
     def get_n_trials(self, study_id, state=None):
-        # type: (int, Optional[structs.TrialState]) -> int
+        # type: (int, Optional[TrialState]) -> int
 
         self._check_study_id(study_id)
         if state is None:

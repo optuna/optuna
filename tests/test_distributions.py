@@ -90,7 +90,7 @@ def test_check_distribution_compatibility():
         EXAMPLE_DISTRIBUTIONS["u"], distributions.UniformDistribution(low=-3.0, high=-2.0)
     )
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["l"], distributions.LogUniformDistribution(low=-0.1, high=1.0)
+        EXAMPLE_DISTRIBUTIONS["l"], distributions.LogUniformDistribution(low=0.1, high=1.0)
     )
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["du"],
@@ -187,7 +187,9 @@ def test_single():
         distributions.UniformDistribution(low=1.0, high=1.0),
         distributions.LogUniformDistribution(low=7.3, high=7.3),
         distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
+        distributions.DiscreteUniformDistribution(low=2.22, high=2.24, q=0.3),
         distributions.IntUniformDistribution(low=-123, high=-123),
+        distributions.IntUniformDistribution(low=-123, high=-120, step=4),
         distributions.CategoricalDistribution(choices=("foo",)),
     ]  # type: List[distributions.BaseDistribution]
     for distribution in single_distributions:
@@ -197,7 +199,12 @@ def test_single():
         distributions.UniformDistribution(low=1.0, high=1.001),
         distributions.LogUniformDistribution(low=7.3, high=10),
         distributions.DiscreteUniformDistribution(low=-30, high=-20, q=2),
+        distributions.DiscreteUniformDistribution(low=-30, high=-20, q=10),
+        # In Python, "0.3 - 0.2 != 0.1" is True.
+        distributions.DiscreteUniformDistribution(low=0.2, high=0.3, q=0.1),
+        distributions.DiscreteUniformDistribution(low=0.7, high=0.8, q=0.1),
         distributions.IntUniformDistribution(low=-123, high=0),
+        distributions.IntUniformDistribution(low=-123, high=0, step=123),
         distributions.CategoricalDistribution(choices=("foo", "bar")),
     ]  # type: List[distributions.BaseDistribution]
     for distribution in nonsingle_distributions:

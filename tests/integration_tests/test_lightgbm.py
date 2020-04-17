@@ -50,28 +50,28 @@ def test_lightgbm_pruning_callback(cv):
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     study.optimize(partial(objective, cv=cv), n_trials=1)
-    assert study.trials[0].state == optuna.structs.TrialState.PRUNED
+    assert study.trials[0].state == optuna.trial.TrialState.PRUNED
 
     study = optuna.create_study(pruner=DeterministicPruner(False))
     study.optimize(partial(objective, cv=cv), n_trials=1)
-    assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
+    assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
     # Use non default validation name.
     custom_valid_name = "my_validation"
     study = optuna.create_study(pruner=DeterministicPruner(False))
     study.optimize(lambda trial: objective(trial, valid_name=custom_valid_name, cv=cv), n_trials=1)
-    assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
+    assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
     # Check "maximize" direction.
     study = optuna.create_study(pruner=DeterministicPruner(True), direction="maximize")
     study.optimize(lambda trial: objective(trial, metric="auc", cv=cv), n_trials=1, catch=())
-    assert study.trials[0].state == optuna.structs.TrialState.PRUNED
+    assert study.trials[0].state == optuna.trial.TrialState.PRUNED
 
     study = optuna.create_study(pruner=DeterministicPruner(False), direction="maximize")
     study.optimize(lambda trial: objective(trial, metric="auc", cv=cv), n_trials=1, catch=())
-    assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
+    assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
 

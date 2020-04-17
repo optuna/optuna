@@ -18,8 +18,8 @@ import numpy as np
 import optuna
 from optuna import distributions
 from optuna.samplers import BaseSampler
-from optuna import structs
 from optuna.study import StudyDirection
+from optuna.trial import TrialState
 
 
 class SimulatedAnnealingSampler(BaseSampler):
@@ -97,7 +97,7 @@ class SimulatedAnnealingSampler(BaseSampler):
 
     @staticmethod
     def _get_last_complete_trial(study):
-        complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
+        complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
         return complete_trials[-1]
 
     def sample_independent(self, study, trial, param_name, param_distribution):

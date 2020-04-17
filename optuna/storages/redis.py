@@ -7,9 +7,10 @@ from optuna import distributions
 from optuna import exceptions
 from optuna.storages import base
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
-from optuna import structs
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 from optuna import type_checking
 
 try:
@@ -292,7 +293,7 @@ class RedisStorage(base.BaseStorage):
         return study_summaries
 
     def create_new_trial(self, study_id, template_trial=None):
-        # type: (int, Optional[structs.FrozenTrial]) -> int
+        # type: (int, Optional[FrozenTrial]) -> int
 
         self._check_study_id(study_id)
 
@@ -328,12 +329,12 @@ class RedisStorage(base.BaseStorage):
 
     @staticmethod
     def _create_running_trial():
-        # type: () -> structs.FrozenTrial
+        # type: () -> FrozenTrial
 
-        return structs.FrozenTrial(
+        return FrozenTrial(
             trial_id=-1,  # dummy value.
             number=-1,  # dummy value.
-            state=structs.TrialState.RUNNING,
+            state=TrialState.RUNNING,
             params={},
             distributions={},
             user_attrs={},
@@ -345,12 +346,12 @@ class RedisStorage(base.BaseStorage):
         )
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, structs.TrialState) -> bool
+        # type: (int, TrialState) -> bool
 
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        if state == structs.TrialState.RUNNING and trial.state != structs.TrialState.WAITING:
+        if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
             return False
 
         trial.state = state
@@ -409,11 +410,11 @@ class RedisStorage(base.BaseStorage):
         return "study_id:{:010d}:best_trial_id".format(study_id)
 
     def get_best_trial(self, study_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         if not self._redis.exists(self._key_best_trial(study_id)):
             all_trials = self.get_all_trials(study_id, deepcopy=False)
-            all_trials = [t for t in all_trials if t.state is structs.TrialState.COMPLETE]
+            all_trials = [t for t in all_trials if t.state is TrialState.COMPLETE]
 
             if len(all_trials) == 0:
                 raise ValueError("No trials are completed yet.")
@@ -463,7 +464,7 @@ class RedisStorage(base.BaseStorage):
         # type: (int) -> None
 
         trial = self.get_trial(trial_id)
-        if trial.state != structs.TrialState.COMPLETE:
+        if trial.state != TrialState.COMPLETE:
             return
         study_id = self.get_study_id_from_trial_id(trial_id)
         if not self._redis.exists("study_id:{:010d}:best_trial_id".format(study_id)):
@@ -525,14 +526,14 @@ class RedisStorage(base.BaseStorage):
         return "trial_id:{:010d}:frozentrial".format(trial_id)
 
     def get_trial(self, trial_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         frozen_trial_pkl = self._redis.get(self._key_trial(trial_id))
         assert frozen_trial_pkl is not None
         return pickle.loads(frozen_trial_pkl)
 
     def _set_trial(self, trial_id, trial):
-        # type: (int, structs.FrozenTrial) -> None
+        # type: (int, FrozenTrial) -> None
 
         self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
@@ -554,7 +555,7 @@ class RedisStorage(base.BaseStorage):
         return [int(tid) for tid in self._redis.lrange(study_trial_list_key, 0, -1)]
 
     def get_all_trials(self, study_id, deepcopy=True):
-        # type: (int, bool) -> List[structs.FrozenTrial]
+        # type: (int, bool) -> List[FrozenTrial]
 
         self._check_study_id(study_id)
 
@@ -570,7 +571,7 @@ class RedisStorage(base.BaseStorage):
             return trials
 
     def get_n_trials(self, study_id, state=None):
-        # type: (int, Optional[structs.TrialState]) -> int
+        # type: (int, Optional[TrialState]) -> int
 
         self._check_study_id(study_id)
         if state is None:

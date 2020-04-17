@@ -11,8 +11,8 @@ from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.samplers import intersection_search_space
-from optuna.structs import TrialState
 from optuna.study import Study
+from optuna.trial import TrialState
 
 
 @experimental("1.3.0")

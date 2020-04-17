@@ -24,7 +24,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
 
@@ -419,14 +419,14 @@ class LightGBMTuner(BaseTuner):
             self.study = study
 
         if self.higher_is_better():
-            if self.study.direction != optuna.structs.StudyDirection.MAXIMIZE:
+            if self.study.direction != optuna.study.StudyDirection.MAXIMIZE:
                 metric_name = self.lgbm_params.get("metric", "binary_logloss")
                 raise ValueError(
                     "Study direction is inconsistent with the metric {}. "
                     "Please set 'maximize' as the direction.".format(metric_name)
                 )
         else:
-            if self.study.direction != optuna.structs.StudyDirection.MINIMIZE:
+            if self.study.direction != optuna.study.StudyDirection.MINIMIZE:
                 metric_name = self.lgbm_params.get("metric", "binary_logloss")
                 raise ValueError(
                     "Study direction is inconsistent with the metric {}. "
@@ -660,7 +660,7 @@ class LightGBMTuner(BaseTuner):
                 self._step_name = step_name
 
             def get_trials(self, deepcopy=True):
-                # type: (bool) -> List[optuna.structs.FrozenTrial]
+                # type: (bool) -> List[optuna.trial.FrozenTrial]
 
                 trials = super().get_trials(deepcopy=deepcopy)
                 return [
@@ -671,20 +671,20 @@ class LightGBMTuner(BaseTuner):
 
             @property
             def best_trial(self):
-                # type: () -> optuna.structs.FrozenTrial
+                # type: () -> optuna.trial.FrozenTrial
                 """Return the best trial in the study.
 
                 Returns:
-                    A :class:`~optuna.structs.FrozenTrial` object of the best trial.
+                    A :class:`~optuna.trial.FrozenTrial` object of the best trial.
                 """
 
                 trials = self.get_trials(deepcopy=False)
-                trials = [t for t in trials if t.state is optuna.structs.TrialState.COMPLETE]
+                trials = [t for t in trials if t.state is optuna.trial.TrialState.COMPLETE]
 
                 if len(trials) == 0:
                     raise ValueError("No trials are completed yet.")
 
-                if self.direction == optuna.structs.StudyDirection.MINIMIZE:
+                if self.direction == optuna.study.StudyDirection.MINIMIZE:
                     best_trial = min(trials, key=lambda t: t.value)
                 else:
                     best_trial = max(trials, key=lambda t: t.value)

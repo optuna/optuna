@@ -6,7 +6,7 @@ import warnings
 
 from optuna._study_direction import StudyDirection
 from optuna import logging
-from optuna import structs
+from optuna import trial
 
 
 _logger = logging.get_logger(__name__)
@@ -41,7 +41,7 @@ class StudySummary(object):
         self,
         study_name: str,
         direction: StudyDirection,
-        best_trial: Optional[structs.FrozenTrial],
+        best_trial: Optional[trial.FrozenTrial],
         user_attrs: Dict[str, Any],
         system_attrs: Dict[str, Any],
         n_trials: int,

@@ -1,7 +1,7 @@
 import pytest
 
 import optuna
-from optuna.structs import TrialState
+from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
