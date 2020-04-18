@@ -54,7 +54,7 @@ Even so, we can invoke the optimization as follows. (Don't care about ``--storag
         return (x - 2) ** 2
 
     $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
-    $ optuna study optimize foo.py objective --n-trials=100 --storage sqlite:///example.db --study $STUDY_NAME
+    $ optuna study optimize foo.py objective --n-trials=100 --storage sqlite:///example.db --study-name $STUDY_NAME
     [I 2018-05-09 10:40:25,196] Finished a trial resulted in value: 54.353767789264026. Current best value is 54.353767789264026 with parameters: {'x': -5.372500782588228}.
     [I 2018-05-09 10:40:25,197] Finished a trial resulted in value: 15.784266965526376. Current best value is 15.784266965526376 with parameters: {'x': 5.972941852774387}.
     ...
