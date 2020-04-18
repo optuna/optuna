@@ -12,7 +12,7 @@ We have the following two ways to execute this example:
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
-    $ optuna study optimize quadratic_simple.py objective --n-trials=100 --study $STUDY_NAME \
+    $ optuna study optimize quadratic_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
       --storage sqlite:///example.db
 
 """

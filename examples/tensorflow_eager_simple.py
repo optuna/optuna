@@ -14,7 +14,7 @@ We have the following two ways to execute this example:
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
     $ optuna study optimize tensorflow_eager_simple.py objective --n-trials=100 \
-      --study $STUDY_NAME --storage sqlite:///example.db
+      --study-name $STUDY_NAME --storage sqlite:///example.db
 
 """
 
