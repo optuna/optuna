@@ -1,3 +1,5 @@
+import numpy
+
 import optuna
 from optuna._experimental import experimental
 from optuna import logging
@@ -117,6 +119,16 @@ class HyperbandPruner(BasePruner):
 
         n = self._reduction_factor ** (n_brackets - 1)
         return n + (n / 2) * (n_brackets - 1 - pruner_index)
+
+        # s = n_brackets - 1 - pruner_index
+        # #return n_brackets * (self._reduction_factor ** s) / (s + 1)
+        #
+        # log_reduction_factor = numpy.log(self._reduction_factor)
+        # coef1 = (log_reduction_factor ** 2) / 2
+        # coef0 = log_reduction_factor * (1 - log_reduction_factor)
+        # coefinv1 = 1 - log_reduction_factor + (log_reduction_factor ** 2) / 2
+        # return n_brackets * (coef1 * (s + 1) + coef0 + coefinv1 / (s + 1))
+
 
     def _get_bracket_id(self, study, trial):
         # type: (optuna.study.Study, FrozenTrial) -> int
