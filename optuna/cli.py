@@ -134,7 +134,7 @@ class _StudySetUserAttribute(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
-        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
         self.logger.info("Attribute successfully written.")
@@ -207,7 +207,7 @@ class _Dashboard(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
-        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
 
         if parsed_args.out is None:
             optuna.dashboard._serve(study, parsed_args.bokeh_allow_websocket_origins)
@@ -257,7 +257,7 @@ class _StudyOptimize(_BaseCommand):
         # type: (Namespace) -> int
 
         storage_url = _check_storage_url(self.app_args.storage)
-        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.
