@@ -196,7 +196,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int, TrialState) -> bool
 
         with self._lock:
-            trial = self.trials[trial_id]
+            trial = copy.copy(self.trials[trial_id])
             self.check_trial_is_updatable(trial_id, trial.state)
 
             if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
@@ -205,7 +205,10 @@ class InMemoryStorage(base.BaseStorage):
             trial.state = state
             if state.is_finished():
                 trial.datetime_complete = datetime.now()
+                self.trials[trial_id] = trial
                 self._update_cache(trial_id)
+            else:
+                self.trials[trial_id] = trial
 
         return True
 
@@ -229,10 +232,12 @@ class InMemoryStorage(base.BaseStorage):
             self.param_distribution[param_name] = distribution
 
             # Set param.
-            self.trials[trial_id].params[param_name] = distribution.to_external_repr(
-                param_value_internal
-            )
-            self.trials[trial_id].distributions[param_name] = distribution
+            trial = copy.copy(self.trials[trial_id])
+            trial.params = copy.copy(trial.params)
+            trial.params[param_name] = distribution.to_external_repr(param_value_internal)
+            trial.distributions = copy.copy(trial.distributions)
+            trial.distributions[param_name] = distribution
+            self.trials[trial_id] = trial
 
             return True
 
@@ -258,10 +263,11 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int, float) -> None
 
         with self._lock:
-            trial = self.trials[trial_id]
+            trial = copy.copy(self.trials[trial_id])
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial.value = value
+            self.trials[trial_id] = trial
 
     def _update_cache(self, trial_id):
         # type: (int) -> None
@@ -294,11 +300,14 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
 
-            values = self.trials[trial_id].intermediate_values
+            trial = copy.copy(self.trials[trial_id])
+            values = copy.copy(self.trials[trial_id].intermediate_values)
             if step in values:
                 return False
 
             values[step] = intermediate_value
+            trial.intermediate_values = values
+            self.trials[trial_id] = trial
 
             return True
 
@@ -308,7 +317,10 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
 
-            self.trials[trial_id].user_attrs[key] = value
+            trial = copy.copy(self.trials[trial_id])
+            trial.user_attrs = copy.copy(trial.user_attrs)
+            trial.user_attrs[key] = value
+            self.trials[trial_id] = trial
 
     def set_trial_system_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
@@ -316,7 +328,10 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
 
-            self.trials[trial_id].system_attrs[key] = value
+            trial = copy.copy(self.trials[trial_id])
+            trial.system_attrs = copy.copy(trial.system_attrs)
+            trial.system_attrs[key] = value
+            self.trials[trial_id] = trial
 
     def get_trial(self, trial_id):
         # type: (int) -> FrozenTrial
@@ -332,7 +347,7 @@ class InMemoryStorage(base.BaseStorage):
             if deepcopy:
                 return copy.deepcopy(self.trials)
             else:
-                return self.trials
+                return [t for t in self.trials]
 
     def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[TrialState]) -> int
