@@ -1,8 +1,8 @@
 import math
+from unittest.mock import call
+from unittest.mock import patch
 
 import cma
-from mock import call
-from mock import patch
 import pytest
 
 import optuna

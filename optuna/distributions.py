@@ -1,4 +1,5 @@
 import abc
+import decimal
 import json
 import warnings
 
@@ -222,7 +223,14 @@ class DiscreteUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        return self.low == self.high
+        if self.low == self.high:
+            return True
+        high = decimal.Decimal(str(self.high))
+        low = decimal.Decimal(str(self.low))
+        q = decimal.Decimal(str(self.q))
+        if (high - low) < q:
+            return True
+        return False
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -276,7 +284,11 @@ class IntUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        return self.low == self.high
+        if self.low == self.high:
+            return True
+        if (self.high - self.low) < self.step:
+            return True
+        return False
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
