@@ -232,13 +232,21 @@ def _is_higher_better(metric: str) -> bool:
 
 
 class _LightGBMExtractionCallback(object):
-    def __init__(self) -> None:
-        self._best_iteration = None  # type: Optional[int]
-        self._boosters = None  # type: Optional[List[lgb.Booster]]
+    @property
+    def best_iteration_(self) -> int:
+        best_iteration = self.env_.model.best_iteration
+
+        if best_iteration > 0:
+            return best_iteration
+
+        return self.env_.iteration + 1
+
+    @property
+    def boosters_(self) -> List[lgb.Booster]:
+        return self.env_.model.boosters
 
     def __call__(self, env: LightGBMCallbackEnvType) -> None:
-        self._best_iteration = env.iteration + 1
-        self._boosters = env.model.boosters
+        self.env_ = env
 
 
 class _Objective(object):
@@ -289,7 +297,7 @@ class _Objective(object):
             init_model=self.init_model,
             num_boost_round=self.n_estimators,
         )  # Dict[str, List[float]]
-        best_iteration = callbacks[0]._best_iteration  # type: ignore
+        best_iteration = callbacks[0].best_iteration_  # type: ignore
 
         trial.set_user_attr("best_iteration", best_iteration)
 
@@ -302,7 +310,7 @@ class _Objective(object):
             pass
 
         if is_best_trial:
-            boosters = callbacks[0]._boosters  # type: ignore
+            boosters = callbacks[0].boosters_  # type: ignore
             representations = []  # type: List[str]
 
             for b in boosters:
@@ -524,6 +532,11 @@ class LGBMModel(lgb.LGBMModel):
 
         booster = _VotingBooster.from_representations(representations, weights=weights)
 
+        boosters = booster.boosters
+
+        for b in boosters:
+            b.best_iteration = num_boost_round
+
         return booster
 
     def fit(
@@ -723,7 +736,9 @@ class LGBMModel(lgb.LGBMModel):
 
         elapsed_time = time.perf_counter() - start_time
 
-        self._best_iteration = self.study_.best_trial.user_attrs["best_iteration"]
+        best_iteration = self.study_.best_trial.user_attrs["best_iteration"]
+
+        self._best_iteration = None if early_stopping_rounds is None else best_iteration
         self._best_score = self.study_.best_value
         self._objective = params["objective"]
         self.best_params_ = {**params, **self.study_.best_params}
@@ -732,7 +747,7 @@ class LGBMModel(lgb.LGBMModel):
         logger.info(
             "Finished hyperparemeter search! "
             "(elapsed time: {:.3f} sec.) "
-            "The best_iteration is {}.".format(elapsed_time, self._best_iteration)
+            "The best_iteration is {}.".format(elapsed_time, best_iteration)
         )
 
         folds = cv.split(X, y, groups=groups)
@@ -746,7 +761,7 @@ class LGBMModel(lgb.LGBMModel):
             self.best_params_,
             dataset,
             representations,
-            self._best_iteration,
+            best_iteration,
             folds,
             fobj=fobj,
             feature_name=feature_name,

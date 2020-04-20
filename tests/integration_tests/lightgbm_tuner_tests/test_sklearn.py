@@ -26,6 +26,7 @@ n_estimators = 10
 n_trials = 5
 random_state = 0
 callback = lgb.reset_parameter(learning_rate=lambda iteration: 0.05 * (0.99 ** iteration))
+early_stopping_rounds = 3
 
 
 def log_likelihood(y_true: np.ndarray, y_pred: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -81,7 +82,8 @@ def test_ogbm_regressor() -> None:
 
 
 @pytest.mark.parametrize("refit", [False, True])
-def test_hasattr(refit: bool) -> None:
+@pytest.mark.parametrize("early_stopping_rounds", [None, early_stopping_rounds])
+def test_hasattr(refit: bool, early_stopping_rounds: int) -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
     clf = OGBMClassifier(n_estimators=n_estimators, n_trials=n_trials, refit=refit)
@@ -89,7 +91,7 @@ def test_hasattr(refit: bool) -> None:
     attrs = {
         "classes_": np.ndarray,
         "best_index_": int,
-        "best_iteration_": int,
+        "best_iteration_": (int, type(None)),
         "best_params_": dict,
         "best_score_": float,
         "booster_": (lgb.Booster, _VotingBooster),
@@ -105,15 +107,31 @@ def test_hasattr(refit: bool) -> None:
         with pytest.raises(AttributeError):
             getattr(clf, attr)
 
-    clf.fit(X, y)
+    clf.fit(X, y, early_stopping_rounds=early_stopping_rounds)
 
     for attr, klass in attrs.items():
         assert isinstance(getattr(clf, attr), klass)
 
     if refit:
         assert hasattr(clf, "refit_time_")
+
+        assert clf.booster_.best_iteration == 0
+
     else:
         assert not hasattr(clf, "refit_time_")
+
+        boosters = clf.booster_.boosters
+
+        for b in boosters:
+            if early_stopping_rounds is None:
+                assert b.best_iteration == clf.n_estimators
+            else:
+                assert b.best_iteration == clf.best_iteration_
+
+    if early_stopping_rounds is None:
+        assert clf.best_iteration_ is None
+    else:
+        assert clf.best_iteration_ > 0
 
 
 @pytest.mark.parametrize("boosting_type", ["dart", "gbdt", "goss", "rf"])
@@ -285,7 +303,7 @@ def test_predict_with_unused_predict_params() -> None:
     assert y.shape == y_pred.shape
 
 
-@pytest.mark.parametrize("early_stopping_rounds", [None, 10])
+@pytest.mark.parametrize("early_stopping_rounds", [None, early_stopping_rounds])
 def test_refit(early_stopping_rounds: Optional[int]) -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
@@ -297,7 +315,12 @@ def test_refit(early_stopping_rounds: Optional[int]) -> None:
 
     y_pred = clf.predict(X)
 
-    clf = lgb.LGBMClassifier(n_estimators=clf.best_iteration_, **clf.best_params_)
+    if early_stopping_rounds is None:
+        _n_estimators = n_estimators
+    else:
+        _n_estimators = clf.best_iteration_
+
+    clf = lgb.LGBMClassifier(n_estimators=_n_estimators, **clf.best_params_)
 
     clf.fit(X, y)
 
