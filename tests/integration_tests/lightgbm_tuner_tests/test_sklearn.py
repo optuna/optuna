@@ -315,7 +315,7 @@ def test_score() -> None:
 def test_plot_importance(n_jobs: int) -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
-    clf = OGBMClassifier(n_estimators=n_estimators, n_jobs=n_jobs, n_trials=n_trials)
+    clf = OGBMClassifier(n_estimators=n_estimators, n_jobs=n_jobs, n_trials=n_trials, refit=False)
 
     clf.fit(X, y)
 
