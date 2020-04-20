@@ -1,8 +1,7 @@
+import math
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 import warnings
-
-import numpy
 
 from optuna._experimental import experimental
 from optuna import logging
@@ -54,7 +53,7 @@ class HyperbandPruner(BasePruner):
         max_resource:
             A parameter for specifying the maximum resource allocated to a trial noted as :math:`R`
             in the paper. This value is exactly same with the maximum iteration steps (e.g.,
-            `max_epoch` for neural networks).
+            ``max_epoch`` for neural networks).
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial noted as :math:`r`
             in the paper.
@@ -65,11 +64,11 @@ class HyperbandPruner(BasePruner):
             :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         n_brackets:
 
-            .. deprecated:: 2.0.0
-                This argument will be removed from class:`~optuna.pruners.HyperbandPruner`.
+            .. deprecated:: 1.4.0
+                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`.
 
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
-            Defaults to :math`4`. See
+            Defaults to :math:`4`. See
             https://github.com/optuna/optuna/pull/809#discussion_r361363897.
         min_early_stopping_rate_low:
             A parameter for specifying the minimum early-stopping rate.
@@ -80,7 +79,7 @@ class HyperbandPruner(BasePruner):
 
     def __init__(
         self,
-        max_resource: int,
+        max_resource: int = 100,
         min_resource: int = 1,
         reduction_factor: int = 3,
         n_brackets: Optional[int] = None,
@@ -92,12 +91,16 @@ class HyperbandPruner(BasePruner):
         self._resource_budget = 0
 
         if n_brackets is None:
-            self._n_brackets = numpy.ceil(numpy.log2(max_resource) / numpy.log2(reduction_factor))
+            # In the original paper <<http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>, the
+            # inputs of Hyperband are ``R``: max resource amd ``\eta``: reduction factor. The
+            # number of brackets (this is referred as ``s_{max} + 1`` in the paper) is calculated
+            # by s_{max} + 1 = \ceil{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
+            self._n_brackets = math.floor(math.log2(max_resource)/math.log2(reduction_factor)) + 1
             self._n_brackets = int(self._n_brackets)
         else:
             message = (
-                "The argument of `n_brackets` is deprecated. "
-                "Please specify `max_resource` instead."
+                "The argument of ``n_brackets`` is deprecated. "
+                "Please specify ``max_resource`` instead."
             )
             warnings.warn(message, DeprecationWarning)
             _logger.warning(message)
