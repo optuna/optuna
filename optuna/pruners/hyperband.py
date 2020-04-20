@@ -1,7 +1,8 @@
-import numpy
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 import warnings
+
+import numpy
 
 from optuna._experimental import experimental
 from optuna import logging
@@ -52,7 +53,8 @@ class HyperbandPruner(BasePruner):
     Args:
         max_resource:
             A parameter for specifying the maximum resource allocated to a trial noted as :math:`R`
-            in the paper.
+            in the paper. This value is exactly same with the maximum iteration steps (e.g.,
+            `max_epoch` for neural networks).
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial noted as :math:`r`
             in the paper.
@@ -63,8 +65,8 @@ class HyperbandPruner(BasePruner):
             :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         n_brackets:
 
-            .. deprecated:: 1.4.0
-                This input was removed from class:`~optuna.pruners.HyperbandPruner`.
+            .. deprecated:: 2.0.0
+                This argument will be removed from class:`~optuna.pruners.HyperbandPruner`.
 
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
             Defaults to :math`4`. See
@@ -94,8 +96,8 @@ class HyperbandPruner(BasePruner):
             self._n_brackets = int(self._n_brackets)
         else:
             message = (
-                "The use of `HyperbandPruner.n/brackets` is deprecated. "
-                "Please specify `HyperbandPruner.max_resource instead."
+                "The argument of `n_brackets` is deprecated. "
+                "Please specify `max_resource` instead."
             )
             warnings.warn(message, DeprecationWarning)
             _logger.warning(message)
