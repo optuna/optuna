@@ -2,7 +2,7 @@ name: stale
 
 on:
   schedule:
-    - cron: '0 23 * * 7,1,2,3,4'
+    - cron: '0 23 * * SUN-THU'
 
 jobs:
   stale:
