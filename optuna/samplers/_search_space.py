@@ -19,12 +19,14 @@ class IntersectionSearchSpace(object):
     (i.e., the parameters with dynamic value ranges are excluded).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._known_trials = set()  # type: Set[int]
         self._search_space = None  # type: Optional[Dict[str, BaseDistribution]]
         self._study_id = None  # type: Optional[int]
 
-    def calculate(self, study: BaseStudy, ordered_dict: bool = False):
+    def calculate(
+        self, study: BaseStudy, ordered_dict: bool = False
+    ) -> Dict[str, BaseDistribution]:
         """Returns the intersection search space of the :class:`~optuna.study.BaseStudy`.
 
         Args:
@@ -33,8 +35,8 @@ class IntersectionSearchSpace(object):
             ordered_dict:
                 A boolean flag determining the return type.
                 If :obj:`False`, the returned object will be a :obj:`dict`.
-                If :obj:`True`, the returned object will be an :obj:`collections.OrderedDict` sorted by
-                keys, i.e. parameter names.
+                If :obj:`True`, the returned object will be an :obj:`collections.OrderedDict`
+                sorted by keys, i.e. parameter names.
 
         Returns:
             A dictionary containing the parameter names and parameter's distributions.
@@ -44,7 +46,7 @@ class IntersectionSearchSpace(object):
             self._study_id = study._study_id
         else:
             # Note that the check below is meaningless when `InMemortyStorage` is used
-            # because `InMemortyStorage.create_new_study` always returns the same study ID (i.e., `0`).
+            # because `InMemortyStorage.create_new_study` always returns the same study ID.
             if self._study_id != study._study_id:
                 raise ValueError("`IntersectionSearchSpace` cannot handle multiple studies.")
 
