@@ -12,14 +12,9 @@ except ImportError as e:
 class MXNetPruningCallback(object):
     """MXNet callback to prune unpromising trials.
 
-    Example:
-
-        Add a pruning callback which observes validation accuracy.
-
-        .. code::
-
-            model.fit(train_data=X, eval_data=Y,
-                      eval_end_callback=MXNetPruningCallback(trial, eval_metric='accuracy'))
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/mxnet_integration.py>`__
+    if you want to add a pruning callback which observes accuracy.
 
     Args:
         trial:

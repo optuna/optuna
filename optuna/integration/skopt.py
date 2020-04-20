@@ -4,8 +4,8 @@ import optuna
 from optuna import distributions
 from optuna import samplers
 from optuna.samplers import BaseSampler
-from optuna import structs
-from optuna.structs import StudyDirection
+from optuna.study import StudyDirection
+from optuna.trial import TrialState
 from optuna import type_checking
 
 try:
@@ -26,8 +26,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
 
 class SkoptSampler(BaseSampler):
@@ -128,7 +128,7 @@ class SkoptSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
+        complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
         if len(complete_trials) < self._n_startup_trials:
             return {}
 
@@ -140,7 +140,7 @@ class SkoptSampler(BaseSampler):
         # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
 
         if self._warn_independent_sampling:
-            complete_trials = [t for t in study.trials if t.state == structs.TrialState.COMPLETE]
+            complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 

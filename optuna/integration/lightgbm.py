@@ -39,15 +39,10 @@ else:
 class LightGBMPruningCallback(object):
     """Callback for LightGBM to prune unpromising trials.
 
-    Example:
-
-        Add a pruning callback which observes validation scores to training of a LightGBM model.
-
-        .. code::
-
-                param = {'objective': 'binary', 'metric': 'binary_error'}
-                pruning_callback = LightGBMPruningCallback(trial, 'binary_error')
-                gbm = lgb.train(param, dtrain, valid_sets=[dtest], callbacks=[pruning_callback])
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/lightgbm_integration.py>`__
+    if you want to add a pruning callback which observes AUC
+    of a LightGBM model.
 
     Args:
         trial:
@@ -100,7 +95,7 @@ class LightGBMPruningCallback(object):
             if is_higher_better:
                 if (
                     self._trial.storage.get_study_direction(self._trial.study._study_id)
-                    != optuna.structs.StudyDirection.MAXIMIZE
+                    != optuna.study.StudyDirection.MAXIMIZE
                 ):
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
@@ -110,7 +105,7 @@ class LightGBMPruningCallback(object):
             else:
                 if (
                     self._trial.storage.get_study_direction(self._trial.study._study_id)
-                    != optuna.structs.StudyDirection.MINIMIZE
+                    != optuna.study.StudyDirection.MINIMIZE
                 ):
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
