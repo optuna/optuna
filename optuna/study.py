@@ -191,6 +191,7 @@ class Study(BaseStudy):
         storage,  # type: Union[str, storages.BaseStorage]
         sampler=None,  # type: samplers.BaseSampler
         pruner=None,  # type: pruners.BasePruner
+        predefined_search_space=None,  # type: Optional[Dict[str, BaseDistribution]]
     ):
         # type: (...) -> None
 
@@ -203,6 +204,7 @@ class Study(BaseStudy):
         self.pruner = pruner or pruners.MedianPruner()
 
         self._optimize_lock = threading.Lock()
+        self._predefined_search_space = predefined_search_space
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -675,7 +677,9 @@ class Study(BaseStudy):
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
             trial_id = self._storage.create_new_trial(self._study_id)
-        trial = trial_module.Trial(self, trial_id)
+        trial = trial_module.Trial(
+            self, trial_id, relative_search_space=self._predefined_search_space
+        )
         trial_number = trial.number
 
         try:
@@ -765,6 +769,7 @@ def create_study(
     study_name=None,  # type: Optional[str]
     direction="minimize",  # type: str
     load_if_exists=False,  # type: bool
+    predefined_search_space=None,  # type: Optional[Dict[str, BaseDistribution]]
 ):
     # type: (...) -> Study
     """Create a new :class:`~optuna.study.Study`.
@@ -805,6 +810,9 @@ def create_study(
             a :class:`~optuna.exceptions.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
+        predefined_search_space:
+            A search space for relative sampling. If given, you can sample parameters
+            by :meth:`~optuna.samplers.BaseSampler.sample_relative` from the first trial.
 
     Returns:
         A :class:`~optuna.study.Study` object.
@@ -827,7 +835,13 @@ def create_study(
             raise
 
     study_name = storage.get_study_name_from_id(study_id)
-    study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
+    study = Study(
+        study_name=study_name,
+        storage=storage,
+        sampler=sampler,
+        pruner=pruner,
+        predefined_search_space=predefined_search_space,
+    )
 
     if direction == "minimize":
         _direction = StudyDirection.MINIMIZE
