@@ -32,7 +32,7 @@ def train(*args: Any, **kwargs: Any) -> Any:
 
     auto_booster = LightGBMTuner(*args, **kwargs)
     auto_booster.run()
-    return auto_booster.best_booster
+    return auto_booster.get_best_booster()
 
 
 def _check_lightgbm_availability():
