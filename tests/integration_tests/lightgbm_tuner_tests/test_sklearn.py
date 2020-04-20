@@ -151,6 +151,16 @@ def test_fit_with_empty_param_distributions() -> None:
     assert values.nunique() == 1
 
 
+def test_fit_with_invalid_study() -> None:
+    X, y = load_breast_cancer(return_X_y=True)
+
+    study = study_module.create_study(direction="maximize")
+    clf = OGBMClassifier(study=study)
+
+    with pytest.raises(ValueError):
+        clf.fit(X, y)
+
+
 def test_fit_with_pruning() -> None:
     X, y = load_breast_cancer(return_X_y=True)
 
