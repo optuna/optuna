@@ -54,7 +54,7 @@ class IntersectionSearchSpace(object):
             if self._cursor > trial.number:
                 break
 
-            if trial.state == optuna.trial.TrialState.RUNNING:
+            if not trial.state.is_finished():
                 next_cursor = trial.number
 
             if trial.state != optuna.trial.TrialState.COMPLETE:
