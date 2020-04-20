@@ -1,4 +1,4 @@
-import numpy
+import math
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 import warnings
@@ -52,7 +52,8 @@ class HyperbandPruner(BasePruner):
     Args:
         max_resource:
             A parameter for specifying the maximum resource allocated to a trial noted as :math:`R`
-            in the paper.
+            in the paper. This value is exactly same with the maximum iteration steps (e.g.,
+            ``max_epoch`` for neural networks).
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial noted as :math:`r`
             in the paper.
@@ -64,10 +65,10 @@ class HyperbandPruner(BasePruner):
         n_brackets:
 
             .. deprecated:: 1.4.0
-                This input was removed from class:`~optuna.pruners.HyperbandPruner`.
+                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`.
 
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
-            Defaults to :math`4`. See
+            Defaults to :math:`4`. See
             https://github.com/optuna/optuna/pull/809#discussion_r361363897.
         min_early_stopping_rate_low:
             A parameter for specifying the minimum early-stopping rate.
@@ -78,7 +79,7 @@ class HyperbandPruner(BasePruner):
 
     def __init__(
         self,
-        max_resource: int,
+        max_resource: int = 100,
         min_resource: int = 1,
         reduction_factor: int = 3,
         n_brackets: Optional[int] = None,
@@ -90,12 +91,18 @@ class HyperbandPruner(BasePruner):
         self._resource_budget = 0
 
         if n_brackets is None:
-            self._n_brackets = numpy.ceil(numpy.log2(max_resource) / numpy.log2(reduction_factor))
+            # In the original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>, the
+            # inputs of Hyperband are ``R``: max resource amd ``\eta``: reduction factor. The
+            # number of brackets (this is referred as ``s_{max} + 1`` in the paper) is calculated
+            # by s_{max} + 1 = \ceil{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
+            self._n_brackets = (
+                math.floor(math.log2(max_resource) / math.log2(reduction_factor)) + 1
+            )
             self._n_brackets = int(self._n_brackets)
         else:
             message = (
-                "The use of `HyperbandPruner.n_brackets` is deprecated. "
-                "Please specify `HyperbandPruner.max_resource instead."
+                "The argument of ``n_brackets`` is deprecated. "
+                "Please specify ``max_resource`` instead."
             )
             warnings.warn(message, DeprecationWarning)
             _logger.warning(message)
@@ -106,7 +113,7 @@ class HyperbandPruner(BasePruner):
         _logger.debug("Hyperband has {} brackets".format(self._n_brackets))
 
         for i in range(self._n_brackets):
-            bracket_resource_budget = self._calc_bracket_resource_budget(i, self._n_brackets)
+            bracket_resource_budget = self._calc_bracket_resource_budget(i)
             self._resource_budget += bracket_resource_budget
             self._bracket_resource_budgets.append(bracket_resource_budget)
 
@@ -132,20 +139,11 @@ class HyperbandPruner(BasePruner):
         bracket_study = self._create_bracket_study(study, i)
         return self._pruners[i].prune(bracket_study, trial)
 
-    # TODO(crcrpar): Improve resource computation/allocation algorithm.
-    def _calc_bracket_resource_budget(self, pruner_index: int, n_brackets: int) -> int:
-        n = self._reduction_factor ** (n_brackets - 1)
-        return n + (n / 2) * (n_brackets - 1 - pruner_index)
-
-        # s = n_brackets - 1 - pruner_index
-        # #return n_brackets * (self._reduction_factor ** s) / (s + 1)
-        #
-        # log_reduction_factor = numpy.log(self._reduction_factor)
-        # coef1 = (log_reduction_factor ** 2) / 2
-        # coef0 = log_reduction_factor * (1 - log_reduction_factor)
-        # coefinv1 = 1 - log_reduction_factor + (log_reduction_factor ** 2) / 2
-        # return n_brackets * (coef1 * (s + 1) + coef0 + coefinv1 / (s + 1))
-
+    def _calc_bracket_resource_budget(self, pruner_index: int) -> int:
+        # In the original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>, the
+        # number of trials per one bracket is referred as ``n`` as calculated in Algorithm 1.
+        s = self.n_brackets - 1 - pruner_index
+        return self.n_brackets * (self._reduction_factor ** s) / (s + 1)
 
     def _get_bracket_id(self, study: Study, trial: FrozenTrial) -> int:
         """Computes the index of bracket for a trial of ``trial_number``.
