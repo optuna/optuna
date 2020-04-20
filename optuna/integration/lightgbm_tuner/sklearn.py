@@ -371,6 +371,9 @@ class _VotingBooster(object):
         return self.boosters[0].feature_name
 
     def __init__(self, boosters: List[lgb.Booster], weights: Optional[np.ndarray] = None) -> None:
+        if not boosters:
+            raise ValueError("boosters must be non-empty array.")
+
         self.boosters = boosters
         self.weights = weights
 
