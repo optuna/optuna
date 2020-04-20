@@ -250,11 +250,9 @@ class _Objective(object):
         is_higher_better: bool,
         n_samples: int,
         callbacks: Optional[List[Callable]] = None,
-        categorical_feature: Union[List[int], List[str], str] = "auto",
         cv: Optional[CVType] = None,
         early_stopping_rounds: Optional[int] = None,
         enable_pruning: bool = False,
-        feature_name: Union[List[str], str] = "auto",
         feval: Optional[Callable] = None,
         fobj: Optional[Callable] = None,
         init_model: Optional[Union[lgb.Booster, lgb.LGBMModel, str]] = None,
@@ -262,13 +260,11 @@ class _Objective(object):
         param_distributions: Optional[Dict[str, distributions.BaseDistribution]] = None,
     ) -> None:
         self.callbacks = callbacks
-        self.categorical_feature = categorical_feature
         self.cv = cv
         self.dataset = dataset
         self.early_stopping_rounds = early_stopping_rounds
         self.enable_pruning = enable_pruning
         self.eval_name = eval_name
-        self.feature_name = feature_name
         self.feval = feval
         self.fobj = fobj
         self.init_model = init_model
@@ -286,9 +282,7 @@ class _Objective(object):
             params,
             dataset,
             callbacks=callbacks,
-            categorical_feature=self.categorical_feature,
             early_stopping_rounds=self.early_stopping_rounds,
-            feature_name=self.feature_name,
             feval=self.feval,
             fobj=self.fobj,
             folds=self.cv,
@@ -695,7 +689,14 @@ class LGBMModel(lgb.LGBMModel):
             groups = _safe_indexing(groups, indices)
             _, group = np.unique(groups, return_counts=True)
 
-        dataset = lgb.Dataset(X, label=y, group=group, weight=sample_weight)
+        dataset = lgb.Dataset(
+            X,
+            label=y,
+            group=group,
+            weight=sample_weight,
+            feature_name=feature_name,
+            categorical_feature=categorical_feature,
+        )
 
         objective = _Objective(
             params,
@@ -704,11 +705,9 @@ class LGBMModel(lgb.LGBMModel):
             is_higher_better,
             n_samples,
             callbacks=callbacks,
-            categorical_feature=categorical_feature,
             cv=cv,
             early_stopping_rounds=early_stopping_rounds,
             enable_pruning=self.enable_pruning,
-            feature_name=feature_name,
             feval=feval,
             fobj=fobj,
             init_model=init_model,
