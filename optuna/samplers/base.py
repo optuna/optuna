@@ -121,7 +121,6 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
-    @abc.abstractmethod
     def reseed_rng(self) -> None:
         """Reseed sampler's random number generator.
 
@@ -132,4 +131,4 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         number generator.
         """
 
-        raise NotImplementedError
+        pass
