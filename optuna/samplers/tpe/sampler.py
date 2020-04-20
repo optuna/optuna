@@ -71,6 +71,38 @@ class TPESampler(base.BaseSampler):
     - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
       Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
 
+    Args:
+        consider_prior:
+            Add a Gaussian prior centered at the middle of the domain to Parzen-tree estimator
+            when True. The prior is only effective if the sampling distribution is either
+            `UniformDistribution`, `DiscreteUniformDistribution`, `LogUniformDistribution`,
+            or `IntUniformDistribution`..
+        prior_weight:
+            The weight of the prior.
+        consider_magic_clip:
+            Enable a heuristic to limit the smallest variances of Gaussians used in
+            the Parzen-tree estimator.
+        consider_endpoints:
+            Take endpoints of domains into account when calculating variances of Gaussians
+            in Parzen-tree estimator. See the original paper for details on the heuristics
+            to calculate the variances,
+        n_startup_trials:
+            Number of steps required to run TPE. When the total number of finished trials
+            are less than this value, this sampler switches to random sampler.
+        n_ei_candidate:
+            Number of candidate samples used to calculate the estimated improvement.
+        gamma:
+            A function that takes the number of finished trials and returns the number
+            of trials to form a density function for samples with low grains.
+            See the original paper for more details.
+        weights:
+            A function that takes the number of finished trials and returns the weight for the trial.
+            See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
+            Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+            for more details.
+        seed:
+            A random seed.
+
     Example:
 
         .. testcode::
