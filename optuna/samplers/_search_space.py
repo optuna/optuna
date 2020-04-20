@@ -76,7 +76,7 @@ class IntersectionSearchSpace(object):
         if ordered_dict:
             search_space = OrderedDict(sorted(search_space.items(), key=lambda x: x[0]))
 
-        return search_space
+        return copy.deepcopy(search_space)
 
 
 def intersection_search_space(
