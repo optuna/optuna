@@ -104,12 +104,13 @@ class SkoptSampler(BaseSampler):
         self._independent_sampler = independent_sampler or samplers.RandomSampler()
         self._warn_independent_sampling = warn_independent_sampling
         self._n_startup_trials = n_startup_trials
+        self._search_space = samplers.IntersectionSearchSpace()
 
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         search_space = {}
-        for name, distribution in samplers.intersection_search_space(study).items():
+        for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
                 if not isinstance(distribution, distributions.CategoricalDistribution):
                     # `skopt` cannot handle non-categorical distributions that contain just
