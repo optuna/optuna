@@ -113,7 +113,7 @@ class HyperbandPruner(BasePruner):
         _logger.debug("Hyperband has {} brackets".format(self._n_brackets))
 
         for i in range(self._n_brackets):
-            bracket_resource_budget = self._calc_bracket_resource_budget(i)
+            bracket_resource_budget = self._calc_trial_allocation_budget(i)
             self._resource_budget += bracket_resource_budget
             self._bracket_resource_budgets.append(bracket_resource_budget)
 
@@ -139,7 +139,7 @@ class HyperbandPruner(BasePruner):
         bracket_study = self._create_bracket_study(study, i)
         return self._pruners[i].prune(bracket_study, trial)
 
-    def _calc_bracket_resource_budget(self, pruner_index: int) -> int:
+    def _calc_trial_allocation_budget(self, pruner_index: int) -> int:
         # In the original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>, the
         # number of trials per one bracket is referred as ``n`` as calculated in Algorithm 1.
         s = self.n_brackets - 1 - pruner_index
