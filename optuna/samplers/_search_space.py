@@ -19,7 +19,7 @@ class IntersectionSearchSpace(object):
     """
 
     def __init__(self) -> None:
-        self._cursor = -1
+        self._cursor = -1  # type: int
         self._search_space = None  # type: Optional[Dict[str, BaseDistribution]]
         self._study_id = None  # type: Optional[int]
 
