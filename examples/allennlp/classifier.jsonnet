@@ -10,6 +10,9 @@ local CNN_FIELDS(max_filter_size, embedding_dim, hidden_size, num_filters) = {
   embedding_dim: embedding_dim,
   output_dim: hidden_size,
 };
+
+// You have to use parseInt for MAX_FILTER_SIZE
+// since it is used as an argument of the built-in function std.range in CNN_FIELDS.
 local ENCODER = CNN_FIELDS(
   std.parseInt(std.extVar('MAX_FILTER_SIZE')),
   EMBEDDING_DIM,
