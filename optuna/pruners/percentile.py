@@ -4,7 +4,8 @@ import math
 import numpy as np
 
 from optuna.pruners import BasePruner
-from optuna import structs
+from optuna.study import StudyDirection
+from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -12,26 +13,27 @@ if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
     from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
 
 def _get_best_intermediate_result_over_steps(trial, direction):
-    # type: (structs.FrozenTrial, structs.StudyDirection) -> float
+    # type: (FrozenTrial, StudyDirection) -> float
 
     values = np.array(list(trial.intermediate_values.values()), np.float)
-    if direction == structs.StudyDirection.MAXIMIZE:
+    if direction == StudyDirection.MAXIMIZE:
         return np.nanmax(values)
     return np.nanmin(values)
 
 
 def _get_percentile_intermediate_result_over_trials(all_trials, direction, step, percentile):
-    # type: (List[structs.FrozenTrial], structs.StudyDirection, int, float) -> float
+    # type: (List[FrozenTrial], StudyDirection, int, float) -> float
 
-    completed_trials = [t for t in all_trials if t.state == structs.TrialState.COMPLETE]
+    completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
 
     if len(completed_trials) == 0:
         raise ValueError("No trials have been completed.")
 
-    if direction == structs.StudyDirection.MAXIMIZE:
+    if direction == StudyDirection.MAXIMIZE:
         percentile = 100 - percentile
 
     return float(
@@ -152,10 +154,10 @@ class PercentilePruner(BasePruner):
         self._interval_steps = interval_steps
 
     def prune(self, study, trial):
-        # type: (Study, structs.FrozenTrial) -> bool
+        # type: (Study, FrozenTrial) -> bool
 
         all_trials = study.get_trials(deepcopy=False)
-        n_trials = len([t for t in all_trials if t.state == structs.TrialState.COMPLETE])
+        n_trials = len([t for t in all_trials if t.state == TrialState.COMPLETE])
 
         if n_trials == 0:
             return False
@@ -187,6 +189,6 @@ class PercentilePruner(BasePruner):
         if math.isnan(p):
             return False
 
-        if direction == structs.StudyDirection.MAXIMIZE:
+        if direction == StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p

@@ -1,4 +1,5 @@
 import abc
+import decimal
 import json
 import warnings
 
@@ -167,6 +168,11 @@ class LogUniformDistribution(BaseDistribution):
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}).".format(low, high)
             )
+        if low <= 0.0:
+            raise ValueError(
+                "The `low` value must be larger than 0 for a log distribution "
+                "(low={}, high={}).".format(low, high)
+            )
 
         self.low = low
         self.high = high
@@ -217,7 +223,14 @@ class DiscreteUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        return self.low == self.high
+        if self.low == self.high:
+            return True
+        high = decimal.Decimal(str(self.high))
+        low = decimal.Decimal(str(self.low))
+        q = decimal.Decimal(str(self.q))
+        if (high - low) < q:
+            return True
+        return False
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -237,19 +250,26 @@ class IntUniformDistribution(BaseDistribution):
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+        step:
+            A step for spacing between values.
     """
 
-    def __init__(self, low, high):
-        # type: (int, int) -> None
+    def __init__(self, low, high, step=1):
+        # type: (int, int, int) -> None
 
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}).".format(low, high)
             )
+        if step <= 0:
+            raise ValueError(
+                "The `step` value must be non-zero positive value, but step={}.".format(step)
+            )
 
         self.low = low
         self.high = high
+        self.step = step
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
@@ -264,13 +284,17 @@ class IntUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        return self.low == self.high
+        if self.low == self.high:
+            return True
+        if (self.high - self.low) < self.step:
+            return True
+        return False
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
-        value = int(param_value_in_internal_repr)
-        return self.low <= value and value <= self.high
+        value = param_value_in_internal_repr
+        return self.low <= value <= self.high
 
 
 class CategoricalDistribution(BaseDistribution):
@@ -286,7 +310,7 @@ class CategoricalDistribution(BaseDistribution):
     .. note::
 
         Not all types are guaranteed to be compatible with all storages. It is recommended to
-        restrict the types of the choices to :obj:`None`, :class:`bool`, :class"`int`,
+        restrict the types of the choices to :obj:`None`, :class:`bool`, :class:`int`,
         :class:`float` and :class:`str`.
 
     Attributes:

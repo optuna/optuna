@@ -67,16 +67,10 @@ class ChainerMNStudy(object):
         :class:`~optuna.study.Study`. Please refer to :class:`optuna.study.Study` for further
         details.
 
-    Example:
-
-        Optimize an objective function that trains neural network written with ChainerMN.
-
-        .. code::
-
-            comm = chainermn.create_communicator('naive')
-            study = optuna.load_study(study_name, storage_url)
-            chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
-            chainermn_study.optimize(objective, n_trials=25)
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/chainermn_integration.py>`__
+    if you want to optimize an objective function that trains neural network
+    written with ChainerMN.
 
     Args:
         study:
@@ -189,6 +183,17 @@ class ChainerMNTrial(BaseTrial):
         self.delegate = trial
         self.comm = comm
 
+    def suggest_float(self, name, low, high, *, log=False, step=None):
+        # type: (str, float, float, bool, Optional[float]) -> float
+
+        def func():
+            # type: () -> float
+
+            assert self.delegate is not None
+            return self.delegate.suggest_float(name, low, high, log=log, step=step)
+
+        return self._call_with_mpi(func)
+
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
@@ -222,14 +227,14 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
+    def suggest_int(self, name, low, high, step=1):
+        # type: (str, int, int, int) -> int
 
         def func():
             # type: () -> int
 
             assert self.delegate is not None
-            return self.delegate.suggest_int(name, low, high)
+            return self.delegate.suggest_int(name, low, high, step)
 
         return self._call_with_mpi(func)
 

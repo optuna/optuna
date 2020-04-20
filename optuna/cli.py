@@ -1,3 +1,12 @@
+"""Optuna CLI module.
+
+This module is implemented using cliff. It follows
+[the demoapp](https://docs.openstack.org/cliff/latest/user/demoapp.html).
+
+If you want to add a new command, you also need to update `entry_points` in `setup.py`.
+c.f. https://docs.openstack.org/cliff/latest/user/demoapp.html#setup-py
+"""
+
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
 from importlib.machinery import SourceFileLoader
@@ -40,6 +49,8 @@ class _BaseCommand(Command):
 
 
 class _CreateStudy(_BaseCommand):
+    """Create a new study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -70,9 +81,9 @@ class _CreateStudy(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
-        storage = optuna.storages.RDBStorage(storage_url)
+        storage = optuna.storages.get_storage(storage_url)
         study_name = optuna.create_study(
-            storage,
+            storage=storage,
             study_name=parsed_args.study_name,
             direction=parsed_args.direction,
             load_if_exists=parsed_args.skip_if_exists,
@@ -81,6 +92,8 @@ class _CreateStudy(_BaseCommand):
 
 
 class _DeleteStudy(_BaseCommand):
+    """Delete a specified study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -96,12 +109,14 @@ class _DeleteStudy(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
-        storage = optuna.storages.RDBStorage(storage_url)
+        storage = optuna.storages.get_storage(storage_url)
         study_id = storage.get_study_id_from_name(parsed_args.study_name)
         storage.delete_study(study_id)
 
 
 class _StudySetUserAttribute(_BaseCommand):
+    """Set a user attribute to a study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -122,6 +137,7 @@ class _StudySetUserAttribute(_BaseCommand):
 
 
 class _Studies(Lister):
+    """Show a list of studies."""
 
     _datetime_format = "%Y-%m-%d %H:%M:%S"
     _study_list_header = ("NAME", "DIRECTION", "N_TRIALS", "DATETIME_START")
@@ -152,6 +168,8 @@ class _Studies(Lister):
 
 
 class _Dashboard(_BaseCommand):
+    """Launch web dashboard (beta)."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -191,6 +209,8 @@ class _Dashboard(_BaseCommand):
 
 
 class _StudyOptimize(_BaseCommand):
+    """Start optimization of a study."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -254,6 +274,8 @@ class _StudyOptimize(_BaseCommand):
 
 
 class _StorageUpgrade(_BaseCommand):
+    """Upgrade the schema of a storage."""
+
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
 
@@ -264,6 +286,9 @@ class _StorageUpgrade(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
+        if storage_url.startswith("redis"):
+            self.logger.info("This storage does not support upgrade yet.")
+            return
         storage = RDBStorage(storage_url, skip_compatibility_check=True)
         current_version = storage.get_current_version()
         head_version = storage.get_head_version()
@@ -282,27 +307,15 @@ class _StorageUpgrade(_BaseCommand):
             )
 
 
-_COMMANDS = {
-    "create-study": _CreateStudy,
-    "delete-study": _DeleteStudy,
-    "study set-user-attr": _StudySetUserAttribute,
-    "studies": _Studies,
-    "dashboard": _Dashboard,
-    "study optimize": _StudyOptimize,
-    "storage upgrade": _StorageUpgrade,
-}
-
-
 class _OptunaApp(App):
     def __init__(self):
         # type: () -> None
 
-        command_manager = CommandManager("optuna.command")
         super(_OptunaApp, self).__init__(
-            description="", version=optuna.__version__, command_manager=command_manager
+            description="",
+            version=optuna.__version__,
+            command_manager=CommandManager("optuna.command"),
         )
-        for name, cls in _COMMANDS.items():
-            command_manager.add_command(name, cls)
 
     def build_option_parser(self, description, version, argparse_kwargs=None):
         # type: (str, str, Optional[Dict]) -> ArgumentParser

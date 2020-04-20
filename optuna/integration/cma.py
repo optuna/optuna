@@ -11,8 +11,8 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
-from optuna.structs import StudyDirection
-from optuna.structs import TrialState
+from optuna.study import StudyDirection
+from optuna.trial import TrialState
 from optuna import type_checking
 
 try:
@@ -32,7 +32,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Set  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
 
 # Minimum value of sigma0 to avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
@@ -432,7 +432,9 @@ class _Optimizer(object):
             # v may slightly exceed range due to round-off errors.
             return float(min(max(v, dist.low), dist.high))
         if isinstance(dist, IntUniformDistribution):
-            return int(numpy.round(cma_param_value))
+            r = numpy.round((cma_param_value - dist.low) / dist.step)
+            v = r * dist.step + dist.low
+            return v
         if isinstance(dist, CategoricalDistribution):
             v = int(numpy.round(cma_param_value))
             return dist.choices[v]

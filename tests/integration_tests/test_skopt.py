@@ -1,12 +1,14 @@
-from mock import call
-from mock import patch
+from unittest.mock import call
+from unittest.mock import patch
+
 import pytest
 from skopt.space import space
 
 import optuna
 from optuna import distributions
-from optuna.structs import FrozenTrial
 from optuna.testing.sampler import DeterministicRelativeSampler
+from optuna.trial import FrozenTrial
+
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -31,7 +33,7 @@ def test_conversion_from_distribution_to_dimension():
             # Original: trial.suggest_loguniform('p3', 1.1, 1.1)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
             # Original: trial.suggest_int('p4', -100, 8)
-            space.Integer(-100, 8),
+            space.Integer(0, 108),
             # Original: trial.suggest_int('p5', -20, -20)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
             # Original: trial.suggest_discrete_uniform('p6', 10, 20, 2)
@@ -55,7 +57,7 @@ def test_skopt_kwargs():
     with patch("skopt.Optimizer") as mock_object:
         study.optimize(lambda t: t.suggest_int("x", -10, 10), n_trials=2)
 
-        dimensions = [space.Integer(-10, 10)]
+        dimensions = [space.Integer(0, 20)]
         assert mock_object.mock_calls[0] == call(dimensions, base_estimator="GBRT")
 
 
@@ -69,7 +71,7 @@ def test_skopt_kwargs_dimensions():
     with patch("skopt.Optimizer") as mock_object:
         study.optimize(lambda t: t.suggest_int("x", -10, 10), n_trials=2)
 
-        expected_dimensions = [space.Integer(-10, 10)]
+        expected_dimensions = [space.Integer(0, 20)]
         assert mock_object.mock_calls[0] == call(expected_dimensions)
 
 
@@ -172,7 +174,7 @@ def _create_frozen_trial(params, param_distributions):
     return FrozenTrial(
         number=0,
         value=1.0,
-        state=optuna.structs.TrialState.COMPLETE,
+        state=optuna.trial.TrialState.COMPLETE,
         user_attrs={},
         system_attrs={},
         params=params,

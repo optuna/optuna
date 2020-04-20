@@ -29,22 +29,14 @@ if __name__ == "__main__":
         "boosting_type": "gbdt",
     }
 
-    best_params, tuning_history = dict(), list()
-
     model = lgb.train(
-        params,
-        dtrain,
-        valid_sets=[dtrain, dval],
-        best_params=best_params,
-        tuning_history=tuning_history,
-        verbose_eval=100,
-        early_stopping_rounds=100,
+        params, dtrain, valid_sets=[dtrain, dval], verbose_eval=100, early_stopping_rounds=100,
     )
 
     prediction = np.rint(model.predict(val_x, num_iteration=model.best_iteration))
     accuracy = accuracy_score(val_y, prediction)
 
-    print("Number of finished trials: {}".format(len(tuning_history)))
+    best_params = model.params
     print("Best params:", best_params)
     print("  Accuracy = {}".format(accuracy))
     print("  Params: ")

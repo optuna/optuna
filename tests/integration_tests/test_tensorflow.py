@@ -1,9 +1,8 @@
 from collections import OrderedDict
 import math
+from unittest.mock import patch
 
-from mock import patch
 import numpy as np
-import pytest
 import tensorflow as tf
 
 import optuna
@@ -52,11 +51,11 @@ def test_tensorflow_pruning_hook():
 
     study = optuna.create_study(pruner=DeterministicPruner(True), direction="maximize")
     study.optimize(objective, n_trials=1)
-    assert study.trials[0].state == optuna.structs.TrialState.PRUNED
+    assert study.trials[0].state == optuna.trial.TrialState.PRUNED
 
     study = optuna.create_study(pruner=DeterministicPruner(False), direction="maximize")
     study.optimize(objective, n_trials=1)
-    assert study.trials[0].state == optuna.structs.TrialState.COMPLETE
+    assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
     # Check if eval_metrics returns the None value.
@@ -66,29 +65,4 @@ def test_tensorflow_pruning_hook():
         study.optimize(objective, n_trials=1)
         assert mock_obj.call_count == 1
         assert math.isnan(study.trials[0].intermediate_values[10])
-        assert study.trials[0].state == optuna.structs.TrialState.PRUNED
-
-
-@pytest.mark.parametrize("is_higher_better", [True, False])
-def test_init_with_is_higher_better(is_higher_better):
-    # type: (bool) -> None
-
-    clf = tf.estimator.DNNClassifier(
-        hidden_units=[],
-        feature_columns=[tf.feature_column.numeric_column(key="x", shape=[20])],
-        model_dir=None,
-        n_classes=2,
-        config=tf.estimator.RunConfig(save_summary_steps=10, save_checkpoints_steps=10),
-    )
-
-    study = optuna.create_study()
-    trial_id = study._storage.create_new_trial(study._study_id)
-
-    with pytest.raises(ValueError):
-        TensorFlowPruningHook(
-            trial=optuna.trial.Trial(study, trial_id),
-            estimator=clf,
-            metric="accuracy",
-            run_every_steps=5,
-            is_higher_better=is_higher_better,
-        )
+        assert study.trials[0].state == optuna.trial.TrialState.PRUNED

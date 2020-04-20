@@ -21,7 +21,7 @@ if optuna.type_checking.TYPE_CHECKING:
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
 
@@ -130,6 +130,9 @@ def test_discrete_uniform(sampler_class, distribution):
         IntUniformDistribution(-10, 10),
         IntUniformDistribution(0, 10),
         IntUniformDistribution(-10, 0),
+        IntUniformDistribution(-10, 10, 2),
+        IntUniformDistribution(0, 10, 2),
+        IntUniformDistribution(-10, 0, 2),
     ],
 )
 def test_int(sampler_class, distribution):

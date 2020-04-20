@@ -26,16 +26,11 @@ if type_checking.TYPE_CHECKING:
 class ChainerPruningExtension(Extension):
     """Chainer extension to prune unpromising trials.
 
-    Example:
-
-        Add a pruning extension which observes validation losses to
-        `Chainer Trainer <https://docs.chainer.org/en/stable/reference/generated/
-        chainer.training.Trainer.html>`_.
-
-        .. code::
-
-            trainer.extend(
-                ChainerPruningExtension(trial, 'validation/main/loss', (1, 'epoch')))
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/chainer_integration.py>`__
+    if you want to add a pruning extension which observes validation
+    accuracy of a `Chainer Trainer <https://docs.chainer.org/en/stable/
+    reference/generated/chainer.training.Trainer.html>`_.
 
     Args:
         trial:

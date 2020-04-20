@@ -15,7 +15,7 @@ EXAMPLE_DISTRIBUTIONS = {
     "u": distributions.UniformDistribution(low=1.0, high=2.0),
     "l": distributions.LogUniformDistribution(low=0.001, high=100),
     "du": distributions.DiscreteUniformDistribution(low=1.0, high=10.0, q=2.0),
-    "iu": distributions.IntUniformDistribution(low=1, high=10),
+    "iu": distributions.IntUniformDistribution(low=1, high=10, step=2),
     "c1": distributions.CategoricalDistribution(choices=(2.71, -float("inf"))),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
 }  # type: Dict[str, Any]
@@ -25,7 +25,7 @@ EXAMPLE_JSONS = {
     "l": '{"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}}',
     "du": '{"name": "DiscreteUniformDistribution",'
     '"attributes": {"low": 1.0, "high": 10.0, "q": 2.0}}',
-    "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10}}',
+    "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10, "step": 2}}',
     "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
 }
@@ -40,6 +40,15 @@ def test_json_to_distribution():
 
     unknown_json = '{"name": "UnknownDistribution", "attributes": {"low": 1.0, "high": 2.0}}'
     pytest.raises(ValueError, lambda: distributions.json_to_distribution(unknown_json))
+
+
+def test_backward_compatibility_int_uniform_distribution():
+    # type: () -> None
+
+    json_str = '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10}}'
+    actual = distributions.json_to_distribution(json_str)
+    expected = distributions.IntUniformDistribution(low=1, high=10)
+    assert actual == expected
 
 
 def test_distribution_to_json():
@@ -81,7 +90,7 @@ def test_check_distribution_compatibility():
         EXAMPLE_DISTRIBUTIONS["u"], distributions.UniformDistribution(low=-3.0, high=-2.0)
     )
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["l"], distributions.LogUniformDistribution(low=-0.1, high=1.0)
+        EXAMPLE_DISTRIBUTIONS["l"], distributions.LogUniformDistribution(low=0.1, high=1.0)
     )
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["du"],
@@ -118,11 +127,21 @@ def test_contains():
     iu = distributions.IntUniformDistribution(low=1, high=10)
     assert not iu._contains(0.9)
     assert iu._contains(1)
-    assert iu._contains(3.5)
+    assert iu._contains(4)
     assert iu._contains(6)
     assert iu._contains(10)
-    assert iu._contains(10.1)
+    assert not iu._contains(10.1)
     assert not iu._contains(11)
+
+    # IntUniformDistribution with a 'q' parameter.
+    iuq = distributions.IntUniformDistribution(low=1, high=10, step=2)
+    assert not iuq._contains(0.9)
+    assert iuq._contains(1)
+    assert iuq._contains(4)
+    assert iuq._contains(6)
+    assert iuq._contains(10)
+    assert not iuq._contains(10.1)
+    assert not iuq._contains(11)
 
     c = distributions.CategoricalDistribution(choices=("Roppongi", "Azabu"))
     assert not c._contains(-1)
@@ -155,6 +174,11 @@ def test_empty_range_contains():
     assert iu._contains(1)
     assert not iu._contains(2)
 
+    iuq = distributions.IntUniformDistribution(low=1, high=1, step=2)
+    assert not iuq._contains(0)
+    assert iuq._contains(1)
+    assert not iuq._contains(2)
+
 
 def test_single():
     # type: () -> None
@@ -163,7 +187,9 @@ def test_single():
         distributions.UniformDistribution(low=1.0, high=1.0),
         distributions.LogUniformDistribution(low=7.3, high=7.3),
         distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
+        distributions.DiscreteUniformDistribution(low=2.22, high=2.24, q=0.3),
         distributions.IntUniformDistribution(low=-123, high=-123),
+        distributions.IntUniformDistribution(low=-123, high=-120, step=4),
         distributions.CategoricalDistribution(choices=("foo",)),
     ]  # type: List[distributions.BaseDistribution]
     for distribution in single_distributions:
@@ -173,7 +199,12 @@ def test_single():
         distributions.UniformDistribution(low=1.0, high=1.001),
         distributions.LogUniformDistribution(low=7.3, high=10),
         distributions.DiscreteUniformDistribution(low=-30, high=-20, q=2),
+        distributions.DiscreteUniformDistribution(low=-30, high=-20, q=10),
+        # In Python, "0.3 - 0.2 != 0.1" is True.
+        distributions.DiscreteUniformDistribution(low=0.2, high=0.3, q=0.1),
+        distributions.DiscreteUniformDistribution(low=0.7, high=0.8, q=0.1),
         distributions.IntUniformDistribution(low=-123, high=0),
+        distributions.IntUniformDistribution(low=-123, high=0, step=123),
         distributions.CategoricalDistribution(choices=("foo", "bar")),
     ]  # type: List[distributions.BaseDistribution]
     for distribution in nonsingle_distributions:
@@ -195,6 +226,9 @@ def test_empty_distribution():
 
     with pytest.raises(ValueError):
         distributions.IntUniformDistribution(low=123, high=100)
+
+    with pytest.raises(ValueError):
+        distributions.IntUniformDistribution(low=123, high=100, step=2)
 
     with pytest.raises(ValueError):
         distributions.CategoricalDistribution(choices=())
@@ -269,4 +303,4 @@ def test_discrete_uniform_distribution_asdict():
 def test_int_uniform_distribution_asdict():
     # type: () -> None
 
-    assert EXAMPLE_DISTRIBUTIONS["iu"]._asdict() == {"low": 1, "high": 10}
+    assert EXAMPLE_DISTRIBUTIONS["iu"]._asdict() == {"low": 1, "high": 10, "step": 2}

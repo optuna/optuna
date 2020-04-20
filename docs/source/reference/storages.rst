@@ -4,3 +4,4 @@ Storages
 ========
 
 .. autoclass:: RDBStorage
+.. autoclass:: RedisStorage

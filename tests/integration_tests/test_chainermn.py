@@ -10,12 +10,12 @@ from optuna.integration import ChainerMNStudy
 from optuna import pruners
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.structs import TrialState
 from optuna import Study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
+from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -306,6 +306,43 @@ class TestChainerMNTrial(object):
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+    def test_suggest_float(storage_mode, comm):
+        # type: (str, CommunicatorBase) -> None
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            low1 = 0.5
+            high1 = 1.0
+            for _ in range(10):
+                mn_trial = _create_new_chainermn_trial(study, comm)
+
+                x1 = mn_trial.suggest_float("x1", low1, high1)
+                assert low1 <= x1 <= high1
+
+                x2 = mn_trial.suggest_uniform("x1", low1, high1)
+
+                assert x1 == x2
+
+                with pytest.raises(ValueError):
+                    mn_trial.suggest_loguniform("x1", low1, high1)
+
+            low2 = 1e-7
+            high2 = 1e-2
+            for _ in range(10):
+                mn_trial = _create_new_chainermn_trial(study, comm)
+
+                x3 = mn_trial.suggest_float("x2", low2, high2, log=True)
+                assert low2 <= x3 <= high2
+
+                x4 = mn_trial.suggest_loguniform("x2", low2, high2)
+
+                assert x3 == x4
+
+                with pytest.raises(ValueError):
+                    mn_trial.suggest_uniform("x2", low2, high2)
+
+    @staticmethod
+    @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     def test_suggest_uniform(storage_mode, comm):
         # type: (str, CommunicatorBase) -> None
 
@@ -377,13 +414,27 @@ class TestChainerMNTrial(object):
             study = TestChainerMNStudy._create_shared_study(storage, comm)
             low = 0
             high = 10
+            step = 1
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_int("x", low, high)
+                x1 = mn_trial.suggest_int("x", low, high, step)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_int("x", low, high)
+                x2 = mn_trial.suggest_int("x", low, high, step)
+                assert x1 == x2
+
+                with pytest.raises(ValueError):
+                    mn_trial.suggest_uniform("x", low, high)
+
+            step = 2
+            for _ in range(10):
+                mn_trial = _create_new_chainermn_trial(study, comm)
+
+                x1 = mn_trial.suggest_int("x", low, high, step)
+                assert low <= x1 <= high
+
+                x2 = mn_trial.suggest_int("x", low, high, step)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):

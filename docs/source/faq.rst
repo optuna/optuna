@@ -188,7 +188,7 @@ To deal with this problem, please set an option (e.g., random seed) to make the 
 How are exceptions from trials handled?
 ---------------------------------------
 
-Trials that raise exceptions without catching them will be treated as failures, i.e. with the :obj:`~optuna.structs.TrialState.FAIL` status.
+Trials that raise exceptions without catching them will be treated as failures, i.e. with the :obj:`~optuna.trial.TrialState.FAIL` status.
 
 By default, all exceptions except :class:`~optuna.exceptions.TrialPruned` raised in objective functions are propagated to the caller of :func:`~optuna.study.Study.optimize`.
 In other words, studies are aborted when such exceptions are raised.

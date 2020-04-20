@@ -18,20 +18,25 @@ from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
+from sqlalchemy.sql import functions
 
 import optuna
 from optuna import distributions
 from optuna.storages.base import BaseStorage
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.rdb import models
-from optuna import structs
+from optuna.study import StudyDirection
+from optuna.study import StudySummary
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 from optuna import type_checking
 from optuna import version
+
+from typing import List
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import List  # NOQA
     from typing import Optional  # NOQA
 
 _logger = optuna.logging.get_logger(__name__)
@@ -152,7 +157,7 @@ class RDBStorage(BaseStorage):
         if study_name is None:
             study_name = self._create_unique_study_name(session)
 
-        study = models.StudyModel(study_name=study_name, direction=structs.StudyDirection.NOT_SET)
+        study = models.StudyModel(study_name=study_name, direction=StudyDirection.NOT_SET)
         session.add(study)
         if not self._commit_with_integrity_check(session):
             raise optuna.exceptions.DuplicatedStudyError(
@@ -191,13 +196,13 @@ class RDBStorage(BaseStorage):
 
     # TODO(sano): Prevent simultaneously setting different direction in distributed environments.
     def set_study_direction(self, study_id, direction):
-        # type: (int, structs.StudyDirection) -> None
+        # type: (int, StudyDirection) -> None
 
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        if study.direction != structs.StudyDirection.NOT_SET and study.direction != direction:
+        if study.direction != StudyDirection.NOT_SET and study.direction != direction:
             raise ValueError(
                 "Cannot overwrite study direction from {} to {}.".format(
                     study.direction, direction
@@ -276,7 +281,7 @@ class RDBStorage(BaseStorage):
         return study.study_name
 
     def get_study_direction(self, study_id):
-        # type: (int) -> structs.StudyDirection
+        # type: (int) -> StudyDirection
 
         session = self.scoped_session()
 
@@ -334,82 +339,93 @@ class RDBStorage(BaseStorage):
 
         return system_attrs
 
-    # TODO(sano): Optimize this method to reduce the number of queries.
-    def get_all_study_summaries(self):
-        # type: () -> List[structs.StudySummary]
+    def get_all_study_summaries(self) -> List[StudySummary]:
 
         session = self.scoped_session()
 
-        study_models = models.StudyModel.all(session)
-        trial_models = models.TrialModel.all(session)
-        param_models = models.TrialParamModel.all(session)
-        value_models = models.TrialValueModel.all(session)
-        trial_user_attribute_models = models.TrialUserAttributeModel.all(session)
-        trial_system_attribute_models = models.TrialSystemAttributeModel.all(session)
-
-        study_summaries = []
-        for study_model in study_models:
-            # Filter model objects by study.
-            study_trial_models = [t for t in trial_models if t.study_id == study_model.study_id]
-
-            # Get best trial.
-            completed_trial_models = [
-                t for t in study_trial_models if t.state is structs.TrialState.COMPLETE
-            ]
-            best_trial = None
-            if len(completed_trial_models) > 0:
-                if study_model.direction == structs.StudyDirection.MAXIMIZE:
-                    best_trial_model = max(completed_trial_models, key=lambda t: t.value)
-                else:
-                    best_trial_model = min(completed_trial_models, key=lambda t: t.value)
-
-                best_param_models = [
-                    p for p in param_models if p.trial_id == best_trial_model.trial_id
-                ]
-                best_value_models = [
-                    v for v in value_models if v.trial_id == best_trial_model.trial_id
-                ]
-                best_trial_user_models = [
-                    u
-                    for u in trial_user_attribute_models
-                    if u.trial_id == best_trial_model.trial_id
-                ]
-                best_trial_system_models = [
-                    s
-                    for s in trial_system_attribute_models
-                    if s.trial_id == best_trial_model.trial_id
-                ]
-
-                # Merge model objects related to the best trial.
-                best_trial = self._merge_trials_orm(
-                    [best_trial_model],
-                    best_param_models,
-                    best_value_models,
-                    best_trial_user_models,
-                    best_trial_system_models,
-                )[0]
-
-            # Find datetime_start.
-            datetime_start = None
-            if len(study_trial_models) > 0:
-                datetime_start = min([t.datetime_start for t in study_trial_models])
-
-            attributes = models.StudySystemAttributeModel.where_study_id(
-                study_model.study_id, session
+        summarized_trial = (
+            session.query(
+                models.TrialModel.study_id,
+                functions.min(models.TrialModel.datetime_start).label("datetime_start"),
+                functions.count(models.TrialModel.trial_id).label("n_trial"),
             )
-            system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
+            .group_by(models.TrialModel.study_id)
+            .with_labels()
+            .subquery()
+        )
+        study_summary_stmt = session.query(
+            models.StudyModel.study_id,
+            models.StudyModel.study_name,
+            models.StudyModel.direction,
+            summarized_trial.c.datetime_start,
+            functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
+        ).select_from(orm.outerjoin(models.StudyModel, summarized_trial))
 
-            # Consolidate StudySummary.
+        study_summary = study_summary_stmt.all()
+        study_summaries = []
+        for study in study_summary:
+            best_trial = None  # type: Optional[models.TrialModel]
+            try:
+                if study.direction == StudyDirection.MAXIMIZE:
+                    best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
+                else:
+                    best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
+            except ValueError:
+                best_trial_frozen = None  # type: Optional[FrozenTrial]
+            if best_trial:
+                params = (
+                    session.query(
+                        models.TrialParamModel.param_name,
+                        models.TrialParamModel.param_value,
+                        models.TrialParamModel.distribution_json,
+                    )
+                    .filter(models.TrialParamModel.trial_id == best_trial.trial_id)
+                    .all()
+                )
+                param_dict = {}
+                param_distributions = {}
+                for param in params:
+                    distribution = distributions.json_to_distribution(param.distribution_json)
+                    param_dict[param.param_name] = distribution.to_external_repr(param.param_value)
+                    param_distributions[param.param_name] = distribution
+                user_attrs = session.query(models.TrialUserAttributeModel).filter(
+                    models.TrialUserAttributeModel.trial_id == best_trial.trial_id
+                )
+                system_attrs = session.query(models.TrialSystemAttributeModel).filter(
+                    models.TrialSystemAttributeModel.trial_id == best_trial.trial_id
+                )
+                intermediate = session.query(models.TrialValueModel).filter(
+                    models.TrialValueModel.trial_id == best_trial.trial_id
+                )
+                best_trial_frozen = FrozenTrial(
+                    best_trial.number,
+                    TrialState.COMPLETE,
+                    best_trial.value,
+                    best_trial.datetime_start,
+                    best_trial.datetime_complete,
+                    param_dict,
+                    param_distributions,
+                    {i.key: json.loads(i.value_json) for i in user_attrs},
+                    {i.key: json.loads(i.value_json) for i in system_attrs},
+                    {value.step: value.value for value in intermediate},
+                    best_trial.trial_id,
+                )
+            user_attrs = session.query(models.StudyUserAttributeModel).filter(
+                models.StudyUserAttributeModel.study_id == study.study_id
+            )
+            system_attrs = session.query(models.StudySystemAttributeModel).filter(
+                models.StudySystemAttributeModel.study_id == study.study_id
+            )
             study_summaries.append(
-                structs.StudySummary(
-                    study_name=study_model.study_name,
-                    direction=self.get_study_direction(study_model.study_id),
-                    best_trial=best_trial,
-                    user_attrs=self.get_study_user_attrs(study_model.study_id),
-                    system_attrs=system_attrs,
-                    n_trials=len(study_trial_models),
-                    datetime_start=datetime_start,
-                    study_id=study_model.study_id,
+                StudySummary(
+                    study_name=study.study_name,
+                    direction=study.direction,
+                    best_trial=best_trial_frozen,
+                    user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
+                    system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
+                    n_trials=study.n_trial,
+                    datetime_start=study.datetime_start,
+                    study_id=study.study_id,
                 )
             )
 
@@ -419,20 +435,18 @@ class RDBStorage(BaseStorage):
         return study_summaries
 
     def create_new_trial(self, study_id, template_trial=None):
-        # type: (int, Optional[structs.FrozenTrial]) -> int
+        # type: (int, Optional[FrozenTrial]) -> int
 
         session = self.scoped_session()
 
         if template_trial is None:
-            trial = models.TrialModel(
-                study_id=study_id, number=None, state=structs.TrialState.RUNNING,
-            )
+            trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING,)
         else:
             # Because only `RUNNING` trials can be updated,
             # we temporarily set the state of the new trial to `RUNNING`.
             # After all fields of the trial have been updated,
             # the state is set to `template_trial.state`.
-            temp_state = structs.TrialState.RUNNING
+            temp_state = TrialState.RUNNING
 
             trial = models.TrialModel(
                 study_id=study_id,
@@ -481,7 +495,7 @@ class RDBStorage(BaseStorage):
         return trial.trial_id
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, structs.TrialState) -> bool
+        # type: (int, TrialState) -> bool
 
         session = self.scoped_session()
 
@@ -492,7 +506,7 @@ class RDBStorage(BaseStorage):
 
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        if state == structs.TrialState.RUNNING and trial.state != structs.TrialState.WAITING:
+        if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
             session.rollback()
             return False
 
@@ -665,12 +679,12 @@ class RDBStorage(BaseStorage):
         return trial_number
 
     def get_trial(self, trial_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         return self._get_and_cache_trial(trial_id)
 
     def _get_and_cache_trial(self, trial_id, deepcopy=True):
-        # type: (int, bool) -> structs.FrozenTrial
+        # type: (int, bool) -> FrozenTrial
 
         cached_trial = self._finished_trials_cache.get_cached_trial(trial_id)
         if cached_trial is not None:
@@ -699,7 +713,7 @@ class RDBStorage(BaseStorage):
         return frozen_trial
 
     def get_all_trials(self, study_id, deepcopy=True):
-        # type: (int, bool) -> List[structs.FrozenTrial]
+        # type: (int, bool) -> List[FrozenTrial]
 
         if self._finished_trials_cache.is_empty():
             trials = self._get_all_trials_without_cache(study_id)
@@ -713,10 +727,10 @@ class RDBStorage(BaseStorage):
         return trials
 
     def get_best_trial(self, study_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         session = self.scoped_session()
-        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
             trial = models.TrialModel.find_max_value_trial(study_id, session)
         else:
             trial = models.TrialModel.find_min_value_trial(study_id, session)
@@ -739,7 +753,7 @@ class RDBStorage(BaseStorage):
         return trial_ids
 
     def _get_all_trials_without_cache(self, study_id):
-        # type: (int) -> List[structs.FrozenTrial]
+        # type: (int) -> List[FrozenTrial]
 
         session = self.scoped_session()
 
@@ -759,7 +773,7 @@ class RDBStorage(BaseStorage):
         return all_trials
 
     def get_n_trials(self, study_id, state=None):
-        # type: (int, Optional[structs.TrialState]) -> int
+        # type: (int, Optional[TrialState]) -> int
 
         session = self.scoped_session()
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
@@ -777,7 +791,7 @@ class RDBStorage(BaseStorage):
         trial_user_attrs,  # type: List[models.TrialUserAttributeModel]
         trial_system_attrs,  # type: List[models.TrialSystemAttributeModel]
     ):
-        # type: (...) -> List[structs.FrozenTrial]
+        # type: (...) -> List[FrozenTrial]
 
         id_to_trial = {}
         for trial in trials:
@@ -825,7 +839,7 @@ class RDBStorage(BaseStorage):
                 system_attrs[system_attr.key] = json.loads(system_attr.value_json)
 
             result.append(
-                structs.FrozenTrial(
+                FrozenTrial(
                     number=trial.number,
                     state=trial.state,
                     params=params,
@@ -1112,7 +1126,7 @@ class _FinishedTrialsCache(object):
     def __init__(self):
         # type: () -> None
 
-        self._finished_trials = {}  # type: Dict[int, structs.FrozenTrial]
+        self._finished_trials = {}  # type: Dict[int, FrozenTrial]
         self._lock = threading.Lock()
 
     def is_empty(self):
@@ -1122,14 +1136,14 @@ class _FinishedTrialsCache(object):
             return len(self._finished_trials) == 0
 
     def cache_trial_if_finished(self, trial):
-        # type: (structs.FrozenTrial) -> None
+        # type: (FrozenTrial) -> None
 
         if trial.state.is_finished():
             with self._lock:
                 self._finished_trials[trial._trial_id] = trial
 
     def get_cached_trial(self, trial_id):
-        # type: (int) -> Optional[structs.FrozenTrial]
+        # type: (int) -> Optional[FrozenTrial]
 
         with self._lock:
             return self._finished_trials.get(trial_id)
