@@ -96,7 +96,7 @@ class TPESampler(base.BaseSampler):
             of trials to form a density function for samples with low grains.
             See the original paper for more details.
         weights:
-            A function that takes the number of finished trials and returns the weight for the trial.
+            A function that takes the number of finished trials and returns a weight for the trial.
             See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
             Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
             for more details.
