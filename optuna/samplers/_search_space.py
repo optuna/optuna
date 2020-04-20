@@ -43,6 +43,8 @@ class IntersectionSearchSpace(object):
         if self._study_id is None:
             self._study_id = study._study_id
         else:
+            # Note that the check below is meaningless when `InMemortyStorage` is used
+            # because `InMemortyStorage.create_new_study` always returns the same study ID (i.e., `0`).
             if self._study_id != study._study_id:
                 raise ValueError("`IntersectionSearchSpace` cannot handle multiple studies.")
 
