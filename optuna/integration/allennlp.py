@@ -28,6 +28,11 @@ class AllenNLPExecutor(object):
     This feature is experimental since AllenNLP major release will come soon.
     The interface may change without prior notice to correspond to the update.
 
+    See the examples of `objective function <https://github.com/optuna/optuna/blob/
+    master/examples/allennlp/allennlp_jsonnet.py>`_ and
+    `config file <https://github.com/optuna/optuna/blob/master/
+    examples/allennlp/classifier.jsonnet>`_.
+
     Args:
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation
