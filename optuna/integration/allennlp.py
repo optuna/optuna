@@ -34,7 +34,7 @@ class AllenNLPExecutor(object):
             of the objective function.
         config_file:
             Config file for AllenNLP.
-            Hyperparameters should be masked with `std.extVar`.
+            Hyperparameters should be masked with ``std.extVar``.
             Please refer to `the config example <https://github.com/allenai/allentune/blob/
             master/examples/classifier.jsonnet>`_.
         serialization_dir:
