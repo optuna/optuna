@@ -4,6 +4,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Union
+import warnings
 
 import optuna
 from optuna._experimental import experimental
@@ -83,8 +84,14 @@ class AllenNLPExecutor(object):
 
     def run(self) -> float:
         """Train a model using AllenNLP."""
+        try:
+            import_func = allennlp.common.util.import_submodules
+        except AttributeError:
+            import_func = allennlp.common.util.import_module_and_submodules
+            warnings.warn("AllenNLP>0.9 has not been supported officially yet.")
+
         for package_name in self._include_package:
-            allennlp.common.util.import_submodules(package_name)
+            import_func(package_name)
 
         params = allennlp.common.params.Params(self._build_params())
         allennlp.commands.train.train_model(params, self._serialization_dir)
