@@ -623,7 +623,7 @@ class LGBMModel(lgb.LGBMModel):
         seed = self._get_random_state()
 
         if fit_params:
-            logger.warn("{} are ignored.".format(fit_params))
+            logger.warning("{} are ignored.".format(fit_params))
 
         params = self.get_params()
 
@@ -785,7 +785,7 @@ class LGBMModel(lgb.LGBMModel):
         X = check_X(X, accept_sparse=True, estimator=self, force_all_finite=False)
 
         if predict_params:
-            logger.warn("{} are ignored.".format(predict_params))
+            logger.warning("{} are ignored.".format(predict_params))
 
         return self.booster_.predict(X, num_iteration=num_iteration)
 
