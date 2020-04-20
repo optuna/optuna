@@ -165,7 +165,7 @@ def test_sample_independent_log_uniform_distributions() -> None:
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch("optuna.Study.get_trials", return_value=past_trials):
         loguniform_suggestion = sampler.sample_independent(study, trial, "param-a", log_dist)
-    assert 1.0 <= loguniform_suggestion <= 100.0
+    assert 1.0 <= loguniform_suggestion < 100.0
     assert uniform_suggestion != loguniform_suggestion
 
 
