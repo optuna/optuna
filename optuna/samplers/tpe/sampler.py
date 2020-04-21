@@ -71,6 +71,20 @@ class TPESampler(base.BaseSampler):
     - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
       Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
 
+    Example:
+
+        .. testcode::
+
+            import optuna
+            from optuna.samplers import TPESampler
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -10, 10)
+                return x**2
+
+            study = optuna.create_study(sampler=TPESampler())
+            study.optimize(objective, n_trials=10)
+
     Args:
         consider_prior:
             Add a Gaussian prior centered at the middle of the domain to Parzen-tree estimator
@@ -102,21 +116,6 @@ class TPESampler(base.BaseSampler):
             for more details.
         seed:
             A random seed.
-
-    Example:
-
-        .. testcode::
-
-            import optuna
-            from optuna.samplers import TPESampler
-
-            def objective(trial):
-                x = trial.suggest_uniform('x', -10, 10)
-                return x**2
-
-            study = optuna.create_study(sampler=TPESampler())
-            study.optimize(objective, n_trials=10)
-
     """
 
     def __init__(
