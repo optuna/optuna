@@ -98,7 +98,7 @@ def create_study(
         load_if_exists=load_if_exists,
     )
 
-    study.set_system_attr("multi_objective.study.directions", list(directions))
+    study.set_system_attr("multi_objective:study:directions", list(directions))
 
     return MultiObjectiveStudy(study)
 
@@ -153,7 +153,7 @@ class MultiObjectiveStudy(object):
         self._study = study
 
         self._directions = []
-        for d in study.system_attrs["multi_objective.study.directions"]:
+        for d in study.system_attrs["multi_objective:study:directions"]:
             if d == "minimize":
                 self._directions.append(StudyDirection.MINIMIZE)
             elif d == "maximize":
