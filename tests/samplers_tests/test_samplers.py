@@ -348,6 +348,7 @@ def test_intersection_search_space_class_with_different_studies() -> None:
 
         search_space.calculate(study0)
         with pytest.raises(ValueError):
+            # An `IntersectionSearchSpace` instance isn't supposed to be used for multiple studies.
             search_space.calculate(study1)
 
 

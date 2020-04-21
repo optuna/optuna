@@ -16,6 +16,10 @@ class IntersectionSearchSpace(object):
     If there are multiple parameters that have the same name but different distributions,
     neither is included in the resulting search space
     (i.e., the parameters with dynamic value ranges are excluded).
+
+    Note that an instance of this class is supposed to be used for only one study.
+    If different studies are passed to :func:`~optuna.samplers.IntersectionSearchSpace.calculate`,
+    a :obj:`ValueError` is raised.
     """
 
     def __init__(self) -> None:
