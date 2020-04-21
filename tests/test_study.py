@@ -4,12 +4,12 @@ import multiprocessing
 import pickle
 import threading
 import time
+from unittest.mock import Mock  # NOQA
+from unittest.mock import patch
 import uuid
 import warnings
 
 import joblib
-from mock import Mock  # NOQA
-from mock import patch
 import pandas as pd
 import pytest
 
@@ -712,7 +712,8 @@ def test_append_trial(storage_mode):
         study = optuna.create_study(storage=storage)
         assert len(study.trials) == 0
 
-        study._append_trial(value=0.8)
+        trial_id = study._append_trial(value=0.8)
+        assert study.trials[0]._trial_id == trial_id
         assert len(study.trials) == 1
         assert study.best_value == 0.8
 

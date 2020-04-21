@@ -25,13 +25,30 @@ def plot_intermediate_values(study):
 
             import optuna
 
+            def f(x):
+                return (x - 2) ** 2
+
+            def df(x):
+                return 2 * x - 4
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_categorical('y', [-1, 0, 1])
-                return x ** 2 + y
+                lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+
+                x = 3
+                for step in range(128):
+                    y = f(x)
+
+                    trial.report(y, step=step)
+                    if trial.should_prune():
+                        raise optuna.exceptions.TrialPruned()
+
+                    gy = df(x)
+                    x -= gy * lr
+
+                return y
 
             study = optuna.create_study()
-            study.optimize(objective, n_trials=10)
+            study.optimize(objective, n_trials=16)
 
             optuna.visualization.plot_intermediate_values(study)
 

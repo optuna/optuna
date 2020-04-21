@@ -1,10 +1,10 @@
 import copy
 import datetime
 import math
+from unittest.mock import Mock
+from unittest.mock import patch
 import warnings
 
-from mock import Mock
-from mock import patch
 import numpy as np
 import pytest
 
@@ -57,6 +57,13 @@ def test_check_distribution_suggest_float(storage_init_func):
     x4 = trial.suggest_loguniform("x2", 1e-5, 1e-3)
 
     assert x3 == x4
+
+    x5 = trial.suggest_float("x3", 10, 20, step=1.0)
+    x6 = trial.suggest_discrete_uniform("x3", 10, 20, 1.0)
+
+    assert x5 == x6
+    with pytest.raises(NotImplementedError):
+        trial.suggest_float("x4", 1e-5, 1e-2, log=True, step=1e-5)
 
 
 @parametrize_storage
@@ -224,6 +231,9 @@ def test_suggest_low_equals_high(storage_init_func):
         assert mock_object.call_count == 0
         assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting a param.
         assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting the same param.
+        assert mock_object.call_count == 0
+        assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting a param.
+        assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting the same param.
         assert mock_object.call_count == 0
 
 

@@ -465,7 +465,7 @@ class Study(BaseStudy):
 
         _check_pandas_availability()
 
-        trials = self.trials
+        trials = self.get_trials(deepcopy=False)
 
         # If no trials, return an empty dataframe.
         if not len(trials):
@@ -569,7 +569,7 @@ class Study(BaseStudy):
         datetime_start=None,  # type: Optional[datetime.datetime]
         datetime_complete=None,  # type: Optional[datetime.datetime]
     ):
-        # type: (...) -> None
+        # type: (...) -> int
 
         params = params or {}
         distributions = distributions or {}
@@ -597,7 +597,8 @@ class Study(BaseStudy):
 
         trial._validate()
 
-        self._storage.create_new_trial(self._study_id, template_trial=trial)
+        trial_id = self._storage.create_new_trial(self._study_id, template_trial=trial)
+        return trial_id
 
     def _optimize_sequential(
         self,
@@ -636,7 +637,7 @@ class Study(BaseStudy):
         # type: () -> Optional[int]
 
         # TODO(c-bata): Reduce database query counts for extracting waiting trials.
-        for trial in self.trials:
+        for trial in self.get_trials(deepcopy=False):
             if trial.state != TrialState.WAITING:
                 continue
 

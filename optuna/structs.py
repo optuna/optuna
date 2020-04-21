@@ -18,6 +18,17 @@ if type_checking.TYPE_CHECKING:
 
 _logger = logging.get_logger(__name__)
 
+_message = (
+    "`structs` is deprecated. Classes have moved to the following modules. "
+    "`structs.StudyDirection`->`study.StudyDirection`, "
+    "`structs.StudySummary`->`study.StudySummary`, "
+    "`structs.FrozenTrial`->`trial.FrozenTrial`, "
+    "`structs.TrialState`->`trial.TrialState`, "
+    "`structs.TrialPruned`->`exceptions.TrialPruned`."
+)
+warnings.warn(_message, DeprecationWarning)
+_logger.warning(_message)
+
 # The use of the structs.StudyDirection is deprecated and it is recommended that you use
 # study.StudyDirection instead. See the API reference for more details.
 StudyDirection = _study_direction.StudyDirection

@@ -52,7 +52,14 @@ def get_extras_require() -> Dict[str, List[str]]:
     requirements = {
         "checking": ["black", "hacking", "mypy",],
         "codecov": ["codecov", "pytest-cov",],
-        "doctest": ["cma", "pandas", "plotly>=4.0.0", "scikit-learn>=0.19.0", "scikit-optimize",],
+        "doctest": [
+            "cma",
+            "pandas",
+            "plotly>=4.0.0",
+            "scikit-learn>=0.19.0",
+            "scikit-optimize",
+            "mlflow",
+        ],
         "document": ["sphinx", "sphinx_rtd_theme",],
         "example": [
             "catboost",
@@ -66,11 +73,11 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-image",
             "scikit-learn",
             "thop",
-            "torch",
-            "torchvision>=0.5.0",
+            "torch==1.4.0+cpu",
+            "torchvision==0.5.0+cpu",
             "xgboost",
         ]
-        + (["allennlp", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (["allennlp<1", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (
             [
                 "dask[dataframe]",
@@ -95,7 +102,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fakeredis",
             "fanova",
             "lightgbm",
-            "mock",
+            "mlflow",
             "mpi4py",
             "mxnet",
             "pandas",
@@ -104,10 +111,11 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-ignite",
             "scikit-learn>=0.19.0",
             "scikit-optimize",
-            "torch",
-            "torchvision>=0.5.0",
+            "torch==1.4.0+cpu",
+            "torchvision==0.5.0+cpu",
             "xgboost",
         ]
+        + (["allennlp<1", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (["fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (
             [

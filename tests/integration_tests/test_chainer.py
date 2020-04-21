@@ -1,11 +1,11 @@
 from collections import namedtuple
 import math
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import chainer
 import chainer.links as L
 from chainer.training import triggers
-from mock import Mock
-from mock import patch
 import numpy as np
 import pytest
 
