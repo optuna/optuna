@@ -79,7 +79,7 @@ class HyperbandPruner(BasePruner):
 
     def __init__(
         self,
-        min_resource: int = 1,
+        min_resource: int = 3,
         max_resource: int = 80,
         reduction_factor: int = 3,
         n_brackets: Optional[int] = None,
