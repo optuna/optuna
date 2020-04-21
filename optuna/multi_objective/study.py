@@ -45,6 +45,9 @@ def create_study(
         directions:
             Optimization direction for each objective value.
             Set ``minimize`` for minimization and ``maximize`` for maximization.
+        study_name:
+            Study's name. If this argument is set to None, a unique name is generated
+            automatically.
         storage:
             Database URL. If this argument is set to None, in-memory storage is used, and the
             :class:`~optuna.study.Study` will not be persistent.
@@ -66,9 +69,6 @@ def create_study(
             If :obj:`None` is specified,
             :class:`~optuna.multi_objective.samplers.RandomMultiObjectiveSampler` is used
             as the default. See also :class:`~optuna.multi_objective.samplers`.
-        study_name:
-            Study's name. If this argument is set to None, a unique name is generated
-            automatically.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
