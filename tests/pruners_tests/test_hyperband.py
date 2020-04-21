@@ -20,15 +20,15 @@ def test_hyperband_experimental_warning() -> None:
 
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         optuna.pruners.HyperbandPruner(
-            max_resource=MAX_RESOURCE, min_resource=MIN_RESOURCE, reduction_factor=REDUCTION_FACTOR
+            min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
         )
 
 
 def test_hyperband_deprecation_warning() -> None:
     with pytest.deprecated_call():
         optuna.pruners.HyperbandPruner(
-            max_resource=MAX_RESOURCE,
             min_resource=MIN_RESOURCE,
+            max_resource=MAX_RESOURCE,
             reduction_factor=REDUCTION_FACTOR,
             n_brackets=N_BRACKETS,
         )
@@ -38,7 +38,7 @@ def test_hyperband_pruner_intermediate_values():
     # type: () -> None
 
     pruner = optuna.pruners.HyperbandPruner(
-        max_resource=MAX_RESOURCE, min_resource=MIN_RESOURCE, reduction_factor=REDUCTION_FACTOR
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
     )
 
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
@@ -61,7 +61,7 @@ def test_bracket_study():
     # type: () -> None
 
     pruner = optuna.pruners.HyperbandPruner(
-        max_resource=MAX_RESOURCE, min_resource=MIN_RESOURCE, reduction_factor=REDUCTION_FACTOR
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
     )
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
     bracket_study = pruner._create_bracket_study(study, 0)
