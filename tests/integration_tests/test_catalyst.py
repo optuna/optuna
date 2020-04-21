@@ -1,4 +1,3 @@
-import torch
 from catalyst.dl import SupervisedRunner
 
 import optuna
@@ -6,10 +5,13 @@ from optuna.integration import CatalystPruningCallback
 from optuna.testing.integration import DeterministicPruner
 from optuna import type_checking
 
+import torch
+
 if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Union  # NOQA
+
 
 def test_catalyst_pruning_callback():
     # type: () -> None
@@ -24,7 +26,7 @@ def test_catalyst_pruning_callback():
     }
 
     def objective(trial):
-        # type: (optuna.trial.Trial) -> None
+        # type: (optuna.trial.Trial) -> float
         model = torch.nn.Linear(4, 1)
         criterion = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters())
@@ -35,12 +37,10 @@ def test_catalyst_pruning_callback():
             criterion=criterion,
             optimizer=optimizer,
             loaders=loaders,
-            logdir='./logdir',
+            logdir="./logdir",
             num_epochs=2,
             verbose=True,
-            callbacks=[
-                        CatalystPruningCallback(trial, metric="loss"),
-                      ],
+            callbacks=[CatalystPruningCallback(trial, metric="loss"),],
         )
 
         return 1.0
