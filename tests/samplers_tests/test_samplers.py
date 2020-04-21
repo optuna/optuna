@@ -290,7 +290,7 @@ def test_intersection_search_space_func() -> None:
     }
 
     # If two parameters have the same name but different distributions,
-    # those are regarded as different trials.
+    # those are regarded as different parameters.
     study.optimize(lambda t: t.suggest_uniform("y", -1, 1), n_trials=1)
     assert optuna.samplers.intersection_search_space(study) == {}
 
@@ -334,7 +334,7 @@ def test_intersection_search_space_class() -> None:
     assert search_space.calculate(study) == {"y": UniformDistribution(low=-3, high=3)}
 
     # If two parameters have the same name but different distributions,
-    # those are regarded as different trials.
+    # those are regarded as different parameters.
     study.optimize(lambda t: t.suggest_uniform("y", -1, 1), n_trials=1)
     assert search_space.calculate(study) == {}
 
