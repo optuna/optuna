@@ -299,6 +299,11 @@ def test_intersection_search_space() -> None:
     assert search_space.calculate(study) == {}
     assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
 
+    # The search space remains empty once it is empty.
+    study.optimize(lambda t: t.suggest_uniform("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
+    assert search_space.calculate(study) == {}
+    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
+
 
 def test_intersection_search_space_class_with_different_studies() -> None:
     search_space = optuna.samplers.IntersectionSearchSpace()
