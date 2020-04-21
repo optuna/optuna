@@ -1,6 +1,6 @@
 import math
-from typing import List  # NOQA
-from typing import Optional  # NOQA
+from typing import List
+from typing import Optional
 import warnings
 
 from optuna._experimental import experimental
@@ -50,14 +50,14 @@ class HyperbandPruner(BasePruner):
         at least :math:`4 \\times 10` pruners are consumed for startup.
 
     Args:
-        max_resource:
-            A parameter for specifying the maximum resource allocated to a trial noted as :math:`R`
-            in the paper. This value is exactly same with the maximum iteration steps (e.g.,
-            ``max_epoch`` for neural networks).
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial noted as :math:`r`
             in the paper.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
+        max_resource:
+            A parameter for specifying the maximum resource allocated to a trial noted as :math:`R`
+            in the paper. This value represents and should match the maximum iteration steps (e.g.,
+            ``max_epoch`` for neural networks).
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper. See the details for
@@ -79,13 +79,12 @@ class HyperbandPruner(BasePruner):
 
     def __init__(
         self,
-        max_resource: int = 100,
         min_resource: int = 1,
+        max_resource: int = 80,
         reduction_factor: int = 3,
         n_brackets: Optional[int] = None,
         min_early_stopping_rate_low: int = 0,
     ) -> None:
-        self._max_resource = max_resource
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
         self._reduction_factor = reduction_factor
         self._resource_budget = 0
@@ -94,11 +93,10 @@ class HyperbandPruner(BasePruner):
             # In the original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>, the
             # inputs of Hyperband are ``R``: max resource amd ``\eta``: reduction factor. The
             # number of brackets (this is referred as ``s_{max} + 1`` in the paper) is calculated
-            # by s_{max} + 1 = \ceil{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
+            # by s_{max} + 1 = \floor{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
             self._n_brackets = (
                 math.floor(math.log2(max_resource) / math.log2(reduction_factor)) + 1
             )
-            self._n_brackets = int(self._n_brackets)
         else:
             message = (
                 "The argument of ``n_brackets`` is deprecated. "
