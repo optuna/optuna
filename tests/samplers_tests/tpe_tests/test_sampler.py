@@ -252,7 +252,7 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
     with patch("optuna.Study.get_trials", return_value=past_trials):
         all_success_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
-    # Test unsuccessful trials are handled differently
+    # Test unsuccessful trials are handled differently.
     state_fn = build_state_fn(state)
     past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
     trial = frozen_trial_factory(30)
