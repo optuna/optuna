@@ -2,7 +2,6 @@ from collections import OrderedDict
 import copy
 from typing import Dict
 from typing import Optional
-from typing import Set
 
 import optuna
 from optuna.distributions import BaseDistribution
@@ -20,7 +19,7 @@ class IntersectionSearchSpace(object):
     """
 
     def __init__(self) -> None:
-        self._known_trials = set()  # type: Set[int]
+        self._cursor = -1  # type: int
         self._search_space = None  # type: Optional[Dict[str, BaseDistribution]]
         self._study_id = None  # type: Optional[int]
 
@@ -50,14 +49,16 @@ class IntersectionSearchSpace(object):
             if self._study_id != study._study_id:
                 raise ValueError("`IntersectionSearchSpace` cannot handle multiple studies.")
 
-        for trial in study.get_trials(deepcopy=False):
+        next_cursor = self._cursor
+        for trial in reversed(study.get_trials(deepcopy=False)):
+            if self._cursor > trial.number:
+                break
+
+            if not trial.state.is_finished():
+                next_cursor = trial.number
+
             if trial.state != optuna.trial.TrialState.COMPLETE:
                 continue
-
-            if trial.number in self._known_trials:
-                continue
-
-            self._known_trials.add(trial.number)
 
             if self._search_space is None:
                 self._search_space = copy.copy(trial.distributions)
@@ -73,6 +74,7 @@ class IntersectionSearchSpace(object):
             for param_name in delete_list:
                 del self._search_space[param_name]
 
+        self._cursor = next_cursor
         search_space = self._search_space or {}
 
         if ordered_dict:
