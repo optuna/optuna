@@ -23,8 +23,6 @@ class HyperbandPruner(BasePruner):
     As you can see, there will be a trade-off of :math:`B` and :math:`B \\over n`.
     `Hyperband <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ attacks this trade-off
     by trying different :math:`n` values for a fixed budget.
-    Note that this implementation does not take as inputs the maximum amount of resource to
-    a single SHA noted as :math:`R` in the paper.
 
     .. note::
         * In the Hyperband paper, the counterpart of :class:`~optuna.samplers.RandomSampler`
@@ -48,6 +46,15 @@ class HyperbandPruner(BasePruner):
 
         Thus, for example, if ``HyperbandPruner`` has :math:`4` pruners in it,
         at least :math:`4 \\times 10` pruners are consumed for startup.
+
+    .. note::
+        Hyperband has several :class:`~optuna.pruners.SuccessiveHalvingPruner`. Each
+        :class:`~optuna.pruners.SuccessiveHalvingPruner` is referred as "bracket" in the original
+        paper. The number of brackets is an important factor to control the early stopping behavior
+        of Hyperband and is determined by ``max_resource`` and ``reduction_factor`` as
+        `n_brackets = floor(log(max_resource) / log(reduction_factor))`. Please set
+        ``max_resource`` and ``reduction_factor`` so that the number of brackets is not too large
+        (about 4 ~ 10 in most use cases).
 
     Args:
         min_resource:
@@ -100,7 +107,10 @@ class HyperbandPruner(BasePruner):
         else:
             message = (
                 "The argument of ``n_brackets`` is deprecated. "
-                "Please specify ``max_resource`` instead."
+                "The number of brackets is can be determined by ``max_resource`` and "
+                "``reduction_factor`` as "
+                "`n_brackets = floor(log(max_resource) / log(reduction_factor))`. "
+                "Please specify ``max_resource`` appropriately."
             )
             warnings.warn(message, DeprecationWarning)
             _logger.warning(message)
