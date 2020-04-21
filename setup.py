@@ -63,7 +63,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         "document": ["sphinx", "sphinx_rtd_theme",],
         "example": [
             "catboost",
-            "catalyst",
             "chainer",
             "lightgbm",
             "mlflow",
