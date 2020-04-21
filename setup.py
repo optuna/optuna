@@ -91,13 +91,13 @@ def get_extras_require() -> Dict[str, List[str]]:
             ]
             if sys.version_info[:2] < (3, 8)
             else []
-        ),
+        )
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
         "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
             "bokeh<2.0.0",
-            "catalyst",
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
@@ -129,7 +129,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             ]
             if sys.version_info[:2] < (3, 8)
             else []
-        ),
+        )
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
     }
 
     return requirements

@@ -1,9 +1,15 @@
-from catalyst.dl import SupervisedRunner
+try:
+    from catalyst.dl import SupervisedRunner
+except ImportError:
+    pass
 
 import optuna
 from optuna.integration import CatalystPruningCallback
 from optuna.testing.integration import DeterministicPruner
 from optuna import type_checking
+
+import pytest
+import sys
 
 import torch
 
@@ -13,6 +19,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA
 
 
+@pytest.mark.skipif(sys.version_info < (3, 6), reason="catalyst requires python3.6 or higher")
 def test_catalyst_pruning_callback():
     # type: () -> None
 
