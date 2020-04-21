@@ -5,6 +5,7 @@ import enum
 import warnings
 
 from optuna import distributions
+from optuna.pruners import HyperbandPruner
 from optuna import logging
 from optuna import type_checking
 
@@ -413,11 +414,15 @@ class Trial(BaseTrial):
 
         trial = self.storage.get_trial(self._trial_id)
 
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(
-            self.study, trial
-        )
+        study = self.study
+        if isinstance(study.pruner, HyperbandPruner):
+            # Create `_BracketStudy` to use trials that have the same bracket id.
+            pruner = study.pruner  # type: HyperbandPruner
+            study = pruner._create_bracket_study(study, pruner._get_bracket_id(study, trial))
+
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
         self.relative_params = self.study.sampler.sample_relative(
-            self.study, trial, self.relative_search_space
+            study, trial, self.relative_search_space
         )
 
     def suggest_float(self, name, low, high, *, log=False, step=None):
@@ -987,8 +992,15 @@ class Trial(BaseTrial):
             param_value = self.relative_params[name]
         else:
             trial = self.storage.get_trial(self._trial_id)
+
+            study = self.study
+            if isinstance(study.pruner, HyperbandPruner):
+                # Create `_BracketStudy` to use trials that have the same bracket id.
+                pruner = study.pruner  # type: HyperbandPruner
+                study = pruner._create_bracket_study(study, pruner._get_bracket_id(study, trial))
+
             param_value = self.study.sampler.sample_independent(
-                self.study, trial, name, distribution
+                study, trial, name, distribution
             )
 
         return self._set_new_param_or_get_existing(name, param_value, distribution)
