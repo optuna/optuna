@@ -17,8 +17,14 @@ We have the following two ways to execute this example:
       $STUDY_NAME --storage sqlite:///example.db
 """
 
-import os
 import argparse
+import os
+
+from catalyst.dl import AccuracyCallback
+from catalyst.dl import SupervisedRunner
+
+import optuna
+from optuna.integration import CatalystPruningCallback
 
 import torch
 from torch import nn
@@ -26,12 +32,6 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torchvision import transforms
-
-from catalyst.dl import SupervisedRunner
-from catalyst.dl import AccuracyCallback
-
-import optuna
-from optuna.integration import CatalystPruningCallback
 
 
 class Net(nn.Module):
