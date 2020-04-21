@@ -328,14 +328,17 @@ class TPESampler(base.BaseSampler):
         active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
         trunc_low = (low - mus[active]) / sigmas[active]
         trunc_high = (high - mus[active]) / sigmas[active]
-        samples = truncnorm.rvs(
-            trunc_low,
-            trunc_high,
-            size=size,
-            loc=mus[active],
-            scale=sigmas[active],
-            random_state=self._rng,
-        )
+        while True:
+            samples = truncnorm.rvs(
+                trunc_low,
+                trunc_high,
+                size=size,
+                loc=mus[active],
+                scale=sigmas[active],
+                random_state=self._rng,
+            )
+            if (samples < high).all():
+                break
 
         if q is None:
             return samples
