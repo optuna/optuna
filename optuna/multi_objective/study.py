@@ -2,6 +2,7 @@ import types
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -83,8 +84,8 @@ def create_study(
     mo_sampler = sampler or multi_objective.samplers.RandomMultiObjectiveSampler()
     sampler_adapter = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
-    if not isinstance(directions, list):
-        raise TypeError("`directions` must be a list.")
+    if not isinstance(directions, Iterable):
+        raise TypeError("`directions` must be a list or other iterable types.")
 
     if not all(d in ["minimize", "maximize"] for d in directions):
         raise ValueError("`directions` includes unknown direction names.")
@@ -97,7 +98,7 @@ def create_study(
         load_if_exists=load_if_exists,
     )
 
-    study.set_system_attr("multi_objective.study.directions", directions)
+    study.set_system_attr("multi_objective.study.directions", list(directions))
 
     return MultiObjectiveStudy(study)
 
