@@ -89,7 +89,7 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 * [PyTorch Ignite](./examples/pytorch_ignite_simple.py)
 * [PyTorch Lightning](./examples/pytorch_lightning_simple.py)
 * [FastAI](./examples/fastai_simple.py)
-* [AllenNLP](./examples/allennlp_simple.py)
+* [AllenNLP](./examples/allennlp)
 
 ## Installation
 
