@@ -100,7 +100,7 @@ class HyperbandPruner(BasePruner):
 
         if n_brackets is None:
             # In the original paper http://www.jmlr.org/papers/volume18/16-558/16-558.pdf, the
-            # inputs of Hyperband are ``R``: max resource amd ``\eta``: reduction factor. The
+            # inputs of Hyperband are ``R``: max resource and ``\eta``: reduction factor. The
             # number of brackets (this is referred as ``s_{max} + 1`` in the paper) is calculated
             # by s_{max} + 1 = \floor{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
             self._n_brackets = (

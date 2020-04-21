@@ -15,7 +15,7 @@ def test_hyperopt_parameters(use_hyperband):
 
     sampler = TPESampler(**TPESampler.hyperopt_parameters())
     study = optuna.create_study(
-        sampler=sampler, pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None,
+        sampler=sampler, pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None
     )
     study.optimize(lambda t: t.suggest_uniform("x", 10, 20), n_trials=50)
 
