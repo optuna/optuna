@@ -64,7 +64,7 @@ class HyperbandPruner(BasePruner):
         max_resource:
             A parameter for specifying the maximum resource allocated to a trial noted as :math:`R`
             in the paper. This value represents and should match the maximum iteration steps (e.g.,
-            ``max_epoch`` for neural networks).
+            the number of epochs for neural networks).
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper. See the details for
@@ -72,7 +72,9 @@ class HyperbandPruner(BasePruner):
         n_brackets:
 
             .. deprecated:: 1.4.0
-                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`.
+                This argument will be removed from :class:~optuna.pruners.HyperbandPruner. The
+                number of brackets are determined based on ``max_resource`` and
+                ``reduction_factor``.
 
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
             Defaults to :math:`4`. See
@@ -97,7 +99,7 @@ class HyperbandPruner(BasePruner):
         self._resource_budget = 0
 
         if n_brackets is None:
-            # In the original paper <<http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>, the
+            # In the original paper http://www.jmlr.org/papers/volume18/16-558/16-558.pdf, the
             # inputs of Hyperband are ``R``: max resource amd ``\eta``: reduction factor. The
             # number of brackets (this is referred as ``s_{max} + 1`` in the paper) is calculated
             # by s_{max} + 1 = \floor{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
