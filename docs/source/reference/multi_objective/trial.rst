@@ -1,6 +1,5 @@
 .. module:: optuna.multi_objective.trial
 
-
 Trial
 =====
 
