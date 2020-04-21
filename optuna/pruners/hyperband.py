@@ -4,11 +4,11 @@ from typing import Optional
 import warnings
 
 from optuna._experimental import experimental
+from optuna._frozen_trial import FrozenTrial
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
 from optuna.study import Study
-from optuna.trial import FrozenTrial
 
 _logger = logging.get_logger(__name__)
 

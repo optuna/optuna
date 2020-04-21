@@ -12,8 +12,8 @@ if type_checking.TYPE_CHECKING:
     from typing import KeysView  # NOQA
     from typing import List  # NOQA
 
+    from optuna._frozen_trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
 
 
 def _get_best_intermediate_result_over_steps(trial, direction):
