@@ -36,6 +36,9 @@ class MultiObjectiveTrial(object):
 
     def __init__(self, trial: Trial):
         self._trial = trial
+
+        # TODO(ohta): Optimize the code below to eliminate the `MultiObjectiveStudy` construction.
+        # See also: https://github.com/optuna/optuna/pull/1054/files#r407982636
         self._n_objectives = multi_objective.study.MultiObjectiveStudy(trial.study).n_objectives
 
     def suggest_float(self, name: str, low: float, high: float, *, log: bool = False) -> float:
