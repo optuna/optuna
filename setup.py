@@ -63,6 +63,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "document": ["sphinx", "sphinx_rtd_theme",],
         "example": [
             "catboost",
+            "catalyst",
             "chainer",
             "lightgbm",
             "mlflow",
@@ -96,6 +97,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
             "bokeh<2.0.0",
+            "catalyst",
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
