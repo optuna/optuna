@@ -322,7 +322,7 @@ class MultiObjectiveStudy(object):
             A list of :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` objects.
         """
 
-        return self.get_trials()
+        return self.get_trials(deepcopy=True)
 
     def get_trials(
         self, deepcopy: bool = True

@@ -1,7 +1,7 @@
 .. module:: optuna.multi_objective
 
-MultiObjective
-==============
+Multi-objective
+===============
 
 .. toctree::
     :maxdepth: 2
