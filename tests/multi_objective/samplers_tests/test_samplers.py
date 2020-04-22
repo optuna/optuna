@@ -1,5 +1,4 @@
 from typing import Callable
-from typing import Sequence
 
 import numpy as np
 import pytest
@@ -12,7 +11,6 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna import multi_objective
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
-from optuna.multi_objective.trial import CategoricalChoiceType
 
 parametrize_sampler = pytest.mark.parametrize(
     "sampler_class", [optuna.multi_objective.samplers.RandomMultiObjectiveSampler,],
