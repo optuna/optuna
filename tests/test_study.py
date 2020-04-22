@@ -763,7 +763,7 @@ def test_stop_outside_optimize():
         study.stop()
 
 
-@pytest.mark.parametrize('storage_mode', STORAGE_MODES)
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_append_trial(storage_mode):
     # type: (str) -> None
 

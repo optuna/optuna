@@ -531,14 +531,15 @@ class Study(BaseStudy):
 
         return df
 
-    @experimental('1.4.0')
+    @experimental("1.4.0")
     def stop(self):
         # type: () -> None
         """Stop the optimization after the current trial finishes."""
 
         if self._optimize_lock.acquire(False):
-            raise RuntimeError("`Study.stop` is supposed be invoked inside an objective function "
-                               "or callback.")
+            raise RuntimeError(
+                "`Study.stop` is supposed be invoked inside an objective function " "or callback."
+            )
 
         self._stop_flag = True
 
