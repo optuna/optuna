@@ -54,7 +54,9 @@ class HyperbandPruner(BasePruner):
         of Hyperband and is determined by ``max_resource`` and ``reduction_factor`` as
         `n_brackets = floor(log(max_resource) / log(reduction_factor))`. Please set
         ``max_resource`` and ``reduction_factor`` so that the number of brackets is not too large
-        (about 4 ~ 10 in most use cases).
+        (about 4 ~ 6 in most use cases).
+        Please see Section 3.6 of the original paper
+        <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
 
     Args:
         min_resource:
@@ -100,19 +102,19 @@ class HyperbandPruner(BasePruner):
 
         if n_brackets is None:
             # In the original paper http://www.jmlr.org/papers/volume18/16-558/16-558.pdf, the
-            # inputs of Hyperband are ``R``: max resource and ``\eta``: reduction factor. The
-            # number of brackets (this is referred as ``s_{max} + 1`` in the paper) is calculated
+            # inputs of Hyperband are `R`: max resource and `\eta`: reduction factor. The
+            # number of brackets (this is referred as `s_{max} + 1` in the paper) is calculated
             # by s_{max} + 1 = \floor{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
             self._n_brackets = (
                 math.floor(math.log2(max_resource) / math.log2(reduction_factor)) + 1
             )
         else:
             message = (
-                "The argument of ``n_brackets`` is deprecated. "
-                "The number of brackets is can be determined by ``max_resource`` and "
-                "``reduction_factor`` as "
+                "The argument of `n_brackets` is deprecated. "
+                "The number of brackets is can be determined by `max_resource` and "
+                "`reduction_factor` as "
                 "`n_brackets = floor(log(max_resource) / log(reduction_factor))`. "
-                "Please specify ``max_resource`` appropriately."
+                "Please specify `max_resource` appropriately."
             )
             warnings.warn(message, DeprecationWarning)
             _logger.warning(message)
