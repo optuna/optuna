@@ -17,6 +17,10 @@ def test_create_study() -> None:
     assert study.n_objectives == 2
     assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
 
+    with pytest.raises(ValueError):
+        # Empty `directions` isn't allowed.
+        study = optuna.multi_objective.create_study([])
+
 
 def test_load_study() -> None:
     with StorageSupplier("new") as storage:
