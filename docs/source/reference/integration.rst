@@ -55,3 +55,5 @@ Integration
 
 .. autoclass:: AllenNLPExecutor
     :members:
+
+.. autofunction:: optuna.integration.allennlp.save_best_config
