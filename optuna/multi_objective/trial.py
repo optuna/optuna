@@ -334,14 +334,14 @@ class FrozenMultiObjectiveTrial(object):
                 "The number of the values and the number of the objectives are mismatched."
             )
 
-        values0 = [_normalize_value(v, d) for v, d in zip(self.values, directions)]
-        values1 = [_normalize_value(v, d) for v, d in zip(other.values, directions)]
-
         if self.state != TrialState.COMPLETE:
             return False
 
         if other.state != TrialState.COMPLETE:
             return True
+
+        values0 = [_normalize_value(v, d) for v, d in zip(self.values, directions)]
+        values1 = [_normalize_value(v, d) for v, d in zip(other.values, directions)]
 
         if values0 == values1:
             return False
