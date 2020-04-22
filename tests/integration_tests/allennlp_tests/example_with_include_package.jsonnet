@@ -15,8 +15,8 @@ local DROPOUT = std.extVar('DROPOUT');
       },
     },
   },
-  train_data_path: 'https://allennlp.s3.amazonaws.com/datasets/getting-started/sentences.small.dev',
-  validation_data_path: 'https://allennlp.s3.amazonaws.com/datasets/getting-started/sentences.small.test',
+  train_data_path: 'tests/integration_tests/allennlp_tests/sentences.train',
+  validation_data_path: 'tests/integration_tests/allennlp_tests/sentences.valid',
   model: {
     type: 'simple_tagger',
     text_field_embedder: {
