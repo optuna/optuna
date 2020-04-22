@@ -33,6 +33,9 @@ _logger = logging.get_logger(__name__)
 
 # TODO(ohta): Reconsider the API design.
 # See https://github.com/optuna/optuna/pull/1054/files#r407255282 for the detail.
+#
+# TODO(ohta): Consider to add `objective_labels` argument.
+# See: https://github.com/optuna/optuna/pull/1054#issuecomment-616382152
 @experimental("1.4.0")
 def create_study(
     directions: List[str],
