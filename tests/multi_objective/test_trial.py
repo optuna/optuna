@@ -199,5 +199,5 @@ def test_dominates() -> None:
                 # If `t0` isn't COMPLETE and `t1` is COMPLETE, `t1` dominates `t0`.
                 assert t1._dominates(t0, directions)
             else:
-                # If both `t0` and `t1` aren't COMPLETE, they don't dominate each other.
+                # If `t1` isn't COMPLETE, it doesn't dominate others.
                 assert not t1._dominates(t0, directions)
