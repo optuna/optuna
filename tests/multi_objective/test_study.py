@@ -82,6 +82,12 @@ def test_study_user_attrs() -> None:
     study.set_user_attr("foo", "bar")
     assert study.user_attrs == {"foo": "bar"}
 
+    study.set_user_attr("baz", "qux")
+    assert study.user_attrs == {"foo": "bar", "baz": "qux"}
+
+    study.set_user_attr("foo", "quux")
+    assert study.user_attrs == {"foo": "quux", "baz": "qux"}
+
 
 def test_study_system_attrs() -> None:
     study = optuna.multi_objective.create_study(["minimize", "maximize"])
