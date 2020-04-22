@@ -30,20 +30,20 @@ def test_report() -> None:
 
     def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
         if trial.number == 0:
-            trial.report([1, 2, 3], 1)
-            trial.report([10, 20, 30], 2)
-        return [100, 200, 300]
+            trial.report((1, 2, 3), 1)
+            trial.report((10, 20, 30), 2)
+        return 100, 200, 300
 
     study.optimize(objective, n_trials=2)
 
     trial = study.trials[0]
-    assert trial.intermediate_values == {1: [1, 2, 3], 2: [10, 20, 30]}
-    assert trial.values == [100, 200, 300]
+    assert trial.intermediate_values == {1: (1, 2, 3), 2: (10, 20, 30)}
+    assert trial.values == (100, 200, 300)
     assert trial.last_step == 2
 
     trial = study.trials[1]
     assert trial.intermediate_values == {}
-    assert trial.values == [100, 200, 300]
+    assert trial.values == (100, 200, 300)
     assert trial.last_step is None
 
 
