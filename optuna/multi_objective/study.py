@@ -31,6 +31,8 @@ CallbackFuncType = Callable[
 _logger = logging.get_logger(__name__)
 
 
+# TODO(ohta): Reconsider the API design.
+# See https://github.com/optuna/optuna/pull/1054/files#r407255282 for the detail.
 @experimental("1.4.0")
 def create_study(
     directions: List[str],
