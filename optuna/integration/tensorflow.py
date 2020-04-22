@@ -7,6 +7,7 @@ try:
     import tensorflow as tf
     from tensorflow.estimator import SessionRunHook
     from tensorflow_estimator.python.estimator.early_stopping import read_eval_metrics
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -18,25 +19,10 @@ except ImportError as e:
 class TensorFlowPruningHook(SessionRunHook):
     """TensorFlow SessionRunHook to prune unpromising trials.
 
-    Example:
+    See `the example <https://github.com/optuna/optuna/blob/master/examples/
+    pruning/tensorflow_estimator_integration.py>`_
+    if you want to add a pruning hook to TensorFlow's estimator.
 
-        Add a pruning SessionRunHook for a TensorFlow's Estimator.
-
-        .. code::
-
-                pruning_hook = TensorFlowPruningHook(
-                    trial=trial,
-                    estimator=clf,
-                    metric="accuracy",
-                    is_higher_better=True,
-                    run_every_steps=10,
-                )
-                hooks = [pruning_hook]
-                tf.estimator.train_and_evaluate(
-                    clf,
-                    tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=500, hooks=hooks),
-                    eval_spec
-                )
     Args:
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of
@@ -47,14 +33,10 @@ class TensorFlowPruningHook(SessionRunHook):
             An evaluation metric for pruning, e.g., ``accuracy`` and ``loss``.
         run_every_steps:
            An interval to watch the summary file.
-        is_higher_better:
-           Please do not use this argument because this class refers to
-           :class:`~optuna.structs.StudyDirection` to check whether the current study is
-           ``minimize`` or ``maximize``.
     """
 
-    def __init__(self, trial, estimator, metric, run_every_steps, is_higher_better=None):
-        # type: (optuna.trial.Trial, tf.estimator.Estimator, str, int, Optional[bool]) -> None
+    def __init__(self, trial, estimator, metric, run_every_steps):
+        # type: (optuna.trial.Trial, tf.estimator.Estimator, str, int) -> None
 
         _check_tensorflow_availability()
 
@@ -64,11 +46,6 @@ class TensorFlowPruningHook(SessionRunHook):
         self._metric = metric
         self._global_step_tensor = None
         self._timer = tf.estimator.SecondOrStepTimer(every_secs=None, every_steps=run_every_steps)
-
-        if is_higher_better is not None:
-            raise ValueError('Please do not use is_higher_better argument of '
-                             'TensorFlowPruningHook.__init__(). is_higher_better argument '
-                             'is obsolete since Optuna 0.9.0.')
 
     def begin(self):
         # type: () -> None
@@ -98,7 +75,7 @@ class TensorFlowPruningHook(SessionRunHook):
             if summary_step > self._current_summary_step:
                 current_score = latest_eval_metrics[self._metric]
                 if current_score is None:
-                    current_score = float('nan')
+                    current_score = float("nan")
                 self._trial.report(float(current_score), step=summary_step)
                 self._current_summary_step = summary_step
             if self._trial.should_prune():
@@ -111,7 +88,8 @@ def _check_tensorflow_availability():
 
     if not _available:
         raise ImportError(
-            'TensorFlow is not available. Please install TensorFlow to use this feature. '
-            'TensorFlow can be installed by executing `$ pip install tensorflow`. '
-            'For further information, please refer to the installation guide of TensorFlow. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "TensorFlow is not available. Please install TensorFlow to use this feature. "
+            "TensorFlow can be installed by executing `$ pip install tensorflow`. "
+            "For further information, please refer to the installation guide of TensorFlow. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )

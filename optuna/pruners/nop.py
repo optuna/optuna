@@ -2,8 +2,8 @@ from optuna.pruners import BasePruner
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from optuna import structs  # NOQA
     from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
 
 class NopPruner(BasePruner):
@@ -50,6 +50,6 @@ class NopPruner(BasePruner):
     """
 
     def prune(self, study, trial):
-        # type: (Study, structs.FrozenTrial) -> bool
+        # type: (Study, FrozenTrial) -> bool
 
         return False

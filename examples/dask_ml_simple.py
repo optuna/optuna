@@ -34,15 +34,15 @@ def objective(trial):
     X, y = iris.data, iris.target
     X, y = da.from_array(X, chunks=len(X) // 5), da.from_array(y, chunks=len(y) // 5)
 
-    solver = trial.suggest_categorical('solver', ['admm', 'gradient_descent', 'proximal_grad'])
-    C = trial.suggest_uniform('C', 0.0, 1.0)
+    solver = trial.suggest_categorical("solver", ["admm", "gradient_descent", "proximal_grad"])
+    C = trial.suggest_uniform("C", 0.0, 1.0)
 
-    if solver == 'admm' or solver == 'proximal_grad':
-        penalty = trial.suggest_categorical('penalty', ['l1', 'l2', 'elastic_net'])
+    if solver == "admm" or solver == "proximal_grad":
+        penalty = trial.suggest_categorical("penalty", ["l1", "l2", "elastic_net"])
     else:
         # 'penalty' parameter isn't relevant for this solver,
         # so we always specify 'l2' as the dummy value.
-        penalty = 'l2'
+        penalty = "l2"
 
     classifier = LogisticRegression(max_iter=200, solver=solver, C=C, penalty=penalty)
 
@@ -53,17 +53,17 @@ def objective(trial):
     return score
 
 
-if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize')
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100)
 
-    print('Number of finished trials: ', len(study.trials))
+    print("Number of finished trials: ", len(study.trials))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: ', trial.value)
+    print("  Value: ", trial.value)
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

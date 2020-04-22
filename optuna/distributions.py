@@ -1,4 +1,5 @@
 import abc
+import decimal
 import json
 import warnings
 
@@ -102,8 +103,8 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
     def __repr__(self):
         # type: () -> str
 
-        kwargs = ', '.join('{}={}'.format(k, v) for k, v in sorted(self.__dict__.items()))
-        return '{}({})'.format(self.__class__.__name__, kwargs)
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self.__dict__.items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
 
 
 class UniformDistribution(BaseDistribution):
@@ -123,8 +124,10 @@ class UniformDistribution(BaseDistribution):
         # type: (float, float) -> None
 
         if low > high:
-            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
-                             "(low={}, high={}).".format(low, high))
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
 
         self.low = low
         self.high = high
@@ -161,8 +164,15 @@ class LogUniformDistribution(BaseDistribution):
         # type: (float, float) -> None
 
         if low > high:
-            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
-                             "(low={}, high={}).".format(low, high))
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
+        if low <= 0.0:
+            raise ValueError(
+                "The `low` value must be larger than 0 for a log distribution "
+                "(low={}, high={}).".format(low, high)
+            )
 
         self.low = low
         self.high = high
@@ -201,8 +211,10 @@ class DiscreteUniformDistribution(BaseDistribution):
         # type: (float, float, float) -> None
 
         if low > high:
-            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
-                             "(low={}, high={}, q={}).".format(low, high, q))
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}, q={}).".format(low, high, q)
+            )
 
         self.low = low
         self.high = high
@@ -211,7 +223,14 @@ class DiscreteUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        return self.low == self.high
+        if self.low == self.high:
+            return True
+        high = decimal.Decimal(str(self.high))
+        low = decimal.Decimal(str(self.low))
+        q = decimal.Decimal(str(self.q))
+        if (high - low) < q:
+            return True
+        return False
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -231,17 +250,26 @@ class IntUniformDistribution(BaseDistribution):
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+        step:
+            A step for spacing between values.
     """
 
-    def __init__(self, low, high):
-        # type: (int, int) -> None
+    def __init__(self, low, high, step=1):
+        # type: (int, int, int) -> None
 
         if low > high:
-            raise ValueError("The `low` value must be smaller than or equal to the `high` value "
-                             "(low={}, high={}).".format(low, high))
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
+        if step <= 0:
+            raise ValueError(
+                "The `step` value must be non-zero positive value, but step={}.".format(step)
+            )
 
         self.low = low
         self.high = high
+        self.step = step
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
@@ -256,13 +284,17 @@ class IntUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        return self.low == self.high
+        if self.low == self.high:
+            return True
+        if (self.high - self.low) < self.step:
+            return True
+        return False
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
-        value = int(param_value_in_internal_repr)
-        return self.low <= value and value <= self.high
+        value = param_value_in_internal_repr
+        return self.low <= value <= self.high
 
 
 class CategoricalDistribution(BaseDistribution):
@@ -278,7 +310,7 @@ class CategoricalDistribution(BaseDistribution):
     .. note::
 
         Not all types are guaranteed to be compatible with all storages. It is recommended to
-        restrict the types of the choices to :obj:`None`, :class:`bool`, :class"`int`,
+        restrict the types of the choices to :obj:`None`, :class:`bool`, :class:`int`,
         :class:`float` and :class:`str`.
 
     Attributes:
@@ -296,7 +328,8 @@ class CategoricalDistribution(BaseDistribution):
                 message = (
                     "Choices for a categorical distribution should be a tuple of None, bool, "
                     "int, float and str for persistent storage but contains {} which is of type "
-                    "{}.".format(choice, type(choice).__name__))
+                    "{}.".format(choice, type(choice).__name__)
+                )
                 warnings.warn(message)
 
                 logger = logging._get_library_root_logger()
@@ -316,8 +349,8 @@ class CategoricalDistribution(BaseDistribution):
             return self.choices.index(param_value_in_external_repr)
         except ValueError as e:
             raise ValueError(
-                '\'{}\' not in {}.'.format(
-                    param_value_in_external_repr, self.choices)) from e
+                "'{}' not in {}.".format(param_value_in_external_repr, self.choices)
+            ) from e
 
     def single(self):
         # type: () -> bool
@@ -331,8 +364,13 @@ class CategoricalDistribution(BaseDistribution):
         return 0 <= index and index < len(self.choices)
 
 
-DISTRIBUTION_CLASSES = (UniformDistribution, LogUniformDistribution, DiscreteUniformDistribution,
-                        IntUniformDistribution, CategoricalDistribution)
+DISTRIBUTION_CLASSES = (
+    UniformDistribution,
+    LogUniformDistribution,
+    DiscreteUniformDistribution,
+    IntUniformDistribution,
+    CategoricalDistribution,
+)
 
 
 def json_to_distribution(json_str):
@@ -348,14 +386,14 @@ def json_to_distribution(json_str):
 
     json_dict = json.loads(json_str)
 
-    if json_dict['name'] == CategoricalDistribution.__name__:
-        json_dict['attributes']['choices'] = tuple(json_dict['attributes']['choices'])
+    if json_dict["name"] == CategoricalDistribution.__name__:
+        json_dict["attributes"]["choices"] = tuple(json_dict["attributes"]["choices"])
 
     for cls in DISTRIBUTION_CLASSES:
-        if json_dict['name'] == cls.__name__:
-            return cls(**json_dict['attributes'])
+        if json_dict["name"] == cls.__name__:
+            return cls(**json_dict["attributes"])
 
-    raise ValueError('Unknown distribution class: {}'.format(json_dict['name']))
+    raise ValueError("Unknown distribution class: {}".format(json_dict["name"]))
 
 
 def distribution_to_json(dist):
@@ -370,7 +408,7 @@ def distribution_to_json(dist):
 
     """
 
-    return json.dumps({'name': dist.__class__.__name__, 'attributes': dist._asdict()})
+    return json.dumps({"name": dist.__class__.__name__, "attributes": dist._asdict()})
 
 
 def check_distribution_compatibility(dist_old, dist_new):
@@ -388,12 +426,13 @@ def check_distribution_compatibility(dist_old, dist_new):
     """
 
     if dist_old.__class__ != dist_new.__class__:
-        raise ValueError('Cannot set different distribution kind to the same parameter name.')
+        raise ValueError("Cannot set different distribution kind to the same parameter name.")
 
     if not isinstance(dist_old, CategoricalDistribution):
         return
     if not isinstance(dist_new, CategoricalDistribution):
         return
     if dist_old.choices != dist_new.choices:
-        raise ValueError(CategoricalDistribution.__name__ +
-                         ' does not support dynamic value space.')
+        raise ValueError(
+            CategoricalDistribution.__name__ + " does not support dynamic value space."
+        )

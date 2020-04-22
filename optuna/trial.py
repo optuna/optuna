@@ -1,6 +1,7 @@
 import abc
-from datetime import datetime
+import datetime
 import decimal
+import enum
 import warnings
 
 from optuna import distributions
@@ -12,10 +13,256 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
+    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
+
+    FloatingPointDistributionType = Union[
+        distributions.UniformDistribution, distributions.LogUniformDistribution
+    ]
+
+_logger = logging.get_logger(__name__)
+
+
+class TrialState(enum.Enum):
+    """State of a :class:`~optuna.trial.Trial`.
+
+    Attributes:
+        RUNNING:
+            The :class:`~optuna.trial.Trial` is running.
+        COMPLETE:
+            The :class:`~optuna.trial.Trial` has been finished without any error.
+        PRUNED:
+            The :class:`~optuna.trial.Trial` has been pruned with
+            :class:`~optuna.exceptions.TrialPruned`.
+        FAIL:
+            The :class:`~optuna.trial.Trial` has failed due to an uncaught error.
+    """
+
+    RUNNING = 0
+    COMPLETE = 1
+    PRUNED = 2
+    FAIL = 3
+    WAITING = 4
+
+    def __repr__(self):
+        # type: () -> str
+
+        return str(self)
+
+    def is_finished(self):
+        # type: () -> bool
+
+        return self != TrialState.RUNNING and self != TrialState.WAITING
+
+
+class FrozenTrial(object):
+    """Status and results of a :class:`~optuna.trial.Trial`.
+
+    Attributes:
+        number:
+            Unique and consecutive number of :class:`~optuna.trial.Trial` for each
+            :class:`~optuna.study.Study`. Note that this field uses zero-based numbering.
+        state:
+            :class:`TrialState` of the :class:`~optuna.trial.Trial`.
+        value:
+            Objective value of the :class:`~optuna.trial.Trial`.
+        datetime_start:
+            Datetime where the :class:`~optuna.trial.Trial` started.
+        datetime_complete:
+            Datetime where the :class:`~optuna.trial.Trial` finished.
+        params:
+            Dictionary that contains suggested parameters.
+        user_attrs:
+            Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
+            :func:`optuna.trial.Trial.set_user_attr`.
+        intermediate_values:
+            Intermediate objective values set with :func:`optuna.trial.Trial.report`.
+    """
+
+    def __init__(
+        self,
+        number,  # type: int
+        state,  # type: TrialState
+        value,  # type: Optional[float]
+        datetime_start,  # type: Optional[datetime.datetime]
+        datetime_complete,  # type: Optional[datetime.datetime]
+        params,  # type: Dict[str, Any]
+        distributions,  # type: Dict[str, BaseDistribution]
+        user_attrs,  # type: Dict[str, Any]
+        system_attrs,  # type: Dict[str, Any]
+        intermediate_values,  # type: Dict[int, float]
+        trial_id,  # type: int
+    ):
+        # type: (...) -> None
+
+        self.number = number
+        self.state = state
+        self.value = value
+        self.datetime_start = datetime_start
+        self.datetime_complete = datetime_complete
+        self.params = params
+        self.user_attrs = user_attrs
+        self.system_attrs = system_attrs
+        self.intermediate_values = intermediate_values
+        self._distributions = distributions
+        self._trial_id = trial_id
+
+    # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
+    # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
+    _ordered_fields = [
+        "number",
+        "value",
+        "datetime_start",
+        "datetime_complete",
+        "params",
+        "_distributions",
+        "user_attrs",
+        "system_attrs",
+        "intermediate_values",
+        "_trial_id",
+        "state",
+    ]
+
+    def __eq__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, FrozenTrial):
+            return NotImplemented
+        return other.__dict__ == self.__dict__
+
+    def __lt__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, FrozenTrial):
+            return NotImplemented
+
+        return self.number < other.number
+
+    def __le__(self, other):
+        # type: (Any) -> bool
+
+        if not isinstance(other, FrozenTrial):
+            return NotImplemented
+
+        return self.number <= other.number
+
+    def __hash__(self):
+        # type: () -> int
+
+        return hash(tuple(getattr(self, field) for field in self._ordered_fields))
+
+    def __repr__(self):
+        # type: () -> str
+
+        return "{cls}({kwargs})".format(
+            cls=self.__class__.__name__,
+            kwargs=", ".join(
+                "{field}={value}".format(
+                    field=field if not field.startswith("_") else field[1:],
+                    value=repr(getattr(self, field)),
+                )
+                for field in self._ordered_fields
+            ),
+        )
+
+    def _validate(self):
+        # type: () -> None
+
+        if self.datetime_start is None:
+            raise ValueError("`datetime_start` is supposed to be set.")
+
+        if self.state.is_finished():
+            if self.datetime_complete is None:
+                raise ValueError("`datetime_complete` is supposed to be set for a finished trial.")
+        else:
+            if self.datetime_complete is not None:
+                raise ValueError(
+                    "`datetime_complete` is supposed to be None for an unfinished trial."
+                )
+
+        if self.state == TrialState.COMPLETE and self.value is None:
+            raise ValueError("`value` is supposed to be set for a complete trial.")
+
+        if set(self.params.keys()) != set(self.distributions.keys()):
+            raise ValueError(
+                "Inconsistent parameters {} and distributions {}.".format(
+                    set(self.params.keys()), set(self.distributions.keys())
+                )
+            )
+
+        for param_name, param_value in self.params.items():
+            distribution = self.distributions[param_name]
+
+            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            if not distribution._contains(param_value_in_internal_repr):
+                raise ValueError(
+                    "The value {} of parameter '{}' isn't contained in the distribution "
+                    "{}.".format(param_value, param_name, distribution)
+                )
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
+        """Dictionary that contains the distributions of :attr:`params`."""
+
+        return self._distributions
+
+    @distributions.setter
+    def distributions(self, value):
+        # type: (Dict[str, BaseDistribution]) -> None
+        self._distributions = value
+
+    @property
+    def trial_id(self):
+        # type: () -> int
+        """Return the trial ID.
+
+        .. deprecated:: 0.19.0
+            The direct use of this attribute is deprecated and it is recommended that you use
+            :attr:`~optuna.trial.FrozenTrial.number` instead.
+
+        Returns:
+            The trial ID.
+        """
+
+        warnings.warn(
+            "The use of `FrozenTrial.trial_id` is deprecated. "
+            "Please use `FrozenTrial.number` instead.",
+            DeprecationWarning,
+        )
+
+        _logger.warning(
+            "The use of `FrozenTrial.trial_id` is deprecated. "
+            "Please use `FrozenTrial.number` instead."
+        )
+
+        return self._trial_id
+
+    @property
+    def last_step(self):
+        # type: () -> Optional[int]
+
+        if len(self.intermediate_values) == 0:
+            return None
+        else:
+            return max(self.intermediate_values.keys())
+
+    @property
+    def duration(self):
+        # type: () -> Optional[datetime.timedelta]
+        """Return the elapsed time taken to complete the trial.
+
+        Returns:
+            The duration.
+        """
+
+        if self.datetime_start and self.datetime_complete:
+            return self.datetime_complete - self.datetime_start
+        else:
+            return None
 
 
 class BaseTrial(object, metaclass=abc.ABCMeta):
@@ -24,78 +271,103 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     Note that this class is not supposed to be directly accessed by library users.
     """
 
+    @abc.abstractmethod
+    def suggest_float(self, name, low, high, *, log=False, step=None):
+        # type: (str, float, float, bool, Optional[float])-> float
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def suggest_discrete_uniform(self, name, low, high, q):
         # type: (str, float, float, float) -> float
 
         raise NotImplementedError
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
+    @abc.abstractmethod
+    def suggest_int(self, name, low, high, step=1):
+        # type: (str, int, int, int) -> int
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def report(self, value, step):
         # type: (float, int) -> None
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def should_prune(self, step=None):
         # type: (Optional[int]) -> bool
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def set_user_attr(self, key, value):
         # type: (str, Any) -> None
 
         raise NotImplementedError
 
+    @abc.abstractmethod
     def set_system_attr(self, key, value):
         # type: (str, Any) -> None
 
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def params(self):
         # type: () -> Dict[str, Any]
 
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def distributions(self):
         # type: () -> Dict[str, BaseDistribution]
 
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def user_attrs(self):
         # type: () -> Dict[str, Any]
 
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def system_attrs(self):
         # type: () -> Dict[str, Any]
 
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def datetime_start(self):
-        # type: () -> Optional[datetime]
+        # type: () -> Optional[datetime.datetime]
+
+        raise NotImplementedError
+
+    @property
+    def number(self) -> int:
 
         raise NotImplementedError
 
@@ -120,9 +392,9 @@ class Trial(BaseTrial):
     """
 
     def __init__(
-            self,
-            study,  # type: Study
-            trial_id,  # type: int
+        self,
+        study,  # type: Study
+        trial_id,  # type: int
     ):
         # type: (...) -> None
 
@@ -142,9 +414,94 @@ class Trial(BaseTrial):
         trial = self.storage.get_trial(self._trial_id)
 
         self.relative_search_space = self.study.sampler.infer_relative_search_space(
-            self.study, trial)
-        self.relative_params = self.study.sampler.sample_relative(self.study, trial,
-                                                                  self.relative_search_space)
+            self.study, trial
+        )
+        self.relative_params = self.study.sampler.sample_relative(
+            self.study, trial, self.relative_search_space
+        )
+
+    def suggest_float(self, name, low, high, *, log=False, step=None):
+        # type: (str, float, float, bool, Optional[float]) -> float
+        """Suggest a value for the floating point parameter.
+
+        Note that this is a wrapper method for :func:`~optuna.trial.Trial.suggest_uniform`,
+        :func:`~optuna.trial.Trial.suggest_loguniform` and
+        :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
+
+        .. versionadded:: 1.3.0
+
+        .. seealso::
+            Please see also :func:`~optuna.trial.Trial.suggest_uniform`,
+            :func:`~optuna.trial.Trial.suggest_loguniform` and
+            :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
+
+        Example:
+
+            Suggest a momentum, learning rate and scaling factor of learning rate
+            for neural network training.
+
+            .. testsetup::
+
+                import numpy as np
+                import optuna
+                from sklearn.model_selection import train_test_split
+                from sklearn.neural_network import MLPClassifier
+
+                np.random.seed(seed=0)
+                X = np.random.randn(200).reshape(-1, 1)
+                y = np.random.randint(0, 2, 200)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+
+            .. testcode::
+
+                def objective(trial):
+                    momentum = trial.suggest_float('momentum', 0.0, 1.0)
+                    learning_rate_init = trial.suggest_float('learning_rate_init',
+                                                             1e-5, 1e-3, log=True)
+                    power_t = trial.suggest_float('power_t', 0.2, 0.8, step=0.1)
+                    clf = MLPClassifier(hidden_layer_sizes=(100, 50), momentum=momentum,
+                                        learning_rate_init=learning_rate_init,
+                                        solver='sgd', random_state=0, power_t=power_t)
+                    clf.fit(X_train, y_train)
+
+                    return clf.score(X_test, y_test)
+
+                study = optuna.create_study(direction='maximize')
+                study.optimize(objective, n_trials=3)
+
+        Args:
+            name:
+                A parameter name.
+            low:
+                Lower endpoint of the range of suggested values. ``low`` is included in the range.
+            high:
+                Upper endpoint of the range of suggested values. ``high`` is excluded from the
+                range.
+            log:
+                A flag to sample the value from the log domain or not.
+                If ``log`` is true, the value is sampled from the range in the log domain.
+                Otherwise, the value is sampled from the range in the linear domain.
+                See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
+            step:
+                A step of discretization.
+
+        Returns:
+            A suggested float value.
+        """
+
+        if step is not None:
+            if log:
+                raise NotImplementedError(
+                    "The parameter `step` is not supported when `log` is True."
+                )
+            else:
+                return self.suggest_discrete_uniform(name, low, high, step)
+        else:
+            if log:
+                return self.suggest_loguniform(name, low, high)
+            else:
+                return self.suggest_uniform(name, low, high)
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -181,7 +538,7 @@ class Trial(BaseTrial):
 
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -240,7 +597,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -305,7 +662,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -332,8 +689,8 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
+    def suggest_int(self, name, low, high, step=1):
+        # type: (str, int, int, int) -> int
         """Suggest a value for the integer parameter.
 
         The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
@@ -364,7 +721,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
 
@@ -375,12 +732,14 @@ class Trial(BaseTrial):
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
+            step:
+                A step of spacing between values.
 
         Returns:
             A suggested integer value.
         """
 
-        distribution = distributions.IntUniformDistribution(low=low, high=high)
+        distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
 
@@ -421,7 +780,7 @@ class Trial(BaseTrial):
                     clf.fit(X_train, y_train)
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
 
@@ -491,7 +850,7 @@ class Trial(BaseTrial):
 
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
 
@@ -506,12 +865,13 @@ class Trial(BaseTrial):
             # For convenience, we allow users to report a value that can be cast to `float`.
             value = float(value)
         except (TypeError, ValueError):
-            message = 'The `value` argument is of type \'{}\' but supposed to be a float.'.format(
-                type(value).__name__)
+            message = "The `value` argument is of type '{}' but supposed to be a float.".format(
+                type(value).__name__
+            )
             raise TypeError(message)
 
         if step < 0:
-            raise ValueError('The `step` argument is {} but cannot be negative.'.format(step))
+            raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
         self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
@@ -542,9 +902,11 @@ class Trial(BaseTrial):
         """
         if step is not None:
             warnings.warn(
-                'The use of `step` argument is deprecated. '
-                'The last reported step is used instead of '
-                'the step given by the argument.', DeprecationWarning)
+                "The use of `step` argument is deprecated. "
+                "The last reported step is used instead of "
+                "the step given by the argument.",
+                DeprecationWarning,
+            )
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
@@ -584,7 +946,7 @@ class Trial(BaseTrial):
 
                     return clf.score(X_test, y_test)
 
-                study = optuna.create_study()
+                study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
                 assert 'BATCHSIZE' in study.best_trial.user_attrs.keys()
                 assert study.best_trial.user_attrs['BATCHSIZE'] == 128
@@ -620,13 +982,14 @@ class Trial(BaseTrial):
         # type: (str, BaseDistribution) -> Any
 
         if self._is_fixed_param(name, distribution):
-            param_value = self.system_attrs['fixed_params'][name]
+            param_value = self.system_attrs["fixed_params"][name]
         elif self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
             trial = self.storage.get_trial(self._trial_id)
             param_value = self.study.sampler.sample_independent(
-                self.study, trial, name, distribution)
+                self.study, trial, name, distribution
+            )
 
         return self._set_new_param_or_get_existing(name, param_value, distribution)
 
@@ -634,8 +997,9 @@ class Trial(BaseTrial):
         # type: (str, Any, BaseDistribution) -> Any
 
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
-        set_success = self.storage.set_trial_param(self._trial_id, name,
-                                                   param_value_in_internal_repr, distribution)
+        set_success = self.storage.set_trial_param(
+            self._trial_id, name, param_value_in_internal_repr, distribution
+        )
         if not set_success:
             param_value_in_internal_repr = self.storage.get_trial_param(self._trial_id, name)
             param_value = distribution.to_external_repr(param_value_in_internal_repr)
@@ -645,19 +1009,21 @@ class Trial(BaseTrial):
     def _is_fixed_param(self, name, distribution):
         # type: (str, BaseDistribution) -> bool
 
-        if 'fixed_params' not in self.system_attrs:
+        if "fixed_params" not in self.system_attrs:
             return False
 
-        if name not in self.system_attrs['fixed_params']:
+        if name not in self.system_attrs["fixed_params"]:
             return False
 
-        param_value = self.system_attrs['fixed_params'][name]
+        param_value = self.system_attrs["fixed_params"][name]
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
 
         contained = distribution._contains(param_value_in_internal_repr)
         if not contained:
-            warnings.warn("Fixed parameter '{}' with value {} is out of range "
-                          "for distribution {}.".format(name, param_value, distribution))
+            warnings.warn(
+                "Fixed parameter '{}' with value {} is out of range "
+                "for distribution {}.".format(name, param_value, distribution)
+            )
         return contained
 
     def _is_relative_param(self, name, distribution):
@@ -667,8 +1033,10 @@ class Trial(BaseTrial):
             return False
 
         if name not in self.relative_search_space:
-            raise ValueError("The parameter '{}' was sampled by `sample_relative` method "
-                             "but it is not contained in the relative search space.".format(name))
+            raise ValueError(
+                "The parameter '{}' was sampled by `sample_relative` method "
+                "but it is not contained in the relative search space.".format(name)
+            )
 
         relative_distribution = self.relative_search_space[name]
         distributions.check_distribution_compatibility(relative_distribution, distribution)
@@ -682,14 +1050,16 @@ class Trial(BaseTrial):
 
         old_distribution = self.distributions.get(name, distribution)
         if old_distribution != distribution:
-            warnings.warn('Inconsistent parameter values for distribution with name "{}"! '
-                          'This might be a configuration mistake. '
-                          'Optuna allows to call the same distribution with the same '
-                          'name more then once in a trial. '
-                          'When the parameter values are inconsistent optuna only '
-                          'uses the values of the first call and ignores all following. '
-                          'Using these values: {}'
-                          .format(name, old_distribution._asdict()), RuntimeWarning)
+            warnings.warn(
+                'Inconsistent parameter values for distribution with name "{}"! '
+                "This might be a configuration mistake. "
+                "Optuna allows to call the same distribution with the same "
+                "name more then once in a trial. "
+                "When the parameter values are inconsistent optuna only "
+                "uses the values of the first call and ignores all following. "
+                "Using these values: {}".format(name, old_distribution._asdict()),
+                RuntimeWarning,
+            )
 
     @property
     def number(self):
@@ -715,11 +1085,13 @@ class Trial(BaseTrial):
         """
 
         warnings.warn(
-            'The use of `Trial.trial_id` is deprecated. '
-            'Please use `Trial.number` instead.', DeprecationWarning)
+            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead.",
+            DeprecationWarning,
+        )
 
-        self.logger.warning('The use of `Trial.trial_id` is deprecated. '
-                            'Please use `Trial.number` instead.')
+        self.logger.warning(
+            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead."
+        )
 
         return self._trial_id
 
@@ -769,7 +1141,7 @@ class Trial(BaseTrial):
 
     @property
     def datetime_start(self):
-        # type: () -> Optional[datetime]
+        # type: () -> Optional[datetime.datetime]
         """Return start datetime.
 
         Returns:
@@ -790,8 +1162,7 @@ class Trial(BaseTrial):
             The study ID.
         """
 
-        message = 'The use of `Trial.study_id` is deprecated. ' \
-                  'Please use `Trial.study` instead.'
+        message = "The use of `Trial.study_id` is deprecated. Please use `Trial.study` instead."
         warnings.warn(message, DeprecationWarning)
         self.logger.warning(message)
 
@@ -829,18 +1200,41 @@ class FixedTrial(BaseTrial):
     Args:
         params:
             A dictionary containing all parameters.
+        number:
+            A trial number. Defaults to ``0``.
 
     """
 
-    def __init__(self, params):
-        # type: (Dict[str, Any]) -> None
+    def __init__(self, params, number=0):
+        # type: (Dict[str, Any], int) -> None
 
         self._params = params
         self._suggested_params = {}  # type: Dict[str, Any]
         self._distributions = {}  # type: Dict[str, BaseDistribution]
         self._user_attrs = {}  # type: Dict[str, Any]
         self._system_attrs = {}  # type: Dict[str, Any]
-        self._datetime_start = datetime.now()
+        self._datetime_start = datetime.datetime.now()
+        self._number = number
+
+    def suggest_float(self, name, low, high, *, log=False, step=None):
+        # type: (str, float, float, bool, Optional[float]) -> float
+
+        if step is not None:
+            if log:
+                raise NotImplementedError(
+                    "The parameter `step` is not supported when `log` is True."
+                )
+            else:
+                return self._suggest(
+                    name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step)
+                )
+        else:
+            if log:
+                return self._suggest(
+                    name, distributions.LogUniformDistribution(low=low, high=high)
+                )
+            else:
+                return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
@@ -859,10 +1253,12 @@ class FixedTrial(BaseTrial):
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
-
-        return int(self._suggest(name, distributions.IntUniformDistribution(low=low, high=high)))
+    def suggest_int(self, name, low, high, step=1):
+        # type: (str, int, int, int) -> int
+        sample = self._suggest(
+            name, distributions.IntUniformDistribution(low=low, high=high, step=step)
+        )
+        return int(sample)
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
@@ -874,14 +1270,18 @@ class FixedTrial(BaseTrial):
         # type: (str, BaseDistribution) -> Any
 
         if name not in self._params:
-            raise ValueError('The value of the parameter \'{}\' is not found. Please set it at '
-                             'the construction of the FixedTrial object.'.format(name))
+            raise ValueError(
+                "The value of the parameter '{}' is not found. Please set it at "
+                "the construction of the FixedTrial object.".format(name)
+            )
 
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
-            raise ValueError("The value {} of the parameter '{}' is out of "
-                             "the range of the distribution {}.".format(value, name, distribution))
+            raise ValueError(
+                "The value {} of the parameter '{}' is out of "
+                "the range of the distribution {}.".format(value, name, distribution)
+            )
 
         if name in self._distributions:
             distributions.check_distribution_compatibility(self._distributions[name], distribution)
@@ -937,9 +1337,14 @@ class FixedTrial(BaseTrial):
 
     @property
     def datetime_start(self):
-        # type: () -> Optional[datetime]
+        # type: () -> Optional[datetime.datetime]
 
         return self._datetime_start
+
+    @property
+    def number(self) -> int:
+
+        return self._number
 
 
 def _adjust_discrete_uniform_high(name, low, high, q):
@@ -951,10 +1356,11 @@ def _adjust_discrete_uniform_high(name, low, high, q):
 
     d_r = d_high - d_low
 
-    if d_r % d_q != decimal.Decimal('0'):
+    if d_r % d_q != decimal.Decimal("0"):
         high = float((d_r // d_q) * d_q + d_low)
-        logger = logging.get_logger(__name__)
-        logger.warning('The range of parameter `{}` is not divisible by `q`, and is '
-                       'replaced by [{}, {}].'.format(name, low, high))
+        _logger.warning(
+            "The range of parameter `{}` is not divisible by `q`, and is "
+            "replaced by [{}, {}].".format(name, low, high)
+        )
 
     return high

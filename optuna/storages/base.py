@@ -1,7 +1,8 @@
 import abc
 import copy
 
-from optuna import structs
+from optuna import study
+from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -11,8 +12,9 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
     from optuna import distributions  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
-DEFAULT_STUDY_NAME_PREFIX = 'no-name-'
+DEFAULT_STUDY_NAME_PREFIX = "no-name-"
 
 
 class BaseStorage(object, metaclass=abc.ABCMeta):
@@ -46,7 +48,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_study_direction(self, study_id, direction):
-        # type: (int, structs.StudyDirection) -> None
+        # type: (int, study.StudyDirection) -> None
 
         raise NotImplementedError
 
@@ -78,7 +80,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_study_direction(self, study_id):
-        # type: (int) -> structs.StudyDirection
+        # type: (int) -> study.StudyDirection
 
         raise NotImplementedError
 
@@ -96,7 +98,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_all_study_summaries(self):
-        # type: () -> List[structs.StudySummary]
+        # type: () -> List[study.StudySummary]
 
         raise NotImplementedError
 
@@ -104,13 +106,13 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def create_new_trial(self, study_id, template_trial=None):
-        # type: (int, Optional[structs.FrozenTrial]) -> int
+        # type: (int, Optional[FrozenTrial]) -> int
 
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_trial_state(self, trial_id, state):
-        # type: (int, structs.TrialState) -> bool
+        # type: (int, TrialState) -> bool
 
         raise NotImplementedError
 
@@ -160,32 +162,32 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_trial(self, trial_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_all_trials(self, study_id, deepcopy=True):
-        # type: (int, bool) -> List[structs.FrozenTrial]
+        # type: (int, bool) -> List[FrozenTrial]
 
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_n_trials(self, study_id, state=None):
-        # type: (int, Optional[structs.TrialState]) -> int
+        # type: (int, Optional[TrialState]) -> int
 
         raise NotImplementedError
 
     def get_best_trial(self, study_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         all_trials = self.get_all_trials(study_id, deepcopy=False)
-        all_trials = [t for t in all_trials if t.state is structs.TrialState.COMPLETE]
+        all_trials = [t for t in all_trials if t.state is TrialState.COMPLETE]
 
         if len(all_trials) == 0:
-            raise ValueError('No trials are completed yet.')
+            raise ValueError("No trials are completed yet.")
 
-        if self.get_study_direction(study_id) == structs.StudyDirection.MAXIMIZE:
+        if self.get_study_direction(study_id) == study.StudyDirection.MAXIMIZE:
             best_trial = max(all_trials, key=lambda t: t.value)
         else:
             best_trial = min(all_trials, key=lambda t: t.value)
@@ -213,9 +215,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         pass
 
     def check_trial_is_updatable(self, trial_id, trial_state):
-        # type: (int, structs.TrialState) -> None
+        # type: (int, TrialState) -> None
 
         if trial_state.is_finished():
             trial = self.get_trial(trial_id)
             raise RuntimeError(
-                "Trial#{} has already finished and can not be updated.".format(trial.number))
+                "Trial#{} has already finished and can not be updated.".format(trial.number)
+            )

@@ -29,20 +29,20 @@ def test_module_attributes():
 
     import optuna
 
-    assert hasattr(optuna.integration, 'chainer')
-    assert hasattr(optuna.integration, 'chainermn')
-    assert hasattr(optuna.integration, 'keras')
-    assert hasattr(optuna.integration, 'lightgbm')
-    assert hasattr(optuna.integration, 'mxnet')
-    assert hasattr(optuna.integration, 'tensorflow')
-    assert hasattr(optuna.integration, 'xgboost')
-    assert hasattr(optuna.integration, 'ChainerMNStudy')
-    assert hasattr(optuna.integration, 'ChainerPruningExtension')
-    assert hasattr(optuna.integration, 'KerasPruningCallback')
-    assert hasattr(optuna.integration, 'LightGBMPruningCallback')
-    assert hasattr(optuna.integration, 'MXNetPruningCallback')
-    assert hasattr(optuna.integration, 'TensorFlowPruningHook')
-    assert hasattr(optuna.integration, 'XGBoostPruningCallback')
+    assert hasattr(optuna.integration, "chainer")
+    assert hasattr(optuna.integration, "chainermn")
+    assert hasattr(optuna.integration, "keras")
+    assert hasattr(optuna.integration, "lightgbm")
+    assert hasattr(optuna.integration, "mxnet")
+    assert hasattr(optuna.integration, "tensorflow")
+    assert hasattr(optuna.integration, "xgboost")
+    assert hasattr(optuna.integration, "ChainerMNStudy")
+    assert hasattr(optuna.integration, "ChainerPruningExtension")
+    assert hasattr(optuna.integration, "KerasPruningCallback")
+    assert hasattr(optuna.integration, "LightGBMPruningCallback")
+    assert hasattr(optuna.integration, "MXNetPruningCallback")
+    assert hasattr(optuna.integration, "TensorFlowPruningHook")
+    assert hasattr(optuna.integration, "XGBoostPruningCallback")
 
     with pytest.raises(AttributeError):
         optuna.integration.unknown_attribute  # type: ignore

@@ -12,7 +12,6 @@ _tqdm_handler = None  # type: Optional[_TqdmLoggingHandler]
 
 # Reference: https://gist.github.com/hvy/8b80c2cedf02b15c24f85d1fa17ebe02
 class _TqdmLoggingHandler(logging.StreamHandler):
-
     def emit(self, record: Any) -> None:
         try:
             msg = self.format(record)
@@ -37,10 +36,7 @@ class _ProgressBar(object):
     """
 
     def __init__(
-        self,
-        is_valid: bool,
-        n_trials: Optional[int] = None,
-        timeout: Optional[float] = None,
+        self, is_valid: bool, n_trials: Optional[int] = None, timeout: Optional[float] = None,
     ) -> None:
         self._is_valid = is_valid
         self._n_trials = n_trials
@@ -51,7 +47,7 @@ class _ProgressBar(object):
 
     # TODO(hvy): Remove initialization indirection via this method when the progress bar is no
     # longer experimental.
-    @experimental('1.2.0', name='Progress bar')
+    @experimental("1.2.0", name="Progress bar")
     def _init_valid(self) -> None:
         self._progress_bar = tqdm(range(self._n_trials) if self._n_trials is not None else None)
         global _tqdm_handler
@@ -73,7 +69,8 @@ class _ProgressBar(object):
             self._progress_bar.update(1)
             if self._timeout is not None and elapsed_seconds is not None:
                 self._progress_bar.set_postfix_str(
-                    '{:.02f}/{} seconds'.format(elapsed_seconds, self._timeout))
+                    "{:.02f}/{} seconds".format(elapsed_seconds, self._timeout)
+                )
 
     def close(self) -> None:
         """Close progress bars."""

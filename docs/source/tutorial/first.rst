@@ -20,7 +20,7 @@ The objective function is what will be optimized.
     def objective(trial):
         x = trial.suggest_uniform('x', -10, 10)
         return (x - 2) ** 2
-    
+
 
 This function returns the value of :math:`(x - 2)^2`. Our goal is to find the value of ``x`` that minimizes the output of the ``objective`` function. This is the "optimization." During the optimization, Optuna repeatedly calls and evaluates the objective function with different values of ``x``.
 
@@ -39,15 +39,15 @@ Out:
 
 .. code-block:: console
 
-    [I 2018-05-09 10:03:22,469] Finished trial#0 resulted in value: 52.9345515866657. Current best value is 52.9345515866657 with parameters: {'x': -5.275613485244093}.
-    [I 2018-05-09 10:03:22,474] Finished trial#1 resulted in value: 32.82718929591965. Current best value is 32.82718929591965 with parameters: {'x': -3.7295016620924066}.
-    [I 2018-05-09 10:03:22,475] Finished trial#2 resulted in value: 46.89428737068025. Current best value is 32.82718929591965 with parameters: {'x': -3.7295016620924066}.
-    [I 2018-05-09 10:03:22,476] Finished trial#3 resulted in value: 100.99613064563654. Current best value is 32.82718929591965 with parameters: {'x': -3.7295016620924066}.
-    [I 2018-05-09 10:03:22,477] Finished trial#4 resulted in value: 110.56391159932272. Current best value is 32.82718929591965 with parameters: {'x': -3.7295016620924066}.
-    [I 2018-05-09 10:03:22,478] Finished trial#5 resulted in value: 42.486606942847395. Current best value is 32.82718929591965 with parameters: {'x': -3.7295016620924066}.
-    [I 2018-05-09 10:03:22,479] Finished trial#6 resulted in value: 1.130813338091735. Current best value is 1.130813338091735 with parameters: {'x': 3.063397074517198}.
+    [I 2020-04-08 10:42:09,028] Finished trial#0 with value: 25.77382032395108 with parameters: {'x': 7.076792326257898}. Best is trial#0 with value: 25.77382032395108.
+    [I 2020-04-08 10:42:09,064] Finished trial#1 with value: 1.5189812248635903 with parameters: {'x': 0.7675304365366298}. Best is trial#1 with value: 1.5189812248635903.
+    [I 2020-04-08 10:42:09,106] Finished trial#2 with value: 34.4074691838153 with parameters: {'x': -3.865788027521562}. Best is trial#1 with value: 1.5189812248635903.
+    [I 2020-04-08 10:42:09,145] Finished trial#3 with value: 3.3601305753722657 with parameters: {'x': 3.8330658949891205}. Best is trial#1 with value: 1.5189812248635903.
+    [I 2020-04-08 10:42:09,185] Finished trial#4 with value: 61.16797535698886 with parameters: {'x': -5.820995803412048}. Best is trial#1 with value: 1.5189812248635903.
+    [I 2020-04-08 10:42:09,228] Finished trial#5 with value: 90.08665552769618 with parameters: {'x': -7.491399028999686}. Best is trial#1 with value: 1.5189812248635903.
+    [I 2020-04-08 10:42:09,274] Finished trial#6 with value: 25.254236332163032 with parameters: {'x': 7.025359323686519}. Best is trial#1 with value: 1.5189812248635903.
     ...
-    [I 2018-05-09 10:03:23,431] Finished trial#99 resulted in value: 8.760381111220335. Current best value is 0.0026232243068543526 with parameters: {'x': 1.9487825780924659}.
+    [I 2020-04-08 10:42:14,237] Finished trial#99 with value: 0.5227007740782738 with parameters: {'x': 2.7229804797352926}. Best is trial#67 with value: 2.916284393762304e-06.
 
 You can get the best parameter as follows.
 
@@ -59,9 +59,9 @@ Out:
 
 .. code-block:: console
 
-    {'x': 1.9487825780924659}
+    {'x': 2.001707713205946}
 
-We can see that Optuna found the best ``x`` value ``1.9487825780924659``, which is close to the optimal value of ``2``.
+We can see that Optuna found the best ``x`` value ``2.001707713205946``, which is close to the optimal value of ``2``.
 
 .. note::
     When used to search for hyper-parameters in machine learning, usually the objective function would return the loss or accuracy of the model.
@@ -88,7 +88,7 @@ Out:
 
 .. code-block:: console
 
-    {'x': 1.9926578647650126}
+    {'x': 2.001707713205946}
 
 To get the best value:
 
@@ -100,7 +100,7 @@ Out:
 
 .. code-block:: console
 
-    5.390694980884334e-05
+    2.916284393762304e-06
 
 To get the best trial:
 
@@ -112,7 +112,7 @@ Out:
 
 .. code-block:: console
 
-    FrozenTrial(number=26, state=<TrialState.COMPLETE: 1>, params={'x': 1.9926578647650126}, user_attrs={}, system_attrs={'_number': 26}, value=5.390694980884334e-05, intermediate_values={}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 87060), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 91010), trial_id=26)
+    FrozenTrial(number=67, value=2.916284393762304e-06, datetime_start=datetime.datetime(2020, 4, 8, 10, 42, 12, 595884), datetime_complete=datetime.datetime(2020, 4, 8, 10, 42, 12, 639969), params={'x': 2.001707713205946}, distributions={'x': UniformDistribution(high=10, low=-10)}, user_attrs={}, system_attrs={}, intermediate_values={}, trial_id=67, state=TrialState.COMPLETE)
 
 To get all trials:
 
@@ -124,9 +124,9 @@ Out:
 
 .. code-block:: console
 
-    [FrozenTrial(number=0, state=<TrialState.COMPLETE: 1>, params={'x': -4.219801301030433}, user_attrs={}, system_attrs={'_number': 0}, value=38.685928224299865, intermediate_values={}, datetime_start=datetime.datetime(2018, 5, 9, 10, 22, 59, 983824), datetime_complete=datetime.datetime(2018, 5, 9, 10, 22, 59, 984053), trial_id=0),
+    [FrozenTrial(number=0, value=25.77382032395108, datetime_start=datetime.datetime(2020, 4, 8, 10, 42, 8, 987277), datetime_complete=datetime.datetime(2020, 4, 8, 10, 42, 9, 27959), params={'x': 7.076792326257898}, distributions={'x': UniformDistribution(high=10, low=-10)}, user_attrs={}, system_attrs={}, intermediate_values={}, trial_id=0, state=TrialState.COMPLETE),
      ...
-     user_attrs={}, system_attrs={'_number': 99}, value=8.2881000286123179, intermediate_values={}, datetime_start=datetime.datetime(2018, 5, 9, 10, 23, 0, 886434), datetime_complete=datetime.datetime(2018, 5, 9, 10, 23, 0, 891347), trial_id=99)]
+     user_attrs={}, system_attrs={}, intermediate_values={}, trial_id=99, state=TrialState.COMPLETE)]
 
 To get the number of trials:
 

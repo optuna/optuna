@@ -15,8 +15,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
 
 # revision identifiers, used by Alembic.
-revision = 'v1.3.0.a'
-down_revision = 'v1.2.0.a'
+revision = "v1.3.0.a"
+down_revision = "v1.2.0.a"
 branch_labels = None
 depends_on = None
 
@@ -27,15 +27,15 @@ BaseModel = declarative_base()
 
 
 class TrialModel(BaseModel):
-    __tablename__ = 'trials'
+    __tablename__ = "trials"
     trial_id = sa.Column(sa.Integer, primary_key=True)
     number = sa.Column(sa.Integer)
 
 
 class TrialSystemAttributeModel(BaseModel):
-    __tablename__ = 'trial_system_attributes'
+    __tablename__ = "trial_system_attributes"
     trial_system_attribute_id = sa.Column(sa.Integer, primary_key=True)
-    trial_id = sa.Column(sa.Integer, sa.ForeignKey('trials.trial_id'))
+    trial_id = sa.Column(sa.Integer, sa.ForeignKey("trials.trial_id"))
     key = sa.Column(sa.String(MAX_INDEXED_STRING_LENGTH))
     value_json = sa.Column(sa.String(MAX_STRING_LENGTH))
 
@@ -45,17 +45,20 @@ def upgrade():
     session = orm.Session(bind=bind)
 
     with op.batch_alter_table("trials") as batch_op:
-        batch_op.add_column(sa.Column('number', sa.Integer(), nullable=True, default=None))
+        batch_op.add_column(sa.Column("number", sa.Integer(), nullable=True, default=None))
 
     try:
-        number_records = session.query(TrialSystemAttributeModel) \
-            .filter(TrialSystemAttributeModel.key == '_number').all()
-        mapping = [{'trial_id': r.trial_id, 'number': json.loads(r.value_json)}
-                   for r in number_records]
+        number_records = (
+            session.query(TrialSystemAttributeModel)
+            .filter(TrialSystemAttributeModel.key == "_number")
+            .all()
+        )
+        mapping = [
+            {"trial_id": r.trial_id, "number": json.loads(r.value_json)} for r in number_records
+        ]
         session.bulk_update_mappings(TrialModel, mapping)
 
-        session.query(TrialSystemAttributeModel.key == '_number') \
-            .delete(synchronize_session=False)
+        session.query(TrialSystemAttributeModel.key == "_number").delete(synchronize_session=False)
         session.commit()
     except SQLAlchemyError as e:
         session.rollback()
@@ -72,11 +75,11 @@ def downgrade():
         number_attrs = []
         trials = session.query(TrialModel).all()
         for trial in trials:
-            number_attrs.append(TrialSystemAttributeModel(
-                trial_id=trial.trial_id,
-                key='_number',
-                value_json=json.dumps(trial.number),
-            ))
+            number_attrs.append(
+                TrialSystemAttributeModel(
+                    trial_id=trial.trial_id, key="_number", value_json=json.dumps(trial.number),
+                )
+            )
         session.bulk_save_objects(number_attrs)
         session.commit()
     except SQLAlchemyError as e:
@@ -86,4 +89,4 @@ def downgrade():
         session.close()
 
     with op.batch_alter_table("trials") as batch_op:
-        batch_op.drop_column('number')
+        batch_op.drop_column("number")

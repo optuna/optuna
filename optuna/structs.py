@@ -1,12 +1,14 @@
-import enum
 import warnings
 
+from optuna import _study_direction
 from optuna import exceptions
 from optuna import logging
+from optuna import trial
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from datetime import datetime  # NOQA
+    from datetime import timedelta  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
@@ -14,57 +16,35 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
 
 
-class TrialState(enum.Enum):
-    """State of a :class:`~optuna.trial.Trial`.
+_logger = logging.get_logger(__name__)
 
-    Attributes:
-        RUNNING:
-            The :class:`~optuna.trial.Trial` is running.
-        COMPLETE:
-            The :class:`~optuna.trial.Trial` has been finished without any error.
-        PRUNED:
-            The :class:`~optuna.trial.Trial` has been pruned with
-            :class:`~optuna.exceptions.TrialPruned`.
-        FAIL:
-            The :class:`~optuna.trial.Trial` has failed due to an uncaught error.
-    """
+_message = (
+    "`structs` is deprecated. Classes have moved to the following modules. "
+    "`structs.StudyDirection`->`study.StudyDirection`, "
+    "`structs.StudySummary`->`study.StudySummary`, "
+    "`structs.FrozenTrial`->`trial.FrozenTrial`, "
+    "`structs.TrialState`->`trial.TrialState`, "
+    "`structs.TrialPruned`->`exceptions.TrialPruned`."
+)
+warnings.warn(_message, DeprecationWarning)
+_logger.warning(_message)
 
-    RUNNING = 0
-    COMPLETE = 1
-    PRUNED = 2
-    FAIL = 3
-    WAITING = 4
+# The use of the structs.StudyDirection is deprecated and it is recommended that you use
+# study.StudyDirection instead. See the API reference for more details.
+StudyDirection = _study_direction.StudyDirection
 
-    def __repr__(self):
-        # type: () -> str
-
-        return str(self)
-
-    def is_finished(self):
-        # type: () -> bool
-
-        return self != TrialState.RUNNING and self != TrialState.WAITING
-
-
-class StudyDirection(enum.Enum):
-    """Direction of a :class:`~optuna.study.Study`.
-
-    Attributes:
-        NOT_SET:
-            Direction has not been set.
-        MINIMIZE:
-            :class:`~optuna.study.Study` minimizes the objective function.
-        MAXIMIZE:
-            :class:`~optuna.study.Study` maximizes the objective function.
-    """
-
-    NOT_SET = 0
-    MINIMIZE = 1
-    MAXIMIZE = 2
+# The use of the structs.TrialState is deprecated and it is recommended that you use
+# trial.TrialState instead. See the API reference for more details.
+TrialState = trial.TrialState
 
 
 class FrozenTrial(object):
     """Status and results of a :class:`~optuna.trial.Trial`.
+
+    .. deprecated:: 1.4.0
+
+        This class was moved to :mod:`~optuna.trial`. Please use
+        :class:`~optuna.trial.FrozenTrial` instead.
 
     Attributes:
         number:
@@ -80,8 +60,6 @@ class FrozenTrial(object):
             Datetime where the :class:`~optuna.trial.Trial` finished.
         params:
             Dictionary that contains suggested parameters.
-        distributions:
-            Dictionary that contains the distributions of :attr:`params`.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
@@ -105,6 +83,13 @@ class FrozenTrial(object):
     ):
         # type: (...) -> None
 
+        message = (
+            "The use of `structs.FrozenTrial` is deprecated. "
+            "Please use `trial.FrozenTrial` instead."
+        )
+        warnings.warn(message, DeprecationWarning)
+        _logger.warning(message)
+
         self.number = number
         self.state = state
         self.value = value
@@ -120,8 +105,18 @@ class FrozenTrial(object):
     # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
     # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
     _ordered_fields = [
-        'number', 'value', 'datetime_start', 'datetime_complete', 'params', '_distributions',
-        'user_attrs', 'system_attrs', 'intermediate_values', '_trial_id', 'state', ]
+        "number",
+        "value",
+        "datetime_start",
+        "datetime_complete",
+        "params",
+        "_distributions",
+        "user_attrs",
+        "system_attrs",
+        "intermediate_values",
+        "_trial_id",
+        "state",
+    ]
 
     def __eq__(self, other):
         # type: (Any) -> bool
@@ -154,32 +149,41 @@ class FrozenTrial(object):
     def __repr__(self):
         # type: () -> str
 
-        return ('{cls}({kwargs})'.format(
+        return "{cls}({kwargs})".format(
             cls=self.__class__.__name__,
-            kwargs=', '.join('{field}={value}'.format(
-                field=field if not field.startswith('_') else field[1:],
-                value=repr(getattr(self, field))) for field in self._ordered_fields)))
+            kwargs=", ".join(
+                "{field}={value}".format(
+                    field=field if not field.startswith("_") else field[1:],
+                    value=repr(getattr(self, field)),
+                )
+                for field in self._ordered_fields
+            ),
+        )
 
     def _validate(self):
         # type: () -> None
 
         if self.datetime_start is None:
-            raise ValueError('`datetime_start` is supposed to be set.')
+            raise ValueError("`datetime_start` is supposed to be set.")
 
         if self.state.is_finished():
             if self.datetime_complete is None:
-                raise ValueError('`datetime_complete` is supposed to be set for a finished trial.')
+                raise ValueError("`datetime_complete` is supposed to be set for a finished trial.")
         else:
             if self.datetime_complete is not None:
                 raise ValueError(
-                    '`datetime_complete` is supposed to be None for an unfinished trial.')
+                    "`datetime_complete` is supposed to be None for an unfinished trial."
+                )
 
         if self.state == TrialState.COMPLETE and self.value is None:
-            raise ValueError('`value` is supposed to be set for a complete trial.')
+            raise ValueError("`value` is supposed to be set for a complete trial.")
 
         if set(self.params.keys()) != set(self.distributions.keys()):
-            raise ValueError('Inconsistent parameters {} and distributions {}.'.format(
-                set(self.params.keys()), set(self.distributions.keys())))
+            raise ValueError(
+                "Inconsistent parameters {} and distributions {}.".format(
+                    set(self.params.keys()), set(self.distributions.keys())
+                )
+            )
 
         for param_name, param_value in self.params.items():
             distribution = self.distributions[param_name]
@@ -187,29 +191,20 @@ class FrozenTrial(object):
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)
             if not distribution._contains(param_value_in_internal_repr):
                 raise ValueError(
-                    "The value {} of parameter '{}' isn't contained in the distribution {}.".
-                    format(param_value, param_name, distribution))
+                    "The value {} of parameter '{}' isn't contained in the distribution "
+                    "{}.".format(param_value, param_name, distribution)
+                )
 
     @property
     def distributions(self):
         # type: () -> Dict[str, BaseDistribution]
-        """Return the distributions for this trial.
-
-        Returns:
-            The distributions.
-        """
+        """Dictionary that contains the distributions of :attr:`params`."""
 
         return self._distributions
 
     @distributions.setter
     def distributions(self, value):
         # type: (Dict[str, BaseDistribution]) -> None
-        """Set the distributions for this trial.
-
-        Args:
-            value: The distributions.
-        """
-
         self._distributions = value
 
     @property
@@ -226,13 +221,15 @@ class FrozenTrial(object):
         """
 
         warnings.warn(
-            'The use of `FrozenTrial.trial_id` is deprecated. '
-            'Please use `FrozenTrial.number` instead.', DeprecationWarning)
+            "The use of `FrozenTrial.trial_id` is deprecated. "
+            "Please use `FrozenTrial.number` instead.",
+            DeprecationWarning,
+        )
 
-        logger = logging.get_logger(__name__)
-        logger.warning(
-            'The use of `FrozenTrial.trial_id` is deprecated. '
-            'Please use `FrozenTrial.number` instead.')
+        _logger.warning(
+            "The use of `FrozenTrial.trial_id` is deprecated. "
+            "Please use `FrozenTrial.number` instead."
+        )
 
         return self._trial_id
 
@@ -245,9 +242,28 @@ class FrozenTrial(object):
         else:
             return max(self.intermediate_values.keys())
 
+    @property
+    def duration(self):
+        # type: () -> Optional[timedelta]
+        """Return the elapsed time taken to complete the trial.
+
+        Returns:
+            The duration.
+        """
+
+        if self.datetime_start and self.datetime_complete:
+            return self.datetime_complete - self.datetime_start
+        else:
+            return None
+
 
 class StudySummary(object):
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
+
+    .. deprecated:: 1.4.0
+
+        This class was moved to :mod:`~optuna.study`. Please use
+        :class:`~optuna.study.StudySummary` instead.
 
     See also :func:`optuna.study.get_all_study_summaries`.
 
@@ -255,7 +271,7 @@ class StudySummary(object):
         study_name:
             Name of the :class:`~optuna.study.Study`.
         direction:
-            :class:`StudyDirection` of the :class:`~optuna.study.Study`.
+            :class:`~optuna.study.StudyDirection` of the :class:`~optuna.study.Study`.
         best_trial:
             :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
         user_attrs:
@@ -271,17 +287,24 @@ class StudySummary(object):
     """
 
     def __init__(
-            self,
-            study_name,  # type: str
-            direction,  # type: StudyDirection
-            best_trial,  # type: Optional[FrozenTrial]
-            user_attrs,  # type: Dict[str, Any]
-            system_attrs,  # type: Dict[str, Any]
-            n_trials,  # type: int
-            datetime_start,  # type: Optional[datetime]
-            study_id,  # type: int
+        self,
+        study_name,  # type: str
+        direction,  # type: _study_direction.StudyDirection
+        best_trial,  # type: Optional[FrozenTrial]
+        user_attrs,  # type: Dict[str, Any]
+        system_attrs,  # type: Dict[str, Any]
+        n_trials,  # type: int
+        datetime_start,  # type: Optional[datetime]
+        study_id,  # type: int
     ):
         # type: (...) -> None
+
+        message = (
+            "The use of `structs.StudySummary` is deprecated. "
+            "Please use `study.StudySummary` instead."
+        )
+        warnings.warn(message, DeprecationWarning)
+        _logger.warning(message)
 
         self.study_name = study_name
         self.direction = direction
@@ -323,18 +346,19 @@ class StudySummary(object):
 
         .. deprecated:: 0.20.0
             The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.structs.StudySummary.study_name` instead.
+            :attr:`~optuna.study.StudySummary.study_name` instead.
 
         Returns:
             The study ID.
         """
 
-        message = 'The use of `StudySummary.study_id` is deprecated. ' \
-                  'Please use `StudySummary.study_name` instead.'
+        message = (
+            "The use of `StudySummary.study_id` is deprecated. "
+            "Please use `StudySummary.study_name` instead."
+        )
         warnings.warn(message, DeprecationWarning)
 
-        logger = logging.get_logger(__name__)
-        logger.warning(message)
+        _logger.warning(message)
 
         return self._study_id
 
@@ -351,8 +375,9 @@ class TrialPruned(exceptions.TrialPruned):
     def __init__(self, *args, **kwargs):
         # type: (Any, Any) -> None
 
-        message = 'The use of `optuna.structs.TrialPruned` is deprecated. ' \
-                  'Please use `optuna.exceptions.TrialPruned` instead.'
+        message = (
+            "The use of `optuna.structs.TrialPruned` is deprecated. "
+            "Please use `optuna.exceptions.TrialPruned` instead."
+        )
         warnings.warn(message, DeprecationWarning)
-        logger = logging.get_logger(__name__)
-        logger.warning(message)
+        _logger.warning(message)

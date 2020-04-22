@@ -4,7 +4,6 @@ from logging import CRITICAL  # NOQA
 from logging import DEBUG  # NOQA
 from logging import ERROR  # NOQA
 from logging import FATAL  # NOQA
-from logging import FATAL  # NOQA
 from logging import INFO  # NOQA
 from logging import WARN  # NOQA
 from logging import WARNING  # NOQA
@@ -19,31 +18,28 @@ _lock = threading.Lock()
 _default_handler = None  # type: Optional[logging.Handler]
 
 
-def create_default_formatter():
-    # type: () -> colorlog.ColoredFormatter
+def create_default_formatter() -> colorlog.ColoredFormatter:
     """Create a default formatter of log messages.
 
     This function is not supposed to be directly accessed by library users.
     """
 
     return colorlog.ColoredFormatter(
-        '%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s')
+        "%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s"
+    )
 
 
-def _get_library_name():
-    # type: () -> str
+def _get_library_name() -> str:
 
-    return __name__.split('.')[0]
+    return __name__.split(".")[0]
 
 
-def _get_library_root_logger():
-    # type: () -> logging.Logger
+def _get_library_root_logger() -> logging.Logger:
 
     return logging.getLogger(_get_library_name())
 
 
-def _configure_library_root_logger():
-    # type: () -> None
+def _configure_library_root_logger() -> None:
 
     global _default_handler
 
@@ -61,8 +57,7 @@ def _configure_library_root_logger():
         library_root_logger.propagate = False
 
 
-def _reset_library_root_logger():
-    # type: () -> None
+def _reset_library_root_logger() -> None:
 
     global _default_handler
 
@@ -76,8 +71,7 @@ def _reset_library_root_logger():
         _default_handler = None
 
 
-def get_logger(name):
-    # type: (str) -> logging.Logger
+def get_logger(name: str) -> logging.Logger:
     """Return a logger with the specified name.
 
     This function is not supposed to be directly accessed by library users.
@@ -87,8 +81,7 @@ def get_logger(name):
     return logging.getLogger(name)
 
 
-def get_verbosity():
-    # type: () -> int
+def get_verbosity() -> int:
     """Return the current level for the Optuna's root logger.
 
     Returns:
@@ -108,8 +101,7 @@ def get_verbosity():
     return _get_library_root_logger().getEffectiveLevel()
 
 
-def set_verbosity(verbosity):
-    # type: (int) -> None
+def set_verbosity(verbosity: int) -> None:
     """Set the level for the Optuna's root logger.
 
     Args:
@@ -121,8 +113,7 @@ def set_verbosity(verbosity):
     _get_library_root_logger().setLevel(verbosity)
 
 
-def disable_default_handler():
-    # type: () -> None
+def disable_default_handler() -> None:
     """Disable the default handler of the Optuna's root logger.
 
     Example:
@@ -149,8 +140,8 @@ def disable_default_handler():
             # There are logs in sys.stderr.
             optuna.logging.enable_default_handler()
             study.optimize(objective, n_trials=10)
-            # [I 2020-02-23 17:00:54,314] Finished trial#10 resulted in value: ...
-            # [I 2020-02-23 17:00:54,356] Finished trial#11 resulted in value: ...
+            # [I 2020-02-23 17:00:54,314] Finished trial#10 with value: ...
+            # [I 2020-02-23 17:00:54,356] Finished trial#11 with value: ...
             # ...
 
     """
@@ -161,8 +152,7 @@ def disable_default_handler():
     _get_library_root_logger().removeHandler(_default_handler)
 
 
-def enable_default_handler():
-    # type: () -> None
+def enable_default_handler() -> None:
     """Enable the default handler of the Optuna's root logger.
 
     Please refer to the example shown in :func:`~optuna.logging.disable_default_handler()`.
@@ -174,8 +164,7 @@ def enable_default_handler():
     _get_library_root_logger().addHandler(_default_handler)
 
 
-def disable_propagation():
-    # type: () -> None
+def disable_propagation() -> None:
     """Disable propagation of the library log outputs.
 
     Note that log propagation is disabled by default.
@@ -185,8 +174,7 @@ def disable_propagation():
     _get_library_root_logger().propagate = False
 
 
-def enable_propagation():
-    # type: () -> None
+def enable_propagation() -> None:
     """Enable propagation of the library log outputs.
 
     Please disable the Optuna's default handler to prevent double logging if the root logger has
@@ -223,7 +211,7 @@ def enable_propagation():
 
             with open('foo.log') as f:
                 assert f.readline() == "Start optimization.\\n"
-                assert f.readline().startswith("Finished trial#0 resulted in value:")
+                assert f.readline().startswith("Finished trial#0 with value:")
 
     """
 

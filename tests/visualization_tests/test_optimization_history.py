@@ -8,7 +8,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
-@pytest.mark.parametrize('direction', ['minimize', 'maximize'])
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_plot_optimization_history(direction):
     # type: (str) -> None
 
@@ -36,7 +36,7 @@ def test_plot_optimization_history(direction):
     assert figure.data[0].x == (0, 1, 2)
     assert figure.data[0].y == (1.0, 2.0, 0.0)
     assert figure.data[1].x == (0, 1, 2)
-    if direction == 'minimize':
+    if direction == "minimize":
         assert figure.data[1].y == (1.0, 1.0, 0.0)
     else:
         assert figure.data[1].y == (1.0, 2.0, 2.0)
@@ -48,7 +48,7 @@ def test_plot_optimization_history(direction):
         raise ValueError
 
     study = create_study(direction=direction)
-    study.optimize(fail_objective, n_trials=1, catch=(ValueError, ))
+    study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
 
     figure = plot_optimization_history(study)
     assert len(figure.data) == 0
