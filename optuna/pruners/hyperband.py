@@ -52,7 +52,7 @@ class HyperbandPruner(BasePruner):
         :class:`~optuna.pruners.SuccessiveHalvingPruner` is referred as "bracket" in the original
         paper. The number of brackets is an important factor to control the early stopping behavior
         of Hyperband and is determined by ``max_resource`` and ``reduction_factor`` as
-        `n_brackets = floor(log(max_resource) / log(reduction_factor))`. Please set
+        `n_brackets = floor(log(max_resource) / log(reduction_factor)) + 1`. Please set
         ``max_resource`` and ``reduction_factor`` so that the number of brackets is not too large
         (about 4 ~ 6 in most use cases).
         Please see Section 3.6 of the original paper
@@ -113,7 +113,7 @@ class HyperbandPruner(BasePruner):
                 "The argument of `n_brackets` is deprecated. "
                 "The number of brackets is can be determined by `max_resource` and "
                 "`reduction_factor` as "
-                "`n_brackets = floor(log(max_resource) / log(reduction_factor))`. "
+                "`n_brackets = floor(log(max_resource) / log(reduction_factor)) + 1`. "
                 "Please specify `max_resource` appropriately."
             )
             warnings.warn(message, DeprecationWarning)
