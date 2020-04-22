@@ -751,7 +751,7 @@ def test_stop_n_jobs():
 
     study = optuna.create_study()
     study.optimize(lambda _: 1.0, n_trials=None, callbacks=[callback], n_jobs=2)
-    assert 5 <= len(study.trials) <= 6  # todo(g-votte): discuss if we need more strict assertion.
+    assert 5 <= len(study.trials) <= 6
 
 
 def test_stop_outside_optimize():
