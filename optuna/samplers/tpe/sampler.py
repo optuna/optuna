@@ -87,35 +87,36 @@ class TPESampler(base.BaseSampler):
 
     Args:
         consider_prior:
-            Add a Gaussian prior centered at the middle of the domain to Parzen-tree estimator
-            when True. The prior is only effective if the sampling distribution is either
-            `UniformDistribution`, `DiscreteUniformDistribution`, `LogUniformDistribution`,
-            or `IntUniformDistribution`..
+            Enhance the stability of Parzen estimator by imposing a Gaussian prior when True. The 
+            prior is only effective if the sampling distribution is either `UniformDistribution`, 
+            `DiscreteUniformDistribution`, `LogUniformDistribution`, or `IntUniformDistribution`.
         prior_weight:
-            The weight of the prior.
+            The weight of the prior. This argument is used in `UniformDistribution`, 
+            `DiscreteUniformDistribution`, `LogUniformDistribution`, `IntUniformDistribution` and
+            `CategoricalDistribution`.
         consider_magic_clip:
             Enable a heuristic to limit the smallest variances of Gaussians used in
-            the Parzen-tree estimator.
+            the Parzen estimator.
         consider_endpoints:
             Take endpoints of domains into account when calculating variances of Gaussians
-            in Parzen-tree estimator. See the original paper for details on the heuristics
-            to calculate the variances,
+            in Parzen estimator. See the original paper for details on the heuristics
+            to calculate the variances.
         n_startup_trials:
-            Number of steps required to run TPE. When the total number of finished trials
-            are less than this value, this sampler switches to random sampler.
+            The random sampling is used instead of the TPE algorithm until the given number
+            of trials finish in the same study.
         n_ei_candidate:
-            Number of candidate samples used to calculate the estimated improvement.
+            Number of candidate samples used to calculate the expected improvement.
         gamma:
             A function that takes the number of finished trials and returns the number
             of trials to form a density function for samples with low grains.
             See the original paper for more details.
         weights:
-            A function that takes the number of finished trials and returns a weight for the trial.
+            A function that takes the number of finished trials and returns a weight for those trials.
             See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
             Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
             for more details.
         seed:
-            A random seed.
+            Seed for random number generator.
     """
 
     def __init__(
