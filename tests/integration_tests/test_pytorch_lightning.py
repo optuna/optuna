@@ -102,3 +102,45 @@ def test_pytorch_lightning_pruning_callback():
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+
+def test_pytorch_lightning_pruning_callback_with_interval():
+    # type: () -> None
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        trainer = pl.Trainer(
+            early_stop_callback=PyTorchLightningPruningCallback(
+                                        trial, monitor="accuracy", interval=7),
+            max_epochs=7,
+        )
+        trainer.checkpoint_callback = None  # Disable unrelated checkpoint callbacks.
+
+        model = Model()
+        trainer.fit(model)
+
+        return 1.0
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    study.optimize(objective, n_trials=1)
+    assert study.trials[0].state == optuna.trial.TrialState.PRUNED
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        trainer = pl.Trainer(
+            early_stop_callback=PyTorchLightningPruningCallback(
+                                        trial, monitor="accuracy", interval=7),
+            max_epochs=6,
+        )
+        trainer.checkpoint_callback = None  # Disable unrelated checkpoint callbacks.
+
+        model = Model()
+        trainer.fit(model)
+
+        return 1.0
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    study.optimize(objective, n_trials=1)
+    assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
+    assert study.trials[0].value == 1.0

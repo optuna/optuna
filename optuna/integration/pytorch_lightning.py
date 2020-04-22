@@ -36,7 +36,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             how this dictionary is formatted.
     """
 
-    def __init__(self, trial, monitor):
+    def __init__(self, trial, monitor, interval=1):
         # type: (optuna.trial.Trial, str) -> None
 
         super(PyTorchLightningPruningCallback, self).__init__()
@@ -45,9 +45,13 @@ class PyTorchLightningPruningCallback(EarlyStopping):
 
         self._trial = trial
         self._monitor = monitor
+        self._interval = interval
 
     def on_epoch_end(self, epoch, logs=None):
         # type: (int, Optional[Dict[str, float]]) -> None
+
+        if (epoch + 1) % self._interval != 0:
+            return
 
         logs = logs or {}
         current_score = logs.get(self._monitor)
