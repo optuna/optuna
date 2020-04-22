@@ -4,6 +4,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 from optuna._experimental import experimental
@@ -97,7 +98,7 @@ class MultiObjectiveTrial(object):
 
         return self._trial.suggest_categorical(name, choices)
 
-    def report(self, values: List[float], step: int) -> None:
+    def report(self, values: Tuple[float], step: int) -> None:
         """Report intermediate objective function values for a given step.
 
         The reported values are used by the pruners to determine whether this trial should be
@@ -133,7 +134,7 @@ class MultiObjectiveTrial(object):
         for i, value in enumerate(values):
             self._trial.report(value, self._n_objectives * (step + 1) + i)
 
-    def _report_complete_values(self, values: List[float]) -> None:
+    def _report_complete_values(self, values: Tuple[float]) -> None:
         if len(values) != self._n_objectives:
             raise ValueError(
                 "The number of the values {} is mismatched with the number of the objectives {}.",
@@ -267,18 +268,19 @@ class FrozenMultiObjectiveTrial(object):
         self.n_objectives = n_objectives
         self._trial = trial
 
-        self.values = [trial.intermediate_values.get(i) for i in range(n_objectives)]
+        self.values = tuple(trial.intermediate_values.get(i) for i in range(n_objectives))
 
-        self.intermediate_values = {}  # type: Dict[int, List[Optional[float]]]
+        intermediate_values = {}  # type: Dict[int, List[Optional[float]]]
         for key, value in trial.intermediate_values.items():
             if key < n_objectives:
                 continue
 
             step = key // n_objectives - 1
-            if step not in self.intermediate_values:
-                self.intermediate_values[step] = list(None for _ in range(n_objectives))
+            if step not in intermediate_values:
+                intermediate_values[step] = list(None for _ in range(n_objectives))
 
-            self.intermediate_values[step][key % n_objectives] = value
+            intermediate_values[step][key % n_objectives] = value
+        self.intermediate_values = {k: tuple(v) for k, v in intermediate_values.items()}
 
     @property
     def number(self) -> int:
