@@ -76,7 +76,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.5.0+cpu",
             "xgboost",
         ]
-        + (["allennlp", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (["allennlp<1", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (
+            ["llvmlite<=0.31.0"] if (3, 5) == sys.version_info[:2] else []
+        )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
         + (
             [
                 "dask[dataframe]",
@@ -114,6 +117,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.5.0+cpu",
             "xgboost",
         ]
+        + (["allennlp<1", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (["fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (
             [
