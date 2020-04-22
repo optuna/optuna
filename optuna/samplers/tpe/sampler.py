@@ -87,11 +87,11 @@ class TPESampler(base.BaseSampler):
 
     Args:
         consider_prior:
-            Enhance the stability of Parzen estimator by imposing a Gaussian prior when True. The 
-            prior is only effective if the sampling distribution is either `UniformDistribution`, 
+            Enhance the stability of Parzen estimator by imposing a Gaussian prior when True. The
+            prior is only effective if the sampling distribution is either `UniformDistribution`,
             `DiscreteUniformDistribution`, `LogUniformDistribution`, or `IntUniformDistribution`.
         prior_weight:
-            The weight of the prior. This argument is used in `UniformDistribution`, 
+            The weight of the prior. This argument is used in `UniformDistribution`,
             `DiscreteUniformDistribution`, `LogUniformDistribution`, `IntUniformDistribution` and
             `CategoricalDistribution`.
         consider_magic_clip:
