@@ -26,139 +26,43 @@ parametrize_sampler = pytest.mark.parametrize(
         UniformDistribution(-1.0, 1.0),
         UniformDistribution(0.0, 1.0),
         UniformDistribution(-1.0, 0.0),
-    ],
-)
-def test_uniform(
-    sampler_class: Callable[[], BaseMultiObjectiveSampler], distribution: UniformDistribution
-) -> None:
-    study = optuna.multi_objective.study.create_study(
-        ["minimize", "maximize"], sampler=sampler_class()
-    )
-    points = np.array(
-        [
-            study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution)
-            for _ in range(100)
-        ]
-    )
-    assert np.all(points >= distribution.low)
-    assert np.all(points < distribution.high)
-    assert not isinstance(
-        study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution),
-        np.floating,
-    )
-
-
-@parametrize_sampler
-@pytest.mark.parametrize("distribution", [LogUniformDistribution(1e-7, 1.0)])
-def test_log_uniform(
-    sampler_class: Callable[[], BaseMultiObjectiveSampler], distribution: LogUniformDistribution
-) -> None:
-    study = optuna.multi_objective.study.create_study(
-        ["minimize", "maximize"], sampler=sampler_class()
-    )
-    points = np.array(
-        [
-            study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution)
-            for _ in range(100)
-        ]
-    )
-    assert np.all(points >= distribution.low)
-    assert np.all(points < distribution.high)
-    assert not isinstance(
-        study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution),
-        np.floating,
-    )
-
-
-@parametrize_sampler
-@pytest.mark.parametrize(
-    "distribution",
-    [DiscreteUniformDistribution(-10, 10, 0.1), DiscreteUniformDistribution(-10.2, 10.2, 0.1)],
-)
-def test_discrete_uniform(
-    sampler_class: Callable[[], BaseMultiObjectiveSampler],
-    distribution: DiscreteUniformDistribution,
-) -> None:
-    study = optuna.multi_objective.study.create_study(
-        ["minimize", "maximize"], sampler=sampler_class()
-    )
-    points = np.array(
-        [
-            study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution)
-            for _ in range(100)
-        ]
-    )
-    assert np.all(points >= distribution.low)
-    assert np.all(points <= distribution.high)
-    assert not isinstance(
-        study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution),
-        np.floating,
-    )
-
-    # Check all points are multiples of distribution.q.
-    points = points
-    points -= distribution.low
-    points /= distribution.q
-    round_points = np.round(points)
-    np.testing.assert_almost_equal(round_points, points)
-
-
-@parametrize_sampler
-@pytest.mark.parametrize(
-    "distribution",
-    [
+        LogUniformDistribution(1e-7, 1.0),
+        DiscreteUniformDistribution(-10, 10, 0.1),
+        DiscreteUniformDistribution(-10.2, 10.2, 0.1),
         IntUniformDistribution(-10, 10),
         IntUniformDistribution(0, 10),
         IntUniformDistribution(-10, 0),
         IntUniformDistribution(-10, 10, 2),
         IntUniformDistribution(0, 10, 2),
         IntUniformDistribution(-10, 0, 2),
+        CategoricalDistribution((1, 2, 3)),
+        CategoricalDistribution(("a", "b", "c")),
+        CategoricalDistribution((1, "a")),
     ],
 )
-def test_int(
-    sampler_class: Callable[[], BaseMultiObjectiveSampler], distribution: IntUniformDistribution
+def test_sample_independent(
+    sampler_class: Callable[[], BaseMultiObjectiveSampler], distribution: UniformDistribution
 ) -> None:
     study = optuna.multi_objective.study.create_study(
         ["minimize", "maximize"], sampler=sampler_class()
     )
-    points = np.array(
-        [
-            study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution)
-            for _ in range(100)
-        ]
-    )
-    assert np.all(points >= distribution.low)
-    assert np.all(points <= distribution.high)
-    assert not isinstance(
-        study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution),
-        np.integer,
-    )
+    for i in range(100):
+        value = study.sampler.sample_independent(
+            study, _create_new_trial(study), "x", distribution
+        )
+        assert distribution._contains(distribution.to_internal_repr(value))
 
+        if not isinstance(distribution, CategoricalDistribution):
+            # Please see https://github.com/optuna/optuna/pull/393 why this assertion is needed.
+            assert not isinstance(value, np.floating)
 
-@parametrize_sampler
-@pytest.mark.parametrize("choices", [(1, 2, 3), ("a", "b", "c"), (1, "a")])
-def test_categorical(
-    sampler_class: Callable[[], BaseMultiObjectiveSampler],
-    choices: Sequence[CategoricalChoiceType],
-) -> None:
-    distribution = CategoricalDistribution(choices)
-
-    study = optuna.multi_objective.study.create_study(
-        ["minimize", "maximize"], sampler=sampler_class()
-    )
-
-    def sample() -> float:
-        trial = _create_new_trial(study)
-        param_value = study.sampler.sample_independent(study, trial, "x", distribution)
-        return distribution.to_internal_repr(param_value)
-
-    points = np.array([sample() for _ in range(100)])
-
-    # 'x' value is corresponding to an index of distribution.choices.
-    assert np.all(points >= 0)
-    assert np.all(points <= len(distribution.choices) - 1)
-    round_points = np.round(points)
-    np.testing.assert_almost_equal(round_points, points)
+        if isinstance(distribution, DiscreteUniformDistribution):
+            # Check the value is a multiple of `distribution.q` which is
+            # the quantization interval of the distribution.
+            value -= distribution.low
+            value /= distribution.q
+            round_value = np.round(value)
+            np.testing.assert_almost_equal(round_value, value)
 
 
 def _create_new_trial(
