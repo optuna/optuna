@@ -704,12 +704,8 @@ def test_nested_optimization():
     study.optimize(objective, n_trials=10, catch=())
 
 
-def test_stop_in_objective():
-    # type: () -> None
-
-    def objective(trial, threshold_number):
-        # type: (optuna.trial.Trial, int) -> float
-
+def test_stop_in_objective() -> None:
+    def objective(trial: optuna.trial.Trial, threshold_number: int) -> float:
         if trial.number >= threshold_number:
             trial.study.stop()
 
@@ -725,12 +721,8 @@ def test_stop_in_objective():
     assert len(study.trials) == 12
 
 
-def test_stop_in_callback():
-    # type: () -> None
-
-    def callback(study, trial):
-        # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
-
+def test_stop_in_callback() -> None:
+    def callback(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
         if trial.number >= 4:
             study.stop()
 
@@ -740,12 +732,8 @@ def test_stop_in_callback():
     assert len(study.trials) == 5
 
 
-def test_stop_n_jobs():
-    # type: () -> None
-
-    def callback(study, trial):
-        # type: (optuna.study.Study, optuna.structs.FrozenTrial) -> None
-
+def test_stop_n_jobs() -> None:
+    def callback(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
         if trial.number >= 4:
             study.stop()
 
@@ -754,9 +742,7 @@ def test_stop_n_jobs():
     assert 5 <= len(study.trials) <= 6
 
 
-def test_stop_outside_optimize():
-    # type: () -> None
-
+def test_stop_outside_optimize() -> None:
     # Test stopping outside the optimization: it should raise RuntimeError.
     study = optuna.create_study()
     with pytest.raises(RuntimeError):

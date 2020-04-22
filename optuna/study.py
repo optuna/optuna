@@ -345,9 +345,7 @@ class Study(BaseStudy):
 
                 time_start = datetime.datetime.now()
 
-                def _should_stop():
-                    # type: () -> bool
-
+                def _should_stop() -> bool:
                     if self._stop_flag:
                         return True
 
@@ -532,8 +530,7 @@ class Study(BaseStudy):
         return df
 
     @experimental("1.4.0")
-    def stop(self):
-        # type: () -> None
+    def stop(self) -> None:
         """Stop the optimization after the current trial finishes."""
 
         if self._optimize_lock.acquire(False):
