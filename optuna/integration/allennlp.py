@@ -29,21 +29,21 @@ def _save_best_config(config_file: str, study: optuna.Study) -> Dict:
     return allennlp.common.params.infer_and_cast(config)
 
 
-def save_best_config(config_file: str, dest_file: str, study: optuna.Study) -> None:
+def save_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
     """Save resulting jsonnet replacing masks with best params in the experiment.
 
     Args:
-        config_file:
+        input_config_file:
             Config file used in AllenNLPExecutor.
-        dest_file:
+        output_config_file:
             Path to output a optimized jsonnet config file.
         study:
             A optimized study instance.
             ``optimized`` means it requires ``study.best_trial_id`` is not empty.
 
     """
-    best_config = _save_best_config(config_file, study)
-    with open(dest_file, "w") as f:
+    best_config = _save_best_config(input_config_file, study)
+    with open(output_config_file, "w") as f:
         json.dump(best_config, f, indent=4)
 
 
