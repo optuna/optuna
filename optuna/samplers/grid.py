@@ -95,10 +95,6 @@ class GridSampler(BaseSampler):
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
 
-    def reseed_rng(self) -> None:
-
-        pass
-
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
