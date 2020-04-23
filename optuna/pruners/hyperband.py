@@ -147,8 +147,10 @@ class HyperbandPruner(BasePruner):
                 )
                 warnings.warn(message, DeprecationWarning)
                 _logger.warning(message)
-                min_early_stopping_rate = min_early_stopping_rate_low + \
-                                          self._calc_min_early_stopping_rate(i, min_resource)
+                min_early_stopping_rate = (
+                    min_early_stopping_rate_low
+                    + self._calc_min_early_stopping_rate(i, min_resource)
+                )
 
             _logger.debug(
                 "{}th bracket has minimum early stopping rate of {}".format(
@@ -177,7 +179,9 @@ class HyperbandPruner(BasePruner):
         See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         The minimum early stopping rate for :math:`i` th bracket is :math:`i + s`.
         """
-        return math.floor(math.log2(min_resource) / math.log2(self._reduction_factor)) + pruner_index
+        return (
+            math.floor(math.log2(min_resource) / math.log2(self._reduction_factor)) + pruner_index
+        )
 
     # TODO(crcrpar): Improve resource computation/allocation algorithm.
     def _calc_bracket_resource_budget(self, pruner_index: int, n_brackets: int) -> int:
