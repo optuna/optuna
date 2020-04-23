@@ -161,6 +161,7 @@ class HyperbandPruner(BasePruner):
     # TODO(crcrpar): Improve resource computation/allocation algorithm.
     def _calc_bracket_resource_budget(self, pruner_index, n_brackets):
         # type: (int, int) -> int
+
         n = self._reduction_factor ** (n_brackets - 1)
         return n + (n / 2) * (n_brackets - 1 - pruner_index)
 
