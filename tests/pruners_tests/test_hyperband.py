@@ -6,8 +6,8 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
-MAX_RESOURCE = 16
 MIN_RESOURCE = 1
+MAX_RESOURCE = 16
 REDUCTION_FACTOR = 2
 N_BRACKETS = 4
 EARLY_STOPPING_RATE_LOW = 0

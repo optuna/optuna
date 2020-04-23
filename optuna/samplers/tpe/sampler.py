@@ -328,14 +328,17 @@ class TPESampler(base.BaseSampler):
         active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
         trunc_low = (low - mus[active]) / sigmas[active]
         trunc_high = (high - mus[active]) / sigmas[active]
-        samples = truncnorm.rvs(
-            trunc_low,
-            trunc_high,
-            size=size,
-            loc=mus[active],
-            scale=sigmas[active],
-            random_state=self._rng,
-        )
+        while True:
+            samples = truncnorm.rvs(
+                trunc_low,
+                trunc_high,
+                size=size,
+                loc=mus[active],
+                scale=sigmas[active],
+                random_state=self._rng,
+            )
+            if (samples < high).all():
+                break
 
         if q is None:
             return samples
@@ -371,8 +374,6 @@ class TPESampler(base.BaseSampler):
             raise ValueError(
                 "The 'sigmas' should be 2-dimension. " "But sigmas.shape = {}".format(sigmas.shape)
             )
-        _samples = samples
-        samples = _samples.flatten()
 
         p_accept = np.sum(
             weights
@@ -383,24 +384,24 @@ class TPESampler(base.BaseSampler):
         )
 
         if q is None:
-            distance = samples[:, None] - mus
+            distance = samples[..., None] - mus
             mahalanobis = (distance / np.maximum(sigmas, EPS)) ** 2
             Z = np.sqrt(2 * np.pi) * sigmas
             coefficient = weights / Z / p_accept
-            return_val = TPESampler._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
+            return TPESampler._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
         else:
-            probabilities = np.zeros(samples.shape, dtype=float)
             cdf_func = TPESampler._normal_cdf
-            for w, mu, sigma in zip(weights, mus, sigmas):
-                upper_bound = np.minimum(samples + q / 2.0, high)
-                lower_bound = np.maximum(samples - q / 2.0, low)
-                inc_amt = w * cdf_func(upper_bound, mu, sigma)
-                inc_amt -= w * cdf_func(lower_bound, mu, sigma)
-                probabilities += inc_amt
-            return_val = np.log(probabilities + EPS) - np.log(p_accept + EPS)
-
-        return_val.shape = _samples.shape
-        return return_val
+            upper_bound = np.minimum(samples + q / 2.0, high)
+            lower_bound = np.maximum(samples - q / 2.0, low)
+            probabilities = np.sum(
+                weights[..., None]
+                * (
+                    cdf_func(upper_bound[None], mus[..., None], sigmas[..., None])
+                    - cdf_func(lower_bound[None], mus[..., None], sigmas[..., None])
+                ),
+                axis=0,
+            )
+            return np.log(probabilities + EPS) - np.log(p_accept + EPS)
 
     def _sample_from_categorical_dist(self, probabilities, size):
         # type: (np.ndarray, Tuple[int]) -> np.ndarray
