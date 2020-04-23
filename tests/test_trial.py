@@ -527,6 +527,26 @@ def test_relative_parameters(storage_init_func):
         trial4._suggest("z", distribution4)
 
 
+def test_predefined_search_space() -> None:
+
+    sampler = DeterministicRelativeSampler(
+        relative_search_space={}, relative_params={"x": 5.5},
+    )  # type: ignore
+    study = create_study(
+        sampler=sampler, predefined_search_space={"x": UniformDistribution(low=5, high=6)}
+    )
+
+    def objective(trial: "Trial") -> float:
+        return trial.suggest_float("x", 5, 6)
+
+    # infer_relative_search_space is skipped when given predefined_search_space
+    with patch.object(sampler, "infer_relative_search_space") as mock_object:
+        study.optimize(objective, n_trials=5)
+        assert mock_object.call_count == 0
+
+    assert study.best_trial.params == {"x": 5.5}
+
+
 @parametrize_storage
 def test_datetime_start(storage_init_func):
     # type: (Callable[[], storages.BaseStorage]) -> None
