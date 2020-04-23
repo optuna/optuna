@@ -80,6 +80,12 @@ class HyperbandPruner(BasePruner):
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
             Defaults to :math:`4`.
         min_early_stopping_rate_low:
+
+            .. deprecated:: 1.4.0
+                This argument will be removed from :class:~optuna.pruners.HyperbandPruner. The
+                 minimum value of the minimum early-stopping rate are automatically determined
+                 based on ``min_resource`` and ``reduction_factor``.
+
             A parameter for specifying the minimum early-stopping rate.
             This parameter is related to a parameter that is referred to as :math:`r` and used in
             `Asynchronous SuccessiveHalving paper <http://arxiv.org/abs/1810.05934>`_.
@@ -92,7 +98,7 @@ class HyperbandPruner(BasePruner):
         max_resource: int = 80,
         reduction_factor: int = 3,
         n_brackets: Optional[int] = None,
-        min_early_stopping_rate_low: int = 0,
+        min_early_stopping_rate_low: Optional[int] = None,
     ) -> None:
 
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
@@ -129,7 +135,20 @@ class HyperbandPruner(BasePruner):
             self._bracket_resource_budgets.append(bracket_resource_budget)
 
             # N.B. (crcrpar): `min_early_stopping_rate` has the information of `bracket_index`.
-            min_early_stopping_rate = min_early_stopping_rate_low + i
+            if min_early_stopping_rate_low is None:
+                min_early_stopping_rate = self._calc_min_early_stopping_rate(i, min_resource)
+            else:
+                message = (
+                    "The argument of `min_early_stopping_rate_low` is deprecated. "
+                    "The minimum value of the minimum early-stopping rate is automatically "
+                    "determined by `min_resource` and `reduction_factor` as "
+                    "`min_early_stopping_rate_low = floor(log(min_resource) / "
+                    "log(reduction_factor))`. Please specify `min_resource` appropriately."
+                )
+                warnings.warn(message, DeprecationWarning)
+                _logger.warning(message)
+                min_early_stopping_rate = min_early_stopping_rate_low + \
+                                          self._calc_min_early_stopping_rate(i, min_resource)
 
             _logger.debug(
                 "{}th bracket has minimum early stopping rate of {}".format(
@@ -138,7 +157,7 @@ class HyperbandPruner(BasePruner):
             )
 
             pruner = SuccessiveHalvingPruner(
-                min_resource=min_resource,
+                min_resource=1,
                 reduction_factor=reduction_factor,
                 min_early_stopping_rate=min_early_stopping_rate,
             )
@@ -149,6 +168,16 @@ class HyperbandPruner(BasePruner):
         _logger.debug("{}th bracket is selected".format(i))
         bracket_study = self._create_bracket_study(study, i)
         return self._pruners[i].prune(bracket_study, trial)
+
+    def _calc_min_early_stopping_rate(self, pruner_index: int, min_resource: int) -> int:
+        """Computes the minimum early-stopping rate
+
+        The minimum early-stopping rate is not appeared in
+        `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
+        See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
+        The minimum early stopping rate for :math:`i` th bracket is :math:`i + s`.
+        """
+        return math.floor(math.log2(min_resource) / math.log2(self._reduction_factor)) + pruner_index
 
     # TODO(crcrpar): Improve resource computation/allocation algorithm.
     def _calc_bracket_resource_budget(self, pruner_index: int, n_brackets: int) -> int:
