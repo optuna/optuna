@@ -224,10 +224,16 @@ class _HyperbandSampler(BaseSampler):
         self._sampler = sampler
         self._pruner = hyperband_pruner
 
+    @property
+    def sampler(self) -> BaseSampler:
+        return self._sampler
+
+    @sampler.setter
+    def sampler(self, new_sampler: BaseSampler) -> None:
+        self._sampler = new_sampler
+
     def infer_relative_search_space(
-            self,
-            study: "optuna.study.Study",
-            trial: FrozenTrial
+        self, study: "optuna.study.Study", trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         study = self._pruner._create_bracket_study(
             study, self._pruner._get_bracket_id(study, trial)
@@ -235,10 +241,10 @@ class _HyperbandSampler(BaseSampler):
         return self._sampler.infer_relative_search_space(study, trial)
 
     def sample_relative(
-            self,
-            study: "optuna.study.Study",
-            trial: FrozenTrial,
-            search_space: Dict[str, BaseDistribution]
+        self,
+        study: "optuna.study.Study",
+        trial: FrozenTrial,
+        search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         study = self._pruner._create_bracket_study(
             study, self._pruner._get_bracket_id(study, trial)
@@ -246,11 +252,11 @@ class _HyperbandSampler(BaseSampler):
         return self._sampler.sample_relative(study, trial, search_space)
 
     def sample_independent(
-            self,
-            study: "optuna.study.Study",
-            trial: FrozenTrial,
-            param_name: str,
-            param_distribution: BaseDistribution
+        self,
+        study: "optuna.study.Study",
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: BaseDistribution,
     ) -> Any:
         study = self._pruner._create_bracket_study(
             study, self._pruner._get_bracket_id(study, trial)

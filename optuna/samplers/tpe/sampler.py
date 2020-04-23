@@ -5,7 +5,6 @@ import scipy.special
 from scipy.stats import truncnorm
 
 from optuna import distributions
-from optuna.pruners import HyperbandPruner
 from optuna.samplers import base
 from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import _ParzenEstimator
