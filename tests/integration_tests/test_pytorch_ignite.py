@@ -43,3 +43,32 @@ def test_pytorch_ignite_pruning_handler():
         with patch.object(evaluator, "state", metrics={"accuracy": 2}):
             handler(evaluator)
             assert study.trials[0].intermediate_values == {5: 2}
+
+
+def test_pytorch_ignite_pruning_interval():
+    # type: () -> None
+
+    def update(engine, batch):
+        # type: (Engine, Iterable) -> None
+
+        pass
+
+    trainer = Engine(update)
+    evaluator = Engine(update)
+
+    # The pruner is activated.
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    trial = create_running_trial(study, 1.0)
+
+    handler = optuna.integration.PyTorchIgnitePruningHandler(
+        trial, "accuracy", trainer, interval=2
+    )
+
+    with patch.object(trainer, "state", epoch=1):
+        with patch.object(evaluator, "state", metrics={"accuracy": 1}):
+            handler(evaluator)
+
+    with patch.object(trainer, "state", epoch=2):
+        with patch.object(evaluator, "state", metrics={"accuracy": 1}):
+            with pytest.raises(optuna.exceptions.TrialPruned):
+                handler(evaluator)
