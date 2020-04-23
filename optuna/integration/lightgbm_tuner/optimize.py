@@ -701,8 +701,9 @@ class LightGBMTuner(BaseTuner):
         _n_trials = n_trials - len(complete_trials)
         if _n_trials > 0:
             try:
-                study.optimize(objective, n_trials=_n_trials, catch=(),
-                               callbacks=self.optuna_callbacks)
+                study.optimize(
+                    objective, n_trials=_n_trials, catch=(), callbacks=self.optuna_callbacks
+                )
             except ValueError:
                 # ValueError is raised by GridSampler when all combinations were examined.
                 # TODO(toshihikoyanase): Remove this try-except after Study.stop is implemented.
