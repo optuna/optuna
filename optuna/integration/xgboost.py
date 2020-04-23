@@ -43,20 +43,30 @@ class XGBoostPruningCallback(object):
             ``validation-merror``. Please refer to ``eval_metric`` in
             `XGBoost reference <https://xgboost.readthedocs.io/en/latest/parameter.html>`_
             for further details.
+        interval:
+            Check if trial should be pruned every n-th epoch. By default `interval=1` and
+            pruning is performed after every epoch. Increase `interval` to run several
+            epochs faster before applying pruning.
     """
 
-    def __init__(self, trial, observation_key):
-        # type: (optuna.trial.Trial, str) -> None
+    def __init__(self, trial, observation_key, interval=1):
+        # type: (optuna.trial.Trial, str, int) -> None
 
         _check_xgboost_availability()
 
         self._trial = trial
         self._observation_key = observation_key
+        self._interval = interval
 
     def __call__(self, env):
         # type: (xgb.core.CallbackEnv) -> None
 
         context = _get_callback_context(env)
+
+        # Iterations start with 1.
+        if (env.iteration + 1) % self._interval != 0:
+            return
+
         evaluation_result_list = env.evaluation_result_list
         if context == "cv":
             # Remove a third element: the stddev of the metric across the cross-valdation folds.

@@ -89,3 +89,37 @@ def test_xgboost_pruning_callback_cv():
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+
+
+@pytest.mark.parametrize("num_boost_round", [1, 2])
+def test_xgboost_pruning_callback_interval(num_boost_round):
+    # type: (int) -> None
+
+    def objective(trial):
+        # type: (optuna.trial.Trial) -> float
+
+        dtrain = xgb.DMatrix(np.ones((2, 1)), label=[1.0, 1.0])
+        params = {
+            "silent": 1,
+            "objective": "binary:logistic",
+        }
+
+        pruning_callback = optuna.integration.XGBoostPruningCallback(
+            trial, "test-error", interval=2
+        )
+        xgb.cv(
+            params, dtrain, num_boost_round=num_boost_round, callbacks=[pruning_callback], nfold=2
+        )
+        return 1.0
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    study.optimize(objective, n_trials=1)
+    if num_boost_round == 2:
+        assert study.trials[0].state == optuna.trial.TrialState.PRUNED
+    else:
+        assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
+
+    study = optuna.create_study(pruner=DeterministicPruner(False))
+    study.optimize(objective, n_trials=1)
+    assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
+    assert study.trials[0].value == 1.0
