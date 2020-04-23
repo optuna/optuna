@@ -320,6 +320,13 @@ class LightGBMTuner(BaseTuner):
             model in the trial. ``lgbm_params`` is a JSON-serialized dictionary of LightGBM
             parameters used in the trial.
 
+        optuna_callbacks:
+            List of Optuna callback functions that are invoked at the end of each trial.
+            Each function must accept two parameters with the following types in this order:
+            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+            Please note that this is not a ``callbacks`` argument of `lightgbm.train()
+            <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html#lightgbm-train>`_
+
         model_dir:
             A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
             saved. Please set shared directory (e.g., directories on NFS) if you want to access
@@ -351,6 +358,7 @@ class LightGBMTuner(BaseTuner):
         best_params=None,  # type: Optional[Dict[str, Any]]
         tuning_history=None,  # type: Optional[List[Dict[str, Any]]]
         study=None,  # type: Optional[Study]
+        optuna_callbacks=None,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
         model_dir=None,  # type: Optional[str]
         verbosity=1,  # type: Optional[int]
     ):
@@ -431,6 +439,8 @@ class LightGBMTuner(BaseTuner):
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
+
+        self.optuna_callbacks = optuna_callbacks
 
     @property
     def best_score(self) -> float:
@@ -691,7 +701,8 @@ class LightGBMTuner(BaseTuner):
         _n_trials = n_trials - len(complete_trials)
         if _n_trials > 0:
             try:
-                study.optimize(objective, n_trials=_n_trials, catch=())
+                study.optimize(objective, n_trials=_n_trials, catch=(),
+                               callbacks=self.optuna_callbacks)
             except ValueError:
                 # ValueError is raised by GridSampler when all combinations were examined.
                 # TODO(toshihikoyanase): Remove this try-except after Study.stop is implemented.
