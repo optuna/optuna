@@ -1,5 +1,8 @@
+import json
+import os.path
 import tempfile
 
+import _jsonnet
 import pytest
 
 import optuna
@@ -114,16 +117,18 @@ def test_save_best_config() -> None:
 
         def objective(trial: optuna.Trial) -> float:
             trial.suggest_uniform("DROPOUT", dropout, dropout)
-            executor = optuna.integration.AllenNLPExecutor(trial, config_file, tmp_dir)
+            executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, tmp_dir)
             return executor.run()
 
-        config_file = "tests/integration_tests/allennlp_tests/example.jsonnet"
         dropout = 0.5
+        input_config_file = "tests/integration_tests/allennlp_tests/example.jsonnet"
+        output_config_file = os.path.join(tmp_dir, "result.jsonnet")
 
         study = optuna.create_study(direction="maximize")
         study.optimize(objective, n_trials=1)
 
-        best_config = optuna.integration.allennlp._save_best_config(config_file, study)
+        optuna.integration.allennlp.save_best_config(input_config_file, output_config_file, study)
+        best_config = json.loads(_jsonnet.evaluate_file(output_config_file))
         model_config = best_config["model"]
         target_config = model_config["text_field_embedder"]["token_embedders"]["token_characters"]
         assert target_config["dropout"] == dropout
