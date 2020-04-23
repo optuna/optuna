@@ -289,8 +289,7 @@ class OptunaObjective(BaseTuner):
 class LightGBMTuner(BaseTuner):
     """Hyperparameter-tuning with Optuna for LightGBM.
 
-    Arguments and keyword arguments for `lightgbm.train()
-    <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
+    Arguments and keyword arguments for `lightgbm.train()`_ can be passed.
     The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTuner` has are listed
     below:
 
@@ -323,8 +322,7 @@ class LightGBMTuner(BaseTuner):
             List of Optuna callback functions that are invoked at the end of each trial.
             Each function must accept two parameters with the following types in this order:
             :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
-            Please note that this is not a ``callbacks`` argument of `lightgbm.train()
-            <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html#lightgbm-train>`_
+            Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_
 
         model_dir:
             A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
@@ -333,6 +331,8 @@ class LightGBMTuner(BaseTuner):
             Otherwise, it may raise :obj:`ValueError`. If the directory does not exist, it will be
             created. The filenames of the boosters will be ``{model_dir}/{trial_number}.pkl``
             (e.g., ``./boosters/0.pkl``).
+
+    .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     """
 
     def __init__(
