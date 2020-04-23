@@ -21,7 +21,7 @@ except ImportError as e:
     TrackerCallback = object
 
 
-def _save_best_config(config_file: str, study: optuna.Study) -> Dict:
+def _dump_best_config(config_file: str, study: optuna.Study) -> Dict:
     best_params = study.best_params
     for key, value in best_params.items():
         best_params[key] = str(value)
@@ -42,7 +42,7 @@ def save_best_config(input_config_file: str, output_config_file: str, study: opt
             ``optimized`` means it requires ``study.best_trial_id`` is not empty.
 
     """
-    best_config = _save_best_config(input_config_file, study)
+    best_config = _dump_best_config(input_config_file, study)
     with open(output_config_file, "w") as f:
         json.dump(best_config, f, indent=4)
 
