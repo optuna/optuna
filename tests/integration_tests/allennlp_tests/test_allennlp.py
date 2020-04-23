@@ -112,7 +112,7 @@ def test_allennlp_executor_with_include_package_arr() -> None:
         assert isinstance(result, float)
 
 
-def test_save_best_config() -> None:
+def test_dump_best_config() -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
 
         def objective(trial: optuna.Trial) -> float:
@@ -127,7 +127,7 @@ def test_save_best_config() -> None:
         study = optuna.create_study(direction="maximize")
         study.optimize(objective, n_trials=1)
 
-        optuna.integration.allennlp.save_best_config(input_config_file, output_config_file, study)
+        optuna.integration.allennlp.dump_best_config(input_config_file, output_config_file, study)
         best_config = json.loads(_jsonnet.evaluate_file(output_config_file))
         model_config = best_config["model"]
         target_config = model_config["text_field_embedder"]["token_embedders"]["token_characters"]

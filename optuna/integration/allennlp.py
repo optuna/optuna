@@ -29,7 +29,7 @@ def _dump_best_config(config_file: str, study: optuna.Study) -> Dict:
     return allennlp.common.params.infer_and_cast(config)
 
 
-def save_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
+def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
     """Save resulting jsonnet replacing masks with best params in the experiment.
 
     Args:
