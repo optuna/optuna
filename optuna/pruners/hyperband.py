@@ -1,12 +1,13 @@
 import math
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 import warnings
 
-import numpy
-
+import optuna
 from optuna._experimental import experimental
-from optuna import distributions
+from optuna.distributions import BaseDistribution
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
@@ -219,23 +220,38 @@ class HyperbandPruner(BasePruner):
 
 
 class _HyperbandSampler(BaseSampler):
-    def __init__(self, sampler, hyperband_pruner):
+    def __init__(self, sampler: BaseSampler, hyperband_pruner: HyperbandPruner) -> None:
         self._sampler = sampler
         self._pruner = hyperband_pruner
 
-    def infer_relative_search_space(self, study, trial):
+    def infer_relative_search_space(
+            self,
+            study: "optuna.study.Study",
+            trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
         study = self._pruner._create_bracket_study(
             study, self._pruner._get_bracket_id(study, trial)
         )
         return self._sampler.infer_relative_search_space(study, trial)
 
-    def sample_relative(self, study, trial, search_space):
+    def sample_relative(
+            self,
+            study: "optuna.study.Study",
+            trial: FrozenTrial,
+            search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
         study = self._pruner._create_bracket_study(
             study, self._pruner._get_bracket_id(study, trial)
         )
         return self._sampler.sample_relative(study, trial, search_space)
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
+    def sample_independent(
+            self,
+            study: "optuna.study.Study",
+            trial: FrozenTrial,
+            param_name: str,
+            param_distribution: BaseDistribution
+    ) -> Any:
         study = self._pruner._create_bracket_study(
             study, self._pruner._get_bracket_id(study, trial)
         )

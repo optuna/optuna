@@ -45,6 +45,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.samplers import BaseSampler  # NOQA
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
@@ -201,6 +202,8 @@ class Study(BaseStudy):
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
+        if isinstance(self.pruner, pruners.HyperbandPruner):
+            self.sampler = pruners.hyperband._HyperbandSampler(self.sampler, self.pruner)
 
         self._optimize_lock = threading.Lock()
 
