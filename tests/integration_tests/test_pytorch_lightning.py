@@ -1,3 +1,5 @@
+import pytest
+
 import pytorch_lightning as pl
 import torch
 from torch import nn
@@ -103,16 +105,19 @@ def test_pytorch_lightning_pruning_callback():
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
-def test_pytorch_lightning_pruning_callback_with_interval():
-    # type: () -> None
+
+@pytest.mark.parametrize("max_epochs", [6, 7])
+def test_pytorch_lightning_pruning_callback_with_interval(max_epochs):
+    # type: (int) -> None
 
     def objective(trial):
         # type: (optuna.trial.Trial) -> float
 
         trainer = pl.Trainer(
             early_stop_callback=PyTorchLightningPruningCallback(
-                                        trial, monitor="accuracy", interval=7),
-            max_epochs=7,
+                trial, monitor="accuracy", interval=7
+            ),
+            max_epochs=max_epochs,
         )
         trainer.checkpoint_callback = None  # Disable unrelated checkpoint callbacks.
 
@@ -123,24 +128,8 @@ def test_pytorch_lightning_pruning_callback_with_interval():
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     study.optimize(objective, n_trials=1)
-    assert study.trials[0].state == optuna.trial.TrialState.PRUNED
-
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
-
-        trainer = pl.Trainer(
-            early_stop_callback=PyTorchLightningPruningCallback(
-                                        trial, monitor="accuracy", interval=7),
-            max_epochs=6,
-        )
-        trainer.checkpoint_callback = None  # Disable unrelated checkpoint callbacks.
-
-        model = Model()
-        trainer.fit(model)
-
-        return 1.0
-
-    study = optuna.create_study(pruner=DeterministicPruner(True))
-    study.optimize(objective, n_trials=1)
-    assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
-    assert study.trials[0].value == 1.0
+    if max_epochs == 7:
+        assert study.trials[0].state == optuna.trial.TrialState.PRUNED
+    else:
+        assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
+        assert study.trials[0].value == 1.0

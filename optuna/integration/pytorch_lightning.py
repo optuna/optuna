@@ -34,10 +34,14 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             ``pytorch_lightning.LightningModule.training_step`` or
             ``pytorch_lightning.LightningModule.validation_end`` and the names thus depend on
             how this dictionary is formatted.
+        interval:
+            Check if trial should be pruned every n-th epoch. By default `interval=1` and
+            pruning is performed after every epoch. Increase `interval` to run several
+            epochs faster before applying pruning.
     """
 
     def __init__(self, trial, monitor, interval=1):
-        # type: (optuna.trial.Trial, str) -> None
+        # type: (optuna.trial.Trial, str, int) -> None
 
         super(PyTorchLightningPruningCallback, self).__init__()
 
