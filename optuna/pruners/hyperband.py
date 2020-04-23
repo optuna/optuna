@@ -128,7 +128,7 @@ class HyperbandPruner(BasePruner):
         _logger.debug("Hyperband has {} brackets".format(self._n_brackets))
 
         for i in range(self._n_brackets):
-            bracket_resource_budget = self._calc_bracket_resource_budget(i, self._n_brackets)
+            bracket_resource_budget = self._calc_trial_allocation_budget(i)
             self._resource_budget += bracket_resource_budget
             self._bracket_resource_budgets.append(bracket_resource_budget)
 
@@ -154,10 +154,15 @@ class HyperbandPruner(BasePruner):
         bracket_study = self._create_bracket_study(study, i)
         return self._pruners[i].prune(bracket_study, trial)
 
-    # TODO(crcrpar): Improve resource computation/allocation algorithm.
-    def _calc_bracket_resource_budget(self, pruner_index: int, n_brackets: int) -> int:
-        n = self._reduction_factor ** (n_brackets - 1)
-        return n + (n / 2) * (n_brackets - 1 - pruner_index)
+    def _calc_trial_allocation_budget(self, pruner_index: int) -> int:
+        """Computes the trial allocated budget for a bracket of ``pruner_index``.
+
+        In the `original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`, the
+        number of trials per one bracket is referred as ``n`` as calculated in Algorithm 1.
+        """
+
+        s = self._n_brackets - 1 - pruner_index
+        return self._n_brackets * (self._reduction_factor ** s) / (s + 1)
 
     def _get_bracket_id(self, study: "optuna.study.Study", trial: FrozenTrial) -> int:
         """Computes the index of bracket for a trial of ``trial_number``.
