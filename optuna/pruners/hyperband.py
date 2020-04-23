@@ -12,7 +12,6 @@ from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
 from optuna.samplers.base import BaseSampler
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 
 _logger = logging.get_logger(__name__)
@@ -50,7 +49,7 @@ class HyperbandPruner(BasePruner):
         for :class:`~optuna.samplers.TPESampler` to adapt its search space.
 
         Thus, for example, if ``HyperbandPruner`` has :math:`4` pruners in it,
-        at least :math:`4 \\times 10` pruners are consumed for startup.
+        at least :math:`4 \\times 10` trials are consumed for startup.
 
     .. note::
         Hyperband has several :class:`~optuna.pruners.SuccessiveHalvingPruner`. Each
@@ -99,6 +98,7 @@ class HyperbandPruner(BasePruner):
         n_brackets: Optional[int] = None,
         min_early_stopping_rate_low: int = 0,
     ) -> None:
+
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
         self._reduction_factor = reduction_factor
         self._resource_budget = 0
@@ -148,7 +148,7 @@ class HyperbandPruner(BasePruner):
             )
             self._pruners.append(pruner)
 
-    def prune(self, study: Study, trial: FrozenTrial) -> bool:
+    def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
         i = self._get_bracket_id(study, trial)
         _logger.debug("{}th bracket is selected".format(i))
         bracket_study = self._create_bracket_study(study, i)
@@ -159,7 +159,7 @@ class HyperbandPruner(BasePruner):
         n = self._reduction_factor ** (n_brackets - 1)
         return n + (n / 2) * (n_brackets - 1 - pruner_index)
 
-    def _get_bracket_id(self, study: Study, trial: FrozenTrial) -> int:
+    def _get_bracket_id(self, study: "optuna.study.Study", trial: FrozenTrial) -> int:
         """Computes the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
@@ -174,13 +174,14 @@ class HyperbandPruner(BasePruner):
 
         assert False, "This line should be unreachable."
 
-    def _create_bracket_study(self, study: Study, bracket_index: int) -> Study:
-
+    def _create_bracket_study(
+        self, study: "optuna.study.Study", bracket_index: int
+    ) -> "optuna.study.Study":
         # This class is assumed to be passed to
         # `SuccessiveHalvingPruner.prune` in which `get_trials`,
         # `direction`, and `storage` are used.
         # But for safety, prohibit the other attributes explicitly.
-        class _BracketStudy(Study):
+        class _BracketStudy(optuna.study.Study):
 
             _VALID_ATTRS = (
                 "get_trials",
@@ -193,7 +194,7 @@ class HyperbandPruner(BasePruner):
                 "sampler",
             )
 
-            def __init__(self, study: Study, bracket_id: int) -> None:
+            def __init__(self, study: "optuna.study.Study", bracket_id: int) -> None:
                 super().__init__(
                     study_name=study.study_name,
                     storage=study._storage,
