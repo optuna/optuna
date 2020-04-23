@@ -25,7 +25,6 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
     from typing import Union  # NOQA
 
-    from optuna.distributions import BaseDistribution  # NOQA
     from optuna.trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
@@ -441,6 +440,7 @@ class LightGBMTuner(BaseTuner):
             raise ValueError("`valid_sets` is required.")
 
         self.optuna_callbacks = optuna_callbacks
+        self.start_time = None  # type: Optional[float]
 
     @property
     def best_score(self) -> float:
@@ -549,7 +549,7 @@ class LightGBMTuner(BaseTuner):
 
     def run(self) -> None:
         """Perform the hyperparameter-tuning with given parameters."""
-        # Surpress log messages.
+        # Suppress log messages.
         if self.auto_options["verbosity"] == 0:
             optuna.logging.disable_default_handler()
             self.lgbm_params["verbose"] = -1
