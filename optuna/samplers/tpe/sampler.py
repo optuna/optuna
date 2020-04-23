@@ -114,7 +114,7 @@ class TPESampler(base.BaseSampler):
         weights:
             A function that takes the number of finished trials and returns a weight for them.
             See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
-            Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`
+            Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
             for more details.
         seed:
             Seed for random number generator.
