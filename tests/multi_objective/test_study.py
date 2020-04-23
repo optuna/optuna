@@ -73,6 +73,11 @@ def test_pareto_front() -> None:
 
     study.optimize(lambda t: [1, 3], n_trials=1)
     assert {tuple(t.values) for t in study.get_pareto_front_trials()} == {(1, 3)}
+    assert len(study.get_pareto_front_trials()) == 1
+
+    study.optimize(lambda t: [1, 3], n_trials=1)  # The trial result is the same as the above one.
+    assert {tuple(t.values) for t in study.get_pareto_front_trials()} == {(1, 3)}
+    assert len(study.get_pareto_front_trials()) == 2
 
 
 def test_study_user_attrs() -> None:
