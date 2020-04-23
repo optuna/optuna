@@ -200,7 +200,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     ) -> "multi_objective.trial.FrozenMultiObjectiveTrial":
         candidate0 = self._rng.choice(population)
         candidate1 = self._rng.choice(population)
-        # TODO: Consider crowding distance.
+        # TODO(ohta): Consider crowding distance.
         if candidate0._dominates(candidate1, study.directions):
             return candidate0
         else:
