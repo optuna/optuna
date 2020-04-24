@@ -95,7 +95,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     ) -> Tuple[int, List["multi_objective.trial.FrozenMultiObjectiveTrial"]]:
         trials = study.get_trials(deepcopy=False)
         parent_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
-        parent_generation = None
+        parent_generation = -1
         for generation in itertools.count():
             population = [
                 t
@@ -122,7 +122,6 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
                     parent_population.extend(population[:n])
                     break
 
-        assert parent_generation is not None
         return parent_generation, parent_population
 
     def _fast_non_dominated_sort(

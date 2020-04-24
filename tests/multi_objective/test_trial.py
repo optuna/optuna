@@ -84,7 +84,10 @@ def test_user_attrs() -> None:
 
 
 def test_system_attrs() -> None:
-    study = optuna.multi_objective.create_study(["maximize", "minimize", "maximize"])
+    study = optuna.multi_objective.create_study(
+        ["maximize", "minimize", "maximize"],
+        sampler=optuna.multi_objective.samplers.RandomMultiObjectiveSampler(),
+    )
 
     def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
         trial.set_system_attr("foo", "bar")
