@@ -151,7 +151,7 @@ class HyperbandPruner(BasePruner):
         return self._pruners[i].prune(bracket_study, trial)
 
     def _calculate_trial_allocation_budget(self, pruner_index: int) -> int:
-        """Computes the trial allocated budget for a bracket of ``pruner_index``.
+        """Compute the trial allocated budget for a bracket of ``pruner_index``.
 
         In the `original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`, the
         number of trials per one bracket is referred as ``n`` in Algorithm 1. Since we do not know
