@@ -6,8 +6,9 @@ import sys
 __all__ = ["deprecated"]
 
 
-class deprecated:
-    """Decorator to mark a function or class as deprecated.
+class deprecated(object):
+    """
+    Decorator to mark a function or class as deprecated.
 
     Issue a warning when the function is called/the class is instantiated and
     adds a warning to the docstring.
