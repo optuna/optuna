@@ -1,9 +1,12 @@
-from __future__ import absolute_import
+import sys
 
 import optuna
 
+from optuna.integration import lightgbm_tuner as tuner
+
 try:
     import lightgbm as lgb  # NOQA
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -11,18 +14,35 @@ except ImportError as e:
     _available = False
 
 
+# Attach lightgbm API.
+if _available:
+    # To pass tests/integration_tests/lightgbm_tuner_tests/test_optimize.py.
+    from lightgbm import Dataset  # NOQA
+    from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
+
+    _names_from_tuners = ["train", "LGBMModel", "LGBMClassifier", "LGBMRegressor"]
+
+    # API from lightgbm.
+    for api_name in lgb.__dict__["__all__"]:
+        if api_name in _names_from_tuners:
+            continue
+        setattr(sys.modules[__name__], api_name, lgb.__dict__[api_name])
+
+    # API from lightgbm_tuner.
+    for api_name in _names_from_tuners:
+        setattr(sys.modules[__name__], api_name, tuner.__dict__[api_name])
+else:
+    # To create docstring of train.
+    setattr(sys.modules[__name__], "train", tuner.__dict__["train"])
+
+
 class LightGBMPruningCallback(object):
     """Callback for LightGBM to prune unpromising trials.
 
-    Example:
-
-        Add a pruning callback which observes validation scores to training of a LightGBM model.
-
-        .. code::
-
-                param = {'objective': 'binary', 'metric': 'binary_error'}
-                pruning_callback = LightGBMPruningCallback(trial, 'binary_error')
-                gbm = lgb.train(param, dtrain, valid_sets=[dtest], callbacks=[pruning_callback])
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/lightgbm_integration.py>`__
+    if you want to add a pruning callback which observes AUC
+    of a LightGBM model.
 
     Args:
         trial:
@@ -45,14 +65,14 @@ class LightGBMPruningCallback(object):
             instead of train method.
     """
 
-    def __init__(self, trial, metric, valid_name='valid_0'):
+    def __init__(self, trial, metric, valid_name="valid_0"):
         # type: (optuna.trial.Trial, str, str) -> None
 
         _check_lightgbm_availability()
 
-        self.trial = trial
-        self.valid_name = valid_name
-        self.metric = metric
+        self._trial = trial
+        self._valid_name = valid_name
+        self._metric = metric
 
     def __call__(self, env):
         # type: (lgb.callback.CallbackEnv) -> None
@@ -63,41 +83,49 @@ class LightGBMPruningCallback(object):
         # Note that `5` is not the number of folds but the length of sequence.
         is_cv = len(env.evaluation_result_list) > 0 and len(env.evaluation_result_list[0]) == 5
         if is_cv:
-            target_valid_name = 'cv_agg'
+            target_valid_name = "cv_agg"
         else:
-            target_valid_name = self.valid_name
+            target_valid_name = self._valid_name
 
         for evaluation_result in env.evaluation_result_list:
             valid_name, metric, current_score, is_higher_better = evaluation_result[:4]
-            if valid_name != target_valid_name or metric != self.metric:
+            if valid_name != target_valid_name or metric != self._metric:
                 continue
 
             if is_higher_better:
-                if self.trial.storage.get_study_direction(self.trial.study_id) != \
-                        optuna.structs.StudyDirection.MAXIMIZE:
+                if (
+                    self._trial.storage.get_study_direction(self._trial.study._study_id)
+                    != optuna.study.StudyDirection.MAXIMIZE
+                ):
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
                         "terms of study directions. Please specify a metric to be minimized for "
-                        "LightGBMPruningCallback.")
+                        "LightGBMPruningCallback."
+                    )
             else:
-                if self.trial.storage.get_study_direction(self.trial.study_id) != \
-                        optuna.structs.StudyDirection.MINIMIZE:
+                if (
+                    self._trial.storage.get_study_direction(self._trial.study._study_id)
+                    != optuna.study.StudyDirection.MINIMIZE
+                ):
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
                         "terms of study directions. Please specify a metric to be maximized for "
-                        "LightGBMPruningCallback.")
+                        "LightGBMPruningCallback."
+                    )
 
-            self.trial.report(current_score, step=env.iteration)
-            if self.trial.should_prune():
+            self._trial.report(current_score, step=env.iteration)
+            if self._trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(env.iteration)
-                raise optuna.structs.TrialPruned(message)
+                raise optuna.exceptions.TrialPruned(message)
 
             return None
 
         raise ValueError(
             'The entry associated with the validation name "{}" and the metric name "{}" '
-            'is not found in the evaluation result list {}.'.format(
-                target_valid_name, self.metric, str(env.evaluation_result_list)))
+            "is not found in the evaluation result list {}.".format(
+                target_valid_name, self._metric, str(env.evaluation_result_list)
+            )
+        )
 
 
 def _check_lightgbm_availability():
@@ -105,7 +133,8 @@ def _check_lightgbm_availability():
 
     if not _available:
         raise ImportError(
-            'LightGBM is not available. Please install LightGBM to use this feature. '
-            'LightGBM can be installed by executing `$ pip install lightgbm`. '
-            'For further information, please refer to the installation guide of LightGBM. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "LightGBM is not available. Please install LightGBM to use this feature. "
+            "LightGBM can be installed by executing `$ pip install lightgbm`. "
+            "For further information, please refer to the installation guide of LightGBM. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )

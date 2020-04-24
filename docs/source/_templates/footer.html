@@ -1,0 +1,5 @@
+{% extends "!footer.html" %}
+{% block extrafooter %}
+    {% trans path=pathto('privacy') %}<a href="{{ path }}">Privacy Policy</a>{{ privacy }}.{% endtrans %}
+    {{ super() }}
+{% endblock %}

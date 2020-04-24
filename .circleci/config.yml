@@ -6,30 +6,12 @@ workflows:
     jobs:
       - checks
       - document
+      - doctest
+      - tests-python38
       - tests-python37
       - tests-python36
       - tests-python35
-      - tests-python27
       - codecov
-  daily-build:
-    triggers:
-      - schedule:
-          cron: "0 15 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - checks
-      - document
-      - tests-python37-full
-      - tests-python36-full
-      - tests-python35-full
-      - tests-python27-full
-      - examples-python37
-      - examples-python36
-      - examples-python35
-      - examples-python27
 
 jobs:
 
@@ -41,18 +23,29 @@ jobs:
     steps:
       - checkout
 
+      - run: &checkout-merge-master
+          name: checkout-merge-master
+          command: |
+            set -ex
+            if [[ -n "${CIRCLE_PR_NUMBER}" ]]; then
+                FETCH_REFS="${FETCH_REFS} +refs/pull/${CIRCLE_PR_NUMBER}/merge:pr/${CIRCLE_PR_NUMBER}/merge"
+                git fetch -u origin ${FETCH_REFS}
+                git checkout "pr/${CIRCLE_PR_NUMBER}/merge"
+            fi
+
       - run:
           name: install
           command: |
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            pip install .[checking]
+            pip install -U pip
+            pip install --progress-bar off .[checking]
 
       - run:
-          name: autopep8
+          name: black
           command: |
             . venv/bin/activate
-            autopep8 . -r --diff --exit-code
+            black . --line-length 99 --check --exclude="docs"
 
       - run:
           name: flake8
@@ -64,8 +57,7 @@ jobs:
           name: mypy
           command: |
             . venv/bin/activate
-            mypy --disallow-untyped-defs --ignore-missing-imports .
-            mypy --py2 --disallow-untyped-defs --ignore-missing-imports .
+            mypy .
 
   document:
     docker:
@@ -73,12 +65,15 @@ jobs:
     steps:
       - checkout
 
+      - run: *checkout-merge-master
+
       - run:
           name: install
           command: |
             python -m venv venv || virtualenv venv --python=python3
             . venv/bin/activate
-            pip install .[document]
+            pip install -U pip
+            pip install --progress-bar off .[document]
 
       - run:
           name: build
@@ -87,25 +82,71 @@ jobs:
             cd docs
             make html
 
+      - store_artifacts:
+          path: ./docs/build
+
+  doctest:
+    docker:
+      - image: readthedocs/build:latest
+    steps:
+      - checkout
+
+      - run: *checkout-merge-master
+
+      - run:
+          name: install
+          command: |
+            python -m venv venv || virtualenv venv --python=python3
+            . venv/bin/activate
+            pip install -U pip
+            pip install --progress-bar off .[doctest,document]
+
+      - run:
+          name: build
+          command: |
+            . venv/bin/activate
+            cd docs
+            make doctest
 
   # Unit tests
 
   tests-python37:
     docker:
       - image: circleci/python:3.7
+      - image: circleci/redis:5.0.7
     steps:
       - checkout
+
+      - run: *checkout-merge-master
 
       - run: &install
           name: install
           command: |
             sudo apt-get update
             sudo apt-get -y install openmpi-bin libopenmpi-dev
+
+            # Install swig which is required by pyrfr which is required by fanova.
+            wget http://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz
+            tar -zxvf swig-3.0.12.tar.gz
+            pushd swig-3.0.12
+            ./configure
+            make
+            sudo make install
+            popd
+            swig -version
+
             python -m venv venv || virtualenv venv
             . venv/bin/activate
-            pip install -U setuptools
+            pip install -U pip
+            pip install --progress-bar off -U setuptools
             python setup.py sdist
-            pip install $(ls dist/*.tar.gz)[testing]
+
+            # Install minimal dependencies and confirm that `import optuna` is successful.
+            pip install --progress-bar off $(ls dist/*.tar.gz)
+            python -c 'import optuna'
+
+            # Install all dependencies needed for testing.
+            pip install --progress-bar off $(ls dist/*.tar.gz)[testing] -f https://download.pytorch.org/whl/torch_stable.html
 
       - run: &tests
           name: tests
@@ -123,75 +164,66 @@ jobs:
           environment:
             OMP_NUM_THREADS: 1
 
+  tests-python38:
+    docker:
+      - image: circleci/python:3.8
+      - image: circleci/redis:5.0.7
+    steps:
+      - checkout
+
+      - run: *checkout-merge-master
+
+      - run: *install
+
+      - run:
+          <<: *tests
+          command: |
+            . venv/bin/activate
+            pytest tests --ignore tests/integration_tests/test_fastai.py \
+                --ignore tests/integration_tests/test_keras.py \
+                --ignore tests/integration_tests/test_pytorch_lightning.py \
+                --ignore tests/integration_tests/test_tensorflow.py \
+                --ignore tests/integration_tests/test_tfkeras.py \
+                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
+
+      - run: *tests-mn
+
   tests-python36:
     docker:
       - image: circleci/python:3.6
+      - image: circleci/redis:5.0.7
     steps:
-      - checkout
-      - run: *install
-      - run: *tests
-      - run: *tests-mn
+      [checkout, run: *checkout-merge-master, run: *install, run: *tests, run: *tests-mn]
 
   tests-python35:
     docker:
       - image: circleci/python:3.5
-    steps:
-      [checkout, run: *install, run: *tests, run: *tests-mn]
-
-  tests-python27:
-    docker:
-      - image: circleci/python:2.7
-    steps:
-      [checkout, run: *install, run: *tests, run: *tests-mn]
-
-  tests-python37-full:
-    docker:
-      - image: circleci/python:3.7
+      - image: circleci/redis:5.0.7
     steps:
       - checkout
 
+      - run: *checkout-merge-master
+
       - run: *install
-      - run: &tests-full
-          name: tests-full
+
+      - run:
+          <<: *tests
           command: |
             . venv/bin/activate
-            pytest tests
-          environment:
-            OMP_NUM_THREADS: 1
-            INCLUDE_SLOW_TESTS: 1
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py \
+                --ignore tests/integration_tests/test_fastai.py \
+                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
 
-      - run: &tests-mn-full
-          name: tests-mn-full
-          command: |
-            . venv/bin/activate
-            mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
-          environment:
-            OMP_NUM_THREADS: 1
-            INCLUDE_SLOW_TESTS: 1
-
-  tests-python36-full:
-    docker:
-      - image: circleci/python:3.6
-    steps:
-      [checkout, run: *install, run: *tests-full, run: *tests-mn-full]
-
-  tests-python35-full:
-    docker:
-      - image: circleci/python:3.5
-    steps:
-      [checkout, run: *install, run: *tests-full, run: *tests-mn-full]
-
-  tests-python27-full:
-    docker:
-      - image: circleci/python:2.7
-    steps:
-      [checkout, run: *install, run: *tests-full, run: *tests-mn-full]
+      - run: *tests-mn
 
   codecov:
     docker:
       - image: circleci/python:3.7
+      - image: circleci/redis:5.0.7
     steps:
       - checkout
+
+      - run: *checkout-merge-master
 
       - run: *install
 
@@ -199,7 +231,7 @@ jobs:
           name: install-codecov
           command: |
             . venv/bin/activate
-            pip install .[codecov]
+            pip install --progress-bar off .[codecov]
 
       - run:
           name: codecov
@@ -209,70 +241,3 @@ jobs:
             codecov
           environment:
             OMP_NUM_THREADS: 1
-
-  # Examples
-
-  examples-python37:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
-
-      - run: *install
-
-      - run: &install-examples
-          name: install
-          command: |
-            . venv/bin/activate
-            pip install chainer keras catboost lightgbm scikit-learn tensorflow mxnet xgboost torch torchvision dask-ml dask[dataframe]
-
-      - run: &examples
-          name: examples
-          command: |
-            . venv/bin/activate
-            for file in `find examples -name '*.py' -not -name 'chainermn_*.py' -not -name 'dask_ml*.py'`
-            do
-               python $file
-            done
-          environment:
-            OMP_NUM_THREADS: 1
-
-      - run: &examples-mn
-          name: examples-mn
-          command: |
-            . venv/bin/activate
-            STORAGE_URL=sqlite:///example.db
-            for file in `find examples -name 'chainermn_*.py'`
-            do
-                STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
-                mpirun -n 2 -- python $file $STUDY_NAME $STORAGE_URL
-            done
-          environment:
-            OMP_NUM_THREADS: 1
-
-      - run: &examples-dask-ml
-          name: examples-dask-ml
-          command: |
-            . venv/bin/activate
-            for file in `find examples -name 'dask_ml*.py'`
-            do
-               python $file
-            done
-
-  examples-python36:
-    docker:
-      - image: circleci/python:3.6
-    steps:
-      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn, run: *examples-dask-ml]
-
-  examples-python35:
-    docker:
-      - image: circleci/python:3.5
-    steps:
-      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn, run: *examples-dask-ml]
-
-  examples-python27:
-    docker:
-      - image: circleci/python:2.7
-    steps:
-      [checkout, run: *install, run: *install-examples, run: *examples, run: *examples-mn]

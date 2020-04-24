@@ -41,7 +41,7 @@ To turn on the pruning feature, you need to call :func:`~optuna.trial.Trial.repo
 
             # Handle pruning based on the intermediate value.
             if trial.should_prune():
-                raise optuna.structs.TrialPruned()
+                raise optuna.exceptions.TrialPruned()
 
         return 1.0 - clf.score(test_x, test_y)
 
@@ -80,10 +80,14 @@ To implement pruning mechanism in much simpler forms, Optuna provides integratio
 - Chainer: :class:`optuna.integration.ChainerPruningExtension`
 - Keras: :class:`optuna.integration.KerasPruningCallback`
 - TensorFlow :class:`optuna.integration.TensorFlowPruningHook`
+- tf.keras :class:`optuna.integration.TFKerasPruningCallback`
 - MXNet :class:`optuna.integration.MXNetPruningCallback`
+- PyTorch Ignite :class:`optuna.integration.PyTorchIgnitePruningHandler`
+- PyTorch Lightning :class:`optuna.integration.PyTorchLightningPruningCallback`
+- FastAI :class:`optuna.integration.FastAIPruningCallback`
 
 For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
-(See also `example <https://github.com/pfnet/optuna/blob/master/examples/pruning/xgboost_integration.py>`_ for the entire script.)
+(See also `example <https://github.com/optuna/optuna/blob/master/examples/pruning/xgboost_integration.py>`_ for the entire script.)
 
 .. code-block:: python
 

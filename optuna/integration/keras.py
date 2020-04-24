@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import optuna
 from optuna import type_checking
 
@@ -8,6 +6,7 @@ if type_checking.TYPE_CHECKING:
 
 try:
     from keras.callbacks import Callback
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -20,13 +19,9 @@ except ImportError as e:
 class KerasPruningCallback(Callback):
     """Keras callback to prune unpromising trials.
 
-    Example:
-
-        Add a pruning callback which observes validation losses.
-
-        .. code::
-
-            model.fit(X, y, callbacks=KerasPruningCallback(trial, 'val_loss'))
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/keras_integration.py>`__
+    if you want to add a pruning callback which observes validation accuracy.
 
     Args:
         trial:
@@ -45,20 +40,20 @@ class KerasPruningCallback(Callback):
 
         _check_keras_availability()
 
-        self.trial = trial
-        self.monitor = monitor
+        self._trial = trial
+        self._monitor = monitor
 
     def on_epoch_end(self, epoch, logs=None):
         # type: (int, Dict[str, float]) -> None
 
         logs = logs or {}
-        current_score = logs.get(self.monitor)
+        current_score = logs.get(self._monitor)
         if current_score is None:
             return
-        self.trial.report(current_score, step=epoch)
-        if self.trial.should_prune():
+        self._trial.report(float(current_score), step=epoch)
+        if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
-            raise optuna.structs.TrialPruned(message)
+            raise optuna.exceptions.TrialPruned(message)
 
 
 def _check_keras_availability():
@@ -66,7 +61,8 @@ def _check_keras_availability():
 
     if not _available:
         raise ImportError(
-            'Keras is not available. Please install Keras to use this feature. '
-            'Keras can be installed by executing `$ pip install keras tensorflow`. '
-            'For further information, please refer to the installation guide of Keras. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "Keras is not available. Please install Keras to use this feature. "
+            "Keras can be installed by executing `$ pip install keras tensorflow`. "
+            "For further information, please refer to the installation guide of Keras. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )

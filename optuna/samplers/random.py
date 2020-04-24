@@ -10,8 +10,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
-    from optuna.study import InTrialStudy  # NOQA
+    from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
 
 class RandomSampler(BaseSampler):
@@ -22,10 +22,17 @@ class RandomSampler(BaseSampler):
 
     Example:
 
-        .. code::
+        .. testcode::
 
-            >>> study = optuna.create_study(sampler=RandomSampler())
-            >>> study.optimize(objective, direction='minimize')
+            import optuna
+            from optuna.samplers import RandomSampler
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -5, 5)
+                return x**2
+
+            study = optuna.create_study(sampler=RandomSampler())
+            study.optimize(objective, n_trials=10)
 
         Args:
             seed: Seed for random number generator.
@@ -34,45 +41,60 @@ class RandomSampler(BaseSampler):
     def __init__(self, seed=None):
         # type: (Optional[int]) -> None
 
-        self.seed = seed
-        self.rng = numpy.random.RandomState(seed)
+        self._rng = numpy.random.RandomState(seed)
+
+    def __getstate__(self):
+        # type: () -> Dict[Any, Any]
+
+        state = self.__dict__.copy()
+        del state["_rng"]
+        return state
+
+    def __setstate__(self, state):
+        # type: (Dict[Any, Any]) -> None
+
+        self.__dict__.update(state)
+        self._rng = numpy.random.RandomState(None)
 
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 
         return {}
 
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
 
         return {}
 
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, distributions.BaseDistribution) -> Any
-        """Please consult the documentation for :func:`BaseSampler.sample_independent`."""
+        # type: (Study, FrozenTrial, str, distributions.BaseDistribution) -> Any
 
         if isinstance(param_distribution, distributions.UniformDistribution):
-            return self.rng.uniform(param_distribution.low, param_distribution.high)
+            return self._rng.uniform(param_distribution.low, param_distribution.high)
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
             log_low = numpy.log(param_distribution.low)
             log_high = numpy.log(param_distribution.high)
-            return float(numpy.exp(self.rng.uniform(log_low, log_high)))
+            return float(numpy.exp(self._rng.uniform(log_low, log_high)))
         elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
             q = param_distribution.q
             r = param_distribution.high - param_distribution.low
             # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
             low = 0 - 0.5 * q
             high = r + 0.5 * q
-            s = self.rng.uniform(low, high)
+            s = self._rng.uniform(low, high)
             v = numpy.round(s / q) * q + param_distribution.low
             # v may slightly exceed range due to round-off errors.
             return float(min(max(v, param_distribution.low), param_distribution.high))
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
+            # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
+            r = (param_distribution.high - param_distribution.low) / param_distribution.step
             # numpy.random.randint includes low but excludes high.
-            return self.rng.randint(param_distribution.low, param_distribution.high + 1)
+            s = self._rng.randint(0, r + 1)
+            v = s * param_distribution.step + param_distribution.low
+            return int(v)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             choices = param_distribution.choices
-            index = self.rng.randint(0, len(choices))
+            index = self._rng.randint(0, len(choices))
             return choices[index]
         else:
             raise NotImplementedError

@@ -1,12 +1,15 @@
-<div align="center"><img src="https://raw.githubusercontent.com/pfnet/optuna/master/docs/image/optuna-logo.png" width="800"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/optuna/optuna/master/docs/image/optuna-logo.png" width="800"/></div>
 
 # Optuna: A hyperparameter optimization framework
 
+[![Python](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/pfnet/optuna)
-[![CircleCI](https://circleci.com/gh/pfnet/optuna.svg?style=svg)](https://circleci.com/gh/pfnet/optuna)
+[![conda](https://img.shields.io/conda/vn/conda-forge/optuna.svg)](https://anaconda.org/conda-forge/optuna)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/optuna/optuna)
+[![CircleCI](https://circleci.com/gh/optuna/optuna.svg?style=svg)](https://circleci.com/gh/optuna/optuna)
 [![Read the Docs](https://readthedocs.org/projects/optuna/badge/?version=stable)](https://optuna.readthedocs.io/en/stable/)
-[![Codecov](https://codecov.io/gh/pfnet/optuna/branch/master/graph/badge.svg)](https://codecov.io/gh/pfnet/optuna/branch/master)
+[![Codecov](https://codecov.io/gh/optuna/optuna/branch/master/graph/badge.svg)](https://codecov.io/gh/optuna/optuna/branch/master)
+[![Gitter chat](https://badges.gitter.im/optuna/gitter.svg)](https://gitter.im/optuna/optuna)
 
 [**Website**](https://optuna.org/)
 | [**Docs**](https://optuna.readthedocs.io/en/stable/)
@@ -40,6 +43,7 @@ hyperparameter values (e.g., `classifier` and `svm_c`) through multiple *trials*
 `n_trials=100`). Optuna is a framework designed for the automation and the acceleration of the
 optimization *studies*.
 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/optuna/optuna/blob/master/examples/quickstart.ipynb)
 
 ```python
 import ...
@@ -71,15 +75,48 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 ```
 
 
+## Integrations
+
+[Integrations modules](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html), which allow pruning, or early stopping, of unpromising trials are available for the following libraries:
+
+* [XGBoost](./examples/pruning/xgboost_integration.py)
+* [LightGBM](./examples/pruning/lightgbm_integration.py)
+* [Chainer](./examples/pruning/chainer_integration.py)
+* [Keras](./examples/pruning/keras_integration.py)
+* [TensorFlow](./examples/pruning/tensorflow_estimator_integration.py)
+* [tf.keras](./examples/pruning/tfkeras_integration.py)
+* [MXNet](./examples/pruning/mxnet_integration.py)
+* [PyTorch Ignite](./examples/pytorch_ignite_simple.py)
+* [PyTorch Lightning](./examples/pytorch_lightning_simple.py)
+* [FastAI](./examples/fastai_simple.py)
+* [AllenNLP](./examples/allennlp)
+
 ## Installation
 
-To install Optuna, use `pip` as follows:
+Optuna is available at [the Python Package Index](https://pypi.org/project/optuna/) and on [Anaconda Cloud](https://anaconda.org/conda-forge/optuna).
 
-```
+```bash
+# PyPI
 $ pip install optuna
 ```
 
-Optuna supports Python 2.7 and Python 3.5 or newer.
+```bash
+# Anaconda Cloud
+$ conda install -c conda-forge optuna
+```
+
+Optuna supports Python 3.5 or newer.
+
+
+## Communication
+
+- [GitHub Issues] for bug reports, feature requests and questions.
+- [Gitter] for interactive chat with developers.
+- [Stack Overflow] for questions.
+
+[GitHub issues]: https://github.com/optuna/optuna/issues
+[Gitter]: https://gitter.im/optuna/optuna
+[Stack Overflow]: https://stackoverflow.com/questions/tagged/optuna
 
 
 ## Contribution

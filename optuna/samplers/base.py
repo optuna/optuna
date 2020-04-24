@@ -1,5 +1,4 @@
 import abc
-import six
 
 from optuna import type_checking
 
@@ -8,12 +7,11 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
-    from optuna.study import InTrialStudy  # NOQA
+    from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseSampler(object):
+class BaseSampler(object, metaclass=abc.ABCMeta):
     """Base class for samplers.
 
     Optuna combines two types of sampling strategies, which are called *relative sampling* and
@@ -47,7 +45,7 @@ class BaseSampler(object):
 
     @abc.abstractmethod
     def infer_relative_search_space(self, study, trial):
-        # type: (InTrialStudy, FrozenTrial) -> Dict[str, BaseDistribution]
+        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
         """Infer the search space that will be used by relative sampling in the target trial.
 
         This method is called right before :func:`~optuna.samplers.BaseSampler.sample_relative`
@@ -73,7 +71,7 @@ class BaseSampler(object):
 
     @abc.abstractmethod
     def sample_relative(self, study, trial, search_space):
-        # type: (InTrialStudy, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
         """Sample parameters in a given search space.
 
         This method is called once at the beginning of each trial, i.e., right before the
@@ -98,7 +96,7 @@ class BaseSampler(object):
 
     @abc.abstractmethod
     def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (InTrialStudy, FrozenTrial, str, BaseDistribution) -> Any
+        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
         """Sample a parameter for a given distribution.
 
         This method is called only for the parameters not contained in the search space returned

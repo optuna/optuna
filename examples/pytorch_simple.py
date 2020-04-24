@@ -19,10 +19,8 @@ We have the following two ways to execute this example:
 
 """
 
-from __future__ import division
-from __future__ import print_function
-
 import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -31,7 +29,9 @@ import torch.utils.data
 from torchvision import datasets
 from torchvision import transforms
 
-DEVICE = torch.device('cpu')
+import optuna
+
+DEVICE = torch.device("cpu")
 BATCHSIZE = 128
 CLASSES = 10
 DIR = os.getcwd()
@@ -41,55 +41,38 @@ N_TRAIN_EXAMPLES = BATCHSIZE * 30
 N_TEST_EXAMPLES = BATCHSIZE * 10
 
 
-class Net(nn.Module):
-    # Constructor for trial network.
-    def __init__(self, trial):
-        super(Net, self).__init__()
-        self.layers = []
-        self.dropouts = []
+def define_model(trial):
+    # We optimize the number of layers, hidden untis and dropout ratio in each layer.
+    n_layers = trial.suggest_int("n_layers", 1, 3)
+    layers = []
 
-        # We optimize the number of layers, hidden untis in each layer and drouputs.
-        n_layers = trial.suggest_int('n_layers', 1, 3)
-        dropout = trial.suggest_uniform('dropout', 0.2, 0.5)
-        input_dim = 28 * 28
-        for i in range(n_layers):
-            output_dim = int(trial.suggest_loguniform('n_units_l{}'.format(i), 4, 128))
-            self.layers.append(nn.Linear(input_dim, output_dim))
-            self.dropouts.append(nn.Dropout(dropout))
-            input_dim = output_dim
+    in_features = 28 * 28
+    for i in range(n_layers):
+        out_features = trial.suggest_int("n_units_l{}".format(i), 4, 128)
+        layers.append(nn.Linear(in_features, out_features))
+        layers.append(nn.ReLU())
+        p = trial.suggest_uniform("dropout_l{}".format(i), 0.2, 0.5)
+        layers.append(nn.Dropout(p))
 
-        self.layers.append(nn.Linear(input_dim, CLASSES))
+        in_features = out_features
+    layers.append(nn.Linear(in_features, CLASSES))
+    layers.append(nn.LogSoftmax(dim=1))
 
-        # Assigning the layers as class variables (PyTorch requirement).
-        for idx, layer in enumerate(self.layers):
-            setattr(self, 'fc{}'.format(idx), layer)
-
-        # Assigning the dropouts as class variables (PyTorch requirement).
-        for idx, dropout in enumerate(self.dropouts):
-            setattr(self, 'drop{}'.format(idx), dropout)
-
-    # Forward pass computation function.
-    def forward(self, data):
-        data = data.view(-1, 28 * 28)
-        for layer, dropout in zip(self.layers, self.dropouts):
-            data = F.relu(layer(data))
-            data = dropout(data)
-        return F.log_softmax(self.layers[-1](data), dim=1)
+    return nn.Sequential(*layers)
 
 
 def get_mnist():
     # Load MNIST dataset.
-    train_loader = torch.utils.data.DataLoader(datasets.MNIST(DIR,
-                                                              train=True,
-                                                              download=True,
-                                                              transform=transforms.ToTensor()),
-                                               batch_size=BATCHSIZE,
-                                               shuffle=True)
-    test_loader = torch.utils.data.DataLoader(datasets.MNIST(DIR,
-                                                             train=False,
-                                                             transform=transforms.ToTensor()),
-                                              batch_size=BATCHSIZE,
-                                              shuffle=True)
+    train_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(DIR, train=True, download=True, transform=transforms.ToTensor()),
+        batch_size=BATCHSIZE,
+        shuffle=True,
+    )
+    test_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(DIR, train=False, transform=transforms.ToTensor()),
+        batch_size=BATCHSIZE,
+        shuffle=True,
+    )
 
     return train_loader, test_loader
 
@@ -97,11 +80,11 @@ def get_mnist():
 def objective(trial):
 
     # Generate the model.
-    model = Net(trial).to(DEVICE)
+    model = define_model(trial).to(DEVICE)
 
     # Generate the optimizers.
-    optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'RMSprop', 'SGD'])
-    lr = trial.suggest_uniform('lr', 1e-5, 1e-1)
+    optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
+    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
     optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
 
     # Get the MNIST dataset.
@@ -115,7 +98,7 @@ def objective(trial):
             if batch_idx * BATCHSIZE >= N_TRAIN_EXAMPLES:
                 break
 
-            data, target = data.to(DEVICE), target.to(DEVICE)
+            data, target = data.view(-1, 28 * 28).to(DEVICE), target.to(DEVICE)
 
             # Zeroing out gradient buffers.
             optimizer.zero_grad()
@@ -136,7 +119,7 @@ def objective(trial):
             # Limiting testing data.
             if batch_idx * BATCHSIZE >= N_TEST_EXAMPLES:
                 break
-            data, target = data.to(DEVICE), target.to(DEVICE)
+            data, target = data.view(-1, 28 * 28).to(DEVICE), target.to(DEVICE)
             output = model(data)
             pred = output.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability.
             correct += pred.eq(target.view_as(pred)).sum().item()
@@ -145,18 +128,17 @@ def objective(trial):
     return accuracy
 
 
-if __name__ == '__main__':
-    import optuna
-    study = optuna.create_study(direction='maximize')
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100)
 
-    print('Number of finished trials: ', len(study.trials))
+    print("Number of finished trials: ", len(study.trials))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: ', trial.value)
+    print("  Value: ", trial.value)
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

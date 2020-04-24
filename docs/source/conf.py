@@ -25,8 +25,8 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 # -- Project information -----------------------------------------------------
 
 project = 'Optuna'
-copyright = '2018, Preferred Networks, Inc.'
-author = 'Preferred Networks, Inc.'
+copyright = '2018, Optuna Contributors.'
+author = 'Optuna Contributors.'
 
 # The short X.Y version
 version = __version__
@@ -44,10 +44,13 @@ release = __version__
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
+    'cliff.sphinxext',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -91,10 +94,13 @@ if not on_rtd:
 #
 # html_theme_options = {}
 
+html_favicon = '../image/favicon.ico'
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ['_static', 'plotly_figures']
+html_css_files = ["css/custom.css"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -135,7 +141,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Optuna.tex', 'Optuna Documentation', 'Preferred Networks, Inc.', 'manual'),
+    (master_doc, 'Optuna.tex', 'Optuna Documentation', 'Optuna Contributors.', 'manual'),
 ]
 
 # -- Options for manual page output ------------------------------------------
@@ -153,5 +159,7 @@ texinfo_documents = [
     (master_doc, 'Optuna', 'Optuna Documentation', author, 'Optuna',
      'One line description of project.', 'Miscellaneous'),
 ]
+
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 # -- Extension configuration -------------------------------------------------

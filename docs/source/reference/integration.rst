@@ -13,13 +13,28 @@ Integration
     :members:
     :exclude-members: infer_relative_search_space, sample_relative, sample_independent
 
+.. autoclass:: FastAIPruningCallback
+    :members:
+    :exclude-members: on_epoch_end
+
+.. autoclass:: PyTorchIgnitePruningHandler
+    :members:
+
 .. autoclass:: KerasPruningCallback
     :members:
 
 .. autoclass:: LightGBMPruningCallback
     :members:
 
+.. autofunction:: optuna.integration.lightgbm.train
+
+.. autoclass:: MLflowCallback
+    :members:
+
 .. autoclass:: MXNetPruningCallback
+    :members:
+
+.. autoclass:: PyTorchLightningPruningCallback
     :members:
 
 .. autoclass:: SkoptSampler
@@ -29,5 +44,14 @@ Integration
 .. autoclass:: TensorFlowPruningHook
     :members:
 
+.. autoclass:: TFKerasPruningCallback
+    :members:
+
 .. autoclass:: XGBoostPruningCallback
+    :members:
+
+.. autoclass:: OptunaSearchCV
+    :members:
+
+.. autoclass:: AllenNLPExecutor
     :members:

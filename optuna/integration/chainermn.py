@@ -1,16 +1,15 @@
-from __future__ import absolute_import
-
 import gc
+import warnings
 
+from optuna.exceptions import TrialPruned
 from optuna.logging import get_logger
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.structs import TrialPruned
 from optuna.trial import BaseTrial
 from optuna import type_checking
-import warnings
 
 if type_checking.TYPE_CHECKING:
+    from datetime import datetime  # NOQA
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
@@ -18,17 +17,16 @@ if type_checking.TYPE_CHECKING:
     from typing import Sequence  # NOQA
     from typing import Tuple  # NOQA
     from typing import Type  # NOQA
-    from typing import TypeVar  # NOQA
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
 
-    T = TypeVar('T', float, str)
-
 try:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -69,16 +67,10 @@ class ChainerMNStudy(object):
         :class:`~optuna.study.Study`. Please refer to :class:`optuna.study.Study` for further
         details.
 
-    Example:
-
-        Optimize an objective function that trains neural network written with ChainerMN.
-
-        .. code::
-
-            comm = chainermn.create_communicator('naive')
-            study = optuna.load_study(study_name, storage_url)
-            chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
-            chainermn_study.optimize(objective, n_trials=25)
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/chainermn_integration.py>`__
+    if you want to optimize an objective function that trains neural network
+    written with ChainerMN.
 
     Args:
         study:
@@ -89,36 +81,38 @@ class ChainerMNStudy(object):
     """
 
     def __init__(
-            self,
-            study,  # type: Study
-            comm,  # type: CommunicatorBase
+        self,
+        study,  # type: Study
+        comm,  # type: CommunicatorBase
     ):
         # type: (...) -> None
 
         _check_chainermn_availability()
 
         if isinstance(study._storage, InMemoryStorage):
-            raise ValueError('ChainerMN integration is not available with InMemoryStorage.')
+            raise ValueError("ChainerMN integration is not available with InMemoryStorage.")
 
         if isinstance(study._storage, RDBStorage):
-            if study._storage.engine.dialect.name == 'sqlite':
+            if study._storage.engine.dialect.name == "sqlite":
                 logger = get_logger(__name__)
-                logger.warning('SQLite may cause synchronization problems when used with '
-                               'ChainerMN integration. Please use other DBs like PostgreSQL.')
+                logger.warning(
+                    "SQLite may cause synchronization problems when used with "
+                    "ChainerMN integration. Please use other DBs like PostgreSQL."
+                )
 
         study_names = comm.mpi_comm.allgather(study.study_name)
         if len(set(study_names)) != 1:
-            raise ValueError('Please make sure an identical study name is shared among workers.')
+            raise ValueError("Please make sure an identical study name is shared among workers.")
 
-        super(ChainerMNStudy, self).__setattr__('delegate', study)
-        super(ChainerMNStudy, self).__setattr__('comm', comm)
+        super(ChainerMNStudy, self).__setattr__("delegate", study)
+        super(ChainerMNStudy, self).__setattr__("comm", comm)
 
     def optimize(
-            self,
-            func,  # type: Callable[[ChainerMNTrial, CommunicatorBase], float]
-            n_trials=None,  # type: Optional[int]
-            timeout=None,  # type: Optional[float]
-            catch=(Exception, ),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        self,
+        func,  # type: Callable[[ChainerMNTrial, CommunicatorBase], float]
+        n_trials=None,  # type: Optional[int]
+        timeout=None,  # type: Optional[float]
+        catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -152,7 +146,7 @@ class ChainerMNStudy(object):
                     # The following line mitigates memory problems that can be occurred in some
                     # environments (e.g., services that use computing containers such as CircleCI).
                     # Please refer to the following PR for further details:
-                    # https://github.com/pfnet/optuna/pull/325.
+                    # https://github.com/optuna/optuna/pull/325.
                     gc.collect()
 
     def __getattr__(self, attr_name):
@@ -189,6 +183,17 @@ class ChainerMNTrial(BaseTrial):
         self.delegate = trial
         self.comm = comm
 
+    def suggest_float(self, name, low, high, *, log=False, step=None):
+        # type: (str, float, float, bool, Optional[float]) -> float
+
+        def func():
+            # type: () -> float
+
+            assert self.delegate is not None
+            return self.delegate.suggest_float(name, low, high, log=log, step=step)
+
+        return self._call_with_mpi(func)
+
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
@@ -222,30 +227,30 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def suggest_int(self, name, low, high):
-        # type: (str, int, int) -> int
+    def suggest_int(self, name, low, high, step=1):
+        # type: (str, int, int, int) -> int
 
         def func():
             # type: () -> int
 
             assert self.delegate is not None
-            return self.delegate.suggest_int(name, low, high)
+            return self.delegate.suggest_int(name, low, high, step)
 
         return self._call_with_mpi(func)
 
     def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[T]) -> T
+        # type: (str, Sequence[CategoricalChoiceType]) -> Any
 
         def func():
-            # type: () -> T
+            # type: () -> CategoricalChoiceType
 
             assert self.delegate is not None
             return self.delegate.suggest_categorical(name, choices)
 
         return self._call_with_mpi(func)
 
-    def report(self, value, step=None):
-        # type: (float, Optional[int]) -> None
+    def report(self, value, step):
+        # type: (float, int) -> None
 
         if self.comm.rank == 0:
             assert self.delegate is not None
@@ -296,8 +301,10 @@ class ChainerMNTrial(BaseTrial):
         # type: () -> int
 
         warnings.warn(
-            'The use of `ChainerMNTrial.trial_id` is deprecated. '
-            'Please use `ChainerMNTrial.number` instead.', DeprecationWarning)
+            "The use of `ChainerMNTrial.trial_id` is deprecated. "
+            "Please use `ChainerMNTrial.number` instead.",
+            DeprecationWarning,
+        )
         return self._trial_id
 
     @property
@@ -360,6 +367,18 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
+    @property
+    def datetime_start(self):
+        # type: () -> Optional[datetime]
+
+        def func():
+            # type: () -> Optional[datetime]
+
+            assert self.delegate is not None
+            return self.delegate.datetime_start
+
+        return self._call_with_mpi(func)
+
     def _call_with_mpi(self, func):
         # type: (Callable) -> Any
 
@@ -383,7 +402,8 @@ def _check_chainermn_availability():
 
     if not _available:
         raise ImportError(
-            'ChainerMN is not available. Please install ChainerMN to use this feature. '
-            'ChainerMN can be installed by executing `$ pip install chainermn`. '
-            'For further information, please refer to the installation guide of ChainerMN. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "ChainerMN is not available. Please install ChainerMN to use this feature. "
+            "ChainerMN can be installed by executing `$ pip install chainermn`. "
+            "For further information, please refer to the installation guide of ChainerMN. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )

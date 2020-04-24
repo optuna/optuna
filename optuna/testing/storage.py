@@ -4,7 +4,7 @@ import optuna
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from type_checking import TracebackType  # NOQA
+    from types import TracebackType  # NOQA
     from typing import Any  # NOQA
     from typing import IO  # NOQA
     from typing import Optional  # NOQA
@@ -17,33 +17,28 @@ class StorageSupplier(object):
 
     _common_tempfile = None  # type: Optional[IO[Any]]
 
-    def __init__(self, storage_specifier, enable_cache=True):
-        # type: (str, bool) -> None
+    def __init__(self, storage_specifier):
+        # type: (str) -> None
 
         self.storage_specifier = storage_specifier
         self.tempfile = None  # type: Optional[IO[Any]]
-        self.enable_cache = enable_cache
 
     def __enter__(self):
         # type: () -> Optional[optuna.storages.BaseStorage]
 
-        if self.storage_specifier == 'none':
+        if self.storage_specifier == "none":
             return None
-        elif self.storage_specifier == 'new':
+        elif self.storage_specifier == "new":
             self.tempfile = tempfile.NamedTemporaryFile()
-            url = 'sqlite:///{}'.format(self.tempfile.name)
+            url = "sqlite:///{}".format(self.tempfile.name)
             return optuna.storages.RDBStorage(
-                url,
-                engine_kwargs={'connect_args': {'timeout': SQLITE3_TIMEOUT}},
-                enable_cache=self.enable_cache,
+                url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
             )
-        elif self.storage_specifier == 'common':
+        elif self.storage_specifier == "common":
             assert self._common_tempfile is not None
-            url = 'sqlite:///{}'.format(self._common_tempfile.name)
+            url = "sqlite:///{}".format(self._common_tempfile.name)
             return optuna.storages.RDBStorage(
-                url,
-                engine_kwargs={'connect_args': {'timeout': SQLITE3_TIMEOUT}},
-                enable_cache=self.enable_cache,
+                url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
             )
         else:
             assert False
