@@ -87,7 +87,7 @@ class HyperbandPruner(BasePruner):
                  based on ``min_resource`` and ``reduction_factor``.
 
             A parameter for specifying the minimum early-stopping rate.
-            This parameter is related to a parameter that is referred to as :math:`r` and used in
+            This parameter is related to a parameter that is referred to as :math:`s` and used in
             `Asynchronous SuccessiveHalving paper <http://arxiv.org/abs/1810.05934>`_.
             The minimum early stopping rate for :math:`i` th bracket is :math:`i + s`.
     """
@@ -177,7 +177,8 @@ class HyperbandPruner(BasePruner):
         The minimum early-stopping rate is not appeared in
         `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
         See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
-        The minimum early stopping rate for :math:`i` th bracket is :math:`i + s`.
+        The minimum early stopping rate for :math:`i` th bracket is
+        :math:`i + \\lfloor \\log_\\eta \\mathrm{min ersource}`.
         """
         return (
             math.floor(math.log2(min_resource) / math.log2(self._reduction_factor)) + pruner_index
