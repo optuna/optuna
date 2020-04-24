@@ -101,7 +101,7 @@ class HyperbandPruner(BasePruner):
 
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
         self._reduction_factor = reduction_factor
-        self._resource_budget = 0
+        self._total_trial_allocation_budget = 0
 
         if n_brackets is None:
             # In the original paper http://www.jmlr.org/papers/volume18/16-558/16-558.pdf, the
@@ -123,14 +123,14 @@ class HyperbandPruner(BasePruner):
             _logger.warning(message)
             self._n_brackets = n_brackets
 
-        self._bracket_resource_budgets = []  # type: List[int]
+        self._trial_allocation_budgets = []  # type: List[int]
 
         _logger.debug("Hyperband has {} brackets".format(self._n_brackets))
 
         for i in range(self._n_brackets):
-            bracket_resource_budget = self._calc_trial_allocation_budget(i)
-            self._resource_budget += bracket_resource_budget
-            self._bracket_resource_budgets.append(bracket_resource_budget)
+            trial_allocation_budget = self._calculate_trial_allocation_budget(i)
+            self._total_trial_allocation_budget += trial_allocation_budget
+            self._trial_allocation_budgets.append(trial_allocation_budget)
 
             # N.B. (crcrpar): `min_early_stopping_rate` has the information of `bracket_index`.
             min_early_stopping_rate = min_early_stopping_rate_low + i
@@ -154,15 +154,17 @@ class HyperbandPruner(BasePruner):
         bracket_study = self._create_bracket_study(study, i)
         return self._pruners[i].prune(bracket_study, trial)
 
-    def _calc_trial_allocation_budget(self, pruner_index: int) -> int:
+    def _calculate_trial_allocation_budget(self, pruner_index: int) -> int:
         """Computes the trial allocated budget for a bracket of ``pruner_index``.
 
         In the `original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`, the
-        number of trials per one bracket is referred as ``n`` as calculated in Algorithm 1.
+        number of trials per one bracket is referred as ``n`` in Algorithm 1. Since we do not know
+        the total number of trials in the leaning scheme of Optuna, we calculate the ratio of the
+        number of trials here instead.
         """
 
         s = self._n_brackets - 1 - pruner_index
-        return self._n_brackets * (self._reduction_factor ** s) / (s + 1)
+        return self._n_brackets * (self._reduction_factor ** s) // (s + 1)
 
     def _get_bracket_id(self, study: "optuna.study.Study", trial: FrozenTrial) -> int:
         """Computes the index of bracket for a trial of ``trial_number``.
@@ -171,9 +173,12 @@ class HyperbandPruner(BasePruner):
         `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
         """
 
-        n = hash("{}_{}".format(study.study_name, trial.number)) % self._resource_budget
+        n = (
+            hash("{}_{}".format(study.study_name, trial.number))
+            % self._total_trial_allocation_budget
+        )
         for i in range(self._n_brackets):
-            n -= self._bracket_resource_budgets[i]
+            n -= self._trial_allocation_budgets[i]
             if n < 0:
                 return i
 
