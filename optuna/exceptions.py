@@ -88,3 +88,12 @@ class ExperimentalWarning(Warning):
     """
 
     pass
+
+
+class DeprecationWarning(Warning):
+    """Deprecation Warning class.
+
+    This error is raised when a deprecated method or class is called.
+    """
+
+    pass
