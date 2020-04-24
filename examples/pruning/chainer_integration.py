@@ -55,7 +55,9 @@ def objective(trial):
     train = chainer.datasets.SubDataset(
         train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))
     )
-    valid = chainer.datasets.SubDataset(valid, 0, N_VALID_EXAMPLES, order=rng.permutation(len(valid)))
+    valid = chainer.datasets.SubDataset(
+        valid, 0, N_VALID_EXAMPLES, order=rng.permutation(len(valid))
+    )
     train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE)
     valid_iter = chainer.iterators.SerialIterator(valid, BATCHSIZE, repeat=False, shuffle=False)
 
