@@ -30,16 +30,15 @@ def _dump_best_config(config_file: str, study: optuna.Study) -> Dict:
 
 
 def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
-    """Save resulting jsonnet replacing masks with best params in the experiment.
+    """Save jsonnet after updating with parameters from the best trial in the study.
 
     Args:
         input_config_file:
-            Config file used in AllenNLPExecutor.
+            Input configuration file used with :class:`~optuna.integration.AllenNLPExecutor`.
         output_config_file:
-            Path to output a optimized jsonnet config file.
+            Output configuration file.
         study:
-            A optimized study instance.
-            ``optimized`` means it requires ``study.best_trial_id`` is not empty.
+            An optimized study (``study.best_trial`` does not raise an error).
 
     """
     best_config = _dump_best_config(input_config_file, study)
