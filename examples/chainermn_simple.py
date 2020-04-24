@@ -22,7 +22,7 @@ import numpy as np
 import optuna
 
 N_TRAIN_EXAMPLES = 3000
-N_TEST_EXAMPLES = 1000
+N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
 
@@ -55,22 +55,22 @@ def objective(trial, comm):
     # Setup dataset and iterator. Only worker 0 loads the whole dataset.
     # The dataset of worker 0 is evenly split and distributed to all workers.
     if comm.rank == 0:
-        train, test = chainer.datasets.get_mnist()
+        train, valid = chainer.datasets.get_mnist()
         rng = np.random.RandomState(0)
         train = chainer.datasets.SubDataset(
             train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))
         )
-        test = chainer.datasets.SubDataset(
-            test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test))
+        valid = chainer.datasets.SubDataset(
+            valid, 0, N_VALID_EXAMPLES, order=rng.permutation(len(valid))
         )
     else:
-        train, test = None, None
+        train, valid = None, None
 
     train = chainermn.scatter_dataset(train, comm, shuffle=True)
-    test = chainermn.scatter_dataset(test, comm)
+    valid = chainermn.scatter_dataset(valid, comm)
 
     train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE, shuffle=True)
-    test_iter = chainer.iterators.SerialIterator(test, BATCHSIZE, repeat=False, shuffle=False)
+    valid_iter = chainer.iterators.SerialIterator(valid, BATCHSIZE, repeat=False, shuffle=False)
 
     # Setup trainer.
     updater = chainer.training.StandardUpdater(train_iter, optimizer)
@@ -83,7 +83,7 @@ def objective(trial, comm):
     trainer.run()
 
     # Evaluate.
-    evaluator = chainer.training.extensions.Evaluator(test_iter, model)
+    evaluator = chainer.training.extensions.Evaluator(valid_iter, model)
     evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
     report = evaluator()
 

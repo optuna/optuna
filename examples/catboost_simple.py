@@ -29,7 +29,7 @@ import optuna
 
 def objective(trial):
     data, target = load_breast_cancer(return_X_y=True)
-    train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.3)
+    train_x, valid_x, train_y, valid_y = train_test_split(data, target, test_size=0.3)
 
     param = {
         "objective": trial.suggest_categorical("objective", ["Logloss", "CrossEntropy"]),
@@ -49,11 +49,11 @@ def objective(trial):
 
     gbm = cb.CatBoostClassifier(**param)
 
-    gbm.fit(train_x, train_y, eval_set=[(test_x, test_y)], verbose=0, early_stopping_rounds=100)
+    gbm.fit(train_x, train_y, eval_set=[(valid_x, valid_y)], verbose=0, early_stopping_rounds=100)
 
-    preds = gbm.predict(test_x)
+    preds = gbm.predict(valid_x)
     pred_labels = np.rint(preds)
-    accuracy = accuracy_score(test_y, pred_labels)
+    accuracy = accuracy_score(valid_y, pred_labels)
     return accuracy
 
 

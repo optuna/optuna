@@ -23,7 +23,7 @@ if pkg_resources.parse_version(chainer.__version__) < pkg_resources.parse_versio
     raise RuntimeError("Chainer>=4.0.0 is required for this example.")
 
 N_TRAIN_EXAMPLES = 3000
-N_TEST_EXAMPLES = 1000
+N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
 PRUNER_INTERVAL = 3
@@ -51,13 +51,13 @@ def objective(trial):
     optimizer.setup(model)
 
     rng = np.random.RandomState(0)
-    train, test = chainer.datasets.get_mnist()
+    train, valid = chainer.datasets.get_mnist()
     train = chainer.datasets.SubDataset(
         train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))
     )
-    test = chainer.datasets.SubDataset(test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
+    valid = chainer.datasets.SubDataset(valid, 0, N_VALID_EXAMPLES, order=rng.permutation(len(valid)))
     train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE)
-    test_iter = chainer.iterators.SerialIterator(test, BATCHSIZE, repeat=False, shuffle=False)
+    valid_iter = chainer.iterators.SerialIterator(valid, BATCHSIZE, repeat=False, shuffle=False)
 
     # Setup trainer.
     updater = chainer.training.StandardUpdater(train_iter, optimizer)
@@ -70,7 +70,7 @@ def objective(trial):
         )
     )
 
-    trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
+    trainer.extend(chainer.training.extensions.Evaluator(valid_iter, model))
     trainer.extend(
         chainer.training.extensions.PrintReport(
             [
