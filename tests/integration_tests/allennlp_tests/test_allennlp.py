@@ -121,7 +121,9 @@ def test_dump_best_config() -> None:
             return executor.run()
 
         dropout = 0.5
-        input_config_file = "tests/integration_tests/allennlp_tests/example.jsonnet"
+        input_config_file = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "example.jsonnet"
+        )
         output_config_file = os.path.join(tmp_dir, "result.jsonnet")
 
         study = optuna.create_study(direction="maximize")
