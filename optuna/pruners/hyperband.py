@@ -163,7 +163,7 @@ class HyperbandPruner(BasePruner):
         return math.ceil(self._n_brackets * (self._reduction_factor ** s) / (s + 1))
 
     def _get_bracket_id(self, study: "optuna.study.Study", trial: FrozenTrial) -> int:
-        """Computes the index of bracket for a trial of ``trial_number``.
+        """Compute the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
         `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
