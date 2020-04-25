@@ -41,6 +41,7 @@ class deprecated(object):
         ----------
         obj : object
         """
+
         if isinstance(obj, type):
             return self._decorate_class(obj)
         elif isinstance(obj, property):
@@ -116,6 +117,7 @@ class deprecated(object):
 def _is_deprecated(func):
     """Helper to check if func is wrapped by our deprecated decorator
     """
+
     closures = getattr(func, "__closure__", [])
     if closures is None:
         closures = []
@@ -130,6 +132,7 @@ def _raise_dep_warning_if_not_pytest(deprecated_path, correct_path):
     Useful because we are now deprecating # anything that isn't explicitly
     in an __init__ file.
     """
+
     message = (
         "The {deprecated_path} module is  deprecated in version "
         "1.3.0 and will be removed in version 1.4.0. "
