@@ -183,7 +183,9 @@ class TPESampler(base.BaseSampler):
         n_below = self._gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
         below = config_vals[np.sort(loss_ascending[:n_below])]
+        below = below[below != None].astype(float)
         above = config_vals[np.sort(loss_ascending[n_below:])]
+        above = above[above != None].astype(float)
         return below, above
 
     def _sample_uniform(self, distribution, below, above):
@@ -532,8 +534,7 @@ def _get_observation_pairs(study, param_name, trial):
     """Get observation pairs from the study.
 
        This function collects observation pairs from the complete or pruned trials of the study.
-       The trials that don't contain the parameter named ``param_name`` are excluded
-       from the result.
+       The values for trials that don't contain the parameter named ``param_name`` are set to None.
 
        An observation pair fundamentally consists of a parameter value and an objective value.
        However, due to the pruning mechanism of Optuna, final objective values are not always
@@ -559,9 +560,6 @@ def _get_observation_pairs(study, param_name, trial):
     values = []
     scores = []
     for trial in study.get_trials(deepcopy=False):
-        if param_name not in trial.params:
-            continue
-
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
@@ -576,8 +574,11 @@ def _get_observation_pairs(study, param_name, trial):
         else:
             continue
 
-        distribution = trial.distributions[param_name]
-        param_value = distribution.to_internal_repr(trial.params[param_name])
+        if param_name in trial.params:
+            distribution = trial.distributions[param_name]
+            param_value = distribution.to_internal_repr(trial.params[param_name])
+        else:
+            param_value = None  # the parameter is not active for this trial
         values.append(param_value)
         scores.append(score)
 
