@@ -1,13 +1,12 @@
-import warnings
 import functools
+import warnings
 
 
 __all__ = ["deprecated"]
 
 
 class deprecated(object):
-    """
-    Decorator to mark a function or class as deprecated.
+    """Decorator to mark a function or class as deprecated.
 
     Issue a warning when the function is called/the class is instantiated and
     adds a warning to the docstring.
@@ -36,8 +35,7 @@ class deprecated(object):
         self.extra = extra
 
     def __call__(self, obj):
-        """
-        Call method
+        """Call method
 
         Parameters
         ----------
@@ -116,8 +114,7 @@ class deprecated(object):
 
 
 def _is_deprecated(func):
-    """
-    Helper to check if func is wrapped by our deprecated decorator
+    """Helper to check if func is wrapped by our deprecated decorator
     """
     closures = getattr(func, "__closure__", [])
     if closures is None:
@@ -129,8 +126,7 @@ def _is_deprecated(func):
 
 
 def _raise_dep_warning_if_not_pytest(deprecated_path, correct_path):
-    """
-    Raise a deprecation warning with standardized deprecation message.
+    """Raise a deprecation warning with standardized deprecation message.
     Useful because we are now deprecating # anything that isn't explicitly
     in an __init__ file.
     """
