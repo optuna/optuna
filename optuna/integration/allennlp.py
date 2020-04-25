@@ -36,8 +36,8 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
     best_params = study.best_params
     for key, value in best_params.items():
         best_params[key] = str(value)
-    config = json.loads(_jsonnet.evaluate_file(config_file, ext_vars=best_params))
-    best_config = allennlp.common.params.infer_and_cast(config)
+    best_config = json.loads(_jsonnet.evaluate_file(input_config_file, ext_vars=best_params))
+    best_config = allennlp.common.params.infer_and_cast(best_config)
 
     with open(output_config_file, "w") as f:
         json.dump(best_config, f, indent=4)
