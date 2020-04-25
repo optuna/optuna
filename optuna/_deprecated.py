@@ -4,17 +4,15 @@ from typing import Any
 from typing import Callable
 import warnings
 
-from optuna.exceptions import DeprecationWarning
-
 
 # White spaces of each line are necessary to beautifully rendered documentation.
-# NOTE(crcrpar): When `experimental` decorator is applied to member methods, these lines require
+# NOTE(crcrpar): When `deprecated` decorator is applied to member methods, these lines require
 # another four spaces.
-_EXPERIMENTAL_DOCSTRING_TEMPLATE = """
+_DEPRECATED_DOCSTRING_TEMPLATE = """
 
     .. note::
         Deprecated in v{deprecated_version}, and will be removed in v{removed_version}.
-        Added in v{ver} as an experimental feature. The interface may change in newer versions
+        Added in v{ver} as an deprecated feature. The interface may change in newer versions
         without prior notice. See https://github.com/optuna/optuna/releases/tag/v{ver}.
 """
 
@@ -59,7 +57,7 @@ def _validate_version(version: str) -> None:
 
 
 def deprecated(version: str, name: str = None) -> Any:
-    """Decorate class or function as experimental.
+    """Decorate class or function as deprecated.
 
     Args:
         version: The first version that supports the target feature.
@@ -71,9 +69,9 @@ def deprecated(version: str, name: str = None) -> Any:
     def _deprecated_wrapper(f: Any) -> Any:
         # f is either func or class.
 
-        def _experimental_func(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        def _deprecated_func(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
 
-            docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+            docstring = _DEPRECATED_DOCSTRING_TEMPLATE.format(ver=version)
             if func.__doc__ is None:
                 func.__doc__ = ""
             func.__doc__ += docstring
@@ -84,11 +82,11 @@ def deprecated(version: str, name: str = None) -> Any:
                 """Wrapped function."""
 
                 warnings.warn(
-                    "{} is experimental (supported from v{}). "
+                    "{} is deprecated (supported from v{}). "
                     "The interface can change in the future.".format(
                         name if name is not None else func.__name__, version
                     ),
-                    ExperimentalWarning,
+                    DeprecationWarning,
                 )
 
                 return func(*args, **kwargs)  # type: ignore
@@ -96,20 +94,20 @@ def deprecated(version: str, name: str = None) -> Any:
             return new_func
 
         def _deprecated_class(cls: Any) -> Any:
-            """Decorates a class as experimental.
+            """Decorates a class as deprecated.
 
-            This decorator is supposed to be applied to the experimental class.
+            This decorator is supposed to be applied to the deprecated class.
             """
 
             _original_init = cls.__init__
 
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
                 warnings.warn(
-                    "{} is experimental (supported from v{}). "
+                    "{} is deprecated (supported from v{}). "
                     "The interface can change in the future.".format(
                         name if name is not None else cls.__name__, version
                     ),
-                    ExperimentalWarning,
+                    DeprecationWarning,
                 )
 
                 _original_init(self, *args, **kwargs)
@@ -121,7 +119,7 @@ def deprecated(version: str, name: str = None) -> Any:
             cls.__doc__ = (
                 _make_func_spec_str(_original_init)
                 + cls.__doc__
-                + _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+                + _DEPRECATED_DOCSTRING_TEMPLATE.format(ver=version)
             )
             return cls
 
