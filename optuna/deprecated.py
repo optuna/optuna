@@ -33,7 +33,7 @@ class deprecated(object):
     # Adapted from https://wiki.python.org/moin/PythonDecoratorLibrary,
     # but with many changes.
 
-    def __init__(self, extra=''):
+    def __init__(self, extra=""):
         self.extra = extra
 
     def __call__(self, obj):
@@ -69,9 +69,10 @@ class deprecated(object):
         def wrapped(*args, **kwargs):
             warnings.warn(msg, category=FutureWarning)
             return init(*args, **kwargs)
+
         cls.__init__ = wrapped
 
-        wrapped.__name__ = '__init__'
+        wrapped.__name__ = "__init__"
         wrapped.__doc__ = self._update_doc(init.__doc__)
         wrapped.deprecated_original = init
 
@@ -119,12 +120,12 @@ def _is_deprecated(func):
     """
     Helper to check if func is wrapped by our deprecated decorator
     """
-    closures = getattr(func, '__closure__', [])
+    closures = getattr(func, "__closure__", [])
     if closures is None:
         closures = []
-    is_deprecated = ('deprecated' in ''.join([c.cell_contents
-                                              for c in closures
-                     if isinstance(c.cell_contents, str)]))
+    is_deprecated = "deprecated" in "".join(
+        [c.cell_contents for c in closures if isinstance(c.cell_contents, str)]
+    )
     return is_deprecated
 
 
