@@ -179,7 +179,7 @@ class TPESampler(base.BaseSampler):
 
     def _split_observation_pairs(
         self,
-        config_vals,  # type: List[float]
+        config_vals,  # type: List[Optional[float]]
         loss_vals,  # type: List[Tuple[float, float]]
     ):
         # type: (...) -> Tuple[np.ndarray, np.ndarray]
@@ -538,7 +538,7 @@ class TPESampler(base.BaseSampler):
 
 
 def _get_observation_pairs(study, param_name, trial):
-    # type: (Study, str, FrozenTrial) -> Tuple[List[float], List[Tuple[float, float]]]
+    # type: (Study, str, FrozenTrial) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]
     """Get observation pairs from the study.
 
        This function collects observation pairs from the complete or pruned trials of the study.
@@ -565,7 +565,7 @@ def _get_observation_pairs(study, param_name, trial):
         pruner = study.pruner  # type: HyperbandPruner
         study = pruner._create_bracket_study(study, pruner._get_bracket_id(study, trial))
 
-    values = []
+    values = []  # type: List[Optional[float]]
     scores = []
     for trial in study.get_trials(deepcopy=False):
         if trial.state is TrialState.COMPLETE and trial.value is not None:
@@ -582,11 +582,11 @@ def _get_observation_pairs(study, param_name, trial):
         else:
             continue
 
+        param_value = None  # type: Optional[float]
         if param_name in trial.params:
             distribution = trial.distributions[param_name]
             param_value = distribution.to_internal_repr(trial.params[param_name])
-        else:
-            param_value = None  # the parameter is not active for this trial
+
         values.append(param_value)
         scores.append(score)
 
