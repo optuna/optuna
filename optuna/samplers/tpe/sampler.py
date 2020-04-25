@@ -190,9 +190,9 @@ class TPESampler(base.BaseSampler):
         n_below = self._gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
         below = config_vals[np.sort(loss_ascending[:n_below])]
-        below = below[below != None].astype(float)
+        below = np.asarray([v for v in below if v is not None], dtype=float)
         above = config_vals[np.sort(loss_ascending[n_below:])]
-        above = above[above != None].astype(float)
+        above = np.asarray([v for v in above if v is not None], dtype=float)
         return below, above
 
     def _sample_uniform(self, distribution, below, above):
