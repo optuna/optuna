@@ -252,7 +252,6 @@ class TPESampler(base.BaseSampler):
 
         size = (self._n_ei_candidates,)
 
-        self._parzen_estimator_parameters
         parzen_estimator_below = _ParzenEstimator(
             mus=below, low=low, high=high, parameters=self._parzen_estimator_parameters
         )
