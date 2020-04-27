@@ -71,6 +71,7 @@ class HyperbandPruner(BasePruner):
             y = np.where(X[:, 0] < 0.5, 0, 1)
             X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
             classes = np.unique(y)
+            n_train_iter = 100
 
         .. testcode::
 
@@ -80,7 +81,6 @@ class HyperbandPruner(BasePruner):
             def objective(trial):
                 alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
                 clf = SGDClassifier(alpha=alpha)
-                n_train_iter = 100
 
                 for step in range(n_train_iter):
                     clf.partial_fit(X_train, y_train, classes=classes)
@@ -97,9 +97,8 @@ class HyperbandPruner(BasePruner):
                 direction='maximize',
                 pruner=optuna.pruners.HyperbandPruner(
                     min_resource=1,
-                    reduction_factor=3,
-                    n_brackets=4,
-                    min_early_stopping_rate_low=0
+                    max_resource=n_train_iter,
+                    reduction_factor=3
                 )
             )
             study.optimize(objective, n_trials=20)
