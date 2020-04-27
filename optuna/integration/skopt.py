@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 
 import optuna
@@ -87,11 +89,11 @@ class SkoptSampler(BaseSampler):
     """
 
     def __init__(
-        self,
-        independent_sampler=None,
-        warn_independent_sampling=True,
-        skopt_kwargs=None,
-        n_startup_trials=1,
+            self,
+            independent_sampler=None,
+            warn_independent_sampling=True,
+            skopt_kwargs=None,
+            n_startup_trials=1,
     ):
         # type: (Optional[BaseSampler], bool, Optional[Dict[str, Any]], int) -> None
 
@@ -133,7 +135,7 @@ class SkoptSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+        complete_trials = _get_complete_trials(study)
         if len(complete_trials) < self._n_startup_trials:
             return {}
 
@@ -145,7 +147,7 @@ class SkoptSampler(BaseSampler):
         # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
 
         if self._warn_independent_sampling:
-            complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+            complete_trials = _get_complete_trials(study)
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -275,6 +277,17 @@ class _Optimizer(object):
             value = -value
 
         return param_values, value
+
+
+def _get_complete_trials(study: Study) -> List[FrozenTrial]:
+    complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    for t in study.trials:
+        if t.state == TrialState.PRUNED:
+            _, value = max(t.intermediate_values.items())
+            _t = copy.deepcopy(t)
+            _t.value = value
+            complete_trials.append(_t)
+    return complete_trials
 
 
 def _check_skopt_availability():
