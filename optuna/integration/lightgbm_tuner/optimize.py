@@ -322,7 +322,7 @@ class LightGBMTuner(BaseTuner):
             List of Optuna callback functions that are invoked at the end of each trial.
             Each function must accept two parameters with the following types in this order:
             :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
-            Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_
+            Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
 
         model_dir:
             A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
@@ -440,7 +440,6 @@ class LightGBMTuner(BaseTuner):
             raise ValueError("`valid_sets` is required.")
 
         self.optuna_callbacks = optuna_callbacks
-        self.start_time = None  # type: Optional[float]
 
     @property
     def best_score(self) -> float:
@@ -565,7 +564,6 @@ class LightGBMTuner(BaseTuner):
         # Tuning.
         time_budget = self.auto_options["time_budget"]
 
-        self.start_time = time.time()
         with _timer() as t:
             self.tune_feature_fraction()
             if time_budget is not None and time_budget < t.elapsed_secs():
