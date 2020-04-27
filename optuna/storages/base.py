@@ -24,6 +24,41 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     Storage classes abstract a backend database and provide library internal interfaces to
     read/write history of studies and trials.
+
+    Storage classes might be shared from multiple threads, and thus storage classes
+    must be thread-safe.
+    However, storage class can assume that return values are never modified by users.
+    When users modify return values of storage classes, it might break the internal states
+    of storage classes, which will result in undefined behaviors.
+
+    Storage classes must support monotonic-reads consistency model, that is, if a
+    process reads a data `X`, any successive reads on data `X` does not return
+    older values.
+    They must virtually support read-your-writes, that is, if a process writes to
+    data `X`, any successive reads on data `X` from the same process must read
+    the written value or one of more recent values.
+
+    Under multi-worker settings, storage classes are guaranteed to return the latest
+    values of any attributes of `Study`, but not guaranteed the same thing for
+    attributes of `Trial`.
+    However, if `load(study_id)` method is called, any successive reads on `state` and
+    `system_attrs` attributes of `Trial` in the study are guaranteed to return the
+    same or more recent values than the value at the time the `load` method called.
+    Let `T` be a `Trial`.
+    Let `P` be a process that last updated the `state` or `system_attr` of `T`.
+    Then, any reads on any attributes of `T` are guaranteed to return the same or
+    more recent values than any writes by `P` on the attribute before `P` updated
+    the `state` or `system_attr` of `T`.
+
+    Storage classes do not guarantee that write operations are logged into a persistent
+    storage even when write methods succeed.
+    Thus, when process failure occurs, some writes might be lost.
+    As exceptions, when a persistent storage is available, any writes on any attributes
+    of `Study` and writes on `state` and `system_attr` of `Trial` are guaranteed to be
+    persistent.
+    Additionally, any preceding writes on any attributes of `Trial` are guaranteed to
+    be written into a persistent storage before writes on `state` or `system_attr` of
+    `Trial` succeed.
     """
 
     # Basic study manipulation
