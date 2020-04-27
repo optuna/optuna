@@ -369,7 +369,7 @@ class Study(BaseStudy):
                         _logger.warning(msg)
 
                     parallel(
-                        delayed(self._optimize_sequential)(
+                        delayed(self._reseed_and_optimize_sequential)(
                             func, 1, timeout, catch, callbacks, gc_after_trial, time_start
                         )
                         for _ in _iter
@@ -465,7 +465,7 @@ class Study(BaseStudy):
 
         _check_pandas_availability()
 
-        trials = self.trials
+        trials = self.get_trials(deepcopy=False)
 
         # If no trials, return an empty dataframe.
         if not len(trials):
@@ -600,6 +600,23 @@ class Study(BaseStudy):
         trial_id = self._storage.create_new_trial(self._study_id, template_trial=trial)
         return trial_id
 
+    def _reseed_and_optimize_sequential(
+        self,
+        func,  # type: ObjectiveFuncType
+        n_trials,  # type: Optional[int]
+        timeout,  # type: Optional[float]
+        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        callbacks,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
+        gc_after_trial,  # type: bool
+        time_start,  # type: Optional[datetime.datetime]
+    ):
+        # type: (...) -> None
+
+        self.sampler.reseed_rng()
+        self._optimize_sequential(
+            func, n_trials, timeout, catch, callbacks, gc_after_trial, time_start
+        )
+
     def _optimize_sequential(
         self,
         func,  # type: ObjectiveFuncType
@@ -637,7 +654,7 @@ class Study(BaseStudy):
         # type: () -> Optional[int]
 
         # TODO(c-bata): Reduce database query counts for extracting waiting trials.
-        for trial in self.trials:
+        for trial in self.get_trials(deepcopy=False):
             if trial.state != TrialState.WAITING:
                 continue
 

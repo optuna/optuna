@@ -12,6 +12,7 @@ jobs:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8]
 
+    if: github.repository == 'optuna/optuna'
     steps:
     - uses: actions/checkout@v2
     - name: setup-python${{ matrix.python-version }}
@@ -31,7 +32,7 @@ jobs:
         python -c 'import optuna'
 
         # Install all dependencies needed for examples.
-        pip install --progress-bar off $(ls dist/*.tar.gz)[example]
+        pip install --progress-bar off $(ls dist/*.tar.gz)[example] -f https://download.pytorch.org/whl/torch_stable.html
     - name: Run examples
       run: |
         if [ ${{ matrix.python-version }} = 3.5 ]; then

@@ -1,5 +1,5 @@
-from mock import MagicMock
-from mock import patch
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -32,9 +32,9 @@ def test_init_cmaes_opts() -> None:
             lambda t: t.suggest_uniform("x", -1, 1) + t.suggest_uniform("y", -1, 1), n_trials=2
         )
 
-        cma_class.assert_called_once()
+        assert cma_class.call_count == 1
 
-        actual_kwargs = cma_class.mock_calls[0].kwargs
+        _, actual_kwargs = cma_class.call_args
         assert np.array_equal(actual_kwargs["mean"], np.array([0, 0]))
         assert actual_kwargs["sigma"] == 0.1
         assert np.array_equal(actual_kwargs["bounds"], np.array([(-1, 1), (-1, 1),]))
@@ -103,3 +103,13 @@ def test_initialize_sigma0_with_unsupported_distribution() -> None:
 
     with pytest.raises(NotImplementedError):
         _initialize_sigma0({"x": UnsupportedDistribution()})
+
+
+def test_reseed_rng() -> None:
+    sampler = optuna.samplers.CmaEsSampler()
+
+    with patch.object(
+        sampler._independent_sampler, "reseed_rng", wraps=sampler._independent_sampler.reseed_rng
+    ) as mock_object:
+        sampler.reseed_rng()
+        assert mock_object.call_count == 1

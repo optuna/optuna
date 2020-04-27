@@ -22,4 +22,7 @@ Samplers
     :members:
     :exclude-members: infer_relative_search_space, sample_relative, sample_independent
 
+.. autoclass:: IntersectionSearchSpace
+    :members:
+
 .. autofunction:: intersection_search_space

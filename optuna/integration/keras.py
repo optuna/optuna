@@ -19,13 +19,9 @@ except ImportError as e:
 class KerasPruningCallback(Callback):
     """Keras callback to prune unpromising trials.
 
-    Example:
-
-        Add a pruning callback which observes validation losses.
-
-        .. code::
-
-            model.fit(X, y, callbacks=[KerasPruningCallback(trial, 'val_loss')])
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/keras_integration.py>`__
+    if you want to add a pruning callback which observes validation accuracy.
 
     Args:
         trial:

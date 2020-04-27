@@ -146,7 +146,7 @@ jobs:
             python -c 'import optuna'
 
             # Install all dependencies needed for testing.
-            pip install --progress-bar off $(ls dist/*.tar.gz)[testing]
+            pip install --progress-bar off $(ls dist/*.tar.gz)[testing] -f https://download.pytorch.org/whl/torch_stable.html
 
       - run: &tests
           name: tests
@@ -183,7 +183,8 @@ jobs:
                 --ignore tests/integration_tests/test_keras.py \
                 --ignore tests/integration_tests/test_pytorch_lightning.py \
                 --ignore tests/integration_tests/test_tensorflow.py \
-                --ignore tests/integration_tests/test_tfkeras.py
+                --ignore tests/integration_tests/test_tfkeras.py \
+                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
 
       - run: *tests-mn
 
@@ -209,7 +210,9 @@ jobs:
           <<: *tests
           command: |
             . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_fastai.py
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py \
+                --ignore tests/integration_tests/test_fastai.py \
+                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
 
       - run: *tests-mn
 

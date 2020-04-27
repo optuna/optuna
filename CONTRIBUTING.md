@@ -134,6 +134,6 @@ Introduces Tree-structured Parzen Estimator to `optuna.samplers`.
 
 The description of your pull request should
 
+- describe the motivation
 - describe the changes
 - if still work-in-progress, describe remaining tasks
-- if not obvious, motivate the changes

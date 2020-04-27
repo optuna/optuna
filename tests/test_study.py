@@ -4,12 +4,12 @@ import multiprocessing
 import pickle
 import threading
 import time
+from unittest.mock import Mock  # NOQA
+from unittest.mock import patch
 import uuid
 import warnings
 
 import joblib
-from mock import Mock  # NOQA
-from mock import patch
 import pandas as pd
 import pytest
 
@@ -271,6 +271,22 @@ def test_optimize_parallel_storage_warning(recwarn):
     with pytest.warns(UserWarning):
         with joblib.parallel_backend("loky"):
             study.optimize(lambda t: t.suggest_uniform("x", 0, 1), n_trials=20, n_jobs=2)
+
+
+@pytest.mark.parametrize(
+    "n_jobs, storage_mode", itertools.product((2, -1), STORAGE_MODES,),  # n_jobs  # storage_mode
+)
+def test_optimize_with_reseeding(n_jobs, storage_mode):
+    # type: (int, str)-> None
+
+    f = Func()
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        sampler = study.sampler
+        with patch.object(sampler, "reseed_rng", wraps=sampler.reseed_rng) as mock_object:
+            study.optimize(f, n_trials=1, n_jobs=2)
+            assert mock_object.call_count == 1
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

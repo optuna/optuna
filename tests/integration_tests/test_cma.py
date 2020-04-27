@@ -1,8 +1,8 @@
 import math
+from unittest.mock import call
+from unittest.mock import patch
 
 import cma
-from mock import call
-from mock import patch
 import pytest
 
 import optuna
@@ -66,6 +66,21 @@ class TestCmaEsSampler(object):
         assert 0 < seed
 
         assert isinstance(sampler._independent_sampler, optuna.samplers.RandomSampler)
+
+    @staticmethod
+    def test_reseed_rng() -> None:
+        sampler = optuna.integration.CmaEsSampler()
+        original_seed = sampler._cma_opts["seed"]
+        sampler._independent_sampler.reseed_rng()
+
+        with patch.object(
+            sampler._independent_sampler,
+            "reseed_rng",
+            wraps=sampler._independent_sampler.reseed_rng,
+        ) as mock_object:
+            sampler.reseed_rng()
+            assert mock_object.call_count == 1
+            assert original_seed != sampler._cma_opts["seed"]
 
     @staticmethod
     def test_infer_relative_search_space_1d():
