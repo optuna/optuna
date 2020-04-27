@@ -80,8 +80,12 @@ class HyperbandPruner(BasePruner):
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
             Defaults to :math:`4`.
         min_early_stopping_rate_low:
+
+            .. deprecated:: 1.4.0
+                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`.
+
             A parameter for specifying the minimum early-stopping rate.
-            This parameter is related to a parameter that is referred to as :math:`r` and used in
+            This parameter is related to a parameter that is referred to as :math:`s` and used in
             `Asynchronous SuccessiveHalving paper <http://arxiv.org/abs/1810.05934>`_.
             The minimum early stopping rate for :math:`i` th bracket is :math:`i + s`.
     """
@@ -92,7 +96,7 @@ class HyperbandPruner(BasePruner):
         max_resource: int = 80,
         reduction_factor: int = 3,
         n_brackets: Optional[int] = None,
-        min_early_stopping_rate_low: int = 0,
+        min_early_stopping_rate_low: Optional[int] = None,
     ) -> None:
 
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
@@ -129,7 +133,16 @@ class HyperbandPruner(BasePruner):
             self._trial_allocation_budgets.append(trial_allocation_budget)
 
             # N.B. (crcrpar): `min_early_stopping_rate` has the information of `bracket_index`.
-            min_early_stopping_rate = min_early_stopping_rate_low + i
+            if min_early_stopping_rate_low is None:
+                min_early_stopping_rate = i
+            else:
+                message = (
+                    "The argument of `min_early_stopping_rate_low` is deprecated. "
+                    "Please specify `min_resource` appropriately."
+                )
+                warnings.warn(message, DeprecationWarning)
+                _logger.warning(message)
+                min_early_stopping_rate = min_early_stopping_rate_low + i
 
             _logger.debug(
                 "{}th bracket has minimum early stopping rate of {}".format(
