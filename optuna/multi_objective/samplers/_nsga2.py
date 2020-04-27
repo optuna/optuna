@@ -26,8 +26,8 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         self,
         seed: Optional[int] = None,
         population_size: int = 20,
-        crossover_prob: float = 0.5,
-        mutation_prob: float = 0.3,
+        crossover_prob: float = 0.2,
+        mutation_prob: float = 0.1,
     ) -> None:
         self._population_size = population_size
         self._crossover_prob = crossover_prob
@@ -187,7 +187,10 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 assert v_high is not None
                 assert v_low is not None
 
-                distances[population[j].number] += (v_high - v_low) / width
+                if width == 0.0:
+                    distances[population[j].number] = float("inf")
+                else:
+                    distances[population[j].number] += (v_high - v_low) / width
 
         population.sort(key=lambda x: distances[x.number])
         population.reverse()
