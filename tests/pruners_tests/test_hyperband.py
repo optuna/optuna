@@ -14,6 +14,7 @@ EARLY_STOPPING_RATE_LOW = 0
 EARLY_STOPPING_RATE_HIGH = 3
 N_REPORTS = 10
 EXPECTED_N_TRIALS_PER_BRACKET = 10
+N_RESOURCES = 80
 
 
 def test_hyperband_experimental_warning() -> None:
@@ -90,3 +91,25 @@ def test_bracket_study():
     # we cannot do `assert isinstance(bracket_study, _BracketStudy)`.
     # This is why the below line is ignored by mypy checks.
     bracket_study._bracket_id  # type: ignore
+
+
+def test_hyperband_max_resource_is_auto():
+    # type: () -> None
+
+    pruner = optuna.pruners.HyperbandPruner(
+        min_resource=MIN_RESOURCE, reduction_factor=REDUCTION_FACTOR
+    )
+    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
+
+    def objective(trial):
+        # type: (Trial) -> float
+
+        for i in range(N_RESOURCES):
+            if trial.should_prune():
+                raise optuna.exceptions.TrialPruned()
+
+        return 1.0
+
+    study.optimize(objective, n_trials=N_BRACKETS * EXPECTED_N_TRIALS_PER_BRACKET)
+
+    assert N_RESOURCES == pruner._max_resource
