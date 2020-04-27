@@ -82,7 +82,7 @@ class HyperbandPruner(BasePruner):
         min_early_stopping_rate_low:
 
             .. deprecated:: 1.4.0
-                This argument will be removed from :class:~optuna.pruners.HyperbandPruner.
+                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`.
 
             A parameter for specifying the minimum early-stopping rate.
             This parameter is related to a parameter that is referred to as :math:`s` and used in
