@@ -73,7 +73,7 @@ class HyperbandPruner(BasePruner):
         n_brackets:
 
             .. deprecated:: 1.4.0
-                This argument will be removed from :class:~optuna.pruners.HyperbandPruner. The
+                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`. The
                 number of brackets are automatically determined based on ``max_resource`` and
                 ``reduction_factor``.
 
