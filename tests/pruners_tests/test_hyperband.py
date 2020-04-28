@@ -14,7 +14,6 @@ EARLY_STOPPING_RATE_LOW = 0
 EARLY_STOPPING_RATE_HIGH = 3
 N_REPORTS = 10
 EXPECTED_N_TRIALS_PER_BRACKET = 10
-N_RESOURCES = 80
 
 
 def test_hyperband_experimental_warning() -> None:
@@ -104,7 +103,8 @@ def test_hyperband_max_resource_is_auto():
     def objective(trial):
         # type: (Trial) -> float
 
-        for i in range(N_RESOURCES):
+        for i in range(N_REPORTS):
+            trial.report(1.0, i)
             if trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
 
@@ -112,4 +112,4 @@ def test_hyperband_max_resource_is_auto():
 
     study.optimize(objective, n_trials=N_BRACKETS * EXPECTED_N_TRIALS_PER_BRACKET)
 
-    assert N_RESOURCES == pruner._max_resource
+    assert N_REPORTS == pruner._max_resource

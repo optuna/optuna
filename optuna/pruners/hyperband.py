@@ -139,27 +139,17 @@ class HyperbandPruner(BasePruner):
         assert len(self._pruners) == 0
 
         if self._max_resource == "auto":
-            completed_trials = [
-                t for t in study.get_trials(deepcopy=False) if t.state is TrialState.COMPLETE
-            ]
+            trials = study.get_trials(deepcopy=False)
+            completed_trials = [t for t in trials if t.state is TrialState.COMPLETE]
 
             if len(completed_trials) == 0:
-                # This implementation assumes that the number of calls of _try_initialization() (as
-                # same as prune()) is equivalent to the amount of "resource".
-                # The 'max_resource' is determined by the number of calls of prune() before
-                # completion of some trials
-                if trial.number in self._running_trials:
-                    self._running_trials[trial.number] += 1
-                else:
-                    self._running_trials[trial.number] = 1
                 return
 
-            max_resource = 0
             for t in completed_trials:
-                max_resource = max(max_resource, self._running_trials.get(t.number, max_resource))
-            self._max_resource = max_resource
-        else:
-            assert isinstance(self._max_resource, int)
+                assert len(t.intermediate_values) > 0
+                self._max_resource = max(t.intermediate_values) + 1
+
+        assert isinstance(self._max_resource, int)
 
         if self._n_brackets is None:
             # In the original paper http://www.jmlr.org/papers/volume18/16-558/16-558.pdf, the
