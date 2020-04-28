@@ -32,8 +32,8 @@ class KerasPruningCallback(Callback):
             ``val_acc``. Please refer to `keras.Callback reference
             <https://keras.io/callbacks/#callback>`_ for further details.
         interval:
-            Check if trial should be pruned every n-th epoch. By default `interval=1` and
-            pruning is performed after every epoch. Increase `interval` to run several
+            Check if trial should be pruned every n-th epoch. By default ``interval=1`` and
+            pruning is performed after every epoch. Increase ``interval`` to run several
             epochs faster before applying pruning.
      """
 
