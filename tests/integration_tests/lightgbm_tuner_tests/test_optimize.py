@@ -391,7 +391,7 @@ class TestLightGBMTuner(object):
                 params=dict(
                     feature_fraction=unexpected_value,  # set default as unexpected value.
                 ),
-                kwargs_options=dict(time_budget=0, ),
+                kwargs_options=dict(time_budget=0,),
             )
             assert len(runner.study.trials) == 0
             # No trials run because `time_budget` is set to zero.
