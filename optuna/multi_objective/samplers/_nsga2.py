@@ -56,6 +56,20 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
+        if not isinstance(population_size, int):
+            raise ValueError("`population_size` must be an integer value.")
+
+        if population_size < 2:
+            raise ValueError("`population_size` must be greater or equal to 2.")
+
+        if not (0.0 <= mutation_prob <= 1.0):
+            raise ValueError("`mutation_prob` must be an float value within the range [0.0, 1.0).")
+
+        if not (0.0 <= crossover_prob <= 1.0):
+            raise ValueError(
+                "`crossover_prob` must be an float value within the range [0.0, 1.0)."
+            )
+
         self._population_size = population_size
         self._crossover_prob = crossover_prob
         self._mutation_prob = mutation_prob
@@ -121,6 +135,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         self, study: "multi_objective.study.MultiObjectiveStudy"
     ) -> Tuple[int, List["multi_objective.trial.FrozenMultiObjectiveTrial"]]:
         # TODO(ohta): Optimize this method.
+
         trials = study.get_trials(deepcopy=False)
         parent_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
         parent_generation = -1
@@ -140,88 +155,17 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
             parent_population = []
             parent_generation = generation
 
-            population_per_rank = self._fast_non_dominated_sort(study, population)
+            population_per_rank = _fast_non_dominated_sort(population, study.directions)
             for population in population_per_rank:
                 if len(parent_population) + len(population) < self._population_size:
                     parent_population.extend(population)
                 else:
                     n = self._population_size - len(parent_population)
-                    self._crowding_distance_sort(population)
+                    _crowding_distance_sort(population)
                     parent_population.extend(population[:n])
                     break
 
         return parent_generation, parent_population
-
-    def _fast_non_dominated_sort(
-        self,
-        study: "multi_objective.study.MultiObjectiveStudy",
-        population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
-    ) -> List[List["multi_objective.trial.FrozenMultiObjectiveTrial"]]:
-        dominated_count = defaultdict(int)  # type: DefaultDict[int, int]
-        dominates_list = defaultdict(list)
-
-        for p, q in itertools.combinations(population, 2):
-            if p._dominates(q, study.directions):
-                dominates_list[p.number].append(q.number)
-                dominated_count[q.number] += 1
-            elif q._dominates(p, study.directions):
-                dominates_list[q.number].append(p.number)
-                dominated_count[p.number] += 1
-
-        population_per_rank = []
-        while len(population) > 0:
-            non_dominated_population = []
-            i = 0
-            while i < len(population):
-                if dominated_count[population[i].number] == 0:
-                    individual = population[i]
-                    if i == len(population) - 1:
-                        population.pop()
-                    else:
-                        population[i] = population.pop()
-                    non_dominated_population.append(individual)
-                else:
-                    i += 1
-
-            for x in non_dominated_population:
-                for y in dominates_list[x.number]:
-                    dominated_count[y] -= 1
-
-            assert non_dominated_population != []
-            population_per_rank.append(non_dominated_population)
-
-        return population_per_rank
-
-    def _crowding_distance_sort(
-        self, population: List["multi_objective.trial.FrozenMultiObjectiveTrial"]
-    ) -> None:
-        distances = defaultdict(float)
-        for i in range(len(population[0].values)):
-            population.sort(key=lambda x: x.values[i])
-
-            distances[population[0].number] = float("inf")
-            distances[population[-1].number] = float("inf")
-
-            v_max = population[-1].values[i]
-            v_min = population[0].values[i]
-            assert v_max is not None
-            assert v_min is not None
-
-            width = v_max - v_min
-
-            for j in range(1, len(population) - 1):
-                v_high = population[j + 1].values[i]
-                v_low = population[j - 1].values[i]
-                assert v_high is not None
-                assert v_low is not None
-
-                if width == 0.0:
-                    distances[population[j].number] = float("inf")
-                else:
-                    distances[population[j].number] += (v_high - v_low) / width
-
-        population.sort(key=lambda x: distances[x.number])
-        population.reverse()
 
     def _select_parent(
         self,
@@ -230,8 +174,80 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     ) -> "multi_objective.trial.FrozenMultiObjectiveTrial":
         candidate0 = self._rng.choice(population)
         candidate1 = self._rng.choice(population)
+
         # TODO(ohta): Consider crowding distance.
         if candidate0._dominates(candidate1, study.directions):
             return candidate0
         else:
             return candidate1
+
+
+def _fast_non_dominated_sort(
+    population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
+    directions: List[optuna.study.StudyDirection],
+) -> List[List["multi_objective.trial.FrozenMultiObjectiveTrial"]]:
+    dominated_count = defaultdict(int)  # type: DefaultDict[int, int]
+    dominates_list = defaultdict(list)
+
+    for p, q in itertools.combinations(population, 2):
+        if p._dominates(q, directions):
+            dominates_list[p.number].append(q.number)
+            dominated_count[q.number] += 1
+        elif q._dominates(p, directions):
+            dominates_list[q.number].append(p.number)
+            dominated_count[p.number] += 1
+
+    population_per_rank = []
+    while len(population) > 0:
+        non_dominated_population = []
+        i = 0
+        while i < len(population):
+            if dominated_count[population[i].number] == 0:
+                individual = population[i]
+                if i == len(population) - 1:
+                    population.pop()
+                else:
+                    population[i] = population.pop()
+                non_dominated_population.append(individual)
+            else:
+                i += 1
+
+        for x in non_dominated_population:
+            for y in dominates_list[x.number]:
+                dominated_count[y] -= 1
+
+        assert non_dominated_population != []
+        population_per_rank.append(non_dominated_population)
+
+    return population_per_rank
+
+
+def _crowding_distance_sort(
+    population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
+) -> None:
+    distances = defaultdict(float)
+    for i in range(len(population[0].values)):
+        population.sort(key=lambda x: x.values[i])
+
+        v_min = population[0].values[i]
+        v_max = population[-1].values[i]
+        assert v_min is not None
+        assert v_max is not None
+
+        width = v_max - v_min
+        if width == 0:
+            continue
+
+        distances[population[0].number] = float("inf")
+        distances[population[-1].number] = float("inf")
+
+        for j in range(1, len(population) - 1):
+            v_high = population[j + 1].values[i]
+            v_low = population[j - 1].values[i]
+            assert v_high is not None
+            assert v_low is not None
+
+            distances[population[j].number] += (v_high - v_low) / width
+
+    population.sort(key=lambda x: distances[x.number])
+    population.reverse()
