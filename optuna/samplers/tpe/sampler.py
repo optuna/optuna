@@ -88,13 +88,19 @@ class TPESampler(base.BaseSampler):
 
     Args:
         consider_prior:
-            Enhance the stability of Parzen estimator by imposing a Gaussian prior when True. The
-            prior is only effective if the sampling distribution is either `UniformDistribution`,
-            `DiscreteUniformDistribution`, `LogUniformDistribution`, or `IntUniformDistribution`.
+            Enhance the stability of Parzen estimator by imposing a Gaussian prior when
+            :obj:`True`. The prior is only effective if the sampling distribution is
+            either :class:`~optuna.distributions.UniformDistribution`,
+            :class:`~optuna.distributions.DiscreteUniformDistribution`,
+            :class:`~optuna.distributions.LogUniformDistribution`,
+            or :class:`~optuna.distributions.IntUniformDistribution`.
         prior_weight:
-            The weight of the prior. This argument is used in `UniformDistribution`,
-            `DiscreteUniformDistribution`, `LogUniformDistribution`, `IntUniformDistribution` and
-            `CategoricalDistribution`.
+            The weight of the prior. This argument is used in
+            :class:`~optuna.distributions.UniformDistribution`,
+            :class:`~optuna.distributions.DiscreteUniformDistribution`,
+            :class:`~optuna.distributions.LogUniformDistribution`,
+            :class:`~optuna.distributions.IntUniformDistribution` and
+            :class:`~optuna.distributions.CategoricalDistribution`.
         consider_magic_clip:
             Enable a heuristic to limit the smallest variances of Gaussians used in
             the Parzen estimator.
