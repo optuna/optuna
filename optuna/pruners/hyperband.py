@@ -235,6 +235,9 @@ class _HyperbandSampler(BaseSampler):
         self._sampler = sampler
         self._pruner = hyperband_pruner
 
+    def reseed_rng(self) -> None:
+        self._sampler.reseed_rng()
+
     @property
     def sampler(self) -> BaseSampler:
         return self._sampler
