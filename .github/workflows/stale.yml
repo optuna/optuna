@@ -9,8 +9,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    if: github.repository == 'optuna/optuna'
     steps:
-    - uses: actions/stale@v2.0.0
+    - uses: actions/stale@v2
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-issue-message: 'This issue has not seen any recent activity.'
