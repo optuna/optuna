@@ -22,13 +22,40 @@ PARENTS_KEY = "multi_objective:nsga2:parents"
 
 @experimental("1.4.0")
 class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
+    """Multi-objective sampler using NSGA-II algorithm.
+
+    NSGA-II stands for "Nondominated Sorting Genetic Algorithm II",
+    which is a well known, fast and elitist multi-objective genetic algorithm.
+
+    For further information about NSGA-II, please refer to the following paper:
+
+    - `A fast and elitist multiobjective genetic algorithm: NSGA-II
+      <https://ieeexplore.ieee.org/document/996017>`_
+
+    Args:
+        seed:
+            Seed for random number generator.
+
+        population_size:
+            Number of individuals (trials) in a generation.
+
+        mutation_prob:
+            Probability of mutating each parameter when creating a new individual.
+
+        crossover_prob:
+            Probability of swapping each parameter of the parents when creating a new individual.
+
+    """
+
     def __init__(
         self,
         seed: Optional[int] = None,
         population_size: int = 50,
-        crossover_prob: float = 0.2,
         mutation_prob: float = 0.1,
+        crossover_prob: float = 0.2,
     ) -> None:
+        # TODO(ohta): Reconsider the default value of each parameter.
+
         self._population_size = population_size
         self._crossover_prob = crossover_prob
         self._mutation_prob = mutation_prob
@@ -93,6 +120,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     def _collect_parent_population(
         self, study: "multi_objective.study.MultiObjectiveStudy"
     ) -> Tuple[int, List["multi_objective.trial.FrozenMultiObjectiveTrial"]]:
+        # TODO(ohta): Optimize this method.
         trials = study.get_trials(deepcopy=False)
         parent_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
         parent_generation = -1

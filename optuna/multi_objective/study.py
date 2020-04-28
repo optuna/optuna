@@ -72,7 +72,7 @@ def create_study(
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified,
-            :class:`~optuna.multi_objective.samplers.RandomMultiObjectiveSampler` is used
+            :class:`~optuna.multi_objective.samplers.NSGAIIMultiObjectiveSampler` is used
             as the default. See also :class:`~optuna.multi_objective.samplers`.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
