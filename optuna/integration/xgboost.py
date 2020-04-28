@@ -63,7 +63,7 @@ class XGBoostPruningCallback(object):
 
         context = _get_callback_context(env)
 
-        if (env.iteration + 1) % self._interval != 0:
+        if env.iteration % self._interval != 0:
             return
 
         evaluation_result_list = env.evaluation_result_list

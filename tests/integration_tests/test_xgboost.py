@@ -95,31 +95,26 @@ def test_xgboost_pruning_callback_cv():
 def test_xgboost_pruning_callback_interval(num_boost_round):
     # type: (int) -> None
 
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+    env = xgb.core.CallbackEnv(
+        model="test",
+        cvfolds=1,
+        begin_iteration=0,
+        end_iteration=1,
+        rank=1,
+        iteration=1,
+        evaluation_result_list=[["validation-error", 1.0]],
+    )
 
-        dtrain = xgb.DMatrix(np.ones((2, 1)), label=[1.0, 1.0])
-        params = {
-            "silent": 1,
-            "objective": "binary:logistic",
-        }
-
-        pruning_callback = optuna.integration.XGBoostPruningCallback(
-            trial, "test-error", interval=2
-        )
-        xgb.cv(
-            params, dtrain, num_boost_round=num_boost_round, callbacks=[pruning_callback], nfold=2
-        )
-        return 1.0
-
-    study = optuna.create_study(pruner=DeterministicPruner(True))
-    study.optimize(objective, n_trials=1)
-    if num_boost_round == 2:
-        assert study.trials[0].state == optuna.trial.TrialState.PRUNED
-    else:
-        assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
-
+    # The pruner is deactivated.
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    study.optimize(objective, n_trials=1)
-    assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
-    assert study.trials[0].value == 1.0
+    trial = create_running_trial(study, 1.0)
+    pruning_callback = XGBoostPruningCallback(trial, "validation-error")
+    pruning_callback(env)
+
+    # The pruner is activated.
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    trial = create_running_trial(study, 1.0)
+    pruning_callback = XGBoostPruningCallback(trial, "validation-error")
+    if num_boost_round == 1:
+        with pytest.raises(optuna.exceptions.TrialPruned):
+            pruning_callback(env)
