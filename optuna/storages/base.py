@@ -31,6 +31,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     When users modify return values of storage classes, it might break the internal states
     of storage classes, which will result in undefined behaviors.
 
+    Storage class can assume that each RUNNING trial is modified from only one process.
+    When users modify a RUNNING trial from multiple processes, it might lead to
+    an inconsistent internal state, which will result in undefined behaviors.
+
     Storage classes must support monotonic-reads consistency model, that is, if a
     process reads a data `X`, any successive reads on data `X` does not return
     older values.
