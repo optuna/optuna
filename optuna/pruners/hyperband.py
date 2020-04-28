@@ -81,15 +81,19 @@ class HyperbandPruner(BasePruner):
         n_brackets:
 
             .. deprecated:: 1.4.0
-                This argument will be removed from :class:~optuna.pruners.HyperbandPruner. The
+                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`. The
                 number of brackets are automatically determined based on ``max_resource`` and
                 ``reduction_factor``.
 
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
             Defaults to :math:`4`.
         min_early_stopping_rate_low:
+
+            .. deprecated:: 1.4.0
+                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`.
+
             A parameter for specifying the minimum early-stopping rate.
-            This parameter is related to a parameter that is referred to as :math:`r` and used in
+            This parameter is related to a parameter that is referred to as :math:`s` and used in
             `Asynchronous SuccessiveHalving paper <http://arxiv.org/abs/1810.05934>`_.
             The minimum early stopping rate for :math:`i` th bracket is :math:`i + s`.
     """
@@ -100,7 +104,7 @@ class HyperbandPruner(BasePruner):
         max_resource: Union[str, int] = "auto",
         reduction_factor: int = 3,
         n_brackets: Optional[int] = None,
-        min_early_stopping_rate_low: int = 0,
+        min_early_stopping_rate_low: Optional[int] = None,
     ) -> None:
 
         self._min_resource = min_resource
@@ -168,7 +172,16 @@ class HyperbandPruner(BasePruner):
             self._trial_allocation_budgets.append(trial_allocation_budget)
 
             # N.B. (crcrpar): `min_early_stopping_rate` has the information of `bracket_index`.
-            min_early_stopping_rate = self._min_early_stopping_rate_low + i
+            if self._min_early_stopping_rate_low is None:
+                min_early_stopping_rate = i
+            else:
+                message = (
+                    "The argument of `min_early_stopping_rate_low` is deprecated. "
+                    "Please specify `min_resource` appropriately."
+                )
+                warnings.warn(message, DeprecationWarning)
+                _logger.warning(message)
+                min_early_stopping_rate = self._min_early_stopping_rate_low + i
 
             _logger.debug(
                 "{}th bracket has minimum early stopping rate of {}".format(
@@ -184,7 +197,7 @@ class HyperbandPruner(BasePruner):
             self._pruners.append(pruner)
 
     def _calculate_trial_allocation_budget(self, pruner_index: int) -> int:
-        """Computes the trial allocated budget for a bracket of ``pruner_index``.
+        """Compute the trial allocated budget for a bracket of ``pruner_index``.
 
         In the `original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`, the
         number of trials per one bracket is referred as ``n`` in Algorithm 1. Since we do not know
@@ -194,10 +207,10 @@ class HyperbandPruner(BasePruner):
 
         assert isinstance(self._n_brackets, int)
         s = self._n_brackets - 1 - pruner_index
-        return self._n_brackets * (self._reduction_factor ** s) // (s + 1)
+        return math.ceil(self._n_brackets * (self._reduction_factor ** s) / (s + 1))
 
     def _get_bracket_id(self, study: "optuna.study.Study", trial: FrozenTrial) -> int:
-        """Computes the index of bracket for a trial of ``trial_number``.
+        """Compute the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
         `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.

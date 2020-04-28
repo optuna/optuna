@@ -38,7 +38,7 @@ from optuna.integration import PyTorchLightningPruningCallback
 if pkg_resources.parse_version(pl.__version__) < pkg_resources.parse_version("0.6.0"):
     raise RuntimeError("PyTorch Lightning>=0.6.0 is required for this example.")
 
-PERCENT_TEST_EXAMPLES = 0.1
+PERCENT_VALID_EXAMPLES = 0.1
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 10
@@ -160,7 +160,7 @@ def objective(trial):
 
     trainer = pl.Trainer(
         logger=logger,
-        val_percent_check=PERCENT_TEST_EXAMPLES,
+        val_percent_check=PERCENT_VALID_EXAMPLES,
         checkpoint_callback=checkpoint_callback,
         max_epochs=EPOCHS,
         gpus=0 if torch.cuda.is_available() else None,
