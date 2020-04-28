@@ -25,7 +25,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     def __init__(
         self,
         seed: Optional[int] = None,
-        population_size: int = 20,
+        population_size: int = 50,
         crossover_prob: float = 0.2,
         mutation_prob: float = 0.1,
     ) -> None:
