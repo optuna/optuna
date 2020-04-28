@@ -44,9 +44,9 @@ class XGBoostPruningCallback(object):
             `XGBoost reference <https://xgboost.readthedocs.io/en/latest/parameter.html>`_
             for further details.
         interval:
-            Check if trial should be pruned every n-th epoch. By default `interval=1` and
-            pruning is performed after every epoch. Increase `interval` to run several
-            epochs faster before applying pruning.
+            Check if trial should be pruned every n-th iteration. By default `interval=1` and
+            pruning is performed after every iteration. Increase `interval` to run several
+            iterations faster before applying pruning.
     """
 
     def __init__(self, trial, observation_key, interval=1):
@@ -63,7 +63,6 @@ class XGBoostPruningCallback(object):
 
         context = _get_callback_context(env)
 
-        # Iterations start with 1.
         if (env.iteration + 1) % self._interval != 0:
             return
 
