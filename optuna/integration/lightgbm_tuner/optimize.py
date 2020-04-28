@@ -277,7 +277,7 @@ class OptunaObjective(BaseTuner):
         self.trial_count += 1
 
 
-class OptunaCVObjective(OptunaObjective):
+class OptunaObjectiveCV(OptunaObjective):
     def __init__(
         self,
         target_param_names: List[str],
@@ -289,7 +289,7 @@ class OptunaCVObjective(OptunaObjective):
         pbar: Optional[tqdm.tqdm] = None,
     ):
 
-        super(OptunaCVObjective, self).__init__(
+        super(OptunaObjectiveCV, self).__init__(
             target_param_names,
             lgbm_params,
             train_set,
@@ -940,7 +940,7 @@ class LightGBMTunerCV(LightGBMBaseTuner):
         step_name: str,
         pbar: tqdm.tqdm,
     ) -> OptunaObjective:
-        return OptunaCVObjective(
+        return OptunaObjectiveCV(
             target_param_names,
             self.lgbm_params,
             train_set,
