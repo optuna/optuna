@@ -279,7 +279,9 @@ class _Optimizer(object):
         return param_values, value
 
 
-def _get_complete_trials(study: Study) -> List[FrozenTrial]:
+def _get_complete_trials(study):
+    # type: (Study) -> List[FrozenTrial]
+
     complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
     for t in study.trials:
         if t.state == TrialState.PRUNED:
