@@ -283,7 +283,7 @@ def _get_complete_trials(study):
     # type: (Study) -> List[FrozenTrial]
 
     complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
-    for t in study.trials:
+    for t in study.get_trials(deepcopy=False):
         if t.state == TrialState.PRUNED:
             _, value = max(t.intermediate_values.items())
             _t = copy.deepcopy(t)
