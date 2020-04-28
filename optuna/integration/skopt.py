@@ -89,11 +89,11 @@ class SkoptSampler(BaseSampler):
     """
 
     def __init__(
-            self,
-            independent_sampler=None,
-            warn_independent_sampling=True,
-            skopt_kwargs=None,
-            n_startup_trials=1,
+        self,
+        independent_sampler=None,
+        warn_independent_sampling=True,
+        skopt_kwargs=None,
+        n_startup_trials=1,
     ):
         # type: (Optional[BaseSampler], bool, Optional[Dict[str, Any]], int) -> None
 
