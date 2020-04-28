@@ -137,14 +137,6 @@ class TPESampler(base.BaseSampler):
             )
         below_param_values, above_param_values = self._split_observation_pairs(values, scores)
 
-        # Parzen estimator construction requires at least one observation or a priror.
-        n_below = len(below_param_values)
-        n_above = len(above_param_values)
-        if not self._parzen_estimator_parameters.consider_prior and (n_below == 0 or n_above == 0):
-            return self._random_sampler.sample_independent(
-                study, trial, param_name, param_distribution
-            )
-
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._sample_uniform(param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
