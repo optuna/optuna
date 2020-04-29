@@ -534,11 +534,11 @@ class Study(BaseStudy):
 
         """Exit from the current optimization loop after the running trials finish.
 
-        This method lets the running `optimize` method return immediately after
-        all trials which the `optimize` method spawned finishes.
-        This method does not affect any behaviors of parallel or successive
-        study processes.
-        
+        This method lets the running :meth:`~optuna.study.Study.optimize` method return
+        immediately after all trials which the :meth:`~optuna.study.Study.optimize` method
+        spawned finishes.
+        This method does not affect any behaviors of parallel or successive study processes.
+
         Raises:
             RuntimeError:
                 If this method is called outside an objective function or callback.
@@ -546,7 +546,8 @@ class Study(BaseStudy):
 
         if self._optimize_lock.acquire(False):
             raise RuntimeError(
-                "`Study.stop` is supposed to be invoked inside an objective function or a callback."
+                "`Study.stop` is supposed to be invoked inside an objective function or a "
+                "callback."
             )
 
         self._stop_flag = True
