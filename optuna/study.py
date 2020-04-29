@@ -545,6 +545,7 @@ class Study(BaseStudy):
         """
 
         if self._optimize_lock.acquire(False):
+            self._optimize_lock.release()
             raise RuntimeError(
                 "`Study.stop` is supposed to be invoked inside an objective function or a "
                 "callback."

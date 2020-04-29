@@ -743,10 +743,13 @@ def test_stop_n_jobs() -> None:
 
 
 def test_stop_outside_optimize() -> None:
-    # Test stopping outside the optimization: it should raise RuntimeError.
+    # Test stopping outside the optimization: it should raise `RuntimeError`.
     study = optuna.create_study()
     with pytest.raises(RuntimeError):
         study.stop()
+
+    # Test calling `optimize` after the `RuntimeError` is caught.
+    study.optimize(lambda _: 1.0, n_trials=1)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
