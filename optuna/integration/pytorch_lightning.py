@@ -49,7 +49,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
         self._monitor = monitor
 
     def on_epoch_end(self, trainer, pl_module):
-        # type: ("Trainer", "LightningModule") -> None
+        # type: (Trainer, LightningModule) -> None
         logs = trainer.callback_metrics
         epoch = pl_module.current_epoch
         current_score = logs.get(self._monitor)
