@@ -531,7 +531,18 @@ class Study(BaseStudy):
 
     @experimental("1.4.0")
     def stop(self) -> None:
-        """Stop the optimization after the current trial finishes."""
+
+        """Exit from the current optimization loop after the running trials finish.
+
+        This method lets the running `optimize` method return immediately after
+        all trials which the `optimize` method spawned finishes.
+        This method does not affect any behaviors of parallel or successive
+        study processes.
+        
+        Raises:
+            RuntimeError:
+                If this method is called outside an objective function or callback.
+        """
 
         if self._optimize_lock.acquire(False):
             raise RuntimeError(
