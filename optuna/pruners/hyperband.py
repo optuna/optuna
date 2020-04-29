@@ -109,7 +109,8 @@ class HyperbandPruner(BasePruner):
             # number of brackets (this is referred as `s_{max} + 1` in the paper) is calculated
             # by s_{max} + 1 = \floor{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
             self._n_brackets = (
-                math.floor(math.log2(max_resource) / math.log2(reduction_factor)) + 1
+                math.floor(math.log2(max_resource / min_resource) / math.log2(reduction_factor))
+                + 1
             )
         else:
             message = (
