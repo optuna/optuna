@@ -144,3 +144,30 @@ def objective(
             callbacks=[pruning_callback],
         )
     return 1.0
+
+def test_lightgbm_pruning_callback_interval():
+    # type: () -> None
+
+    callback_env = partial(
+        lgb.callback.CallbackEnv,
+        model="test",
+        params={},
+        begin_iteration=0,
+        end_iteration=1,
+        iteration=1,
+    )
+
+    env = callback_env(evaluation_result_list=[("validation", "binary_error", 1.0, False)])
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    trial = create_running_trial(study, 1.0)
+    pruning_callback = LightGBMPruningCallback(trial, "binary_error", valid_name="validation", interval=2)
+    pruning_callback(env)
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    trial = create_running_trial(study, 1.0)
+    pruning_callback = LightGBMPruningCallback(trial, "binary_error", valid_name="validation", interval=1)
+    with pytest.raises(optuna.exceptions.TrialPruned):
+        pruning_callback(env)
+
+

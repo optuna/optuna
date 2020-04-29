@@ -63,9 +63,13 @@ class LightGBMPruningCallback(object):
             Note that this argument will be ignored if you are calling
             `cv method <https://lightgbm.readthedocs.io/en/latest/Python-API.html#lightgbm.cv>`_
             instead of train method.
-    """
+        interval:
+            Check if trial should be pruned every n-th iteration. By default `interval=1` and
+            pruning is performed after every iteration. Increase `interval` to run several
+            iterations faster before applying pruning.
+     """
 
-    def __init__(self, trial, metric, valid_name="valid_0"):
+    def __init__(self, trial, metric, valid_name="valid_0", interval=1):
         # type: (optuna.trial.Trial, str, str) -> None
 
         _check_lightgbm_availability()
@@ -73,9 +77,13 @@ class LightGBMPruningCallback(object):
         self._trial = trial
         self._valid_name = valid_name
         self._metric = metric
+        self._interval = interval
 
     def __call__(self, env):
         # type: (lgb.callback.CallbackEnv) -> None
+
+        if env.iteration % self._interval != 0:
+            return
 
         # If this callback has been passed to `lightgbm.cv` function,
         # the value of `is_cv` becomes `True`. See also:
