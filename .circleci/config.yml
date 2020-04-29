@@ -237,10 +237,7 @@ jobs:
           name: codecov
           command: |
             . venv/bin/activate
-            pytest --cov=./ --cov-report=html tests
+            pytest --cov=optuna tests
             codecov
           environment:
             OMP_NUM_THREADS: 1
-
-      - store_artifacts:
-          path: ./htmlcov
