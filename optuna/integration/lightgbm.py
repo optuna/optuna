@@ -70,7 +70,7 @@ class LightGBMPruningCallback(object):
      """
 
     def __init__(self, trial, metric, valid_name="valid_0", interval=1):
-        # type: (optuna.trial.Trial, str, str) -> None
+        # type: (optuna.trial.Trial, str, str, int) -> None
 
         _check_lightgbm_availability()
 
