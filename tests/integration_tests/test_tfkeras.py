@@ -57,3 +57,16 @@ def test_tfkeras_pruning_callback_observation_isnan():
 
     with pytest.raises(optuna.exceptions.TrialPruned):
         callback.on_epoch_end(0, {"loss": float("nan")})
+
+
+def test_tfkeras_pruning_callback_interval():
+    # type: () -> None
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    trial = create_running_trial(study, 1.0)
+    callback = TFKerasPruningCallback(trial, "loss", interval=2)
+
+    callback.on_epoch_end(1, {"loss": 1.0})
+
+    with pytest.raises(optuna.exceptions.TrialPruned):
+        callback.on_epoch_end(2, {"loss": 1.0})

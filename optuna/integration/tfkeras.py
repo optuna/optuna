@@ -32,10 +32,14 @@ class TFKerasPruningCallback(Callback):
             objective function.
         monitor:
             An evaluation metric for pruning, e.g., ``val_loss`` or ``val_acc``.
+        interval:
+            Check if trial should be pruned every n-th epoch. By default ``interval=1`` and
+            pruning is performed after every epoch. Increase ``interval`` to run several
+            epochs faster before applying pruning.
     """
 
-    def __init__(self, trial, monitor):
-        # type: (optuna.trial.Trial, str) -> None
+    def __init__(self, trial, monitor, interval=1):
+        # type: (optuna.trial.Trial, str, int) -> None
 
         super(TFKerasPruningCallback, self).__init__()
 
@@ -43,9 +47,13 @@ class TFKerasPruningCallback(Callback):
 
         self._trial = trial
         self._monitor = monitor
+        self._interval = interval
 
     def on_epoch_end(self, epoch, logs=None):
         # type: (int, Dict[str, Any]) -> None
+
+        if epoch % self._interval != 0:
+            return
 
         logs = logs or {}
         current_score = logs.get(self._monitor)
