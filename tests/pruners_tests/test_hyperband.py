@@ -24,13 +24,23 @@ def test_hyperband_experimental_warning() -> None:
         )
 
 
-def test_hyperband_deprecation_warning() -> None:
+def test_hyperband_deprecation_warning_n_brackets() -> None:
     with pytest.deprecated_call():
         optuna.pruners.HyperbandPruner(
             min_resource=MIN_RESOURCE,
             max_resource=MAX_RESOURCE,
             reduction_factor=REDUCTION_FACTOR,
             n_brackets=N_BRACKETS,
+        )
+
+
+def test_hyperband_deprecation_warning_min_early_stopping_rate_low() -> None:
+    with pytest.deprecated_call():
+        optuna.pruners.HyperbandPruner(
+            min_resource=MIN_RESOURCE,
+            max_resource=MAX_RESOURCE,
+            reduction_factor=REDUCTION_FACTOR,
+            min_early_stopping_rate_low=EARLY_STOPPING_RATE_LOW,
         )
 
 
@@ -90,3 +100,23 @@ def test_bracket_study():
     # we cannot do `assert isinstance(bracket_study, _BracketStudy)`.
     # This is why the below line is ignored by mypy checks.
     bracket_study._bracket_id  # type: ignore
+
+
+def test_sample_with_hyperband():
+    # type: () -> None
+
+    pruner = optuna.pruners.HyperbandPruner(
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
+    )
+    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
+
+    assert isinstance(study.sampler, optuna.pruners.hyperband._HyperbandSampler)
+
+    def objective(trial):
+        # type: (Trial) -> float
+
+        x = trial.suggest_uniform("x", -1, 1)
+        return x ** 2
+
+    study.optimize(objective, n_trials=N_BRACKETS * EXPECTED_N_TRIALS_PER_BRACKET)
+    assert study.best_value <= 1.0

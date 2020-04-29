@@ -200,10 +200,10 @@ class Study(BaseStudy):
         study_id = storage.get_study_id_from_name(study_name)
         super(Study, self).__init__(study_id, storage)
 
-        self.sampler = sampler or samplers.TPESampler()
+        self._sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
         if isinstance(self.pruner, pruners.HyperbandPruner):
-            self.sampler = pruners.hyperband._HyperbandSampler(self.sampler, self.pruner)
+            self._sampler = pruners.hyperband._HyperbandSampler(self._sampler, self.pruner)
 
         self._optimize_lock = threading.Lock()
 
@@ -219,6 +219,17 @@ class Study(BaseStudy):
 
         self.__dict__.update(state)
         self._optimize_lock = threading.Lock()
+
+    @property
+    def sampler(self) -> samplers.base.BaseSampler:
+        return self._sampler
+
+    @sampler.setter
+    def sampler(self, new_sampler: samplers.base.BaseSampler) -> None:
+        if isinstance(self.pruner, pruners.HyperbandPruner):
+            self._sampler = pruners.hyperband._HyperbandSampler(new_sampler, self.pruner)
+        else:
+            self._sampler = new_sampler
 
     @property
     def study_id(self):
@@ -615,7 +626,7 @@ class Study(BaseStudy):
     ):
         # type: (...) -> None
 
-        self.sampler.reseed_rng()
+        self._sampler.reseed_rng()
         self._optimize_sequential(
             func, n_trials, timeout, catch, callbacks, gc_after_trial, time_start
         )

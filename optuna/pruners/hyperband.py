@@ -214,7 +214,7 @@ class HyperbandPruner(BasePruner):
                 "pruner",
                 "study_name",
                 "_bracket_id",
-                "sampler",
+                "_sampler",
             )
 
             def __init__(self, study: "optuna.study.Study", bracket_id: int) -> None:
@@ -250,14 +250,6 @@ class _HyperbandSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
         self._sampler.reseed_rng()
-
-    @property
-    def sampler(self) -> BaseSampler:
-        return self._sampler
-
-    @sampler.setter
-    def sampler(self, new_sampler: BaseSampler) -> None:
-        self._sampler = new_sampler
 
     def infer_relative_search_space(
         self, study: "optuna.study.Study", trial: FrozenTrial
