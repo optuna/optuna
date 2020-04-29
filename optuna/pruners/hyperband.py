@@ -108,9 +108,7 @@ class HyperbandPruner(BasePruner):
             # inputs of Hyperband are `R`: max resource and `\eta`: reduction factor. The
             # number of brackets (this is referred as `s_{max} + 1` in the paper) is calculated
             # by s_{max} + 1 = \floor{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
-            self._n_brackets = (
-                math.floor(math.log2(max_resource) / math.log2(reduction_factor)) + 1
-            )
+            self._n_brackets = math.floor(math.log(max_resource, reduction_factor)) + 1
         else:
             message = (
                 "The argument of `n_brackets` is deprecated. "
