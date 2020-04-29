@@ -11,6 +11,7 @@ from torch.utils.data import Dataset
 
 import optuna
 from optuna.integration import FastAIPruningCallback
+from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -79,3 +80,32 @@ def test_fastai_pruning_callback(tmpdir):
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+
+
+def test_fastai_pruning_callback_interval(tmpdir):
+    # type: (typing.Any) -> None
+
+    train_x = np.zeros((16, 20), np.float32)
+    train_y = np.zeros((16,), np.int64)
+    valid_x = np.zeros((4, 20), np.float32)
+    valid_y = np.zeros((4,), np.int64)
+    train_ds = ArrayDataset(train_x, train_y)
+    valid_ds = ArrayDataset(valid_x, valid_y)
+
+    data_bunch = DataBunch.create(
+        train_ds=train_ds, valid_ds=valid_ds, test_ds=None, path=tmpdir, bs=1  # batch size
+    )
+
+    model = nn.Sequential(nn.Linear(20, 1), nn.Sigmoid())
+    learn = Learner(data_bunch, model, metrics=[accuracy],)
+
+    learn.fit(1)
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    trial = create_running_trial(study, 1.0)
+    callback = FastAIPruningCallback(learn, trial, monitor="valid_loss", interval=2)
+
+    callback.on_epoch_end(1)
+
+    with pytest.raises(optuna.exceptions.TrialPruned):
+        callback.on_epoch_end(2)

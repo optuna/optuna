@@ -48,19 +48,27 @@ class FastAIPruningCallback(TrackerCallback):
             Please refer to `fastai.Callback reference
             <https://docs.fast.ai/callback.html#Callback>`_ for further
             details.
+        interval:
+            Check if trial should be pruned every n-th epoch. By default ``interval=1`` and
+            pruning is performed after every epoch. Increase ``interval`` to run several
+            epochs faster before applying pruning.
     """
 
-    def __init__(self, learn, trial, monitor):
-        # type: (Learner, optuna.trial.Trial, str) -> None
+    def __init__(self, learn, trial, monitor, interval=1):
+        # type: (Learner, optuna.trial.Trial, str, int) -> None
 
         super(FastAIPruningCallback, self).__init__(learn, monitor)
 
         _check_fastai_availability()
 
         self._trial = trial
+        self._interval = interval
 
     def on_epoch_end(self, epoch, **kwargs):
         # type: (int, Any) -> None
+
+        if epoch % self._interval != 0:
+            return
 
         value = self.get_monitor_value()
         if value is None:
