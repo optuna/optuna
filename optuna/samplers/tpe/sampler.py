@@ -86,6 +86,44 @@ class TPESampler(base.BaseSampler):
             study = optuna.create_study(sampler=TPESampler())
             study.optimize(objective, n_trials=10)
 
+    Args:
+        consider_prior:
+            Enhance the stability of Parzen estimator by imposing a Gaussian prior when
+            :obj:`True`. The prior is only effective if the sampling distribution is
+            either :class:`~optuna.distributions.UniformDistribution`,
+            :class:`~optuna.distributions.DiscreteUniformDistribution`,
+            :class:`~optuna.distributions.LogUniformDistribution`,
+            or :class:`~optuna.distributions.IntUniformDistribution`.
+        prior_weight:
+            The weight of the prior. This argument is used in
+            :class:`~optuna.distributions.UniformDistribution`,
+            :class:`~optuna.distributions.DiscreteUniformDistribution`,
+            :class:`~optuna.distributions.LogUniformDistribution`,
+            :class:`~optuna.distributions.IntUniformDistribution` and
+            :class:`~optuna.distributions.CategoricalDistribution`.
+        consider_magic_clip:
+            Enable a heuristic to limit the smallest variances of Gaussians used in
+            the Parzen estimator.
+        consider_endpoints:
+            Take endpoints of domains into account when calculating variances of Gaussians
+            in Parzen estimator. See the original paper for details on the heuristics
+            to calculate the variances.
+        n_startup_trials:
+            The random sampling is used instead of the TPE algorithm until the given number
+            of trials finish in the same study.
+        n_ei_candidate:
+            Number of candidate samples used to calculate the expected improvement.
+        gamma:
+            A function that takes the number of finished trials and returns the number
+            of trials to form a density function for samples with low grains.
+            See the original paper for more details.
+        weights:
+            A function that takes the number of finished trials and returns a weight for them.
+            See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
+            Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+            for more details.
+        seed:
+            Seed for random number generator.
     """
 
     def __init__(
