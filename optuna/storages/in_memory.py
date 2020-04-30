@@ -268,7 +268,7 @@ class InMemoryStorage(base.BaseStorage):
                 return False
 
             # Set param distribution.
-            self._param_distribution[param_name] = distribution
+            self._param_distribution[study_id][param_name] = distribution
 
             # Set param.
             trial = copy.copy(self._trials[trial_id])
