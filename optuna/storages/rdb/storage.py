@@ -296,6 +296,8 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
+        # Ensure that that study exists.
+        models.StudyModel.find_or_raise_by_id(study_id, session)
         attributes = models.StudyUserAttributeModel.where_study_id(study_id, session)
         user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during transaction.
@@ -308,6 +310,8 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
+        # Ensure that that study exists.
+        models.StudyModel.find_or_raise_by_id(study_id, session)
         attributes = models.StudySystemAttributeModel.where_study_id(study_id, session)
         system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during transaction.
