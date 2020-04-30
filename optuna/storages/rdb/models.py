@@ -219,7 +219,7 @@ class TrialModel(BaseModel):
 
         trial = cls.find_by_id(trial_id, session)
         if trial is None:
-            raise ValueError(NOT_FOUND_MSG)
+            raise KeyError(NOT_FOUND_MSG)
 
         return trial
 
@@ -438,7 +438,7 @@ class TrialParamModel(BaseModel):
         param_distribution = cls.find_by_trial_and_param_name(trial, param_name, session)
 
         if param_distribution is None:
-            raise ValueError(NOT_FOUND_MSG)
+            raise KeyError(NOT_FOUND_MSG)
 
         return param_distribution
 
