@@ -266,9 +266,7 @@ def test_set_and_get_study_user_attrs(storage_mode: str) -> None:
         with pytest.raises(KeyError):
             storage.set_study_user_attr(non_existent_study_id, "key", "value")
         with pytest.raises(KeyError):
-            storage.get_study_user_attr(non_existent_study_id, list(EXAMPLE_ATTRS.keys())[0])
-        with pytest.raises(KeyError):
-            storage.get_study_user_attr(study_id, "non-existent-key")
+            storage.get_study_user_attrs(non_existent_study_id)
         with pytest.raises(KeyError):
             storage.get_study_user_attrs(non_existent_study_id)
 
