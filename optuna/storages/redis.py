@@ -218,7 +218,7 @@ class RedisStorage(base.BaseStorage):
         # type: (str) -> int
 
         if not self._redis.exists(self._key_study_name(study_name)):
-            raise ValueError("No such study {}.".format(study_name))
+            raise KeyError("No such study {}.".format(study_name))
         study_id_pkl = self._redis.get(self._key_study_name(study_name))
         assert study_id_pkl is not None
         return pickle.loads(study_id_pkl)
@@ -227,7 +227,8 @@ class RedisStorage(base.BaseStorage):
         # type: (int) -> int
 
         study_id_pkl = self._redis.get("trial_id:{:010d}:study_id".format(trial_id))
-        assert study_id_pkl is not None
+        if study_id_pkl is None:
+            raise KeyError("No such trial: {}.".format(trial_id))
         return pickle.loads(study_id_pkl)
 
     def get_study_name_from_id(self, study_id):
@@ -236,14 +237,16 @@ class RedisStorage(base.BaseStorage):
         self._check_study_id(study_id)
 
         study_name_pkl = self._redis.get("study_id:{:010d}:study_name".format(study_id))
-        assert study_name_pkl is not None
+        if study_name_pkl is None:
+            raise KeyError("No such study: {}.".format(study_id))
         return pickle.loads(study_name_pkl)
 
     def get_study_direction(self, study_id):
         # type: (int) -> StudyDirection
 
         direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
-        assert direction_pkl is not None
+        if direction_pkl is None:
+            raise KeyError("No such study: {}.".format(study_id))
         return pickle.loads(direction_pkl)
 
     def get_study_user_attrs(self, study_id):
