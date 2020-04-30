@@ -670,7 +670,7 @@ class TestLightGBMTuner(object):
         def objective(trial: optuna.trial.Trial, value: float) -> float:
 
             trial.set_system_attr(
-                optuna.integration.lightgbm_tuner.optimize.STEP_NAME_KEY,
+                optuna.integration.lightgbm_tuner.optimize._STEP_NAME_KEY,
                 "step{:.0f}".format(value),
             )
             return trial.suggest_uniform("x", value, value)
