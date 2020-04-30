@@ -1,5 +1,7 @@
 import tempfile
 
+import fakeredis
+
 import optuna
 from optuna import type_checking
 
@@ -26,14 +28,18 @@ class StorageSupplier(object):
     def __enter__(self):
         # type: () -> Optional[optuna.storages.BaseStorage]
 
-        if self.storage_specifier == "none":
-            return None
-        elif self.storage_specifier == "new":
+        if self.storage_specifier == "inmemory":
+            return optuna.storages.InMemoryStorage()
+        elif self.storage_specifier == "sqlite":
             self.tempfile = tempfile.NamedTemporaryFile()
             url = "sqlite:///{}".format(self.tempfile.name)
             return optuna.storages.RDBStorage(
                 url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
             )
+        elif self.storage_specifier == "redis":
+            storage = optuna.storages.RedisStorage("redis://localhost")
+            storage._redis = fakeredis.FakeStrictRedis()
+            return storage
         elif self.storage_specifier == "common":
             assert self._common_tempfile is not None
             url = "sqlite:///{}".format(self._common_tempfile.name)
