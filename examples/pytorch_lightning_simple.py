@@ -47,7 +47,7 @@ MODEL_DIR = os.path.join(DIR, "result")
 
 
 class MetricsCallback(Callback):
-    """PyTorch Lightning metric callback"""
+    """PyTorch Lightning metric callback."""
 
     def __init__(self):
         super().__init__()
