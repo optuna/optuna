@@ -723,7 +723,7 @@ class RDBStorage(BaseStorage):
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
-        return frozen_trial
+        return copy.deepcopy(frozen_trial) if deepcopy else frozen_trial
 
     def get_all_trials(self, study_id, deepcopy=True):
         # type: (int, bool) -> List[FrozenTrial]
@@ -733,7 +733,7 @@ class RDBStorage(BaseStorage):
             for trial in trials:
                 self._finished_trials_cache.cache_trial_if_finished(trial)
 
-            return trials
+            return copy.deepcopy(trials) if deepcopy else trials
 
         trial_ids = self._get_all_trial_ids(study_id)
         trials = [self._get_and_cache_trial(trial_id, deepcopy) for trial_id in trial_ids]
