@@ -763,7 +763,7 @@ def test_get_all_study_summaries(storage_mode: str) -> None:
             assert summary.user_attrs == expected_summary.user_attrs
             assert summary.system_attrs == expected_summary.system_attrs
             if expected_summary.best_trial is not None:
-                assert summary.best_trial == expected_summary.best_trial
+                _check_trial_equality(summary.best_trial, expected_summary.best_trial)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
