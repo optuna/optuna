@@ -26,18 +26,26 @@ class MXNetPruningCallback(object):
             default metric name. For custom metrics, use the metric_name provided to
             constructor. Please refer to `mxnet.metrics reference
             <https://mxnet.apache.org/api/python/metric/metric.html>`_ for further details.
+        interval:
+            Check if trial should be pruned every n-th epoch. By default ``interval=1`` and
+            pruning is performed after every epoch. Increase ``interval`` to run several
+            epochs faster before applying pruning.
     """
 
-    def __init__(self, trial, eval_metric):
-        # type: (optuna.trial.Trial, str) -> None
+    def __init__(self, trial, eval_metric, interval=1):
+        # type: (optuna.trial.Trial, str, int) -> None
 
         _check_mxnet_availability()
 
         self._trial = trial
         self._eval_metric = eval_metric
+        self._interval = interval
 
     def __call__(self, param):
         # type: (mx.model.BatchEndParams,) -> None
+
+        if param.epoch % self._interval != 0:
+            return
 
         if param.eval_metric is not None:
             metric_names, metric_values = param.eval_metric.get()

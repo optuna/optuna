@@ -4,6 +4,7 @@ import pytest
 
 import optuna
 from optuna.integration.mxnet import MXNetPruningCallback
+from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 from optuna import type_checking
 
@@ -66,3 +67,20 @@ def test_mxnet_pruning_callback():
         objective(optuna.trial.Trial(study, 0), ["mae"])
 
     study.optimize(lambda trial: objective(trial, ["accuracy", "mae"]), n_trials=1)
+
+
+def test_mxnet_pruning_callback_interval():
+    # type: () -> None
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    trial = create_running_trial(study, 1.0)
+    callback = MXNetPruningCallback(trial, "accuracy", interval=2)
+
+    class dummy_eval_metric:
+        def get(self):  # type: ignore
+            return ["accuracy"], [0]
+
+    callback(mx.model.BatchEndParam(1, 0, dummy_eval_metric(), None))
+
+    with pytest.raises(optuna.exceptions.TrialPruned):
+        callback(mx.model.BatchEndParam(2, 0, dummy_eval_metric(), None))
