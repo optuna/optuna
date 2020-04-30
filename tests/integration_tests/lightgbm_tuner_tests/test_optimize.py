@@ -25,7 +25,6 @@ if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
 
 
 @contextlib.contextmanager
