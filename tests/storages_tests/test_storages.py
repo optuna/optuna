@@ -78,8 +78,9 @@ def test_create_new_study(storage_mode: str) -> None:
         assert summaries[0]._study_id == study_id
         assert summaries[0].study_name.startswith(DEFAULT_STUDY_NAME_PREFIX)
 
-        # study id must be unique
         study_id2 = storage.create_new_study()
+        # Study id muse be unique.
+        assert study_id != study_id2
         summaries = storage.get_all_study_summaries()
         assert len(summaries) == 2
         assert {s._study_id for s in summaries} == {study_id, study_id2}
@@ -96,7 +97,7 @@ def test_create_new_study_unique_id(storage_mode: str) -> None:
         storage.delete_study(study_id2)
         study_id3 = storage.create_new_study()
 
-        # study id must not be reused after deletion
+        # Study id must not be reused after deletion.
         assert len({study_id, study_id2, study_id3}) == 3
         summaries = storage.get_all_study_summaries()
         assert {s._study_id for s in summaries} == {study_id, study_id3}
