@@ -136,7 +136,7 @@ class LightningNet(pl.LightningModule):
 
 
 def objective(trial):
-    # filenames for each trial must be made unique in order to access each checkpoint
+    # Filenames for each trial must be made unique in order to access each checkpoint.
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         os.path.join(MODEL_DIR, "trial_{}".format(trial.number), "{epoch}"), monitor="val_acc"
     )
