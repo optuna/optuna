@@ -182,7 +182,7 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
             storage.get_study_id_from_name("dummy-name")
 
         with pytest.raises(KeyError):
-            storage.get_study_name_from_id(study_id)
+            storage.get_study_name_from_id(study_id + 1)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
