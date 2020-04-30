@@ -202,8 +202,6 @@ class Study(BaseStudy):
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
-        if isinstance(self.pruner, pruners.HyperbandPruner):
-            self.sampler = pruners.hyperband._HyperbandSampler(self.sampler, self.pruner)
 
         self._optimize_lock = threading.Lock()
 
