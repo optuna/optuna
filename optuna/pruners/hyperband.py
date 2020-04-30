@@ -125,6 +125,14 @@ class HyperbandPruner(BasePruner):
             warnings.warn(message, DeprecationWarning)
             _logger.warning(message)
 
+        if min_early_stopping_rate_low is not None:
+            message = (
+                "The argument of `min_early_stopping_rate_low` is deprecated. "
+                "Please specify `min_resource` appropriately."
+            )
+            warnings.warn(message, DeprecationWarning)
+            _logger.warning(message)
+
     def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
         if len(self._pruners) == 0:
             self._try_initialization(study, trial)
@@ -168,16 +176,9 @@ class HyperbandPruner(BasePruner):
             self._total_trial_allocation_budget += trial_allocation_budget
             self._trial_allocation_budgets.append(trial_allocation_budget)
 
-            # N.B. (crcrpar): `min_early_stopping_rate` has the information of `bracket_index`.
             if self._min_early_stopping_rate_low is None:
                 min_early_stopping_rate = i
             else:
-                message = (
-                    "The argument of `min_early_stopping_rate_low` is deprecated. "
-                    "Please specify `min_resource` appropriately."
-                )
-                warnings.warn(message, DeprecationWarning)
-                _logger.warning(message)
                 min_early_stopping_rate = self._min_early_stopping_rate_low + i
 
             _logger.debug(
