@@ -1,5 +1,4 @@
 import math
-from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
@@ -69,8 +68,8 @@ class HyperbandPruner(BasePruner):
             A parameter for specifying the maximum resource allocated to a trial noted as :math:`R`
             in the paper. This value represents and should match the maximum iteration steps (e.g.,
             the number of epochs for neural networks).
-            When this argument is 'auto', the maximum resource is estimated according to the
-            completed trials.
+            When this argument is "auto", the maximum resource is estimated according to the
+            completed trials. The default value of this argument is "auto".
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper. See the details for
@@ -112,7 +111,6 @@ class HyperbandPruner(BasePruner):
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
         self._total_trial_allocation_budget = 0
         self._trial_allocation_budgets = []  # type: List[int]
-        self._running_trials = {}  # type: Dict[int, int]
 
         if n_brackets is not None:
             message = (
@@ -135,7 +133,7 @@ class HyperbandPruner(BasePruner):
 
     def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
         if len(self._pruners) == 0:
-            self._try_initialization(study, trial)
+            self._try_initialization(study)
             if len(self._pruners) == 0:
                 return False
 
@@ -144,9 +142,7 @@ class HyperbandPruner(BasePruner):
         bracket_study = self._create_bracket_study(study, i)
         return self._pruners[i].prune(bracket_study, trial)
 
-    def _try_initialization(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
-        assert len(self._pruners) == 0
-
+    def _try_initialization(self, study: "optuna.study.Study") -> None:
         if self._max_resource == "auto":
             trials = study.get_trials(deepcopy=False)
             completed_trials = [t for t in trials if t.state is TrialState.COMPLETE]
