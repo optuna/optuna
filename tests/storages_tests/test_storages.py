@@ -414,8 +414,8 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
 
         study_id2 = storage.create_new_study()
         for i in range(n_trial_in_study):
-            storage.create_new_trial(study_id, template_trial=template_trial)
-            trials = storage.get_all_trials(study_id)
+            storage.create_new_trial(study_id2, template_trial=template_trial)
+            trials = storage.get_all_trials(study_id2)
             assert {t.number for t in trials} == set(range(i + 1))
 
         trials = storage.get_all_trials(study_id) + storage.get_all_trials(study_id2)
