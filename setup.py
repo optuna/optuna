@@ -77,19 +77,16 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.5.0+cpu",
             "xgboost",
         ]
-        + (["allennlp<1", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (
+            ["allennlp<1", "fastai<2", "pytorch-lightning>=0.7.1"]
+            if (3, 5) < sys.version_info[:2] < (3, 8)
+            else []
+        )
         + (
             ["llvmlite<=0.31.0"] if (3, 5) == sys.version_info[:2] else []
         )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
         + (
-            [
-                "dask[dataframe]",
-                "dask-ml",
-                "keras",
-                "pytorch-lightning>=0.7.1",
-                "tensorflow>=2.0.0",
-                "tensorflow-datasets",
-            ]
+            ["dask[dataframe]", "dask-ml", "keras", "tensorflow>=2.0.0", "tensorflow-datasets"]
             if sys.version_info[:2] < (3, 8)
             else []
         ),
