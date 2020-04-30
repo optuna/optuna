@@ -809,8 +809,8 @@ def test_get_all_trials_deepcopy_option(storage_mode: str) -> None:
 
         for study_id in study_summaries:
             with patch("copy.deepcopy", wraps=copy.deepcopy) as mock_object:
-                trials0 = storage.get_all_trials(study_id, deepcopy=False)
-                assert mock_object.call_count == 0
+                trials0 = storage.get_all_trials(study_id, deepcopy=True)
+                assert mock_object.call_count > 0
                 assert len(trials0) == len(study_to_trials[study_id])
 
             # Check modifying output does not break the internal state of the storage.
@@ -818,8 +818,8 @@ def test_get_all_trials_deepcopy_option(storage_mode: str) -> None:
             trials0[0].params["x"] = 0.1
 
             with patch("copy.deepcopy", wraps=copy.deepcopy) as mock_object:
-                trials1 = storage.get_all_trials(study_id, deepcopy=True)
-                assert mock_object.call_count > 0
+                trials1 = storage.get_all_trials(study_id, deepcopy=False)
+                assert mock_object.call_count == 0
                 assert trials0_original == trials1
 
 
