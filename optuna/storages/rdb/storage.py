@@ -324,6 +324,9 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
+        # Ensure trial exists.
+        models.TrialModel.find_or_raise_by_id(trial_id, session)
+
         attributes = models.TrialUserAttributeModel.where_trial_id(trial_id, session)
         user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during transaction.
@@ -335,6 +338,9 @@ class RDBStorage(BaseStorage):
         # type: (int) -> Dict[str, Any]
 
         session = self.scoped_session()
+
+        # Ensure trial exists.
+        models.TrialModel.find_or_raise_by_id(trial_id, session)
 
         attributes = models.TrialSystemAttributeModel.where_trial_id(trial_id, session)
         system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
@@ -442,6 +448,9 @@ class RDBStorage(BaseStorage):
         # type: (int, Optional[FrozenTrial]) -> int
 
         session = self.scoped_session()
+
+        # Ensure that the study exists.
+        models.StudyModel.find_or_raise_by_id(study_id, session)
 
         if template_trial is None:
             trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING,)
