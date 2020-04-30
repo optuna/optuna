@@ -396,7 +396,7 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
         assert all(t.system_attrs == template_trial.system_attrs for t in trials)
         assert all(t.datetime_start == template_trial.datetime_start for t in trials)
         assert all(t.datetime_complete == template_trial.datetime_complete for t in trials)
-        assert all(t.value is template_trial.value for t in trials)
+        assert all(t.value == template_trial.value for t in trials)
 
     with StorageSupplier(storage_mode) as storage:
 
