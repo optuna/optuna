@@ -58,7 +58,7 @@ class StudyModel(BaseModel):
 
         study = cls.find_by_id(study_id, session)
         if study is None:
-            raise ValueError(NOT_FOUND_MSG)
+            raise KeyError(NOT_FOUND_MSG)
 
         return study
 
