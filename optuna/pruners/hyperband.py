@@ -151,13 +151,18 @@ class HyperbandPruner(BasePruner):
     def _try_initialization(self, study: "optuna.study.Study") -> None:
         if self._max_resource == "auto":
             trials = study.get_trials(deepcopy=False)
-            completed_trials = [t for t in trials if t.state is TrialState.COMPLETE]
+            completed_trials = [
+                t for t in trials if t.state is TrialState.COMPLETE and t.last_step is not None
+            ]
 
             if len(completed_trials) == 0:
                 return
 
             for t in completed_trials:
-                self._max_resource = t.last_step
+                assert t.last_step is not None
+                self._max_resource = t.last_step + 1
+
+        assert isinstance(self._max_resource, int)
 
         if self._n_brackets is None:
             # In the original paper http://www.jmlr.org/papers/volume18/16-558/16-558.pdf, the
