@@ -361,7 +361,7 @@ class LightGBMTuner(BaseTuner):
         )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
         self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
-        self.start_time = None  # type: Optional[float]
+        self._start_time = None  # type: Optional[float]
         self._model_dir = model_dir
 
         if self._model_dir is not None and not os.path.exists(self._model_dir):
@@ -648,11 +648,11 @@ class LightGBMTuner(BaseTuner):
         ]
         _n_trials = n_trials - len(complete_trials)
 
-        if self.start_time is None:
-            self.start_time = time.time()
+        if self._start_time is None:
+            self._start_time = time.time()
 
         if self.auto_options["time_budget"] is not None:
-            _timeout = self.auto_options["time_budget"] - (time.time() - self.start_time)
+            _timeout = self.auto_options["time_budget"] - (time.time() - self._start_time)
         else:
             _timeout = None
         if _n_trials > 0:
