@@ -67,8 +67,6 @@ class HyperbandPruner(BasePruner):
             A parameter for specifying the maximum resource allocated to a trial. :math:`R` in the
             paper corresponds to ``max_resource / min_resource``. This value represents and should
             match the maximum iteration steps (e.g., the number of epochs for neural networks).
-            When this argument is "auto", the maximum resource is estimated according to the
-            completed trials. The default value of this argument is "auto".
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper. See the details for
