@@ -10,7 +10,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
     from typing import Union  # NOQA
 
-    from optuna._frozen_trial import FrozenTrial  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
 
 

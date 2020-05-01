@@ -2,7 +2,7 @@ from optuna.pruners import BasePruner
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from optuna._frozen_trial import FrozenTrial  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
 
 

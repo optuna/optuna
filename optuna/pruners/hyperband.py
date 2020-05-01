@@ -5,7 +5,6 @@ import warnings
 
 import optuna
 from optuna._experimental import experimental
-from optuna._frozen_trial import FrozenTrial
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
@@ -157,7 +156,7 @@ class HyperbandPruner(BasePruner):
             )
             self._pruners.append(pruner)
 
-    def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
+    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
         i = self._get_bracket_id(study, trial)
         _logger.debug("{}th bracket is selected".format(i))
         bracket_study = self._create_bracket_study(study, i)
@@ -175,7 +174,7 @@ class HyperbandPruner(BasePruner):
         s = self._n_brackets - 1 - pruner_index
         return math.ceil(self._n_brackets * (self._reduction_factor ** s) / (s + 1))
 
-    def _get_bracket_id(self, study: "optuna.study.Study", trial: FrozenTrial) -> int:
+    def _get_bracket_id(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> int:
         """Compute the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
@@ -222,7 +221,7 @@ class HyperbandPruner(BasePruner):
                 )
                 self._bracket_id = bracket_id
 
-            def get_trials(self, deepcopy: bool = True) -> List[FrozenTrial]:
+            def get_trials(self, deepcopy: bool = True) -> List["optuna.trial.FrozenTrial"]:
                 trials = super().get_trials(deepcopy=deepcopy)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
