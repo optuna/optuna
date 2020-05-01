@@ -439,7 +439,7 @@ class LightGBMTuner(BaseTuner):
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
 
-        self.optuna_callbacks = optuna_callbacks
+        self._optuna_callbacks = optuna_callbacks
 
     @property
     def best_score(self) -> float:
@@ -700,7 +700,7 @@ class LightGBMTuner(BaseTuner):
         if _n_trials > 0:
             try:
                 study.optimize(
-                    objective, n_trials=_n_trials, catch=(), callbacks=self.optuna_callbacks
+                    objective, n_trials=_n_trials, catch=(), callbacks=self._optuna_callbacks
                 )
             except ValueError:
                 # ValueError is raised by GridSampler when all combinations were examined.
