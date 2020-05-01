@@ -7,6 +7,7 @@ from optuna import exceptions  # NOQA
 from optuna import importance  # NOQA
 from optuna import integration  # NOQA
 from optuna import logging  # NOQA
+from optuna import multi_objective  # NOQA
 from optuna import pruners  # NOQA
 from optuna import samplers  # NOQA
 from optuna import storages  # NOQA

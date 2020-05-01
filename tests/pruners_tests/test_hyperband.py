@@ -6,8 +6,8 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
-MAX_RESOURCE = 16
 MIN_RESOURCE = 1
+MAX_RESOURCE = 16
 REDUCTION_FACTOR = 2
 N_BRACKETS = 4
 EARLY_STOPPING_RATE_LOW = 0
@@ -24,13 +24,23 @@ def test_hyperband_experimental_warning() -> None:
         )
 
 
-def test_hyperband_deprecation_warning() -> None:
+def test_hyperband_deprecation_warning_n_brackets() -> None:
     with pytest.deprecated_call():
         optuna.pruners.HyperbandPruner(
             min_resource=MIN_RESOURCE,
             max_resource=MAX_RESOURCE,
             reduction_factor=REDUCTION_FACTOR,
             n_brackets=N_BRACKETS,
+        )
+
+
+def test_hyperband_deprecation_warning_min_early_stopping_rate_low() -> None:
+    with pytest.deprecated_call():
+        optuna.pruners.HyperbandPruner(
+            min_resource=MIN_RESOURCE,
+            max_resource=MAX_RESOURCE,
+            reduction_factor=REDUCTION_FACTOR,
+            min_early_stopping_rate_low=EARLY_STOPPING_RATE_LOW,
         )
 
 
