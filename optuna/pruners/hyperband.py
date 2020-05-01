@@ -53,7 +53,7 @@ class HyperbandPruner(BasePruner):
         paper. The number of brackets is an important factor to control the early stopping behavior
         of Hyperband and is automatically determined by ``min_resource``, ``max_resource`` and
         ``reduction_factor`` as
-        `The number of brackets = `floor(log_{reduction_factor}(max_resource / min_resource)) + 1`.
+        `The number of brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`.
         Please set ``reduction_factor`` so that the number of brackets is not too large　(about 4 ~
         6 in most use cases).　Please see Section 3.6 of the `original paper
         <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
