@@ -284,7 +284,7 @@ def _get_complete_trials(study):
 
     complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
     for t in study.get_trials(deepcopy=False):
-        if t.state == TrialState.PRUNED:
+        if t.state == TrialState.PRUNED and len(t.intermediate_values) > 0:
             _, value = max(t.intermediate_values.items())
             _t = copy.deepcopy(t)
             _t.value = value
