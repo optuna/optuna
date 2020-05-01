@@ -33,10 +33,16 @@ if type_checking.TYPE_CHECKING:
     VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
 
 
+# Define key names of `Trial.system_attrs`.
+_ELAPSED_SECS_KEY = "lightgbm_tuner:elapsed_secs"
+_AVERAGE_ITERATION_TIME_KEY = "lightgbm_tuner:average_iteration_time"
+_STEP_NAME_KEY = "lightgbm_tuner:step_name"
+_LGBM_PARAMS_KEY = "lightgbm_tuner:lgbm_params"
+
 # EPS is used to ensure that a sampled parameter value is in pre-defined value range.
 EPS = 1e-12
 
-# Default value of tree_depth, used for upper bound of num_leaves
+# Default value of tree_depth, used for upper bound of num_leaves.
 DEFAULT_TUNER_TREE_DEPTH = 8
 
 # Default parameter values described in the official webpage.
@@ -277,10 +283,10 @@ class OptunaObjective(BaseTuner):
             )
         )
 
-        trial.set_system_attr("lightgbm_tuner:elapsed_secs", elapsed_secs)
-        trial.set_system_attr("lightgbm_tuner:average_iteration_time", average_iteration_time)
-        trial.set_system_attr("lightgbm_tuner:step_name", self.step_name)
-        trial.set_system_attr("lightgbm_tuner:lgbm_params", json.dumps(self.lgbm_params))
+        trial.set_system_attr(_ELAPSED_SECS_KEY, elapsed_secs)
+        trial.set_system_attr(_AVERAGE_ITERATION_TIME_KEY, average_iteration_time)
+        trial.set_system_attr(_STEP_NAME_KEY, self.step_name)
+        trial.set_system_attr(_LGBM_PARAMS_KEY, json.dumps(self.lgbm_params))
 
         self.trial_count += 1
 
@@ -445,7 +451,7 @@ class LightGBMTuner(BaseTuner):
     def best_params(self) -> Dict[str, Any]:
         """Return parameters of the best booster."""
         try:
-            return json.loads(self.study.best_trial.system_attrs["lightgbm_tuner:lgbm_params"])
+            return json.loads(self.study.best_trial.system_attrs[_LGBM_PARAMS_KEY])
         except ValueError:
             # Return the default score because no trials have completed.
             params = copy.deepcopy(DEFAULT_LIGHTGBM_PARAMETERS)
@@ -728,11 +734,7 @@ class LightGBMTuner(BaseTuner):
                 # type: (bool) -> List[optuna.trial.FrozenTrial]
 
                 trials = super().get_trials(deepcopy=deepcopy)
-                return [
-                    t
-                    for t in trials
-                    if t.system_attrs.get("lightgbm_tuner:step_name") == self._step_name
-                ]
+                return [t for t in trials if t.system_attrs.get(_STEP_NAME_KEY) == self._step_name]
 
             @property
             def best_trial(self):
