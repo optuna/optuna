@@ -150,7 +150,7 @@ def objective(trial):
         val_percent_check=PERCENT_VALID_EXAMPLES,
         checkpoint_callback=checkpoint_callback,
         max_epochs=EPOCHS,
-        gpus=0 if torch.cuda.is_available() else None,
+        gpus='0' if torch.cuda.is_available() else None,
         callbacks=[metrics_callback],
         early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="val_acc"),
     )
