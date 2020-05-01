@@ -1,5 +1,4 @@
 import contextlib
-from mock import MagicMock
 from tempfile import TemporaryDirectory
 from typing import Any
 from typing import Dict
@@ -701,7 +700,7 @@ class TestLightGBMTuner(object):
         params = {"verbose": -1}  # type: Dict[str, Any]
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
-        callback_mock = MagicMock()
+        callback_mock = mock.MagicMock()
 
         study = optuna.create_study()
         tuner = LightGBMTuner(
