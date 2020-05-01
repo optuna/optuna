@@ -1,11 +1,13 @@
 import abc
 import datetime
 import decimal
-import enum
 import warnings
+
+from optuna._trial_state import TrialState
 
 from optuna import distributions
 from optuna import logging
+from optuna import pruners
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -23,39 +25,8 @@ if type_checking.TYPE_CHECKING:
         distributions.UniformDistribution, distributions.LogUniformDistribution
     ]
 
+
 _logger = logging.get_logger(__name__)
-
-
-class TrialState(enum.Enum):
-    """State of a :class:`~optuna.trial.Trial`.
-
-    Attributes:
-        RUNNING:
-            The :class:`~optuna.trial.Trial` is running.
-        COMPLETE:
-            The :class:`~optuna.trial.Trial` has been finished without any error.
-        PRUNED:
-            The :class:`~optuna.trial.Trial` has been pruned with
-            :class:`~optuna.exceptions.TrialPruned`.
-        FAIL:
-            The :class:`~optuna.trial.Trial` has failed due to an uncaught error.
-    """
-
-    RUNNING = 0
-    COMPLETE = 1
-    PRUNED = 2
-    FAIL = 3
-    WAITING = 4
-
-    def __repr__(self):
-        # type: () -> str
-
-        return str(self)
-
-    def is_finished(self):
-        # type: () -> bool
-
-        return self != TrialState.RUNNING and self != TrialState.WAITING
 
 
 class FrozenTrial(object):
@@ -223,7 +194,6 @@ class FrozenTrial(object):
         .. deprecated:: 0.19.0
             The direct use of this attribute is deprecated and it is recommended that you use
             :attr:`~optuna.trial.FrozenTrial.number` instead.
-
         Returns:
             The trial ID.
         """
@@ -413,11 +383,11 @@ class Trial(BaseTrial):
 
         trial = self.storage.get_trial(self._trial_id)
 
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(
-            self.study, trial
-        )
+        study = pruners.filter_study(self.study, trial)
+
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
         self.relative_params = self.study.sampler.sample_relative(
-            self.study, trial, self.relative_search_space
+            study, trial, self.relative_search_space
         )
 
     def suggest_float(self, name, low, high, *, log=False, step=None):
@@ -987,9 +957,10 @@ class Trial(BaseTrial):
             param_value = self.relative_params[name]
         else:
             trial = self.storage.get_trial(self._trial_id)
-            param_value = self.study.sampler.sample_independent(
-                self.study, trial, name, distribution
-            )
+
+            study = pruners.filter_study(self.study, trial)
+
+            param_value = self.study.sampler.sample_independent(study, trial, name, distribution)
 
         return self._set_new_param_or_get_existing(name, param_value, distribution)
 

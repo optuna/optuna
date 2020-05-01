@@ -1,8 +1,8 @@
 import math
 
+from optuna._trial_state import TrialState
 from optuna.pruners.base import BasePruner
 from optuna.study import StudyDirection
-from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
