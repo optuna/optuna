@@ -112,6 +112,12 @@ class HyperbandPruner(BasePruner):
         self._total_trial_allocation_budget = 0
         self._trial_allocation_budgets = []  # type: List[int]
 
+        if not isinstance(self._max_resource, int) and self._max_resource != "auto":
+            raise ValueError(
+                "The 'max_resource' should be integer or 'auto'. "
+                "But max_resource = {}".format(self._max_resource)
+            )
+
         if n_brackets is not None:
             message = (
                 "The argument of `n_brackets` is deprecated. "
@@ -151,10 +157,7 @@ class HyperbandPruner(BasePruner):
                 return
 
             for t in completed_trials:
-                assert len(t.intermediate_values) > 0
-                self._max_resource = max(t.intermediate_values) + 1
-
-        assert isinstance(self._max_resource, int)
+                self._max_resource = t.last_step
 
         if self._n_brackets is None:
             # In the original paper http://www.jmlr.org/papers/volume18/16-558/16-558.pdf, the
@@ -199,7 +202,7 @@ class HyperbandPruner(BasePruner):
         number of trials here instead.
         """
 
-        assert isinstance(self._n_brackets, int)
+        assert self._n_brackets is not None
         s = self._n_brackets - 1 - pruner_index
         return math.ceil(self._n_brackets * (self._reduction_factor ** s) / (s + 1))
 
@@ -213,7 +216,7 @@ class HyperbandPruner(BasePruner):
         if len(self._pruners) == 0:
             return 0
 
-        assert isinstance(self._n_brackets, int)
+        assert self._n_brackets is not None
         n = (
             hash("{}_{}".format(study.study_name, trial.number))
             % self._total_trial_allocation_budget
