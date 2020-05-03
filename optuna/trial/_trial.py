@@ -341,8 +341,8 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
+    def suggest_int(self, name, low, high, log=False, step=1):
+        # type: (str, int, int, bool, int) -> int
         """Suggest a value for the integer parameter.
 
         The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
@@ -384,14 +384,21 @@ class Trial(BaseTrial):
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
+            log:
+                A flag to sample the value from the log domain or not.
+                If ``log`` is true, the value is sampled from the range in the log domain.
+                Otherwise, the value is sampled from the range in the linear domain.
             step:
-                A step of spacing between values.
+                A step of spacing between values. This value is ignored when ``log=True``.
 
         Returns:
             A suggested integer value.
         """
 
-        distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
+        if log:
+            distribution = distributions.IntLogUniformDistribution(low=low, high=high)
+        else:
+            distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
 
