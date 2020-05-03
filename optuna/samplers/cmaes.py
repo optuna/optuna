@@ -1,3 +1,4 @@
+import copy
 import math
 import pickle
 from typing import Any
@@ -151,9 +152,7 @@ class CmaEsSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        completed_trials = [
-            t for t in study.get_trials(deepcopy=False) if t.state == TrialState.COMPLETE
-        ]
+        completed_trials = _get_complete_trials(study)
         if len(completed_trials) < self._n_startup_trials:
             return {}
 
@@ -261,7 +260,7 @@ class CmaEsSampler(BaseSampler):
     ) -> Any:
 
         if self._warn_independent_sampling:
-            complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+            complete_trials = _get_complete_trials(study)
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -347,6 +346,17 @@ def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
                 "The distribution {} is not implemented.".format(distribution)
             )
     return min(sigma0)
+
+
+def _get_complete_trials(study: "optuna.Study") -> List[FrozenTrial]:
+    complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    for t in study.get_trials(deepcopy=False):
+        if t.state == TrialState.PRUNED and len(t.intermediate_values) > 0:
+            _, value = max(t.intermediate_values.items())
+            _t = copy.deepcopy(t)
+            _t.value = value
+            complete_trials.append(_t)
+    return complete_trials
 
 
 def _get_search_space_bound(
