@@ -306,10 +306,12 @@ class IntLogUniformDistribution(BaseDistribution):
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+        step:
+            A step for spacing between values.
     """
 
-    def __init__(self, low, high):
-        # type: (float, float) -> None
+    def __init__(self, low, high, step):
+        # type: (int, int, int) -> None
 
         if low > high:
             raise ValueError(
@@ -322,8 +324,14 @@ class IntLogUniformDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
+        if step <= 0:
+            raise ValueError(
+                "The `step` value must be non-zero positive value, but step={}.".format(step)
+            )
+
         self.low = low
         self.high = high
+        self.step = step
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
@@ -338,7 +346,9 @@ class IntLogUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        return self.low == self.high
+        if self.low == self.high:
+            return True
+        return (self.high - self.low) < self.step
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool

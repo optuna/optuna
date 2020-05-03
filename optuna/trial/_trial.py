@@ -389,14 +389,14 @@ class Trial(BaseTrial):
                 If ``log`` is true, the value is sampled from the range in the log domain.
                 Otherwise, the value is sampled from the range in the linear domain.
             step:
-                A step of spacing between values. This value is ignored when ``log=True``.
+                A step of spacing between values.
 
         Returns:
             A suggested integer value.
         """
 
         if log:
-            distribution = distributions.IntLogUniformDistribution(low=low, high=high)
+            distribution = distributions.IntLogUniformDistribution(low=low, high=high, step=step)
         else:
             distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
 
