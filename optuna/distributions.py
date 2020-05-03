@@ -295,6 +295,58 @@ class IntUniformDistribution(BaseDistribution):
         return self.low <= value <= self.high
 
 
+class IntLogUniformDistribution(BaseDistribution):
+    """A uniform distribution on integers in the log domain.
+
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
+    :mod:`~optuna.samplers` in general.
+
+    Attributes:
+        low:
+            Lower endpoint of the range of the distribution. ``low`` is included in the range.
+        high:
+            Upper endpoint of the range of the distribution. ``high`` is included in the range.
+    """
+
+    def __init__(self, low, high):
+        # type: (float, float) -> None
+
+        if low > high:
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
+        if low <= 0.0:
+            raise ValueError(
+                "The `low` value must be larger than 0 for a log distribution "
+                "(low={}, high={}).".format(low, high)
+            )
+
+        self.low = low
+        self.high = high
+
+    def to_external_repr(self, param_value_in_internal_repr):
+        # type: (float) -> int
+
+        return int(param_value_in_internal_repr)
+
+    def to_internal_repr(self, param_value_in_external_repr):
+        # type: (int) -> float
+
+        return float(param_value_in_external_repr)
+
+    def single(self):
+        # type: () -> bool
+
+        return self.low == self.high
+
+    def _contains(self, param_value_in_internal_repr):
+        # type: (float) -> bool
+
+        value = param_value_in_internal_repr
+        return self.low <= value < self.high
+
+
 class CategoricalDistribution(BaseDistribution):
     """A categorical distribution.
 
@@ -367,6 +419,7 @@ DISTRIBUTION_CLASSES = (
     LogUniformDistribution,
     DiscreteUniformDistribution,
     IntUniformDistribution,
+    IntLogUniformDistribution,
     CategoricalDistribution,
 )
 
