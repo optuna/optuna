@@ -329,6 +329,12 @@ class IntLogUniformDistribution(BaseDistribution):
                 "The `step` value must be non-zero positive value, but step={}.".format(step)
             )
 
+        if (high - low) % step != 0:
+            raise ValueError(
+                "The `high` - `low` must be a multiple of `step`, but "
+                "low={}, high={}, step={}.".format(low, high, step)
+            )
+
         self.low = low
         self.high = high
         self.step = step
