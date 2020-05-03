@@ -83,6 +83,10 @@ class RandomSampler(BaseSampler):
             s = self._rng.randint(0, r + 1)
             v = s * param_distribution.step + param_distribution.low
             return int(v)
+        elif isinstance(param_distribution, distributions.IntLogUniformDistribution):
+            log_low = numpy.log(param_distribution.low)
+            log_high = numpy.log(param_distribution.high+1)
+            return int(numpy.exp(self._rng.uniform(log_low, log_high)))
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             choices = param_distribution.choices
             index = self._rng.randint(0, len(choices))

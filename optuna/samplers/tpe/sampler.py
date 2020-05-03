@@ -98,7 +98,8 @@ class TPESampler(base.BaseSampler):
             :class:`~optuna.distributions.UniformDistribution`,
             :class:`~optuna.distributions.DiscreteUniformDistribution`,
             :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.IntUniformDistribution` and
+            :class:`~optuna.distributions.LogIntUniformDistribution`,
+            :class:`~optuna.distributions.IntUniformDistribution`, and
             :class:`~optuna.distributions.CategoricalDistribution`.
         consider_magic_clip:
             Enable a heuristic to limit the smallest variances of Gaussians used in
@@ -110,7 +111,7 @@ class TPESampler(base.BaseSampler):
         n_startup_trials:
             The random sampling is used instead of the TPE algorithm until the given number
             of trials finish in the same study.
-        n_ei_candidate:
+        n_ei_candidates:
             Number of candidate samples used to calculate the expected improvement.
         gamma:
             A function that takes the number of finished trials and returns the number
@@ -191,6 +192,10 @@ class TPESampler(base.BaseSampler):
             )
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
             return self._sample_int(param_distribution, below_param_values, above_param_values)
+        elif isinstance(param_distribution, distributions.IntLogUniformDistribution):
+            return self._sample_int_loguniform(
+                param_distribution, below_param_values, above_param_values
+            )
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             index = self._sample_categorical_index(
                 param_distribution, below_param_values, above_param_values
@@ -202,6 +207,7 @@ class TPESampler(base.BaseSampler):
                 distributions.LogUniformDistribution.__name__,
                 distributions.DiscreteUniformDistribution.__name__,
                 distributions.IntUniformDistribution.__name__,
+                distributions.IntLogUniformDistribution.__name__,
                 distributions.CategoricalDistribution.__name__,
             ]
             raise NotImplementedError(
@@ -266,6 +272,13 @@ class TPESampler(base.BaseSampler):
             low=distribution.low, high=distribution.high, q=distribution.step
         )
         return int(self._sample_discrete_uniform(d, below, above))
+
+    def _sample_int_loguniform(self, distribution, below, above):
+        # type: (distributions.IntLogUniformDistribution, np.ndarray, np.ndarray) -> int
+
+        low = distribution.low
+        high = distribution.high + 1
+        return int(self._sample_numerical(low, high, below, above, is_log=True))
 
     def _sample_numerical(
         self,

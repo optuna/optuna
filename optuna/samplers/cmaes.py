@@ -320,6 +320,10 @@ def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.nd
             x0[name] = np.mean([distribution.high, distribution.low])
         elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
             x0[name] = int(np.mean([distribution.high, distribution.low]))
+        elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+            log_high = math.log(distribution.high)
+            log_low = math.log(distribution.low)
+            x0[name] = int(math.exp(np.mean([log_high, log_low])))
         elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
             log_high = math.log(distribution.high)
             log_low = math.log(distribution.low)
@@ -341,6 +345,10 @@ def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
             sigma0.append((distribution.high - distribution.low) / 6)
         elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
             sigma0.append((distribution.high - distribution.low) / 6)
+        elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+            log_high = math.log(distribution.high)
+            log_low = math.log(distribution.low)
+            sigma0.append((log_high - log_low) / 6)
         elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
             log_high = math.log(distribution.high)
             log_low = math.log(distribution.low)
@@ -366,6 +374,7 @@ def _get_search_space_bound(
                 optuna.distributions.LogUniformDistribution,
                 optuna.distributions.DiscreteUniformDistribution,
                 optuna.distributions.IntUniformDistribution,
+                optuna.distributions.IntLogUniformDistribution,
             ),
         ):
             bounds.append([dist.low, dist.high])
