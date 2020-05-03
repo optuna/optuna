@@ -86,14 +86,14 @@ class MultiObjectiveTrial(object):
 
         return self._trial.suggest_discrete_uniform(name, low, high, q)
 
-    def suggest_int(self, name: str, low: int, high: int) -> int:
+    def suggest_int(self, name: str, low: int, high: int, log: bool = False, step: int = 1) -> int:
         """Suggest a value for the integer parameter.
 
         Please refer to the documentation of :func:`optuna.trial.Trial.suggest_int`
         for further details.
         """
 
-        return self._trial.suggest_int(name, low, high)
+        return self._trial.suggest_int(name, low, high, log, step)
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
