@@ -33,7 +33,7 @@ def test_report() -> None:
         if trial.number == 0:
             trial.report((1, 2, 3), 1)
             trial.report((10, 20, 30), 2)
-        return 100, 200, 300
+        return [100, 200, 300]
 
     study.optimize(objective, n_trials=2)
 
