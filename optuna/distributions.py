@@ -352,9 +352,7 @@ class IntLogUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        if self.low == self.high:
-            return True
-        return (self.high - self.low) < self.step
+        return (self.high - self.low) % self.step == 0
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
