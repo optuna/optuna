@@ -20,7 +20,7 @@ def test_suggest() -> None:
         p3 = trial.suggest_discrete_uniform("p3", 100, 200, q=5)
         p4 = trial.suggest_int("p4", -20, -15)
         p5 = trial.suggest_categorical("p5", [7, 1, 100])
-        p6 = trial.suggest_float("p6", -10, 10, step=1.)
+        p6 = trial.suggest_float("p6", -10, 10, step=1.0)
         return [p0 + p1 + p2, p3 + p4 + p5 + p6]
 
     study.optimize(objective, n_trials=10)

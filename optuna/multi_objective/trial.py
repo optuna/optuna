@@ -43,8 +43,14 @@ class MultiObjectiveTrial(object):
         self._n_objectives = multi_objective.study.MultiObjectiveStudy(trial.study).n_objectives
 
     def suggest_float(
-            self, name: str, low: float, high: float, *, log: bool = False, step: Optional[float] = None
-        ) -> float:
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        log: bool = False,
+        step: Optional[float] = None
+    ) -> float:
         """Suggest a value for the floating point parameter.
 
         Please refer to the documentation of :func:`optuna.trial.Trial.suggest_float`
