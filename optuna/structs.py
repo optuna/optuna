@@ -24,7 +24,7 @@ _message = (
     "`structs.StudySummary`->`study.StudySummary`, "
     "`structs.FrozenTrial`->`trial.FrozenTrial`, "
     "`structs.TrialState`->`trial.TrialState`, "
-    "`structs.TrialPruned`->`exceptions.TrialPruned`."
+    "`structs.TrialPruned`->`TrialPruned`."
 )
 warnings.warn(_message, DeprecationWarning)
 _logger.warning(_message)
@@ -369,7 +369,7 @@ class TrialPruned(exceptions.TrialPruned):
     .. deprecated:: 0.19.0
 
         This class was moved to :mod:`~optuna.exceptions`. Please use
-        :class:`~optuna.exceptions.TrialPruned` instead.
+        :class:`~optuna.TrialPruned` instead.
     """
 
     def __init__(self, *args, **kwargs):
@@ -377,7 +377,7 @@ class TrialPruned(exceptions.TrialPruned):
 
         message = (
             "The use of `optuna.structs.TrialPruned` is deprecated. "
-            "Please use `optuna.exceptions.TrialPruned` instead."
+            "Please use `optuna.TrialPruned` instead."
         )
         warnings.warn(message, DeprecationWarning)
         _logger.warning(message)

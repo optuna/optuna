@@ -300,7 +300,7 @@ class Study(BaseStudy):
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
-                exception except for :class:`~optuna.exceptions.TrialPruned`.
+                exception except for :class:`~optuna.TrialPruned`.
             callbacks:
                 List of callback functions that are invoked at the end of each trial. Each function
                 must accept two parameters with the following types in this order:

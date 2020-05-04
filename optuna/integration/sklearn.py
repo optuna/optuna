@@ -35,7 +35,7 @@ except ImportError as e:
     _available = False
 
 from optuna import distributions  # NOQA
-from optuna import exceptions  # NOQA
+from optuna.exceptions import TrialPruned  # NOQA
 from optuna import logging  # NOQA
 from optuna import samplers  # NOQA
 from optuna import study as study_module  # NOQA
@@ -314,7 +314,7 @@ class _Objective(object):
             if trial.should_prune():
                 self._store_scores(trial, scores)
 
-                raise exceptions.TrialPruned("trial was pruned at iteration {}.".format(step))
+                raise TrialPruned("trial was pruned at iteration {}.".format(step))
 
         return scores
 

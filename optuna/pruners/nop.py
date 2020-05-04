@@ -40,7 +40,7 @@ class NopPruner(BasePruner):
 
                     if trial.should_prune():
                         assert False, "should_prune() should always return False with this pruner."
-                        raise optuna.exceptions.TrialPruned()
+                        raise optuna.TrialPruned()
 
                 return clf.score(X_valid, y_valid)
 

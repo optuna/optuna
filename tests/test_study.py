@@ -444,11 +444,11 @@ def test_run_trial(storage_mode):
 
 # TODO(Yanase): Remove this test function after removing `optuna.structs.TrialPruned`.
 @pytest.mark.parametrize(
-    "trial_pruned_class", [optuna.exceptions.TrialPruned, optuna.structs.TrialPruned]
+    "trial_pruned_class",
+    [optuna.TrialPruned, optuna.exceptions.TrialPruned, optuna.structs.TrialPruned],
 )
 @pytest.mark.parametrize("report_value", [None, 1.2])
 def test_run_trial_with_trial_pruned(trial_pruned_class, report_value):
-    # type: (Callable[[], optuna.exceptions.TrialPruned], Optional[float]) -> None
 
     study = optuna.create_study()
 
