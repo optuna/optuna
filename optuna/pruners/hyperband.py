@@ -53,10 +53,11 @@ class HyperbandPruner(BasePruner):
         Hyperband has several :class:`~optuna.pruners.SuccessiveHalvingPruner`. Each
         :class:`~optuna.pruners.SuccessiveHalvingPruner` is referred as "bracket" in the original
         paper. The number of brackets is an important factor to control the early stopping behavior
-        of Hyperband and is automatically determined by ``max_resource`` and ``reduction_factor``
-        as `The number of brackets = floor(log(max_resource) / log(reduction_factor)) + 1`. Please
-        set ``reduction_factor`` so that the number of brackets is not too large　(about 4 ~ 6 in
-        most use cases).　Please see Section 3.6 of the `original paper
+        of Hyperband and is automatically determined by ``min_resource``, ``max_resource`` and
+        ``reduction_factor`` as
+        `The number of brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`.
+        Please set ``reduction_factor`` so that the number of brackets is not too large　(about 4 ~
+        6 in most use cases).　Please see Section 3.6 of the `original paper
         <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
 
     Args:
@@ -65,9 +66,9 @@ class HyperbandPruner(BasePruner):
             in the paper.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         max_resource:
-            A parameter for specifying the maximum resource allocated to a trial noted as :math:`R`
-            in the paper. This value represents and should match the maximum iteration steps (e.g.,
-            the number of epochs for neural networks).
+            A parameter for specifying the maximum resource allocated to a trial. :math:`R` in the
+            paper corresponds to ``max_resource / min_resource``. This value represents and should
+            match the maximum iteration steps (e.g., the number of epochs for neural networks).
             When this argument is "auto", the maximum resource is estimated according to the
             completed trials. The default value of this argument is "auto".
         reduction_factor:
@@ -78,8 +79,8 @@ class HyperbandPruner(BasePruner):
 
             .. deprecated:: 1.4.0
                 This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`. The
-                number of brackets are automatically determined based on ``max_resource`` and
-                ``reduction_factor``.
+                number of brackets are automatically determined based on ``min_resource``,
+                ``max_resource`` and ``reduction_factor``.
 
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
             Defaults to :math:`4`.
@@ -121,9 +122,9 @@ class HyperbandPruner(BasePruner):
         if n_brackets is not None:
             message = (
                 "The argument of `n_brackets` is deprecated. "
-                "The number of brackets is automatically determined by `max_resource` and "
-                "`reduction_factor` as "
-                "`n_brackets = floor(log(max_resource) / log(reduction_factor)) + 1`. "
+                "The number of brackets is automatically determined by `min_resource`, "
+                "`max_resource` and `reduction_factor` as "
+                "`n_brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`. "
                 "Please specify `reduction_factor` appropriately."
             )
             warnings.warn(message, DeprecationWarning)
