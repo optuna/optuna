@@ -106,16 +106,16 @@ def test_pytorch_lightning_pruning_callback():
     assert study.trials[0].value == 1.0
 
 
-@pytest.mark.parametrize("max_epochs", [6, 7])
-def test_pytorch_lightning_pruning_callback_with_interval(max_epochs):
-    # type: (int) -> None
+@pytest.mark.parametrize("interval, max_epochs", [(6, 6), (7, 6), (7, 7)])
+def test_pytorch_lightning_pruning_callback_with_interval(interval, max_epochs):
+    # type: (int, int) -> None
 
     def objective(trial):
         # type: (optuna.trial.Trial) -> float
 
         trainer = pl.Trainer(
             early_stop_callback=PyTorchLightningPruningCallback(
-                trial, monitor="accuracy", interval=7
+                trial, monitor="accuracy", interval=interval
             ),
             max_epochs=max_epochs,
         )
@@ -128,7 +128,7 @@ def test_pytorch_lightning_pruning_callback_with_interval(max_epochs):
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     study.optimize(objective, n_trials=1)
-    if max_epochs == 7:
+    if max_epochs == interval:
         assert study.trials[0].state == optuna.trial.TrialState.PRUNED
     else:
         assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
