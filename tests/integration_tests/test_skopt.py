@@ -129,6 +129,17 @@ def test_is_compatible():
         optimizer._is_compatible(trial)
 
 
+def test_reseed_rng() -> None:
+    sampler = optuna.integration.SkoptSampler()
+    sampler._independent_sampler.reseed_rng()
+
+    with patch.object(
+        sampler._independent_sampler, "reseed_rng", wraps=sampler._independent_sampler.reseed_rng
+    ) as mock_object:
+        sampler.reseed_rng()
+        assert mock_object.call_count == 1
+
+
 def _objective(trial):
     # type: (optuna.trial.Trial) -> float
 

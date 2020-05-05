@@ -28,7 +28,7 @@ import optuna
 
 
 N_TRAIN_EXAMPLES = 3000
-N_TEST_EXAMPLES = 1000
+N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
 
@@ -76,6 +76,7 @@ def objective(trial):
     optimizer = create_optimizer(trial)
 
     # Load the test and train MNIST dataset.
+    # Use test as a validation set.
     mnist = mx.test_utils.get_mnist()
     rng = np.random.RandomState(0)
     permute_train = rng.permutation(len(mnist["train_data"]))
@@ -85,10 +86,10 @@ def objective(trial):
         batch_size=BATCHSIZE,
         shuffle=True,
     )
-    permute_test = rng.permutation(len(mnist["test_data"]))
+    permute_valid = rng.permutation(len(mnist["test_data"]))
     val = mx.io.NDArrayIter(
-        data=mnist["test_data"][permute_test][:N_TEST_EXAMPLES],
-        label=mnist["test_label"][permute_test][:N_TEST_EXAMPLES],
+        data=mnist["test_data"][permute_valid][:N_VALID_EXAMPLES],
+        label=mnist["test_label"][permute_valid][:N_VALID_EXAMPLES],
         batch_size=BATCHSIZE,
     )
 
@@ -102,11 +103,11 @@ def objective(trial):
         num_epoch=EPOCH,
     )
 
-    # Compute the accuracy on the entire test set.
-    test = mx.io.NDArrayIter(
+    # Compute the accuracy on the entire validation set.
+    valid = mx.io.NDArrayIter(
         data=mnist["test_data"], label=mnist["test_label"], batch_size=BATCHSIZE
     )
-    accuracy = model.score(eval_data=test, eval_metric="acc")[0]
+    accuracy = model.score(eval_data=valid, eval_metric="acc")[0]
 
     return accuracy[1]
 

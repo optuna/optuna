@@ -6,6 +6,8 @@ if optuna.type_checking.TYPE_CHECKING:
 
 try:
     from pytorch_lightning.callbacks import EarlyStopping
+    from pytorch_lightning import LightningModule
+    from pytorch_lightning import Trainer
 
     _available = True
 except (ImportError, SyntaxError) as e:
@@ -43,7 +45,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
     def __init__(self, trial, monitor, interval=1):
         # type: (optuna.trial.Trial, str, int) -> None
 
-        super(PyTorchLightningPruningCallback, self).__init__()
+        super(PyTorchLightningPruningCallback, self).__init__(monitor=monitor)
 
         _check_pytorch_lightning_availability()
 
@@ -51,13 +53,14 @@ class PyTorchLightningPruningCallback(EarlyStopping):
         self._monitor = monitor
         self._interval = interval
 
-    def on_epoch_end(self, epoch, logs=None):
-        # type: (int, Optional[Dict[str, float]]) -> None
-
+    def on_epoch_end(self, trainer, pl_module):
+        # type: (Trainer, LightningModule) -> None
+        logs = trainer.callback_metrics
+        epoch = pl_module.current_epoch
+        
         if (epoch + 1) % self._interval != 0:
             return
 
-        logs = logs or {}
         current_score = logs.get(self._monitor)
         if current_score is None:
             return
