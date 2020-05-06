@@ -16,6 +16,7 @@ from optuna import multi_objective
 from optuna.storages import BaseStorage
 from optuna.study import Study
 from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
@@ -235,13 +236,14 @@ class MultiObjectiveStudy(object):
 
         mo_callbacks = None
         if callbacks is not None:
-            mo_callbacks = [
-                lambda study, trial: callback(
+
+            def to_mo_callback(callback: CallbackFuncType) -> Callable[[Study, FrozenTrial], None]:
+                return lambda study, trial: callback(
                     MultiObjectiveStudy(study),
                     multi_objective.trial.FrozenMultiObjectiveTrial(self.n_objectives, trial),
                 )
-                for callback in callbacks
-            ]
+
+            mo_callbacks = [to_mo_callback(callback) for callback in callbacks]
 
         self._study.optimize(
             mo_objective,
