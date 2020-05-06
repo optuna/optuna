@@ -3,8 +3,8 @@ import warnings
 
 from optuna import distributions
 from optuna import logging
-from optuna import type_checking
 from optuna.trials.state import TrialState
+from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
