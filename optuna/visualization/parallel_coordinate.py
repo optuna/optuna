@@ -76,7 +76,7 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
     if params is not None:
         for input_p_name in params:
             if input_p_name not in all_params:
-                ValueError("Parameter {} does not exist in your study.".format(input_p_name))
+                raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
