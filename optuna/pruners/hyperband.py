@@ -67,16 +67,17 @@ class HyperbandPruner(BasePruner):
             from sklearn.model_selection import train_test_split
 
             np.random.seed(seed=0)
-            X = np.random.randn(200).reshape(-1, 1)
-            y = np.where(X[:, 0] < 0.5, 0, 1)
-            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-            classes = np.unique(y)
-            n_train_iter = 100
 
         .. testcode::
 
             import optuna
             from sklearn.linear_model import SGDClassifier
+
+            X = np.random.randn(200).reshape(-1, 1)
+            y = np.where(X[:, 0] < 0.5, 0, 1)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+            classes = np.unique(y)
+            n_train_iter = 100
 
             def objective(trial):
                 alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
@@ -106,7 +107,7 @@ class HyperbandPruner(BasePruner):
     Args:
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial noted as :math:`r`
-            in the paper. Basically, a smaller :math:`r` will give a result faster, but a larger
+            in the paper. A smaller :math:`r` will give a result faster, but a larger
             :math:`r` will give a better guarantee of successful judging between configurations.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         max_resource:
@@ -115,8 +116,7 @@ class HyperbandPruner(BasePruner):
             the number of epochs for neural networks).
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
-            :math:`\\eta` in the paper. Basically, the paper says that results are
-            not very sensitive to the choice of :math:`\\eta`.
+            :math:`\\eta` in the paper.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         n_brackets:
 
