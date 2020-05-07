@@ -755,7 +755,6 @@ def test_get_all_study_summaries(storage_mode: str) -> None:
         assert len(summaries) == len(expected_summaries)
         for summary in summaries:
             expected_summary = expected_summaries[summary.study_id]
-            assert summary.study_id == expected_summary.study_id
             assert summary.direction == expected_summary.direction
             assert summary.datetime_start == expected_summary.datetime_start
             assert summary.study_name == expected_summary.study_name
