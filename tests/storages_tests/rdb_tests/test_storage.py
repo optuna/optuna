@@ -5,19 +5,11 @@ from unittest.mock import patch
 
 import pytest
 
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import json_to_distribution
-from optuna.distributions import UniformDistribution
-from optuna.exceptions import DuplicatedStudyError
 from optuna.exceptions import StorageInternalError
 from optuna.storages.rdb.models import SCHEMA_VERSION
-from optuna.storages.rdb.models import StudyModel
 from optuna.storages.rdb.models import TrialModel
-from optuna.storages.rdb.models import TrialParamModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
-from optuna.study import StudyDirection
-from optuna.study import StudySummary
 from optuna.trial import TrialState
 from optuna import type_checking
 from optuna import version
@@ -28,7 +20,6 @@ if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
     from typing import Optional  # NOQA
 
-    from optuna.distributions import BaseDistribution  # NOQA
     from optuna.trial import FrozenTrial  # NOQA
 
 
@@ -119,135 +110,6 @@ def test_set_default_engine_kwargs_for_mysql_with_other_rdb():
     assert "pool_pre_ping" not in engine_kwargs
 
 
-def test_create_new_study_multiple_studies():
-    # type: () -> None
-
-    storage = create_test_storage()
-    session = storage.scoped_session()
-
-    study_id_1 = storage.create_new_study()
-    study_id_2 = storage.create_new_study()
-
-    result = session.query(StudyModel).all()
-    result = sorted(result, key=lambda x: x.study_id)
-    assert len(result) == 2
-    assert result[0].study_id == study_id_1
-    assert result[1].study_id == study_id_2
-
-
-def test_create_new_study_duplicated_name():
-    # type: () -> None
-
-    storage = create_test_storage()
-    study_name = "sample_study_name"
-    storage.create_new_study(study_name)
-    with pytest.raises(DuplicatedStudyError):
-        storage.create_new_study(study_name)
-
-
-def test_set_trial_param_to_check_distribution_json():
-    # type: () -> None
-
-    example_distributions = {
-        "x": UniformDistribution(low=1.0, high=2.0),
-        "y": CategoricalDistribution(choices=("Otemachi", "Tokyo", "Ginza")),
-    }  # type: Dict[str, BaseDistribution]
-
-    storage = create_test_storage()
-    session = storage.scoped_session()
-    study_id = storage.create_new_study()
-
-    trial_id = storage.create_new_trial(study_id)
-    storage.set_trial_param(trial_id, "x", 1.5, example_distributions["x"])
-    storage.set_trial_param(trial_id, "y", 2, example_distributions["y"])
-
-    # test setting new name
-    result_1 = session.query(TrialParamModel).filter(TrialParamModel.param_name == "x").one()
-    assert json_to_distribution(result_1.distribution_json) == example_distributions["x"]
-
-    result_2 = session.query(TrialParamModel).filter(TrialParamModel.param_name == "y").one()
-    assert json_to_distribution(result_2.distribution_json) == example_distributions["y"]
-
-
-def test_get_all_study_summaries_with_multiple_studies():
-    # type: () -> None
-
-    storage = create_test_storage()
-
-    # Set up a MINIMIZE study.
-    study_id_1 = storage.create_new_study()
-    storage.set_study_direction(study_id_1, StudyDirection.MINIMIZE)
-
-    trial_id_1_1 = storage.create_new_trial(study_id_1)
-    trial_id_1_2 = storage.create_new_trial(study_id_1)
-
-    storage.set_trial_value(trial_id_1_1, 100)
-    storage.set_trial_value(trial_id_1_2, 0)
-
-    storage.set_trial_state(trial_id_1_1, TrialState.COMPLETE)
-    storage.set_trial_state(trial_id_1_2, TrialState.COMPLETE)
-
-    # Set up a MAXIMIZE study.
-    study_id_2 = storage.create_new_study()
-    storage.set_study_direction(study_id_2, StudyDirection.MAXIMIZE)
-
-    trial_id_2_1 = storage.create_new_trial(study_id_2)
-    trial_id_2_2 = storage.create_new_trial(study_id_2)
-
-    storage.set_trial_value(trial_id_2_1, -100)
-    storage.set_trial_value(trial_id_2_2, -200)
-
-    storage.set_trial_state(trial_id_2_1, TrialState.COMPLETE)
-    storage.set_trial_state(trial_id_2_2, TrialState.COMPLETE)
-
-    # Set up an empty study.
-    study_id_3 = storage.create_new_study()
-
-    summaries = storage.get_all_study_summaries()
-    summaries = sorted(summaries)
-
-    expected_summary_1 = StudySummary(
-        study_id=study_id_1,
-        study_name=storage.get_study_name_from_id(study_id_1),
-        direction=StudyDirection.MINIMIZE,
-        user_attrs={},
-        system_attrs={},
-        best_trial=summaries[0].best_trial,  # This always passes.
-        n_trials=2,
-        datetime_start=summaries[0].datetime_start,  # This always passes.
-    )
-    expected_summary_2 = StudySummary(
-        study_id=study_id_2,
-        study_name=storage.get_study_name_from_id(study_id_2),
-        direction=StudyDirection.MAXIMIZE,
-        user_attrs={},
-        system_attrs={},
-        best_trial=summaries[1].best_trial,  # This always passes.
-        n_trials=2,
-        datetime_start=summaries[1].datetime_start,  # This always passes.
-    )
-    expected_summary_3 = StudySummary(
-        study_id=study_id_3,
-        study_name=storage.get_study_name_from_id(study_id_3),
-        direction=StudyDirection.NOT_SET,
-        user_attrs={},
-        system_attrs={},
-        best_trial=None,
-        n_trials=0,
-        datetime_start=None,
-    )
-
-    assert summaries[0] == expected_summary_1
-    assert summaries[1] == expected_summary_2
-    assert summaries[2] == expected_summary_3
-
-    assert summaries[0].best_trial is not None
-    assert summaries[0].best_trial.value == 0
-
-    assert summaries[1].best_trial is not None
-    assert summaries[1].best_trial.value == -100
-
-
 def test_check_table_schema_compatibility():
     # type: () -> None
 
@@ -302,42 +164,6 @@ def test_commit():
     session.add(v)
     with pytest.raises(StorageInternalError):
         storage._commit(session)
-
-
-def test_update_finished_trial():
-    # type: () -> None
-
-    storage = create_test_storage()
-    study_id = storage.create_new_study()
-
-    # Running trials are allowed to be updated.
-    trial_id = storage.create_new_trial(study_id)
-    assert storage.get_trial(trial_id).state == TrialState.RUNNING
-
-    storage.set_trial_intermediate_value(trial_id, 3, 5)
-    storage.set_trial_value(trial_id, 10)
-    storage.set_trial_param(trial_id, "x", 1.5, UniformDistribution(low=1.0, high=2.0))
-    storage.set_trial_user_attr(trial_id, "foo", "bar")
-    storage.set_trial_system_attr(trial_id, "baz", "qux")
-    storage.set_trial_state(trial_id, TrialState.COMPLETE)
-
-    # Finished trials are not allowed to be updated.
-    for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
-        trial_id = storage.create_new_trial(study_id)
-        storage.set_trial_state(trial_id, state)
-
-        with pytest.raises(RuntimeError):
-            storage.set_trial_intermediate_value(trial_id, 3, 5)
-        with pytest.raises(RuntimeError):
-            storage.set_trial_value(trial_id, 10)
-        with pytest.raises(RuntimeError):
-            storage.set_trial_param(trial_id, "x", 1.5, UniformDistribution(low=1.0, high=2.0))
-        with pytest.raises(RuntimeError):
-            storage.set_trial_user_attr(trial_id, "foo", "bar")
-        with pytest.raises(RuntimeError):
-            storage.set_trial_system_attr(trial_id, "baz", "qux")
-        with pytest.raises(RuntimeError):
-            storage.set_trial_state(trial_id, TrialState.COMPLETE)
 
 
 def test_upgrade():
