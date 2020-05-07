@@ -753,8 +753,13 @@ def test_get_all_study_summaries(storage_mode: str) -> None:
         expected_summaries, _ = _setup_studies(storage, n_study=10, n_trial=10, seed=46)
         summaries = storage.get_all_study_summaries()
         assert len(summaries) == len(expected_summaries)
-        for summary in summaries:
-            expected_summary = expected_summaries[summary.study_id]
+        for study_id, expected_summary in expected_summaries.items():
+            summary = None  # type: Optional[StudySummary]
+            for s in summaries:
+                if s.study_name == expected_summary.study_name:
+                    summary = s
+                    break
+            assert summary is not None
             assert summary.direction == expected_summary.direction
             assert summary.datetime_start == expected_summary.datetime_start
             assert summary.study_name == expected_summary.study_name
