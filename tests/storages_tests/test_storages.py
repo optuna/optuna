@@ -460,10 +460,6 @@ def test_set_trial_state(storage_mode: str) -> None:
             else:
                 assert storage.get_trial(trial_id).datetime_complete is None
 
-            # Cannot set WAITING state.
-            with pytest.raises(RuntimeError):
-                storage.set_trial_state(trial_id, TrialState.WAITING)
-
         for state in ALL_STATES:
             if not state.is_finished():
                 continue
