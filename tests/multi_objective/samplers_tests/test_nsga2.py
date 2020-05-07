@@ -16,7 +16,7 @@ def test_population_size() -> None:
 
     generations = defaultdict(int)
     for t in study.trials:
-        generations[t.system_attrs[multi_objective.samplers._nsga2.GENERATION_KEY]] += 1
+        generations[t.system_attrs[multi_objective.samplers._nsga2._GENERATION_KEY]] += 1
     assert dict(generations) == {0: 10, 1: 10, 2: 10, 3: 10}
 
     # Set `population_size` to 2.
@@ -27,7 +27,7 @@ def test_population_size() -> None:
 
     generations = defaultdict(int)
     for t in study.trials:
-        generations[t.system_attrs[multi_objective.samplers._nsga2.GENERATION_KEY]] += 1
+        generations[t.system_attrs[multi_objective.samplers._nsga2._GENERATION_KEY]] += 1
     assert dict(generations) == {i: 2 for i in range(20)}
 
     # Invalid population size.

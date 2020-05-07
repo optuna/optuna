@@ -16,8 +16,9 @@ from optuna import multi_objective
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
 
-GENERATION_KEY = "multi_objective:nsga2:generation"
-PARENTS_KEY = "multi_objective:nsga2:parents"
+# Define key names of `Trial.system_attrs`.
+_GENERATION_KEY = "multi_objective:nsga2:generation"
+_PARENTS_KEY = "multi_objective:nsga2:parents"
 
 
 @experimental("1.4.0")
@@ -94,14 +95,14 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
         if len(population) == 0:
             generation = 0
-            study._storage.set_trial_system_attr(trial_id, GENERATION_KEY, generation)
+            study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
         else:
             p0 = self._select_parent(study, population)
             p1 = self._select_parent(study, population)
 
             generation = parent_generation + 1
-            study._storage.set_trial_system_attr(trial_id, GENERATION_KEY, generation)
-            study._storage.set_trial_system_attr(trial_id, PARENTS_KEY, [p0.number, p1.number])
+            study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
+            study._storage.set_trial_system_attr(trial_id, _PARENTS_KEY, [p0.number, p1.number])
 
         return {}
 
@@ -112,13 +113,13 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-        if PARENTS_KEY not in trial.system_attrs:
+        if _PARENTS_KEY not in trial.system_attrs:
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )
 
         trials = study.get_trials(deepcopy=False)
-        p0, p1 = trial.system_attrs[PARENTS_KEY]
+        p0, p1 = trial.system_attrs[_PARENTS_KEY]
 
         param = trials[p0].params.get(param_name, None)
         if param is None or self._rng.rand() < self._crossover_prob:
@@ -144,7 +145,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 t
                 for t in trials
                 if (
-                    t.system_attrs.get(GENERATION_KEY, 0) == generation
+                    t.system_attrs.get(_GENERATION_KEY, 0) == generation
                     and t.state == optuna.trial.TrialState.COMPLETE
                 )
             ]
