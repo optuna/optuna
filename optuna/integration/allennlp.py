@@ -21,6 +21,28 @@ except ImportError as e:
     TrackerCallback = object
 
 
+def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
+    """Save jsonnet after updating with parameters from the best trial in the study.
+
+    Args:
+        input_config_file:
+            Input configuration file used with :class:`~optuna.integration.AllenNLPExecutor`.
+        output_config_file:
+            Output configuration file.
+        study:
+            An optimized study (``study.best_trial`` does not raise an error).
+
+    """
+    best_params = study.best_params
+    for key, value in best_params.items():
+        best_params[key] = str(value)
+    best_config = json.loads(_jsonnet.evaluate_file(input_config_file, ext_vars=best_params))
+    best_config = allennlp.common.params.infer_and_cast(best_config)
+
+    with open(output_config_file, "w") as f:
+        json.dump(best_config, f, indent=4)
+
+
 @experimental("1.4.0")
 class AllenNLPExecutor(object):
     """AllenNLP extension to use optuna with a jsonnet config file.

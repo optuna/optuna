@@ -144,7 +144,7 @@ class UniformDistribution(BaseDistribution):
         if self.low == self.high:
             return value == self.low
         else:
-            return self.low <= value and value < self.high
+            return self.low <= value < self.high
 
 
 class LogUniformDistribution(BaseDistribution):
@@ -189,7 +189,7 @@ class LogUniformDistribution(BaseDistribution):
         if self.low == self.high:
             return value == self.low
         else:
-            return self.low <= value and value < self.high
+            return self.low <= value < self.high
 
 
 class DiscreteUniformDistribution(BaseDistribution):
@@ -236,7 +236,7 @@ class DiscreteUniformDistribution(BaseDistribution):
         # type: (float) -> bool
 
         value = param_value_in_internal_repr
-        return self.low <= value and value <= self.high
+        return self.low <= value <= self.high
 
 
 class IntUniformDistribution(BaseDistribution):
@@ -286,9 +286,7 @@ class IntUniformDistribution(BaseDistribution):
 
         if self.low == self.high:
             return True
-        if (self.high - self.low) < self.step:
-            return True
-        return False
+        return (self.high - self.low) < self.step
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -361,7 +359,7 @@ class CategoricalDistribution(BaseDistribution):
         # type: (float) -> bool
 
         index = int(param_value_in_internal_repr)
-        return 0 <= index and index < len(self.choices)
+        return 0 <= index < len(self.choices)
 
 
 DISTRIBUTION_CLASSES = (

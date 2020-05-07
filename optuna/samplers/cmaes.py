@@ -110,6 +110,10 @@ class CmaEsSampler(BaseSampler):
         self._cma_rng = np.random.RandomState(seed)
         self._search_space = optuna.samplers.IntersectionSearchSpace()
 
+    def reseed_rng(self) -> None:
+        # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
+        self._independent_sampler.reseed_rng()
+
     def infer_relative_search_space(
         self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial",
     ) -> Dict[str, BaseDistribution]:

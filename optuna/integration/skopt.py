@@ -106,6 +106,10 @@ class SkoptSampler(BaseSampler):
         self._n_startup_trials = n_startup_trials
         self._search_space = samplers.IntersectionSearchSpace()
 
+    def reseed_rng(self) -> None:
+
+        self._independent_sampler.reseed_rng()
+
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
 

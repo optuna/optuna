@@ -51,10 +51,11 @@ class HyperbandPruner(BasePruner):
         Hyperband has several :class:`~optuna.pruners.SuccessiveHalvingPruner`. Each
         :class:`~optuna.pruners.SuccessiveHalvingPruner` is referred as "bracket" in the original
         paper. The number of brackets is an important factor to control the early stopping behavior
-        of Hyperband and is automatically determined by ``max_resource`` and ``reduction_factor``
-        as `The number of brackets = floor(log(max_resource) / log(reduction_factor)) + 1`. Please
-        set ``reduction_factor`` so that the number of brackets is not too large　(about 4 ~ 6 in
-        most use cases).　Please see Section 3.6 of the `original paper
+        of Hyperband and is automatically determined by ``min_resource``, ``max_resource`` and
+        ``reduction_factor`` as
+        `The number of brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`.
+        Please set ``reduction_factor`` so that the number of brackets is not too large　(about 4 ~
+        6 in most use cases).　Please see Section 3.6 of the `original paper
         <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
 
     Args:
@@ -63,9 +64,9 @@ class HyperbandPruner(BasePruner):
             in the paper.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         max_resource:
-            A parameter for specifying the maximum resource allocated to a trial noted as :math:`R`
-            in the paper. This value represents and should match the maximum iteration steps (e.g.,
-            the number of epochs for neural networks).
+            A parameter for specifying the maximum resource allocated to a trial. :math:`R` in the
+            paper corresponds to ``max_resource / min_resource``. This value represents and should
+            match the maximum iteration steps (e.g., the number of epochs for neural networks).
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper. See the details for
@@ -73,15 +74,19 @@ class HyperbandPruner(BasePruner):
         n_brackets:
 
             .. deprecated:: 1.4.0
-                This argument will be removed from :class:~optuna.pruners.HyperbandPruner. The
-                number of brackets are automatically determined based on ``max_resource`` and
-                ``reduction_factor``.
+                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`. The
+                number of brackets are automatically determined based on ``min_resource``,
+                ``max_resource`` and ``reduction_factor``.
 
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
             Defaults to :math:`4`.
         min_early_stopping_rate_low:
+
+            .. deprecated:: 1.4.0
+                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`.
+
             A parameter for specifying the minimum early-stopping rate.
-            This parameter is related to a parameter that is referred to as :math:`r` and used in
+            This parameter is related to a parameter that is referred to as :math:`s` and used in
             `Asynchronous SuccessiveHalving paper <http://arxiv.org/abs/1810.05934>`_.
             The minimum early stopping rate for :math:`i` th bracket is :math:`i + s`.
     """
@@ -92,12 +97,12 @@ class HyperbandPruner(BasePruner):
         max_resource: int = 80,
         reduction_factor: int = 3,
         n_brackets: Optional[int] = None,
-        min_early_stopping_rate_low: int = 0,
+        min_early_stopping_rate_low: Optional[int] = None,
     ) -> None:
 
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
         self._reduction_factor = reduction_factor
-        self._resource_budget = 0
+        self._total_trial_allocation_budget = 0
 
         if n_brackets is None:
             # In the original paper http://www.jmlr.org/papers/volume18/16-558/16-558.pdf, the
@@ -105,31 +110,40 @@ class HyperbandPruner(BasePruner):
             # number of brackets (this is referred as `s_{max} + 1` in the paper) is calculated
             # by s_{max} + 1 = \floor{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
             self._n_brackets = (
-                math.floor(math.log2(max_resource) / math.log2(reduction_factor)) + 1
+                math.floor(math.log(max_resource / min_resource, reduction_factor)) + 1
             )
         else:
             message = (
                 "The argument of `n_brackets` is deprecated. "
-                "The number of brackets is automatically determined by `max_resource` and "
-                "`reduction_factor` as "
-                "`n_brackets = floor(log(max_resource) / log(reduction_factor)) + 1`. "
+                "The number of brackets is automatically determined by `min_resource`, "
+                "`max_resource` and `reduction_factor` as "
+                "`n_brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`. "
                 "Please specify `reduction_factor` appropriately."
             )
             warnings.warn(message, DeprecationWarning)
             _logger.warning(message)
             self._n_brackets = n_brackets
 
-        self._bracket_resource_budgets = []  # type: List[int]
+        self._trial_allocation_budgets = []  # type: List[int]
 
         _logger.debug("Hyperband has {} brackets".format(self._n_brackets))
 
         for i in range(self._n_brackets):
-            bracket_resource_budget = self._calc_bracket_resource_budget(i, self._n_brackets)
-            self._resource_budget += bracket_resource_budget
-            self._bracket_resource_budgets.append(bracket_resource_budget)
+            trial_allocation_budget = self._calculate_trial_allocation_budget(i)
+            self._total_trial_allocation_budget += trial_allocation_budget
+            self._trial_allocation_budgets.append(trial_allocation_budget)
 
             # N.B. (crcrpar): `min_early_stopping_rate` has the information of `bracket_index`.
-            min_early_stopping_rate = min_early_stopping_rate_low + i
+            if min_early_stopping_rate_low is None:
+                min_early_stopping_rate = i
+            else:
+                message = (
+                    "The argument of `min_early_stopping_rate_low` is deprecated. "
+                    "Please specify `min_resource` appropriately."
+                )
+                warnings.warn(message, DeprecationWarning)
+                _logger.warning(message)
+                min_early_stopping_rate = min_early_stopping_rate_low + i
 
             _logger.debug(
                 "{}th bracket has minimum early stopping rate of {}".format(
@@ -150,21 +164,31 @@ class HyperbandPruner(BasePruner):
         bracket_study = self._create_bracket_study(study, i)
         return self._pruners[i].prune(bracket_study, trial)
 
-    # TODO(crcrpar): Improve resource computation/allocation algorithm.
-    def _calc_bracket_resource_budget(self, pruner_index: int, n_brackets: int) -> int:
-        n = self._reduction_factor ** (n_brackets - 1)
-        return n + (n / 2) * (n_brackets - 1 - pruner_index)
+    def _calculate_trial_allocation_budget(self, pruner_index: int) -> int:
+        """Compute the trial allocated budget for a bracket of ``pruner_index``.
+
+        In the `original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`, the
+        number of trials per one bracket is referred as ``n`` in Algorithm 1. Since we do not know
+        the total number of trials in the leaning scheme of Optuna, we calculate the ratio of the
+        number of trials here instead.
+        """
+
+        s = self._n_brackets - 1 - pruner_index
+        return math.ceil(self._n_brackets * (self._reduction_factor ** s) / (s + 1))
 
     def _get_bracket_id(self, study: "optuna.study.Study", trial: FrozenTrial) -> int:
-        """Computes the index of bracket for a trial of ``trial_number``.
+        """Compute the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
         `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
         """
 
-        n = hash("{}_{}".format(study.study_name, trial.number)) % self._resource_budget
+        n = (
+            hash("{}_{}".format(study.study_name, trial.number))
+            % self._total_trial_allocation_budget
+        )
         for i in range(self._n_brackets):
-            n -= self._bracket_resource_budgets[i]
+            n -= self._trial_allocation_budgets[i]
             if n < 0:
                 return i
 

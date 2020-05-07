@@ -13,8 +13,6 @@ import pytest
 
 import optuna
 import optuna.integration.lightgbm as lgb
-from optuna.integration.lightgbm_tuner.optimize import _TimeKeeper
-from optuna.integration.lightgbm_tuner.optimize import _timer
 from optuna.integration.lightgbm_tuner.optimize import BaseTuner
 from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration.lightgbm_tuner.optimize import OptunaObjective
@@ -87,25 +85,6 @@ class TestOptunaObjective(object):
             study.optimize(objective, n_trials=10)
 
             assert study.best_value == 0.5
-
-
-class TestTimeKeeper(object):
-    def test__timer_elapsed_secs(self):
-        # type: () -> None
-
-        with mock.patch("time.time", return_value=1):
-            tk = _TimeKeeper()
-            with mock.patch("time.time", return_value=10):
-                assert tk.elapsed_secs() == 9
-
-
-def test__timer_context():
-    # type: () -> None
-
-    with mock.patch("time.time", return_value=1):
-        with _timer() as t:
-            with mock.patch("time.time", return_value=10):
-                assert t.elapsed_secs() == 9
 
 
 class TestBaseTuner(object):
@@ -404,6 +383,22 @@ class TestLightGBMTuner(object):
             runner.train_subset.construct()  # Cannot get label before construct `lgb.Dataset`.
             assert runner.train_subset.get_label().shape[0] == sample_size
 
+    def test_time_budget(self) -> None:
+        unexpected_value = 1.1  # out of scope.
+
+        with turnoff_train():
+            runner = self._get_tuner_object(
+                params=dict(
+                    feature_fraction=unexpected_value,  # set default as unexpected value.
+                ),
+                kwargs_options=dict(time_budget=0,),
+            )
+            assert len(runner.study.trials) == 0
+            # No trials run because `time_budget` is set to zero.
+            runner.tune_feature_fraction()
+            assert runner.lgbm_params["feature_fraction"] == unexpected_value
+            assert len(runner.study.trials) == 0
+
     def test_tune_feature_fraction(self):
         # type: () -> None
 
@@ -669,7 +664,10 @@ class TestLightGBMTuner(object):
 
         def objective(trial: optuna.trial.Trial, value: float) -> float:
 
-            trial.set_user_attr("lightgbm_tuner:step_name", "step{:.0f}".format(value))
+            trial.set_system_attr(
+                optuna.integration.lightgbm_tuner.optimize._STEP_NAME_KEY,
+                "step{:.0f}".format(value),
+            )
             return trial.suggest_uniform("x", value, value)
 
         study = optuna.create_study(direction=direction)
