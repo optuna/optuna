@@ -1,4 +1,3 @@
-import contextlib
 import copy
 import json
 import os
@@ -57,26 +56,6 @@ DEFAULT_LIGHTGBM_PARAMETERS = {
 }
 
 _logger = optuna.logging.get_logger(__name__)
-
-
-class _TimeKeeper(object):
-    def __init__(self):
-        # type: () -> None
-
-        self.time = time.time()
-
-    def elapsed_secs(self):
-        # type: () -> float
-
-        return time.time() - self.time
-
-
-@contextlib.contextmanager
-def _timer():
-    # type: () -> Generator[_TimeKeeper, None, None]
-
-    timekeeper = _TimeKeeper()
-    yield timekeeper
 
 
 class BaseTuner(object):
@@ -249,11 +228,11 @@ class OptunaObjective(BaseTuner):
             param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + EPS))
             self.lgbm_params["min_child_samples"] = param_value
 
-        with _timer() as t:
-            booster = lgb.train(self.lgbm_params, self.train_set, **self.lgbm_kwargs)
+        start_time = time.time()
+        booster = lgb.train(self.lgbm_params, self.train_set, **self.lgbm_kwargs)
 
         val_score = self._get_booster_best_score(booster)
-        elapsed_secs = t.elapsed_secs()
+        elapsed_secs = time.time() - start_time
         average_iteration_time = elapsed_secs / booster.current_iteration()
 
         if self.model_dir is not None:
@@ -388,6 +367,7 @@ class LightGBMTuner(BaseTuner):
         )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
         self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
+        self._start_time = None  # type: Optional[float]
         self._model_dir = model_dir
 
         if self._model_dir is not None and not os.path.exists(self._model_dir):
@@ -558,34 +538,12 @@ class LightGBMTuner(BaseTuner):
         # Sampling.
         self.sample_train_set()
 
-        # Tuning.
-        time_budget = self.auto_options["time_budget"]
-
-        self.start_time = time.time()
-        with _timer() as t:
-            self.tune_feature_fraction()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
-
-            self.tune_num_leaves()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
-
-            self.tune_bagging()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
-
-            self.tune_feature_fraction_stage2()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
-
-            self.tune_regularization_factors()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
-
-            self.tune_min_data_in_leaf()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
+        self.tune_feature_fraction()
+        self.tune_num_leaves()
+        self.tune_bagging()
+        self.tune_feature_fraction_stage2()
+        self.tune_regularization_factors()
+        self.tune_min_data_in_leaf()
 
     def sample_train_set(self):
         # type: () -> None
@@ -695,9 +653,17 @@ class LightGBMTuner(BaseTuner):
             if t.state in (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
         ]
         _n_trials = n_trials - len(complete_trials)
+
+        if self._start_time is None:
+            self._start_time = time.time()
+
+        if self.auto_options["time_budget"] is not None:
+            _timeout = self.auto_options["time_budget"] - (time.time() - self._start_time)
+        else:
+            _timeout = None
         if _n_trials > 0:
             try:
-                study.optimize(objective, n_trials=_n_trials, catch=())
+                study.optimize(objective, n_trials=_n_trials, timeout=_timeout, catch=())
             except ValueError:
                 # ValueError is raised by GridSampler when all combinations were examined.
                 # TODO(toshihikoyanase): Remove this try-except after Study.stop is implemented.
