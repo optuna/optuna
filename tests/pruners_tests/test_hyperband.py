@@ -123,3 +123,10 @@ def test_hyperband_max_resource_is_auto():
     study.optimize(objective, n_trials=N_BRACKETS * EXPECTED_N_TRIALS_PER_BRACKET)
 
     assert N_REPORTS == pruner._max_resource
+
+
+def test_hyperband_max_resource_value_error():
+    # type: () -> None
+
+    with pytest.raises(ValueError):
+        _ = optuna.pruners.HyperbandPruner(max_resource="not_appropriate")
