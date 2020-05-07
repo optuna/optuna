@@ -35,7 +35,7 @@ except ImportError as e:
     _available = False
 
 from optuna import distributions  # NOQA
-from optuna.exceptions import TrialPruned  # NOQA
+from optuna import TrialPruned  # NOQA
 from optuna import logging  # NOQA
 from optuna import samplers  # NOQA
 from optuna import study as study_module  # NOQA

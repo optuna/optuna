@@ -9,12 +9,12 @@ from optuna.integration import ChainerMNStudy
 from optuna import pruners
 from optuna.storages import RDBStorage
 from optuna import Study
-from optuna import TrialPruned
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
+from optuna import TrialPruned
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

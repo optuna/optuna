@@ -731,7 +731,7 @@ class Study(BaseStudy):
 
         try:
             result = func(trial)
-        except optuna.TrialPruned as e:
+        except exceptions.TrialPruned as e:
             message = "Setting status of trial#{} as {}. {}".format(
                 trial_number, TrialState.PRUNED, str(e)
             )

@@ -449,6 +449,7 @@ def test_run_trial(storage_mode):
 )
 @pytest.mark.parametrize("report_value", [None, 1.2])
 def test_run_trial_with_trial_pruned(trial_pruned_class, report_value):
+    # type: (Callable[[], optuna.exceptions.TrialPruned], Optional[float]) -> None
 
     study = optuna.create_study()
 
