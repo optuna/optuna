@@ -338,6 +338,9 @@ class RedisStorage(base.BaseStorage):
             pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
             pipe.execute()
 
+        if trial.state.is_finished():
+            self._update_cache(trial_id)
+
         return trial_id
 
     @staticmethod
