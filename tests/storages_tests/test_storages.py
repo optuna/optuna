@@ -451,6 +451,8 @@ def test_set_trial_state(storage_mode: str) -> None:
             if state == TrialState.WAITING:
                 continue
             assert storage.get_trial(trial_id).state == TrialState.RUNNING
+            if state.is_finished():
+                storage.set_trial_value(trial_id, 0.0)
             storage.set_trial_state(trial_id, state)
             assert storage.get_trial(trial_id).state == state
             if state.is_finished():
@@ -466,6 +468,8 @@ def test_set_trial_state(storage_mode: str) -> None:
             if not state.is_finished():
                 continue
             trial_id = storage.create_new_trial(study_id)
+            storage.set_trial_value(trial_id, 0.0)
+            storage.set_trial_state(trial_id, state)
             for state2 in ALL_STATES:
                 # Cannot update states of finished trials.
                 with pytest.raises(RuntimeError):
