@@ -79,7 +79,7 @@ def test_create_new_study(storage_mode: str) -> None:
         assert summaries[0].study_name.startswith(DEFAULT_STUDY_NAME_PREFIX)
 
         study_id2 = storage.create_new_study()
-        # Study id muse be unique.
+        # Study id must be unique.
         assert study_id != study_id2
         summaries = storage.get_all_study_summaries()
         assert len(summaries) == 2
