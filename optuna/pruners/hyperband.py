@@ -159,8 +159,9 @@ class HyperbandPruner(BasePruner):
         if self._max_resource == "auto":
             trials = study.get_trials(deepcopy=False)
             n_steps = [
-                t.last_step for t in trials if
-                t.state == TrialState.COMPLETE and t.last_step is not None
+                t.last_step
+                for t in trials
+                if t.state == TrialState.COMPLETE and t.last_step is not None
             ]
 
             if not n_steps:
