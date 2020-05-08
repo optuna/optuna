@@ -44,7 +44,7 @@ def test_plot_parallel_coordinate():
     assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
 
     # Test with wrong params that do not exist in trials
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
         plot_parallel_coordinate(study, params=["optuna", "optuna"])
 
     # Ignore failed trials.
