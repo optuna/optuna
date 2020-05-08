@@ -71,6 +71,12 @@ class HyperbandPruner(BasePruner):
             match the maximum iteration steps (e.g., the number of epochs for neural networks).
             When this argument is "auto", the maximum resource is estimated according to the
             completed trials. The default value of this argument is "auto".
+
+            .. note::
+                With "auto", the maximum resource will be the largest step reported by
+                :meth:~optuna.trial.Trial.report in the first, or one of the first if trained in
+                parallel, completed trial. No trials will be pruned until the maximum resource is
+                determined.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper. See the details for
@@ -152,16 +158,15 @@ class HyperbandPruner(BasePruner):
     def _try_initialization(self, study: "optuna.study.Study") -> None:
         if self._max_resource == "auto":
             trials = study.get_trials(deepcopy=False)
-            completed_trials = [
-                t for t in trials if t.state is TrialState.COMPLETE and t.last_step is not None
+            n_steps = [
+                t.last_step for t in trials if
+                t.state == TrialState.COMPLETE and t.last_step is not None
             ]
 
-            if len(completed_trials) == 0:
+            if not n_steps:
                 return
 
-            for t in completed_trials:
-                assert t.last_step is not None
-                self._max_resource = t.last_step + 1
+            self._max_resource = max(n_steps) + 1
 
         assert isinstance(self._max_resource, int)
 
