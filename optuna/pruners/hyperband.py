@@ -67,16 +67,16 @@ class HyperbandPruner(BasePruner):
             from sklearn.model_selection import train_test_split
 
             np.random.seed(seed=0)
+            X = np.random.randn(200).reshape(-1, 1)
+            y = np.where(X[:, 0] < 0.5, 0, 1)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+            classes = np.unique(y)
 
         .. testcode::
 
             import optuna
             from sklearn.linear_model import SGDClassifier
 
-            X = np.random.randn(200).reshape(-1, 1)
-            y = np.where(X[:, 0] < 0.5, 0, 1)
-            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-            classes = np.unique(y)
             n_train_iter = 100
 
             def objective(trial):
