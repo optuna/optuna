@@ -21,7 +21,7 @@ import optuna
 from optuna.integration import KerasPruningCallback
 
 N_TRAIN_EXAMPLES = 3000
-N_TEST_EXAMPLES = 1000
+N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 20
@@ -56,14 +56,14 @@ def objective(trial):
     # Clear clutter from previous session graphs.
     keras.backend.clear_session()
 
-    # The data is split between train and test sets.
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    # The data is split between train and validation sets.
+    (x_train, y_train), (x_valid, y_valid) = mnist.load_data()
     x_train = x_train.reshape(60000, 784)[:N_TRAIN_EXAMPLES].astype("float32") / 255
-    x_test = x_test.reshape(10000, 784)[:N_TEST_EXAMPLES].astype("float32") / 255
+    x_valid = x_valid.reshape(10000, 784)[:N_VALID_EXAMPLES].astype("float32") / 255
 
     # Convert class vectors to binary class matrices.
     y_train = keras.utils.to_categorical(y_train[:N_TRAIN_EXAMPLES], CLASSES)
-    y_test = keras.utils.to_categorical(y_test[:N_TEST_EXAMPLES], CLASSES)
+    y_valid = keras.utils.to_categorical(y_valid[:N_VALID_EXAMPLES], CLASSES)
 
     # Generate our trial model.
     model = create_model(trial)
@@ -76,12 +76,12 @@ def objective(trial):
         batch_size=BATCHSIZE,
         callbacks=[KerasPruningCallback(trial, "val_acc")],
         epochs=EPOCHS,
-        validation_data=(x_test, y_test),
+        validation_data=(x_valid, y_valid),
         verbose=1,
     )
 
-    # Evaluate the model accuracy on the test set.
-    score = model.evaluate(x_test, y_test, verbose=0)
+    # Evaluate the model accuracy on the validation set.
+    score = model.evaluate(x_valid, y_valid, verbose=0)
     return score[1]
 
 
