@@ -15,7 +15,11 @@ COPY . .
 ARG BUILD_TYPE='dev'
 
 RUN if [ "${BUILD_TYPE}" = "dev" ]; then \
-        pip install --no-cache-dir -e '.[checking, doctest, document, example, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
+        if [ "${PYTHON_VERSION}" \< "3.6" ]; then \
+            pip install --no-cache-dir -e '.[doctest, document, example, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
+        else \
+            pip install --no-cache-dir -e '.[checking, doctest, document, example, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
+        fi \
     else \
         pip install --no-cache-dir -e .; \
     fi \
