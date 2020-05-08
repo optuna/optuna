@@ -58,6 +58,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     **Stronger consistency requirements for special data**
 
+    TODO(ytsmiling) Add load method to storage class implementations.
+
     Under multi-worker settings, storage classes are guaranteed to return the latest
     values of any attributes of `Study`, but not guaranteed the same thing for
     attributes of `Trial`.
