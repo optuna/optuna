@@ -58,10 +58,58 @@ class HyperbandPruner(BasePruner):
         6 in most use cases).　Please see Section 3.6 of the `original paper
         <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
 
+    Example:
+
+        We minimize an objective function with Hyperband pruning algorithm.
+
+        .. testsetup::
+
+            import numpy as np
+            from sklearn.model_selection import train_test_split
+
+            np.random.seed(seed=0)
+            X = np.random.randn(200).reshape(-1, 1)
+            y = np.where(X[:, 0] < 0.5, 0, 1)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+            classes = np.unique(y)
+
+        .. testcode::
+
+            import optuna
+            from sklearn.linear_model import SGDClassifier
+
+            n_train_iter = 100
+
+            def objective(trial):
+                alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
+                clf = SGDClassifier(alpha=alpha)
+
+                for step in range(n_train_iter):
+                    clf.partial_fit(X_train, y_train, classes=classes)
+
+                    intermediate_value = clf.score(X_test, y_test)
+                    trial.report(intermediate_value, step)
+
+                    if trial.should_prune():
+                        raise optuna.exceptions.TrialPruned()
+
+                return clf.score(X_test, y_test)
+
+            study = optuna.create_study(
+                direction='maximize',
+                pruner=optuna.pruners.HyperbandPruner(
+                    min_resource=1,
+                    max_resource=n_train_iter,
+                    reduction_factor=3
+                )
+            )
+            study.optimize(objective, n_trials=20)
+
     Args:
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial noted as :math:`r`
-            in the paper.
+            in the paper. A smaller :math:`r` will give a result faster, but a larger
+            :math:`r` will give a better guarantee of successful judging between configurations.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         max_resource:
             A parameter for specifying the maximum resource allocated to a trial. :math:`R` in the
@@ -69,8 +117,8 @@ class HyperbandPruner(BasePruner):
             match the maximum iteration steps (e.g., the number of epochs for neural networks).
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
-            :math:`\\eta` in the paper. See the details for
-            :class:`~optuna.pruners.SuccessiveHalvingPruner`.
+            :math:`\\eta` in the paper.
+            See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         n_brackets:
 
             .. deprecated:: 1.4.0
