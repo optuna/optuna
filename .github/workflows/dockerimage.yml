@@ -45,20 +45,3 @@ jobs:
       run: |
         docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --file Dockerfile --tag "${PKG_TAG}"
         docker tag "${PKG_TAG}" "${HUB_TAG}"
-
-    - name: Login & Push to GitHub Packages
-      # if: github.event_name != 'pull_request'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        echo "${GITHUB_TOKEN}" | docker login docker.pkg.github.com -u optuna --password-stdin
-        docker push "${PKG_TAG}"
-
-    - name: Login & Push to Docker Hub
-      # if: github.event_name != 'pull_request'
-      env:
-        DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
-        DOCKER_HUB_USER: ${{ secrets.DOCKER_HUB_USER }}
-      run: |
-        echo "${DOCKER_HUB_TOKEN}" | docker login -u "${DOCKER_HUB_USER}" --password-stdin
-        docker push "${HUB_TAG}"
