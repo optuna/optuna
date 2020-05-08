@@ -24,7 +24,6 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
     from typing import Union  # NOQA
 
-    from optuna.distributions import BaseDistribution  # NOQA
     from optuna.trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
@@ -275,8 +274,7 @@ class OptunaObjective(BaseTuner):
 class LightGBMTuner(BaseTuner):
     """Hyperparameter-tuning with Optuna for LightGBM.
 
-    Arguments and keyword arguments for `lightgbm.train()
-    <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
+    Arguments and keyword arguments for `lightgbm.train()`_ can be passed.
     The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTuner` has are listed
     below:
 
@@ -305,6 +303,12 @@ class LightGBMTuner(BaseTuner):
             model in the trial. ``lgbm_params`` is a JSON-serialized dictionary of LightGBM
             parameters used in the trial.
 
+        optuna_callbacks:
+            List of Optuna callback functions that are invoked at the end of each trial.
+            Each function must accept two parameters with the following types in this order:
+            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+            Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
+
         model_dir:
             A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
             saved. Please set shared directory (e.g., directories on NFS) if you want to access
@@ -312,6 +316,8 @@ class LightGBMTuner(BaseTuner):
             Otherwise, it may raise :obj:`ValueError`. If the directory does not exist, it will be
             created. The filenames of the boosters will be ``{model_dir}/{trial_number}.pkl``
             (e.g., ``./boosters/0.pkl``).
+
+    .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     """
 
     def __init__(
@@ -336,6 +342,7 @@ class LightGBMTuner(BaseTuner):
         best_params=None,  # type: Optional[Dict[str, Any]]
         tuning_history=None,  # type: Optional[List[Dict[str, Any]]]
         study=None,  # type: Optional[Study]
+        optuna_callbacks=None,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
         model_dir=None,  # type: Optional[str]
         verbosity=1,  # type: Optional[int]
     ):
@@ -417,6 +424,8 @@ class LightGBMTuner(BaseTuner):
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
+
+        self._optuna_callbacks = optuna_callbacks
 
     @property
     def best_score(self) -> float:
@@ -525,7 +534,7 @@ class LightGBMTuner(BaseTuner):
 
     def run(self) -> None:
         """Perform the hyperparameter-tuning with given parameters."""
-        # Surpress log messages.
+        # Suppress log messages.
         if self.auto_options["verbosity"] == 0:
             optuna.logging.disable_default_handler()
             self.lgbm_params["verbose"] = -1
@@ -663,7 +672,13 @@ class LightGBMTuner(BaseTuner):
             _timeout = None
         if _n_trials > 0:
             try:
-                study.optimize(objective, n_trials=_n_trials, timeout=_timeout, catch=())
+                study.optimize(
+                    objective,
+                    n_trials=_n_trials,
+                    timeout=_timeout,
+                    catch=(),
+                    callbacks=self._optuna_callbacks,
+                )
             except ValueError:
                 # ValueError is raised by GridSampler when all combinations were examined.
                 # TODO(toshihikoyanase): Remove this try-except after Study.stop is implemented.
