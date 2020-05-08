@@ -13,13 +13,13 @@ We have following two ways to execute this example:
       --storage sqlite:///example.db
 """
 
-import numpy as np
+
+from optuna.samplers import TPESampler
+import optuna
+import os
 import sklearn.datasets
 import sklearn.metrics
 import xgboost as xgb
-import os
-import optuna
-from optuna.samplers import TPESampler
 
 # Set path to save CV results
 file_path = "./tmp_results_xgbCV_optuna/"
@@ -28,7 +28,7 @@ file_path = "./tmp_results_xgbCV_optuna/"
 if not os.path.exists(file_path):
     try:
         os.makedirs(file_path)
-    except:
+    except Exception:
         print("please create folder to store xgboost CV results")
 
 # Set Constants
