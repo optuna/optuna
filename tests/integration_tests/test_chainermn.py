@@ -151,7 +151,7 @@ class TestChainerMNStudy(object):
     def test_init_with_incompatible_storage(comm):
         # type: (CommunicatorBase) -> None
 
-        study = create_study(InMemoryStorage(), study_name='in-memory-study')
+        study = create_study(InMemoryStorage(), study_name="in-memory-study")
 
         with pytest.raises(ValueError):
             ChainerMNStudy(study, comm)
