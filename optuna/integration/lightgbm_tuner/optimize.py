@@ -860,7 +860,7 @@ class LightGBMTunerCV(LightGBMBaseTuner):
     In each trial, it performs cross-validation with the suggested hyperparameters.
     Arguments and keyword arguments for `lightgbm.cv()
     <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html>`_ can be passed except
-    ``metrics`` and ``init_model``.
+    ``metrics``, ``init_model`` and ``eval_train_metric``.
     The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTunerCV` has are listed
     below:
 
