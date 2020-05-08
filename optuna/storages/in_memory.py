@@ -210,9 +210,9 @@ class InMemoryStorage(base.BaseStorage):
             trial_id = len(self._trial_id_to_study_id_and_number)
             trial.number = len(self._study_trials[study_id])
             trial._trial_id = trial_id
+            self._trial_id_to_study_id_and_number[trial_id] = (study_id, trial.number)
             self._study_trials[study_id].append(trial)
             self._update_cache(trial_id, study_id)
-            self._trial_id_to_study_id_and_number[trial_id] = (study_id, trial.number)
         return trial_id
 
     @staticmethod
