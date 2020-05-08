@@ -108,7 +108,7 @@ class RedisStorage(base.BaseStorage):
                 user_attrs={},
                 system_attrs={},
                 n_trials=0,
-                datetime_start=datetime.now(),
+                datetime_start=None,
                 study_id=study_id,
             )
             pipe.rpush("study_list", pickle.dumps(study_id))
