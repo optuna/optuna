@@ -80,9 +80,11 @@ class RandomSampler(BaseSampler):
             log_low = numpy.log(param_distribution.low - 0.5)
             log_high = numpy.log(param_distribution.high + 0.5)
             s = numpy.exp(self._rng.uniform(log_low, log_high))
-            v = numpy.round(
-                (s - param_distribution.low) / param_distribution.step
-            ) * param_distribution.step + param_distribution.low
+            v = (
+                numpy.round((s - param_distribution.low) / param_distribution.step)
+                * param_distribution.step
+                + param_distribution.low
+            )
             return int(min(max(v, param_distribution.low), param_distribution.high))
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
             # [low, high] is shifted to [0, r] to align sampled values at regular intervals.

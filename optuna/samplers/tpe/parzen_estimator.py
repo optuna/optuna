@@ -97,7 +97,7 @@ class _ParzenEstimator(object):
                 sorted_mus = low_sorted_mus_high[1:-1]
                 sorted_mus[:prior_pos] = ordered_mus[:prior_pos]
                 sorted_mus[prior_pos] = prior_mu
-                sorted_mus[prior_pos + 1:] = ordered_mus[prior_pos:]
+                sorted_mus[prior_pos + 1 :] = ordered_mus[prior_pos:]
         else:
             order = numpy.argsort(mus)
             # We decide the mus.
@@ -123,7 +123,7 @@ class _ParzenEstimator(object):
             sorted_weights = numpy.zeros_like(sorted_mus)
             sorted_weights[:prior_pos] = unsorted_weights[order[:prior_pos]]
             sorted_weights[prior_pos] = prior_weight
-            sorted_weights[prior_pos + 1:] = unsorted_weights[order[prior_pos:]]
+            sorted_weights[prior_pos + 1 :] = unsorted_weights[order[prior_pos:]]
         else:
             sorted_weights = unsorted_weights[order]
         sorted_weights /= sorted_weights.sum()
