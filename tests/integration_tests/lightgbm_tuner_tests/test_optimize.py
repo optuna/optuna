@@ -806,6 +806,7 @@ class TestLightGBMTunerCV(object):
                         feature_fraction=unexpected_value,  # set default as unexpected value.
                     ),
                 )
+            assert len(runner.study.trials) == 0
             runner.tune_feature_fraction()
 
             assert runner.lgbm_params["feature_fraction"] != unexpected_value
