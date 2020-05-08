@@ -4,6 +4,7 @@ FROM python:${PYTHON_VERSION}
 
 RUN apt-get update \
     && apt-get -y install openmpi-bin libopenmpi-dev \
+    && apt-get -y install swig  \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir -U 'pip<20' \
     && pip install --no-cache-dir --progress-bar off -U setuptools
@@ -14,7 +15,7 @@ COPY . .
 ARG BUILD_TYPE='dev'
 
 RUN if [ "${BUILD_TYPE}" = "dev" ]; then \
-        pip install --no-cache-dir -e '.[checking, doctest, document, example, testing]'; \
+        pip install --no-cache-dir -e '.[checking, doctest, document, example, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
     else \
         pip install --no-cache-dir -e .; \
     fi \
