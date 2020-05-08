@@ -43,5 +43,5 @@ jobs:
 
     - name: Build the Docker image
       run: |
-        docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --file Dockerfile --tag "${PKG_TAG}"
+        docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE={{ matrix.build_type }} --file Dockerfile --tag "${PKG_TAG}"
         docker tag "${PKG_TAG}" "${HUB_TAG}"
