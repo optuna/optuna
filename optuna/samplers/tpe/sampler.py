@@ -276,9 +276,14 @@ class TPESampler(base.BaseSampler):
     def _sample_int_loguniform(self, distribution, below, above):
         # type: (distributions.IntLogUniformDistribution, np.ndarray, np.ndarray) -> int
 
-        low = distribution.low
-        high = distribution.high + 1
-        return int(self._sample_numerical(low, high, below, above, is_log=True))
+        low = distribution.low - 0.5
+        high = distribution.high + 0.5
+
+        log_sample = self._sample_numerical(low, high, below, above, is_log=True)
+        best_sample = np.round(
+            (log_sample - distribution.low) / distribution.step
+        ) * distribution.step + distribution.low
+        return int(min(max(best_sample, distribution.low), distribution.high))
 
     def _sample_numerical(
         self,
