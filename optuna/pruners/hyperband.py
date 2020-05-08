@@ -74,7 +74,7 @@ class HyperbandPruner(BasePruner):
 
             .. note::
                 With "auto", the maximum resource will be the largest step reported by
-                :meth:~optuna.trial.Trial.report in the first, or one of the first if trained in
+                :meth:`~optuna.trial.Trial.report` in the first, or one of the first if trained in
                 parallel, completed trial. No trials will be pruned until the maximum resource is
                 determined.
         reduction_factor:
