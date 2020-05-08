@@ -383,7 +383,7 @@ class LightGBMBaseTuner(BaseTuner):
             verbosity=verbosity,
         )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
-        self._start_time = None
+        self._start_time = None  # type: Optional[float]
         self._best_params = {}
 
         # Set default parameters as best.
