@@ -173,8 +173,8 @@ class Trial(BaseTrial):
 
                 import numpy as np
                 from sklearn.datasets import load_iris
-                from sklearn.neural_network import MLPClassifier
                 from sklearn.model_selection import train_test_split
+                from sklearn.neural_network import MLPClassifier
 
                 import optuna
 
@@ -231,8 +231,8 @@ class Trial(BaseTrial):
 
                 import numpy as np
                 from sklearn.datasets import load_iris
-                from sklearn.svm import SVC
                 from sklearn.model_selection import train_test_split
+                from sklearn.svm import SVC
 
                 import optuna
 
@@ -292,8 +292,8 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import numpy as np
-                from sklearn.ensemble import GradientBoostingClassifier
                 from sklearn.datasets import load_iris
+                from sklearn.ensemble import GradientBoostingClassifier
                 from sklearn.model_selection import train_test_split
 
                 import optuna
@@ -348,8 +348,8 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import numpy as np
-                from sklearn.ensemble import RandomForestClassifier
                 from sklearn.datasets import load_iris
+                from sklearn.ensemble import RandomForestClassifier
                 from sklearn.model_selection import train_test_split
 
                 import optuna
@@ -418,9 +418,9 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import numpy as np
-                from sklearn.svm import SVC
                 from sklearn.datasets import load_iris
                 from sklearn.model_selection import train_test_split
+                from sklearn.svm import SVC
 
                 import optuna
 
@@ -480,8 +480,8 @@ class Trial(BaseTrial):
             .. testcode::
 
                 import numpy as np
-                from sklearn.linear_model import SGDClassifier
                 from sklearn.datasets import load_iris
+                from sklearn.linear_model import SGDClassifier
                 from sklearn.model_selection import train_test_split
 
                 import optuna
