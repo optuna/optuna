@@ -58,20 +58,12 @@ def objective(trial):
         param["eta"] = trial.suggest_loguniform("eta", 1e-3, 1.0)
         param["gamma"] = trial.suggest_loguniform("gamma", 1e-3, 1.0)
         param["subsample"] = trial.suggest_loguniform("subsample", 0.6, 1.0)
-        param["colsample_bytree"] = trial.suggest_loguniform(
-            "colsample_bytree", 0.6, 1.0
-        )
-        param["grow_policy"] = trial.suggest_categorical(
-            "grow_policy", ["depthwise", "lossguide"]
-        )
+        param["colsample_bytree"] = trial.suggest_loguniform("colsample_bytree", 0.6, 1.0)
+        param["grow_policy"] = trial.suggest_categorical("grow_policy", ["depthwise", "lossguide"])
 
     if param["booster"] == "dart":
-        param["sample_type"] = trial.suggest_categorical(
-            "sample_type", ["uniform", "weighted"]
-        )
-        param["normalize_type"] = trial.suggest_categorical(
-            "normalize_type", ["tree", "forest"]
-        )
+        param["sample_type"] = trial.suggest_categorical("sample_type", ["uniform", "weighted"])
+        param["normalize_type"] = trial.suggest_categorical("normalize_type", ["tree", "forest"])
         param["rate_drop"] = trial.suggest_loguniform("rate_drop", 1e-8, 1.0)
         param["skip_drop"] = trial.suggest_loguniform("skip_drop", 1e-8, 1.0)
 
@@ -90,18 +82,14 @@ def objective(trial):
     # Print n_estimators in the output at each call to the objective function
     print(
         "-" * 10,
-        "Trial {} has optimal trees: {}".format(
-            trial.number, str(xgb_cv_results.shape[0])
-        ),
+        "Trial {} has optimal trees: {}".format(trial.number, str(xgb_cv_results.shape[0])),
         "-" * 10,
     )
     print()
 
     # (Optional: Disable if not needed)
     # Save XGB results for Analysis; Update to your path by changing: file_path
-    xgb_cv_results.to_csv(
-        file_path + "Optuna_cv_{}.csv".format(trial.number), index=False
-    )
+    xgb_cv_results.to_csv(file_path + "Optuna_cv_{}.csv".format(trial.number), index=False)
 
     # Set n_estimators as a trial attribute; Accessible via study.trials_dataframe()
     trial.set_user_attr("n_estimators", len(xgb_cv_results))
