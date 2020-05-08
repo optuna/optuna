@@ -31,27 +31,27 @@ from torchvision import transforms
 
 import optuna
 
-DEVICE = torch.device('cpu')
+DEVICE = torch.device("cpu")
 BATCHSIZE = 128
 CLASSES = 10
 DIR = os.getcwd()
 EPOCHS = 10
 LOG_INTERVAL = 10
 N_TRAIN_EXAMPLES = BATCHSIZE * 30
-N_TEST_EXAMPLES = BATCHSIZE * 10
+N_VALID_EXAMPLES = BATCHSIZE * 10
 
 
 def define_model(trial):
     # We optimize the number of layers, hidden untis and dropout ratio in each layer.
-    n_layers = trial.suggest_int('n_layers', 1, 3)
+    n_layers = trial.suggest_int("n_layers", 1, 3)
     layers = []
 
     in_features = 28 * 28
     for i in range(n_layers):
-        out_features = trial.suggest_int('n_units_l{}'.format(i), 4, 128)
+        out_features = trial.suggest_int("n_units_l{}".format(i), 4, 128)
         layers.append(nn.Linear(in_features, out_features))
         layers.append(nn.ReLU())
-        p = trial.suggest_uniform('dropout_l{}'.format(i), 0.2, 0.5)
+        p = trial.suggest_uniform("dropout_l{}".format(i), 0.2, 0.5)
         layers.append(nn.Dropout(p))
 
         in_features = out_features
@@ -63,19 +63,18 @@ def define_model(trial):
 
 def get_mnist():
     # Load MNIST dataset.
-    train_loader = torch.utils.data.DataLoader(datasets.MNIST(DIR,
-                                                              train=True,
-                                                              download=True,
-                                                              transform=transforms.ToTensor()),
-                                               batch_size=BATCHSIZE,
-                                               shuffle=True)
-    test_loader = torch.utils.data.DataLoader(datasets.MNIST(DIR,
-                                                             train=False,
-                                                             transform=transforms.ToTensor()),
-                                              batch_size=BATCHSIZE,
-                                              shuffle=True)
+    train_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(DIR, train=True, download=True, transform=transforms.ToTensor()),
+        batch_size=BATCHSIZE,
+        shuffle=True,
+    )
+    valid_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(DIR, train=False, transform=transforms.ToTensor()),
+        batch_size=BATCHSIZE,
+        shuffle=True,
+    )
 
-    return train_loader, test_loader
+    return train_loader, valid_loader
 
 
 def objective(trial):
@@ -84,12 +83,12 @@ def objective(trial):
     model = define_model(trial).to(DEVICE)
 
     # Generate the optimizers.
-    optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'RMSprop', 'SGD'])
-    lr = trial.suggest_uniform('lr', 1e-5, 1e-1)
+    optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
+    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
     optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
 
     # Get the MNIST dataset.
-    train_loader, test_loader = get_mnist()
+    train_loader, valid_loader = get_mnist()
 
     # Training of the model.
     model.train()
@@ -116,30 +115,30 @@ def objective(trial):
     model.eval()
     correct = 0
     with torch.no_grad():
-        for batch_idx, (data, target) in enumerate(test_loader):
-            # Limiting testing data.
-            if batch_idx * BATCHSIZE >= N_TEST_EXAMPLES:
+        for batch_idx, (data, target) in enumerate(valid_loader):
+            # Limiting validation data.
+            if batch_idx * BATCHSIZE >= N_VALID_EXAMPLES:
                 break
             data, target = data.view(-1, 28 * 28).to(DEVICE), target.to(DEVICE)
             output = model(data)
             pred = output.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability.
             correct += pred.eq(target.view_as(pred)).sum().item()
 
-    accuracy = correct / N_TEST_EXAMPLES
+    accuracy = correct / N_VALID_EXAMPLES
     return accuracy
 
 
-if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize')
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100)
 
-    print('Number of finished trials: ', len(study.trials))
+    print("Number of finished trials: ", len(study.trials))
 
-    print('Best trial:')
+    print("Best trial:")
     trial = study.best_trial
 
-    print('  Value: ', trial.value)
+    print("  Value: ", trial.value)
 
-    print('  Params: ')
+    print("  Params: ")
     for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print("    {}: {}".format(key, value))

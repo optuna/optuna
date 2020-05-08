@@ -7,6 +7,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 MIN_RESOURCE = 1
+MAX_RESOURCE = 16
 REDUCTION_FACTOR = 2
 N_BRACKETS = 4
 EARLY_STOPPING_RATE_LOW = 0
@@ -15,13 +16,39 @@ N_REPORTS = 10
 EXPECTED_N_TRIALS_PER_BRACKET = 10
 
 
+def test_hyperband_experimental_warning() -> None:
+
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.pruners.HyperbandPruner(
+            min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
+        )
+
+
+def test_hyperband_deprecation_warning_n_brackets() -> None:
+    with pytest.deprecated_call():
+        optuna.pruners.HyperbandPruner(
+            min_resource=MIN_RESOURCE,
+            max_resource=MAX_RESOURCE,
+            reduction_factor=REDUCTION_FACTOR,
+            n_brackets=N_BRACKETS,
+        )
+
+
+def test_hyperband_deprecation_warning_min_early_stopping_rate_low() -> None:
+    with pytest.deprecated_call():
+        optuna.pruners.HyperbandPruner(
+            min_resource=MIN_RESOURCE,
+            max_resource=MAX_RESOURCE,
+            reduction_factor=REDUCTION_FACTOR,
+            min_early_stopping_rate_low=EARLY_STOPPING_RATE_LOW,
+        )
+
+
 def test_hyperband_pruner_intermediate_values():
     # type: () -> None
 
     pruner = optuna.pruners.HyperbandPruner(
-        min_resource=MIN_RESOURCE,
-        reduction_factor=REDUCTION_FACTOR,
-        n_brackets=N_BRACKETS
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
     )
 
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
@@ -30,7 +57,7 @@ def test_hyperband_pruner_intermediate_values():
         # type: (Trial) -> float
 
         for i in range(N_REPORTS):
-            trial.report(i)
+            trial.report(i, step=i)
 
         return 1.0
 
@@ -44,9 +71,7 @@ def test_bracket_study():
     # type: () -> None
 
     pruner = optuna.pruners.HyperbandPruner(
-        min_resource=MIN_RESOURCE,
-        reduction_factor=REDUCTION_FACTOR,
-        n_brackets=N_BRACKETS
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
     )
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
     bracket_study = pruner._create_bracket_study(study, 0)
@@ -54,11 +79,11 @@ def test_bracket_study():
     with pytest.raises(AttributeError):
         bracket_study.optimize(lambda *args: 1.0)
 
-    for attr in ('set_user_attr', 'set_system_attr'):
+    for attr in ("set_user_attr", "set_system_attr"):
         with pytest.raises(AttributeError):
-            getattr(bracket_study, attr)('abc', 100)
+            getattr(bracket_study, attr)("abc", 100)
 
-    for attr in ('user_attrs', 'system_attrs'):
+    for attr in ("user_attrs", "system_attrs"):
         with pytest.raises(AttributeError):
             getattr(bracket_study, attr)
 

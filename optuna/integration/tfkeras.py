@@ -7,6 +7,7 @@ if type_checking.TYPE_CHECKING:
 
 try:
     from tensorflow.keras.callbacks import Callback
+
     _available = True
 except ImportError as e:
     _import_error = e
@@ -21,13 +22,9 @@ class TFKerasPruningCallback(Callback):
     This callback is intend to be compatible for TensorFlow v1 and v2,
     but only tested with TensorFlow v1.
 
-    Example:
-
-        Add a pruning callback which observes validation losses.
-
-        .. code::
-
-            model.fit(x, y, callbacks=[TFKerasPruningCallback(trial, 'val_loss')])
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/tfkeras_integration.py>`__
+    if you want to add a pruning callback which observes the validation accuracy.
 
     Args:
         trial:
@@ -70,7 +67,8 @@ def _check_tensorflow_availability():
 
     if not _available:
         raise ImportError(
-            'TensorFlow is not available. Please install TensorFlow to use this feature. '
-            'TensorFlow can be installed by executing `$ pip install tensorflow`. '
-            'For further information, please refer to the installation guide of TensorFlow. '
-            '(The actual import error is as follows: ' + str(_import_error) + ')')
+            "TensorFlow is not available. Please install TensorFlow to use this feature. "
+            "TensorFlow can be installed by executing `$ pip install tensorflow`. "
+            "For further information, please refer to the installation guide of TensorFlow. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
+        )

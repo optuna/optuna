@@ -4,7 +4,7 @@ import optuna
 from optuna.storages import InMemoryStorage
 
 
-@pytest.mark.parametrize('study_direction', ['minimize', 'maximize'])
+@pytest.mark.parametrize("study_direction", ["minimize", "maximize"])
 def test_update_cache(study_direction):
     # type: (str) -> None
 
@@ -14,7 +14,7 @@ def test_update_cache(study_direction):
 
     # If the direction is 'minimize', the objective function is weakly decreasing.
     # Otherwise, it is weakly increasing.
-    sign = -1 if study_direction == 'minimize' else 1
+    sign = -1 if study_direction == "minimize" else 1
 
     study = optuna.create_study(storage=storage, direction=study_direction)
     study.optimize(lambda trial: sign * trial.number, n_trials=1)

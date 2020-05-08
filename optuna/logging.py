@@ -1,14 +1,14 @@
-import colorlog
 import logging
 from logging import CRITICAL  # NOQA
 from logging import DEBUG  # NOQA
 from logging import ERROR  # NOQA
 from logging import FATAL  # NOQA
-from logging import FATAL  # NOQA
 from logging import INFO  # NOQA
 from logging import WARN  # NOQA
 from logging import WARNING  # NOQA
 import threading
+
+import colorlog
 
 from optuna import type_checking
 
@@ -19,31 +19,28 @@ _lock = threading.Lock()
 _default_handler = None  # type: Optional[logging.Handler]
 
 
-def create_default_formatter():
-    # type: () -> colorlog.ColoredFormatter
+def create_default_formatter() -> colorlog.ColoredFormatter:
     """Create a default formatter of log messages.
 
     This function is not supposed to be directly accessed by library users.
     """
 
     return colorlog.ColoredFormatter(
-        '%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s')
+        "%(log_color)s[%(levelname)1.1s %(asctime)s]%(reset)s %(message)s"
+    )
 
 
-def _get_library_name():
-    # type: () -> str
+def _get_library_name() -> str:
 
-    return __name__.split('.')[0]
+    return __name__.split(".")[0]
 
 
-def _get_library_root_logger():
-    # type: () -> logging.Logger
+def _get_library_root_logger() -> logging.Logger:
 
     return logging.getLogger(_get_library_name())
 
 
-def _configure_library_root_logger():
-    # type: () -> None
+def _configure_library_root_logger() -> None:
 
     global _default_handler
 
@@ -51,7 +48,7 @@ def _configure_library_root_logger():
         if _default_handler:
             # This library has already configured the library root logger.
             return
-        _default_handler = logging.StreamHandler()
+        _default_handler = logging.StreamHandler()  # Set sys.stderr as stream.
         _default_handler.setFormatter(create_default_formatter())
 
         # Apply our default configuration to the library root logger.
@@ -61,8 +58,7 @@ def _configure_library_root_logger():
         library_root_logger.propagate = False
 
 
-def _reset_library_root_logger():
-    # type: () -> None
+def _reset_library_root_logger() -> None:
 
     global _default_handler
 
@@ -76,8 +72,7 @@ def _reset_library_root_logger():
         _default_handler = None
 
 
-def get_logger(name):
-    # type: (str) -> logging.Logger
+def get_logger(name: str) -> logging.Logger:
     """Return a logger with the specified name.
 
     This function is not supposed to be directly accessed by library users.
@@ -87,8 +82,7 @@ def get_logger(name):
     return logging.getLogger(name)
 
 
-def get_verbosity():
-    # type: () -> int
+def get_verbosity() -> int:
     """Return the current level for the Optuna's root logger.
 
     Returns:
@@ -108,8 +102,7 @@ def get_verbosity():
     return _get_library_root_logger().getEffectiveLevel()
 
 
-def set_verbosity(verbosity):
-    # type: (int) -> None
+def set_verbosity(verbosity: int) -> None:
     """Set the level for the Optuna's root logger.
 
     Args:
@@ -121,24 +114,37 @@ def set_verbosity(verbosity):
     _get_library_root_logger().setLevel(verbosity)
 
 
-def disable_default_handler():
-    # type: () -> None
+def disable_default_handler() -> None:
     """Disable the default handler of the Optuna's root logger.
 
     Example:
 
-        Stop and then resume logging to standard output.
+        Stop and then resume logging to :obj:`sys.stderr`.
 
-        .. code::
+        .. testsetup::
 
-            >> study = optuna.create_study()
-            >> optuna.logging.disable_default_handler()
-            >> study.optimize(objective, n_trials=10)
-            >> len(study.trials)
-            10
-            >> optuna.logging.enable_default_handler()
-            >> study.optimize(objective, n_trials=10)
-            [I 2018-11-07 16:11:28,285] Finished a trial resulted in value: 3787.44371584515. ...
+            def objective(trial):
+                x = trial.suggest_uniform('x', -100, 100)
+                y = trial.suggest_categorical('y', [-1, 0, 1])
+                return x ** 2 + y
+
+        .. testcode::
+
+            import optuna
+
+            study = optuna.create_study()
+
+            # There are no logs in sys.stderr.
+            optuna.logging.disable_default_handler()
+            study.optimize(objective, n_trials=10)
+
+            # There are logs in sys.stderr.
+            optuna.logging.enable_default_handler()
+            study.optimize(objective, n_trials=10)
+            # [I 2020-02-23 17:00:54,314] Finished trial#10 with value: ...
+            # [I 2020-02-23 17:00:54,356] Finished trial#11 with value: ...
+            # ...
+
     """
 
     _configure_library_root_logger()
@@ -147,8 +153,7 @@ def disable_default_handler():
     _get_library_root_logger().removeHandler(_default_handler)
 
 
-def enable_default_handler():
-    # type: () -> None
+def enable_default_handler() -> None:
     """Enable the default handler of the Optuna's root logger.
 
     Please refer to the example shown in :func:`~optuna.logging.disable_default_handler()`.
@@ -160,8 +165,7 @@ def enable_default_handler():
     _get_library_root_logger().addHandler(_default_handler)
 
 
-def disable_propagation():
-    # type: () -> None
+def disable_propagation() -> None:
     """Disable propagation of the library log outputs.
 
     Note that log propagation is disabled by default.
@@ -171,8 +175,7 @@ def disable_propagation():
     _get_library_root_logger().propagate = False
 
 
-def enable_propagation():
-    # type: () -> None
+def enable_propagation() -> None:
     """Enable propagation of the library log outputs.
 
     Please disable the Optuna's default handler to prevent double logging if the root logger has
@@ -182,19 +185,35 @@ def enable_propagation():
 
         Propagate all log output to the root logger in order to save them to the file.
 
-        .. code::
+        .. testsetup::
 
-            >> logging.getLogger().setLevel(logging.INFO)  # Setup the root logger.
-            >> logging.getLogger().addHandler(logging.FileHandler('foo.log'))
+            def objective(trial):
+                x = trial.suggest_uniform('x', -100, 100)
+                y = trial.suggest_categorical('y', [-1, 0, 1])
+                return x ** 2 + y
 
-            >> optuna.logging.enable_propagation()  # Propagate logs to the root logger.
-            >> optuna.logging.disable_default_handler()  # Stop showing logs in stderr.
+        .. testcode::
 
-            >> study = optuna.create_study()
-            >> logging.getLogger().info("Start optimization.")
-            >> study.optimize(objective, n_trials=10)
-            >> open('foo.log').readlines()
-            ["Start optimization.", "Finished trial#0 resulted in value: ...
+            import optuna
+            import logging
+
+            logger = logging.getLogger()
+
+            logger.setLevel(logging.INFO)  # Setup the root logger.
+            logger.addHandler(logging.FileHandler("foo.log", mode="w"))
+
+            optuna.logging.enable_propagation()  # Propagate logs to the root logger.
+            optuna.logging.disable_default_handler()  # Stop showing logs in sys.stderr.
+
+            study = optuna.create_study()
+
+            logger.info("Start optimization.")
+            study.optimize(objective, n_trials=10)
+
+            with open('foo.log') as f:
+                assert f.readline() == "Start optimization.\\n"
+                assert f.readline().startswith("Finished trial#0 with value:")
+
     """
 
     _configure_library_root_logger()

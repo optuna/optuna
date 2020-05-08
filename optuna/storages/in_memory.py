@@ -5,7 +5,10 @@ import threading
 from optuna import distributions  # NOQA
 from optuna.storages import base
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
-from optuna import structs
+from optuna.study import StudyDirection
+from optuna.study import StudySummary
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -15,7 +18,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
 IN_MEMORY_STORAGE_STUDY_ID = 0
-IN_MEMORY_STORAGE_STUDY_UUID = '00000000-0000-0000-0000-000000000000'
+IN_MEMORY_STORAGE_STUDY_UUID = "00000000-0000-0000-0000-000000000000"
 
 
 class InMemoryStorage(base.BaseStorage):
@@ -26,9 +29,9 @@ class InMemoryStorage(base.BaseStorage):
 
     def __init__(self):
         # type: () -> None
-        self.trials = []  # type: List[structs.FrozenTrial]
+        self.trials = []  # type: List[FrozenTrial]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
-        self.direction = structs.StudyDirection.NOT_SET
+        self.direction = StudyDirection.NOT_SET
         self.study_user_attrs = {}  # type: Dict[str, Any]
         self.study_system_attrs = {}  # type: Dict[str, Any]
         self.study_name = DEFAULT_STUDY_NAME_PREFIX + IN_MEMORY_STORAGE_STUDY_UUID  # type: str
@@ -39,7 +42,7 @@ class InMemoryStorage(base.BaseStorage):
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
         state = self.__dict__.copy()
-        del state['_lock']
+        del state["_lock"]
         return state
 
     def __setstate__(self, state):
@@ -64,18 +67,21 @@ class InMemoryStorage(base.BaseStorage):
             self.trials = []
             self.best_trial_id = None
             self.param_distribution = {}
-            self.direction = structs.StudyDirection.NOT_SET
+            self.direction = StudyDirection.NOT_SET
             self.study_user_attrs = {}
             self.study_system_attrs = {}
             self.study_name = DEFAULT_STUDY_NAME_PREFIX + IN_MEMORY_STORAGE_STUDY_UUID
 
     def set_study_direction(self, study_id, direction):
-        # type: (int, structs.StudyDirection) -> None
+        # type: (int, StudyDirection) -> None
 
         with self._lock:
-            if self.direction != structs.StudyDirection.NOT_SET and self.direction != direction:
-                raise ValueError('Cannot overwrite study direction from {} to {}.'.format(
-                    self.direction, direction))
+            if self.direction != StudyDirection.NOT_SET and self.direction != direction:
+                raise ValueError(
+                    "Cannot overwrite study direction from {} to {}.".format(
+                        self.direction, direction
+                    )
+                )
             self.direction = direction
 
     def set_study_user_attr(self, study_id, key, value):
@@ -110,7 +116,7 @@ class InMemoryStorage(base.BaseStorage):
         return self.study_name
 
     def get_study_direction(self, study_id):
-        # type: (int) -> structs.StudyDirection
+        # type: (int) -> StudyDirection
 
         return self.direction
 
@@ -127,10 +133,10 @@ class InMemoryStorage(base.BaseStorage):
             return copy.deepcopy(self.study_system_attrs)
 
     def get_all_study_summaries(self):
-        # type: () -> List[structs.StudySummary]
+        # type: () -> List[StudySummary]
 
         best_trial = None
-        if any(t for t in self.trials if t.state == structs.TrialState.COMPLETE):
+        if any(t for t in self.trials if t.state == TrialState.COMPLETE):
             best_trial = self.get_best_trial(IN_MEMORY_STORAGE_STUDY_ID)
 
         datetime_start = None
@@ -138,7 +144,7 @@ class InMemoryStorage(base.BaseStorage):
             datetime_start = min([t.datetime_start for t in self.trials])
 
         return [
-            structs.StudySummary(
+            StudySummary(
                 study_name=self.study_name,
                 direction=self.direction,
                 best_trial=best_trial,
@@ -146,12 +152,12 @@ class InMemoryStorage(base.BaseStorage):
                 system_attrs=copy.deepcopy(self.study_system_attrs),
                 n_trials=len(self.trials),
                 datetime_start=datetime_start,
-                study_id=IN_MEMORY_STORAGE_STUDY_ID
+                study_id=IN_MEMORY_STORAGE_STUDY_ID,
             )
         ]
 
     def create_new_trial(self, study_id, template_trial=None):
-        # type: (int, Optional[structs.FrozenTrial]) -> int
+        # type: (int, Optional[FrozenTrial]) -> int
 
         self._check_study_id(study_id)
 
@@ -162,7 +168,6 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             trial_id = len(self.trials)
-            trial.system_attrs['_number'] = trial_id
             trial.number = trial_id
             trial._trial_id = trial_id
             self.trials.append(trial)
@@ -171,12 +176,12 @@ class InMemoryStorage(base.BaseStorage):
 
     @staticmethod
     def _create_running_trial():
-        # type: () -> structs.FrozenTrial
+        # type: () -> FrozenTrial
 
-        return structs.FrozenTrial(
+        return FrozenTrial(
             trial_id=-1,  # dummy value.
             number=-1,  # dummy value.
-            state=structs.TrialState.RUNNING,
+            state=TrialState.RUNNING,
             params={},
             distributions={},
             user_attrs={},
@@ -184,19 +189,28 @@ class InMemoryStorage(base.BaseStorage):
             value=None,
             intermediate_values={},
             datetime_start=datetime.now(),
-            datetime_complete=None)
+            datetime_complete=None,
+        )
 
     def set_trial_state(self, trial_id, state):
-        # type: (int, structs.TrialState) -> None
+        # type: (int, TrialState) -> bool
 
         with self._lock:
-            trial = self.trials[trial_id]
+            trial = copy.copy(self.trials[trial_id])
             self.check_trial_is_updatable(trial_id, trial.state)
+
+            if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
+                return False
 
             trial.state = state
             if state.is_finished():
                 trial.datetime_complete = datetime.now()
+                self.trials[trial_id] = trial
                 self._update_cache(trial_id)
+            else:
+                self.trials[trial_id] = trial
+
+        return True
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
         # type: (int, str, float, distributions.BaseDistribution) -> bool
@@ -206,8 +220,9 @@ class InMemoryStorage(base.BaseStorage):
 
             # Check param distribution compatibility with previous trial(s).
             if param_name in self.param_distribution:
-                distributions.check_distribution_compatibility(self.param_distribution[param_name],
-                                                               distribution)
+                distributions.check_distribution_compatibility(
+                    self.param_distribution[param_name], distribution
+                )
 
             # Check param has not been set; otherwise, return False.
             if param_name in self.trials[trial_id].params:
@@ -217,9 +232,12 @@ class InMemoryStorage(base.BaseStorage):
             self.param_distribution[param_name] = distribution
 
             # Set param.
-            self.trials[trial_id].params[param_name] = distribution.to_external_repr(
-                param_value_internal)
-            self.trials[trial_id].distributions[param_name] = distribution
+            trial = copy.copy(self.trials[trial_id])
+            trial.params = copy.copy(trial.params)
+            trial.params[param_name] = distribution.to_external_repr(param_value_internal)
+            trial.distributions = copy.copy(trial.distributions)
+            trial.distributions[param_name] = distribution
+            self.trials[trial_id] = trial
 
             return True
 
@@ -229,10 +247,10 @@ class InMemoryStorage(base.BaseStorage):
         return trial_id
 
     def get_best_trial(self, study_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         if self.best_trial_id is None:
-            raise ValueError('No trials are completed yet.')
+            raise ValueError("No trials are completed yet.")
         return self.get_trial(self.best_trial_id)
 
     def get_trial_param(self, trial_id, param_name):
@@ -245,15 +263,16 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int, float) -> None
 
         with self._lock:
-            trial = self.trials[trial_id]
+            trial = copy.copy(self.trials[trial_id])
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial.value = value
+            self.trials[trial_id] = trial
 
     def _update_cache(self, trial_id):
         # type: (int) -> None
 
-        if self.trials[trial_id].state != structs.TrialState.COMPLETE:
+        if self.trials[trial_id].state != TrialState.COMPLETE:
             return
 
         if self.best_trial_id is None:
@@ -267,8 +286,7 @@ class InMemoryStorage(base.BaseStorage):
         # Complete trials do not have `None` values.
         assert new_value is not None
 
-        if (self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) ==
-                structs.StudyDirection.MAXIMIZE):
+        if self.get_study_direction(IN_MEMORY_STORAGE_STUDY_ID) == StudyDirection.MAXIMIZE:
             if best_value < new_value:
                 self.best_trial_id = trial_id
             return
@@ -282,11 +300,14 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
 
-            values = self.trials[trial_id].intermediate_values
+            trial = copy.copy(self.trials[trial_id])
+            values = copy.copy(self.trials[trial_id].intermediate_values)
             if step in values:
                 return False
 
             values[step] = intermediate_value
+            trial.intermediate_values = values
+            self.trials[trial_id] = trial
 
             return True
 
@@ -296,7 +317,10 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
 
-            self.trials[trial_id].user_attrs[key] = value
+            trial = copy.copy(self.trials[trial_id])
+            trial.user_attrs = copy.copy(trial.user_attrs)
+            trial.user_attrs[key] = value
+            self.trials[trial_id] = trial
 
     def set_trial_system_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
@@ -304,26 +328,29 @@ class InMemoryStorage(base.BaseStorage):
         with self._lock:
             self.check_trial_is_updatable(trial_id, self.trials[trial_id].state)
 
-            self.trials[trial_id].system_attrs[key] = value
+            trial = copy.copy(self.trials[trial_id])
+            trial.system_attrs = copy.copy(trial.system_attrs)
+            trial.system_attrs[key] = value
+            self.trials[trial_id] = trial
 
     def get_trial(self, trial_id):
-        # type: (int) -> structs.FrozenTrial
+        # type: (int) -> FrozenTrial
 
         with self._lock:
             return copy.deepcopy(self.trials[trial_id])
 
     def get_all_trials(self, study_id, deepcopy=True):
-        # type: (int, bool) -> List[structs.FrozenTrial]
+        # type: (int, bool) -> List[FrozenTrial]
 
         self._check_study_id(study_id)
         with self._lock:
             if deepcopy:
                 return copy.deepcopy(self.trials)
             else:
-                return self.trials
+                return [t for t in self.trials]
 
     def get_n_trials(self, study_id, state=None):
-        # type: (int, Optional[structs.TrialState]) -> int
+        # type: (int, Optional[TrialState]) -> int
 
         self._check_study_id(study_id)
         if state is None:
@@ -335,5 +362,8 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int) -> None
 
         if study_id != IN_MEMORY_STORAGE_STUDY_ID:
-            raise ValueError('study_id is supposed to be {} in {}.'.format(
-                IN_MEMORY_STORAGE_STUDY_ID, self.__class__.__name__))
+            raise ValueError(
+                "study_id is supposed to be {} in {}.".format(
+                    IN_MEMORY_STORAGE_STUDY_ID, self.__class__.__name__
+                )
+            )
