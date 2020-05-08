@@ -363,7 +363,7 @@ class LightGBMBaseTuner(BaseTuner):
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
-        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]]=None,
+        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         verbosity: Optional[int] = 1,
     ) -> None:
         params = copy.deepcopy(params)
@@ -725,7 +725,7 @@ class LightGBMTuner(LightGBMBaseTuner):
         best_params: Optional[Dict[str, Any]] = None,
         tuning_history: Optional[List[Dict[str, Any]]] = None,
         study: Optional[optuna.study.Study] = None,
-        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]]=None,
+        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         model_dir: Optional[str] = None,
         verbosity: Optional[int] = 1,
     ) -> None:
@@ -933,7 +933,7 @@ class LightGBMTunerCV(LightGBMBaseTuner):
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
-        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]]=None,
+        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         verbosity: int = 1,
     ) -> None:
 

@@ -907,9 +907,7 @@ class TestLightGBMTunerCV(object):
         callback_mock = mock.MagicMock()
 
         study = optuna.create_study()
-        tuner = LightGBMTunerCV(
-            params, dataset, study=study, optuna_callbacks=[callback_mock],
-        )
+        tuner = LightGBMTunerCV(params, dataset, study=study, optuna_callbacks=[callback_mock],)
 
         with mock.patch.object(OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
             tuner.tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
