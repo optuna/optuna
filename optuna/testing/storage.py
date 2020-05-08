@@ -26,7 +26,7 @@ class StorageSupplier(object):
         self.tempfile = None  # type: Optional[IO[Any]]
 
     def __enter__(self):
-        # type: () -> Optional[optuna.storages.BaseStorage]
+        # type: () -> optuna.storages.BaseStorage
 
         if self.storage_specifier == "inmemory":
             return optuna.storages.InMemoryStorage()

@@ -3,6 +3,7 @@ from datetime import datetime
 import random
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
 from unittest.mock import patch
@@ -316,7 +317,7 @@ def test_study_user_and_system_attrs_confusion(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_trial(storage_mode: str) -> None:
-    def _check_trials(trials, idx, trial_id, time_before_creation, time_after_creation):
+    def _check_trials(trials: List[FrozenTrial], idx: int, trial_id: int, time_before_creation: datetime, time_after_creation: datetime) -> None:
         assert len(trials) == idx + 1
         assert len({t._trial_id for t in trials}) == idx + 1
         assert trial_id in {t._trial_id for t in trials}
@@ -327,12 +328,12 @@ def test_create_new_trial(storage_mode: str) -> None:
         assert all(t.user_attrs == {} for t in trials)
         assert all(t.system_attrs == {} for t in trials)
         assert all(
-            t.datetime_start < time_before_creation for t in trials if t._trial_id != trial_id
+            t.datetime_start < time_before_creation for t in trials if t._trial_id != trial_id and t.datetime_start is not None
         )
         assert all(
             time_before_creation < t.datetime_start < time_after_creation
             for t in trials
-            if t._trial_id == trial_id
+            if t._trial_id == trial_id and t.datetime_start is not None
         )
         assert all(t.datetime_complete is None for t in trials)
         assert all(t.value is None for t in trials)
@@ -385,7 +386,7 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
         trial_id=-1,  # dummy value (unused).
     )
 
-    def _check_trials(trials, idx, trial_id):
+    def _check_trials(trials: List[FrozenTrial], idx: int, trial_id: int) -> None:
         assert len(trials) == idx + 1
         assert len({t._trial_id for t in trials}) == idx + 1
         assert trial_id in {t._trial_id for t in trials}
@@ -769,6 +770,7 @@ def test_get_all_study_summaries(storage_mode: str) -> None:
             assert summary.user_attrs == expected_summary.user_attrs
             assert summary.system_attrs == expected_summary.system_attrs
             if expected_summary.best_trial is not None:
+                assert summary.best_trial is not None
                 _check_trial_equality(summary.best_trial, expected_summary.best_trial)
 
 
