@@ -21,7 +21,8 @@ def test_suggest() -> None:
         p4 = trial.suggest_int("p4", -20, -15)
         p5 = trial.suggest_categorical("p5", [7, 1, 100])
         p6 = trial.suggest_float("p6", -10, 10, step=1.0)
-        return [p0 + p1 + p2, p3 + p4 + p5 + p6]
+        p7 = trial.suggest_int("p7", 1, 7, step=3, log=True)
+        return [p0 + p1 + p2, p3 + p4 + p5 + p6 + p7]
 
     study.optimize(objective, n_trials=10)
 
