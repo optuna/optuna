@@ -25,6 +25,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     Storage classes abstract a backend database and provide library internal interfaces to
     read/write history of studies and trials.
 
+    **Thread safety**
+
     Storage classes might be shared from multiple threads, and thus storage classes
     must be thread-safe.
     As one of the requirements of the thread-safety, storage classes must guarantee
@@ -33,6 +35,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     However, storage class can assume that return values are never modified by users.
     When users modify return values of storage classes, it might break the internal states
     of storage classes, which will result in undefined behaviors.
+
+    **Ownership of RUNNING trials**
 
     Trials in finished states are not allowed to be modified.
     Trials in the WAITING state are not allowed to be modified except for the `state` field.
@@ -43,12 +47,16 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     that the optuna interface is accessed from only one of the processes.
     Storage classes are not designed to provide inter-process communication functionalities.
 
+    **Consistency models**
+
     Storage classes must support monotonic-reads consistency model, that is, if a
     process reads a data `X`, any successive reads on data `X` does not return
     older values.
     They must support read-your-writes, that is, if a process writes to data `X`,
     any successive reads on data `X` from the same process must read the written
     value or one of more recent values.
+
+    **Stronger consistency requirements for special data**
 
     Under multi-worker settings, storage classes are guaranteed to return the latest
     values of any attributes of `Study`, but not guaranteed the same thing for
@@ -64,6 +72,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     The same applies for `user_attrs', 'system_attrs', 'intermediate_values` attributes,
     but future development may allow storage class users to explicitly skip the above
     properties for these attributes.
+
+    **Data persistence**
 
     Storage classes do not guarantee that write operations are logged into a persistent
     storage even when write methods succeed.
