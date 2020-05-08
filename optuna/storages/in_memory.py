@@ -43,7 +43,9 @@ class InMemoryStorage(base.BaseStorage):
         self._study_system_attrs = defaultdict(dict)  # type: DefaultDict[int, Dict[str, Any]]
         self._study_name = {}  # type: Dict[int, str]
         self._study_name_to_id = {}  # type: Dict[str, int]
-        self._best_trial_id = defaultdict(self._best_trial_default_value)  # type: DefaultDict[int, Optional[int]]
+        self._best_trial_id = defaultdict(
+            self._best_trial_default_value
+        )  # type: DefaultDict[int, Optional[int]]
 
         self._max_study_id = -1
 

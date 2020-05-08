@@ -649,9 +649,7 @@ def test_create_study(storage_mode):
         optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=True)
 
         with pytest.raises(optuna.exceptions.DuplicatedStudyError):
-            optuna.create_study(
-                study_name=study.study_name, storage=storage, load_if_exists=False
-            )
+            optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=False)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
