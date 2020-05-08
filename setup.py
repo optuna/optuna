@@ -119,7 +119,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
         )
-        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
         + (
             ["keras", "tensorflow", "tensorflow-datasets"] if sys.version_info[:2] < (3, 8) else []
         ),
