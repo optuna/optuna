@@ -1,10 +1,10 @@
 from typing import Any
 
 from optuna._experimental import experimental
-from optuna import type_checking
+from optuna.integration.lightgbm_tuner.optimize import _check_lightgbm_availability
 from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration.lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
-from optuna.integration.lightgbm_tuner.optimize import _check_lightgbm_availability
+from optuna import type_checking
 
 try:
     from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
