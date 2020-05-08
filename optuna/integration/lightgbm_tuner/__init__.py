@@ -2,10 +2,11 @@ from typing import Any
 
 from optuna._experimental import experimental
 from optuna import type_checking
+from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
+from optuna.integration.lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
+from optuna.integration.lightgbm_tuner.optimize import _check_lightgbm_availability
 
 try:
-    from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
-    from optuna.integration.lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
     from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
     from optuna.integration.lightgbm_tuner.sklearn import LGBMModel  # NOQA
     from optuna.integration.lightgbm_tuner.sklearn import LGBMRegressor  # NOQA
@@ -34,15 +35,3 @@ def train(*args: Any, **kwargs: Any) -> Any:
     auto_booster = LightGBMTuner(*args, **kwargs)
     auto_booster.run()
     return auto_booster.get_best_booster()
-
-
-def _check_lightgbm_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "LightGBM is not available. Please install LightGBM to use this feature. "
-            "LightGBM can be installed by executing `$ pip install lightgbm`. "
-            "For further information, please refer to the installation guide of LightGBM. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )

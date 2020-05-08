@@ -15,7 +15,6 @@ from typing import Tuple
 from typing import Union
 import warnings
 
-import lightgbm as lgb
 import numpy as np
 from sklearn.model_selection import BaseCrossValidator
 import tqdm
@@ -26,8 +25,17 @@ from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
+try:
+    import lightgbm as lgb
 
-VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
+    VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
+
+    _available = True
+except ImportError as e:
+    _import_error = e
+    # LightGBMTuner is disabled because LightGBM is not available.
+    _available = False
+
 
 # Define key names of `Trial.system_attrs`.
 _ELAPSED_SECS_KEY = "lightgbm_tuner:elapsed_secs"
@@ -289,7 +297,7 @@ class OptunaObjectiveCV(OptunaObjective):
         self,
         target_param_names: List[str],
         lgbm_params: Dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         lgbm_kwargs: Dict[str, Any],
         best_score: float,
         step_name: str,
@@ -344,7 +352,7 @@ class LightGBMBaseTuner(BaseTuner):
     def __init__(
         self,
         params: Dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
         fobj: Optional[Callable[..., Any]] = None,
         feval: Optional[Callable[..., Any]] = None,
@@ -359,6 +367,9 @@ class LightGBMBaseTuner(BaseTuner):
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         verbosity: Optional[int] = 1,
     ) -> None:
+
+        _check_lightgbm_availability()
+
         params = copy.deepcopy(params)
 
         # Handling alias metrics.
@@ -429,7 +440,8 @@ class LightGBMBaseTuner(BaseTuner):
             params.update(self.lgbm_params)
             return params
 
-    def _parse_args(self, *args: Any, **kwargs: Any) -> None:
+    def _parse_args(self, *args, **kwargs):
+        # type: (Any, Any) -> None
 
         self.auto_options = {
             option_name: kwargs.get(option_name)
@@ -595,7 +607,7 @@ class LightGBMBaseTuner(BaseTuner):
     def _create_objective(
         self,
         target_param_names: List[str],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
     ) -> OptunaObjective:
@@ -699,9 +711,9 @@ class LightGBMTuner(LightGBMBaseTuner):
     def __init__(
         self,
         params: Dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
-        valid_sets: Optional[VALID_SET_TYPE] = None,
+        valid_sets: Optional["VALID_SET_TYPE"] = None,
         valid_names: Optional[Any] = None,
         fobj: Optional[Callable[..., Any]] = None,
         feval: Optional[Callable[..., Any]] = None,
@@ -781,7 +793,7 @@ class LightGBMTuner(LightGBMBaseTuner):
             raise ValueError("`valid_sets` is required.")
 
     @property
-    def best_booster(self) -> lgb.Booster:
+    def best_booster(self) -> "lgb.Booster":
         """Return the best booster.
 
         .. deprecated:: 1.4.0
@@ -795,7 +807,7 @@ class LightGBMTuner(LightGBMBaseTuner):
 
         return self.get_best_booster()
 
-    def get_best_booster(self) -> lgb.Booster:
+    def get_best_booster(self) -> "lgb.Booster":
         """Return the best booster.
 
         If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
@@ -851,7 +863,7 @@ class LightGBMTuner(LightGBMBaseTuner):
     def _create_objective(
         self,
         target_param_names: List[str],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
     ) -> OptunaObjective:
@@ -901,7 +913,7 @@ class LightGBMTunerCV(LightGBMBaseTuner):
     def __init__(
         self,
         params: Dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
         folds: Optional[
             Union[
@@ -959,7 +971,7 @@ class LightGBMTunerCV(LightGBMBaseTuner):
     def _create_objective(
         self,
         target_param_names: List[str],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
     ) -> OptunaObjective:
@@ -971,4 +983,14 @@ class LightGBMTunerCV(LightGBMBaseTuner):
             self.best_score,
             step_name=step_name,
             pbar=pbar,
+        )
+
+
+def _check_lightgbm_availability() -> None:
+    if not _available:
+        raise ImportError(
+            "LightGBM is not available. Please install LightGBM to use this feature. "
+            "LightGBM can be installed by executing `$ pip install lightgbm`. "
+            "For further information, please refer to the installation guide of LightGBM. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )
