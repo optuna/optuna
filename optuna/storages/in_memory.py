@@ -32,8 +32,7 @@ class InMemoryStorage(base.BaseStorage):
     def __init__(self):
         # type: () -> None
         self._trial_id_to_study_id_and_number = {}  # type: Dict[int, Tuple[int, int]]
-        self._trials = []  # type: List[Optional[FrozenTrial]]
-        self._study_trials = defaultdict(list)  # type: DefaultDict[int, List[int]]
+        self._study_trials = defaultdict(list)  # type: DefaultDict[int, List[FrozenTrial]]
         self._param_distribution = defaultdict(
             dict
         )  # type: DefaultDict[int, Dict[str, distributions.BaseDistribution]]
@@ -86,9 +85,8 @@ class InMemoryStorage(base.BaseStorage):
         self._check_study_id(study_id)
 
         with self._lock:
-            for trial_id in self._study_trials[study_id]:
-                self._trials[trial_id] = None
-                del self._trial_id_to_study_id_and_number[trial_id]
+            for trial in self._study_trials[study_id]:
+                del self._trial_id_to_study_id_and_number[trial._trial_id]
             del self._study_trials[study_id]
             if study_id in self._best_trial_id:
                 del self._best_trial_id[study_id]
@@ -186,7 +184,7 @@ class InMemoryStorage(base.BaseStorage):
         return StudySummary(
             study_name=self._study_name[study_id],
             direction=self._direction[study_id],
-            best_trial=self._trials[best_trial_id] if best_trial_id is not None else None,
+            best_trial=self.get_trial(best_trial_id) if best_trial_id is not None else None,
             user_attrs=copy.copy(self._study_user_attrs[study_id]),
             system_attrs=copy.copy(self._study_system_attrs[study_id]),
             n_trials=len(self._study_trials[study_id]),
@@ -209,13 +207,12 @@ class InMemoryStorage(base.BaseStorage):
             trial = copy.deepcopy(template_trial)
 
         with self._lock:
-            trial_id = len(self._trials)
+            trial_id = len(self._trial_id_to_study_id_and_number)
             trial.number = len(self._study_trials[study_id])
             trial._trial_id = trial_id
-            self._trials.append(trial)
+            self._study_trials[study_id].append(trial)
             self._update_cache(trial_id, study_id)
             self._trial_id_to_study_id_and_number[trial_id] = (study_id, trial.number)
-            self._study_trials[study_id].append(trial_id)
         return trial_id
 
     @staticmethod
@@ -252,11 +249,11 @@ class InMemoryStorage(base.BaseStorage):
             trial.state = state
             if state.is_finished():
                 trial.datetime_complete = datetime.now()
-                self._trials[trial_id] = trial
+                self._set_trial(trial_id, trial)
                 study_id = self._trial_id_to_study_id_and_number[trial_id][0]
                 self._update_cache(trial_id, study_id)
             else:
-                self._trials[trial_id] = trial
+                self._set_trial(trial_id, trial)
 
         return True
 
@@ -288,7 +285,7 @@ class InMemoryStorage(base.BaseStorage):
             trial.params[param_name] = distribution.to_external_repr(param_value_internal)
             trial.distributions = copy.copy(trial.distributions)
             trial.distributions[param_name] = distribution
-            self._trials[trial_id] = trial
+            self._set_trial(trial_id, trial)
 
             return True
 
@@ -328,7 +325,7 @@ class InMemoryStorage(base.BaseStorage):
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial.value = value
-            self._trials[trial_id] = trial
+            self._set_trial(trial_id, trial)
 
     def _update_cache(self, trial_id: int, study_id: int) -> None:
 
@@ -341,7 +338,7 @@ class InMemoryStorage(base.BaseStorage):
         if best_trial_id is None:
             self._best_trial_id[study_id] = trial_id
             return
-        best_trial = self._trials[best_trial_id]
+        best_trial = self.get_trial(best_trial_id)
         assert best_trial is not None
         best_value = best_trial.value
         new_value = trial.value
@@ -375,7 +372,7 @@ class InMemoryStorage(base.BaseStorage):
 
             values[step] = intermediate_value
             trial.intermediate_values = values
-            self._trials[trial_id] = trial
+            self._set_trial(trial_id, trial)
 
             return True
 
@@ -392,7 +389,7 @@ class InMemoryStorage(base.BaseStorage):
             trial = copy.copy(trial)
             trial.user_attrs = copy.copy(trial.user_attrs)
             trial.user_attrs[key] = value
-            self._trials[trial_id] = trial
+            self._set_trial(trial_id, trial)
 
     def set_trial_system_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
@@ -406,28 +403,28 @@ class InMemoryStorage(base.BaseStorage):
             trial = copy.copy(trial)
             trial.system_attrs = copy.copy(trial.system_attrs)
             trial.system_attrs[key] = value
-            self._trials[trial_id] = trial
+            self._set_trial(trial_id, trial)
 
     def get_trial(self, trial_id):
         # type: (int) -> FrozenTrial
 
         self._check_trial_id(trial_id)
-        trial = self._trials[trial_id]
-        assert trial is not None
-        return trial
+        study_id, trial_number = self._trial_id_to_study_id_and_number[trial_id]
+        return self._study_trials[study_id][trial_number]
+
+    def _set_trial(self, trial_id: int, trial: FrozenTrial) -> None:
+        study_id, trial_number = self._trial_id_to_study_id_and_number[trial_id]
+        self._study_trials[study_id][trial_number] = trial
 
     def get_all_trials(self, study_id, deepcopy=True):
         # type: (int, bool) -> List[FrozenTrial]
 
-        # TODO(ytsmiling) Rewrite the whole trial management logic for faster get_all_trials.
-
         self._check_study_id(study_id)
-        trials = [self._trials[tid] for tid in self._study_trials[study_id]]
         with self._lock:
             if deepcopy:
-                return [copy.deepcopy(trial) for trial in trials if trial is not None]
+                return [copy.deepcopy(trial) for trial in self._study_trials[study_id]]
             else:
-                return [trial for trial in trials if trial is not None]
+                return self._study_trials[study_id][:]
 
     def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[TrialState]) -> int
@@ -450,5 +447,5 @@ class InMemoryStorage(base.BaseStorage):
     def _check_trial_id(self, trial_id: int) -> None:
 
         with self._lock:
-            if trial_id >= len(self._trials) or self._trials[trial_id] is None:
+            if trial_id not in self._trial_id_to_study_id_and_number:
                 raise KeyError("No trial with trial_id {} exists.".format(trial_id))
