@@ -730,6 +730,22 @@ class TestLightGBMTuner(object):
         assert study_step2.best_trial.value == 2
         assert study.best_trial.value == overall_best
 
+    def test_optuna_callback(self) -> None:
+        params = {"verbose": -1}  # type: Dict[str, Any]
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        callback_mock = mock.MagicMock()
+
+        study = optuna.create_study()
+        tuner = LightGBMTuner(
+            params, dataset, valid_sets=dataset, study=study, optuna_callbacks=[callback_mock],
+        )
+
+        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
+            tuner.tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
+
+        assert callback_mock.call_count == 10
+
 
 class TestLightGBMTunerCV(object):
     def _get_tunercv_object(
@@ -883,3 +899,19 @@ class TestLightGBMTunerCV(object):
         with mock.patch.object(OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
             tuner2.tune_regularization_factors()
         assert n_trials == len(study.trials)
+
+    def test_optuna_callback(self) -> None:
+        params = {"verbose": -1}  # type: Dict[str, Any]
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        callback_mock = mock.MagicMock()
+
+        study = optuna.create_study()
+        tuner = LightGBMTunerCV(
+            params, dataset, study=study, optuna_callbacks=[callback_mock],
+        )
+
+        with mock.patch.object(OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+            tuner.tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
+
+        assert callback_mock.call_count == 10

@@ -23,6 +23,8 @@ import tqdm
 import optuna
 from optuna.integration.lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 
 
 VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
@@ -361,6 +363,7 @@ class LightGBMBaseTuner(BaseTuner):
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
+        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]]=None,
         verbosity: Optional[int] = 1,
     ) -> None:
         params = copy.deepcopy(params)
@@ -384,6 +387,7 @@ class LightGBMBaseTuner(BaseTuner):
         )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
         self._start_time = None  # type: Optional[float]
+        self._optuna_callbacks = optuna_callbacks
         self._best_params = {}
 
         # Set default parameters as best.
@@ -457,7 +461,7 @@ class LightGBMBaseTuner(BaseTuner):
 
     def run(self) -> None:
         """Perform the hyperparameter-tuning with given parameters."""
-        # Surpress log messages.
+        # Suppress log messages.
         if self.auto_options["verbosity"] == 0:
             optuna.logging.disable_default_handler()
             self.lgbm_params["verbose"] = -1
@@ -577,7 +581,13 @@ class LightGBMBaseTuner(BaseTuner):
             _timeout = None
         if _n_trials > 0:
             try:
-                study.optimize(objective, n_trials=_n_trials, timeout=_timeout, catch=())
+                study.optimize(
+                    objective,
+                    n_trials=_n_trials,
+                    timeout=_timeout,
+                    catch=(),
+                    callbacks=self._optuna_callbacks,
+                )
             except ValueError:
                 # ValueError is raised by GridSampler when all combinations were examined.
                 # TODO(toshihikoyanase): Remove this try-except after Study.stop is implemented.
@@ -676,6 +686,12 @@ class LightGBMTuner(LightGBMBaseTuner):
             model in the trial. ``lgbm_params`` is a JSON-serialized dictionary of LightGBM
             parameters used in the trial.
 
+        optuna_callbacks:
+            List of Optuna callback functions that are invoked at the end of each trial.
+            Each function must accept two parameters with the following types in this order:
+            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+            Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
+
         model_dir:
             A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
             saved. Please set shared directory (e.g., directories on NFS) if you want to access
@@ -683,6 +699,8 @@ class LightGBMTuner(LightGBMBaseTuner):
             Otherwise, it may raise :obj:`ValueError`. If the directory does not exist, it will be
             created. The filenames of the boosters will be ``{model_dir}/{trial_number}.pkl``
             (e.g., ``./boosters/0.pkl``).
+
+    .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     """
 
     def __init__(
@@ -707,6 +725,7 @@ class LightGBMTuner(LightGBMBaseTuner):
         best_params: Optional[Dict[str, Any]] = None,
         tuning_history: Optional[List[Dict[str, Any]]] = None,
         study: Optional[optuna.study.Study] = None,
+        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]]=None,
         model_dir: Optional[str] = None,
         verbosity: Optional[int] = 1,
     ) -> None:
@@ -725,6 +744,7 @@ class LightGBMTuner(LightGBMBaseTuner):
             time_budget=time_budget,
             sample_size=sample_size,
             study=study,
+            optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
         )
 
@@ -875,6 +895,14 @@ class LightGBMTunerCV(LightGBMBaseTuner):
             ``average_iteration_time`` is the average time of iteration to train the booster
             model in the trial. ``lgbm_params`` is a JSON-serialized dictionary of LightGBM
             parameters used in the trial.
+
+        optuna_callbacks:
+            List of Optuna callback functions that are invoked at the end of each trial.
+            Each function must accept two parameters with the following types in this order:
+            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+            Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
+
+    .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     """
 
     def __init__(
@@ -905,6 +933,7 @@ class LightGBMTunerCV(LightGBMBaseTuner):
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
+        optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]]=None,
         verbosity: int = 1,
     ) -> None:
 
@@ -922,6 +951,7 @@ class LightGBMTunerCV(LightGBMBaseTuner):
             time_budget=time_budget,
             sample_size=sample_size,
             study=study,
+            optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
         )
 
