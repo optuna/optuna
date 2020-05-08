@@ -1,5 +1,5 @@
-import copy
 from collections import defaultdict
+import copy
 from datetime import datetime
 import threading
 import uuid
