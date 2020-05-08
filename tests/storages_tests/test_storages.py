@@ -64,7 +64,9 @@ def test_get_storage() -> None:
 
     isinstance(optuna.storages.get_storage(None), InMemoryStorage)
     isinstance(optuna.storages.get_storage("sqlite:///:memory:"), RDBStorage)
-    isinstance(optuna.storages.get_storage("redis://test_user:passwd@localhost:6379/0"), RedisStorage)
+    isinstance(
+        optuna.storages.get_storage("redis://test_user:passwd@localhost:6379/0"), RedisStorage
+    )
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -317,7 +319,13 @@ def test_study_user_and_system_attrs_confusion(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_trial(storage_mode: str) -> None:
-    def _check_trials(trials: List[FrozenTrial], idx: int, trial_id: int, time_before_creation: datetime, time_after_creation: datetime) -> None:
+    def _check_trials(
+        trials: List[FrozenTrial],
+        idx: int,
+        trial_id: int,
+        time_before_creation: datetime,
+        time_after_creation: datetime,
+    ) -> None:
         assert len(trials) == idx + 1
         assert len({t._trial_id for t in trials}) == idx + 1
         assert trial_id in {t._trial_id for t in trials}
@@ -328,7 +336,9 @@ def test_create_new_trial(storage_mode: str) -> None:
         assert all(t.user_attrs == {} for t in trials)
         assert all(t.system_attrs == {} for t in trials)
         assert all(
-            t.datetime_start < time_before_creation for t in trials if t._trial_id != trial_id and t.datetime_start is not None
+            t.datetime_start < time_before_creation
+            for t in trials
+            if t._trial_id != trial_id and t.datetime_start is not None
         )
         assert all(
             time_before_creation < t.datetime_start < time_after_creation

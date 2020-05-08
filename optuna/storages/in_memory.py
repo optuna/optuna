@@ -34,8 +34,12 @@ class InMemoryStorage(base.BaseStorage):
         self._trial_id_to_study_id_and_number = {}  # type: Dict[int, Tuple[int, int]]
         self._trials = []  # type: List[Optional[FrozenTrial]]
         self._study_trials = defaultdict(list)  # type: DefaultDict[int, List[int]]
-        self._param_distribution = defaultdict(dict)  # type: DefaultDict[int, Dict[str, distributions.BaseDistribution]]
-        self._direction = defaultdict(lambda: StudyDirection.NOT_SET)  # type: DefaultDict[int, StudyDirection]
+        self._param_distribution = defaultdict(
+            dict
+        )  # type: DefaultDict[int, Dict[str, distributions.BaseDistribution]]
+        self._direction = defaultdict(
+            lambda: StudyDirection.NOT_SET
+        )  # type: DefaultDict[int, StudyDirection]
         self._study_user_attrs = defaultdict(dict)  # type: DefaultDict[int, Dict[str, Any]]
         self._study_system_attrs = defaultdict(dict)  # type: DefaultDict[int, Dict[str, Any]]
         self._study_name = {}  # type: Dict[int, str]
@@ -104,7 +108,10 @@ class InMemoryStorage(base.BaseStorage):
         self._check_study_id(study_id)
 
         with self._lock:
-            if self._direction[study_id] != StudyDirection.NOT_SET and self._direction[study_id] != direction:
+            if (
+                self._direction[study_id] != StudyDirection.NOT_SET
+                and self._direction[study_id] != direction
+            ):
                 raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
                         self._direction[study_id], direction
@@ -184,11 +191,10 @@ class InMemoryStorage(base.BaseStorage):
             system_attrs=copy.copy(self._study_system_attrs[study_id]),
             n_trials=len(self._study_trials[study_id]),
             datetime_start=min(
-                [
-                    trial.datetime_start
-                    for trial in self.get_all_trials(study_id, deepcopy=False)
-                ]
-            ) if self._study_trials[study_id] else None,
+                [trial.datetime_start for trial in self.get_all_trials(study_id, deepcopy=False)]
+            )
+            if self._study_trials[study_id]
+            else None,
             study_id=study_id,
         )
 
@@ -430,7 +436,9 @@ class InMemoryStorage(base.BaseStorage):
         if state is None:
             return len(self._study_trials[study_id])
 
-        return len([0 for trial in self.get_all_trials(study_id, deepcopy=False) if trial.state == state])
+        return len(
+            [0 for trial in self.get_all_trials(study_id, deepcopy=False) if trial.state == state]
+        )
 
     def _check_study_id(self, study_id):
         # type: (int) -> None
