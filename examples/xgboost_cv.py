@@ -14,12 +14,13 @@ We have following two ways to execute this example:
 """
 
 
-from optuna.samplers import TPESampler
 import optuna
+from optuna.samplers import TPESampler
 import os
 import sklearn.datasets
 import sklearn.metrics
 import xgboost as xgb
+
 
 # Set path to save CV results
 file_path = "./tmp_results_xgbCV_optuna/"
@@ -38,9 +39,11 @@ n_folds = 3
 # Make the Optuna Sampler behave in a deterministically.
 sampler = TPESampler(seed=seed)
 
-# Define Optuna Objective
-def objective(trial):
 
+# Define Optuna Objective
+# FYI: Objective functions can take additional arguments
+# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
+def objective(trial):
     (data, target) = sklearn.datasets.load_breast_cancer(return_X_y=True)
     dtrain = xgb.DMatrix(data, label=target)
 
@@ -96,7 +99,6 @@ def objective(trial):
 
     # Extract the best score
     best_score = xgb_cv_results["test-auc-mean"].values[-1]
-
     return best_score
 
 
