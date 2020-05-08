@@ -320,14 +320,14 @@ def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.nd
             x0[name] = np.mean([distribution.high, distribution.low])
         elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
             x0[name] = int(np.mean([distribution.high, distribution.low]))
-        elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
-            log_high = math.log(distribution.high)
-            log_low = math.log(distribution.low)
-            x0[name] = int(math.exp(np.mean([log_high, log_low])))
         elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
             log_high = math.log(distribution.high)
             log_low = math.log(distribution.low)
             x0[name] = math.exp(np.mean([log_high, log_low]))
+        elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+            log_high = math.log(distribution.high)
+            log_low = math.log(distribution.low)
+            x0[name] = int(math.exp(np.mean([log_high, log_low])))
         else:
             raise NotImplementedError(
                 "The distribution {} is not implemented.".format(distribution)
