@@ -1,4 +1,3 @@
-import contextlib
 import copy
 import json
 import os
@@ -25,7 +24,6 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
     from typing import Union  # NOQA
 
-    from optuna.distributions import BaseDistribution  # NOQA
     from optuna.trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
@@ -57,26 +55,6 @@ DEFAULT_LIGHTGBM_PARAMETERS = {
 }
 
 _logger = optuna.logging.get_logger(__name__)
-
-
-class _TimeKeeper(object):
-    def __init__(self):
-        # type: () -> None
-
-        self.time = time.time()
-
-    def elapsed_secs(self):
-        # type: () -> float
-
-        return time.time() - self.time
-
-
-@contextlib.contextmanager
-def _timer():
-    # type: () -> Generator[_TimeKeeper, None, None]
-
-    timekeeper = _TimeKeeper()
-    yield timekeeper
 
 
 class BaseTuner(object):
@@ -249,11 +227,11 @@ class OptunaObjective(BaseTuner):
             param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + EPS))
             self.lgbm_params["min_child_samples"] = param_value
 
-        with _timer() as t:
-            booster = lgb.train(self.lgbm_params, self.train_set, **self.lgbm_kwargs)
+        start_time = time.time()
+        booster = lgb.train(self.lgbm_params, self.train_set, **self.lgbm_kwargs)
 
         val_score = self._get_booster_best_score(booster)
-        elapsed_secs = t.elapsed_secs()
+        elapsed_secs = time.time() - start_time
         average_iteration_time = elapsed_secs / booster.current_iteration()
 
         if self.model_dir is not None:
@@ -296,8 +274,7 @@ class OptunaObjective(BaseTuner):
 class LightGBMTuner(BaseTuner):
     """Hyperparameter-tuning with Optuna for LightGBM.
 
-    Arguments and keyword arguments for `lightgbm.train()
-    <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
+    Arguments and keyword arguments for `lightgbm.train()`_ can be passed.
     The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTuner` has are listed
     below:
 
@@ -326,6 +303,12 @@ class LightGBMTuner(BaseTuner):
             model in the trial. ``lgbm_params`` is a JSON-serialized dictionary of LightGBM
             parameters used in the trial.
 
+        optuna_callbacks:
+            List of Optuna callback functions that are invoked at the end of each trial.
+            Each function must accept two parameters with the following types in this order:
+            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+            Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
+
         model_dir:
             A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
             saved. Please set shared directory (e.g., directories on NFS) if you want to access
@@ -333,6 +316,8 @@ class LightGBMTuner(BaseTuner):
             Otherwise, it may raise :obj:`ValueError`. If the directory does not exist, it will be
             created. The filenames of the boosters will be ``{model_dir}/{trial_number}.pkl``
             (e.g., ``./boosters/0.pkl``).
+
+    .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     """
 
     def __init__(
@@ -357,6 +342,7 @@ class LightGBMTuner(BaseTuner):
         best_params=None,  # type: Optional[Dict[str, Any]]
         tuning_history=None,  # type: Optional[List[Dict[str, Any]]]
         study=None,  # type: Optional[Study]
+        optuna_callbacks=None,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
         model_dir=None,  # type: Optional[str]
         verbosity=1,  # type: Optional[int]
     ):
@@ -388,6 +374,7 @@ class LightGBMTuner(BaseTuner):
         )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
         self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
+        self._start_time = None  # type: Optional[float]
         self._model_dir = model_dir
 
         if self._model_dir is not None and not os.path.exists(self._model_dir):
@@ -437,6 +424,8 @@ class LightGBMTuner(BaseTuner):
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
+
+        self._optuna_callbacks = optuna_callbacks
 
     @property
     def best_score(self) -> float:
@@ -545,7 +534,7 @@ class LightGBMTuner(BaseTuner):
 
     def run(self) -> None:
         """Perform the hyperparameter-tuning with given parameters."""
-        # Surpress log messages.
+        # Suppress log messages.
         if self.auto_options["verbosity"] == 0:
             optuna.logging.disable_default_handler()
             self.lgbm_params["verbose"] = -1
@@ -558,34 +547,12 @@ class LightGBMTuner(BaseTuner):
         # Sampling.
         self.sample_train_set()
 
-        # Tuning.
-        time_budget = self.auto_options["time_budget"]
-
-        self.start_time = time.time()
-        with _timer() as t:
-            self.tune_feature_fraction()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
-
-            self.tune_num_leaves()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
-
-            self.tune_bagging()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
-
-            self.tune_feature_fraction_stage2()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
-
-            self.tune_regularization_factors()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
-
-            self.tune_min_data_in_leaf()
-            if time_budget is not None and time_budget < t.elapsed_secs():
-                return
+        self.tune_feature_fraction()
+        self.tune_num_leaves()
+        self.tune_bagging()
+        self.tune_feature_fraction_stage2()
+        self.tune_regularization_factors()
+        self.tune_min_data_in_leaf()
 
     def sample_train_set(self):
         # type: () -> None
@@ -695,9 +662,23 @@ class LightGBMTuner(BaseTuner):
             if t.state in (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
         ]
         _n_trials = n_trials - len(complete_trials)
+
+        if self._start_time is None:
+            self._start_time = time.time()
+
+        if self.auto_options["time_budget"] is not None:
+            _timeout = self.auto_options["time_budget"] - (time.time() - self._start_time)
+        else:
+            _timeout = None
         if _n_trials > 0:
             try:
-                study.optimize(objective, n_trials=_n_trials, catch=())
+                study.optimize(
+                    objective,
+                    n_trials=_n_trials,
+                    timeout=_timeout,
+                    catch=(),
+                    callbacks=self._optuna_callbacks,
+                )
             except ValueError:
                 # ValueError is raised by GridSampler when all combinations were examined.
                 # TODO(toshihikoyanase): Remove this try-except after Study.stop is implemented.

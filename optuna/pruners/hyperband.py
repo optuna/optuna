@@ -1,6 +1,7 @@
 import math
 from typing import List
 from typing import Optional
+from typing import Union
 import warnings
 
 import optuna
@@ -8,6 +9,8 @@ from optuna._experimental import experimental
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 _logger = logging.get_logger(__name__)
 
@@ -50,31 +53,88 @@ class HyperbandPruner(BasePruner):
         Hyperband has several :class:`~optuna.pruners.SuccessiveHalvingPruner`. Each
         :class:`~optuna.pruners.SuccessiveHalvingPruner` is referred as "bracket" in the original
         paper. The number of brackets is an important factor to control the early stopping behavior
-        of Hyperband and is automatically determined by ``max_resource`` and ``reduction_factor``
-        as `The number of brackets = floor(log(max_resource) / log(reduction_factor)) + 1`. Please
-        set ``reduction_factor`` so that the number of brackets is not too large　(about 4 ~ 6 in
-        most use cases).　Please see Section 3.6 of the `original paper
+        of Hyperband and is automatically determined by ``min_resource``, ``max_resource`` and
+        ``reduction_factor`` as
+        `The number of brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`.
+        Please set ``reduction_factor`` so that the number of brackets is not too large　(about 4 ~
+        6 in most use cases).　Please see Section 3.6 of the `original paper
         <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
+
+    Example:
+
+        We minimize an objective function with Hyperband pruning algorithm.
+
+        .. testsetup::
+
+            import numpy as np
+            from sklearn.model_selection import train_test_split
+
+            np.random.seed(seed=0)
+            X = np.random.randn(200).reshape(-1, 1)
+            y = np.where(X[:, 0] < 0.5, 0, 1)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+            classes = np.unique(y)
+
+        .. testcode::
+
+            import optuna
+            from sklearn.linear_model import SGDClassifier
+
+            n_train_iter = 100
+
+            def objective(trial):
+                alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
+                clf = SGDClassifier(alpha=alpha)
+
+                for step in range(n_train_iter):
+                    clf.partial_fit(X_train, y_train, classes=classes)
+
+                    intermediate_value = clf.score(X_test, y_test)
+                    trial.report(intermediate_value, step)
+
+                    if trial.should_prune():
+                        raise optuna.exceptions.TrialPruned()
+
+                return clf.score(X_test, y_test)
+
+            study = optuna.create_study(
+                direction='maximize',
+                pruner=optuna.pruners.HyperbandPruner(
+                    min_resource=1,
+                    max_resource=n_train_iter,
+                    reduction_factor=3
+                )
+            )
+            study.optimize(objective, n_trials=20)
 
     Args:
         min_resource:
             A parameter for specifying the minimum resource allocated to a trial noted as :math:`r`
-            in the paper.
+            in the paper. A smaller :math:`r` will give a result faster, but a larger
+            :math:`r` will give a better guarantee of successful judging between configurations.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         max_resource:
-            A parameter for specifying the maximum resource allocated to a trial noted as :math:`R`
-            in the paper. This value represents and should match the maximum iteration steps (e.g.,
-            the number of epochs for neural networks).
+            A parameter for specifying the maximum resource allocated to a trial. :math:`R` in the
+            paper corresponds to ``max_resource / min_resource``. This value represents and should
+            match the maximum iteration steps (e.g., the number of epochs for neural networks).
+            When this argument is "auto", the maximum resource is estimated according to the
+            completed trials. The default value of this argument is "auto".
+
+            .. note::
+                With "auto", the maximum resource will be the largest step reported by
+                :meth:`~optuna.trial.Trial.report` in the first, or one of the first if trained in
+                parallel, completed trial. No trials will be pruned until the maximum resource is
+                determined.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
-            :math:`\\eta` in the paper. See the details for
-            :class:`~optuna.pruners.SuccessiveHalvingPruner`.
+            :math:`\\eta` in the paper.
+            See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
         n_brackets:
 
             .. deprecated:: 1.4.0
                 This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`. The
-                number of brackets are automatically determined based on ``max_resource`` and
-                ``reduction_factor``.
+                number of brackets are automatically determined based on ``min_resource``,
+                ``max_resource`` and ``reduction_factor``.
 
             The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
             Defaults to :math:`4`.
@@ -92,37 +152,81 @@ class HyperbandPruner(BasePruner):
     def __init__(
         self,
         min_resource: int = 1,
-        max_resource: int = 80,
+        max_resource: Union[str, int] = "auto",
         reduction_factor: int = 3,
         n_brackets: Optional[int] = None,
         min_early_stopping_rate_low: Optional[int] = None,
     ) -> None:
 
-        self._pruners = []  # type: List[SuccessiveHalvingPruner]
+        self._min_resource = min_resource
+        self._max_resource = max_resource
         self._reduction_factor = reduction_factor
+        self._n_brackets = n_brackets
+        self._min_early_stopping_rate_low = min_early_stopping_rate_low
+        self._pruners = []  # type: List[SuccessiveHalvingPruner]
         self._total_trial_allocation_budget = 0
+        self._trial_allocation_budgets = []  # type: List[int]
 
-        if n_brackets is None:
+        if not isinstance(self._max_resource, int) and self._max_resource != "auto":
+            raise ValueError(
+                "The 'max_resource' should be integer or 'auto'. "
+                "But max_resource = {}".format(self._max_resource)
+            )
+
+        if n_brackets is not None:
+            message = (
+                "The argument of `n_brackets` is deprecated. "
+                "The number of brackets is automatically determined by `min_resource`, "
+                "`max_resource` and `reduction_factor` as "
+                "`n_brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`. "
+                "Please specify `reduction_factor` appropriately."
+            )
+            warnings.warn(message, DeprecationWarning)
+            _logger.warning(message)
+
+        if min_early_stopping_rate_low is not None:
+            message = (
+                "The argument of `min_early_stopping_rate_low` is deprecated. "
+                "Please specify `min_resource` appropriately."
+            )
+            warnings.warn(message, DeprecationWarning)
+            _logger.warning(message)
+
+    def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
+        if len(self._pruners) == 0:
+            self._try_initialization(study)
+            if len(self._pruners) == 0:
+                return False
+
+        i = self._get_bracket_id(study, trial)
+        _logger.debug("{}th bracket is selected".format(i))
+        bracket_study = self._create_bracket_study(study, i)
+        return self._pruners[i].prune(bracket_study, trial)
+
+    def _try_initialization(self, study: "optuna.study.Study") -> None:
+        if self._max_resource == "auto":
+            trials = study.get_trials(deepcopy=False)
+            n_steps = [
+                t.last_step
+                for t in trials
+                if t.state == TrialState.COMPLETE and t.last_step is not None
+            ]
+
+            if not n_steps:
+                return
+
+            self._max_resource = max(n_steps) + 1
+
+        assert isinstance(self._max_resource, int)
+
+        if self._n_brackets is None:
             # In the original paper http://www.jmlr.org/papers/volume18/16-558/16-558.pdf, the
             # inputs of Hyperband are `R`: max resource and `\eta`: reduction factor. The
             # number of brackets (this is referred as `s_{max} + 1` in the paper) is calculated
             # by s_{max} + 1 = \floor{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
             self._n_brackets = (
-                math.floor(math.log2(max_resource) / math.log2(reduction_factor)) + 1
+                math.floor(math.log2(self._max_resource) / math.log2(self._reduction_factor)) + 1
             )
-        else:
-            message = (
-                "The argument of `n_brackets` is deprecated. "
-                "The number of brackets is automatically determined by `max_resource` and "
-                "`reduction_factor` as "
-                "`n_brackets = floor(log(max_resource) / log(reduction_factor)) + 1`. "
-                "Please specify `reduction_factor` appropriately."
-            )
-            warnings.warn(message, DeprecationWarning)
-            _logger.warning(message)
-            self._n_brackets = n_brackets
-
-        self._trial_allocation_budgets = []  # type: List[int]
 
         _logger.debug("Hyperband has {} brackets".format(self._n_brackets))
 
@@ -131,17 +235,10 @@ class HyperbandPruner(BasePruner):
             self._total_trial_allocation_budget += trial_allocation_budget
             self._trial_allocation_budgets.append(trial_allocation_budget)
 
-            # N.B. (crcrpar): `min_early_stopping_rate` has the information of `bracket_index`.
-            if min_early_stopping_rate_low is None:
+            if self._min_early_stopping_rate_low is None:
                 min_early_stopping_rate = i
             else:
-                message = (
-                    "The argument of `min_early_stopping_rate_low` is deprecated. "
-                    "Please specify `min_resource` appropriately."
-                )
-                warnings.warn(message, DeprecationWarning)
-                _logger.warning(message)
-                min_early_stopping_rate = min_early_stopping_rate_low + i
+                min_early_stopping_rate = self._min_early_stopping_rate_low + i
 
             _logger.debug(
                 "{}th bracket has minimum early stopping rate of {}".format(
@@ -150,17 +247,11 @@ class HyperbandPruner(BasePruner):
             )
 
             pruner = SuccessiveHalvingPruner(
-                min_resource=min_resource,
-                reduction_factor=reduction_factor,
+                min_resource=self._min_resource,
+                reduction_factor=self._reduction_factor,
                 min_early_stopping_rate=min_early_stopping_rate,
             )
             self._pruners.append(pruner)
-
-    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
-        i = self._get_bracket_id(study, trial)
-        _logger.debug("{}th bracket is selected".format(i))
-        bracket_study = self._create_bracket_study(study, i)
-        return self._pruners[i].prune(bracket_study, trial)
 
     def _calculate_trial_allocation_budget(self, pruner_index: int) -> int:
         """Compute the trial allocated budget for a bracket of ``pruner_index``.
@@ -171,6 +262,7 @@ class HyperbandPruner(BasePruner):
         number of trials here instead.
         """
 
+        assert self._n_brackets is not None
         s = self._n_brackets - 1 - pruner_index
         return math.ceil(self._n_brackets * (self._reduction_factor ** s) / (s + 1))
 
@@ -183,6 +275,10 @@ class HyperbandPruner(BasePruner):
         `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
         """
 
+        if len(self._pruners) == 0:
+            return 0
+
+        assert self._n_brackets is not None
         n = (
             hash("{}_{}".format(study.study_name, trial.number))
             % self._total_trial_allocation_budget
