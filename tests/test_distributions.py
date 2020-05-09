@@ -18,6 +18,7 @@ EXAMPLE_DISTRIBUTIONS = {
     "iu": distributions.IntUniformDistribution(low=1, high=10, step=2),
     "c1": distributions.CategoricalDistribution(choices=(2.71, -float("inf"))),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
+    "ilu": distributions.IntUniformDistribution(low=2, high=12, step=2),
 }  # type: Dict[str, Any]
 
 EXAMPLE_JSONS = {
@@ -28,6 +29,7 @@ EXAMPLE_JSONS = {
     "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10, "step": 2}}',
     "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
+    "ilu": '{"name": "IntUniformDistribution", "attributes": {"low": 2, "high": 12, "step": 2}}',
 }
 
 
@@ -99,6 +101,10 @@ def test_check_distribution_compatibility():
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["iu"], distributions.IntUniformDistribution(low=-1, high=1)
     )
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS["ilu"],
+        distributions.IntLogUniformDistribution(low=1, high=13, step=1),
+    )
 
 
 def test_contains():
@@ -150,6 +156,16 @@ def test_contains():
     assert c._contains(1.5)
     assert not c._contains(3)
 
+    ilu = distributions.IntUniformDistribution(low=2, high=12, step=2)
+    assert not ilu._contains(0.9)
+    assert ilu._contains(2)
+    assert ilu._contains(6)
+    assert ilu._contains(8)
+    assert ilu._contains(12)
+    assert not ilu._contains(9)
+    assert not ilu._contains(13)
+    assert not ilu._contains(12.1)
+
 
 def test_empty_range_contains():
     # type: () -> None
@@ -179,6 +195,16 @@ def test_empty_range_contains():
     assert iuq._contains(1)
     assert not iuq._contains(2)
 
+    ilu = distributions.IntUniformDistribution(low=1, high=1)
+    assert not ilu._contains(0)
+    assert ilu._contains(1)
+    assert not ilu._contains(2)
+
+    iluq = distributions.IntUniformDistribution(low=1, high=1, step=2)
+    assert not iluq._contains(0)
+    assert iluq._contains(1)
+    assert not iluq._contains(2)
+
 
 def test_single():
     # type: () -> None
@@ -191,6 +217,8 @@ def test_single():
         distributions.IntUniformDistribution(low=-123, high=-123),
         distributions.IntUniformDistribution(low=-123, high=-120, step=4),
         distributions.CategoricalDistribution(choices=("foo",)),
+        distributions.IntLogUniformDistribution(low=2, high=2),
+        distributions.IntLogUniformDistribution(low=2, high=2, step=2),
     ]  # type: List[distributions.BaseDistribution]
     for distribution in single_distributions:
         assert distribution.single()
@@ -206,6 +234,8 @@ def test_single():
         distributions.IntUniformDistribution(low=-123, high=0),
         distributions.IntUniformDistribution(low=-123, high=0, step=123),
         distributions.CategoricalDistribution(choices=("foo", "bar")),
+        distributions.IntLogUniformDistribution(low=2, high=4),
+        distributions.IntLogUniformDistribution(low=2, high=4, step=2),
     ]  # type: List[distributions.BaseDistribution]
     for distribution in nonsingle_distributions:
         assert not distribution.single()
@@ -232,6 +262,15 @@ def test_empty_distribution():
 
     with pytest.raises(ValueError):
         distributions.CategoricalDistribution(choices=())
+
+    with pytest.raises(ValueError):
+        distributions.IntLogUniformDistribution(low=123, high=100)
+
+    with pytest.raises(ValueError):
+        distributions.IntLogUniformDistribution(low=123, high=100, step=2)
+
+    with pytest.raises(ValueError):
+        distributions.IntLogUniformDistribution(low=1, high=4, step=2)
 
 
 def test_invalid_distribution():
@@ -304,3 +343,9 @@ def test_int_uniform_distribution_asdict():
     # type: () -> None
 
     assert EXAMPLE_DISTRIBUTIONS["iu"]._asdict() == {"low": 1, "high": 10, "step": 2}
+
+
+def test_int_log_uniform_distribution_asdict():
+    # type: () -> None
+
+    assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12, "step": 2}

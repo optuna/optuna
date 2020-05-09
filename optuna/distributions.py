@@ -330,7 +330,7 @@ class IntLogUniformDistribution(IntUniformDistribution):
     def single(self):
         # type: () -> bool
 
-        return (self.high - self.low) % self.step == 0
+        return self.low == self.high
 
 
 class CategoricalDistribution(BaseDistribution):
