@@ -3,8 +3,8 @@ import warnings
 
 from optuna import distributions
 from optuna import logging
-from optuna.trials.base import BaseTrial
-from optuna.trials.util import _adjust_discrete_uniform_high
+from optuna.trial.base import BaseTrial
+from optuna.trial.util import _adjust_discrete_uniform_high
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
