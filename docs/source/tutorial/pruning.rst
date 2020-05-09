@@ -92,4 +92,4 @@ For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces prun
 .. code-block:: python
 
         pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'validation-error')
-        bst = xgb.train(param, dtrain, evals=[(dtest, 'validation')], callbacks=[pruning_callback])
+        bst = xgb.train(param, dtrain, evals=[(dvalid, 'validation')], callbacks=[pruning_callback])
