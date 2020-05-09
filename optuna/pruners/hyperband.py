@@ -6,11 +6,10 @@ import warnings
 
 import optuna
 from optuna._experimental import experimental
+from optuna._trial_state import TrialState
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
-from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
 
 _logger = logging.get_logger(__name__)
 
@@ -192,7 +191,7 @@ class HyperbandPruner(BasePruner):
             warnings.warn(message, DeprecationWarning)
             _logger.warning(message)
 
-    def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
+    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
         if len(self._pruners) == 0:
             self._try_initialization(study)
             if len(self._pruners) == 0:
