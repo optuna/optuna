@@ -310,7 +310,7 @@ class IntLogUniformDistribution(IntUniformDistribution):
             A step for spacing between values.
     """
 
-    def __init__(self, low, high, step):
+    def __init__(self, low, high, step=1):
         # type: (int, int, int) -> None
 
         super(IntLogUniformDistribution, self).__init__(low, high, step)
