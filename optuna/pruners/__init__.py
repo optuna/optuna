@@ -9,7 +9,7 @@ from optuna.pruners.threshold import ThresholdPruner  # NOQA
 import optuna
 
 
-def filter_study(
+def _filter_study(
     study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
 ) -> "optuna.study.Study":
     if isinstance(study.pruner, HyperbandPruner):

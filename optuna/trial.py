@@ -4,7 +4,6 @@ import decimal
 import warnings
 
 from optuna._trial_state import TrialState
-
 from optuna import distributions
 from optuna import logging
 from optuna import pruners
@@ -383,7 +382,7 @@ class Trial(BaseTrial):
 
         trial = self.storage.get_trial(self._trial_id)
 
-        study = pruners.filter_study(self.study, trial)
+        study = pruners._filter_study(self.study, trial)
 
         self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
         self.relative_params = self.study.sampler.sample_relative(
@@ -958,7 +957,7 @@ class Trial(BaseTrial):
         else:
             trial = self.storage.get_trial(self._trial_id)
 
-            study = pruners.filter_study(self.study, trial)
+            study = pruners._filter_study(self.study, trial)
 
             param_value = self.study.sampler.sample_independent(study, trial, name, distribution)
 
