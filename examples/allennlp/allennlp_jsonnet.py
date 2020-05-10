@@ -20,17 +20,21 @@ We have the following two ways to execute this example:
 
 """
 
+import json
 import os.path
 import shutil
 
 import optuna
+from optuna.integration.allennlp import dump_best_config
 from optuna.integration import AllenNLPExecutor
 
 
 # This path trick is used since this example is also
 # run from the root of this repository by CI.
 EXAMPLE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(EXAMPLE_DIR, "classifier.jsonnet")
 MODEL_DIR = "result"
+BEST_CONFIG_PATH = os.path.join(MODEL_DIR, "best.classifier.json")
 
 
 def objective(trial):
@@ -40,9 +44,9 @@ def objective(trial):
     trial.suggest_int("NUM_FILTERS", 16, 32)
     trial.suggest_int("HIDDEN_SIZE", 16, 32)
 
-    config_path = os.path.join(EXAMPLE_DIR, "classifier.jsonnet")
     serialization_dir = os.path.join(MODEL_DIR, "test_{}".format(trial.number))
-    executor = AllenNLPExecutor(trial, config_path, serialization_dir)
+    executor = AllenNLPExecutor(trial, CONFIG_PATH, serialization_dir)
+
     return executor.run()
 
 
@@ -57,6 +61,13 @@ if __name__ == "__main__":
     print("  Value: ", trial.value)
     print("  Params: ")
     for key, value in trial.params.items():
+        print("    {}: {}".format(key, value))
+
+    dump_best_config(CONFIG_PATH, BEST_CONFIG_PATH, study)
+
+    print("Best AllenNLP config:")
+    best_config = json.load(open(BEST_CONFIG_PATH))
+    for key, value in best_config.items():
         print("    {}: {}".format(key, value))
 
     shutil.rmtree(MODEL_DIR)
