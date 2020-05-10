@@ -234,16 +234,17 @@ class MultiObjectiveStudy(object):
             mo_trial._report_complete_values(values)
             return 0.0  # Dummy value.
 
-        mo_callbacks = None
-        if callbacks is not None:
+        # Wraps a multi-objective callback so that we can pass it to the `Study.optimize` method.
+        def wrap_mo_callback(callback: CallbackFuncType) -> Callable[[Study, FrozenTrial], None]:
+            return lambda study, trial: callback(
+                MultiObjectiveStudy(study),
+                multi_objective.trial.FrozenMultiObjectiveTrial(self.n_objectives, trial),
+            )
 
-            def to_mo_callback(callback: CallbackFuncType) -> Callable[[Study, FrozenTrial], None]:
-                return lambda study, trial: callback(
-                    MultiObjectiveStudy(study),
-                    multi_objective.trial.FrozenMultiObjectiveTrial(self.n_objectives, trial),
-                )
-
-            mo_callbacks = [to_mo_callback(callback) for callback in callbacks]
+        if callbacks is None:
+            wrapped_callbacks = None
+        else:
+            wrapped_callbacks = [wrap_mo_callback(callback) for callback in callbacks]
 
         self._study.optimize(
             mo_objective,
@@ -251,7 +252,7 @@ class MultiObjectiveStudy(object):
             n_trials=n_trials,
             n_jobs=n_jobs,
             catch=catch,
-            callbacks=mo_callbacks,
+            callbacks=wrapped_callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
         )
