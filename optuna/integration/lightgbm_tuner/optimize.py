@@ -66,9 +66,7 @@ class BaseTuner(object):
         self.lgbm_params = lgbm_params or {}
         self.lgbm_kwargs = lgbm_kwargs or {}
 
-    def _get_booster_best_score(self, booster):
-        # type: (lgb.Booster) -> float
-
+    def _get_metric_for_objective(self) -> str:
         metric = self.lgbm_params.get("metric", "binary_logloss")
 
         # todo (smly): This implementation is different logic from the LightGBM's python bindings.
@@ -80,6 +78,14 @@ class BaseTuner(object):
             metric = list(metric)[-1]
         else:
             raise NotImplementedError
+        metric = self._metric_with_eval_at(metric)
+
+        return metric
+
+    def _get_booster_best_score(self, booster):
+        # type: (lgb.Booster) -> float
+
+        metric = self._get_metric_for_objective()
         valid_sets = self.lgbm_kwargs.get("valid_sets")  # type: Optional[VALID_SET_TYPE]
 
         if self.lgbm_kwargs.get("valid_names") is not None:
@@ -100,7 +106,6 @@ class BaseTuner(object):
         else:
             raise NotImplementedError
 
-        metric = self._metric_with_eval_at(metric)
         val_score = booster.best_score[valid_name][metric]
         return val_score
 
@@ -304,19 +309,7 @@ class OptunaObjectiveCV(OptunaObjective):
 
     def _get_cv_scores(self, cv_results: Dict[str, List[float]]) -> List[float]:
 
-        metric = self.lgbm_params.get("metric", "binary_logloss")
-
-        # todo (smly): This implementation is different logic from the LightGBM's python bindings.
-        if type(metric) is str:
-            pass
-        elif type(metric) is list:
-            metric = metric[-1]
-        elif type(metric) is set:
-            metric = list(metric)[-1]
-        else:
-            raise NotImplementedError
-
-        metric = self._metric_with_eval_at(metric)
+        metric = self._get_metric_for_objective()
         val_scores = cv_results["{}-mean".format(metric)]
         return val_scores
 
