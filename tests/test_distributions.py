@@ -29,7 +29,8 @@ EXAMPLE_JSONS = {
     "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10, "step": 2}}',
     "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
-    "ilu": '{"name": "IntLogUniformDistribution", "attributes": {"low": 2, "high": 12, "step": 2}}',
+    "ilu": '{"name": "IntLogUniformDistribution",'
+    '"attributes": {"low": 2, "high": 12, "step": 2}}',
 }
 
 
