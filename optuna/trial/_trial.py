@@ -341,7 +341,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high, log=False, step=1):
+    def suggest_int(self, name, low, high, *, log=False, step=1):
         # type: (str, int, int, bool, int) -> int
         """Suggest a value for the integer parameter.
 
