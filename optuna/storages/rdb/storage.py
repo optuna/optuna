@@ -50,26 +50,29 @@ class RDBStorage(BaseStorage):
 
     Example:
 
-        We create an :class:`~optuna.storages.RDBStorage` instance with
-        customized ``pool_size`` and ``max_overflow`` settings.
+        Create an :class:`~optuna.storages.RDBStorage` instance with customized
+        ``pool_size`` and ``timeout`` settings.
 
-        .. code::
+        .. testcode::
 
-            >>> import optuna
-            >>>
-            >>> def objective(trial):
-            >>>     ...
-            >>>
-            >>> storage = optuna.storages.RDBStorage(
-            >>>     url='postgresql://foo@localhost/db',
-            >>>     engine_kwargs={
-            >>>         'pool_size': 20,
-            >>>         'max_overflow': 0
-            >>>     }
-            >>> )
-            >>>
-            >>> study = optuna.create_study(storage=storage)
-            >>> study.optimize(objective)
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -100, 100)
+                return x ** 2
+
+            storage = optuna.storages.RDBStorage(
+                url='sqlite:///:memory:',
+                engine_kwargs={
+                    'pool_size': 20,
+                    'connect_args': {
+                        'timeout': 10
+                    }
+                }
+            )
+
+            study = optuna.create_study(storage=storage)
+            study.optimize(objective, n_trials=10)
 
     Args:
         url: URL of the storage.
