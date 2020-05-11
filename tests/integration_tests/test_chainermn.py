@@ -8,7 +8,6 @@ from optuna.exceptions import TrialPruned
 from optuna import integration
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
-from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna import Study
 from optuna.testing.integration import DeterministicPruner
