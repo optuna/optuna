@@ -29,7 +29,7 @@ class KerasPruningCallback(Callback):
             objective function.
         monitor:
             An evaluation metric for pruning, e.g., ``val_loss`` and
-            ``val_acc``. Please refer to `keras.Callback reference
+            ``val_accuracy``. Please refer to `keras.Callback reference
             <https://keras.io/callbacks/#callback>`_ for further details.
         interval:
             Check if trial should be pruned every n-th epoch. By default ``interval=1`` and

@@ -74,7 +74,7 @@ def objective(trial):
         x_train,
         y_train,
         batch_size=BATCHSIZE,
-        callbacks=[KerasPruningCallback(trial, "val_acc")],
+        callbacks=[KerasPruningCallback(trial, "val_accuracy")],
         epochs=EPOCHS,
         validation_data=(x_valid, y_valid),
         verbose=1,
