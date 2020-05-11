@@ -91,7 +91,7 @@ class InMemoryStorage(base.BaseStorage):
             ):
                 raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
-                        self._direction[study_id], direction
+                        self._studies[study_id].direction, direction
                     )
                 )
             self._studies[study_id].direction = direction
