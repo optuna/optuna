@@ -332,6 +332,12 @@ class IntLogUniformDistribution(IntUniformDistribution):
 
         return self.low == self.high
 
+    def _contains(self, param_value_in_internal_repr):
+        # type: (float) -> bool
+
+        value = param_value_in_internal_repr
+        return (self.low <= value <= self.high) & (value % self.step == 0)
+
 
 class CategoricalDistribution(BaseDistribution):
     """A categorical distribution.

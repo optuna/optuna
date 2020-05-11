@@ -18,7 +18,7 @@ EXAMPLE_DISTRIBUTIONS = {
     "iu": distributions.IntUniformDistribution(low=1, high=10, step=2),
     "c1": distributions.CategoricalDistribution(choices=(2.71, -float("inf"))),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
-    "ilu": distributions.IntUniformDistribution(low=2, high=12, step=2),
+    "ilu": distributions.IntLogUniformDistribution(low=2, high=12, step=2),
 }  # type: Dict[str, Any]
 
 EXAMPLE_JSONS = {
@@ -29,7 +29,7 @@ EXAMPLE_JSONS = {
     "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10, "step": 2}}',
     "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
-    "ilu": '{"name": "IntUniformDistribution", "attributes": {"low": 2, "high": 12, "step": 2}}',
+    "ilu": '{"name": "IntLogUniformDistribution", "attributes": {"low": 2, "high": 12, "step": 2}}',
 }
 
 
@@ -156,7 +156,7 @@ def test_contains():
     assert c._contains(1.5)
     assert not c._contains(3)
 
-    ilu = distributions.IntUniformDistribution(low=2, high=12, step=2)
+    ilu = distributions.IntLogUniformDistribution(low=2, high=12, step=2)
     assert not ilu._contains(0.9)
     assert ilu._contains(2)
     assert ilu._contains(6)
