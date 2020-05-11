@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         python_version: ['3.5', '3.6', '3.7', '3.8']
-        build_type: ['', 'dev']  # empty string represents the normal optuna environment.
+        build_type: ['', 'dev']  # "dev" installs all the dependencies including pytest.
 
     steps:
     - uses: actions/checkout@v2
