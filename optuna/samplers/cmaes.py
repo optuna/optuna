@@ -248,7 +248,7 @@ class CmaEsSampler(BaseSampler):
             mean=mean,
             sigma=sigma0,
             bounds=bounds,
-            seed=self._cma_rng.randint(1, 2 ** 32),
+            seed=self._cma_rng.randint(1, 2 ** 31 - 2),
             n_max_resampling=10 * n_dimension,
         )
 
