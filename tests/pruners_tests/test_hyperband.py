@@ -1,4 +1,6 @@
+import datetime
 import pytest
+from unittest import mock
 
 import optuna
 from optuna import type_checking
@@ -130,3 +132,49 @@ def test_hyperband_max_resource_value_error():
 
     with pytest.raises(ValueError):
         _ = optuna.pruners.HyperbandPruner(max_resource="not_appropriate")
+
+
+def test_hyperband_filter_study():
+    # type: () -> None
+
+    pruner = optuna.pruners.HyperbandPruner(
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
+    )
+
+    def objective(t: optuna.trial.Trial) -> float:
+        return 1.0
+
+    def side_effect(s: optuna.study.Study, t: optuna.trial.FrozenTrial) -> int:
+        if t.number % 2:
+            return 0
+        else:
+            return 1
+
+    with mock.patch(
+        "optuna.pruners.HyperbandPruner._get_bracket_id",
+        new=mock.MagicMock(side_effect=side_effect),
+    ):
+        study = optuna.study.create_study(pruner=pruner)
+        study.optimize(objective, n_trials=10)
+
+        trial = optuna.trial.FrozenTrial(
+            number=10,
+            trial_id=10,
+            state=optuna.trial.TrialState.COMPLETE,
+            value=0,
+            datetime_start=datetime.datetime.now(),
+            datetime_complete=datetime.datetime.now(),
+            params={},
+            distributions={},
+            user_attrs={},
+            system_attrs={},
+            intermediate_values={},
+        )
+        filtered_study = optuna.pruners._filter_study(study, trial)
+
+        filtered_trials = filtered_study.get_trials(deepcopy=False)
+        assert len(filtered_trials) == 5
+        assert isinstance(study.pruner, optuna.pruners.HyperbandPruner)
+        assert study.pruner._get_bracket_id(study, trial) == 1
+        for t in filtered_trials:
+            assert study.pruner._get_bracket_id(study, t) == 1
