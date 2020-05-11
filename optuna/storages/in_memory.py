@@ -116,7 +116,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: (str) -> int
 
         if study_name not in self._study_name_to_id:
-            raise KeyError("No such study {}.".format(study_name))
+            raise ValueError("No such study {}.".format(study_name))
 
         return self._study_name_to_id[study_name]
 
@@ -422,13 +422,13 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             if study_id not in self._studies:
-                raise KeyError("No study with study_id {} exists.".format(study_id))
+                raise ValueError("No study with study_id {} exists.".format(study_id))
 
     def _check_trial_id(self, trial_id: int) -> None:
 
         with self._lock:
             if trial_id not in self._trial_id_to_study_id_and_number:
-                raise KeyError("No trial with trial_id {} exists.".format(trial_id))
+                raise ValueError("No trial with trial_id {} exists.".format(trial_id))
 
 
 class _StudyInfo:
