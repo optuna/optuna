@@ -78,7 +78,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         evaluation of the objective function. This method is suitable for sampling algorithms
         that use relationship between parameters such as Gaussian Process and CMA-ES.
 
-        ... note::
+        .. note::
                 The failed trials are ignored by any build-in samplers when they sample new
                 parameters. Thus, failed trials are regarded as deleted in the samplers'
                 perspective.
@@ -109,7 +109,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         for sampling algorithms that do not use relationship between parameters such as random
         sampling and TPE.
 
-        ... note::
+        .. note::
                 The failed trials are ignored by any build-in samplers when they sample new
                 parameters. Thus, failed trials are regarded as deleted in the samplers'
                 perspective.

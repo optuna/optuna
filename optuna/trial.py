@@ -40,7 +40,7 @@ class TrialState(enum.Enum):
         FAIL:
             The :class:`~optuna.trial.Trial` has failed due to an uncaught error.
 
-            ... note::
+            .. note::
                 The failed trials are ignored by any build-in samplers when they sample new
                 parameters. Thus, failed trials are regarded as deleted in the samplers'
                 perspective.
