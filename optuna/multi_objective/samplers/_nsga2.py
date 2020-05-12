@@ -100,7 +100,9 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
             generation = parent_generation + 1
             study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
-            study._storage.set_trial_system_attr(trial_id, _PARENTS_KEY, [p0.number, p1.number])
+            study._storage.set_trial_system_attr(
+                trial_id, _PARENTS_KEY, [p0._trial_id, p1._trial_id]
+            )
 
         return {}
 
@@ -116,12 +118,11 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 study, trial, param_name, param_distribution
             )
 
-        trials = study.get_trials(deepcopy=False)
         p0, p1 = trial.system_attrs[_PARENTS_KEY]
 
-        param = trials[p0].params.get(param_name, None)
+        param = study._storage.get_trial(p0).params.get(param_name, None)
         if param is None or self._rng.rand() < self._crossover_prob:
-            param = trials[p1].params.get(param_name, None)
+            param = study._storage.get_trial(p1).params.get(param_name, None)
 
         if param is None or self._rng.rand() < self._mutation_prob:
             return self._random_sampler.sample_independent(
