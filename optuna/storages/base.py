@@ -45,6 +45,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             optuna.exceptions.DuplicatedStudyError:
                 If a study with the same `study_name` already exists.
         """
+        # TODO(ytsmiling) Fix RDB storage implementation to ensure unique `study_id`.
         raise NotImplementedError
 
     @abc.abstractmethod
