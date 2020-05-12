@@ -86,16 +86,17 @@ class InMemoryStorage(base.BaseStorage):
             self._check_study_id(study_id)
 
             with self._lock:
+                study = self._studies[study_id]
                 if (
-                    self._studies[study_id].direction != StudyDirection.NOT_SET
-                    and self._studies[study_id].direction != direction
+                    study.direction != StudyDirection.NOT_SET
+                    and study.direction != direction
                 ):
                     raise ValueError(
                         "Cannot overwrite study direction from {} to {}.".format(
-                            self._studies[study_id].direction, direction
+                            study.direction, direction
                         )
                     )
-                self._studies[study_id].direction = direction
+                study.direction = direction
 
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
