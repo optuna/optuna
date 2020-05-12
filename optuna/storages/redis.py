@@ -185,7 +185,7 @@ class RedisStorage(base.BaseStorage):
 
         if self._redis.exists(self._key_study_direction(study_id)):
             direction_pkl = self._redis.get(self._key_study_direction(study_id))
-            # assert direction_pkl is not None
+            assert direction_pkl is not None
             current_direction = pickle.loads(direction_pkl)
             if current_direction != StudyDirection.NOT_SET and current_direction != direction:
                 raise ValueError(
