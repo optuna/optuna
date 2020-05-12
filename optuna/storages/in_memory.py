@@ -300,7 +300,7 @@ class InMemoryStorage(base.BaseStorage):
             best_trial_id = self._studies[study_id].best_trial_id
             if best_trial_id is None:
                 raise ValueError("No trials are completed yet.")
-            return self._get_trial(best_trial_id)
+            return self.get_trial(best_trial_id)
 
     def get_trial_param(self, trial_id, param_name):
         # type: (int, str) -> float
