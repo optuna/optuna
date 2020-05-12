@@ -88,10 +88,7 @@ class InMemoryStorage(base.BaseStorage):
 
             with self._lock:
                 study = self._studies[study_id]
-                if (
-                    study.direction != StudyDirection.NOT_SET
-                    and study.direction != direction
-                ):
+                if study.direction != StudyDirection.NOT_SET and study.direction != direction:
                     raise ValueError(
                         "Cannot overwrite study direction from {} to {}.".format(
                             study.direction, direction
