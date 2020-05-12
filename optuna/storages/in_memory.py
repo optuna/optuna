@@ -51,112 +51,124 @@ class InMemoryStorage(base.BaseStorage):
     def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
 
-        study_id = self._max_study_id + 1
-        self._max_study_id += 1
+        with self._lock:
+            study_id = self._max_study_id + 1
+            self._max_study_id += 1
 
-        if study_name is not None:
-            if study_name in self._study_name_to_id:
-                raise DuplicatedStudyError
-            self._studies[study_id] = _StudyInfo(study_name)
-            self._study_name_to_id[study_name] = study_id
-        else:
-            study_uuid = str(uuid.uuid4())
-            study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
-            self._studies[study_id] = _StudyInfo(study_name)
-            self._study_name_to_id[study_name] = study_id
+            if study_name is not None:
+                if study_name in self._study_name_to_id:
+                    raise DuplicatedStudyError
+                self._studies[study_id] = _StudyInfo(study_name)
+                self._study_name_to_id[study_name] = study_id
+            else:
+                study_uuid = str(uuid.uuid4())
+                study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
+                self._studies[study_id] = _StudyInfo(study_name)
+                self._study_name_to_id[study_name] = study_id
 
-        return study_id
+            return study_id
 
     def delete_study(self, study_id):
         # type: (int) -> None
 
-        self._check_study_id(study_id)
-
         with self._lock:
-            for trial in self._studies[study_id].trials:
-                del self._trial_id_to_study_id_and_number[trial._trial_id]
-            study_name = self._studies[study_id].name
-            del self._study_name_to_id[study_name]
-            del self._studies[study_id]
+            self._check_study_id(study_id)
+
+            with self._lock:
+                for trial in self._studies[study_id].trials:
+                    del self._trial_id_to_study_id_and_number[trial._trial_id]
+                study_name = self._studies[study_id].name
+                del self._study_name_to_id[study_name]
+                del self._studies[study_id]
 
     def set_study_direction(self, study_id, direction):
         # type: (int, StudyDirection) -> None
 
-        self._check_study_id(study_id)
-
         with self._lock:
-            if (
-                self._studies[study_id].direction != StudyDirection.NOT_SET
-                and self._studies[study_id].direction != direction
-            ):
-                raise ValueError(
-                    "Cannot overwrite study direction from {} to {}.".format(
-                        self._studies[study_id].direction, direction
+            self._check_study_id(study_id)
+
+            with self._lock:
+                if (
+                    self._studies[study_id].direction != StudyDirection.NOT_SET
+                    and self._studies[study_id].direction != direction
+                ):
+                    raise ValueError(
+                        "Cannot overwrite study direction from {} to {}.".format(
+                            self._studies[study_id].direction, direction
+                        )
                     )
-                )
-            self._studies[study_id].direction = direction
+                self._studies[study_id].direction = direction
 
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
-        self._check_study_id(study_id)
-
         with self._lock:
-            self._studies[study_id].user_attrs[key] = value
+            self._check_study_id(study_id)
+
+            with self._lock:
+                self._studies[study_id].user_attrs[key] = value
 
     def set_study_system_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
-        self._check_study_id(study_id)
-
         with self._lock:
-            self._studies[study_id].system_attrs[key] = value
+            self._check_study_id(study_id)
+
+            with self._lock:
+                self._studies[study_id].system_attrs[key] = value
 
     def get_study_id_from_name(self, study_name):
         # type: (str) -> int
 
-        if study_name not in self._study_name_to_id:
-            raise ValueError("No such study {}.".format(study_name))
+        with self._lock:
+            if study_name not in self._study_name_to_id:
+                raise ValueError("No such study {}.".format(study_name))
 
-        return self._study_name_to_id[study_name]
+            return self._study_name_to_id[study_name]
 
     def get_study_id_from_trial_id(self, trial_id):
         # type: (int) -> int
 
-        self._check_trial_id(trial_id)
+        with self._lock:
+            self._check_trial_id(trial_id)
 
-        return self._trial_id_to_study_id_and_number[trial_id][0]
+            return self._trial_id_to_study_id_and_number[trial_id][0]
 
     def get_study_name_from_id(self, study_id):
         # type: (int) -> str
 
-        self._check_study_id(study_id)
-        return self._studies[study_id].name
+        with self._lock:
+            self._check_study_id(study_id)
+            return self._studies[study_id].name
 
     def get_study_direction(self, study_id):
         # type: (int) -> StudyDirection
 
-        self._check_study_id(study_id)
-        return self._studies[study_id].direction
+        with self._lock:
+            self._check_study_id(study_id)
+            return self._studies[study_id].direction
 
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
 
-        self._check_study_id(study_id)
         with self._lock:
-            return self._studies[study_id].user_attrs
+            self._check_study_id(study_id)
+            with self._lock:
+                return self._studies[study_id].user_attrs
 
     def get_study_system_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
 
-        self._check_study_id(study_id)
         with self._lock:
-            return self._studies[study_id].system_attrs
+            self._check_study_id(study_id)
+            with self._lock:
+                return self._studies[study_id].system_attrs
 
     def get_all_study_summaries(self):
         # type: () -> List[StudySummary]
 
-        return [self._build_study_summary(study_id) for study_id in self._studies.keys()]
+        with self._lock:
+            return [self._build_study_summary(study_id) for study_id in self._studies.keys()]
 
     def _build_study_summary(self, study_id: int) -> StudySummary:
         study = self._studies[study_id]
@@ -180,21 +192,22 @@ class InMemoryStorage(base.BaseStorage):
     def create_new_trial(self, study_id, template_trial=None):
         # type: (int, Optional[FrozenTrial]) -> int
 
-        self._check_study_id(study_id)
-
-        if template_trial is None:
-            trial = self._create_running_trial()
-        else:
-            trial = copy.deepcopy(template_trial)
-
         with self._lock:
-            trial_id = len(self._trial_id_to_study_id_and_number)
-            trial.number = len(self._studies[study_id].trials)
-            trial._trial_id = trial_id
-            self._trial_id_to_study_id_and_number[trial_id] = (study_id, trial.number)
-            self._studies[study_id].trials.append(trial)
-            self._update_cache(trial_id, study_id)
-        return trial_id
+            self._check_study_id(study_id)
+
+            if template_trial is None:
+                trial = self._create_running_trial()
+            else:
+                trial = copy.deepcopy(template_trial)
+
+            with self._lock:
+                trial_id = len(self._trial_id_to_study_id_and_number)
+                trial.number = len(self._studies[study_id].trials)
+                trial._trial_id = trial_id
+                self._trial_id_to_study_id_and_number[trial_id] = (study_id, trial.number)
+                self._studies[study_id].trials.append(trial)
+                self._update_cache(trial_id, study_id)
+            return trial_id
 
     @staticmethod
     def _create_running_trial():
@@ -217,96 +230,102 @@ class InMemoryStorage(base.BaseStorage):
     def set_trial_state(self, trial_id, state):
         # type: (int, TrialState) -> bool
 
-        trial = self.get_trial(trial_id)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
         with self._lock:
-            trial = copy.copy(trial)
+            trial = self.get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
-                return False
+            with self._lock:
+                trial = copy.copy(trial)
+                self.check_trial_is_updatable(trial_id, trial.state)
 
-            trial.state = state
-            if state.is_finished():
-                trial.datetime_complete = datetime.now()
-                self._set_trial(trial_id, trial)
-                study_id = self._trial_id_to_study_id_and_number[trial_id][0]
-                self._update_cache(trial_id, study_id)
-            else:
-                self._set_trial(trial_id, trial)
+                if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
+                    return False
 
-        return True
+                trial.state = state
+                if state.is_finished():
+                    trial.datetime_complete = datetime.now()
+                    self._set_trial(trial_id, trial)
+                    study_id = self._trial_id_to_study_id_and_number[trial_id][0]
+                    self._update_cache(trial_id, study_id)
+                else:
+                    self._set_trial(trial_id, trial)
+
+            return True
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
         # type: (int, str, float, distributions.BaseDistribution) -> bool
 
-        trial = self.get_trial(trial_id)
-
         with self._lock:
-            self.check_trial_is_updatable(trial_id, trial.state)
+            trial = self.get_trial(trial_id)
 
-            study_id = self._trial_id_to_study_id_and_number[trial_id][0]
-            # Check param distribution compatibility with previous trial(s).
-            if param_name in self._studies[study_id].param_distribution:
-                distributions.check_distribution_compatibility(
-                    self._studies[study_id].param_distribution[param_name], distribution
-                )
+            with self._lock:
+                self.check_trial_is_updatable(trial_id, trial.state)
 
-            # Check param has not been set; otherwise, return False.
-            if param_name in trial.params:
-                return False
+                study_id = self._trial_id_to_study_id_and_number[trial_id][0]
+                # Check param distribution compatibility with previous trial(s).
+                if param_name in self._studies[study_id].param_distribution:
+                    distributions.check_distribution_compatibility(
+                        self._studies[study_id].param_distribution[param_name], distribution
+                    )
 
-            # Set param distribution.
-            self._studies[study_id].param_distribution[param_name] = distribution
+                # Check param has not been set; otherwise, return False.
+                if param_name in trial.params:
+                    return False
 
-            # Set param.
-            trial = copy.copy(trial)
-            trial.params = copy.copy(trial.params)
-            trial.params[param_name] = distribution.to_external_repr(param_value_internal)
-            trial.distributions = copy.copy(trial.distributions)
-            trial.distributions[param_name] = distribution
-            self._set_trial(trial_id, trial)
+                # Set param distribution.
+                self._studies[study_id].param_distribution[param_name] = distribution
 
-            return True
+                # Set param.
+                trial = copy.copy(trial)
+                trial.params = copy.copy(trial.params)
+                trial.params[param_name] = distribution.to_external_repr(param_value_internal)
+                trial.distributions = copy.copy(trial.distributions)
+                trial.distributions[param_name] = distribution
+                self._set_trial(trial_id, trial)
+
+                return True
 
     def get_trial_number_from_id(self, trial_id):
         # type: (int) -> int
 
-        self._check_trial_id(trial_id)
+        with self._lock:
+            self._check_trial_id(trial_id)
 
-        return self._trial_id_to_study_id_and_number[trial_id][1]
+            return self._trial_id_to_study_id_and_number[trial_id][1]
 
     def get_best_trial(self, study_id):
         # type: (int) -> FrozenTrial
 
-        self._check_study_id(study_id)
+        with self._lock:
+            self._check_study_id(study_id)
 
-        best_trial_id = self._studies[study_id].best_trial_id
-        if best_trial_id is None:
-            raise ValueError("No trials are completed yet.")
-        return self.get_trial(best_trial_id)
+            best_trial_id = self._studies[study_id].best_trial_id
+            if best_trial_id is None:
+                raise ValueError("No trials are completed yet.")
+            return self.get_trial(best_trial_id)
 
     def get_trial_param(self, trial_id, param_name):
         # type: (int, str) -> float
 
-        trial = self.get_trial(trial_id)
+        with self._lock:
+            trial = self.get_trial(trial_id)
 
-        distribution = trial.distributions[param_name]
-        return distribution.to_internal_repr(trial.params[param_name])
+            distribution = trial.distributions[param_name]
+            return distribution.to_internal_repr(trial.params[param_name])
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
 
-        trial = self.get_trial(trial_id)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
         with self._lock:
-            trial = copy.copy(trial)
+            trial = self.get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            trial.value = value
-            self._set_trial(trial_id, trial)
+            with self._lock:
+                trial = copy.copy(trial)
+                self.check_trial_is_updatable(trial_id, trial.state)
+
+                trial.value = value
+                self._set_trial(trial_id, trial)
 
     def _update_cache(self, trial_id: int, study_id: int) -> None:
 
@@ -339,58 +358,62 @@ class InMemoryStorage(base.BaseStorage):
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> bool
 
-        trial = self.get_trial(trial_id)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
         with self._lock:
+            trial = self.get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            trial = copy.copy(trial)
-            values = copy.copy(trial.intermediate_values)
-            if step in values:
-                return False
+            with self._lock:
+                self.check_trial_is_updatable(trial_id, trial.state)
 
-            values[step] = intermediate_value
-            trial.intermediate_values = values
-            self._set_trial(trial_id, trial)
+                trial = copy.copy(trial)
+                values = copy.copy(trial.intermediate_values)
+                if step in values:
+                    return False
 
-            return True
+                values[step] = intermediate_value
+                trial.intermediate_values = values
+                self._set_trial(trial_id, trial)
+
+                return True
 
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
 
-        self._check_trial_id(trial_id)
-        trial = self.get_trial(trial_id)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
         with self._lock:
+            self._check_trial_id(trial_id)
+            trial = self.get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            trial = copy.copy(trial)
-            trial.user_attrs = copy.copy(trial.user_attrs)
-            trial.user_attrs[key] = value
-            self._set_trial(trial_id, trial)
+            with self._lock:
+                self.check_trial_is_updatable(trial_id, trial.state)
+
+                trial = copy.copy(trial)
+                trial.user_attrs = copy.copy(trial.user_attrs)
+                trial.user_attrs[key] = value
+                self._set_trial(trial_id, trial)
 
     def set_trial_system_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
 
-        trial = self.get_trial(trial_id)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
         with self._lock:
+            trial = self.get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            trial = copy.copy(trial)
-            trial.system_attrs = copy.copy(trial.system_attrs)
-            trial.system_attrs[key] = value
-            self._set_trial(trial_id, trial)
+            with self._lock:
+                self.check_trial_is_updatable(trial_id, trial.state)
+
+                trial = copy.copy(trial)
+                trial.system_attrs = copy.copy(trial.system_attrs)
+                trial.system_attrs[key] = value
+                self._set_trial(trial_id, trial)
 
     def get_trial(self, trial_id):
         # type: (int) -> FrozenTrial
 
-        self._check_trial_id(trial_id)
-        study_id, trial_number = self._trial_id_to_study_id_and_number[trial_id]
-        return self._studies[study_id].trials[trial_number]
+        with self._lock:
+            self._check_trial_id(trial_id)
+            study_id, trial_number = self._trial_id_to_study_id_and_number[trial_id]
+            return self._studies[study_id].trials[trial_number]
 
     def _set_trial(self, trial_id: int, trial: FrozenTrial) -> None:
         study_id, trial_number = self._trial_id_to_study_id_and_number[trial_id]
@@ -399,23 +422,25 @@ class InMemoryStorage(base.BaseStorage):
     def get_all_trials(self, study_id, deepcopy=True):
         # type: (int, bool) -> List[FrozenTrial]
 
-        self._check_study_id(study_id)
         with self._lock:
-            if deepcopy:
-                return [copy.deepcopy(trial) for trial in self._studies[study_id].trials]
-            else:
-                return self._studies[study_id].trials[:]
+            self._check_study_id(study_id)
+            with self._lock:
+                if deepcopy:
+                    return [copy.deepcopy(trial) for trial in self._studies[study_id].trials]
+                else:
+                    return self._studies[study_id].trials[:]
 
     def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[TrialState]) -> int
 
-        self._check_study_id(study_id)
-        if state is None:
-            return len(self._studies[study_id].trials)
+        with self._lock:
+            self._check_study_id(study_id)
+            if state is None:
+                return len(self._studies[study_id].trials)
 
-        return len(
-            [0 for trial in self.get_all_trials(study_id, deepcopy=False) if trial.state == state]
-        )
+            return len(
+                [0 for trial in self.get_all_trials(study_id, deepcopy=False) if trial.state == state]
+            )
 
     def _check_study_id(self, study_id):
         # type: (int) -> None
