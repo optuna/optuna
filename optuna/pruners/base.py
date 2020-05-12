@@ -30,3 +30,10 @@ class BasePruner(object, metaclass=abc.ABCMeta):
         """
 
         raise NotImplementedError
+
+    def is_target_step(self, step):
+        # type: (int) -> bool
+        """Judge whether :func:`optuna.pruners.base.prune` should be called.
+        """
+
+        raise NotImplementedError

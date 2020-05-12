@@ -11,7 +11,7 @@ from optuna.testing.integration import DeterministicPruner
 
 
 def test_keras_pruning_callback():
-    # type: (int, int) -> None
+    # type: () -> None
 
     def objective(trial):
         # type: (optuna.trial.Trial) -> float
