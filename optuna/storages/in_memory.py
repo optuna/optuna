@@ -115,7 +115,7 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             if study_name not in self._study_name_to_id:
-                raise ValueError("No such study {}.".format(study_name))
+                raise KeyError("No such study {}.".format(study_name))
 
             return self._study_name_to_id[study_name]
 
