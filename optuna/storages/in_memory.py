@@ -425,7 +425,7 @@ class InMemoryStorage(base.BaseStorage):
             self._check_study_id(study_id)
             with self._lock:
                 if deepcopy:
-                    return [copy.deepcopy(trial) for trial in self._studies[study_id].trials]
+                    return copy.deepcopy(self._studies[study_id].trials)
                 else:
                     return self._studies[study_id].trials[:]
 
