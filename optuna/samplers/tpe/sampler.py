@@ -92,13 +92,14 @@ class TPESampler(base.BaseSampler):
             either :class:`~optuna.distributions.UniformDistribution`,
             :class:`~optuna.distributions.DiscreteUniformDistribution`,
             :class:`~optuna.distributions.LogUniformDistribution`,
+            :class:`~optuna.distributions.IntLogUniformDistribution`,
             or :class:`~optuna.distributions.IntUniformDistribution`.
         prior_weight:
             The weight of the prior. This argument is used in
             :class:`~optuna.distributions.UniformDistribution`,
             :class:`~optuna.distributions.DiscreteUniformDistribution`,
             :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.LogIntUniformDistribution`,
+            :class:`~optuna.distributions.IntLogUniformDistribution`,
             :class:`~optuna.distributions.IntUniformDistribution`, and
             :class:`~optuna.distributions.CategoricalDistribution`.
         consider_magic_clip:
