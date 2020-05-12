@@ -174,6 +174,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         study: "multi_objective.study.MultiObjectiveStudy",
         population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
     ) -> "multi_objective.trial.FrozenMultiObjectiveTrial":
+        # TODO(ohta): Consider to allow users to specify the number of parent candidates.
         candidate0 = self._rng.choice(population)
         candidate1 = self._rng.choice(population)
 
