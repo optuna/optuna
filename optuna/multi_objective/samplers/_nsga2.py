@@ -228,7 +228,7 @@ def _fast_non_dominated_sort(
 def _crowding_distance_sort(
     population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
 ) -> None:
-    distances = defaultdict(float)
+    manhattan_distances = defaultdict(float)
     for i in range(len(population[0].values)):
         population.sort(key=lambda x: x.values[i])
 
@@ -241,8 +241,8 @@ def _crowding_distance_sort(
         if width == 0:
             continue
 
-        distances[population[0].number] = float("inf")
-        distances[population[-1].number] = float("inf")
+        manhattan_distances[population[0].number] = float("inf")
+        manhattan_distances[population[-1].number] = float("inf")
 
         for j in range(1, len(population) - 1):
             v_high = population[j + 1].values[i]
@@ -250,7 +250,7 @@ def _crowding_distance_sort(
             assert v_high is not None
             assert v_low is not None
 
-            distances[population[j].number] += (v_high - v_low) / width
+            manhattan_distances[population[j].number] += (v_high - v_low) / width
 
-    population.sort(key=lambda x: distances[x.number])
+    population.sort(key=lambda x: manhattan_distances[x.number])
     population.reverse()
