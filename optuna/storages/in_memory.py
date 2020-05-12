@@ -436,8 +436,8 @@ class InMemoryStorage(base.BaseStorage):
             if state is None:
                 return len(self._studies[study_id].trials)
 
-            return len(
-                [0 for trial in self.get_all_trials(study_id, deepcopy=False) if trial.state == state]
+            return sum(
+                trial.state == state for trial in self.get_all_trials(study_id, deepcopy=False)
             )
 
     def _check_study_id(self, study_id):
