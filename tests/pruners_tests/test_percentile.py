@@ -241,3 +241,23 @@ def test_get_percentile_intermediate_result_over_trials():
     assert math.isnan(
         percentile._get_percentile_intermediate_result_over_trials(all_trials, direction, 2, 75)
     )
+
+
+def test_percentile_pruner_interval_is_target_step():
+    # type: () -> None
+
+    pruner = optuna.pruners.PercentilePruner(25.0, interval_steps=1)
+    assert pruner.is_target_step(0)
+    assert pruner.is_target_step(1)
+    assert pruner.is_target_step(2)
+
+    pruner = optuna.pruners.PercentilePruner(25.0, interval_steps=5)
+    assert pruner.is_target_step(0)
+    assert not pruner.is_target_step(1)
+    assert pruner.is_target_step(5)
+
+    pruner = optuna.pruners.PercentilePruner(25.0, n_warmup_steps=3, interval_steps=1)
+    assert not pruner.is_target_step(0)
+    assert not pruner.is_target_step(1)
+    assert not pruner.is_target_step(2)
+    assert pruner.is_target_step(3)

@@ -192,3 +192,10 @@ class PercentilePruner(BasePruner):
         if direction == StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p
+
+    def is_target_step(self, step):
+        # type: (int) -> bool
+        if step < self._n_warmup_steps:
+            return False
+
+        return (step - self._n_warmup_steps) % self._interval_steps == 0
