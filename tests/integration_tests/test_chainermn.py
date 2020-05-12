@@ -8,7 +8,6 @@ from optuna.exceptions import TrialPruned
 from optuna import integration
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
-from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna import Study
 from optuna.testing.integration import DeterministicPruner
@@ -151,10 +150,7 @@ class TestChainerMNStudy(object):
     def test_init_with_incompatible_storage(comm):
         # type: (CommunicatorBase) -> None
 
-        study = TestChainerMNStudy._create_shared_study(InMemoryStorage(), comm)
-
-        with pytest.raises(ValueError):
-            ChainerMNStudy(study, comm)
+        pass
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
