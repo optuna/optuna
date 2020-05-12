@@ -34,6 +34,7 @@ class InMemoryStorage(base.BaseStorage):
         self._studies = {}  # type: Dict[int, _StudyInfo]
 
         self._max_study_id = -1
+        self._max_trial_id = -1
 
         self._lock = threading.RLock()
 
@@ -200,7 +201,8 @@ class InMemoryStorage(base.BaseStorage):
                 trial = copy.deepcopy(template_trial)
 
             with self._lock:
-                trial_id = len(self._trial_id_to_study_id_and_number)
+                trial_id = self._max_trial_id + 1
+                self._max_trial_id += 1
                 trial.number = len(self._studies[study_id].trials)
                 trial._trial_id = trial_id
                 self._trial_id_to_study_id_and_number[trial_id] = (study_id, trial.number)
