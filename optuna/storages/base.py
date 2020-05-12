@@ -29,7 +29,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def create_new_study(self, study_name: Optional[str] = None) -> int:
-
         """Creates a new study with a given name.
 
         When no name is specified, storage class auto-generates the name.
@@ -46,12 +45,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             optuna.exceptions.DuplicatedStudyError:
                 If a study with the same `study_name` already exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def delete_study(self, study_id: int) -> None:
-
         """Deletes a study specified by the study ID.
 
         Args:
@@ -62,12 +59,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no study with the matching `study_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
-
         """Register a user-defined attribute to a study.
 
         This method overwrites an existing attribute.
@@ -84,12 +79,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no study with the matching `study_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_study_direction(self, study_id: int, direction: study.StudyDirection) -> None:
-
         """Register a direction of optimization problem to a study.
 
         Args:
@@ -104,12 +97,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             ValueError:
                 If `direction` is already set and the passed `direction` conflicts with it.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
-
         """Register an ontuna-internal attribute to a study.
 
         This method overwrites an existing attribute.
@@ -126,14 +117,12 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no study with the matching `study_id` exists.
         """
-
         raise NotImplementedError
 
     # Basic study access
 
     @abc.abstractmethod
     def get_study_id_from_name(self, study_name: str) -> int:
-
         """Read study ID of a study with the same name.
 
         Args:
@@ -147,12 +136,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no study with the matching `study_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
-
         """Read study ID of a study that a specified trial belongs to.
 
         Args:
@@ -165,12 +152,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no trial with the matching `trial_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_study_name_from_id(self, study_id: int) -> str:
-
         """Read study name of a study with a matching study ID.
 
         Args:
@@ -183,7 +168,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no study with the matching `study_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -201,12 +185,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no study with the matching `study_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
-
         """Read a dictionary of user-defined attributes of a specified study.
 
         Args:
@@ -219,12 +201,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no study with the matching `study_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
-
         """Read a dictionary of optuna-internal attributes of a specified study.
 
         Args:
@@ -237,18 +217,17 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no study with the matching `study_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_all_study_summaries(self) -> List[study.StudySummary]:
-
         """Returns a list of `study.StudySummary` objects.
 
         Returns:
             A list of `study.StudySummary` objects.
 
         """
+        raise NotImplementedError
 
     # Basic trial manipulation
 
@@ -256,7 +235,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     def create_new_trial(
         self, study_id: int, template_trial: Optional["FrozenTrial"] = None
     ) -> int:
-
         """Create and add a new trial to a specified study.
 
         Trial ID is unique among all current and deleted trials.
@@ -275,12 +253,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no study with the matching `study_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-
         """Update a state of a specified trial.
 
         This method succeeds only when trial is not already finished.
@@ -303,7 +279,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             RuntimeError:
                 If the trial is already finished.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -314,7 +289,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         param_value_internal: float,
         distribution: "distributions.BaseDistribution",
     ) -> bool:
-
         """Add a parameter to a specified trial.
 
         Args:
@@ -336,12 +310,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             RuntimeError:
                 If the trial is already finished.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_trial_number_from_id(self, trial_id: int) -> int:
-
         """Read a trial number of a specified trial.
 
         Trial ID is a unique ID of a trial, while trial number is a unique and
@@ -358,12 +330,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no trial with the matching `trial_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
-
         """Read a specified parameter of a trial.
 
         Args:
@@ -380,12 +350,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 If no trial with the matching `trial_id` exists.
                 If no such parameter exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_trial_value(self, trial_id: int, value: float) -> None:
-
         """Set a return value of an objective function.
 
         This method overwrites existing trial value.
@@ -402,14 +370,12 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             RuntimeError:
                 If the trial is already finished.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> bool:
-
         """Report a value within an evaluation of an objective function.
 
         Args:
@@ -429,12 +395,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             RuntimeError:
                 If the trial is already finished.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-
         """Set a user-defined attribute to a specified trial.
 
         This method overwrites an existing attribute.
@@ -453,12 +417,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             RuntimeError:
                 If the trial is already finished.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
-
         """Set an optuna-internal attribute to a specified trial.
 
         This method overwrites an existing attribute.
@@ -477,14 +439,12 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             RuntimeError:
                 If the trial is already finished.
         """
-
         raise NotImplementedError
 
     # Basic trial access
 
     @abc.abstractmethod
     def get_trial(self, trial_id: int) -> "FrozenTrial":
-
         """Read a trial using a trial ID.
 
         Args:
@@ -498,12 +458,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no trial with the matching `trial_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List["FrozenTrial"]:
-
         """Read all trials in a specified study.
 
         Args:
@@ -520,12 +478,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no study with the matching `study_id` exists.
         """
-
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
-
         """Count the number of trials in a specified study.
 
         Args:
@@ -540,11 +496,9 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no study with the matching `study_id` exists.
         """
-
         raise NotImplementedError
 
     def get_best_trial(self, study_id: int) -> "FrozenTrial":
-
         """Return a trial with the best value in the study.
 
         Args:
@@ -561,7 +515,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             RuntimeError:
                 If no trials have been completed.
         """
-
         all_trials = self.get_all_trials(study_id, deepcopy=False)
         all_trials = [t for t in all_trials if t.state is TrialState.COMPLETE]
 
@@ -576,7 +529,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         return copy.deepcopy(best_trial)
 
     def get_trial_params(self, trial_id: int) -> Dict[str, Any]:
-
         """Read parameter dictionary of a specified trial.
 
         Args:
@@ -591,11 +543,9 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no trial with the matching `trial_id` exists.
         """
-
         return self.get_trial(trial_id).params
 
     def get_trial_user_attrs(self, trial_id: int) -> Dict[str, Any]:
-
         """Read a user-defined attributes of a specified trial.
 
         Args:
@@ -609,11 +559,9 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no trial with the matching `trial_id` exists.
         """
-
         return self.get_trial(trial_id).user_attrs
 
     def get_trial_system_attrs(self, trial_id: int) -> Dict[str, Any]:
-
         """Read an optuna-internal attributes of a specified trial.
 
         Args:
@@ -627,17 +575,13 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             KeyError:
                 If no trial with the matching `trial_id` exists.
         """
-
         return self.get_trial(trial_id).system_attrs
 
     def remove_session(self) -> None:
-
         """Clean up all connections to a database."""
-
         pass
 
     def check_trial_is_updatable(self, trial_id: int, trial_state: TrialState) -> None:
-
         """Check whether a `trial_state` is updatable.
 
         Args:
@@ -651,7 +595,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             RuntimeError:
                 If the trial is already finished.
         """
-
         if trial_state.is_finished():
             trial = self.get_trial(trial_id)
             raise RuntimeError(
@@ -659,7 +602,5 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             )
 
     def load(self, study_id: int) -> None:
-
         """Load trials in the study from remote database if exists."""
-
         pass
