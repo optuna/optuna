@@ -61,14 +61,14 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
             raise ValueError("`population_size` must be an integer value.")
 
         if population_size < 2:
-            raise ValueError("`population_size` must be greater or equal to 2.")
+            raise ValueError("`population_size` must be greater than or equal to 2.")
 
-        if not (0.0 <= mutation_prob <= 1.0):
-            raise ValueError("`mutation_prob` must be an float value within the range [0.0, 1.0).")
+        if not (0.0 <= mutation_prob < 1.0):
+            raise ValueError("`mutation_prob` must be a float value within the range [0.0, 1.0).")
 
-        if not (0.0 <= crossover_prob <= 1.0):
+        if not (0.0 <= crossover_prob < 1.0):
             raise ValueError(
-                "`crossover_prob` must be an float value within the range [0.0, 1.0)."
+                "`crossover_prob` must be a float value within the range [0.0, 1.0)."
             )
 
         self._population_size = population_size
@@ -199,7 +199,7 @@ def _fast_non_dominated_sort(
             dominated_count[p.number] += 1
 
     population_per_rank = []
-    while len(population) > 0:
+    while population:
         non_dominated_population = []
         i = 0
         while i < len(population):
@@ -217,7 +217,7 @@ def _fast_non_dominated_sort(
             for y in dominates_list[x.number]:
                 dominated_count[y] -= 1
 
-        assert non_dominated_population != []
+        assert non_dominated_population
         population_per_rank.append(non_dominated_population)
 
     return population_per_rank
