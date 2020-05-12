@@ -67,9 +67,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
             raise ValueError("`mutation_prob` must be a float value within the range [0.0, 1.0).")
 
         if not (0.0 <= crossover_prob < 1.0):
-            raise ValueError(
-                "`crossover_prob` must be a float value within the range [0.0, 1.0)."
-            )
+            raise ValueError("`crossover_prob` must be a float value within the range [0.0, 1.0).")
 
         self._population_size = population_size
         self._crossover_prob = crossover_prob
