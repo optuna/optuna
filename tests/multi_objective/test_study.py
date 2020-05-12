@@ -120,3 +120,23 @@ def test_enqueue_trial() -> None:
         return [0, 0]
 
     study.optimize(objective, n_trials=2)
+
+
+def test_callbacks() -> None:
+    study = optuna.multi_objective.create_study(["minimize", "maximize"])
+
+    def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
+        x = trial.suggest_float("x", 0, 10)
+        y = trial.suggest_float("y", 0, 10)
+        return x, y
+
+    list0 = []
+    list1 = []
+    callbacks = [
+        lambda study, trial: list0.append(trial.number),
+        lambda study, trial: list1.append(trial.number),
+    ]
+    study.optimize(objective, n_trials=2, callbacks=callbacks)
+
+    assert list0 == [0, 1]
+    assert list1 == [0, 1]

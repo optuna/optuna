@@ -237,7 +237,7 @@ jobs:
           name: codecov
           command: |
             . venv/bin/activate
-            pytest --cov=./ tests
+            pytest --cov=optuna tests
             codecov
           environment:
             OMP_NUM_THREADS: 1
