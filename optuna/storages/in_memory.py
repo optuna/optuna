@@ -58,13 +58,11 @@ class InMemoryStorage(base.BaseStorage):
             if study_name is not None:
                 if study_name in self._study_name_to_id:
                     raise DuplicatedStudyError
-                self._studies[study_id] = _StudyInfo(study_name)
-                self._study_name_to_id[study_name] = study_id
             else:
                 study_uuid = str(uuid.uuid4())
                 study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
-                self._studies[study_id] = _StudyInfo(study_name)
-                self._study_name_to_id[study_name] = study_id
+            self._studies[study_id] = _StudyInfo(study_name)
+            self._study_name_to_id[study_name] = study_id
 
             return study_id
 
