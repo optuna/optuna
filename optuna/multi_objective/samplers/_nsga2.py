@@ -136,17 +136,16 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     ) -> Tuple[int, List["multi_objective.trial.FrozenMultiObjectiveTrial"]]:
         # TODO(ohta): Optimize this method.
 
-        trials = study.get_trials(deepcopy=False)
+        trials = [
+            t
+            for t in study.get_trials(deepcopy=False)
+            if t.state == optuna.trial.TrialState.COMPLETE
+        ]
         parent_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
         parent_generation = -1
         for generation in itertools.count():
             population = [
-                t
-                for t in trials
-                if (
-                    t.system_attrs.get(_GENERATION_KEY, 0) == generation
-                    and t.state == optuna.trial.TrialState.COMPLETE
-                )
+                t for t in trials if t.system_attrs.get(_GENERATION_KEY, 0) == generation
             ]
             if len(population) < self._population_size:
                 break
