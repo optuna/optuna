@@ -808,7 +808,7 @@ class Study(BaseStudy):
             result = func(trial)
         except exceptions.TrialStopOpt as e:
             message = "Setting status of trial#{} as {}. {}".format(
-                trial_number, structs.TrialState.STOPPED, str(e)
+                trial_number, TrialState.STOPPED, str(e)
             )
             _logger.info(message)
             return trial
