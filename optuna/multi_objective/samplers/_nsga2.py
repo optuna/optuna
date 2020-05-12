@@ -147,6 +147,9 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
             population = [
                 t for t in trials if t.system_attrs.get(_GENERATION_KEY, 0) == generation
             ]
+
+            # Under multi-worker settings, the population size might become larger than
+            # `self._population_size`.
             if len(population) < self._population_size:
                 break
 
