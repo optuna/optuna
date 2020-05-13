@@ -1,7 +1,6 @@
 import abc
 import pytest
-from typing import Any
-from typing import Dict
+from typing import Callable
 from unittest import mock
 
 import numpy
@@ -131,18 +130,21 @@ def test_hyperband_max_resource_value_error() -> None:
 
 
 @pytest.mark.parametrize(
-    "sampler_cls,sampler_kwargs",
+    "sampler_init_func",
     [
-        (optuna.samplers.RandomSampler, {}),
-        (optuna.samplers.TPESampler, {"n_startup_trials": 1}),
+        lambda: optuna.samplers.RandomSampler(),
+        (lambda: optuna.samplers.TPESampler(n_startup_trials=1)),
         (
-            optuna.samplers.GridSampler,
-            {"search_space": {"value": numpy.linspace(0.0, 1.0, 10, endpoint=False).tolist()}},
+            lambda: optuna.samplers.GridSampler(
+                search_space={"value": numpy.linspace(0.0, 1.0, 10, endpoint=False).tolist()}
+            )
         ),
-        (optuna.samplers.CmaEsSampler, {"n_startup_trials": 1}),
+        (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=1)),
     ],
 )
-def test_hyperband_filter_study(sampler_cls: abc.ABCMeta, sampler_kwargs: Dict[str, Any]) -> None:
+def test_hyperband_filter_study(
+    sampler_init_func: Callable[[], optuna.samplers.BaseSampler]
+) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
         return trial.suggest_uniform("value", 0.0, 1.0)
 
@@ -158,14 +160,14 @@ def test_hyperband_filter_study(sampler_cls: abc.ABCMeta, sampler_kwargs: Dict[s
             "sample_relative",
             "sample_independent",
         ]:
-            sampler = sampler_cls(**sampler_kwargs)
+            sampler = sampler_init_func()
             pruner = optuna.pruners.HyperbandPruner(
                 min_resource=MIN_RESOURCE,
                 max_resource=MAX_RESOURCE,
                 reduction_factor=REDUCTION_FACTOR,
             )
             with mock.patch(
-                "optuna.samplers.{}.{}".format(sampler_cls.__name__, method_name),
+                "optuna.samplers.{}.{}".format(sampler.__class__.__name__, method_name),
                 wraps=getattr(sampler, method_name),
             ) as method_mock:
                 study = optuna.study.create_study(sampler=sampler, pruner=pruner)
@@ -177,15 +179,17 @@ def test_hyperband_filter_study(sampler_cls: abc.ABCMeta, sampler_kwargs: Dict[s
 
 
 @pytest.mark.parametrize(
-    "pruner_cls,pruner_kwargs",
+    "pruner_init_func",
     [
-        (optuna.pruners.NopPruner, {}),
-        (optuna.pruners.MedianPruner, {}),
-        (optuna.pruners.ThresholdPruner, {"lower": 0.5}),
-        (optuna.pruners.SuccessiveHalvingPruner, {}),
+        lambda: optuna.pruners.NopPruner(),
+        lambda: optuna.pruners.MedianPruner(),
+        lambda: optuna.pruners.ThresholdPruner(lower=0.5),
+        lambda: optuna.pruners.SuccessiveHalvingPruner(),
     ],
 )
-def test_hyperband_no_filter_study(pruner_cls: abc.ABCMeta, pruner_kwargs: Dict[str, Any]) -> None:
+def test_hyperband_no_filter_study(
+    pruner_init_func: Callable[[], optuna.pruners.BasePruner]
+) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
         return trial.suggest_uniform("value", 0.0, 1.0)
 
@@ -196,7 +200,7 @@ def test_hyperband_no_filter_study(pruner_cls: abc.ABCMeta, pruner_kwargs: Dict[
         "sample_independent",
     ]:
         sampler = optuna.samplers.RandomSampler()
-        pruner = pruner_cls(**pruner_kwargs)
+        pruner = pruner_init_func()
         with mock.patch(
             "optuna.samplers.{}.{}".format(sampler.__class__.__name__, method_name),
             wraps=getattr(sampler, method_name),
