@@ -63,6 +63,11 @@ class _ParzenEstimator(object):
         weights_func,  # type: Callable[[int], ndarray]
     ):
         # type: (...) -> Tuple[ndarray, ndarray, ndarray]
+        """Calculates the weights, mus and sigma for the Parzen estimator.
+
+           Note: When the number of observations is zero, the Parzen estimator ignores the
+           `consider_prior` flag and utilizes a prior. Validation of this approach is future work.
+        """
 
         mus = numpy.asarray(mus)
         sigma = numpy.asarray([], dtype=float)
