@@ -5,6 +5,7 @@ from optuna import type_checking
 
 try:
     from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
+    from optuna.integration.lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
     from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
     from optuna.integration.lightgbm_tuner.sklearn import LGBMModel  # NOQA
     from optuna.integration.lightgbm_tuner.sklearn import LGBMRegressor  # NOQA

@@ -203,6 +203,7 @@ class Study(BaseStudy):
         self.pruner = pruner or pruners.MedianPruner()
 
         self._optimize_lock = threading.Lock()
+        self._stop_flag = False
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -328,6 +329,9 @@ class Study(BaseStudy):
         self._progress_bar = pbar_module._ProgressBar(
             show_progress_bar and n_jobs == 1, n_trials, timeout
         )
+
+        self._stop_flag = False
+
         try:
             if n_jobs == 1:
                 self._optimize_sequential(
@@ -341,19 +345,21 @@ class Study(BaseStudy):
 
                 time_start = datetime.datetime.now()
 
+                def _should_stop() -> bool:
+                    if self._stop_flag:
+                        return True
+
+                    if timeout is not None:
+                        # This is needed for mypy.
+                        t = timeout  # type: float
+                        return (datetime.datetime.now() - time_start).total_seconds() > t
+
+                    return False
+
                 if n_trials is not None:
                     _iter = iter(range(n_trials))
-                elif timeout is not None:
-                    # This is needed for mypy
-                    actual_timeout = timeout  # type: float
-                    _iter = iter(
-                        lambda: (datetime.datetime.now() - time_start).total_seconds()
-                        > actual_timeout,
-                        True,
-                    )
                 else:
-                    # The following expression makes an iterator that never ends.
-                    _iter = iter(int, 1)
+                    _iter = iter(_should_stop, True)
 
                 with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
                     if not isinstance(
@@ -523,6 +529,30 @@ class Study(BaseStudy):
 
         return df
 
+    @experimental("1.4.0")
+    def stop(self) -> None:
+
+        """Exit from the current optimization loop after the running trials finish.
+
+        This method lets the running :meth:`~optuna.study.Study.optimize` method return
+        immediately after all trials which the :meth:`~optuna.study.Study.optimize` method
+        spawned finishes.
+        This method does not affect any behaviors of parallel or successive study processes.
+
+        Raises:
+            RuntimeError:
+                If this method is called outside an objective function or callback.
+        """
+
+        if self._optimize_lock.acquire(False):
+            self._optimize_lock.release()
+            raise RuntimeError(
+                "`Study.stop` is supposed to be invoked inside an objective function or a "
+                "callback."
+            )
+
+        self._stop_flag = True
+
     @experimental("1.2.0")
     def enqueue_trial(self, params):
         # type: (Dict[str, Any]) -> None
@@ -635,6 +665,9 @@ class Study(BaseStudy):
             time_start = datetime.datetime.now()
 
         while True:
+            if self._stop_flag:
+                break
+
             if n_trials is not None:
                 if i_trial >= n_trials:
                     break
@@ -648,6 +681,7 @@ class Study(BaseStudy):
             self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
 
             self._progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
+
         self._storage.remove_session()
 
     def _pop_waiting_trial_id(self):

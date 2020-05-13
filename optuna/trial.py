@@ -24,7 +24,6 @@ if type_checking.TYPE_CHECKING:
         distributions.UniformDistribution, distributions.LogUniformDistribution
     ]
 
-
 _logger = logging.get_logger(__name__)
 
 

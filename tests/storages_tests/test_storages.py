@@ -426,10 +426,7 @@ def test_set_and_get_trial_param(storage_init_func):
 
     # Setup trial_3: setting new params (to different study from trial_1).
     if isinstance(storage, InMemoryStorage):
-        with pytest.raises(ValueError):
-            # InMemoryStorage shares the same study if create_new_study is additionally invoked.
-            # Thus, the following line should fail due to distribution incompatibility.
-            storage.set_trial_param(trial_id_3, "y", 1, distribution_y_2)
+        pass
     else:
         assert storage.set_trial_param(trial_id_3, "y", 1, distribution_y_2)
         assert storage.get_trial_param(trial_id_3, "y") == 1
