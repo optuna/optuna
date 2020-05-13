@@ -31,6 +31,9 @@ Integration
 .. autoclass:: optuna.integration.lightgbm_tuner.LightGBMTuner
     :members:
 
+.. autoclass:: optuna.integration.lightgbm_tuner.LightGBMTunerCV
+    :members:
+
 .. autoclass:: MLflowCallback
     :members:
 
