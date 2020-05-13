@@ -4,12 +4,12 @@ import multiprocessing
 import pickle
 import threading
 import time
+from unittest.mock import Mock  # NOQA
+from unittest.mock import patch
 import uuid
 import warnings
 
 import joblib
-from mock import Mock  # NOQA
-from mock import patch
 import pandas as pd
 import pytest
 
@@ -271,6 +271,22 @@ def test_optimize_parallel_storage_warning(recwarn):
     with pytest.warns(UserWarning):
         with joblib.parallel_backend("loky"):
             study.optimize(lambda t: t.suggest_uniform("x", 0, 1), n_trials=20, n_jobs=2)
+
+
+@pytest.mark.parametrize(
+    "n_jobs, storage_mode", itertools.product((2, -1), STORAGE_MODES,),  # n_jobs  # storage_mode
+)
+def test_optimize_with_reseeding(n_jobs, storage_mode):
+    # type: (int, str)-> None
+
+    f = Func()
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        sampler = study.sampler
+        with patch.object(sampler, "reseed_rng", wraps=sampler.reseed_rng) as mock_object:
+            study.optimize(f, n_trials=1, n_jobs=2)
+            assert mock_object.call_count == 1
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -702,6 +718,54 @@ def test_nested_optimization():
 
     study = optuna.create_study()
     study.optimize(objective, n_trials=10, catch=())
+
+
+def test_stop_in_objective() -> None:
+    def objective(trial: optuna.trial.Trial, threshold_number: int) -> float:
+        if trial.number >= threshold_number:
+            trial.study.stop()
+
+        return trial.number
+
+    # Test stopping the optimization: it should stop once the trial number reaches 4.
+    study = optuna.create_study()
+    study.optimize(lambda x: objective(x, 4), n_trials=10)
+    assert len(study.trials) == 5
+
+    # Test calling `optimize` again: it should stop once the trial number reaches 11.
+    study.optimize(lambda x: objective(x, 11), n_trials=10)
+    assert len(study.trials) == 12
+
+
+def test_stop_in_callback() -> None:
+    def callback(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+        if trial.number >= 4:
+            study.stop()
+
+    # Test stopping the optimization inside a callback.
+    study = optuna.create_study()
+    study.optimize(lambda _: 1.0, n_trials=10, callbacks=[callback])
+    assert len(study.trials) == 5
+
+
+def test_stop_n_jobs() -> None:
+    def callback(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+        if trial.number >= 4:
+            study.stop()
+
+    study = optuna.create_study()
+    study.optimize(lambda _: 1.0, n_trials=None, callbacks=[callback], n_jobs=2)
+    assert 5 <= len(study.trials) <= 6
+
+
+def test_stop_outside_optimize() -> None:
+    # Test stopping outside the optimization: it should raise `RuntimeError`.
+    study = optuna.create_study()
+    with pytest.raises(RuntimeError):
+        study.stop()
+
+    # Test calling `optimize` after the `RuntimeError` is caught.
+    study.optimize(lambda _: 1.0, n_trials=1)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

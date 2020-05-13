@@ -1,4 +1,5 @@
 import abc
+import decimal
 import json
 import warnings
 
@@ -143,7 +144,7 @@ class UniformDistribution(BaseDistribution):
         if self.low == self.high:
             return value == self.low
         else:
-            return self.low <= value and value < self.high
+            return self.low <= value < self.high
 
 
 class LogUniformDistribution(BaseDistribution):
@@ -188,7 +189,7 @@ class LogUniformDistribution(BaseDistribution):
         if self.low == self.high:
             return value == self.low
         else:
-            return self.low <= value and value < self.high
+            return self.low <= value < self.high
 
 
 class DiscreteUniformDistribution(BaseDistribution):
@@ -222,13 +223,20 @@ class DiscreteUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        return self.low == self.high
+        if self.low == self.high:
+            return True
+        high = decimal.Decimal(str(self.high))
+        low = decimal.Decimal(str(self.low))
+        q = decimal.Decimal(str(self.q))
+        if (high - low) < q:
+            return True
+        return False
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
         value = param_value_in_internal_repr
-        return self.low <= value and value <= self.high
+        return self.low <= value <= self.high
 
 
 class IntUniformDistribution(BaseDistribution):
@@ -276,7 +284,9 @@ class IntUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        return self.low == self.high
+        if self.low == self.high:
+            return True
+        return (self.high - self.low) < self.step
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
@@ -349,7 +359,7 @@ class CategoricalDistribution(BaseDistribution):
         # type: (float) -> bool
 
         index = int(param_value_in_internal_repr)
-        return 0 <= index and index < len(self.choices)
+        return 0 <= index < len(self.choices)
 
 
 DISTRIBUTION_CLASSES = (

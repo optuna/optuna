@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 import scipy.special
+from scipy.stats import truncnorm
 
 from optuna import distributions
 from optuna.pruners import HyperbandPruner
@@ -85,6 +86,44 @@ class TPESampler(base.BaseSampler):
             study = optuna.create_study(sampler=TPESampler())
             study.optimize(objective, n_trials=10)
 
+    Args:
+        consider_prior:
+            Enhance the stability of Parzen estimator by imposing a Gaussian prior when
+            :obj:`True`. The prior is only effective if the sampling distribution is
+            either :class:`~optuna.distributions.UniformDistribution`,
+            :class:`~optuna.distributions.DiscreteUniformDistribution`,
+            :class:`~optuna.distributions.LogUniformDistribution`,
+            or :class:`~optuna.distributions.IntUniformDistribution`.
+        prior_weight:
+            The weight of the prior. This argument is used in
+            :class:`~optuna.distributions.UniformDistribution`,
+            :class:`~optuna.distributions.DiscreteUniformDistribution`,
+            :class:`~optuna.distributions.LogUniformDistribution`,
+            :class:`~optuna.distributions.IntUniformDistribution` and
+            :class:`~optuna.distributions.CategoricalDistribution`.
+        consider_magic_clip:
+            Enable a heuristic to limit the smallest variances of Gaussians used in
+            the Parzen estimator.
+        consider_endpoints:
+            Take endpoints of domains into account when calculating variances of Gaussians
+            in Parzen estimator. See the original paper for details on the heuristics
+            to calculate the variances.
+        n_startup_trials:
+            The random sampling is used instead of the TPE algorithm until the given number
+            of trials finish in the same study.
+        n_ei_candidate:
+            Number of candidate samples used to calculate the expected improvement.
+        gamma:
+            A function that takes the number of finished trials and returns the number
+            of trials to form a density function for samples with low grains.
+            See the original paper for more details.
+        weights:
+            A function that takes the number of finished trials and returns a weight for them.
+            See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
+            Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+            for more details.
+        seed:
+            Seed for random number generator.
     """
 
     def __init__(
@@ -112,6 +151,11 @@ class TPESampler(base.BaseSampler):
 
         self._rng = np.random.RandomState(seed)
         self._random_sampler = random.RandomSampler(seed=seed)
+
+    def reseed_rng(self) -> None:
+
+        self._rng = np.random.RandomState()
+        self._random_sampler.reseed_rng()
 
     def infer_relative_search_space(self, study, trial):
         # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
@@ -246,12 +290,7 @@ class TPESampler(base.BaseSampler):
             mus=below, low=low, high=high, parameters=self._parzen_estimator_parameters
         )
         samples_below = self._sample_from_gmm(
-            parzen_estimator=parzen_estimator_below,
-            low=low,
-            high=high,
-            q=q,
-            is_log=is_log,
-            size=size,
+            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size,
         )
         log_likelihoods_below = self._gmm_log_pdf(
             samples=samples_below,
@@ -259,7 +298,6 @@ class TPESampler(base.BaseSampler):
             low=low,
             high=high,
             q=q,
-            is_log=is_log,
         )
 
         parzen_estimator_above = _ParzenEstimator(
@@ -272,14 +310,14 @@ class TPESampler(base.BaseSampler):
             low=low,
             high=high,
             q=q,
-            is_log=is_log,
         )
 
-        return float(
+        ret = float(
             TPESampler._compare(
                 samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above
             )[0]
         )
+        return math.exp(ret) if is_log else ret
 
     def _sample_categorical_index(self, distribution, below, above):
         # type: (distributions.CategoricalDistribution, np.ndarray, np.ndarray) -> int
@@ -316,7 +354,6 @@ class TPESampler(base.BaseSampler):
         high,  # type: float
         q=None,  # type: Optional[float]
         size=(),  # type: Tuple
-        is_log=False,  # type: bool
     ):
         # type: (...) -> np.ndarray
 
@@ -324,24 +361,27 @@ class TPESampler(base.BaseSampler):
         mus = parzen_estimator.mus
         sigmas = parzen_estimator.sigmas
         weights, mus, sigmas = map(np.asarray, (weights, mus, sigmas))
-        n_samples = np.prod(size)
 
         if low >= high:
             raise ValueError(
                 "The 'low' should be lower than the 'high'. "
                 "But (low, high) = ({}, {}).".format(low, high)
             )
-        samples = np.asarray([], dtype=float)
-        while samples.size < n_samples:
-            active = np.argmax(self._rng.multinomial(1, weights))
-            draw = self._rng.normal(loc=mus[active], scale=sigmas[active])
-            if low <= draw < high:
-                samples = np.append(samples, draw)
 
-        samples = np.reshape(samples, size)
-
-        if is_log:
-            samples = np.exp(samples)
+        active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
+        trunc_low = (low - mus[active]) / sigmas[active]
+        trunc_high = (high - mus[active]) / sigmas[active]
+        while True:
+            samples = truncnorm.rvs(
+                trunc_low,
+                trunc_high,
+                size=size,
+                loc=mus[active],
+                scale=sigmas[active],
+                random_state=self._rng,
+            )
+            if (samples < high).all():
+                break
 
         if q is None:
             return samples
@@ -355,7 +395,6 @@ class TPESampler(base.BaseSampler):
         low,  # type: float
         high,  # type: float
         q=None,  # type: Optional[float]
-        is_log=False,  # type: bool
     ):
         # type: (...) -> np.ndarray
 
@@ -378,8 +417,6 @@ class TPESampler(base.BaseSampler):
             raise ValueError(
                 "The 'sigmas' should be 2-dimension. " "But sigmas.shape = {}".format(sigmas.shape)
             )
-        _samples = samples
-        samples = _samples.flatten()
 
         p_accept = np.sum(
             weights
@@ -390,33 +427,24 @@ class TPESampler(base.BaseSampler):
         )
 
         if q is None:
-            jacobian = samples[:, None] if is_log else np.ones(samples.shape)[:, None]
-            if is_log:
-                distance = np.log(samples[:, None]) - mus
-            else:
-                distance = samples[:, None] - mus
+            distance = samples[..., None] - mus
             mahalanobis = (distance / np.maximum(sigmas, EPS)) ** 2
-            Z = np.sqrt(2 * np.pi) * sigmas * jacobian
+            Z = np.sqrt(2 * np.pi) * sigmas
             coefficient = weights / Z / p_accept
-            return_val = TPESampler._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
+            return TPESampler._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
         else:
-            probabilities = np.zeros(samples.shape, dtype=float)
-            cdf_func = TPESampler._log_normal_cdf if is_log else TPESampler._normal_cdf
-            for w, mu, sigma in zip(weights, mus, sigmas):
-                if is_log:
-                    upper_bound = np.minimum(samples + q / 2.0, np.exp(high))
-                    lower_bound = np.maximum(samples - q / 2.0, np.exp(low))
-                    lower_bound = np.maximum(0, lower_bound)
-                else:
-                    upper_bound = np.minimum(samples + q / 2.0, high)
-                    lower_bound = np.maximum(samples - q / 2.0, low)
-                inc_amt = w * cdf_func(upper_bound, mu, sigma)
-                inc_amt -= w * cdf_func(lower_bound, mu, sigma)
-                probabilities += inc_amt
-            return_val = np.log(probabilities + EPS) - np.log(p_accept + EPS)
-
-        return_val.shape = _samples.shape
-        return return_val
+            cdf_func = TPESampler._normal_cdf
+            upper_bound = np.minimum(samples + q / 2.0, high)
+            lower_bound = np.maximum(samples - q / 2.0, low)
+            probabilities = np.sum(
+                weights[..., None]
+                * (
+                    cdf_func(upper_bound[None], mus[..., None], sigmas[..., None])
+                    - cdf_func(lower_bound[None], mus[..., None], sigmas[..., None])
+                ),
+                axis=0,
+            )
+            return np.log(probabilities + EPS) - np.log(p_accept + EPS)
 
     def _sample_from_categorical_dist(self, probabilities, size):
         # type: (np.ndarray, Tuple[int]) -> np.ndarray

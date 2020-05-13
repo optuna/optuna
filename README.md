@@ -68,7 +68,7 @@ def objective(trial):
 
     error = sklearn.metrics.mean_squared_error(y_val, y_pred)
 
-    return error  # A objective value linked with the Trial object.
+    return error  # An objective value linked with the Trial object.
 
 study = optuna.create_study()  # Create a new study.
 study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
@@ -89,7 +89,7 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 * [PyTorch Ignite](./examples/pytorch_ignite_simple.py)
 * [PyTorch Lightning](./examples/pytorch_lightning_simple.py)
 * [FastAI](./examples/fastai_simple.py)
-* [AllenNLP](./examples/allennlp_simple.py)
+* [AllenNLP](./examples/allennlp)
 
 ## Installation
 

@@ -17,21 +17,9 @@ except ImportError as e:
 class PyTorchIgnitePruningHandler(object):
     """PyTorch Ignite handler to prune unpromising trials.
 
-    Example:
-
-        Add a pruning handler which observes validation accuracy.
-
-        .. code::
-
-                evaluator = create_supervised_evaluator(model,
-                                                        metrics={'accuracy': Accuracy()},
-                                                        device=device)
-                handler = PyTorchIgnitePruningHandler(trial, 'accuracy', trainer)
-                evaluator.add_event_handler(Events.COMPLETED, handler)
-
-                @trainer.on(Events.EPOCH_COMPLETED)
-                def log_validation_results(engine):
-                    evaluator.run(val_loader)
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pytorch_ignite_simple.py>`__
+    if you want to add a pruning handler which observes validation accuracy.
 
     Args:
         trial:

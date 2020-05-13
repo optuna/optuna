@@ -10,6 +10,7 @@ API Reference
     importance
     integration
     logging
+    multi_objective/index
     pruners
     samplers
     storages

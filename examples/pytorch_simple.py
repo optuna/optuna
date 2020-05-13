@@ -38,7 +38,7 @@ DIR = os.getcwd()
 EPOCHS = 10
 LOG_INTERVAL = 10
 N_TRAIN_EXAMPLES = BATCHSIZE * 30
-N_TEST_EXAMPLES = BATCHSIZE * 10
+N_VALID_EXAMPLES = BATCHSIZE * 10
 
 
 def define_model(trial):
@@ -68,13 +68,13 @@ def get_mnist():
         batch_size=BATCHSIZE,
         shuffle=True,
     )
-    test_loader = torch.utils.data.DataLoader(
+    valid_loader = torch.utils.data.DataLoader(
         datasets.MNIST(DIR, train=False, transform=transforms.ToTensor()),
         batch_size=BATCHSIZE,
         shuffle=True,
     )
 
-    return train_loader, test_loader
+    return train_loader, valid_loader
 
 
 def objective(trial):
@@ -88,7 +88,7 @@ def objective(trial):
     optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
 
     # Get the MNIST dataset.
-    train_loader, test_loader = get_mnist()
+    train_loader, valid_loader = get_mnist()
 
     # Training of the model.
     model.train()
@@ -100,7 +100,6 @@ def objective(trial):
 
             data, target = data.view(data.size(0), -1).to(DEVICE), target.to(DEVICE)
 
-
             optimizer.zero_grad()
             output = model(data)
             loss = F.nll_loss(output, target)
@@ -111,13 +110,17 @@ def objective(trial):
         model.eval()
         correct = 0
         with torch.no_grad():
-            for data, target in test_loader:
+            for batch_idx, (data, target) in enumerate(valid_loader):
+                # Limiting validation data.
+                if batch_idx * BATCHSIZE >= N_VALID_EXAMPLES:
+                    break
                 data, target = data.view(data.size(0), -1).to(DEVICE), target.to(DEVICE)
                 output = model(data)
-                pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+                # get the index of the max log-probability
+                pred = output.argmax(dim=1, keepdim=True)
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
-        accuracy = correct/len(test_loader.dataset)
+        accuracy = correct / min(len(valid_loader.dataset), N_VALID_EXAMPLES)
 
         trial.report(accuracy, epoch)
 

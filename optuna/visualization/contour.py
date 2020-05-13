@@ -102,7 +102,7 @@ def _get_contour_plot(study, params=None):
         x_param = sorted_params[0]
         y_param = sorted_params[1]
         sub_plots = _generate_contour_subplot(trials, x_param, y_param, study.direction)
-        figure = go.Figure(data=sub_plots)
+        figure = go.Figure(data=sub_plots, layout=layout)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
         figure.update_yaxes(title_text=y_param, range=param_values_range[y_param])
         if _is_log_scale(trials, x_param):
@@ -115,6 +115,7 @@ def _get_contour_plot(study, params=None):
         figure = make_subplots(
             rows=len(sorted_params), cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True
         )
+        figure.update_layout(layout)
         showscale = True  # showscale option only needs to be specified once
         for x_i, x_param in enumerate(sorted_params):
             for y_i, y_param in enumerate(sorted_params):

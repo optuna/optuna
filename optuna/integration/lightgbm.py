@@ -19,6 +19,7 @@ if _available:
     # To pass tests/integration_tests/lightgbm_tuner_tests/test_optimize.py.
     from lightgbm import Dataset  # NOQA
     from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
+    from optuna.integration.lightgbm_tuner import LightGBMTunerCV  # NOQA
 
     _names_from_tuners = ["train", "LGBMModel", "LGBMClassifier", "LGBMRegressor"]
 
@@ -39,15 +40,10 @@ else:
 class LightGBMPruningCallback(object):
     """Callback for LightGBM to prune unpromising trials.
 
-    Example:
-
-        Add a pruning callback which observes validation scores to training of a LightGBM model.
-
-        .. code::
-
-                param = {'objective': 'binary', 'metric': 'binary_error'}
-                pruning_callback = LightGBMPruningCallback(trial, 'binary_error')
-                gbm = lgb.train(param, dtrain, valid_sets=[dtest], callbacks=[pruning_callback])
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pruning/lightgbm_integration.py>`__
+    if you want to add a pruning callback which observes AUC
+    of a LightGBM model.
 
     Args:
         trial:

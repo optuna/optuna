@@ -5,6 +5,7 @@ from optuna import type_checking
 
 try:
     from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
+    from optuna.integration.lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
     from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
     from optuna.integration.lightgbm_tuner.sklearn import LGBMModel  # NOQA
     from optuna.integration.lightgbm_tuner.sklearn import LGBMRegressor  # NOQA
@@ -31,8 +32,8 @@ def train(*args: Any, **kwargs: Any) -> Any:
     _check_lightgbm_availability()
 
     auto_booster = LightGBMTuner(*args, **kwargs)
-    booster = auto_booster.run()
-    return booster
+    auto_booster.run()
+    return auto_booster.get_best_booster()
 
 
 def _check_lightgbm_availability():
