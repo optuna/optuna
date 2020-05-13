@@ -130,6 +130,7 @@ def objective(trial):
 
     return accuracy
 
+
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100)
