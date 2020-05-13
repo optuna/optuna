@@ -136,7 +136,7 @@ def test_delete_study(storage_mode: str) -> None:
         assert len(trials) == 1
 
         with pytest.raises(KeyError):
-            # deletion of non-existent study
+            # Deletion of non-existent study.
             storage.delete_study(study_id + 1)
 
         storage.delete_study(study_id)
@@ -146,7 +146,7 @@ def test_delete_study(storage_mode: str) -> None:
 
         storage.delete_study(study_id)
         with pytest.raises(KeyError):
-            # double free
+            # Double free.
             storage.delete_study(study_id)
 
 
