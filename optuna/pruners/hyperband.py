@@ -307,6 +307,7 @@ class HyperbandPruner(BasePruner):
                 "study_name",
                 "_bracket_id",
                 "sampler",
+                "trials",
             )
 
             def __init__(self, study: "optuna.study.Study", bracket_id: int) -> None:

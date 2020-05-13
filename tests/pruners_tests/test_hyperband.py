@@ -1,6 +1,10 @@
-import datetime
+import abc
 import pytest
+from typing import Any
+from typing import Dict
 from unittest import mock
+
+import numpy
 
 import optuna
 from optuna import type_checking
@@ -46,9 +50,7 @@ def test_hyperband_deprecation_warning_min_early_stopping_rate_low() -> None:
         )
 
 
-def test_hyperband_pruner_intermediate_values():
-    # type: () -> None
-
+def test_hyperband_pruner_intermediate_values() -> None:
     pruner = optuna.pruners.HyperbandPruner(
         min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
     )
@@ -69,9 +71,7 @@ def test_hyperband_pruner_intermediate_values():
     assert len(trials) == N_BRACKETS * EXPECTED_N_TRIALS_PER_BRACKET
 
 
-def test_bracket_study():
-    # type: () -> None
-
+def test_bracket_study() -> None:
     pruner = optuna.pruners.HyperbandPruner(
         min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
     )
@@ -104,9 +104,7 @@ def test_bracket_study():
     bracket_study._bracket_id  # type: ignore
 
 
-def test_hyperband_max_resource_is_auto():
-    # type: () -> None
-
+def test_hyperband_max_resource_is_auto() -> None:
     pruner = optuna.pruners.HyperbandPruner(
         min_resource=MIN_RESOURCE, reduction_factor=REDUCTION_FACTOR
     )
@@ -127,54 +125,85 @@ def test_hyperband_max_resource_is_auto():
     assert N_REPORTS == pruner._max_resource
 
 
-def test_hyperband_max_resource_value_error():
-    # type: () -> None
-
+def test_hyperband_max_resource_value_error() -> None:
     with pytest.raises(ValueError):
         _ = optuna.pruners.HyperbandPruner(max_resource="not_appropriate")
 
 
-def test_hyperband_filter_study():
-    # type: () -> None
+@pytest.mark.parametrize(
+    "sampler_cls,sampler_kwargs",
+    [
+        (optuna.samplers.RandomSampler, {}),
+        (optuna.samplers.TPESampler, {"n_startup_trials": 1}),
+        (
+            optuna.samplers.GridSampler,
+            {"search_space": {"value": numpy.linspace(0.0, 1.0, 10, endpoint=False).tolist()}},
+        ),
+        (optuna.samplers.CmaEsSampler, {"n_startup_trials": 1}),
+    ],
+)
+def test_hyperband_filter_study(sampler_cls: abc.ABCMeta, sampler_kwargs: Dict[str, Any]) -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
+        return trial.suggest_uniform("value", 0.0, 1.0)
 
-    pruner = optuna.pruners.HyperbandPruner(
-        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
-    )
-
-    def objective(t: optuna.trial.Trial) -> float:
-        return 1.0
-
-    def side_effect(s: optuna.study.Study, t: optuna.trial.FrozenTrial) -> int:
-        if t.number % 2:
-            return 0
-        else:
-            return 1
-
+    n_trials = 8
+    n_brackets = 4
+    expected_n_trials_per_bracket = n_trials // n_brackets
     with mock.patch(
         "optuna.pruners.HyperbandPruner._get_bracket_id",
-        new=mock.MagicMock(side_effect=side_effect),
+        new=mock.Mock(side_effect=lambda study, trial: trial.number % n_brackets),
     ):
-        study = optuna.study.create_study(pruner=pruner)
-        study.optimize(objective, n_trials=10)
+        for method_name in [
+            "infer_relative_search_space",
+            "sample_relative",
+            "sample_independent",
+        ]:
+            sampler = sampler_cls(**sampler_kwargs)
+            pruner = optuna.pruners.HyperbandPruner(
+                min_resource=MIN_RESOURCE,
+                max_resource=MAX_RESOURCE,
+                reduction_factor=REDUCTION_FACTOR,
+            )
+            with mock.patch(
+                "optuna.samplers.{}.{}".format(sampler_cls.__name__, method_name),
+                wraps=getattr(sampler, method_name),
+            ) as method_mock:
+                study = optuna.study.create_study(sampler=sampler, pruner=pruner)
+                study.optimize(objective, n_trials=n_trials)
+                args = method_mock.call_args[0]
+                study = args[0]
+                trials = study.get_trials()
+                assert len(trials) == expected_n_trials_per_bracket
 
-        trial = optuna.trial.FrozenTrial(
-            number=10,
-            trial_id=10,
-            state=optuna.trial.TrialState.COMPLETE,
-            value=0,
-            datetime_start=datetime.datetime.now(),
-            datetime_complete=datetime.datetime.now(),
-            params={},
-            distributions={},
-            user_attrs={},
-            system_attrs={},
-            intermediate_values={},
-        )
-        filtered_study = optuna.pruners._filter_study(study, trial)
 
-        filtered_trials = filtered_study.get_trials(deepcopy=False)
-        assert len(filtered_trials) == 5
-        assert isinstance(study.pruner, optuna.pruners.HyperbandPruner)
-        assert study.pruner._get_bracket_id(study, trial) == 1
-        for t in filtered_trials:
-            assert study.pruner._get_bracket_id(study, t) == 1
+@pytest.mark.parametrize(
+    "pruner_cls,pruner_kwargs",
+    [
+        (optuna.pruners.NopPruner, {}),
+        (optuna.pruners.MedianPruner, {}),
+        (optuna.pruners.ThresholdPruner, {"lower": 0.5}),
+        (optuna.pruners.SuccessiveHalvingPruner, {}),
+    ],
+)
+def test_hyperband_no_filter_study(pruner_cls: abc.ABCMeta, pruner_kwargs: Dict[str, Any]) -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
+        return trial.suggest_uniform("value", 0.0, 1.0)
+
+    n_trials = 10
+    for method_name in [
+        "infer_relative_search_space",
+        "sample_relative",
+        "sample_independent",
+    ]:
+        sampler = optuna.samplers.RandomSampler()
+        pruner = pruner_cls(**pruner_kwargs)
+        with mock.patch(
+            "optuna.samplers.{}.{}".format(sampler.__class__.__name__, method_name),
+            wraps=getattr(sampler, method_name),
+        ) as method_mock:
+            study = optuna.study.create_study(sampler=sampler, pruner=pruner)
+            study.optimize(objective, n_trials=n_trials)
+            args = method_mock.call_args[0]
+            study = args[0]
+            trials = study.get_trials()
+            assert len(trials) == n_trials
