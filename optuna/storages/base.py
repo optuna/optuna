@@ -222,7 +222,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_all_study_summaries(self) -> List[study.StudySummary]:
-        """Returns a list of `study.StudySummary` objects.
+        """Read a list of `study.StudySummary` objects.
 
         Returns:
             A list of `study.StudySummary` objects.
