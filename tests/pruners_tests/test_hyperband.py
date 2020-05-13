@@ -1,4 +1,3 @@
-import abc
 import pytest
 from typing import Callable
 from unittest import mock
