@@ -5,10 +5,6 @@ from unittest import mock
 import numpy
 
 import optuna
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from optuna.trial import Trial  # NOQA
 
 MIN_RESOURCE = 1
 MAX_RESOURCE = 16
@@ -55,9 +51,7 @@ def test_hyperband_pruner_intermediate_values() -> None:
 
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
 
-    def objective(trial):
-        # type: (Trial) -> float
-
+    def objective(trial: optuna.trial.Trial) -> float:
         for i in range(N_REPORTS):
             trial.report(i, step=i)
 
@@ -108,9 +102,7 @@ def test_hyperband_max_resource_is_auto() -> None:
     )
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
 
-    def objective(trial):
-        # type: (Trial) -> float
-
+    def objective(trial: optuna.trial.Trial) -> float:
         for i in range(N_REPORTS):
             trial.report(1.0, i)
             if trial.should_prune():
@@ -210,3 +202,39 @@ def test_hyperband_no_filter_study(
             study = args[0]
             trials = study.get_trials()
             assert len(trials) == n_trials
+
+
+@pytest.mark.parametrize(
+    "sampler_init_func",
+    [
+        lambda: optuna.samplers.RandomSampler(),
+        (lambda: optuna.samplers.TPESampler(n_startup_trials=1)),
+        (
+            lambda: optuna.samplers.GridSampler(
+                search_space={"value": numpy.linspace(0.0, 1.0, 10, endpoint=False).tolist()}
+            )
+        ),
+        (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=1)),
+    ],
+)
+def test_hyperband_no_call_of_filter_study_in_should_prune(
+    sampler_init_func: Callable[[], optuna.samplers.BaseSampler]
+) -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
+        with mock.patch("optuna.pruners._filter_study") as method_mock:
+            for i in range(N_REPORTS):
+                trial.report(i, step=i)
+                if trial.should_prune():
+                    method_mock.assert_not_called()
+                    raise optuna.exceptions.TrialPruned()
+                else:
+                    method_mock.assert_not_called()
+
+        return 1.0
+
+    sampler = sampler_init_func()
+    pruner = optuna.pruners.HyperbandPruner(
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR,
+    )
+    study = optuna.study.create_study(sampler=sampler, pruner=pruner)
+    study.optimize(objective, n_trials=10)
