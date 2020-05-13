@@ -84,9 +84,12 @@ def test_user_attrs() -> None:
 
 
 def test_system_attrs() -> None:
+    # We use `RandomMultiObjectiveSampler` here because the default `NSGAIimultiobjectivesampler`
+    # sampler sets its own system attributes when sampling (these attributes would become noise in
+    # this test case).
+    sampler = optuna.multi_objective.samplers.RandomMultiObjectiveSampler()
     study = optuna.multi_objective.create_study(
-        ["maximize", "minimize", "maximize"],
-        sampler=optuna.multi_objective.samplers.RandomMultiObjectiveSampler(),
+        ["maximize", "minimize", "maximize"], sampler=sampler
     )
 
     def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
