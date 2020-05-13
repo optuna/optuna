@@ -16,7 +16,6 @@ from typing import Union
 import warnings
 
 import numpy as np
-from sklearn.model_selection import BaseCrossValidator
 import tqdm
 
 import optuna
@@ -24,6 +23,10 @@ from optuna.integration.lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from optuna import type_checking
+
+if type_checking.TYPE_CHECKING:
+    from sklearn.model_selection import BaseCrossValidator  # NOQA
 
 try:
     import lightgbm as lgb
@@ -927,7 +930,7 @@ class LightGBMTunerCV(LightGBMBaseTuner):
             Union[
                 Generator[Tuple[int, int], None, None],
                 Iterator[Tuple[int, int]],
-                BaseCrossValidator,
+                "BaseCrossValidator",
             ]
         ] = None,
         nfold: int = 5,
