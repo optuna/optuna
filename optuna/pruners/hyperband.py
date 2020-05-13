@@ -6,10 +6,10 @@ import warnings
 
 import optuna
 from optuna._experimental import experimental
-from optuna._trial_state import TrialState
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
+from optuna.trial.state import TrialState
 
 _logger = logging.get_logger(__name__)
 
