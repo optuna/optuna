@@ -32,9 +32,9 @@ def train(*args: Any, **kwargs: Any) -> Any:
     `a simple example of LightGBM Tuner <https://github.com/optuna/optuna/blob/master/examples/lig
     htgbm_tuner_simple.py>`_ which optimizes the validation log loss of cancer detection.
 
-    :func:`~optuna.integration.lightgbm.train` is a wrapper function of :class:`~optuna.integration
-    .lightgbm_tuner.LightGBMTuner`, and please use it if you want to utilize advanced features
-    such as suspending/resuming optimization and parallelization.
+    :func:`~optuna.integration.lightgbm.train` is a wrapper function of
+    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner`, and please use it if you want to
+    utilize advanced features such as suspending/resuming optimization and parallelization.
 
     Arguments and keyword arguments for `lightgbm.train()
     <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.

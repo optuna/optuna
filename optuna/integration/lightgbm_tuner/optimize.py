@@ -424,7 +424,7 @@ class LightGBMBaseTuner(BaseTuner):
 
     @property
     def best_score(self) -> float:
-        """"Return the score of the best booster."""
+        """Return the score of the best booster."""
         try:
             return self.study.best_value
         except ValueError:
@@ -662,7 +662,7 @@ class LightGBMBaseTuner(BaseTuner):
 
 
 class LightGBMTuner(LightGBMBaseTuner):
-    """Hyperparameter-tuning with Optuna for LightGBM.
+    """Hyperparameter tuner for LightGBM.
 
     It optimizes the following hypeperparameters in stepwise manner:
     ``lambda_l1``, ``lambda_l2``, ``num_leaves``, ``feature_fraction``, ``bagging_fraction``,
@@ -674,8 +674,8 @@ class LightGBMTuner(LightGBMBaseTuner):
 
     Arguments and keyword arguments for `lightgbm.train()
     <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
-    The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTuner` has are listed
-    below:
+    The arguments that only :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` has are
+    listed below:
 
     Args:
         time_budget:
@@ -891,14 +891,20 @@ class LightGBMTuner(LightGBMBaseTuner):
 
 
 class LightGBMTunerCV(LightGBMBaseTuner):
-    """Hyperparameter-tuning with Optuna for LightGBM.
+    """Hyperparameter tuner for LightGBM with cross-validation.
 
-    In each trial, it performs cross-validation with the suggested hyperparameters.
-    Arguments and keyword arguments for `lightgbm.cv()
-    <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html>`_ can be passed except
+    It employs the same stepwise approach as
+    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner`.
+    :class:`~optuna.integration.lightgbm_tuner.LightGBMTunerCV` invokes `lightgbm.cv()`_ to train
+    and validate boosters while :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` invokes
+    `lightgbm.train()`_. See
+    `a simple example <https://github.com/optuna/optuna/blob/master/examples/lightgbm_tuner_cv.
+    py>`_ which optimizes the validation log loss of cancer detection.
+
+    Arguments and keyword arguments for `lightgbm.cv()`_ can be passed except
     ``metrics``, ``init_model`` and ``eval_train_metric``.
-    The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTunerCV` has are listed
-    below:
+    The arguments that only :class:`~optuna.integration.lightgbm_tuner.LightGBMTunerCV` has are
+    listed below:
 
     Args:
         time_budget:
@@ -919,6 +925,7 @@ class LightGBMTunerCV(LightGBMBaseTuner):
             Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
 
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
+    .. _lightgbm.cv(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html
     """
 
     def __init__(
