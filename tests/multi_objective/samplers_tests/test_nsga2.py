@@ -141,6 +141,7 @@ def test_crowding_distance_sort() -> None:
     assert [t.number for t in trials] == [2, 3, 0, 1]
 
 
+# TODO(ohta): Consider to move this utility function to `optuna.testing` module.
 def _create_frozen_trial(
     number: int, values: List[float]
 ) -> multi_objective.trial.FrozenMultiObjectiveTrial:
