@@ -32,8 +32,9 @@ def train(*args: Any, **kwargs: Any) -> Any:
     htgbm_tuner_simple.py>`_ which optimizes the validation log loss of cancer detection.
 
     :func:`~optuna.integration.lightgbm.train` is a wrapper function of
-    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner`, and please use it if you want to
-    utilize advanced features such as suspending/resuming optimization and parallelization.
+    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner`. To use feature in Optuna such as
+    suspended/resumed optimization and/or parallelization, refer to
+    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` instead of this function.
 
     Arguments and keyword arguments for `lightgbm.train()`_ can be passed.
 
