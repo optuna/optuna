@@ -15,9 +15,7 @@ from typing import Tuple
 from typing import Union
 import warnings
 
-import lightgbm as lgb
 import numpy as np
-from sklearn.model_selection import BaseCrossValidator
 import tqdm
 
 import optuna
@@ -25,9 +23,22 @@ from optuna.integration.lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from optuna import type_checking
 
+if type_checking.TYPE_CHECKING:
+    from sklearn.model_selection import BaseCrossValidator  # NOQA
 
-VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
+try:
+    import lightgbm as lgb
+
+    VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
+
+    _available = True
+except ImportError as e:
+    _import_error = e
+    # LightGBMTuner is disabled because LightGBM is not available.
+    _available = False
+
 
 # Define key names of `Trial.system_attrs`.
 _ELAPSED_SECS_KEY = "lightgbm_tuner:elapsed_secs"
@@ -289,7 +300,7 @@ class OptunaObjectiveCV(OptunaObjective):
         self,
         target_param_names: List[str],
         lgbm_params: Dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         lgbm_kwargs: Dict[str, Any],
         best_score: float,
         step_name: str,
@@ -344,7 +355,7 @@ class LightGBMBaseTuner(BaseTuner):
     def __init__(
         self,
         params: Dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
         fobj: Optional[Callable[..., Any]] = None,
         feval: Optional[Callable[..., Any]] = None,
@@ -359,6 +370,9 @@ class LightGBMBaseTuner(BaseTuner):
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         verbosity: Optional[int] = 1,
     ) -> None:
+
+        _check_lightgbm_availability()
+
         params = copy.deepcopy(params)
 
         # Handling alias metrics.
@@ -410,7 +424,7 @@ class LightGBMBaseTuner(BaseTuner):
 
     @property
     def best_score(self) -> float:
-        """"Return the score of the best booster."""
+        """Return the score of the best booster."""
         try:
             return self.study.best_value
         except ValueError:
@@ -595,7 +609,7 @@ class LightGBMBaseTuner(BaseTuner):
     def _create_objective(
         self,
         target_param_names: List[str],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
     ) -> OptunaObjective:
@@ -647,12 +661,20 @@ class LightGBMBaseTuner(BaseTuner):
 
 
 class LightGBMTuner(LightGBMBaseTuner):
-    """Hyperparameter-tuning with Optuna for LightGBM.
+    """Hyperparameter tuner for LightGBM.
+
+    It optimizes the following hyperparameters in a stepwise manner:
+    ``lambda_l1``, ``lambda_l2``, ``num_leaves``, ``feature_fraction``, ``bagging_fraction``,
+    ``bagging_freq`` and ``min_child_samples``.
+
+    You can find the details of the algorithm and benchmark results in `this blog article <https:/
+    /medium.com/optuna/lightgbm-tuner-new-optuna-integration-for-hyperparameter-optimization-8b709
+    5e99258>`_ by `Kohei Ozaki <https://www.kaggle.com/confirm>`_, a Kaggle Grandmaster.
 
     Arguments and keyword arguments for `lightgbm.train()
     <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
-    The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTuner` has are listed
-    below:
+    The arguments that only :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` has are
+    listed below:
 
     Args:
         time_budget:
@@ -699,9 +721,9 @@ class LightGBMTuner(LightGBMBaseTuner):
     def __init__(
         self,
         params: Dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
-        valid_sets: Optional[VALID_SET_TYPE] = None,
+        valid_sets: Optional["VALID_SET_TYPE"] = None,
         valid_names: Optional[Any] = None,
         fobj: Optional[Callable[..., Any]] = None,
         feval: Optional[Callable[..., Any]] = None,
@@ -781,7 +803,7 @@ class LightGBMTuner(LightGBMBaseTuner):
             raise ValueError("`valid_sets` is required.")
 
     @property
-    def best_booster(self) -> lgb.Booster:
+    def best_booster(self) -> "lgb.Booster":
         """Return the best booster.
 
         .. deprecated:: 1.4.0
@@ -795,7 +817,7 @@ class LightGBMTuner(LightGBMBaseTuner):
 
         return self.get_best_booster()
 
-    def get_best_booster(self) -> lgb.Booster:
+    def get_best_booster(self) -> "lgb.Booster":
         """Return the best booster.
 
         If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
@@ -851,7 +873,7 @@ class LightGBMTuner(LightGBMBaseTuner):
     def _create_objective(
         self,
         target_param_names: List[str],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
     ) -> OptunaObjective:
@@ -868,14 +890,20 @@ class LightGBMTuner(LightGBMBaseTuner):
 
 
 class LightGBMTunerCV(LightGBMBaseTuner):
-    """Hyperparameter-tuning with Optuna for LightGBM.
+    """Hyperparameter tuner for LightGBM with cross-validation.
 
-    In each trial, it performs cross-validation with the suggested hyperparameters.
-    Arguments and keyword arguments for `lightgbm.cv()
-    <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html>`_ can be passed except
+    It employs the same stepwise approach as
+    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner`.
+    :class:`~optuna.integration.lightgbm_tuner.LightGBMTunerCV` invokes `lightgbm.cv()`_ to train
+    and validate boosters while :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` invokes
+    `lightgbm.train()`_. See
+    `a simple example <https://github.com/optuna/optuna/blob/master/examples/lightgbm_tuner_cv.
+    py>`_ which optimizes the validation log loss of cancer detection.
+
+    Arguments and keyword arguments for `lightgbm.cv()`_ can be passed except
     ``metrics``, ``init_model`` and ``eval_train_metric``.
-    The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTunerCV` has are listed
-    below:
+    The arguments that only :class:`~optuna.integration.lightgbm_tuner.LightGBMTunerCV` has are
+    listed below:
 
     Args:
         time_budget:
@@ -896,18 +924,19 @@ class LightGBMTunerCV(LightGBMBaseTuner):
             Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
 
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
+    .. _lightgbm.cv(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html
     """
 
     def __init__(
         self,
         params: Dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         num_boost_round: int = 1000,
         folds: Optional[
             Union[
                 Generator[Tuple[int, int], None, None],
                 Iterator[Tuple[int, int]],
-                BaseCrossValidator,
+                "BaseCrossValidator",
             ]
         ] = None,
         nfold: int = 5,
@@ -959,7 +988,7 @@ class LightGBMTunerCV(LightGBMBaseTuner):
     def _create_objective(
         self,
         target_param_names: List[str],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
     ) -> OptunaObjective:
@@ -971,4 +1000,14 @@ class LightGBMTunerCV(LightGBMBaseTuner):
             self.best_score,
             step_name=step_name,
             pbar=pbar,
+        )
+
+
+def _check_lightgbm_availability() -> None:
+    if not _available:
+        raise ImportError(
+            "LightGBM is not available. Please install LightGBM to use this feature. "
+            "LightGBM can be installed by executing `$ pip install lightgbm`. "
+            "For further information, please refer to the installation guide of LightGBM. "
+            "(The actual import error is as follows: " + str(_import_error) + ")"
         )
