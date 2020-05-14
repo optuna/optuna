@@ -3,7 +3,7 @@ import warnings
 
 from optuna import distributions
 from optuna import logging
-from optuna.trial.state import TrialState
+from optuna.trial._state import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
