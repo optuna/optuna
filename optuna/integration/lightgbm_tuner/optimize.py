@@ -670,7 +670,7 @@ class LightGBMTuner(LightGBMBaseTuner):
 
     You can find the detailed algorithm and benchmark results in `this blog article <https://mediu
     m.com/optuna/lightgbm-tuner-new-optuna-integration-for-hyperparameter-optimization-8b7095e9925
-    8>`_ by `Kohei Ozaki <https://www.kaggle.com/confirm>`_, who is a Kaggle Grandmaster.
+    8>`_ by `Kohei Ozaki <https://www.kaggle.com/confirm>`_, a Kaggle Grandmaster.
 
     Arguments and keyword arguments for `lightgbm.train()
     <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
