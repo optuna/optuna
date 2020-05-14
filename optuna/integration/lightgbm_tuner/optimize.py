@@ -667,9 +667,9 @@ class LightGBMTuner(LightGBMBaseTuner):
     ``lambda_l1``, ``lambda_l2``, ``num_leaves``, ``feature_fraction``, ``bagging_fraction``,
     ``bagging_freq`` and ``min_child_samples``.
 
-    You can find the detailed algorithm and benchmark results in `this blog article <https://mediu
-    m.com/optuna/lightgbm-tuner-new-optuna-integration-for-hyperparameter-optimization-8b7095e9925
-    8>`_ by `Kohei Ozaki <https://www.kaggle.com/confirm>`_, a Kaggle Grandmaster.
+    You can find the details of the algorithm and benchmark results in `this blog article <https:/
+    /medium.com/optuna/lightgbm-tuner-new-optuna-integration-for-hyperparameter-optimization-8b709
+    5e99258>`_ by `Kohei Ozaki <https://www.kaggle.com/confirm>`_, a Kaggle Grandmaster.
 
     Arguments and keyword arguments for `lightgbm.train()
     <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
