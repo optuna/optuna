@@ -1,8 +1,8 @@
-import pytest
 from typing import Callable
 from unittest import mock
 
 import numpy
+import pytest
 
 import optuna
 
@@ -127,7 +127,7 @@ def test_hyperband_max_resource_value_error() -> None:
         (lambda: optuna.samplers.TPESampler(n_startup_trials=1)),
         (
             lambda: optuna.samplers.GridSampler(
-                search_space={"value": numpy.linspace(0.0, 1.0, 10, endpoint=False).tolist()}
+                search_space={"value": numpy.linspace(0.0, 1.0, 8, endpoint=False).tolist()}
             )
         ),
         (lambda: optuna.samplers.CmaEsSampler(n_startup_trials=1)),
