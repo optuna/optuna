@@ -349,8 +349,10 @@ def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
 
 
 def _get_complete_trials(study: "optuna.Study") -> List[FrozenTrial]:
-    complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    complete_trials = []
     for t in study.get_trials(deepcopy=False):
+        if t.state == TrialState.COMPLETE:
+            complete_trials.append(copy.deepcopy(t))
         if t.state == TrialState.PRUNED and len(t.intermediate_values) > 0:
             _, value = max(t.intermediate_values.items())
             _t = copy.deepcopy(t)
