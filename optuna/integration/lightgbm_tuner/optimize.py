@@ -443,8 +443,7 @@ class LightGBMBaseTuner(BaseTuner):
             params.update(self.lgbm_params)
             return params
 
-    def _parse_args(self, *args, **kwargs):
-        # type: (Any, Any) -> None
+    def _parse_args(self, *args: Any, **kwargs: Any) -> None:
 
         self.auto_options = {
             option_name: kwargs.get(option_name)
