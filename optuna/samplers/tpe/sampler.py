@@ -5,7 +5,6 @@ import scipy.special
 from scipy.stats import truncnorm
 
 from optuna import distributions
-from optuna.pruners import HyperbandPruner
 from optuna.samplers import base
 from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import _ParzenEstimator
@@ -594,12 +593,7 @@ def _get_observation_pairs(study, param_name, trial):
     if study.direction == StudyDirection.MAXIMIZE:
         sign = -1
 
-    if isinstance(study.pruner, HyperbandPruner):
-        # Create `_BracketStudy` to use trials that have the same bracket id.
-        pruner = study.pruner  # type: HyperbandPruner
-        study = pruner._create_bracket_study(study, pruner._get_bracket_id(study, trial))
-
-    values = []  # type: List[Optional[float]]
+    values = []
     scores = []
     for trial in study.get_trials(deepcopy=False):
         if trial.state is TrialState.COMPLETE and trial.value is not None:

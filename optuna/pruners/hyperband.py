@@ -9,8 +9,7 @@ from optuna._experimental import experimental
 from optuna import logging
 from optuna.pruners.base import BasePruner
 from optuna.pruners.successive_halving import SuccessiveHalvingPruner
-from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
+from optuna.trial._state import TrialState
 
 _logger = logging.get_logger(__name__)
 
@@ -192,7 +191,7 @@ class HyperbandPruner(BasePruner):
             warnings.warn(message, DeprecationWarning)
             _logger.warning(message)
 
-    def prune(self, study: "optuna.study.Study", trial: FrozenTrial) -> bool:
+    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
         if len(self._pruners) == 0:
             self._try_initialization(study)
             if len(self._pruners) == 0:
@@ -266,7 +265,9 @@ class HyperbandPruner(BasePruner):
         s = self._n_brackets - 1 - pruner_index
         return math.ceil(self._n_brackets * (self._reduction_factor ** s) / (s + 1))
 
-    def _get_bracket_id(self, study: "optuna.study.Study", trial: FrozenTrial) -> int:
+    def _get_bracket_id(
+        self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
+    ) -> int:
         """Compute the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
@@ -306,6 +307,7 @@ class HyperbandPruner(BasePruner):
                 "study_name",
                 "_bracket_id",
                 "sampler",
+                "trials",
             )
 
             def __init__(self, study: "optuna.study.Study", bracket_id: int) -> None:
@@ -317,7 +319,7 @@ class HyperbandPruner(BasePruner):
                 )
                 self._bracket_id = bracket_id
 
-            def get_trials(self, deepcopy: bool = True) -> List[FrozenTrial]:
+            def get_trials(self, deepcopy: bool = True) -> List["optuna.trial.FrozenTrial"]:
                 trials = super().get_trials(deepcopy=deepcopy)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
