@@ -368,7 +368,7 @@ def _get_search_space_bound(
                 optuna.distributions.IntUniformDistribution,
             ),
         ):
-            bounds.append([dist.low, dist.high])
+            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high)])
         else:
             raise NotImplementedError("The distribution {} is not implemented.".format(dist))
     return np.array(bounds, dtype=float)
