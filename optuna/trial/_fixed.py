@@ -108,7 +108,7 @@ class FixedTrial(BaseTrial):
     def suggest_int(self, name, low, high, *, log=False, step=1):
         # type: (str, int, int, bool, int) -> int
         if log:
-            self._suggest(
+            sample = self._suggest(
                 name, distributions.IntLogUniformDistribution(low=low, high=high, step=step)
             )
         else:
