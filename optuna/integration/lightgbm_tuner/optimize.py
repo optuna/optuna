@@ -664,7 +664,7 @@ class LightGBMBaseTuner(BaseTuner):
 class LightGBMTuner(LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM.
 
-    It optimizes the following hypeperparameters in stepwise manner:
+    It optimizes the following hyperparameters in a stepwise manner:
     ``lambda_l1``, ``lambda_l2``, ``num_leaves``, ``feature_fraction``, ``bagging_fraction``,
     ``bagging_freq`` and ``min_child_samples``.
 
