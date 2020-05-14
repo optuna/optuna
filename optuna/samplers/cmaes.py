@@ -358,6 +358,8 @@ def _get_complete_trials(study: "optuna.Study") -> List[FrozenTrial]:
             complete_trials.append(copy.deepcopy(t))
         if t.state == TrialState.PRUNED and len(t.intermediate_values) > 0:
             _, value = max(t.intermediate_values.items())
+            if value is None:
+                continue
             _t = copy.deepcopy(t)
             _t.value = value
             complete_trials.append(_t)
