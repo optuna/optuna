@@ -177,7 +177,6 @@ class TPESampler(base.BaseSampler):
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )
-
         below_param_values, above_param_values = self._split_observation_pairs(values, scores)
 
         if isinstance(param_distribution, distributions.UniformDistribution):
@@ -214,7 +213,7 @@ class TPESampler(base.BaseSampler):
 
     def _split_observation_pairs(
         self,
-        config_vals,  # type: List[float]
+        config_vals,  # type: List[Optional[float]]
         loss_vals,  # type: List[Tuple[float, float]]
     ):
         # type: (...) -> Tuple[np.ndarray, np.ndarray]
@@ -225,7 +224,9 @@ class TPESampler(base.BaseSampler):
         n_below = self._gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
         below = config_vals[np.sort(loss_ascending[:n_below])]
+        below = np.asarray([v for v in below if v is not None], dtype=float)
         above = config_vals[np.sort(loss_ascending[n_below:])]
+        above = np.asarray([v for v in above if v is not None], dtype=float)
         return below, above
 
     def _sample_uniform(self, distribution, below, above):
@@ -570,12 +571,11 @@ class TPESampler(base.BaseSampler):
 
 
 def _get_observation_pairs(study, param_name, trial):
-    # type: (Study, str, FrozenTrial) -> Tuple[List[float], List[Tuple[float, float]]]
+    # type: (Study, str, FrozenTrial) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]
     """Get observation pairs from the study.
 
        This function collects observation pairs from the complete or pruned trials of the study.
-       The trials that don't contain the parameter named ``param_name`` are excluded
-       from the result.
+       The values for trials that don't contain the parameter named ``param_name`` are set to None.
 
        An observation pair fundamentally consists of a parameter value and an objective value.
        However, due to the pruning mechanism of Optuna, final objective values are not always
@@ -596,9 +596,6 @@ def _get_observation_pairs(study, param_name, trial):
     values = []
     scores = []
     for trial in study.get_trials(deepcopy=False):
-        if param_name not in trial.params:
-            continue
-
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
@@ -613,8 +610,11 @@ def _get_observation_pairs(study, param_name, trial):
         else:
             continue
 
-        distribution = trial.distributions[param_name]
-        param_value = distribution.to_internal_repr(trial.params[param_name])
+        param_value = None  # type: Optional[float]
+        if param_name in trial.params:
+            distribution = trial.distributions[param_name]
+            param_value = distribution.to_internal_repr(trial.params[param_name])
+
         values.append(param_value)
         scores.append(score)
 
