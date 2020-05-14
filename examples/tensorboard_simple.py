@@ -1,6 +1,11 @@
 import optuna
 from optuna import distributions
 from optuna.integration.tensorboard import TensorBoardCallback
+from optuna import type_checking
+
+if type_checking.TYPE_CHECKING:
+    from typing import Dict  # NOQA
+    from typing import Any  # NOQA
 
 import tensorflow as tf
 
@@ -11,6 +16,7 @@ x_train, x_test = x_train / 255.0, x_test / 255.0
 
 
 def train_test_model(num_units, dropout_rate, optimizer):
+    # type: (int, float, str) -> float
     model = tf.keras.models.Sequential(
         [
             tf.keras.layers.Flatten(),
@@ -28,13 +34,14 @@ def train_test_model(num_units, dropout_rate, optimizer):
     return accuracy
 
 
-param_distributions = dict()
+param_distributions = dict()  # type: Dict[str, Any]
 param_distributions["NUM_UNITS"] = distributions.IntUniformDistribution(low=16, high=32)
 param_distributions["DROPOUT_RATE"] = distributions.UniformDistribution(low=0.1, high=0.2)
 param_distributions["OPTIMIZER"] = distributions.CategoricalDistribution(choices=["sgd", "adam"])
 
 
 def objective(trial):
+    # type: (optuna.trial.Trial) -> float
 
     num_units = trial.suggest_int(
         "NUM_UNITS", param_distributions["NUM_UNITS"].low, param_distributions["NUM_UNITS"].high
@@ -46,7 +53,7 @@ def objective(trial):
     )
     optimizer = trial.suggest_categorical("OPTIMIZER", param_distributions["OPTIMIZER"].choices)
 
-    accuracy = train_test_model(num_units, dropout_rate, optimizer)
+    accuracy = train_test_model(num_units, dropout_rate, optimizer)  # type: ignore
     return accuracy
 
 
