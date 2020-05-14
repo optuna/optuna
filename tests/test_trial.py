@@ -349,7 +349,7 @@ def test_distributions(storage_init_func):
         trial.suggest_discrete_uniform("c", 0, 10, 1)
         trial.suggest_int("d", 0, 10)
         trial.suggest_categorical("e", ["foo", "bar", "baz"])
-        trial.suggest_int("g", 1, 10, log=True)
+        trial.suggest_int("f", 1, 10, log=True)
 
         return 1.0
 
@@ -362,7 +362,7 @@ def test_distributions(storage_init_func):
         "c": DiscreteUniformDistribution(low=0, high=10, q=1),
         "d": IntUniformDistribution(low=0, high=10),
         "e": CategoricalDistribution(choices=("foo", "bar", "baz")),
-        "g": IntLogUniformDistribution(low=1, high=10),
+        "f": IntLogUniformDistribution(low=1, high=10),
     }
 
 
