@@ -195,7 +195,10 @@ class CmaEsSampler(BaseSampler):
             solutions = []  # type: List[Tuple[np.ndarray, float]]
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
-                x = np.array([_to_cma_param(search_space[k], t.params[k]) for k in ordered_keys])
+                x = np.array(
+                    [_to_cma_param(search_space[k], t.params[k]) for k in ordered_keys],
+                    dtype=float,
+                )
                 solutions.append((x, t.value))
 
             optimizer.tell(solutions)
@@ -368,4 +371,4 @@ def _get_search_space_bound(
             bounds.append([dist.low, dist.high])
         else:
             raise NotImplementedError("The distribution {} is not implemented.".format(dist))
-    return np.array(bounds)
+    return np.array(bounds, dtype=float)
