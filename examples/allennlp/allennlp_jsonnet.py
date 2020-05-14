@@ -20,7 +20,6 @@ We have the following two ways to execute this example:
 
 """
 
-import json
 import os.path
 import shutil
 
@@ -34,7 +33,7 @@ from optuna.integration import AllenNLPExecutor
 EXAMPLE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(EXAMPLE_DIR, "classifier.jsonnet")
 MODEL_DIR = "result"
-BEST_CONFIG_PATH = os.path.join(MODEL_DIR, "best.classifier.json")
+BEST_CONFIG_PATH = "best.classifier.json"
 
 
 def objective(trial):
@@ -64,10 +63,6 @@ if __name__ == "__main__":
         print("    {}: {}".format(key, value))
 
     dump_best_config(CONFIG_PATH, BEST_CONFIG_PATH, study)
-
-    print("Best AllenNLP config:")
-    best_config = json.load(open(BEST_CONFIG_PATH))
-    for key, value in best_config.items():
-        print("    {}: {}".format(key, value))
+    print("\nCreated optimized AllenNLP config to `{}`".format(BEST_CONFIG_PATH))
 
     shutil.rmtree(MODEL_DIR)
