@@ -241,7 +241,7 @@ class CmaEsSampler(BaseSampler):
         else:
             sigma0 = self._sigma0
         sigma0 = max(sigma0, _MIN_SIGMA0)
-        mean = np.array([self._x0[k] for k in ordered_keys])
+        mean = np.array([self._x0[k] for k in ordered_keys], dtype=float)
         bounds = _get_search_space_bound(ordered_keys, search_space)
         n_dimension = len(ordered_keys)
         return CMA(
