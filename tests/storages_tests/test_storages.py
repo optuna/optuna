@@ -929,10 +929,10 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
         "paramB": (generator.uniform(1, 2), LogUniformDistribution(1, 2)),
         "paramC": (
             generator.choice(["CatA", "CatB", "CatC"]),
-            CategoricalDistribution(["CatA", "CatB", "CatC"]),
+            CategoricalDistribution(("CatA", "CatB", "CatC")),
         ),
         "paramD": (generator.uniform(-3, 0), UniformDistribution(-3, 0)),
-        "paramE": (generator.choice([0.1, 0.2]), CategoricalDistribution([0.1, 0.2])),
+        "paramE": (generator.choice([0.1, 0.2]), CategoricalDistribution((0.1, 0.2))),
     }
     example_attrs = {
         "attrA": "valueA",
