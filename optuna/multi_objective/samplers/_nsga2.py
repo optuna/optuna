@@ -88,18 +88,18 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
-        parent_generation, population = self._collect_parent_population(study)
+        parent_generation, parent_population = self._collect_parent_population(study)
         trial_id = trial._trial_id
 
-        if len(population) == 0:
-            generation = 0
-            study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
-        else:
-            p0 = self._select_parent(study, population)
-            p1 = self._select_parent(study, population)
+        generation = parent_generation + 1
+        study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
 
-            generation = parent_generation + 1
-            study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
+        if parent_generation >= 0:
+            p0 = self._select_parent(study, parent_population)
+            p1 = self._select_parent(
+                study, [t for t in parent_population if t._trial_id != p0._trial_id]
+            )
+
             study._storage.set_trial_system_attr(
                 trial_id, _PARENTS_KEY, [p0._trial_id, p1._trial_id]
             )
