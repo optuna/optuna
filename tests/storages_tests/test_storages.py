@@ -11,7 +11,6 @@ from unittest.mock import patch
 import pytest
 
 import optuna
-from optuna.distributions import BaseDistribution  # NOQA
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
