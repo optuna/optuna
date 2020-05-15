@@ -15,7 +15,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages import BaseStorage  # NOQA
+from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
