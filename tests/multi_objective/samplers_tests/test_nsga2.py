@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import Counter
 from typing import List
 
 import pytest
@@ -15,10 +15,10 @@ def test_population_size() -> None:
     study = multi_objective.create_study(["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=40)
 
-    generations = defaultdict(int)
-    for t in study.trials:
-        generations[t.system_attrs[multi_objective.samplers._nsga2._GENERATION_KEY]] += 1
-    assert dict(generations) == {0: 10, 1: 10, 2: 10, 3: 10}
+    generations = Counter(
+        [t.system_attrs[multi_objective.samplers._nsga2._GENERATION_KEY] for t in study.trials]
+    )
+    assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
     # Set `population_size` to 2.
     sampler = multi_objective.samplers.NSGAIIMultiObjectiveSampler(population_size=2)
@@ -26,10 +26,10 @@ def test_population_size() -> None:
     study = multi_objective.create_study(["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=40)
 
-    generations = defaultdict(int)
-    for t in study.trials:
-        generations[t.system_attrs[multi_objective.samplers._nsga2._GENERATION_KEY]] += 1
-    assert dict(generations) == {i: 2 for i in range(20)}
+    generations = Counter(
+        [t.system_attrs[multi_objective.samplers._nsga2._GENERATION_KEY] for t in study.trials]
+    )
+    assert generations == {i: 2 for i in range(20)}
 
     # Invalid population size.
     with pytest.raises(ValueError):
