@@ -773,7 +773,7 @@ def test_get_all_study_summaries(storage_mode: str) -> None:
             assert summary.system_attrs == expected_summary.system_attrs
             if expected_summary.best_trial is not None:
                 assert summary.best_trial is not None
-                _check_trial_equality(summary.best_trial, expected_summary.best_trial)
+                assert summary.best_trial == expected_summary.best_trial
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -785,7 +785,7 @@ def test_get_trial(storage_mode: str) -> None:
         for _, expected_trials in study_to_trials.items():
             for expected_trial in expected_trials.values():
                 trial = storage.get_trial(expected_trial._trial_id)
-                _check_trial_equality(trial, expected_trial)
+                assert trial == expected_trial
 
         non_existent_trial_id = (
             max(tid for ts in study_to_trials.values() for tid in ts.keys()) + 1
@@ -804,7 +804,7 @@ def test_get_all_trials(storage_mode: str) -> None:
             trials = storage.get_all_trials(study_id)
             for trial in trials:
                 expected_trial = expected_trials[trial._trial_id]
-                _check_trial_equality(trial, expected_trial)
+                assert trial == expected_trial
 
         non_existent_study_id = max(study_to_trials.keys()) + 1
         with pytest.raises(KeyError):
@@ -971,14 +971,3 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
         intermediate_values=intermediate_values,
         trial_id=0,  # dummy
     )
-
-
-def _check_trial_equality(output: FrozenTrial, expected: FrozenTrial) -> None:
-    assert output._trial_id == expected._trial_id
-    assert output.state == expected.state
-    assert output.value == expected.value
-    assert output.datetime_start == expected.datetime_start
-    assert output.datetime_complete == expected.datetime_complete
-    assert output.user_attrs == expected.user_attrs
-    assert output.system_attrs == expected.system_attrs
-    assert output.intermediate_values == expected.intermediate_values
