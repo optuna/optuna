@@ -698,7 +698,7 @@ def test_set_trial_user_attr(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_system_user_attrs(storage_mode: str) -> None:
+def test_get_trial_system_attrs(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=10)
