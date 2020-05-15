@@ -16,7 +16,6 @@ SQLITE3_TIMEOUT = 300
 
 
 class StorageSupplier(object):
-
     def __init__(self, storage_specifier):
         # type: (str) -> None
 
