@@ -21,9 +21,9 @@ _GENERATION_KEY = "multi_objective:nsga2:generation"
 _PARENTS_KEY = "multi_objective:nsga2:parents"
 
 
-@experimental("1.4.0")
+@experimental("1.5.0")
 class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
-    """Multi-objective sampler using NSGA-II algorithm.
+    """Multi-objective sampler using the NSGA-II algorithm.
 
     NSGA-II stands for "Nondominated Sorting Genetic Algorithm II",
     which is a well known, fast and elitist multi-objective genetic algorithm.
@@ -58,7 +58,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         # TODO(ohta): Reconsider the default value of each parameter.
 
         if not isinstance(population_size, int):
-            raise ValueError("`population_size` must be an integer value.")
+            raise TypeError("`population_size` must be an integer value.")
 
         if population_size < 2:
             raise ValueError("`population_size` must be greater than or equal to 2.")
