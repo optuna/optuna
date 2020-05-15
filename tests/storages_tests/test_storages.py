@@ -27,13 +27,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-ALL_STATES = [
-    TrialState.COMPLETE,
-    TrialState.PRUNED,
-    TrialState.FAIL,
-    TrialState.RUNNING,
-    TrialState.WAITING,
-]
+ALL_STATES = list(TrialState)
 
 EXAMPLE_ATTRS = {
     "dataset": "MNIST",
@@ -62,9 +56,9 @@ def teardown_module():
 
 def test_get_storage() -> None:
 
-    isinstance(optuna.storages.get_storage(None), InMemoryStorage)
-    isinstance(optuna.storages.get_storage("sqlite:///:memory:"), RDBStorage)
-    isinstance(
+    assert isinstance(optuna.storages.get_storage(None), InMemoryStorage)
+    assert isinstance(optuna.storages.get_storage("sqlite:///:memory:"), RDBStorage)
+    assert isinstance(
         optuna.storages.get_storage("redis://test_user:passwd@localhost:6379/0"), RedisStorage
     )
 
@@ -522,7 +516,7 @@ def test_set_trial_param(storage_mode: str) -> None:
         trial_id_2 = storage.create_new_trial(study_id)
         trial_id_3 = storage.create_new_trial(storage.create_new_study())
 
-        # Setup Distributions.
+        # Setup distributions.
         distribution_x = UniformDistribution(low=1.0, high=2.0)
         distribution_y_1 = CategoricalDistribution(choices=("Shibuya", "Ebisu", "Meguro"))
         distribution_y_2 = CategoricalDistribution(choices=("Shibuya", "Shinsen"))
@@ -533,7 +527,7 @@ def test_set_trial_param(storage_mode: str) -> None:
         assert storage.set_trial_param(trial_id_1, "y", 2, distribution_y_1)
         assert storage.get_trial_param(trial_id_1, "x") == 0.5
         assert storage.get_trial_param(trial_id_1, "y") == 2
-        # Check set_param breaks neither get_trial nor get_trial_params
+        # Check set_param breaks neither get_trial nor get_trial_params.
         assert storage.get_trial(trial_id_1).params == {"x": 0.5, "y": "Meguro"}
         assert storage.get_trial_params(trial_id_1) == {"x": 0.5, "y": "Meguro"}
         # Duplicated registration should return False.
@@ -549,7 +543,7 @@ def test_set_trial_param(storage_mode: str) -> None:
         assert storage.get_trial(trial_id_2).params == {"x": 0.3, "z": 0.1}
         assert storage.get_trial_params(trial_id_2) == {"x": 0.3, "z": 0.1}
 
-        # Set params with distributions that does not match previous ones.
+        # Set params with distributions that do not match previous ones.
         with pytest.raises(ValueError):
             storage.set_trial_param(trial_id_2, "x", 0.5, distribution_z)
         with pytest.raises(ValueError):
@@ -564,7 +558,7 @@ def test_set_trial_param(storage_mode: str) -> None:
         # Cannot assign params to finished trial.
         with pytest.raises(RuntimeError):
             storage.set_trial_param(trial_id_2, "y", 2, distribution_y_1)
-        # Check the previous call does not change the trial's state
+        # Check the previous call does not change the params.
         with pytest.raises(KeyError):
             storage.get_trial_param(trial_id_2, "y")
         # State should be checked prior to distribution compatibility.
@@ -673,8 +667,7 @@ def test_set_trial_user_attr(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         trial_id_1 = storage.create_new_trial(storage.create_new_study())
 
-        def check_set_and_get(trial_id, key, value):
-            # type: (int, str, Any) -> None
+        def check_set_and_get(trial_id: int, key: str, value: Any) -> None:
 
             storage.set_trial_user_attr(trial_id, key, value)
             assert storage.get_trial(trial_id).user_attrs[key] == value
@@ -727,8 +720,7 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
         study_id = storage.create_new_study()
         trial_id_1 = storage.create_new_trial(study_id)
 
-        def check_set_and_get(trial_id, key, value):
-            # type: (int, str, Any) -> None
+        def check_set_and_get(trial_id: int, key: str, value: Any) -> None:
 
             storage.set_trial_system_attr(trial_id, key, value)
             assert storage.get_trial_system_attrs(trial_id)[key] == value
@@ -766,7 +758,7 @@ def test_get_all_study_summaries(storage_mode: str) -> None:
         expected_summaries, _ = _setup_studies(storage, n_study=10, n_trial=10, seed=46)
         summaries = storage.get_all_study_summaries()
         assert len(summaries) == len(expected_summaries)
-        for study_id, expected_summary in expected_summaries.items():
+        for _, expected_summary in expected_summaries.items():
             summary = None  # type: Optional[StudySummary]
             for s in summaries:
                 if s.study_name == expected_summary.study_name:
@@ -790,7 +782,7 @@ def test_get_trial(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=20, seed=47)
 
-        for study_id, expected_trials in study_to_trials.items():
+        for _, expected_trials in study_to_trials.items():
             for expected_trial in expected_trials.values():
                 trial = storage.get_trial(expected_trial._trial_id)
                 _check_trial_equality(trial, expected_trial)
