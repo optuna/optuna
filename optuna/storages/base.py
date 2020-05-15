@@ -29,7 +29,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def create_new_study(self, study_name: Optional[str] = None) -> int:
-        """Creates a new study with a given name.
+        """Create a new study with a given name.
 
         When no name is specified, storage class auto-generates the name.
         Study ID is unique among all current and deleted studies.
@@ -50,7 +50,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def delete_study(self, study_id: int) -> None:
-        """Deletes a study specified by the study ID.
+        """Delete a study specified by the study ID.
 
         Args:
             study_id:
@@ -173,7 +173,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_study_direction(self, study_id: int) -> study.StudyDirection:
-
         """Read whether a specified study maximizes or minimizes an objective.
 
         Args:
