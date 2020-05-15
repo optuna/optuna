@@ -63,6 +63,6 @@ if __name__ == "__main__":
         print("    {}: {}".format(key, value))
 
     dump_best_config(CONFIG_PATH, BEST_CONFIG_PATH, study)
-    print("\nCreated optimized AllenNLP config to `{}`".format(BEST_CONFIG_PATH))
+    print("\nCreated optimized AllenNLP config to `{}`.".format(BEST_CONFIG_PATH))
 
     shutil.rmtree(MODEL_DIR)
