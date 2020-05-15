@@ -36,18 +36,6 @@ STORAGE_MODES = [
 ]
 
 
-def setup_module():
-    # type: () -> None
-
-    StorageSupplier.setup_common_tempfile()
-
-
-def teardown_module():
-    # type: () -> None
-
-    StorageSupplier.teardown_common_tempfile()
-
-
 def func(trial, x_max=1.0):
     # type: (optuna.trial.Trial, float) -> float
 

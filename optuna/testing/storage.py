@@ -17,8 +17,6 @@ SQLITE3_TIMEOUT = 300
 
 class StorageSupplier(object):
 
-    _common_tempfile = None  # type: Optional[IO[Any]]
-
     def __init__(self, storage_specifier):
         # type: (str) -> None
 
@@ -40,12 +38,6 @@ class StorageSupplier(object):
             storage = optuna.storages.RedisStorage("redis://localhost")
             storage._redis = fakeredis.FakeStrictRedis()
             return storage
-        elif self.storage_specifier == "common":
-            assert self._common_tempfile is not None
-            url = "sqlite:///{}".format(self._common_tempfile.name)
-            return optuna.storages.RDBStorage(
-                url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
-            )
         else:
             assert False
 
@@ -54,16 +46,3 @@ class StorageSupplier(object):
 
         if self.tempfile:
             self.tempfile.close()
-
-    @classmethod
-    def setup_common_tempfile(cls):
-        # type: () -> None
-
-        cls._common_tempfile = tempfile.NamedTemporaryFile()
-
-    @classmethod
-    def teardown_common_tempfile(cls):
-        # type: () -> None
-
-        assert cls._common_tempfile is not None
-        cls._common_tempfile.close()

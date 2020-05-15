@@ -41,18 +41,6 @@ STORAGE_MODES = [
 ]
 
 
-def setup_module():
-    # type: () -> None
-
-    StorageSupplier.setup_common_tempfile()
-
-
-def teardown_module():
-    # type: () -> None
-
-    StorageSupplier.teardown_common_tempfile()
-
-
 def test_get_storage() -> None:
 
     assert isinstance(optuna.storages.get_storage(None), InMemoryStorage)
