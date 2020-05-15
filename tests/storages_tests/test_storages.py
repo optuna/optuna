@@ -846,33 +846,6 @@ def test_get_n_trials(storage_mode: str) -> None:
             assert storage.get_n_trials(non_existent_study_id)
 
 
-def _create_new_trial_with_example_trial(storage, study_id, distributions, example_trial):
-    # type: (BaseStorage, int, Dict[str, BaseDistribution], FrozenTrial) -> int
-
-    trial_id = storage.create_new_trial(study_id)
-
-    if example_trial.value is not None:
-        storage.set_trial_value(trial_id, example_trial.value)
-
-    for name, param_external in example_trial.params.items():
-        param_internal = distributions[name].to_internal_repr(param_external)
-        distribution = distributions[name]
-        storage.set_trial_param(trial_id, name, param_internal, distribution)
-
-    for step, value in example_trial.intermediate_values.items():
-        storage.set_trial_intermediate_value(trial_id, step, value)
-
-    for key, value in example_trial.user_attrs.items():
-        storage.set_trial_user_attr(trial_id, key, value)
-
-    for key, value in example_trial.system_attrs.items():
-        storage.set_trial_system_attr(trial_id, key, value)
-
-    storage.set_trial_state(trial_id, example_trial.state)
-
-    return trial_id
-
-
 def _setup_studies(
     storage: BaseStorage,
     n_study: int,
