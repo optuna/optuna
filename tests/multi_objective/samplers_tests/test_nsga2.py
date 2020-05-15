@@ -1,6 +1,7 @@
 from collections import defaultdict
-import pytest
 from typing import List
+
+import pytest
 
 import optuna
 from optuna import multi_objective
