@@ -414,10 +414,10 @@ class TestChainerMNTrial(object):
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_int("x", low, high, step)
+                x1 = mn_trial.suggest_int("x", low, high, step=step)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_int("x", low, high, step)
+                x2 = mn_trial.suggest_int("x", low, high, step=step)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
@@ -427,10 +427,10 @@ class TestChainerMNTrial(object):
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_int("x", low, high, step)
+                x1 = mn_trial.suggest_int("x", low, high, step=step)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_int("x", low, high, step)
+                x2 = mn_trial.suggest_int("x", low, high, step=step)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):

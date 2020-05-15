@@ -95,7 +95,7 @@ class MultiObjectiveTrial(object):
         for further details.
         """
 
-        return self._trial.suggest_int(name, low, high, log, step)
+        return self._trial.suggest_int(name, low, high, log=log, step=step)
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
