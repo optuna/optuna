@@ -102,7 +102,7 @@ class Trial(BaseTrial):
                 np.random.seed(seed=0)
                 X = np.random.randn(200).reshape(-1, 1)
                 y = np.random.randint(0, 2, 200)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
 
             .. testcode::
@@ -117,7 +117,7 @@ class Trial(BaseTrial):
                                         solver='sgd', random_state=0, power_t=power_t)
                     clf.fit(X_train, y_train)
 
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -175,7 +175,7 @@ class Trial(BaseTrial):
                 np.random.seed(seed=0)
                 X = np.random.randn(200).reshape(-1, 1)
                 y = np.random.randint(0, 2, 200)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
             .. testcode::
 
@@ -188,7 +188,7 @@ class Trial(BaseTrial):
                                         solver='sgd', random_state=0)
                     clf.fit(X_train, y_train)
 
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -236,7 +236,7 @@ class Trial(BaseTrial):
                 np.random.seed(seed=0)
                 X = np.random.randn(50).reshape(-1, 1)
                 y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
             .. testcode::
 
@@ -247,7 +247,7 @@ class Trial(BaseTrial):
                     c = trial.suggest_loguniform('c', 1e-5, 1e2)
                     clf = SVC(C=c, gamma='scale', random_state=0)
                     clf.fit(X_train, y_train)
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -301,7 +301,7 @@ class Trial(BaseTrial):
                 np.random.seed(seed=0)
                 X = np.random.randn(50).reshape(-1, 1)
                 y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
             .. testcode::
 
@@ -312,7 +312,7 @@ class Trial(BaseTrial):
                     subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
                     clf = GradientBoostingClassifier(subsample=subsample, random_state=0)
                     clf.fit(X_train, y_train)
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -360,7 +360,7 @@ class Trial(BaseTrial):
                 np.random.seed(seed=0)
                 X = np.random.randn(50).reshape(-1, 1)
                 y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
             .. testcode::
 
@@ -371,7 +371,7 @@ class Trial(BaseTrial):
                     n_estimators = trial.suggest_int('n_estimators', 50, 400)
                     clf = RandomForestClassifier(n_estimators=n_estimators, random_state=0)
                     clf.fit(X_train, y_train)
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -419,7 +419,7 @@ class Trial(BaseTrial):
                 np.random.seed(seed=0)
                 X = np.random.randn(50).reshape(-1, 1)
                 y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
             .. testcode::
 
@@ -430,7 +430,7 @@ class Trial(BaseTrial):
                     kernel = trial.suggest_categorical('kernel', ['linear', 'poly', 'rbf'])
                     clf = SVC(kernel=kernel, gamma='scale', random_state=0)
                     clf.fit(X_train, y_train)
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -484,7 +484,7 @@ class Trial(BaseTrial):
                 np.random.seed(seed=0)
                 X = np.random.randn(50).reshape(-1, 1)
                 y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
             .. testcode::
 
@@ -495,12 +495,12 @@ class Trial(BaseTrial):
                     clf = SGDClassifier(random_state=0)
                     for step in range(100):
                         clf.partial_fit(X_train, y_train, np.unique(y))
-                        intermediate_value = clf.score(X_test, y_test)
+                        intermediate_value = clf.score(X_valid, y_valid)
                         trial.report(intermediate_value, step=step)
                         if trial.should_prune():
                             raise TrialPruned()
 
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -581,7 +581,7 @@ class Trial(BaseTrial):
                 np.random.seed(seed=0)
                 X = np.random.randn(50).reshape(-1, 1)
                 y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
             .. testcode::
 
@@ -596,7 +596,7 @@ class Trial(BaseTrial):
                                         momentum=momentum, solver='sgd', random_state=0)
                     clf.fit(X_train, y_train)
 
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
