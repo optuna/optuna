@@ -33,7 +33,7 @@ from optuna.integration import AllenNLPExecutor
 EXAMPLE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(EXAMPLE_DIR, "classifier.jsonnet")
 MODEL_DIR = "result"
-BEST_CONFIG_PATH = "best.classifier.json"
+BEST_CONFIG_PATH = "best_classifier.json"
 
 
 def objective(trial):
