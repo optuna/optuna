@@ -395,6 +395,7 @@ class Trial(BaseTrial):
             A suggested integer value.
         """
 
+        distribution: distributions.IntUniformDistribution
         if log:
             distribution = distributions.IntLogUniformDistribution(low=low, high=high, step=step)
         else:
