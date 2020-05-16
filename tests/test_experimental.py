@@ -1,3 +1,4 @@
+from textwrap import indent
 from typing import Any
 
 import pytest
@@ -25,6 +26,26 @@ def _h(a: Any = None, b: int = 10) -> None:
 
 class _Sample(object):
     def __init__(self, a: Any, b: Any, c: Any) -> None:
+        pass
+
+    def _sample_method(self) -> None:
+        """Sample method
+
+        Returns:
+            None
+        """
+        pass
+
+    def _sample_method_experimental(self) -> None:
+        """Sample method
+
+        Returns:
+            None
+
+        .. note::
+            Added in v1.1.0 as an experimental feature. The interface may change in newer versions
+            without prior notice. See https://github.com/optuna/optuna/releases/tag/v1.1.0.
+        """
         pass
 
 
@@ -57,6 +78,23 @@ def test_experimental_decorator(version: str) -> None:
 
         with pytest.warns(ExperimentalWarning):
             decorated_sample_func(None)
+
+
+def test_experimental_method_decorator() -> None:
+
+    version = "1.1.0"
+    decorator_experimental = _experimental.experimental(version)
+    assert (
+        callable(decorator_experimental)
+        and decorator_experimental.__name__ == "_experimental_wrapper"
+    )
+
+    decorated_sample_func = decorator_experimental(_Sample._sample_method)
+    assert decorated_sample_func.__name__ == _Sample._sample_method.__name__
+    assert decorated_sample_func.__doc__ == _Sample._sample_method_experimental.__doc__
+
+    with pytest.warns(ExperimentalWarning):
+        decorated_sample_func(None)
 
 
 @pytest.mark.parametrize("version", ["1.1.0", "1.1", 100, None])
