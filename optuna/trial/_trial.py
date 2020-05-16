@@ -19,9 +19,9 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
 
-        FloatingPointDistributionType = Union[
-            distributions.UniformDistribution, distributions.LogUniformDistribution
-        ]
+    FloatingPointDistributionType = Union[
+        distributions.UniformDistribution, distributions.LogUniformDistribution
+    ]
 
 
 class Trial(BaseTrial):
