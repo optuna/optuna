@@ -42,6 +42,8 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
         mutation_prob:
             Probability of mutating each parameter when creating a new individual.
+            If :obj:`None` is specified, the value ``1.0 / len(parent_trial.params)`` is used
+            where ``parent_trial`` is the first parent trial of the target individual.
 
         crossover_prob:
             Probability that a crossover (parameters swapping between parents) will occur
@@ -56,7 +58,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         self,
         seed: Optional[int] = None,
         population_size: int = 50,
-        mutation_prob: float = 0.1,
+        mutation_prob: Optional[float] = None,
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
     ) -> None:
@@ -68,8 +70,10 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         if population_size < 2:
             raise ValueError("`population_size` must be greater than or equal to 2.")
 
-        if not (0.0 <= mutation_prob <= 1.0):
-            raise ValueError("`mutation_prob` must be a float value within the range [0.0, 1.0].")
+        if not (mutation_prob is None or 0.0 <= mutation_prob <= 1.0):
+            raise ValueError(
+                "`mutation_prob` must be None or a float value within the range [0.0, 1.0]."
+            )
 
         if not (0.0 <= crossover_prob <= 1.0):
             raise ValueError("`crossover_prob` must be a float value within the range [0.0, 1.0].")
@@ -130,13 +134,18 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 study, trial, param_name, param_distribution
             )
 
-        p0, p1 = trial.system_attrs[_PARENTS_KEY]
+        p0_id, p1_id = trial.system_attrs[_PARENTS_KEY]
+        p0 = study._storage.get_trial(p0_id)
+        p1 = study._storage.get_trial(p1_id)
 
-        param = study._storage.get_trial(p0).params.get(param_name, None)
+        param = p0.params.get(param_name, None)
         if param is None or self._rng.rand() < self._swapping_prob:
-            param = study._storage.get_trial(p1).params.get(param_name, None)
+            param = p1.params.get(param_name, None)
 
-        if param is None or self._rng.rand() < self._mutation_prob:
+        mutation_prob = (
+            self._mutation_prob if self._mutation_prob is not None else 1.0 / len(p0.params)
+        )
+        if param is None or self._rng.rand() < mutation_prob:
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )

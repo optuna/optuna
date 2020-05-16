@@ -42,6 +42,7 @@ def test_population_size() -> None:
 
 
 def test_mutation_prob() -> None:
+    multi_objective.samplers.NSGAIIMultiObjectiveSampler(mutation_prob=None)
     multi_objective.samplers.NSGAIIMultiObjectiveSampler(mutation_prob=0.0)
     multi_objective.samplers.NSGAIIMultiObjectiveSampler(mutation_prob=0.5)
     multi_objective.samplers.NSGAIIMultiObjectiveSampler(mutation_prob=1.0)
