@@ -1,6 +1,6 @@
-import os
 import optuna
 from optuna import type_checking
+import os
 
 if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
