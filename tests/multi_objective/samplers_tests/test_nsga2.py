@@ -65,6 +65,18 @@ def test_crossover_prob() -> None:
         multi_objective.samplers.NSGAIIMultiObjectiveSampler(crossover_prob=1.1)
 
 
+def test_swapping_prob() -> None:
+    multi_objective.samplers.NSGAIIMultiObjectiveSampler(swapping_prob=0.0)
+    multi_objective.samplers.NSGAIIMultiObjectiveSampler(swapping_prob=0.5)
+    multi_objective.samplers.NSGAIIMultiObjectiveSampler(swapping_prob=1.0)
+
+    with pytest.raises(ValueError):
+        multi_objective.samplers.NSGAIIMultiObjectiveSampler(swapping_prob=-0.5)
+
+    with pytest.raises(ValueError):
+        multi_objective.samplers.NSGAIIMultiObjectiveSampler(swapping_prob=1.1)
+
+
 def test_fast_non_dominated_sort() -> None:
     # Single objective.
     directions = [StudyDirection.MINIMIZE]

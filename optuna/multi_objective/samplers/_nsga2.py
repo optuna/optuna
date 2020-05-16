@@ -44,7 +44,11 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
             Probability of mutating each parameter when creating a new individual.
 
         crossover_prob:
-            Probability of swapping each parameter of the parents when creating a new individual.
+            Probability that a crossover (parameters swapping between parents) will occur
+            when creating a new individual.
+
+        swapping_prob:
+            Probability of swapping each parameter of the parents during crossover.
 
     """
 
@@ -53,7 +57,8 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         seed: Optional[int] = None,
         population_size: int = 50,
         mutation_prob: float = 0.1,
-        crossover_prob: float = 0.2,
+        crossover_prob: float = 0.9,
+        swapping_prob: float = 0.5,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
@@ -69,9 +74,13 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         if not (0.0 <= crossover_prob <= 1.0):
             raise ValueError("`crossover_prob` must be a float value within the range [0.0, 1.0].")
 
+        if not (0.0 <= swapping_prob <= 1.0):
+            raise ValueError("`swapping_prob` must be a float value within the range [0.0, 1.0].")
+
         self._population_size = population_size
-        self._crossover_prob = crossover_prob
         self._mutation_prob = mutation_prob
+        self._crossover_prob = crossover_prob
+        self._swapping_prob = swapping_prob
         self._random_sampler = multi_objective.samplers.RandomMultiObjectiveSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
 
@@ -96,9 +105,12 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
         if parent_generation >= 0:
             p0 = self._select_parent(study, parent_population)
-            p1 = self._select_parent(
-                study, [t for t in parent_population if t._trial_id != p0._trial_id]
-            )
+            if self._rng.rand() < self._crossover_prob:
+                p1 = self._select_parent(
+                    study, [t for t in parent_population if t._trial_id != p0._trial_id]
+                )
+            else:
+                p1 = p0
 
             study._storage.set_trial_system_attr(
                 trial_id, _PARENTS_KEY, [p0._trial_id, p1._trial_id]
@@ -121,7 +133,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         p0, p1 = trial.system_attrs[_PARENTS_KEY]
 
         param = study._storage.get_trial(p0).params.get(param_name, None)
-        if param is None or self._rng.rand() < self._crossover_prob:
+        if param is None or self._rng.rand() < self._swapping_prob:
             param = study._storage.get_trial(p1).params.get(param_name, None)
 
         if param is None or self._rng.rand() < self._mutation_prob:
