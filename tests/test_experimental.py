@@ -89,12 +89,14 @@ def test_experimental_method_decorator() -> None:
         and decorator_experimental.__name__ == "_experimental_wrapper"
     )
 
-    decorated_sample_func = decorator_experimental(_Sample._sample_method)
-    assert decorated_sample_func.__name__ == _Sample._sample_method.__name__
-    assert decorated_sample_func.__doc__ == _Sample._sample_method_experimental.__doc__
+    decorated_sample_method = decorator_experimental(_Sample._sample_method)
+    assert decorated_sample_method.__name__ == _Sample._sample_method.__name__
+    assert (
+        decorated_sample_method.__doc__ == _Sample._sample_method_experimental.__doc__
+    )
 
     with pytest.warns(ExperimentalWarning):
-        decorated_sample_func(None)
+        decorated_sample_method(None)
 
 
 @pytest.mark.parametrize("version", ["1.1.0", "1.1", 100, None])
