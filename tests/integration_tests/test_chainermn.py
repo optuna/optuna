@@ -43,18 +43,6 @@ STORAGE_MODES = ["sqlite"]
 PRUNER_INIT_FUNCS = [lambda: pruners.MedianPruner(), lambda: pruners.SuccessiveHalvingPruner()]
 
 
-def setup_module():
-    # type: () -> None
-
-    StorageSupplier.setup_common_tempfile()
-
-
-def teardown_module():
-    # type: () -> None
-
-    StorageSupplier.teardown_common_tempfile()
-
-
 class Func(object):
     def __init__(self):
         # type: () -> None
