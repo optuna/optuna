@@ -127,7 +127,7 @@ class HyperbandPruner(BasePruner):
 
             .. note::
                 If the step of the last intermediate value may change with each trial, please
-                manually specify the maximum possible step to `max_resource`.
+                manually specify the maximum possible step to ``max_resource``.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper.
