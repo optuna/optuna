@@ -83,10 +83,8 @@ def test_experimental_method_decorator() -> None:
 
     version = "1.1.0"
     decorator_experimental = _experimental.experimental(version)
-    assert (
-        callable(decorator_experimental)
-        and decorator_experimental.__name__ == "_experimental_wrapper"
-    )
+    assert callable(decorator_experimental)
+    assert decorator_experimental.__name__ == "_experimental_wrapper"
 
     decorated_sample_method = decorator_experimental(_Sample._sample_method)
     assert decorated_sample_method.__name__ == _Sample._sample_method.__name__
