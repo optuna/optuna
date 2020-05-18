@@ -178,7 +178,7 @@ class _Optimizer(object):
         dimensions = []
         for name, distribution in sorted(self._search_space.items()):
 
-            # TODO support distributions.IntLogUniformDistribution
+            # TODO(nzw0301) support distributions.IntLogUniformDistribution
             if isinstance(distribution, distributions.IntLogUniformDistribution):
                 raise NotImplementedError
 

@@ -222,7 +222,7 @@ class CmaEsSampler(BaseSampler):
 
         x0 = {}
         for name, distribution in search_space.items():
-            # TODO support IntLogUniform
+            # TODO(nzw0301) support IntLogUniform
             if isinstance(distribution, IntLogUniformDistribution):
                 raise NotImplementedError
 
@@ -251,7 +251,7 @@ class CmaEsSampler(BaseSampler):
 
         sigma0s = []
         for name, distribution in search_space.items():
-            # TODO support IntLogUniform
+            # TODO(nzw0301) support IntLogUniform
             if isinstance(distribution, IntLogUniformDistribution):
                 raise NotImplementedError
 
