@@ -139,12 +139,15 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         p1 = study._storage.get_trial(p1_id)
 
         param = p0.params.get(param_name, None)
+        parent_params_len = len(p0.params)
         if param is None or self._rng.rand() < self._swapping_prob:
             param = p1.params.get(param_name, None)
+            parent_params_len = len(p1.params)
 
-        mutation_prob = (
-            self._mutation_prob if self._mutation_prob is not None else 1.0 / len(p0.params)
-        )
+        mutation_prob = self._mutation_prob
+        if mutation_prob is None:
+            mutation_prob = 1.0 / max(1.0, parent_params_len)
+
         if param is None or self._rng.rand() < mutation_prob:
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
