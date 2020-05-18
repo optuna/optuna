@@ -56,11 +56,11 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
     def __init__(
         self,
-        seed: Optional[int] = None,
         population_size: int = 50,
         mutation_prob: Optional[float] = None,
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
+        seed: Optional[int] = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
