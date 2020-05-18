@@ -320,7 +320,11 @@ def test_suggest_int(storage_init_func):
         assert trial.params == {"x": 1, "y": 3}
         assert mock_object.call_count == 3
 
-    # log space
+
+@parametrize_storage
+def test_suggest_int_log(storage_init_func):
+    # type: (Callable[[], storages.BaseStorage]) -> None
+
     mock = Mock()
     mock.side_effect = [1, 2, 3]
     sampler = samplers.RandomSampler()
