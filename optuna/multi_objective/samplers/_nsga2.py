@@ -43,7 +43,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         mutation_prob:
             Probability of mutating each parameter when creating a new individual.
             If :obj:`None` is specified, the value ``1.0 / len(parent_trial.params)`` is used
-            where ``parent_trial`` is the first parent trial of the target individual.
+            where ``parent_trial`` is the parent trial of the target individual.
 
         crossover_prob:
             Probability that a crossover (parameters swapping between parents) will occur
