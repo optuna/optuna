@@ -1,5 +1,6 @@
 import functools
 import inspect
+import textwrap
 from typing import Any
 from typing import Callable
 import warnings
@@ -12,9 +13,9 @@ from optuna.exceptions import ExperimentalWarning
 # another four spaces.
 _EXPERIMENTAL_DOCSTRING_TEMPLATE = """
 
-    .. note::
-        Added in v{ver} as an experimental feature. The interface may change in newer versions
-        without prior notice. See https://github.com/optuna/optuna/releases/tag/v{ver}.
+.. note::
+    Added in v{ver} as an experimental feature. The interface may change in newer versions
+    without prior notice. See https://github.com/optuna/optuna/releases/tag/v{ver}.
 """
 
 
@@ -57,6 +58,12 @@ def _validate_version(version: str) -> None:
         )
 
 
+def _get_indent(docstring):
+    if "\n" not in docstring:
+        return ""
+    return docstring.split("\n")[-1]
+
+
 def experimental(version: str, name: str = None) -> Any:
     """Decorate class or function as experimental.
 
@@ -72,10 +79,14 @@ def experimental(version: str, name: str = None) -> Any:
 
         def _experimental_func(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
 
-            docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
             if func.__doc__ is None:
                 func.__doc__ = ""
-            func.__doc__ += docstring
+
+            docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+            indent = _get_indent(func.__doc__)
+            func.__doc__ = (
+                func.__doc__.strip() + textwrap.indent(docstring, indent) + indent
+            )
 
             # TODO(crcrpar): Annotate this correctly.
             @functools.wraps(func)
@@ -117,10 +128,12 @@ def experimental(version: str, name: str = None) -> Any:
 
             if cls.__doc__ is None:
                 cls.__doc__ = ""
+            docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+            indent = _get_indent(cls.__doc__)
             cls.__doc__ = (
                 _make_func_spec_str(_original_init)
                 + cls.__doc__
-                + _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+                + textwrap.indent(docstring, indent)
             )
             return cls
 
