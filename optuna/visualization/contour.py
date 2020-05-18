@@ -8,15 +8,14 @@ from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import _is_log_scale
 from optuna.visualization.utils import is_available
 
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
+from typing import List  # NOQA
+from typing import Optional  # NOQA
+from typing import Tuple  # NOQA
 
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
-    from optuna.visualization.plotly_imports import Contour  # NOQA
-    from optuna.visualization.plotly_imports import Scatter  # NOQA
+from optuna.study import Study  # NOQA
+from optuna.trial import FrozenTrial  # NOQA
+from optuna.visualization.plotly_imports import Contour  # NOQA
+from optuna.visualization.plotly_imports import Scatter  # NOQA
 
 if is_available():
     from optuna.visualization.plotly_imports import go
