@@ -21,6 +21,7 @@ class TrialState(enum.Enum):
     PRUNED = 2
     FAIL = 3
     WAITING = 4
+    STOPPED = 5
 
     def __repr__(self) -> str:
 

@@ -75,6 +75,11 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
+    def set_suggest_end(self):
+        # type: () -> None
+
+        raise NotImplementedError
+
     @property
     @abc.abstractmethod
     def params(self) -> Dict[str, Any]:

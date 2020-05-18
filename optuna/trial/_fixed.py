@@ -64,6 +64,7 @@ class FixedTrial(BaseTrial):
         self._system_attrs = {}  # type: Dict[str, Any]
         self._datetime_start = datetime.datetime.now()
         self._number = number
+        self._stop_opt = 0
 
     def suggest_float(
         self,
@@ -137,6 +138,12 @@ class FixedTrial(BaseTrial):
     def set_system_attr(self, key: str, value: Any) -> None:
 
         self._system_attrs[key] = value
+
+    def set_suggest_end(self):
+         # type: () -> None
+
+         if self._stop_opt == 1:
+             raise exceptions.TrialStopOpt()
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
 
