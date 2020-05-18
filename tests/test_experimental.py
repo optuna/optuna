@@ -27,16 +27,16 @@ class _Sample(object):
     def __init__(self, a: Any, b: Any, c: Any) -> None:
         pass
 
-    def _sample_method(self) -> None:
-        """Sample method
+    def _method(self) -> None:
+        """Method
 
         Returns:
             None
         """
         pass
 
-    def _sample_method_experimental(self) -> None:
-        """Sample method
+    def _method_experimental(self) -> None:
+        """Method
 
         Returns:
             None
@@ -86,14 +86,12 @@ def test_experimental_method_decorator() -> None:
     assert callable(decorator_experimental)
     assert decorator_experimental.__name__ == "_experimental_wrapper"
 
-    decorated_sample_method = decorator_experimental(_Sample._sample_method)
-    assert decorated_sample_method.__name__ == _Sample._sample_method.__name__
-    assert (
-        decorated_sample_method.__doc__ == _Sample._sample_method_experimental.__doc__
-    )
+    decorated_method = decorator_experimental(_Sample._method)
+    assert decorated_method.__name__ == _Sample._method.__name__
+    assert decorated_method.__doc__ == _Sample._method.__doc__
 
     with pytest.warns(ExperimentalWarning):
-        decorated_sample_method(None)
+        decorated_method(None)
 
 
 @pytest.mark.parametrize("version", ["1.1.0", "1.1", 100, None])
