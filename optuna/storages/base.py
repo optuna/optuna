@@ -83,26 +83,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_study_direction(self, study_id: int, direction: study.StudyDirection) -> None:
-        """Register a direction of optimization problem to a study.
-
-        Args:
-            study_id:
-                Study ID of a study to update.
-            direction:
-                Either :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
-                :obj:`~optuna.study.StudyDirection.MINIMIZE`.
-
-        Raises:
-            :exc:`KeyError`:
-                If no study with the matching ``study_id`` exists.
-            :exc:`ValueError`:
-                If `direction` is already set and the passed ``direction`` is the opposite
-                direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
         """Register an optuna-internal attribute to a study.
 
@@ -119,6 +99,26 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         Raises:
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def set_study_direction(self, study_id: int, direction: study.StudyDirection) -> None:
+        """Register a direction of optimization problem to a study.
+
+        Args:
+            study_id:
+                Study ID of a study to update.
+            direction:
+                Either :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
+                :obj:`~optuna.study.StudyDirection.MINIMIZE`.
+
+        Raises:
+            :exc:`KeyError`:
+                If no study with the matching ``study_id`` exists.
+            :exc:`ValueError`:
+                If `direction` is already set and the passed ``direction`` is the opposite
+                direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
         """
         raise NotImplementedError
 
