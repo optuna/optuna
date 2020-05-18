@@ -132,6 +132,7 @@ class CmaEsSampler(BaseSampler):
                     optuna.distributions.UniformDistribution,
                     optuna.distributions.LogUniformDistribution,
                     optuna.distributions.DiscreteUniformDistribution,
+                    optuna.distributions.IntLogUniformDistribution,
                     optuna.distributions.IntUniformDistribution,
                 ),
             ):
@@ -290,6 +291,8 @@ def _to_cma_param(distribution: BaseDistribution, optuna_param: Any) -> float:
 
     if isinstance(distribution, optuna.distributions.LogUniformDistribution):
         return math.log(optuna_param)
+    if isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+        return math.log(optuna_param)
     if isinstance(distribution, optuna.distributions.IntUniformDistribution):
         return float(optuna_param)
     return optuna_param
@@ -303,6 +306,10 @@ def _to_optuna_param(distribution: BaseDistribution, cma_param: float) -> Any:
         v = np.round(cma_param / distribution.q) * distribution.q + distribution.low
         # v may slightly exceed range due to round-off errors.
         return float(min(max(v, distribution.low), distribution.high))
+    if isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+        r = np.round((cma_param - math.log(distribution.low)) / math.log(distribution.step))
+        v = r * math.log(distribution.step) + math.log(distribution.low)
+        return int(math.exp(v))
     if isinstance(distribution, optuna.distributions.IntUniformDistribution):
         r = np.round((cma_param - distribution.low) / distribution.step)
         v = r * distribution.step + distribution.low
@@ -313,21 +320,20 @@ def _to_optuna_param(distribution: BaseDistribution, cma_param: float) -> Any:
 def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.ndarray]:
     x0 = {}
     for name, distribution in search_space.items():
-        # TODO support IntLogUniformDistribution
-        if isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
-            raise NotImplementedError
-
         if isinstance(distribution, optuna.distributions.UniformDistribution):
             x0[name] = np.mean([distribution.high, distribution.low])
         elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
             x0[name] = np.mean([distribution.high, distribution.low])
+        elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+            log_high = math.log(distribution.high)
+            log_low = math.log(distribution.low)
+            x0[name] = np.mean([log_high, log_low])
         elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
             x0[name] = int(np.mean([distribution.high, distribution.low]))
         elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
             log_high = math.log(distribution.high)
             log_low = math.log(distribution.low)
             x0[name] = math.exp(np.mean([log_high, log_low]))
-        # TODO support IntLogUniformDistribution
         else:
             raise NotImplementedError(
                 "The distribution {} is not implemented.".format(distribution)
@@ -339,21 +345,20 @@ def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
 
     sigma0 = []
     for name, distribution in search_space.items():
-        # TODO support IntLogUniformDistribution
-        if isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
-            raise NotImplementedError
-
         if isinstance(distribution, optuna.distributions.UniformDistribution):
             sigma0.append((distribution.high - distribution.low) / 6)
         elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
             sigma0.append((distribution.high - distribution.low) / 6)
+        elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+            log_high = math.log(distribution.high)
+            log_low = math.log(distribution.low)
+            sigma0.append((log_high - log_low) / 6)
         elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
             sigma0.append((distribution.high - distribution.low) / 6)
         elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
             log_high = math.log(distribution.high)
             log_low = math.log(distribution.low)
             sigma0.append((log_high - log_low) / 6)
-        # TODO support IntLogUniformDistribution
         else:
             raise NotImplementedError(
                 "The distribution {} is not implemented.".format(distribution)
@@ -374,11 +379,11 @@ def _get_search_space_bound(
                 optuna.distributions.UniformDistribution,
                 optuna.distributions.LogUniformDistribution,
                 optuna.distributions.DiscreteUniformDistribution,
+                optuna.distributions.IntLogUniformDistribution,
                 optuna.distributions.IntUniformDistribution,
-                # TODO add optuna.distributions.IntLogUniformDistribution
             ),
         ):
-            bounds.append([dist.low, dist.high])
+            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high)])
         else:
             raise NotImplementedError("The distribution {} is not implemented.".format(dist))
     return np.array(bounds, dtype=float)
