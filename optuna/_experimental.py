@@ -84,9 +84,7 @@ def experimental(version: str, name: str = None) -> Any:
 
             docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
             indent = _get_indent(func.__doc__)
-            func.__doc__ = (
-                func.__doc__.strip() + textwrap.indent(docstring, indent) + indent
-            )
+            func.__doc__ = func.__doc__.strip() + textwrap.indent(docstring, indent) + indent
 
             # TODO(crcrpar): Annotate this correctly.
             @functools.wraps(func)
