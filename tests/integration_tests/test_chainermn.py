@@ -8,6 +8,7 @@ from optuna.exceptions import TrialPruned
 from optuna import integration
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
+from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna import Study
 from optuna.testing.integration import DeterministicPruner
@@ -38,20 +39,8 @@ try:
 except ImportError:
     _available = False
 
-STORAGE_MODES = ["new", "common"]
+STORAGE_MODES = ["sqlite"]
 PRUNER_INIT_FUNCS = [lambda: pruners.MedianPruner(), lambda: pruners.SuccessiveHalvingPruner()]
-
-
-def setup_module():
-    # type: () -> None
-
-    StorageSupplier.setup_common_tempfile()
-
-
-def teardown_module():
-    # type: () -> None
-
-    StorageSupplier.teardown_common_tempfile()
 
 
 class Func(object):
@@ -150,7 +139,10 @@ class TestChainerMNStudy(object):
     def test_init_with_incompatible_storage(comm):
         # type: (CommunicatorBase) -> None
 
-        pass
+        study = create_study(InMemoryStorage(), study_name="in-memory-study")
+
+        with pytest.raises(ValueError):
+            ChainerMNStudy(study, comm)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

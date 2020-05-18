@@ -28,23 +28,12 @@ if type_checking.TYPE_CHECKING:
 
     CallbackFuncType = Callable[[optuna.study.Study, optuna.trial.FrozenTrial], None]
 
+# TODO(ytsmiling) Add tests for multi-worker settings.
 STORAGE_MODES = [
-    "none",  # We give `None` to storage argument, so InMemoryStorage is used.
-    "new",  # We always create a new sqlite DB file for each experiment.
-    "common",  # We use a sqlite DB file for the whole experiments.
+    "inmemory",
+    "sqlite",
+    "redis",
 ]
-
-
-def setup_module():
-    # type: () -> None
-
-    StorageSupplier.setup_common_tempfile()
-
-
-def teardown_module():
-    # type: () -> None
-
-    StorageSupplier.teardown_common_tempfile()
 
 
 def func(trial, x_max=1.0):
@@ -647,15 +636,8 @@ def test_create_study(storage_mode):
         # Test `load_if_exists=True` with existing study.
         optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=True)
 
-        if isinstance(study._storage, optuna.storages.InMemoryStorage):
-            # `InMemoryStorage` does not share study's namespace (i.e., no name conflicts occur).
+        with pytest.raises(optuna.exceptions.DuplicatedStudyError):
             optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=False)
-        else:
-            # Test `load_if_exists=False` with existing study.
-            with pytest.raises(optuna.exceptions.DuplicatedStudyError):
-                optuna.create_study(
-                    study_name=study.study_name, storage=storage, load_if_exists=False
-                )
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -669,7 +651,7 @@ def test_load_study(storage_mode):
 
         study_name = str(uuid.uuid4())
 
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             # Test loading an unexisting study.
             optuna.study.load_study(study_name=study_name, storage=storage)
 
@@ -691,7 +673,7 @@ def test_delete_study(storage_mode):
         assert storage is not None
 
         # Test deleting a non-existing study.
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             optuna.delete_study("invalid-study-name", storage)
 
         # Test deleting an existing study.
@@ -699,10 +681,8 @@ def test_delete_study(storage_mode):
         optuna.delete_study(study.study_name, storage)
 
         # Test failed to delete the study which is already deleted.
-        if not isinstance(study._storage, optuna.storages.InMemoryStorage):
-            # Skip `InMemoryStorage` because it just internally initializes trials and so on.
-            with pytest.raises(ValueError):
-                optuna.delete_study(study.study_name, storage)
+        with pytest.raises(KeyError):
+            optuna.delete_study(study.study_name, storage)
 
 
 def test_nested_optimization():
