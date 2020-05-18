@@ -177,6 +177,11 @@ class _Optimizer(object):
 
         dimensions = []
         for name, distribution in sorted(self._search_space.items()):
+
+            # TODO support distributions.IntLogUniformDistribution
+            if isinstance(distribution, distributions.IntLogUniformDistribution):
+                raise NotImplementedError
+
             if isinstance(distribution, distributions.UniformDistribution):
                 # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
                 high = np.nextafter(distribution.high, float("-inf"))

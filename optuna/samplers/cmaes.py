@@ -313,6 +313,10 @@ def _to_optuna_param(distribution: BaseDistribution, cma_param: float) -> Any:
 def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.ndarray]:
     x0 = {}
     for name, distribution in search_space.items():
+        # TODO support IntLogUniformDistribution
+        if isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+            raise NotImplementedError
+
         if isinstance(distribution, optuna.distributions.UniformDistribution):
             x0[name] = np.mean([distribution.high, distribution.low])
         elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
@@ -335,6 +339,10 @@ def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
 
     sigma0 = []
     for name, distribution in search_space.items():
+        # TODO support IntLogUniformDistribution
+        if isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+            raise NotImplementedError
+
         if isinstance(distribution, optuna.distributions.UniformDistribution):
             sigma0.append((distribution.high - distribution.low) / 6)
         elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
