@@ -295,7 +295,7 @@ class IntUniformDistribution(BaseDistribution):
         return self.low <= value <= self.high
 
 
-class IntLogUniformDistribution(IntUniformDistribution):
+class IntLogUniformDistribution(BaseDistribution):
     """A uniform distribution on integers in the log domain.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
@@ -313,7 +313,15 @@ class IntLogUniformDistribution(IntUniformDistribution):
     def __init__(self, low, high, step=1):
         # type: (int, int, int) -> None
 
-        super(IntLogUniformDistribution, self).__init__(low, high, step)
+        if low > high:
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
+        if step <= 0:
+            raise ValueError(
+                "The `step` value must be non-zero positive value, but step={}.".format(step)
+            )
 
         if low <= 0.0:
             raise ValueError(
@@ -326,6 +334,20 @@ class IntLogUniformDistribution(IntUniformDistribution):
                 "The `high` - `low` must be a multiple of `step`, but "
                 "low={}, high={}, step={}.".format(low, high, step)
             )
+
+        self.low = low
+        self.high = high
+        self.step = step
+
+    def to_external_repr(self, param_value_in_internal_repr):
+        # type: (float) -> int
+
+        return int(param_value_in_internal_repr)
+
+    def to_internal_repr(self, param_value_in_external_repr):
+        # type: (int) -> float
+
+        return float(param_value_in_external_repr)
 
     def single(self):
         # type: () -> bool

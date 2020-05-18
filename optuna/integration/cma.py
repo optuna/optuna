@@ -7,7 +7,6 @@ import optuna
 from optuna import distributions
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
@@ -223,9 +222,6 @@ class CmaEsSampler(BaseSampler):
         x0 = {}
         for name, distribution in search_space.items():
             # TODO(nzw0301) support IntLogUniform
-            if isinstance(distribution, IntLogUniformDistribution):
-                raise NotImplementedError
-
             if isinstance(distribution, UniformDistribution):
                 x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, DiscreteUniformDistribution):
@@ -252,9 +248,6 @@ class CmaEsSampler(BaseSampler):
         sigma0s = []
         for name, distribution in search_space.items():
             # TODO(nzw0301) support IntLogUniform
-            if isinstance(distribution, IntLogUniformDistribution):
-                raise NotImplementedError
-
             if isinstance(distribution, UniformDistribution):
                 sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, DiscreteUniformDistribution):

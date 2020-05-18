@@ -92,15 +92,15 @@ class TPESampler(base.BaseSampler):
             either :class:`~optuna.distributions.UniformDistribution`,
             :class:`~optuna.distributions.DiscreteUniformDistribution`,
             :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.IntLogUniformDistribution`,
-            or :class:`~optuna.distributions.IntUniformDistribution`.
+            :class:`~optuna.distributions.IntUniformDistribution`,
+            or :class:`~optuna.distributions.IntLogUniformDistribution`.
         prior_weight:
             The weight of the prior. This argument is used in
             :class:`~optuna.distributions.UniformDistribution`,
             :class:`~optuna.distributions.DiscreteUniformDistribution`,
             :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.IntLogUniformDistribution`,
-            :class:`~optuna.distributions.IntUniformDistribution`, and
+            :class:`~optuna.distributions.IntUniformDistribution`,
+            :class:`~optuna.distributions.IntLogUniformDistribution`, and
             :class:`~optuna.distributions.CategoricalDistribution`.
         consider_magic_clip:
             Enable a heuristic to limit the smallest variances of Gaussians used in
@@ -191,12 +191,12 @@ class TPESampler(base.BaseSampler):
             return self._sample_discrete_uniform(
                 param_distribution, below_param_values, above_param_values
             )
+        elif isinstance(param_distribution, distributions.IntUniformDistribution):
+            return self._sample_int(param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.IntLogUniformDistribution):
             return self._sample_int_loguniform(
                 param_distribution, below_param_values, above_param_values
             )
-        elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            return self._sample_int(param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             index = self._sample_categorical_index(
                 param_distribution, below_param_values, above_param_values
