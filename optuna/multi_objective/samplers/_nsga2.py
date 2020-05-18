@@ -34,9 +34,6 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
       <https://ieeexplore.ieee.org/document/996017>`_
 
     Args:
-        seed:
-            Seed for random number generator.
-
         population_size:
             Number of individuals (trials) in a generation.
 
@@ -51,6 +48,9 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
         swapping_prob:
             Probability of swapping each parameter of the parents during crossover.
+
+        seed:
+            Seed for random number generator.
 
     """
 
