@@ -731,16 +731,21 @@ class RDBStorage(BaseStorage):
     def get_all_trials(self, study_id, deepcopy=True):
         # type: (int, bool) -> List[FrozenTrial]
 
-        if self._finished_trials_cache.is_empty():
-            trials = self._get_all_trials_without_cache(study_id)
-            for trial in trials:
-                self._finished_trials_cache.cache_trial_if_finished(trial)
+        if not self._finished_trials_cache.is_empty():
+            trial_ids = self._get_all_trial_ids(study_id)
+            # Check if no more than 5 trials are missing from the cache.
+            # This prevents a single item in the cache from resulting in O(N) database lookups when
+            # the bulk fetch below would be significantly faster.
+            if sum(not self._finished_trials_cache.get_cached_trial(trial_id) for trial_id in trial_ids) < 5:
+                trials = [self._get_and_cache_trial(trial_id, deepcopy) for trial_id in trial_ids]
+                return trials
 
-            return copy.deepcopy(trials) if deepcopy else trials
+        # Cache is either empty or missing enough elements that a bulk fetch is better.
+        trials = self._get_all_trials_without_cache(study_id)
+        for trial in trials:
+            self._finished_trials_cache.cache_trial_if_finished(trial)
 
-        trial_ids = self._get_all_trial_ids(study_id)
-        trials = [self._get_and_cache_trial(trial_id, deepcopy) for trial_id in trial_ids]
-        return trials
+        return copy.deepcopy(trials) if deepcopy else trials
 
     def get_best_trial(self, study_id):
         # type: (int) -> FrozenTrial
