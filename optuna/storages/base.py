@@ -43,7 +43,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`optuna.exceptions.DuplicatedStudyError`:
-                If a study with the same `study_name` already exists.
+                If a study with the same ``study_name`` already exists.
         """
         # TODO(ytsmiling) Fix RDB storage implementation to ensure unique `study_id`.
         raise NotImplementedError
@@ -58,7 +58,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
         """
         raise NotImplementedError
 
@@ -78,7 +78,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
         """
         raise NotImplementedError
 
@@ -90,19 +90,21 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             study_id:
                 Study ID of a study to update.
             direction:
-                Either StudyDirection.MAXIMIZE or StudyDirection.MINIMIZE.
+                Either :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
+                :obj:`~optuna.study.StudyDirection.MINIMIZE`.
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
             :exc:`ValueError`:
-                If `direction` is already set and the passed `direction` conflicts with it.
+                If `direction` is already set and the passed ``direction`` is the opposite
+                direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
-        """Register an ontuna-internal attribute to a study.
+        """Register an optuna-internal attribute to a study.
 
         This method overwrites an existing attribute.
 
@@ -116,7 +118,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
         """
         raise NotImplementedError
 
@@ -135,7 +137,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
         """
         raise NotImplementedError
 
@@ -151,7 +153,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
         """
         raise NotImplementedError
 
@@ -167,7 +169,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
         """
         raise NotImplementedError
 
@@ -183,7 +185,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
         """
         raise NotImplementedError
 
@@ -199,7 +201,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
         """
         raise NotImplementedError
 
@@ -215,16 +217,16 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_all_study_summaries(self) -> List[study.StudySummary]:
-        """Read a list of `study.StudySummary` objects.
+        """Read a list of :class:`~optuna.study.StudySummary` objects.
 
         Returns:
-            A list of `study.StudySummary` objects.
+            A list of :class:`~optuna.study.StudySummary` objects.
 
         """
         raise NotImplementedError
@@ -251,7 +253,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
         """
         raise NotImplementedError
 
@@ -268,14 +270,15 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 New state of the trial.
 
         Returns:
-            :py:obj:`True` if the state is successfully updated.
-            :py:obj:`False` if the state is kept the same.
+            :obj:`True` if the state is successfully updated.
+            :obj:`False` if the state is kept the same.
             The latter happens when this method tries to update the state of
-            RUNNING trial to RUNNING.
+            :obj:`~optuna.trial.TrialState.RUNNING` trial to
+            :obj:`~optuna.trial.TrialState.RUNNING`.
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
@@ -302,11 +305,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 Sampled distribution of a parameter to add.
 
         Returns:
-            Return :py:obj:`False` when the parameter is already set to the trial.
+            Return :obj:`False` when the parameter is already set to the trial.
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
@@ -328,7 +331,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
         """
         raise NotImplementedError
 
@@ -347,7 +350,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
                 If no such parameter exists.
         """
         raise NotImplementedError
@@ -366,7 +369,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
@@ -391,7 +394,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
@@ -413,7 +416,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
@@ -435,7 +438,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
             :exc:`RuntimeError`:
                 If the trial is already finished.
         """
@@ -456,7 +459,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
         """
         raise NotImplementedError
 
@@ -476,7 +479,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
         """
         raise NotImplementedError
 
@@ -488,13 +491,14 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             study_id:
                 Study ID of a study to count trials.
             state:
+                :class:`~optuna.trial.TrialState` to filter trials.
 
         Returns:
             Number of the trials in the study.
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
         """
         raise NotImplementedError
 
@@ -511,7 +515,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching `study_id` exists.
+                If no study with the matching ``study_id`` exists.
             :exc:`RuntimeError`:
                 If no trials have been completed.
         """
@@ -541,7 +545,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
         """
         return self.get_trial(trial_id).params
 
@@ -557,7 +561,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
         """
         return self.get_trial(trial_id).user_attrs
 
@@ -573,7 +577,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Raises:
             :exc:`KeyError`:
-                If no trial with the matching `trial_id` exists.
+                If no trial with the matching ``trial_id`` exists.
         """
         return self.get_trial(trial_id).system_attrs
 
