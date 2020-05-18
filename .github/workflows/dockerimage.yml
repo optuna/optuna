@@ -1,0 +1,47 @@
+name: Build Docker Image
+
+on:
+  push:
+    branches:
+      - master
+  release:
+    types: [published]
+  pull_request:
+    branches:
+      - master
+
+env:
+  DOCKER_BASE_NAME: docker.pkg.github.com/${{ github.repository }}/optuna
+  DOCKER_HUB_BASE_NAME: optuna/optuna
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python_version: ['3.5', '3.6', '3.7', '3.8']
+        build_type: ['', 'dev']  # "dev" installs all the dependencies including pytest.
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set ENV
+      run: |
+        export TAG_NAME="py${{ matrix.python_version }}"
+        if [ "${{ github.event_name }}" = 'release' ]; then
+          export TAG_NAME="${{ github.event.release.tag_name }}-${TAG_NAME}"
+        fi
+        if [ "${{matrix.build_type}}" = 'dev' ]; then
+          export TAG_NAME="${TAG_NAME}-dev"
+        fi
+        echo "::set-env name=PKG_TAG::${DOCKER_BASE_NAME}:${TAG_NAME}"
+        echo "::set-env name=HUB_TAG::${DOCKER_HUB_BASE_NAME}:${TAG_NAME}"
+
+
+    - name: Build the Docker image
+      run: |
+        docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${PKG_TAG}"
+        docker tag "${PKG_TAG}" "${HUB_TAG}"

@@ -1,5 +1,8 @@
+import json
+import os.path
 import tempfile
 
+import _jsonnet
 import pytest
 
 import optuna
@@ -107,3 +110,27 @@ def test_allennlp_executor_with_include_package_arr() -> None:
         )
         result = executor.run()
         assert isinstance(result, float)
+
+
+def test_dump_best_config() -> None:
+    with tempfile.TemporaryDirectory() as tmp_dir:
+
+        def objective(trial: optuna.Trial) -> float:
+            trial.suggest_uniform("DROPOUT", dropout, dropout)
+            executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, tmp_dir)
+            return executor.run()
+
+        dropout = 0.5
+        input_config_file = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "example.jsonnet"
+        )
+        output_config_file = os.path.join(tmp_dir, "result.jsonnet")
+
+        study = optuna.create_study(direction="maximize")
+        study.optimize(objective, n_trials=1)
+
+        optuna.integration.allennlp.dump_best_config(input_config_file, output_config_file, study)
+        best_config = json.loads(_jsonnet.evaluate_file(output_config_file))
+        model_config = best_config["model"]
+        target_config = model_config["text_field_embedder"]["token_embedders"]["token_characters"]
+        assert target_config["dropout"] == dropout

@@ -43,8 +43,15 @@ def test_pickle_random_sampler(seed):
 
     sampler = optuna.samplers.RandomSampler(seed)
     restored_sampler = pickle.loads(pickle.dumps(sampler))
-    assert sampler._rng != restored_sampler._rng
-    assert sampler._rng.bytes(10) != restored_sampler._rng.bytes(10)
+    assert sampler._rng.bytes(10) == restored_sampler._rng.bytes(10)
+
+
+def test_random_sampler_reseed_rng() -> None:
+    sampler = optuna.samplers.RandomSampler()
+    original_seed = sampler._rng.seed
+
+    sampler.reseed_rng()
+    assert original_seed != sampler._rng.seed
 
 
 @parametrize_sampler
@@ -308,7 +315,7 @@ def test_intersection_search_space() -> None:
 def test_intersection_search_space_class_with_different_studies() -> None:
     search_space = optuna.samplers.IntersectionSearchSpace()
 
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         study0 = optuna.create_study(storage=storage)
         study1 = optuna.create_study(storage=storage)
 

@@ -39,20 +39,8 @@ try:
 except ImportError:
     _available = False
 
-STORAGE_MODES = ["new", "common"]
+STORAGE_MODES = ["sqlite"]
 PRUNER_INIT_FUNCS = [lambda: pruners.MedianPruner(), lambda: pruners.SuccessiveHalvingPruner()]
-
-
-def setup_module():
-    # type: () -> None
-
-    StorageSupplier.setup_common_tempfile()
-
-
-def teardown_module():
-    # type: () -> None
-
-    StorageSupplier.teardown_common_tempfile()
 
 
 class Func(object):
@@ -151,7 +139,7 @@ class TestChainerMNStudy(object):
     def test_init_with_incompatible_storage(comm):
         # type: (CommunicatorBase) -> None
 
-        study = TestChainerMNStudy._create_shared_study(InMemoryStorage(), comm)
+        study = create_study(InMemoryStorage(), study_name="in-memory-study")
 
         with pytest.raises(ValueError):
             ChainerMNStudy(study, comm)

@@ -12,6 +12,7 @@ jobs:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8]
 
+    if: github.repository == 'optuna/optuna'
     steps:
     - uses: actions/checkout@v2
     - name: setup-python${{ matrix.python-version }}
@@ -53,7 +54,7 @@ jobs:
         done
       env:
         OMP_NUM_THREADS: 1
-    - name: Run examples
+    - name: Run Jupyter notebook examples
       run: |
         for file in `find examples -name '*.ipynb'`
         do

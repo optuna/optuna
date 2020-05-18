@@ -13,11 +13,11 @@ import pytest
 
 import optuna
 import optuna.integration.lightgbm as lgb
-from optuna.integration.lightgbm_tuner.optimize import _TimeKeeper
-from optuna.integration.lightgbm_tuner.optimize import _timer
 from optuna.integration.lightgbm_tuner.optimize import BaseTuner
 from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
+from optuna.integration.lightgbm_tuner.optimize import LightGBMTunerCV
 from optuna.integration.lightgbm_tuner.optimize import OptunaObjective
+from optuna.integration.lightgbm_tuner.optimize import OptunaObjectiveCV
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -48,6 +48,16 @@ def turnoff_train(metric: Optional[str] = "binary_logloss") -> Generator[None, N
     dummy_booster = DummyBooster()
 
     with mock.patch("lightgbm.train", return_value=dummy_booster):
+        yield
+
+
+@contextlib.contextmanager
+def turnoff_cv(metric: Optional[str] = "binary_logloss") -> Generator[None, None, None]:
+
+    unexpected_value = 0.5
+    dummy_results = {"{}-mean".format(metric): [unexpected_value]}
+
+    with mock.patch("lightgbm.cv", return_value=dummy_results):
         yield
 
 
@@ -89,23 +99,28 @@ class TestOptunaObjective(object):
             assert study.best_value == 0.5
 
 
-class TestTimeKeeper(object):
-    def test__timer_elapsed_secs(self):
-        # type: () -> None
+class TestOptunaObjectiveCV(object):
+    def test_call(self) -> None:
+        target_param_names = ["lambda_l1"]
+        lgbm_params = {}  # type: Dict[str, Any]
+        train_set = lgb.Dataset(None)
+        lgbm_kwargs = {}  # type: Dict[str, Any]
+        best_score = -np.inf
 
-        with mock.patch("time.time", return_value=1):
-            tk = _TimeKeeper()
-            with mock.patch("time.time", return_value=10):
-                assert tk.elapsed_secs() == 9
+        with turnoff_cv():
+            objective = OptunaObjectiveCV(
+                target_param_names,
+                lgbm_params,
+                train_set,
+                lgbm_kwargs,
+                best_score,
+                "tune_lambda_l1",
+                None,
+            )
+            study = optuna.create_study(direction="minimize")
+            study.optimize(objective, n_trials=10)
 
-
-def test__timer_context():
-    # type: () -> None
-
-    with mock.patch("time.time", return_value=1):
-        with _timer() as t:
-            with mock.patch("time.time", return_value=10):
-                assert t.elapsed_secs() == 9
+            assert study.best_value == 0.5
 
 
 class TestBaseTuner(object):
@@ -404,6 +419,22 @@ class TestLightGBMTuner(object):
             runner.train_subset.construct()  # Cannot get label before construct `lgb.Dataset`.
             assert runner.train_subset.get_label().shape[0] == sample_size
 
+    def test_time_budget(self) -> None:
+        unexpected_value = 1.1  # out of scope.
+
+        with turnoff_train():
+            runner = self._get_tuner_object(
+                params=dict(
+                    feature_fraction=unexpected_value,  # set default as unexpected value.
+                ),
+                kwargs_options=dict(time_budget=0,),
+            )
+            assert len(runner.study.trials) == 0
+            # No trials run because `time_budget` is set to zero.
+            runner.tune_feature_fraction()
+            assert runner.lgbm_params["feature_fraction"] == unexpected_value
+            assert len(runner.study.trials) == 0
+
     def test_tune_feature_fraction(self):
         # type: () -> None
 
@@ -669,7 +700,10 @@ class TestLightGBMTuner(object):
 
         def objective(trial: optuna.trial.Trial, value: float) -> float:
 
-            trial.set_user_attr("lightgbm_tuner:step_name", "step{:.0f}".format(value))
+            trial.set_system_attr(
+                optuna.integration.lightgbm_tuner.optimize._STEP_NAME_KEY,
+                "step{:.0f}".format(value),
+            )
             return trial.suggest_uniform("x", value, value)
 
         study = optuna.create_study(direction=direction)
@@ -695,3 +729,188 @@ class TestLightGBMTuner(object):
         assert study_step1.best_trial.value == 1
         assert study_step2.best_trial.value == 2
         assert study.best_trial.value == overall_best
+
+    def test_optuna_callback(self) -> None:
+        params = {"verbose": -1}  # type: Dict[str, Any]
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        callback_mock = mock.MagicMock()
+
+        study = optuna.create_study()
+        tuner = LightGBMTuner(
+            params, dataset, valid_sets=dataset, study=study, optuna_callbacks=[callback_mock],
+        )
+
+        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
+            tuner.tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
+
+        assert callback_mock.call_count == 10
+
+
+class TestLightGBMTunerCV(object):
+    def _get_tunercv_object(
+        self,
+        params: Dict[str, Any] = {},
+        train_set: lgb.Dataset = None,
+        kwargs_options: Dict[str, Any] = {},
+        study: Optional[optuna.study.Study] = None,
+    ) -> LightGBMTunerCV:
+
+        # Required keyword arguments.
+        kwargs = dict(
+            num_boost_round=5, early_stopping_rounds=2, study=study
+        )  # type: Dict[str, Any]
+        kwargs.update(kwargs_options)
+
+        runner = LightGBMTunerCV(params, train_set, **kwargs)
+        return runner
+
+    @pytest.mark.parametrize(
+        "metric, study_direction",
+        [
+            ("auc", "minimize"),
+            ("mse", "maximize"),
+            (None, "maximize"),  # The default metric is binary_logloss.
+        ],
+    )
+    def test_inconsistent_study_direction(self, metric: str, study_direction: str) -> None:
+
+        params = {}  # type: Dict[str, Any]
+        if metric is not None:
+            params["metric"] = metric
+        train_set = lgb.Dataset(None)
+        study = optuna.create_study(direction=study_direction)
+        with pytest.raises(ValueError) as excinfo:
+            LightGBMTunerCV(
+                params, train_set, num_boost_round=5, early_stopping_rounds=2, study=study,
+            )
+
+        assert excinfo.type == ValueError
+        assert str(excinfo.value).startswith("Study direction is inconsistent with the metric")
+
+    def test_with_minimum_required_args(self) -> None:
+
+        runner = self._get_tunercv_object()
+        assert "num_boost_round" in runner.lgbm_kwargs
+        assert "num_boost_round" not in runner.auto_options
+        assert runner.lgbm_kwargs["num_boost_round"] == 5
+
+    def test_tune_feature_fraction(self) -> None:
+        unexpected_value = 1.1  # out of scope.
+
+        with turnoff_cv():
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                runner = self._get_tunercv_object(
+                    params=dict(
+                        feature_fraction=unexpected_value,  # set default as unexpected value.
+                    ),
+                )
+            assert len(runner.study.trials) == 0
+            runner.tune_feature_fraction()
+
+            assert runner.lgbm_params["feature_fraction"] != unexpected_value
+            assert len(runner.study.trials) == 7
+
+    def test_tune_num_leaves(self) -> None:
+        unexpected_value = 1  # out of scope.
+
+        with turnoff_cv():
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                runner = self._get_tunercv_object(params=dict(num_leaves=unexpected_value,),)
+            assert len(runner.study.trials) == 0
+            runner.tune_num_leaves()
+
+            assert runner.lgbm_params["num_leaves"] != unexpected_value
+            assert len(runner.study.trials) == 20
+
+    def test_tune_bagging(self) -> None:
+        unexpected_value = 1  # out of scope.
+
+        with turnoff_cv():
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                runner = self._get_tunercv_object(params=dict(bagging_fraction=unexpected_value,),)
+            assert len(runner.study.trials) == 0
+            runner.tune_bagging()
+
+            assert runner.lgbm_params["bagging_fraction"] != unexpected_value
+            assert len(runner.study.trials) == 10
+
+    def test_tune_feature_fraction_stage2(self) -> None:
+        unexpected_value = 0.5
+
+        with turnoff_cv():
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                runner = self._get_tunercv_object(params=dict(feature_fraction=unexpected_value,),)
+            assert len(runner.study.trials) == 0
+            runner.tune_feature_fraction_stage2()
+
+            assert runner.lgbm_params["feature_fraction"] != unexpected_value
+            assert len(runner.study.trials) == 6
+
+    def test_tune_regularization_factors(self) -> None:
+        unexpected_value = 20  # out of scope.
+
+        with turnoff_cv():
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                runner = self._get_tunercv_object(
+                    params=dict(lambda_l1=unexpected_value,),  # set default as unexpected value.
+                )
+            assert len(runner.study.trials) == 0
+            runner.tune_regularization_factors()
+
+            assert runner.lgbm_params["lambda_l1"] != unexpected_value
+            assert len(runner.study.trials) == 20
+
+    def test_tune_min_data_in_leaf(self) -> None:
+        unexpected_value = 1  # out of scope.
+
+        with turnoff_cv():
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                runner = self._get_tunercv_object(
+                    params=dict(
+                        min_child_samples=unexpected_value,  # set default as unexpected value.
+                    ),
+                )
+            assert len(runner.study.trials) == 0
+            runner.tune_min_data_in_leaf()
+
+            assert runner.lgbm_params["min_child_samples"] != unexpected_value
+            assert len(runner.study.trials) == 5
+
+    def test_resume_run(self) -> None:
+        params = {"verbose": -1}  # type: Dict
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        study = optuna.create_study()
+        tuner = LightGBMTunerCV(params, dataset, study=study)
+
+        with mock.patch.object(OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+            tuner.tune_regularization_factors()
+
+        n_trials = len(study.trials)
+        assert n_trials == len(study.trials)
+
+        tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
+        with mock.patch.object(OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+            tuner2.tune_regularization_factors()
+        assert n_trials == len(study.trials)
+
+    def test_optuna_callback(self) -> None:
+        params = {"verbose": -1}  # type: Dict[str, Any]
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        callback_mock = mock.MagicMock()
+
+        study = optuna.create_study()
+        tuner = LightGBMTunerCV(params, dataset, study=study, optuna_callbacks=[callback_mock],)
+
+        with mock.patch.object(OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+            tuner.tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
+
+        assert callback_mock.call_count == 10

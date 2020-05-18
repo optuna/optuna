@@ -340,7 +340,15 @@ def test_get_observation_pairs():
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
-    assert tpe.sampler._get_observation_pairs(study, "y", trial) == ([], [])
+    assert tpe.sampler._get_observation_pairs(study, "y", trial) == (
+        [None, None, None, None],
+        [
+            (-float("inf"), 5.0),  # COMPLETE
+            (-7, 2),  # PRUNED (with intermediate values)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        ],
+    )
 
     # Test direction=maximize.
     study = optuna.create_study(direction="maximize")
@@ -356,7 +364,15 @@ def test_get_observation_pairs():
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
-    assert tpe.sampler._get_observation_pairs(study, "y", trial) == ([], [])
+    assert tpe.sampler._get_observation_pairs(study, "y", trial) == (
+        [None, None, None, None],
+        [
+            (-float("inf"), -5.0),  # COMPLETE
+            (-7, -2),  # PRUNED (with intermediate values)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        ],
+    )
 
 
 def frozen_trial_factory(
@@ -396,3 +412,15 @@ def build_state_fn(state: optuna.trial.TrialState) -> Callable[[int], optuna.tri
         return [optuna.trial.TrialState.COMPLETE, state][idx % 2]
 
     return state_fn
+
+
+def test_reseed_rng() -> None:
+    sampler = TPESampler()
+    original_seed = sampler._rng.seed
+
+    with patch.object(
+        sampler._random_sampler, "reseed_rng", wraps=sampler._random_sampler.reseed_rng
+    ) as mock_object:
+        sampler.reseed_rng()
+        assert mock_object.call_count == 1
+        assert original_seed != sampler._rng.seed
