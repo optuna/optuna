@@ -16,6 +16,7 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import BaseStorage
+from optuna.storages.cached_storage import _CachedStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
@@ -38,13 +39,14 @@ STORAGE_MODES = [
     "inmemory",
     "sqlite",
     "redis",
+    "cache",
 ]
 
 
 def test_get_storage() -> None:
 
     assert isinstance(optuna.storages.get_storage(None), InMemoryStorage)
-    assert isinstance(optuna.storages.get_storage("sqlite:///:memory:"), RDBStorage)
+    assert isinstance(optuna.storages.get_storage("sqlite:///:memory:"), _CachedStorage)
     assert isinstance(
         optuna.storages.get_storage("redis://test_user:passwd@localhost:6379/0"), RedisStorage
     )
@@ -82,7 +84,7 @@ def test_create_new_study_unique_id(storage_mode: str) -> None:
         study_id3 = storage.create_new_study()
 
         # Study id must not be reused after deletion.
-        if not isinstance(storage, RDBStorage):
+        if not (isinstance(storage, RDBStorage) or isinstance(storage, _CachedStorage)):
             # TODO(ytsmiling) Fix RDBStorage so that it does not reuse study_id.
             assert len({study_id, study_id2, study_id3}) == 3
         summaries = storage.get_all_study_summaries()

@@ -33,6 +33,14 @@ class StorageSupplier(object):
             return optuna.storages.RDBStorage(
                 url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
             )
+        elif self.storage_specifier == "cache":
+            self.tempfile = tempfile.NamedTemporaryFile()
+            url = "sqlite:///{}".format(self.tempfile.name)
+            return optuna.storages.cached_storage._CachedStorage(
+                optuna.storages.RDBStorage(
+                    url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
+                )
+            )
         elif self.storage_specifier == "redis":
             storage = optuna.storages.RedisStorage("redis://localhost")
             storage._redis = fakeredis.FakeStrictRedis()
