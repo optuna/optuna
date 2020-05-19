@@ -9,7 +9,7 @@ from optuna.visualization.utils import is_available
 
 from typing import List
 from typing import Optional
-from typing import Tuple
+from typing import Tuple  # NOQA
 
 if is_available():
     from optuna.study import Study  # NOQA
@@ -24,7 +24,7 @@ if is_available():
 logger = get_logger(__name__)
 
 
-def plot_contour(study: str, params: Optional[List[str]] = None) -> "go.Figure":
+def plot_contour(study, params: Optional[List[str]] = None) -> "go.Figure":
     """Plot the parameter relationship as contour plot in a study.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
@@ -67,7 +67,7 @@ def plot_contour(study: str, params: Optional[List[str]] = None) -> "go.Figure":
     return _get_contour_plot(study, params)
 
 
-def _get_contour_plot(study: str, params: Optional[List[str]] = None) -> "go.Figure":
+def _get_contour_plot(study, params: Optional[List[str]] = None) -> "go.Figure":
 
     layout = go.Layout(title="Contour Plot",)
 
@@ -144,9 +144,7 @@ def _get_contour_plot(study: str, params: Optional[List[str]] = None) -> "go.Fig
     return figure
 
 
-def _generate_contour_subplot(
-    trials: List[str], x_param: str, y_param: str, direction: StudyDirection
-) -> Tuple[str, str]:
+def _generate_contour_subplot(trials, x_param: str, y_param: str, direction: StudyDirection):
     """types:
 
            (trials: List[FrozenTrial])
