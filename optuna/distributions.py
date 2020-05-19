@@ -308,6 +308,11 @@ class IntLogUniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
         step:
             A step for spacing between values.
+
+    .. note::
+
+        ``high - low`` must be a multiple of ``step``. In other words, the
+        following equation must be satisfied for some integer ``k``: ``high = low + step * k``.
     """
 
     def __init__(self, low, high, step=1):
