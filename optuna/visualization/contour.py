@@ -148,7 +148,9 @@ def _generate_contour_subplot(
     trials: List[str], x_param: str, y_param: str, direction: StudyDirection
 ) -> Tuple[str, str]:
     """types:
+
            (trials: List[FrozenTrial])
+
            returned value is Tuple[Contour, Scatter] if availabe
     """
 
