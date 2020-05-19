@@ -12,12 +12,12 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 from typing import Tuple  # NOQA
 
-from optuna.study import Study  # NOQA
-from optuna.trial import FrozenTrial  # NOQA
-from optuna.visualization.plotly_imports import Contour  # NOQA
-from optuna.visualization.plotly_imports import Scatter  # NOQA
-
 if is_available():
+    from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
+    from optuna.visualization.plotly_imports import Contour  # NOQA
+    from optuna.visualization.plotly_imports import Scatter  # NOQA
+
     from optuna.visualization.plotly_imports import go
     from optuna.visualization.plotly_imports import make_subplots
     from optuna.visualization.plotly_imports import plotly
