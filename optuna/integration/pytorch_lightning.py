@@ -4,19 +4,13 @@ if optuna.type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
-try:
+with optuna._imports.try_import(catch=(ImportError, SyntaxError)) as _imports:
     from pytorch_lightning.callbacks import EarlyStopping
     from pytorch_lightning import LightningModule
     from pytorch_lightning import Trainer
 
-    _available = True
-except (ImportError, SyntaxError) as e:
-    # SyntaxError is raised with Python versions below 3.6 since PyTorch Lightning does not
-    # support them.
-    _import_error = e
-    # PyTorchLightningPruningCallback is disabled because PyTorch Lightning is not available.
-    _available = False
-    EarlyStopping = object
+if not _imports.is_successful():
+    EarlyStopping = object  # NOQA
 
 
 class PyTorchLightningPruningCallback(EarlyStopping):
@@ -43,7 +37,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
 
         super(PyTorchLightningPruningCallback, self).__init__(monitor=monitor)
 
-        _check_pytorch_lightning_availability()
+        _imports.check()
 
         self._trial = trial
         self._monitor = monitor
@@ -59,17 +53,3 @@ class PyTorchLightningPruningCallback(EarlyStopping):
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.exceptions.TrialPruned(message)
-
-
-def _check_pytorch_lightning_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "PyTorch Lightning is not available. Please install PyTorch Lightning to use this "
-            "feature. PyTorch Lightning can be installed by executing `$ pip install "
-            "pytorch-lightning`. For further information, please refer to the installation guide "
-            "of PyTorch Lightning. (The actual import error is as follows: "
-            + str(_import_error)
-            + ")"
-        )

@@ -3,6 +3,7 @@ from datetime import datetime
 import pickle
 
 from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna import distributions
 from optuna import exceptions
 from optuna.storages import base
@@ -13,13 +14,10 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna import type_checking
 
-try:
+
+with try_import() as _imports:
     import redis
 
-    _available = True
-except ImportError as e:
-    _import_error = e
-    _available = False
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -66,13 +64,7 @@ class RedisStorage(base.BaseStorage):
     def __init__(self, url):
         # type: (str) -> None
 
-        if not _available:
-            raise ImportError(
-                "Redis in not available. Please install redis to use this feature. "
-                "Redis can be installed by executing `$ pip install -U redis`. "
-                "For further information, please refer to the installation guide of redis. "
-                "(The actual import error is as follows: " + str(_import_error) + ")"
-            )
+        _imports.check()
 
         self._redis = redis.Redis.from_url(url)
 

@@ -5,15 +5,11 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
 
-try:
+with optuna._imports.try_import() as _imports:
     from tensorflow.keras.callbacks import Callback
 
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # TFKerasPruningCallback is disabled because TensorFlow is not available.
-    _available = False
-    Callback = object
+if not _imports.is_successful():
+    Callback = object  # NOQA
 
 
 class TFKerasPruningCallback(Callback):
@@ -39,7 +35,7 @@ class TFKerasPruningCallback(Callback):
 
         super(TFKerasPruningCallback, self).__init__()
 
-        _check_tensorflow_availability()
+        _imports.check()
 
         self._trial = trial
         self._monitor = monitor
@@ -60,15 +56,3 @@ class TFKerasPruningCallback(Callback):
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.exceptions.TrialPruned(message)
-
-
-def _check_tensorflow_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "TensorFlow is not available. Please install TensorFlow to use this feature. "
-            "TensorFlow can be installed by executing `$ pip install tensorflow`. "
-            "For further information, please refer to the installation guide of TensorFlow. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )

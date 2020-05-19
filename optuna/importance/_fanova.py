@@ -4,6 +4,7 @@ from typing import List
 from typing import Optional
 
 from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -15,7 +16,7 @@ from optuna.importance._base import _get_study_data
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
 
-try:
+with try_import() as _imports:
     from ConfigSpace import ConfigurationSpace
     from ConfigSpace.hyperparameters import CategoricalHyperparameter
     from ConfigSpace.hyperparameters import Hyperparameter
@@ -23,14 +24,9 @@ try:
     from ConfigSpace.hyperparameters import UniformIntegerHyperparameter
     from fanova import fANOVA
 
-    _available = True
-except ImportError as e:
-    ConfigurationSpace = None
-    Hyperparameter = None
-    fANOVA = None
-
-    _import_error = e
-    _available = False
+if not _imports.is_successful():
+    ConfigurationSpace = None  # NOQA
+    fANOVA = None  # NOQA
 
 
 @experimental("1.3.0")
@@ -48,7 +44,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     """
 
     def __init__(self) -> None:
-        _check_fanova_availability()
+        _imports.check()
 
     def evaluate(self, study: Study, params: Optional[List[str]]) -> Dict[str, float]:
         distributions = _get_distributions(study, params)
@@ -91,7 +87,7 @@ def _get_configuration_space(search_space: Dict[str, BaseDistribution]) -> Confi
     return config_space
 
 
-def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -> Hyperparameter:
+def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -> "Hyperparameter":
     d = distribution
 
     if isinstance(d, UniformDistribution):
@@ -117,12 +113,3 @@ def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -
             "The parameter distribution should be one of the {}".format(d, distribution_list)
         )
     return hp
-
-
-def _check_fanova_availability() -> None:
-    if not _available:
-        raise ImportError(
-            "fanova is not available. Please install automl/fanova to use this feature. "
-            "For further information, please refer to the installation guide of automl/fanova. "
-            "(The actual import error is as follows: " + str(_import_error) + ")."
-        )

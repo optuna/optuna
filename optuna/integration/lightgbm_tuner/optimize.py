@@ -19,6 +19,7 @@ import numpy as np
 import tqdm
 
 import optuna
+from optuna._imports import try_import
 from optuna.integration.lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
 from optuna.study import Study
@@ -28,17 +29,10 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from sklearn.model_selection import BaseCrossValidator  # NOQA
 
-try:
+with try_import() as _imports:
     import lightgbm as lgb
 
     VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
-
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # LightGBMTuner is disabled because LightGBM is not available.
-    _available = False
-
 
 # Define key names of `Trial.system_attrs`.
 _ELAPSED_SECS_KEY = "lightgbm_tuner:elapsed_secs"
@@ -371,7 +365,7 @@ class LightGBMBaseTuner(BaseTuner):
         verbosity: Optional[int] = 1,
     ) -> None:
 
-        _check_lightgbm_availability()
+        _imports.check()
 
         params = copy.deepcopy(params)
 
@@ -1000,14 +994,4 @@ class LightGBMTunerCV(LightGBMBaseTuner):
             self.best_score,
             step_name=step_name,
             pbar=pbar,
-        )
-
-
-def _check_lightgbm_availability() -> None:
-    if not _available:
-        raise ImportError(
-            "LightGBM is not available. Please install LightGBM to use this feature. "
-            "LightGBM can be installed by executing `$ pip install lightgbm`. "
-            "For further information, please refer to the installation guide of LightGBM. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
         )
