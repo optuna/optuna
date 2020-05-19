@@ -92,6 +92,10 @@ class SuccessiveHalvingPruner(BasePruner):
             (\\mathsf{min}\\_\\mathsf{early}\\_\\mathsf{stopping}\\_\\mathsf{rate}
             + \\mathsf{rung})}` steps)
             and repeats the same procedure.
+
+            .. note::
+                If the step of the last intermediate value may change with each trial, please
+                manually specify the minimum possible step to ``min_resource``.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
