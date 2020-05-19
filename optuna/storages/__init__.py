@@ -3,8 +3,8 @@ from typing import Union  # NOQA
 from optuna.storages.base import BaseStorage  # NOQA
 from optuna.storages.cached_storage import _CachedStorage
 from optuna.storages.in_memory import InMemoryStorage
-from optuna.storages.redis import RedisStorage
 from optuna.storages.rdb.storage import RDBStorage
+from optuna.storages.redis import RedisStorage
 
 
 def get_storage(storage):
