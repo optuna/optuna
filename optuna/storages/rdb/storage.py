@@ -845,7 +845,7 @@ class RDBStorage(BaseStorage):
             id_to_system_attrs[system_attr.trial_id].append(system_attr)
 
         result = []
-        for trial_id, trial in id_to_trial.items():
+        for trial_id, trial in sorted(id_to_trial.items(), key=lambda x: x[0]):
             params = {}
             param_distributions = {}
             for param in id_to_params[trial_id]:
