@@ -23,9 +23,9 @@ import optuna
 # (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     data, target = sklearn.datasets.load_breast_cancer(return_X_y=True)
-    train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.25)
+    train_x, valid_x, train_y, valid_y = train_test_split(data, target, test_size=0.25)
     dtrain = xgb.DMatrix(train_x, label=train_y)
-    dtest = xgb.DMatrix(test_x, label=test_y)
+    dvalid = xgb.DMatrix(valid_x, label=valid_y)
 
     param = {
         "silent": 1,
@@ -49,10 +49,10 @@ def objective(trial):
 
     # Add a callback for pruning.
     pruning_callback = optuna.integration.XGBoostPruningCallback(trial, "validation-auc")
-    bst = xgb.train(param, dtrain, evals=[(dtest, "validation")], callbacks=[pruning_callback])
-    preds = bst.predict(dtest)
+    bst = xgb.train(param, dtrain, evals=[(dvalid, "validation")], callbacks=[pruning_callback])
+    preds = bst.predict(dvalid)
     pred_labels = np.rint(preds)
-    accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
+    accuracy = sklearn.metrics.accuracy_score(valid_y, pred_labels)
     return accuracy
 
 

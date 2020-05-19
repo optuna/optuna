@@ -315,7 +315,7 @@ def test_intersection_search_space() -> None:
 def test_intersection_search_space_class_with_different_studies() -> None:
     search_space = optuna.samplers.IntersectionSearchSpace()
 
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         study0 = optuna.create_study(storage=storage)
         study1 = optuna.create_study(storage=storage)
 

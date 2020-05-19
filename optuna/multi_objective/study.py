@@ -16,6 +16,7 @@ from optuna import multi_objective
 from optuna.storages import BaseStorage
 from optuna.study import Study
 from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
@@ -72,7 +73,7 @@ def create_study(
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified,
-            :class:`~optuna.multi_objective.samplers.RandomMultiObjectiveSampler` is used
+            :class:`~optuna.multi_objective.samplers.NSGAIIMultiObjectiveSampler` is used
             as the default. See also :class:`~optuna.multi_objective.samplers`.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
@@ -86,7 +87,7 @@ def create_study(
     """
 
     # TODO(ohta): Support pruner.
-    mo_sampler = sampler or multi_objective.samplers.RandomMultiObjectiveSampler()
+    mo_sampler = sampler or multi_objective.samplers.NSGAIIMultiObjectiveSampler()
     sampler_adapter = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
     if not isinstance(directions, Iterable):
@@ -233,15 +234,17 @@ class MultiObjectiveStudy(object):
             mo_trial._report_complete_values(values)
             return 0.0  # Dummy value.
 
-        mo_callbacks = None
-        if callbacks is not None:
-            mo_callbacks = [
-                lambda study, trial: callback(
-                    MultiObjectiveStudy(study),
-                    multi_objective.trial.FrozenMultiObjectiveTrial(self.n_objectives, trial),
-                )
-                for callback in callbacks
-            ]
+        # Wraps a multi-objective callback so that we can pass it to the `Study.optimize` method.
+        def wrap_mo_callback(callback: CallbackFuncType) -> Callable[[Study, FrozenTrial], None]:
+            return lambda study, trial: callback(
+                MultiObjectiveStudy(study),
+                multi_objective.trial.FrozenMultiObjectiveTrial(self.n_objectives, trial),
+            )
+
+        if callbacks is None:
+            wrapped_callbacks = None
+        else:
+            wrapped_callbacks = [wrap_mo_callback(callback) for callback in callbacks]
 
         self._study.optimize(
             mo_objective,
@@ -249,7 +252,7 @@ class MultiObjectiveStudy(object):
             n_trials=n_trials,
             n_jobs=n_jobs,
             catch=catch,
-            callbacks=mo_callbacks,
+            callbacks=wrapped_callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
         )
@@ -383,6 +386,10 @@ class MultiObjectiveStudy(object):
                 pareto_front.append(trial)
 
         return pareto_front
+
+    @property
+    def _storage(self) -> BaseStorage:
+        return self._study._storage
 
 
 def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:

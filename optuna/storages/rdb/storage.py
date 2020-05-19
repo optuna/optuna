@@ -50,26 +50,29 @@ class RDBStorage(BaseStorage):
 
     Example:
 
-        We create an :class:`~optuna.storages.RDBStorage` instance with
-        customized ``pool_size`` and ``max_overflow`` settings.
+        Create an :class:`~optuna.storages.RDBStorage` instance with customized
+        ``pool_size`` and ``timeout`` settings.
 
-        .. code::
+        .. testcode::
 
-            >>> import optuna
-            >>>
-            >>> def objective(trial):
-            >>>     ...
-            >>>
-            >>> storage = optuna.storages.RDBStorage(
-            >>>     url='postgresql://foo@localhost/db',
-            >>>     engine_kwargs={
-            >>>         'pool_size': 20,
-            >>>         'max_overflow': 0
-            >>>     }
-            >>> )
-            >>>
-            >>> study = optuna.create_study(storage=storage)
-            >>> study.optimize(objective)
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -100, 100)
+                return x ** 2
+
+            storage = optuna.storages.RDBStorage(
+                url='sqlite:///:memory:',
+                engine_kwargs={
+                    'pool_size': 20,
+                    'connect_args': {
+                        'timeout': 10
+                    }
+                }
+            )
+
+            study = optuna.create_study(storage=storage)
+            study.optimize(objective, n_trials=10)
 
     Args:
         url: URL of the storage.
@@ -296,6 +299,8 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
+        # Ensure that that study exists.
+        models.StudyModel.find_or_raise_by_id(study_id, session)
         attributes = models.StudyUserAttributeModel.where_study_id(study_id, session)
         user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during transaction.
@@ -308,6 +313,8 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
+        # Ensure that that study exists.
+        models.StudyModel.find_or_raise_by_id(study_id, session)
         attributes = models.StudySystemAttributeModel.where_study_id(study_id, session)
         system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during transaction.
@@ -320,6 +327,9 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
+        # Ensure trial exists.
+        models.TrialModel.find_or_raise_by_id(trial_id, session)
+
         attributes = models.TrialUserAttributeModel.where_trial_id(trial_id, session)
         user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during transaction.
@@ -331,6 +341,9 @@ class RDBStorage(BaseStorage):
         # type: (int) -> Dict[str, Any]
 
         session = self.scoped_session()
+
+        # Ensure trial exists.
+        models.TrialModel.find_or_raise_by_id(trial_id, session)
 
         attributes = models.TrialSystemAttributeModel.where_trial_id(trial_id, session)
         system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
@@ -438,6 +451,9 @@ class RDBStorage(BaseStorage):
         # type: (int, Optional[FrozenTrial]) -> int
 
         session = self.scoped_session()
+
+        # Ensure that the study exists.
+        models.StudyModel.find_or_raise_by_id(study_id, session)
 
         if template_trial is None:
             trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING,)
@@ -710,7 +726,7 @@ class RDBStorage(BaseStorage):
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
-        return frozen_trial
+        return copy.deepcopy(frozen_trial) if deepcopy else frozen_trial
 
     def get_all_trials(self, study_id, deepcopy=True):
         # type: (int, bool) -> List[FrozenTrial]
@@ -720,7 +736,7 @@ class RDBStorage(BaseStorage):
             for trial in trials:
                 self._finished_trials_cache.cache_trial_if_finished(trial)
 
-            return trials
+            return copy.deepcopy(trials) if deepcopy else trials
 
         trial_ids = self._get_all_trial_ids(study_id)
         trials = [self._get_and_cache_trial(trial_id, deepcopy) for trial_id in trial_ids]

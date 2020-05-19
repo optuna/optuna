@@ -54,7 +54,7 @@ jobs:
         done
       env:
         OMP_NUM_THREADS: 1
-    - name: Run examples
+    - name: Run Jupyter notebook examples
       run: |
         for file in `find examples -name '*.ipynb'`
         do

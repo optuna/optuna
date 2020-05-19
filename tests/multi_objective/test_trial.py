@@ -20,7 +20,8 @@ def test_suggest() -> None:
         p3 = trial.suggest_discrete_uniform("p3", 100, 200, q=5)
         p4 = trial.suggest_int("p4", -20, -15)
         p5 = trial.suggest_categorical("p5", [7, 1, 100])
-        return [p0 + p1 + p2, p3 + p4 + p5]
+        p6 = trial.suggest_float("p6", -10, 10, step=1.0)
+        return [p0 + p1 + p2, p3 + p4 + p5 + p6]
 
     study.optimize(objective, n_trials=10)
 
@@ -32,7 +33,7 @@ def test_report() -> None:
         if trial.number == 0:
             trial.report((1, 2, 3), 1)
             trial.report((10, 20, 30), 2)
-        return 100, 200, 300
+        return [100, 200, 300]
 
     study.optimize(objective, n_trials=2)
 
@@ -84,7 +85,13 @@ def test_user_attrs() -> None:
 
 
 def test_system_attrs() -> None:
-    study = optuna.multi_objective.create_study(["maximize", "minimize", "maximize"])
+    # We use `RandomMultiObjectiveSampler` here because the default `NSGAIIMultiObjectiveSampler`
+    # sets its own system attributes when sampling (these attributes would become noise in this
+    # test case).
+    sampler = optuna.multi_objective.samplers.RandomMultiObjectiveSampler()
+    study = optuna.multi_objective.create_study(
+        ["maximize", "minimize", "maximize"], sampler=sampler
+    )
 
     def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
         trial.set_system_attr("foo", "bar")

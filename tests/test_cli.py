@@ -23,7 +23,7 @@ if type_checking.TYPE_CHECKING:
 def test_create_study_command():
     # type: () -> None
 
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
 
@@ -44,7 +44,7 @@ def test_create_study_command():
 def test_create_study_command_with_study_name():
     # type: () -> None
 
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
         study_name = "test_study"
@@ -70,7 +70,7 @@ def test_create_study_command_without_storage_url():
 def test_create_study_command_with_direction():
     # type: () -> None
 
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
 
@@ -94,7 +94,7 @@ def test_create_study_command_with_direction():
 def test_delete_study_command():
     # type: () -> None
 
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
         study_name = "delete-study-test"
@@ -120,7 +120,7 @@ def test_delete_study_command_without_storage_url():
 def test_study_set_user_attr_command():
     # type: () -> None
 
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
 
@@ -151,7 +151,7 @@ def test_study_set_user_attr_command():
 def test_studies_command():
     # type: () -> None
 
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
 
@@ -190,7 +190,7 @@ def test_studies_command():
 def test_create_study_command_with_skip_if_exists():
     # type: () -> None
 
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
         study_name = "test_study"
@@ -226,7 +226,7 @@ def test_create_study_command_with_skip_if_exists():
 def test_dashboard_command():
     # type: () -> None
 
-    with StorageSupplier("new") as storage, tempfile.NamedTemporaryFile("r") as tf_report:
+    with StorageSupplier("sqlite") as storage, tempfile.NamedTemporaryFile("r") as tf_report:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
 
@@ -255,7 +255,7 @@ def test_dashboard_command():
 def test_dashboard_command_with_allow_websocket_origin(origins):
     # type: (List[str]) -> None
 
-    with StorageSupplier("new") as storage, tempfile.NamedTemporaryFile("r") as tf_report:
+    with StorageSupplier("sqlite") as storage, tempfile.NamedTemporaryFile("r") as tf_report:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
 
@@ -290,7 +290,7 @@ def objective_func(trial):
 def test_study_optimize_command():
     # type: () -> None
 
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
 
@@ -368,7 +368,7 @@ def test_check_storage_url():
 def test_storage_upgrade_command():
     # type: () -> None
 
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
 
