@@ -28,6 +28,24 @@ except ImportError as e:
 
 @experimental("1.5.0")
 class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
+    """Mean Decrease Impurity (MDI) parameter importance evaluator.
+
+    This evaluator fits a random forest that predicts objective values given hyperparameter
+    configurations. Feature importances are then computed using MDI.
+
+    .. note::
+
+        Requires the `sklean <https://scikit-learn.org/stable/>`_ Python package.
+
+    Args:
+        n_estimators:
+            Number of trees in the random forest.
+        max_depth:
+            The maximum depth of each tree in the random forest.
+        random_seed:
+            Seed for the random forest.
+    """
+
     def __init__(
         self, n_estimators: int = 16, max_depth: int = 64, random_state: Optional[int] = None
     ) -> None:
