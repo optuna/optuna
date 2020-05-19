@@ -28,18 +28,16 @@ class _Sample(object):
         pass
 
     def _method(self) -> None:
-        """Method
+        """summary
 
-        Returns:
-            None
+        detail
         """
         pass
 
     def _method_experimental(self) -> None:
-        """Method
+        """summary
 
-        Returns:
-            None
+        detail
 
         .. note::
             Added in v1.1.0 as an experimental feature. The interface may change in newer versions
