@@ -1,4 +1,5 @@
 from collections import defaultdict
+import hashlib
 import itertools
 from typing import Any
 from typing import DefaultDict
@@ -19,6 +20,7 @@ from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 # Define key names of `Trial.system_attrs`.
 _GENERATION_KEY = "multi_objective:nsga2:generation"
 _PARENTS_KEY = "multi_objective:nsga2:parents"
+_POPULATION_CACHE_KEY_PREFIX = "multi_objective:nsga2:population"
 
 
 @experimental("1.5.0")
@@ -158,19 +160,26 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     def _collect_parent_population(
         self, study: "multi_objective.study.MultiObjectiveStudy"
     ) -> Tuple[int, List["multi_objective.trial.FrozenMultiObjectiveTrial"]]:
-        # TODO(ohta): Optimize this method.
-
+        trials = study.get_trials(deepcopy=False)
+        generation_to_runnings = defaultdict(list)
         generation_to_population = defaultdict(list)
-        for trial in study.get_trials(deepcopy=False):
-            if trial.state != optuna.trial.TrialState.COMPLETE:
+        for trial in trials:
+            if _GENERATION_KEY not in trial.system_attrs:
                 continue
 
-            generation = trial.system_attrs.get(_GENERATION_KEY, 0)
+            generation = trial.system_attrs[_GENERATION_KEY]
+            if trial.state != optuna.trial.TrialState.COMPLETE:
+                if trial.state == optuna.trial.TrialState.RUNNING:
+                    generation_to_runnings[generation].append(trial)
+                continue
+
             generation_to_population[generation].append(trial)
 
+        hasher = hashlib.sha256()
         parent_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
         parent_generation = -1
-        for generation in itertools.count():
+        while True:
+            generation = parent_generation + 1
             population = generation_to_population[generation]
 
             # Under multi-worker settings, the population size might become larger than
@@ -178,21 +187,67 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
             if len(population) < self._population_size:
                 break
 
-            population.extend(parent_population)
-            parent_population = []
-            parent_generation = generation
+            # [NOTE]
+            # It's generally safe to assume that once the above condition is satisfied,
+            # there are no additional individuals added to the generation (i.e., the members of
+            # the generation have been fixed).
+            # If the number of parallel workers is huge, this assumption can be broken, but
+            # this is a very rare case and doesn't significantly impact optimization performance.
+            # So we can ignore the case.
 
-            population_per_rank = _fast_non_dominated_sort(population, study.directions)
-            for population in population_per_rank:
-                if len(parent_population) + len(population) < self._population_size:
-                    parent_population.extend(population)
-                else:
-                    n = self._population_size - len(parent_population)
-                    _crowding_distance_sort(population)
-                    parent_population.extend(population[:n])
-                    break
+            # The cache key is calculated based on the key of the previous generation and
+            # the remaining running trials in the current population.
+            # If there are no running trials, the new cache key becomes exactly the same as
+            # the previous one, and the cached content will be overwritten. This allows us to
+            # skip redundant cache key calculations when this method is called for the subsequent
+            # trials.
+            for trial in generation_to_runnings[generation]:
+                hasher.update(bytes(str(trial.number), "utf-8"))
+
+            cache_key = "{}:{}".format(_POPULATION_CACHE_KEY_PREFIX, hasher.hexdigest())
+            cached_generation, cached_population_numbers = study.system_attrs.get(
+                cache_key, (-1, [])
+            )
+            if cached_generation >= generation:
+                generation = cached_generation
+                population = [trials[n] for n in cached_population_numbers]
+            else:
+                population.extend(parent_population)
+                population = self._select_elite_population(study, population)
+
+                # To reduce the number of system attribute entries,
+                # we cache the population information only if there are no running trials
+                # (i.e., the information of the population has been fixed).
+                # Usually, if there are no too delayed running trials, the single entry
+                # will be used.
+                if len(generation_to_runnings[generation]) == 0:
+                    population_numbers = [t.number for t in population]
+                    study.set_system_attr(
+                        cache_key, (generation, population_numbers),
+                    )
+
+            parent_generation = generation
+            parent_population = population
 
         return parent_generation, parent_population
+
+    def _select_elite_population(
+        self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
+    ) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
+        elite_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
+        population_per_rank = _fast_non_dominated_sort(population, study.directions)
+        for population in population_per_rank:
+            if len(elite_population) + len(population) < self._population_size:
+                elite_population.extend(population)
+            else:
+                n = self._population_size - len(elite_population)
+                _crowding_distance_sort(population)
+                elite_population.extend(population[:n])
+                break
+
+        return elite_population
 
     def _select_parent(
         self,

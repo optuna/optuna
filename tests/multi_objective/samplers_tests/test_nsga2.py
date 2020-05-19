@@ -1,5 +1,6 @@
 from collections import Counter
 from typing import List
+from typing import Tuple
 
 import pytest
 
@@ -153,6 +154,36 @@ def test_crowding_distance_sort() -> None:
     ]
     multi_objective.samplers._nsga2._crowding_distance_sort(trials)
     assert [t.number for t in trials] == [2, 3, 0, 1]
+
+
+def test_study_system_attr_for_population_cache() -> None:
+    sampler = multi_objective.samplers.NSGAIIMultiObjectiveSampler(population_size=10)
+    study = multi_objective.create_study(["minimize"], sampler=sampler)
+
+    def get_cached_entries(
+        study: multi_objective.study.MultiObjectiveStudy,
+    ) -> List[Tuple[int, List[int]]]:
+        return [
+            v
+            for k, v in study.system_attrs.items()
+            if k.startswith(multi_objective.samplers._nsga2._POPULATION_CACHE_KEY_PREFIX)
+        ]
+
+    study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=10)
+    cached_entries = get_cached_entries(study)
+    assert len(cached_entries) == 0
+
+    study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=1)
+    cached_entries = get_cached_entries(study)
+    assert len(cached_entries) == 1
+    assert cached_entries[0][0] == 0  # Cached generation.
+    assert len(cached_entries[0][1]) == 10  # Population size.
+
+    study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=10)
+    cached_entries = get_cached_entries(study)
+    assert len(cached_entries) == 1
+    assert cached_entries[0][0] == 1  # Cached generation.
+    assert len(cached_entries[0][1]) == 10  # Population size.
 
 
 # TODO(ohta): Consider to move this utility function to `optuna.testing` module.
