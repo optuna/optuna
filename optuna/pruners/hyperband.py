@@ -124,6 +124,10 @@ class HyperbandPruner(BasePruner):
                 :meth:`~optuna.trial.Trial.report` in the first, or one of the first if trained in
                 parallel, completed trial. No trials will be pruned until the maximum resource is
                 determined.
+
+            .. note::
+                If the step of the last intermediate value may change with each trial, please
+                manually specify the maximum possible step to ``max_resource``.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper.
