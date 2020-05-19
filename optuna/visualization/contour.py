@@ -147,7 +147,10 @@ def _get_contour_plot(study: str, params: Optional[List[str]] = None) -> "go.Fig
 def _generate_contour_subplot(
     trials: List[str], x_param: str, y_param: str, direction: StudyDirection
 ) -> Tuple[str, str]:
-    """types: (trials: List[FrozenTrial]) and returned value is Tuple[Contour, Scatter] if availabe"""
+    """types:
+           (trials: List[FrozenTrial])
+           returned value is Tuple[Contour, Scatter] if availabe
+    """
 
     x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
     y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
