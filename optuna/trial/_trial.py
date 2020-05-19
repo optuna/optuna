@@ -390,10 +390,10 @@ class Trial(BaseTrial):
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
             log:
                 A flag to sample the value from the log domain or not.
-                If ``log`` is true, at first, the range of suggested values is divided into grid 
-                points of width ``step``. The range of suggested values is then converted to a log 
+                If ``log`` is true, at first, the range of suggested values is divided into grid
+                points of width ``step``. The range of suggested values is then converted to a log
                 domain, from which a value is uniformly sampled. The uniformly sampled value is
-                re-converted to the original domain and rounded to the nearest grid point that we 
+                re-converted to the original domain and rounded to the nearest grid point that we
                 just split, and the suggested value is determined.
                 For example,
                 if `low = 2`, `high = 8` and `step = 2`,
