@@ -397,7 +397,7 @@ class Trial(BaseTrial):
                 just split, and the suggested value is determined.
                 For example,
                 if `low = 2`, `high = 8` and `step = 2`,
-                then the suggested value is in `[2, 4, 6, 8]`
+                then the range of suggested values is divided by ``step`` as `[2, 4, 6, 8]`
                 and lower values tend to be more sampled than higher values.
         """
 
