@@ -64,7 +64,8 @@ class _CachedStorage(base.BaseStorage):
     def create_new_study(self, study_name: Optional[str] = None) -> int:
 
         study_id = self._backend.create_new_study(study_name)
-        self._studies[study_id] = _StudyInfo()
+        with self._lock:
+            self._studies[study_id] = _StudyInfo()
         return study_id
 
     def delete_study(self, study_id: int) -> None:
@@ -280,11 +281,12 @@ class _CachedStorage(base.BaseStorage):
 
     def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
 
-        trials = self._backend.get_all_trials(study_id, deepcopy=False)
-        if study_id in self._studies:
-            for trial in self._studies[study_id].trials.values():
-                trials[trial.number] = trial
-        return copy.deepcopy(trials) if deepcopy else trials
+        with self._lock:
+            trials = self._backend.get_all_trials(study_id, deepcopy=False)
+            if study_id in self._studies:
+                for key, trial in self._studies[study_id].trials.items():
+                    trials[trial.number] = trial
+            return copy.deepcopy(trials) if deepcopy else trials
 
     def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
 
