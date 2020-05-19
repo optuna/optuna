@@ -117,7 +117,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
             :exc:`ValueError`:
-                If `direction` is already set and the passed ``direction`` is the opposite
+                If direction is already set and the passed ``direction`` is the opposite
                 direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
         """
         raise NotImplementedError
@@ -390,7 +390,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 Reported value within an evaluation of an objective function.
 
         Returns:
-            Return :py:obj:`False` when the intermediate of the step already exists.
+            Return :obj:`False` when the intermediate of the step already exists.
 
         Raises:
             :exc:`KeyError`:
@@ -472,7 +472,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 Study ID of a study to read trials from.
             deepcopy:
                 Whether copy the list of trials before returning.
-                Set :py:obj:`True` when you might update the list or elements of the list.
+                Set :obj:`True` when you might update the list or elements of the list.
 
         Returns:
             A list of trials in the study.
@@ -586,7 +586,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         pass
 
     def check_trial_is_updatable(self, trial_id: int, trial_state: TrialState) -> None:
-        """Check whether a `trial_state` is updatable.
+        """Check whether a trial state is updatable.
 
         Args:
             trial_id:
