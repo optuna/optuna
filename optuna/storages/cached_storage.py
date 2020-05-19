@@ -174,10 +174,14 @@ class _CachedStorage(base.BaseStorage):
                     self._studies[study_id].param_distribution[param_name] = distribution
                 if param_name in cached_trial.params:
                     return False
-                cached_trial.params[param_name] = distribution.to_external_repr(
+                params = copy.copy(cached_trial.params)
+                params[param_name] = distribution.to_external_repr(
                     param_value_internal
                 )
-                cached_trial.distributions[param_name] = distribution
+                cached_trial.params = params
+                dists = copy.copy(cached_trial.distributions)
+                dists[param_name] = distribution
+                cached_trial.distributions[param_name] = dists
                 updates.params[param_name] = param_value_internal
                 updates.distributions[param_name] = distribution
                 return True
@@ -222,7 +226,9 @@ class _CachedStorage(base.BaseStorage):
                 updates = self._get_updates(trial_id)
                 if step in cached_trial.intermediate_values:
                     return False
-                cached_trial.intermediate_values[step] = intermediate_value
+                values = copy.copy(cached_trial.intermediate_values)
+                values[step] = intermediate_value
+                cached_trial.intermediate_values = values
                 updates.values[step] = intermediate_value
                 self._flush_trial(trial_id)
                 return True
@@ -235,7 +241,9 @@ class _CachedStorage(base.BaseStorage):
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 updates = self._get_updates(trial_id)
-                cached_trial.user_attrs[key] = value
+                attrs = copy.copy(cached_trial.user_attrs)
+                attrs[key] = value
+                cached_trial.user_attrs = attrs
                 updates.user_attrs[key] = value
                 self._flush_trial(trial_id)
                 return
@@ -248,7 +256,9 @@ class _CachedStorage(base.BaseStorage):
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 updates = self._get_updates(trial_id)
-                cached_trial.system_attrs[key] = value
+                attrs = copy.copy(cached_trial.system_attrs)
+                attrs[key] = value
+                cached_trial.system_attrs = attrs
                 updates.system_attrs[key] = value
                 self._flush_trial(trial_id)
                 return
