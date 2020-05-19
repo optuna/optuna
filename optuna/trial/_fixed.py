@@ -14,6 +14,7 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+from optuna import exceptions
 from optuna.trial._base import BaseTrial
 
 

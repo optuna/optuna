@@ -1103,8 +1103,9 @@ def delete_study(
 
 def build_study(
     study,  # type: Study
-    converter,  # type: Callable[[Trial], Trial]
+    converter,  # type: Callable[[FrozenTrial], FrozenTrial]
 ):
+    # type: (...) -> Study
     new_study = create_study()
     for trial in study.trials:
         new_trial = converter(trial)
@@ -1118,10 +1119,12 @@ def build_study(
 
 
 def new_metric_converter(
-    metric_name,
-    metrics_attr='metrics',
+    metric_name,  # type: str
+    metrics_attr="metrics",  # type: str
 ):
+    # type: (...) -> Callable
     def converter(trial):
+        # type: (FrozenTrial) -> FrozenTrial
         new_trial = FrozenTrial(
             number=-1,  # dummy value.
             trial_id=-1,  # dummy value.
@@ -1140,6 +1143,7 @@ def new_metric_converter(
 
     return converter
 
+
 def _check_param(
     params,  # type: Dict[str, Any]
     modify_distributions,  # type: Dict[str, BaseDistribution]
@@ -1150,21 +1154,24 @@ def _check_param(
             return False
     return True
 
+
 def new_objective_converter(
     new_objective,  # type: ObjectiveFuncType
     add_default_values,  # type: Dict[str, Any]
 ):
-
+    # type: (...) -> Callable
     dummy_study = create_study()
     dummy_study.set_stop_opt()
     dummy_study.optimize(new_objective, n_trials=1, n_jobs=1)
     new_params = dummy_study.trials[0].params
     new_distributions = dummy_study.trials[0].distributions
 
-    modify_distributions = None
+    modify_distributions = {}
+    modify_distributions_done = 0
 
     def get_modify_distributions(trial):
-        nonlocal new_params, new_distributions, modify_distributions
+        # type: (FrozenTrial) -> None
+        nonlocal new_params, new_distributions, modify_distributions, modify_distributions_done
         params = trial.params
         diff_params1 = set(params.keys()) - set(new_params.keys())
         if len(diff_params1) != 0:
@@ -1173,18 +1180,22 @@ def new_objective_converter(
         diff_params2 = set(new_params.keys()) - set(params.keys()) - set(add_default_values.keys())
         if len(diff_params2) != 0:
             raise ValueError(
-                "Parameter {} added in new objective is not defined default value".format(diff_params2)
+                "Parameter {} added in new objective is not defined default value".format(
+                    diff_params2
+                )
             )
         modify_distributions = {param: new_distributions[param] for param in params.keys()}
-        
+        modify_distributions_done = 1
+
     def converter(trial):
-        nonlocal new_params, new_distributions, modify_distributions
-        if modify_distributions is None:
+        # type: (FrozenTrial) -> Optional[FrozenTrial]
+        nonlocal new_params, new_distributions, modify_distributions, modify_distributions_done
+        if modify_distributions_done == 0:
             get_modify_distributions(trial)
 
         if _check_param(trial.params, modify_distributions) is False:
             return None
-        
+
         new_params = trial.params.copy()
         new_params.update(add_default_values)
 
