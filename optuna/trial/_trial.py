@@ -407,7 +407,11 @@ class Trial(BaseTrial):
                 low=low, high=high, step=step
             )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
         else:
-            distribution = IntUniformDistribution(low=low, high=high, step=step)
+        distribution = IntUniformDistribution(
+            low=low, high=high, step=step
+        ) # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+        if log:
+            distribution = IntLogUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
 
