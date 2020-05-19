@@ -456,7 +456,7 @@ class RDBStorage(BaseStorage):
         models.StudyModel.find_or_raise_by_id(study_id, session)
 
         if template_trial is None:
-            trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING,)
+            trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING)
         else:
             # Because only `RUNNING` trials can be updated,
             # we temporarily set the state of the new trial to `RUNNING`.
@@ -736,7 +736,13 @@ class RDBStorage(BaseStorage):
             # Check if no more than 5 trials are missing from the cache.
             # This prevents a single item in the cache from resulting in O(N) database lookups when
             # the bulk fetch below would be significantly faster.
-            if sum(not self._finished_trials_cache.get_cached_trial(trial_id) for trial_id in trial_ids) < 5:
+            if (
+                sum(
+                    not self._finished_trials_cache.get_cached_trial(trial_id)
+                    for trial_id in trial_ids
+                )
+                < 5
+            ):
                 trials = [self._get_and_cache_trial(trial_id, deepcopy) for trial_id in trial_ids]
                 return trials
 
