@@ -179,7 +179,7 @@ class _CachedStorage(base.BaseStorage):
                 cached_trial.params = params
                 dists = copy.copy(cached_trial.distributions)
                 dists[param_name] = distribution
-                cached_trial.distributions[param_name] = dists
+                cached_trial.distributions = dists
                 updates.params[param_name] = param_value_internal
                 updates.distributions[param_name] = distribution
                 return True
