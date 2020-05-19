@@ -8,8 +8,8 @@ import pytest
 import optuna
 from optuna.importance import BaseImportanceEvaluator
 from optuna.importance import FanovaImportanceEvaluator
-from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.importance import get_param_importances
+from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna import samplers
 from optuna import storages
 from optuna.study import create_study
@@ -63,7 +63,7 @@ def test_get_param_importances(
 
 @parametrize_evaluator
 @parametrize_storage
-@pytest.mark.parametrize("params", [[], ["x1"], ["x1", "x3"], ["x1", "x4"],])
+@pytest.mark.parametrize("params", [[], ["x1"], ["x1", "x3"], ["x1", "x4"]])
 def test_get_param_importances_with_params(
     storage_init_func: Callable[[], storages.BaseStorage],
     params: List[str],
