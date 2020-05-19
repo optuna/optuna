@@ -78,7 +78,6 @@ def test_experimental_decorator(version: str) -> None:
 
 
 def test_experimental_method_decorator() -> None:
-
     version = "1.1.0"
     decorator_experimental = _experimental.experimental(version)
     assert callable(decorator_experimental)
