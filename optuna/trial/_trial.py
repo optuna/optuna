@@ -4,9 +4,15 @@ import warnings
 from optuna import distributions
 from optuna import logging
 from optuna import pruners
+from optuna import type_checking
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
 from optuna.trial._util import _adjust_discrete_uniform_high
-from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -19,9 +25,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
 
-    FloatingPointDistributionType = Union[
-        distributions.UniformDistribution, distributions.LogUniformDistribution
-    ]
+    FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
 
 
 class Trial(BaseTrial):
@@ -206,7 +210,7 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = distributions.UniformDistribution(low=low, high=high)
+        distribution = UniformDistribution(low=low, high=high)
 
         self._check_distribution(name, distribution)
 
@@ -265,7 +269,7 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = distributions.LogUniformDistribution(low=low, high=high)
+        distribution = LogUniformDistribution(low=low, high=high)
 
         self._check_distribution(name, distribution)
 
@@ -332,7 +336,7 @@ class Trial(BaseTrial):
         """
 
         high = _adjust_discrete_uniform_high(name, low, high, q)
-        distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+        distribution = DiscreteUniformDistribution(low=low, high=high, q=q)
 
         self._check_distribution(name, distribution)
 
@@ -396,11 +400,11 @@ class Trial(BaseTrial):
         """
 
         if log:
-            distribution = distributions.IntLogUniformDistribution(
+            distribution = IntLogUniformDistribution(
                 low=low, high=high, step=step
-            )  # type: Union[distributions.IntUniformDistribution, distributions.IntLogUniformDistribution]
+            )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
         else:
-            distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
+            distribution = IntUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
 
@@ -463,7 +467,7 @@ class Trial(BaseTrial):
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
 
-        return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
+        return self._suggest(name, CategoricalDistribution(choices=choices))
 
     def report(self, value, step):
         # type: (float, int) -> None
