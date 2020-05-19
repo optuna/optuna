@@ -295,6 +295,10 @@ class FrozenMultiObjectiveTrial(object):
         return self._trial.number
 
     @property
+    def _trial_id(self) -> int:
+        return self._trial._trial_id
+
+    @property
     def state(self) -> TrialState:
         return self._trial.state
 
