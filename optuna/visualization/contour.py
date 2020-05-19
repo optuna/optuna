@@ -25,7 +25,7 @@ if is_available():
 logger = get_logger(__name__)
 
 
-def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
+def plot_contour(study: str, params: Optional[List[str]] = None) -> "go.Figure":
     """Plot the parameter relationship as contour plot in a study.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
@@ -68,7 +68,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
     return _get_contour_plot(study, params)
 
 
-def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
+def _get_contour_plot(study: str, params: Optional[List[str]] = None) -> "go.Figure":
 
     layout = go.Layout(title="Contour Plot",)
 
@@ -146,8 +146,9 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
 
 
 def _generate_contour_subplot(
-    trials: List[FrozenTrial], x_param: str, y_param: str, direction: StudyDirection
-) -> Tuple[Contour, Scatter]:
+    trials: List[str], x_param: str, y_param: str, direction: StudyDirection
+) -> Tuple[str, str]:
+    '''types: (trials: List[FrozenTrial]) and returned value is Tuple[Contour, Scatter]'''
 
     x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
     y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
