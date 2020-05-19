@@ -175,9 +175,7 @@ class _CachedStorage(base.BaseStorage):
                 if param_name in cached_trial.params:
                     return False
                 params = copy.copy(cached_trial.params)
-                params[param_name] = distribution.to_external_repr(
-                    param_value_internal
-                )
+                params[param_name] = distribution.to_external_repr(param_value_internal)
                 cached_trial.params = params
                 dists = copy.copy(cached_trial.distributions)
                 dists[param_name] = distribution
