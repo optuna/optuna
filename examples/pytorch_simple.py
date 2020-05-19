@@ -116,7 +116,7 @@ def objective(trial):
                     break
                 data, target = data.view(data.size(0), -1).to(DEVICE), target.to(DEVICE)
                 output = model(data)
-                # get the index of the max log-probability
+                # Get the index of the max log-probability.
                 pred = output.argmax(dim=1, keepdim=True)
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
