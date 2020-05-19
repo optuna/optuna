@@ -1101,6 +1101,45 @@ def delete_study(
     storage.delete_study(study_id)
 
 
+def build_study(
+    study,  # type: Study
+    converter,  # type: Callable[[Trial], Trial]
+):
+    new_study = create_study()
+    for trial in study.trials:
+        new_trial = converter(trial)
+        if new_trial is None:
+            continue
+        new_study._storage.create_new_trial(study._study_id, template_trial=new_trial)
+
+    message = "Import {} trials".format(len(new_study.trials))
+    _logger.info(message)
+    return new_study
+
+
+def new_metric_converter(
+    metric_name,
+    metrics_attr='metrics',
+):
+    def converter(trial):
+        new_trial = FrozenTrial(
+            number=-1,  # dummy value.
+            trial_id=-1,  # dummy value.
+            state=trial.state,
+            value=trial.user_attrs[metrics_attr][metric_name],
+            datetime_start=trial.datetime_start,
+            datetime_complete=trial.datetime_complete,
+            params=trial.params,
+            distributions=trial.distributions,
+            user_attrs=trial.user_attrs,
+            system_attrs=trial.system_attrs,
+            intermediate_values=trial.intermediate_values,
+        )
+        new_trial._validate()
+        return new_trial
+
+    return converter
+
 def _check_param(
     params,  # type: Dict[str, Any]
     modify_distributions,  # type: Dict[str, BaseDistribution]
@@ -1111,48 +1150,61 @@ def _check_param(
             return False
     return True
 
-
-def import_study(
-    study,  # type: Study
+def new_objective_converter(
     new_objective,  # type: ObjectiveFuncType
     add_default_values,  # type: Dict[str, Any]
 ):
-    # type: (...) -> Study
+
     dummy_study = create_study()
     dummy_study.set_stop_opt()
     dummy_study.optimize(new_objective, n_trials=1, n_jobs=1)
-
-    old_params = study.trials[0].params
     new_params = dummy_study.trials[0].params
     new_distributions = dummy_study.trials[0].distributions
 
-    diff_params1 = set(old_params.keys()) - set(new_params.keys())
-    if len(diff_params1) != 0:
-        raise ValueError("Parameter {} is disappered in new objective".format(diff_params1))
+    modify_distributions = None
 
-    diff_params2 = set(new_params.keys()) - set(old_params.keys()) - set(add_default_values.keys())
-    if len(diff_params2) != 0:
-        raise ValueError(
-            "Parameter {} added in new objective is not defined default value".format(diff_params2)
-        )
+    def get_modify_distributions(trial):
+        nonlocal new_params, new_distributions, modify_distributions
+        params = trial.params
+        diff_params1 = set(params.keys()) - set(new_params.keys())
+        if len(diff_params1) != 0:
+            raise ValueError("Parameter {} is disappered in new objective".format(diff_params1))
 
-    modify_distributions = {param: new_distributions[param] for param in old_params.keys()}
-    new_study = create_study()
-    for trial in study.trials:
+        diff_params2 = set(new_params.keys()) - set(params.keys()) - set(add_default_values.keys())
+        if len(diff_params2) != 0:
+            raise ValueError(
+                "Parameter {} added in new objective is not defined default value".format(diff_params2)
+            )
+        modify_distributions = {param: new_distributions[param] for param in params.keys()}
+        
+    def converter(trial):
+        nonlocal new_params, new_distributions, modify_distributions
+        if modify_distributions is None:
+            get_modify_distributions(trial)
+
         if _check_param(trial.params, modify_distributions) is False:
-            continue
+            return None
+        
         new_params = trial.params.copy()
         new_params.update(add_default_values)
-        new_study._append_trial(
+
+        new_trial = FrozenTrial(
+            number=-1,  # dummy value.
+            trial_id=-1,  # dummy value.
+            state=trial.state,
             value=trial.value,
+            datetime_start=trial.datetime_start,
+            datetime_complete=trial.datetime_complete,
             params=new_params,
             distributions=new_distributions,
             user_attrs=trial.user_attrs,
             system_attrs=trial.system_attrs,
+            intermediate_values=trial.intermediate_values,
         )
-    message = "Import {} trials".format(len(new_study.trials))
-    _logger.info(message)
-    return new_study
+        new_trial._validate()
+        return new_trial
+
+    return converter
 
 
 def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[StudySummary]:
