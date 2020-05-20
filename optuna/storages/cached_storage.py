@@ -15,7 +15,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-class _TrialUpdates:
+class _TrialUpdate:
     def __init__(self) -> None:
         self.state = None  # type: Optional[TrialState]
         self.value = None  # type: Optional[float]
@@ -29,7 +29,7 @@ class _TrialUpdates:
 class _StudyInfo:
     def __init__(self) -> None:
         self.trials = dict()  # type: Dict[int, FrozenTrial]
-        self.updates = dict()  # type: Dict[int, _TrialUpdates]
+        self.updates = dict()  # type: Dict[int, _TrialUpdate]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
 
 
@@ -267,12 +267,12 @@ class _CachedStorage(base.BaseStorage):
         study_id, number = self._trial_id_to_study_id_and_number[trial_id]
         return self._studies[study_id].trials.get(number, None)
 
-    def _get_updates(self, trial_id: int) -> _TrialUpdates:
+    def _get_updates(self, trial_id: int) -> _TrialUpdate:
         study_id, number = self._trial_id_to_study_id_and_number[trial_id]
         updates = self._studies[study_id].updates.get(number, None)
         if updates is not None:
             return updates
-        updates = _TrialUpdates()
+        updates = _TrialUpdate()
         self._studies[study_id].updates[number] = updates
         return updates
 
