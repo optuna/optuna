@@ -459,7 +459,7 @@ class RDBStorage(BaseStorage):
             study_id:
                 Study id.
             template_trial:
-                A FrozenTrial with default trial attributes.
+                A :class:`~optuna.trial.FrozenTrial` with default values for trial attributes.
 
         Returns:
             A tuple of the trial_id of the created trial and the trial converted
