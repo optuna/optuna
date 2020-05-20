@@ -3,8 +3,10 @@ from optuna import type_checking
 import os
 
 if type_checking.TYPE_CHECKING:
+    from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
+    from typing import Tuple  # NOQA
 
 try:
     import tensorboard
@@ -52,7 +54,7 @@ class TensorBoardCallback(object):
     """
 
     def __init__(self, dirname, param_distributions, metric_name):
-        # type: (str, Dict[str, tuple], str) -> None
+        # type: (str, Dict[str, Tuple[str, Any]], str) -> None
 
         _check_tensorboard_availability()
 
@@ -60,19 +62,31 @@ class TensorBoardCallback(object):
         self._metric_name = metric_name
         self._hp_params = dict()  # type: Dict[str, hp.HParam]
 
-        param_distributions_optuna_objects = dict()
+        param_distributions_optuna_objects = (
+            dict()
+        )  # type: Dict[str, optuna.distributions.BaseDistribution]
 
         for param_name, (distribution_type, args) in param_distributions.items():
             if distribution_type == "uniform":
-                param_distributions_optuna_objects[param_name] = optuna.distributions.UniformDistribution(*args)
+                param_distributions_optuna_objects[
+                    param_name
+                ] = optuna.distributions.UniformDistribution(*args)
             elif distribution_type == "loguniform":
-                param_distributions_optuna_objects[param_name] = optuna.distributions.LogUniformDistribution(*args)
+                param_distributions_optuna_objects[
+                    param_name
+                ] = optuna.distributions.LogUniformDistribution(*args)
             elif distribution_type == "discrete_uniform":
-                param_distributions_optuna_objects[param_name] = optuna.distributions.DiscreteUniformDistribution(*args)
+                param_distributions_optuna_objects[
+                    param_name
+                ] = optuna.distributions.DiscreteUniformDistribution(*args)
             elif distribution_type == "int_uniform":
-                param_distributions_optuna_objects[param_name] = optuna.distributions.IntUniformDistribution(*args)
+                param_distributions_optuna_objects[
+                    param_name
+                ] = optuna.distributions.IntUniformDistribution(*args)
             elif distribution_type == "categorical":
-                param_distributions_optuna_objects[param_name] = optuna.distributions.CategoricalDistribution(*args)
+                param_distributions_optuna_objects[
+                    param_name
+                ] = optuna.distributions.CategoricalDistribution(*args)
             else:
                 distribution_list = [
                     "uniform",
@@ -84,7 +98,7 @@ class TensorBoardCallback(object):
                 raise NotImplementedError(
                     "The distribution {} is not implemented. "
                     "The type of distribution should be one of the {}".format(
-                        param_distribution, distribution_list
+                        distribution_type, distribution_list
                     )
                 )
 

@@ -1,5 +1,4 @@
 import optuna
-from optuna import distributions
 from optuna.integration.tensorboard import TensorBoardCallback
 from optuna import type_checking
 import tensorflow as tf
