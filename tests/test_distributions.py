@@ -166,7 +166,7 @@ def test_contains():
     assert not ilu._contains(12.1)
     assert not ilu._contains(13)
 
-    # IntLogUniformDistribution with a 'q' parameter.
+    # IntLogUniformDistribution with a 'step' parameter.
     iluq = distributions.IntLogUniformDistribution(low=2, high=7, step=2)
     assert not iluq._contains(0.9)
     assert iluq._contains(2)
