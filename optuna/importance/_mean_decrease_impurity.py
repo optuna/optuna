@@ -71,7 +71,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
         forest = self._forest
         forest.fit(params_data, values_data)
         feature_importances = forest.feature_importances_
-        feature_importances_reduced = numpy.zeros((len(distributions),), dtype=numpy.float32)
+        feature_importances_reduced = numpy.zeros(len(distributions))
         numpy.add.at(feature_importances_reduced, cols_to_raw_cols, feature_importances)
 
         param_importances = OrderedDict()
