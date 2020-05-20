@@ -453,7 +453,7 @@ class RDBStorage(BaseStorage):
     def _create_new_trial_with_trial(
         self, study_id: int, template_trial: Optional[FrozenTrial] = None
     ) -> Tuple[int, FrozenTrial]:
-        """Create a new trial and returns trial_id and the trial converted into a FrozenTrial.
+        """Create a new trial and returns its trial_id and a :class:`~optuna.trial.FrozenTrial`.
 
         Args:
             study_id:
