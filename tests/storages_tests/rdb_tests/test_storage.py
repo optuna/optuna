@@ -1,6 +1,8 @@
 import pickle
 import sys
 import tempfile
+from typing import Any
+from typing import Dict
 from unittest.mock import patch
 
 import pytest
@@ -18,11 +20,8 @@ from optuna import type_checking
 from optuna import version
 
 if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
 
 
 def test_init():
@@ -219,17 +218,15 @@ def test_storage_cache():
         assert mock_object.call_count == 1
 
 
-def test_update_trial() -> None:
-    storage = create_test_storage()
-    study_id = storage.create_new_study()
-
-    test_sets = [
+@pytest.mark.parametrize(
+    "fields_to_modify, kwargs",
+    [
         (
             {"state": TrialState.COMPLETE, "datetime_complete": None},
             {"state": TrialState.COMPLETE},
         ),
         ({"value": 1.1}, {"value": 1.1}),
-        ({"intermediate_values": {1: 2.3, 3: 2.5}}, {"values": {1: 2.3, 3: 2.5}}),
+        ({"intermediate_values": {1: 2.3, 3: 2.5}}, {"intermediate_values": {1: 2.3, 3: 2.5}}),
         (
             {
                 "params": {"paramA": 3, "paramB": "bar",},
@@ -243,7 +240,7 @@ def test_update_trial() -> None:
                     "paramA": UniformDistribution(0, 3).to_internal_repr(3),
                     "paramB": CategoricalDistribution(["foo", "bar"]).to_internal_repr("bar"),
                 },
-                "dists": {
+                "distributions_": {
                     "paramA": UniformDistribution(0, 3),
                     "paramB": CategoricalDistribution(["foo", "bar"]),
                 },
@@ -257,19 +254,22 @@ def test_update_trial() -> None:
             {"system_attrs": {"attrC": 2.3, "attrB": "bar"}},
             {"system_attrs": {"attrC": 2.3, "attrB": "bar"}},
         ),
-    ]  # type: List[Tuple[Dict[str, Any], Dict[str, Any]]]
+    ],
+)
+def test_update_trial(fields_to_modify: Dict[str, Any], kwargs: Dict[str, Any]) -> None:
+    storage = create_test_storage()
+    study_id = storage.create_new_study()
 
-    for fields_to_modify, kwargs in test_sets:
-        trial_id = storage.create_new_trial(study_id)
-        trial_before_update = storage.get_trial(trial_id)
-        storage._update_trial(trial_id, **kwargs)
-        trial_after_update = storage.get_trial(trial_id)
-        for field in FrozenTrial._ordered_fields:
-            if field not in fields_to_modify:
-                assert getattr(trial_before_update, field) == getattr(trial_after_update, field)
-            for key, value in fields_to_modify.items():
-                if value is not None:
-                    assert getattr(trial_after_update, key) == value
+    trial_id = storage.create_new_trial(study_id)
+    trial_before_update = storage.get_trial(trial_id)
+    storage._update_trial(trial_id, **kwargs)
+    trial_after_update = storage.get_trial(trial_id)
+    for field in FrozenTrial._ordered_fields:
+        if field not in fields_to_modify:
+            assert getattr(trial_before_update, field) == getattr(trial_after_update, field)
+        for key, value in fields_to_modify.items():
+            if value is not None:
+                assert getattr(trial_after_update, key) == value
 
 
 def test_update_trial_second_write() -> None:
@@ -294,9 +294,9 @@ def test_update_trial_second_write() -> None:
         trial_id,
         state=None,
         value=1.1,
-        values={3: 2.3, 7: 3.3},
+        intermediate_values={3: 2.3, 7: 3.3},
         params={"paramA": 0.2, "paramC": 2.3},
-        dists={"paramA": UniformDistribution(0, 1), "paramC": UniformDistribution(0, 4)},
+        distributions_={"paramA": UniformDistribution(0, 1), "paramC": UniformDistribution(0, 4)},
         user_attrs={"userA": 1, "userC": "attr"},
         system_attrs={"sysA": 6, "sysC": 8},
     )
