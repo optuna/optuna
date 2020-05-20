@@ -3,6 +3,7 @@ import math
 from optuna.logging import get_logger
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
+from optuna import type_checking
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import _is_log_scale
 from optuna.visualization.utils import is_available
@@ -12,10 +13,11 @@ from typing import Optional
 from typing import Tuple  # NOQA
 
 if is_available():
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
-    from optuna.visualization.plotly_imports import Contour  # NOQA
-    from optuna.visualization.plotly_imports import Scatter  # NOQA
+    if type_checking.TYPE_CHECKING:
+        from optuna.study import Study  # NOQA
+        from optuna.trial import FrozenTrial  # NOQA
+        from optuna.visualization.plotly_imports import Contour  # NOQA
+        from optuna.visualization.plotly_imports import Scatter  # NOQA
 
     from optuna.visualization.plotly_imports import go
     from optuna.visualization.plotly_imports import make_subplots
@@ -24,7 +26,7 @@ if is_available():
 logger = get_logger(__name__)
 
 
-def plot_contour(study, params: Optional[List[str]] = None) -> "go.Figure":
+def plot_contour(study: "Study", params: Optional[List[str]] = None) -> "go.Figure":
     """Plot the parameter relationship as contour plot in a study.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
@@ -67,7 +69,7 @@ def plot_contour(study, params: Optional[List[str]] = None) -> "go.Figure":
     return _get_contour_plot(study, params)
 
 
-def _get_contour_plot(study, params: Optional[List[str]] = None) -> "go.Figure":
+def _get_contour_plot(study: "Study", params: Optional[List[str]] = None) -> "go.Figure":
 
     layout = go.Layout(title="Contour Plot",)
 
@@ -144,13 +146,9 @@ def _get_contour_plot(study, params: Optional[List[str]] = None) -> "go.Figure":
     return figure
 
 
-def _generate_contour_subplot(trials, x_param: str, y_param: str, direction: StudyDirection):
-    """types:
-
-           (trials: List[FrozenTrial])
-
-           returned value is Tuple[Contour, Scatter] if availabe
-    """
+def _generate_contour_subplot(
+    trials: List["FrozenTrial"], x_param: str, y_param: str, direction: StudyDirection
+) -> Tuple["Contour", "Scatter"]:
 
     x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
     y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
