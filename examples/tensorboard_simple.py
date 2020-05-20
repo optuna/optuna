@@ -35,23 +35,23 @@ def train_test_model(num_units, dropout_rate, optimizer):
 
 
 param_distributions = dict()  # type: Dict[str, Any]
-param_distributions["NUM_UNITS"] = distributions.IntUniformDistribution(low=16, high=32)
-param_distributions["DROPOUT_RATE"] = distributions.UniformDistribution(low=0.1, high=0.2)
-param_distributions["OPTIMIZER"] = distributions.CategoricalDistribution(choices=["sgd", "adam"])
+param_distributions["NUM_UNITS"] = ("int_uniform", (16, 32))
+param_distributions["DROPOUT_RATE"] = ("uniform", (0.1, 0.2))
+param_distributions["OPTIMIZER"] = ("categorical", (["sgd", "adam"],))
 
 
 def objective(trial):
     # type: (optuna.trial.Trial) -> float
 
     num_units = trial.suggest_int(
-        "NUM_UNITS", param_distributions["NUM_UNITS"].low, param_distributions["NUM_UNITS"].high
+        "NUM_UNITS", param_distributions["NUM_UNITS"][1][0], param_distributions["NUM_UNITS"][1][1]
     )
     dropout_rate = trial.suggest_uniform(
         "DROPOUT_RATE",
-        param_distributions["DROPOUT_RATE"].low,
-        param_distributions["DROPOUT_RATE"].high,
+        param_distributions["DROPOUT_RATE"][1][0],
+        param_distributions["DROPOUT_RATE"][1][1],
     )
-    optimizer = trial.suggest_categorical("OPTIMIZER", param_distributions["OPTIMIZER"].choices)
+    optimizer = trial.suggest_categorical("OPTIMIZER", param_distributions["OPTIMIZER"][1][0])
 
     accuracy = train_test_model(num_units, dropout_rate, optimizer)  # type: ignore
     return accuracy

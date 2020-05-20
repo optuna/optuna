@@ -23,9 +23,9 @@ def test_study_name():
     # type: () -> None
 
     distributions = {
-        "x": optuna.distributions.UniformDistribution(-1.0, 1.0),
-        "y": optuna.distributions.LogUniformDistribution(20.0, 30.0),
-        "z": optuna.distributions.CategoricalDistribution((-1.0, 1.0)),
+        "x": ("uniform", (-1.0, 1.0)),
+        "y": ("loguniform", (20.0, 30.0)),
+        "z": ("categorical", ((-1.0, 1.0),)),
     }
 
     dirname = tempfile.mkdtemp()
