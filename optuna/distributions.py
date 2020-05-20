@@ -308,11 +308,6 @@ class IntLogUniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
         step:
             A step for spacing between values.
-
-    .. note::
-
-        ``high - low`` must be a multiple of ``step``. In other words, the
-        following equation must be satisfied for some integer ``k``: ``high = low + step * k``.
     """
 
     def __init__(self, low, high, step=1):
@@ -334,12 +329,6 @@ class IntLogUniformDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
-        if (high - low) % step != 0:
-            raise ValueError(
-                "The `high` - `low` must be a multiple of `step`, but "
-                "low={}, high={}, step={}.".format(low, high, step)
-            )
-
         self.low = low
         self.high = high
         self.step = step
@@ -357,13 +346,15 @@ class IntLogUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        return self.low == self.high
+        if self.low == self.high:
+            return True
+        return (self.high - self.low) < self.step
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
 
         value = param_value_in_internal_repr
-        return (self.low <= value <= self.high) & (value % self.step == 0)
+        return self.low <= value <= self.high
 
 
 class CategoricalDistribution(BaseDistribution):

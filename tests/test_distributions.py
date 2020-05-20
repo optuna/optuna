@@ -157,15 +157,25 @@ def test_contains():
     assert c._contains(1.5)
     assert not c._contains(3)
 
-    ilu = distributions.IntLogUniformDistribution(low=2, high=12, step=2)
+    ilu = distributions.IntUniformDistribution(low=2, high=12)
     assert not ilu._contains(0.9)
     assert ilu._contains(2)
+    assert ilu._contains(4)
     assert ilu._contains(6)
-    assert ilu._contains(8)
     assert ilu._contains(12)
-    assert not ilu._contains(9)
-    assert not ilu._contains(13)
     assert not ilu._contains(12.1)
+    assert not ilu._contains(13)
+
+    # IntLogUniformDistribution with a 'q' parameter.
+    iluq = distributions.IntLogUniformDistribution(low=2, high=7, step=2)
+    assert not iluq._contains(0.9)
+    assert iluq._contains(2)
+    assert iluq._contains(4)
+    assert iluq._contains(5)
+    assert iluq._contains(6)
+    assert iluq._contains(7)
+    assert not iluq._contains(7.1)
+    assert not iluq._contains(8)
 
 
 def test_empty_range_contains():
@@ -268,10 +278,7 @@ def test_empty_distribution():
         distributions.IntLogUniformDistribution(low=123, high=100)
 
     with pytest.raises(ValueError):
-        distributions.IntLogUniformDistribution(low=123, high=100, step=2)
-
-    with pytest.raises(ValueError):
-        distributions.IntLogUniformDistribution(low=1, high=4, step=2)
+        distributions.IntLogUniformDistribution(low=123, high=100)
 
 
 def test_invalid_distribution():
