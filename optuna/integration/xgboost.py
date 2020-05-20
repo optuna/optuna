@@ -44,7 +44,7 @@ class XGBoostPruningCallback(object):
             `XGBoost reference <https://xgboost.readthedocs.io/en/latest/parameter.html>`_
             for further details.
             Note that when using the sklearn API callback, the index number of `eval_set`
-            must be included in the `observation_key`, e.g., ``validation_0-error`` and
+            must be included in the ``observation_key``, e.g., ``validation_0-error`` and
             ``validation_0-merror``.
     """
 
