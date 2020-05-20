@@ -50,7 +50,7 @@ class TensorBoardCallback(object):
 
         self._dirname = dirname
         self._metric_name = metric_name
-        self._hp_params = dict()  # type: Dict
+        self._hp_params = dict()  # type: Dict[str, hp.HParam]
 
         for param_name, param_distribution in param_distributions.items():
 
