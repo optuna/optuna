@@ -41,7 +41,7 @@ class _CachedStorage(base.BaseStorage):
 
     Args:
         storage:
-            BaseStorage class instance to wrap.
+            :class:`~optuna.storages.BaseStorage` class instance to wrap.
     """
 
     def __init__(self, backend: RDBStorage) -> None:

@@ -463,7 +463,7 @@ class RDBStorage(BaseStorage):
 
         Returns:
             A tuple of the trial_id of the created trial and the trial converted
-            into a FrozenTrial instance.
+            into a :class:`~optuna.trial.FrozenTrial` instance.
 
         """
 
