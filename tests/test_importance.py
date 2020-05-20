@@ -55,9 +55,12 @@ def test_get_param_importances(
     assert isinstance(param_importance, OrderedDict)
     assert len(param_importance) == 5
     assert all(param_name in param_importance for param_name in ["x1", "x2", "x3", "x4", "x5"])
+    prev_importance = float("inf")
     for param_name, importance in param_importance.items():
         assert isinstance(param_name, str)
         assert isinstance(importance, float)
+        assert importance <= prev_importance
+        prev_importance = importance
     assert math.isclose(1.0, sum(i for i in param_importance.values()), abs_tol=1e-5)
 
 
