@@ -448,9 +448,9 @@ class RDBStorage(BaseStorage):
     def create_new_trial(self, study_id, template_trial=None):
         # type: (int, Optional[FrozenTrial]) -> int
 
-        return self._create_new_trial_with_trial(study_id, template_trial)[0]
+        return self._create_new_trial(study_id, template_trial)[0]
 
-    def _create_new_trial_with_trial(
+    def _create_new_trial(
         self, study_id: int, template_trial: Optional[FrozenTrial] = None
     ) -> Tuple[int, FrozenTrial]:
         """Create a new trial and returns its trial_id and a :class:`~optuna.trial.FrozenTrial`.
@@ -552,9 +552,9 @@ class RDBStorage(BaseStorage):
         trial_id: int,
         state: Optional[TrialState] = None,
         value: Optional[float] = None,
-        values: Optional[Dict[int, float]] = None,
+        intermediate_values: Optional[Dict[int, float]] = None,
         params: Optional[Dict[str, Any]] = None,
-        dists: Optional[Dict[str, distributions.BaseDistribution]] = None,
+        distributions_: Optional[Dict[str, distributions.BaseDistribution]] = None,
         user_attrs: Optional[Dict[str, Any]] = None,
         system_attrs: Optional[Dict[str, Any]] = None,
     ) -> bool:
@@ -567,11 +567,11 @@ class RDBStorage(BaseStorage):
                 New state. None when there are no changes.
             value:
                 New value. None when there are no changes.
-            values:
+            intermediate_values:
                 New intermediate values. None when there are no updates.
             params:
                 New parameter dictionary. None when there are no updates.
-            dists:
+            distributions_:
                 New parameter distributions. None when there are no updates.
             user_attrs:
                 New user_attr. None when there are no updates.
@@ -647,7 +647,7 @@ class RDBStorage(BaseStorage):
                 for k, v in system_attrs.items()
                 if k not in trial_system_attrs_dict
             )
-        if values:
+        if intermediate_values:
             value_models = (
                 session.query(models.TrialValueModel)
                 .filter(models.TrialValueModel.trial_id == trial_id)
@@ -661,10 +661,10 @@ class RDBStorage(BaseStorage):
                     session.add(value_dict[s])
             trial_model.values.extend(
                 models.TrialValueModel(step=s, value=v)
-                for s, v in values.items()
+                for s, v in intermediate_values.items()
                 if s not in value_dict
             )
-        if params and dists:
+        if params and distributions_:
             trial_param = (
                 session.query(models.TrialParamModel)
                 .filter(models.TrialParamModel.trial_id == trial_id)
@@ -675,7 +675,9 @@ class RDBStorage(BaseStorage):
                 models.TrialParamModel(
                     param_name=param_name,
                     param_value=param_value,
-                    distribution_json=distributions.distribution_to_json(dists[param_name]),
+                    distribution_json=distributions.distribution_to_json(
+                        distributions_[param_name]
+                    ),
                 )
                 for param_name, param_value in params.items()
                 if param_name not in param_keys

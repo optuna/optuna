@@ -19,7 +19,7 @@ class _TrialUpdate:
     def __init__(self) -> None:
         self.state = None  # type: Optional[TrialState]
         self.value = None  # type: Optional[float]
-        self.values = dict()  # type: Dict[int, float]
+        self.intermediate_values = dict()  # type: Dict[int, float]
         self.user_attrs = dict()  # type: Dict[str, Any]
         self.system_attrs = dict()  # type: Dict[str, Any]
         self.params = dict()  # type: Dict[str, Any]
@@ -122,9 +122,7 @@ class _CachedStorage(base.BaseStorage):
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 
-        trial_id, frozen_trial = self._backend._create_new_trial_with_trial(
-            study_id, template_trial
-        )
+        trial_id, frozen_trial = self._backend._create_new_trial(study_id, template_trial)
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
@@ -222,10 +220,10 @@ class _CachedStorage(base.BaseStorage):
                 updates = self._get_updates(trial_id)
                 if step in cached_trial.intermediate_values:
                     return False
-                values = copy.copy(cached_trial.intermediate_values)
-                values[step] = intermediate_value
-                cached_trial.intermediate_values = values
-                updates.values[step] = intermediate_value
+                intermediate_values = copy.copy(cached_trial.intermediate_values)
+                intermediate_values[step] = intermediate_value
+                cached_trial.intermediate_values = intermediate_values
+                updates.intermediate_values[step] = intermediate_value
                 self._flush_trial(trial_id)
                 return True
 
@@ -312,10 +310,10 @@ class _CachedStorage(base.BaseStorage):
         return self._backend._update_trial(
             trial_id=trial_id,
             value=updates.value,
-            values=updates.values,
+            intermediate_values=updates.intermediate_values,
             state=updates.state,
             params=updates.params,
-            dists=updates.distributions,
+            distributions_=updates.distributions,
             user_attrs=updates.user_attrs,
             system_attrs=updates.system_attrs,
         )
