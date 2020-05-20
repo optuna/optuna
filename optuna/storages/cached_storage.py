@@ -298,11 +298,6 @@ class _CachedStorage(base.BaseStorage):
 
         return self._backend.get_n_trials(study_id, state)
 
-    def flush(self) -> None:
-        for study in self._studies.values():
-            for trial_id in study.updates:
-                self._flush_trial(trial_id)
-
     def _flush_trial(self, trial_id: int) -> bool:
         if trial_id not in self._trial_id_to_study_id_and_number:
             # The trial has not been managed by this class.
