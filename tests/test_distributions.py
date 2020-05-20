@@ -140,7 +140,7 @@ def test_contains():
     assert not iu._contains(10.1)
     assert not iu._contains(11)
 
-    # IntUniformDistribution with a 'q' parameter.
+    # IntUniformDistribution with a 'step' parameter.
     iuq = distributions.IntUniformDistribution(low=1, high=10, step=2)
     assert not iuq._contains(0.9)
     assert iuq._contains(1)
