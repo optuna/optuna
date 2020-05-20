@@ -10,7 +10,7 @@ from optuna.visualization.utils import is_available
 
 from typing import List
 from typing import Optional
-from typing import Tuple  # NOQA
+from typing import Tuple
 
 if is_available():
     if type_checking.TYPE_CHECKING:
