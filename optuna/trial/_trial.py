@@ -345,8 +345,8 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high, *, log=False, step=1):
-        # type: (str, int, int, bool, int) -> int
+    def suggest_int(self, name, low, high, step=1, log=False):
+        # type: (str, int, int, int, bool) -> int
         """Suggest a value for the integer parameter.
 
         The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.

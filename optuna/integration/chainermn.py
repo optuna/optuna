@@ -227,8 +227,8 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def suggest_int(self, name, low, high, *, log=False, step=1):
-        # type: (str, int, int, bool, int) -> int
+    def suggest_int(self, name, low, high, step=1, log=False):
+        # type: (str, int, int, int, bool) -> int
 
         if log:
             raise NotImplementedError
@@ -237,7 +237,7 @@ class ChainerMNTrial(BaseTrial):
             # type: () -> int
 
             assert self.delegate is not None
-            return self.delegate.suggest_int(name, low, high, log=log, step=step)
+            return self.delegate.suggest_int(name, low, high, step=step, log=log)
 
         return self._call_with_mpi(func)
 

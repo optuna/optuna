@@ -87,7 +87,7 @@ class MultiObjectiveTrial(object):
         return self._trial.suggest_discrete_uniform(name, low, high, q)
 
     def suggest_int(
-        self, name: str, low: int, high: int, *, log: bool = False, step: int = 1
+        self, name: str, low: int, high: int, step: int = 1, log: bool = False,
     ) -> int:
         """Suggest a value for the integer parameter.
 
@@ -95,7 +95,7 @@ class MultiObjectiveTrial(object):
         for further details.
         """
 
-        return self._trial.suggest_int(name, low, high, log=log, step=step)
+        return self._trial.suggest_int(name, low, high, step=step, log=log)
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
