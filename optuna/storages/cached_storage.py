@@ -50,14 +50,12 @@ class _CachedStorage(base.BaseStorage):
         self._trial_id_to_study_id_and_number = dict()  # type: Dict[int, Tuple[int, int]]
         self._lock = threading.RLock()
 
-    def __getstate__(self):
-        # type: () -> Dict[Any, Any]
+    def __getstate__(self) -> Dict[Any, Any]:
         state = self.__dict__.copy()
         del state["_lock"]
         return state
 
-    def __setstate__(self, state):
-        # type: (Dict[Any, Any]) -> None
+    def __setstate__(self, state: Dict[Any, Any]) -> None:
         self.__dict__.update(state)
         self._lock = threading.RLock()
 
