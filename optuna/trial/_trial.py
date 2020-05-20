@@ -406,7 +406,9 @@ class Trial(BaseTrial):
         )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
 
         if log:
-            high = int(_adjust_discrete_uniform_high(name, low, high, step))
+            high = (
+                distribution.high - distribution.low
+            ) // distribution.step * distribution.step + distribution.low
             distribution = IntLogUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
