@@ -21,88 +21,87 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     This class is not supposed to be directly accessed by library users.
 
-    Storage classes abstract a backend database and provide library internal interfaces to
-    read/write history of studies and trials.
+    A storage class abstract a backend database and provide library internal interfaces to
+    read/write histories of studies and trials.
 
     **Thread safety**
 
-    Storage classes might be shared from multiple threads, and thus storage classes
-    must be thread-safe.
-    As one of the requirements of the thread-safety, storage classes must guarantee
-    that the returned values, such as `FrozenTrial`s will not be directly modified
-    by storage class.
-    However, storage class can assume that return values are never modified by users.
-    When users modify return values of storage classes, it might break the internal states
-    of storage classes, which will result in undefined behaviors.
+    A storage class can be shared among multiple threads, and must therefore be thread-safe.
+    It must guarantee that return values such as `FrozenTrial`s are never modified.
+    A storage class can assume that return values are never modified by its user.
+    When a user modifies a return value from a storage class, the internal state of the storage
+    may become inconsistent. Consequences are undefined.
 
     **Ownership of RUNNING trials**
 
     Trials in finished states are not allowed to be modified.
     Trials in the WAITING state are not allowed to be modified except for the `state` field.
-    Storage classes can assume that each RUNNING trial is modified from only one process.
-    When users modify a RUNNING trial from multiple processes, it might lead to
-    an inconsistent internal state, which will result in undefined behaviors.
-    To use optuna with MPI or in other multi-process programs, users must make sure
-    that the optuna interface is accessed from only one of the processes.
-    Storage classes are not designed to provide inter-process communication functionalities.
+    A storage class can assume that each RUNNING trial is only modified from a single process.
+    When a user modifies a RUNNING trial from multiple processes, the internal state of the storage
+    may become inconsistent. Consequences are undefined.
+    A storage class is not intended for inter-process communication.
+    Consequently, users using optuna with MPI or other multi-process programs must make sure that
+    only one process is used to access the optuna interface.
 
     **Consistency models**
 
-    Storage classes must support monotonic-reads consistency model, that is, if a
-    process reads a data `X`, any successive reads on data `X` does not return
-    older values.
-    They must support read-your-writes, that is, if a process writes to data `X`,
+    A storage class must support the monotonic-reads consistency model, that is, if a
+    process reads data `X`, any successive reads on data `X` cannot return older values.
+    It must support read-your-writes, that is, if a process writes to data `X`,
     any successive reads on data `X` from the same process must read the written
-    value or one of more recent values.
+    value or one of the more recent values.
 
     **Stronger consistency requirements for special data**
 
     TODO(ytsmiling) Add load method to storage class implementations.
 
-    Under multi-worker settings, storage classes are guaranteed to return the latest
-    values of any attributes of `Study`, but not guaranteed the same thing for
-    attributes of `Trial`.
-    However, if `load(study_id)` method is called, any successive reads on the `state`
-    attribute of `Trial` in the study are guaranteed to return the same or more recent
-    values than the value at the time the `load` method called.
+    Under a multi-worker setting, a storage class must return the latest values of any attributes
+    of a study, not necessarily for the attributes of a `Trial`.
+    However, if the `load(study_id)` method is called, any successive reads on the `state`
+    attribute of a `Trial` are guaranteed to return the same or more recent values than the value
+    at the time of call to the `load` method.
     Let `T` be a `Trial`.
-    Let `P` be a process that last updated the `state` attribute of `T`.
+    Let `P` be the process that last updated the `state` attribute of `T`.
     Then, any reads on any attributes of `T` are guaranteed to return the same or
     more recent values than any writes by `P` on the attribute before `P` updated
     the `state` attribute of `T`.
-    The same applies for `user_attrs', 'system_attrs', 'intermediate_values` attributes,
-    but future development may allow storage class users to explicitly skip the above
-    properties for these attributes.
+    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+
+    .. note::
+
+        These attribute behaviors may become user customizable in the future.
 
     **Data persistence**
 
-    Storage classes do not guarantee that write operations are logged into a persistent
-    storage even when write methods succeed.
+    A storage class does not guarantee that write operations are logged into a persistent
+    storage, even when write methods succeed.
     Thus, when process failure occurs, some writes might be lost.
     As exceptions, when a persistent storage is available, any writes on any attributes
     of `Study` and writes on `state` of `Trial` are guaranteed to be persistent.
     Additionally, any preceding writes on any attributes of `Trial` are guaranteed to
     be written into a persistent storage before writes on `state` of `Trial` succeed.
-    The same applies for `user_attrs', 'system_attrs', 'intermediate_values` attributes,
-    but future development may allow storage class users to explicitly skip the above
-    properties for these attributes.
+    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+
+    .. note::
+
+        These attribute behaviors may become user customizable in the future.
     """
 
     # Basic study manipulation
 
     @abc.abstractmethod
     def create_new_study(self, study_name: Optional[str] = None) -> int:
-        """Create a new study with a given name.
+        """Create a new study from a name.
 
-        When no name is specified, storage class auto-generates the name.
-        Study ID is unique among all current and deleted studies.
+        If no name is specified, the storage class generates a name.
+        The returned study ID is unique among all current and deleted studies.
 
         Args:
             study_name:
-                Name of a new study to create.
+                Name of the new study to create.
 
         Returns:
-            Study ID, which is an unique id among studies, of the created study.
+            ID of the created study.
 
         Raises:
             :exc:`optuna.exceptions.DuplicatedStudyError`:
@@ -113,11 +112,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def delete_study(self, study_id: int) -> None:
-        """Delete a study specified by the study ID.
+        """Delete a study.
 
         Args:
             study_id:
-                Study ID of a study to delete.
+                ID of the study.
 
         Raises:
             :exc:`KeyError`:
@@ -129,15 +128,15 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
         """Register a user-defined attribute to a study.
 
-        This method overwrites an existing attribute.
+        This method overwrites any existing attribute.
 
         Args:
             study_id:
-                Study ID of a study to update.
+                ID of the study.
             key:
-                Key of an attribute.
+                Attribute key.
             value:
-                Attributes' value.
+                Attribute value. It should be JSON serializable.
 
         Raises:
             :exc:`KeyError`:
@@ -149,15 +148,15 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
         """Register an optuna-internal attribute to a study.
 
-        This method overwrites an existing attribute.
+        This method overwrites any existing attribute.
 
         Args:
             study_id:
-                Study ID of a study to update.
+                ID of the study.
             key:
-                Key of an attribute.
+                Attribute key.
             value:
-                Attributes' value.
+                Attribute value. It should be JSON serializable.
 
         Raises:
             :exc:`KeyError`:
@@ -167,11 +166,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_study_direction(self, study_id: int, direction: study.StudyDirection) -> None:
-        """Register a direction of optimization problem to a study.
+        """Register an optimization problem direction to a study.
 
         Args:
             study_id:
-                Study ID of a study to update.
+                ID of the study.
             direction:
                 Either :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
                 :obj:`~optuna.study.StudyDirection.MINIMIZE`.
@@ -180,7 +179,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
             :exc:`ValueError`:
-                If direction is already set and the passed ``direction`` is the opposite
+                If the direction is already set and the passed ``direction`` is the opposite
                 direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
         """
         raise NotImplementedError
@@ -189,30 +188,31 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_study_id_from_name(self, study_name: str) -> int:
-        """Read study ID of a study with the same name.
+        """Read the ID of a study.
 
         Args:
             study_name:
-                Name of a study to search the study id.
+                Name of the study.
 
         Returns:
-            Study ID of a study with the matching study name.
+            ID of the study.
 
         Raises:
             :exc:`KeyError`:
-                If no study with the matching ``study_id`` exists.
+                If no study with the matching ``study_name`` exists.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
-        """Read study ID of a study that a specified trial belongs to.
+        """Read the ID of a study to which a trial belongs.
 
         Args:
             trial_id:
-                Trial ID of a trial to search the study id of a study the trial belongs to.
+                ID of the trial.
+
         Returns:
-            Study id of a trial with the given trial id.
+            ID of the study.
 
         Raises:
             :exc:`KeyError`:
@@ -222,11 +222,12 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_study_name_from_id(self, study_id: int) -> str:
-        """Read study name of a study with a matching study ID.
+        """Read the study name of a study.
 
         Args:
             study_id:
-                Study ID of a study to search its name.
+                ID of the study.
+
         Returns:
             Name of the study.
 
@@ -238,11 +239,12 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_study_direction(self, study_id: int) -> study.StudyDirection:
-        """Read whether a specified study maximizes or minimizes an objective.
+        """Read whether a study maximizes or minimizes an objective.
 
         Args:
             study_id:
-                Study ID of a study to read.
+                ID of a study.
+
         Returns:
             Optimization direction of the study.
 
@@ -254,13 +256,14 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
-        """Read a dictionary of user-defined attributes of a specified study.
+        """Read the user-defined attributes of a study.
 
         Args:
             study_id:
-                Study ID of a study to read.
+                ID of the study.
+
         Returns:
-            A dictionary of a user attributes of a study.
+            Dictionary with the user attributes of the study.
 
         Raises:
             :exc:`KeyError`:
@@ -270,13 +273,14 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
-        """Read a dictionary of optuna-internal attributes of a specified study.
+        """Read the optuna-internal attributes of a study.
 
         Args:
             study_id:
-                Study ID of a study to read.
+                ID of the study.
+
         Returns:
-            A dictionary of a system attributes of a study.
+            Dictionary with the optuna-internal attributes of the study.
 
         Raises:
             :exc:`KeyError`:
@@ -300,19 +304,19 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     def create_new_trial(
         self, study_id: int, template_trial: Optional["FrozenTrial"] = None
     ) -> int:
-        """Create and add a new trial to a specified study.
+        """Create and add a new trial to a study.
 
-        Trial ID is unique among all current and deleted trials.
+        The returned trial ID is unique among all current and deleted trials.
 
         Args:
             study_id:
-                Study ID to add a new trial.
+                ID of the study.
             template_trial:
-                Fronzen trial with default user-attributes, system-attributes,
-                intermediate-values, and a state.
+                Template :class:`~optuna.trial.FronzenTrial` with default user-attributes,
+                system-attributes, intermediate-values, and a state.
 
         Returns:
-            Trial ID of the created trial.
+            ID of the created trial.
 
         Raises:
             :exc:`KeyError`:
@@ -322,13 +326,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-        """Update a state of a specified trial.
-
-        This method succeeds only when trial is not already finished.
+        """Update the state of a trial.
 
         Args:
             trial_id:
-                Trial ID of a trial to update its state.
+                ID of the trial.
             state:
                 New state of the trial.
 
@@ -355,20 +357,20 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         param_value_internal: float,
         distribution: "distributions.BaseDistribution",
     ) -> bool:
-        """Add a parameter to a specified trial.
+        """Add a parameter to a trial.
 
         Args:
             trial_id:
-                Trial ID of a trial to add a parameter.
+                ID of the trial.
             param_name:
-                Name of a parameter to add.
+                Name of the parameter.
             param_value_internal:
-                Internal representation of a value a parameter to add.
+                Internal representation of the parameter value.
             distribution:
-                Sampled distribution of a parameter to add.
+                Sampled distribution of the parameter.
 
         Returns:
-            Return :obj:`False` when the parameter is already set to the trial.
+            :obj:`False` when the parameter is already set to the trial, :obj:`True` otherwise.
 
         Raises:
             :exc:`KeyError`:
@@ -380,17 +382,18 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_trial_number_from_id(self, trial_id: int) -> int:
-        """Read a trial number of a specified trial.
+        """Read the trial number of a trial.
 
-        Trial ID is a unique ID of a trial, while trial number is a unique and
-        sequential ID of a trial within a study.
+        .. note::
+
+            The trial number is only unique within a study, and is sequential.
 
         Args:
             trial_id:
-                Trial ID of a trial to read.
+                ID of the trial.
 
         Returns:
-            Trial number of a trial.
+            Number of the trial.
 
         Raises:
             :exc:`KeyError`:
@@ -400,13 +403,13 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
-        """Read a specified parameter of a trial.
+        """Read the parameter of a trial.
 
         Args:
             trial_id:
-                Trial ID of a trial to read.
+                ID of the trial.
             param_name:
-                Name of a parameter to read.
+                Name of the parameter.
 
         Returns:
             Internal representation of the parameter.
@@ -422,13 +425,13 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     def set_trial_value(self, trial_id: int, value: float) -> None:
         """Set a return value of an objective function.
 
-        This method overwrites existing trial value.
+        This method overwrites any existing trial value.
 
         Args:
             trial_id:
-                Trial ID of a trial to set value.
+                ID of the trial.
             value:
-                The return value of an objective.
+                Value of the objective function.
 
         Raises:
             :exc:`KeyError`:
@@ -442,18 +445,18 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> bool:
-        """Report a value within an evaluation of an objective function.
+        """Report an intermediate value of an objective function.
 
         Args:
             trial_id:
-                Trial ID of a trial to set intermediate value.
+                ID of the trial.
             step:
-                Step of the trial (e.g., Epoch of neural network training).
+                Step of the trial (e.g., the epoch when training a neural network).
             intermediate_value:
-                Reported value within an evaluation of an objective function.
+                Intermediate value corresponding to the step.
 
         Returns:
-            Return :obj:`False` when the intermediate of the step already exists.
+            :obj:`False` when the step is already set, :obj:`True` otherwise.
 
         Raises:
             :exc:`KeyError`:
@@ -465,17 +468,17 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-        """Set a user-defined attribute to a specified trial.
+        """Set a user-defined attribute to a trial.
 
-        This method overwrites an existing attribute.
+        This method overwrites any existing attribute.
 
         Args:
             trial_id:
-                Trial ID of a trial to set user-defined attribute.
+                ID of the trial.
             key:
-                Key of an attribute to register.
+                Attribute key.
             value:
-                Value of the attribute. The value should be JSON serializable.
+                Attribute value. It should be JSON serializable.
 
         Raises:
             :exc:`KeyError`:
@@ -487,17 +490,17 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
-        """Set an optuna-internal attribute to a specified trial.
+        """Set an optuna-internal attribute to a trial.
 
-        This method overwrites an existing attribute.
+        This method overwrites any existing attribute.
 
         Args:
             trial_id:
-                Trial ID of a trial to set optuna-internal attribute.
+                ID of the trial.
             key:
-                Key of an attribute to register.
+                Attribute key.
             value:
-                Value of the attribute. The value should be JSON serializable.
+                Attribute value. It should be JSON serializable.
 
         Raises:
             :exc:`KeyError`:
@@ -511,11 +514,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_trial(self, trial_id: int) -> "FrozenTrial":
-        """Read a trial using a trial ID.
+        """Read a trial.
 
         Args:
             trial_id:
-                Trial ID of a trial to read.
+                ID of the trial.
 
         Returns:
             Trial with a matching trial ID.
@@ -528,17 +531,17 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List["FrozenTrial"]:
-        """Read all trials in a specified study.
+        """Read all trials in a study.
 
         Args:
             study_id:
-                Study ID of a study to read trials from.
+                ID of the study.
             deepcopy:
-                Whether copy the list of trials before returning.
-                Set :obj:`True` when you might update the list or elements of the list.
+                Whether to copy the list of trials before returning.
+                Set to :obj:`True` if you intend to update the list or elements of the list.
 
         Returns:
-            A list of trials in the study.
+            List of trials in the study.
 
         Raises:
             :exc:`KeyError`:
@@ -548,16 +551,16 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
-        """Count the number of trials in a specified study.
+        """Count the number of trials in a study.
 
         Args:
             study_id:
-                Study ID of a study to count trials.
+                ID of the study.
             state:
                 :class:`~optuna.trial.TrialState` to filter trials.
 
         Returns:
-            Number of the trials in the study.
+            Number of trials in the study.
 
         Raises:
             :exc:`KeyError`:
@@ -566,15 +569,14 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def get_best_trial(self, study_id: int) -> "FrozenTrial":
-        """Return a trial with the best value in the study.
+        """Return the trial with the best value in a study.
 
         Args:
             study_id:
-                Study ID to search the best trial.
+                ID of the study.
 
         Returns:
-            The trial with the best return value of the objective function
-            among all finished tirals in the study.
+            The trial with the best objective value among all finished trials in the study.
 
         Raises:
             :exc:`KeyError`:
@@ -596,15 +598,15 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         return copy.deepcopy(best_trial)
 
     def get_trial_params(self, trial_id: int) -> Dict[str, Any]:
-        """Read parameter dictionary of a specified trial.
+        """Read the parameter dictionary of a trial.
 
         Args:
             trial_id:
-                A trial ID of a trial to read parameters.
+                ID of the trial.
 
         Returns:
-            A dictionary of a parameters consisting of parameter names and internal
-            representations of the parameters' values.
+            Dictionary of a parameters. Keys are parameter names and values are internal
+            representations of the parameter values.
 
         Raises:
             :exc:`KeyError`:
@@ -613,14 +615,14 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         return self.get_trial(trial_id).params
 
     def get_trial_user_attrs(self, trial_id: int) -> Dict[str, Any]:
-        """Read a user-defined attributes of a specified trial.
+        """Read the user-defined attributes of a trial.
 
         Args:
             trial_id:
-                A trial ID of a trial to read user-defined attributes.
+                ID of the trial.
 
         Returns:
-            A dictionary of user-defined attributes of the trial.
+            Dictionary with the user-defined attributes of the trial.
 
         Raises:
             :exc:`KeyError`:
@@ -629,14 +631,14 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         return self.get_trial(trial_id).user_attrs
 
     def get_trial_system_attrs(self, trial_id: int) -> Dict[str, Any]:
-        """Read an optuna-internal attributes of a specified trial.
+        """Read the optuna-internal attributes of a trial.
 
         Args:
             trial_id:
-                A trial ID of a trial to read optuna-internal attributes.
+                ID of the trial.
 
         Returns:
-            A dictionary of optuna-internal attributes of the trial.
+            Dictionary with the optuna-internal attributes of the trial.
 
         Raises:
             :exc:`KeyError`:
@@ -653,7 +655,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Args:
             trial_id:
-                Trial id of a trial to update.
+                ID of the trial.
                 Only used for an error message.
             trial_state:
                 Trial state to check.
