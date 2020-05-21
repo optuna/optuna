@@ -1,61 +1,46 @@
 from optuna.logging import get_logger
 from optuna.trial import TrialState
-from optuna import type_checking
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import _is_log_scale
 from optuna.visualization.utils import is_available
 
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
+from typing import List
+from typing import Optional
 
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
-    from optuna.visualization.plotly_imports import Scatter  # NOQA
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 
 if is_available():
     from optuna.visualization.plotly_imports import go
     from optuna.visualization.plotly_imports import make_subplots
+    from optuna.visualization.plotly_imports import Scatter
 
 logger = get_logger(__name__)
 
 
-def plot_slice(study, params=None):
-    # type: (Study, Optional[List[str]]) -> go.Figure
+def plot_slice(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
     """Plot the parameter relationship as slice plot in a study.
-
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
-
     Example:
-
         The following code snippet shows how to plot the parameter relationship as slice plot.
-
         .. testcode::
-
             import optuna
-
             def objective(trial):
                 x = trial.suggest_uniform('x', -100, 100)
                 y = trial.suggest_categorical('y', [-1, 0, 1])
                 return x ** 2 + y
-
             study = optuna.create_study()
             study.optimize(objective, n_trials=10)
-
             optuna.visualization.plot_slice(study, params=['x', 'y'])
-
         .. raw:: html
-
             <iframe src="../_static/plot_slice.html" width="100%" height="500px" frameborder="0">
             </iframe>
-
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
             values.
         params:
             Parameter list to visualize. The default is all parameters.
-
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
     """
@@ -64,8 +49,7 @@ def plot_slice(study, params=None):
     return _get_slice_plot(study, params)
 
 
-def _get_slice_plot(study, params=None):
-    # type: (Study, Optional[List[str]]) -> go.Figure
+def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
     layout = go.Layout(title="Slice Plot",)
 
@@ -116,8 +100,7 @@ def _get_slice_plot(study, params=None):
     return figure
 
 
-def _generate_slice_subplot(study, trials, param):
-    # type: (Study, List[FrozenTrial], str) -> Scatter
+def _generate_slice_subplot(study: Study, trials: List[FrozenTrial], param: str) -> "Scatter":
 
     return go.Scatter(
         x=[t.params[param] for t in trials if param in t.params],
