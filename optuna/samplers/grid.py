@@ -115,9 +115,11 @@ class GridSampler(BaseSampler):
         target_grids = self._get_unvisited_grid_ids(study)
 
         if len(target_grids) == 0:
-            _logger.warning("`GridSampler` is evaluating a duplicated point because all grids "
-                            "have been evaluated. This may happen due to a timing issue during "
-                            "distributed optimization or an unnecessary number of `n_trials`.")
+            _logger.warning(
+                "`GridSampler` is evaluating a duplicated point because all grids "
+                "have been evaluated. This may happen due to a timing issue during "
+                "distributed optimization or an unnecessary number of `n_trials`."
+            )
 
             study.stop()
             target_grids = list(range(len(self._all_grids)))
@@ -181,10 +183,10 @@ class GridSampler(BaseSampler):
         for t in study.trials:
             if (
                 (t.state.is_finished() or include_unfinished)
-                and 'grid_id' in t.system_attrs
-                and self._same_search_space(t.system_attrs['search_space'])
+                and "grid_id" in t.system_attrs
+                and self._same_search_space(t.system_attrs["search_space"])
             ):
-                visited_grids.append(t.system_attrs['grid_id'])
+                visited_grids.append(t.system_attrs["grid_id"])
 
         unvisited_grids = set(range(self._n_min_trials)) - set(visited_grids)
 

@@ -98,10 +98,10 @@ def test_study_optimize_with_exceeding_number_of_trials():
     def objective(trial):
         # type: (Trial) -> float
 
-        return trial.suggest_int('a', 0, 100)
+        return trial.suggest_int("a", 0, 100)
 
     # When `n_trials` is `None`, the optimization stops just after all grids are evaluated.
-    search_space = {'a': [0, 50]}  # type: Dict[str, List[GridValueType]]
+    search_space = {"a": [0, 50]}  # type: Dict[str, List[GridValueType]]
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
     study.optimize(objective, n_trials=None)
     assert len(study.trials) == 2
