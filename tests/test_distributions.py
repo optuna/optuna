@@ -278,7 +278,7 @@ def test_empty_distribution():
         distributions.IntLogUniformDistribution(low=123, high=100)
 
     with pytest.raises(ValueError):
-        distributions.IntLogUniformDistribution(low=123, high=100)
+        distributions.IntLogUniformDistribution(low=123, high=100, step=2)
 
 
 def test_invalid_distribution():
