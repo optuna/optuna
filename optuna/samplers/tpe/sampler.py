@@ -1,4 +1,7 @@
 import math
+from typing import Callable
+from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import scipy.special
@@ -15,11 +18,9 @@ from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
-    from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
+    from typing import Type  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.study import Study  # NOQA
@@ -123,21 +124,24 @@ class TPESampler(base.BaseSampler):
             for more details.
         seed:
             Seed for random number generator.
+        distribution:
+            Type of underlying distribution. Either "gaussian" or "logistic".
+            "logistic" runs faster.
     """
 
     def __init__(
         self,
-        consider_prior=True,  # type: bool
-        prior_weight=1.0,  # type: float
-        consider_magic_clip=True,  # type: bool
-        consider_endpoints=False,  # type: bool
-        n_startup_trials=10,  # type: int
-        n_ei_candidates=24,  # type: int
-        gamma=default_gamma,  # type: Callable[[int], int]
-        weights=default_weights,  # type: Callable[[int], np.ndarray]
-        seed=None,  # type: Optional[int]
-    ):
-        # type: (...) -> None
+        consider_prior: bool = True,
+        prior_weight: float = 1.0,
+        consider_magic_clip: bool = True,
+        consider_endpoints: bool = False,
+        n_startup_trials: int = 10,
+        n_ei_candidates: int = 24,
+        gamma: Callable[[int], int] = default_gamma,
+        weights: Callable[[int], np.ndarray] = default_weights,
+        seed: Optional[int] = None,
+        distribution: str = "gaussian",
+    ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             consider_prior, prior_weight, consider_magic_clip, consider_endpoints, weights
@@ -150,6 +154,15 @@ class TPESampler(base.BaseSampler):
 
         self._rng = np.random.RandomState(seed)
         self._random_sampler = random.RandomSampler(seed=seed)
+
+        if distribution == "gaussian":
+            self._dist = _GMM  # type: Type[_TruncatedMixturedDistribution]
+        elif distribution == "logistic":
+            self._dist = _LMM
+        else:
+            raise ValueError(
+                'Distribution "{}" is not supported in TPE sampler.'.format(distribution)
+            )
 
     def reseed_rng(self) -> None:
 
@@ -289,28 +302,27 @@ class TPESampler(base.BaseSampler):
         parzen_estimator_below = _ParzenEstimator(
             mus=below, low=low, high=high, parameters=self._parzen_estimator_parameters
         )
-        samples_below = self._sample_from_gmm(
-            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size,
+        dist_below = self._dist(
+            low,
+            high,
+            parzen_estimator_below.mus,
+            parzen_estimator_below.sigmas,
+            parzen_estimator_below.weights,
         )
-        log_likelihoods_below = self._gmm_log_pdf(
-            samples=samples_below,
-            parzen_estimator=parzen_estimator_below,
-            low=low,
-            high=high,
-            q=q,
-        )
+        samples_below = self._sample(distribution=dist_below, q=q, size=size)
+        log_likelihoods_below = self._log_pdf(samples=samples_below, distribution=dist_below, q=q)
 
         parzen_estimator_above = _ParzenEstimator(
             mus=above, low=low, high=high, parameters=self._parzen_estimator_parameters
         )
-
-        log_likelihoods_above = self._gmm_log_pdf(
-            samples=samples_below,
-            parzen_estimator=parzen_estimator_above,
-            low=low,
-            high=high,
-            q=q,
+        dist_above = self._dist(
+            low,
+            high,
+            parzen_estimator_above.mus,
+            parzen_estimator_above.sigmas,
+            parzen_estimator_above.weights,
         )
+        log_likelihoods_above = self._log_pdf(samples=samples_below, distribution=dist_above, q=q)
 
         ret = float(
             TPESampler._compare(
@@ -347,104 +359,34 @@ class TPESampler(base.BaseSampler):
             )[0]
         )
 
-    def _sample_from_gmm(
+    def _sample(
         self,
-        parzen_estimator,  # type: _ParzenEstimator
-        low,  # type: float
-        high,  # type: float
-        q=None,  # type: Optional[float]
-        size=(),  # type: Tuple
-    ):
-        # type: (...) -> np.ndarray
+        distribution: "_TruncatedMixturedDistribution",
+        q: Optional[float] = None,
+        size: Tuple = (),
+    ) -> np.ndarray:
 
-        weights = parzen_estimator.weights
-        mus = parzen_estimator.mus
-        sigmas = parzen_estimator.sigmas
-        weights, mus, sigmas = map(np.asarray, (weights, mus, sigmas))
-
-        if low >= high:
-            raise ValueError(
-                "The 'low' should be lower than the 'high'. "
-                "But (low, high) = ({}, {}).".format(low, high)
-            )
-
-        active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
-        trunc_low = (low - mus[active]) / sigmas[active]
-        trunc_high = (high - mus[active]) / sigmas[active]
-        while True:
-            samples = truncnorm.rvs(
-                trunc_low,
-                trunc_high,
-                size=size,
-                loc=mus[active],
-                scale=sigmas[active],
-                random_state=self._rng,
-            )
-            if (samples < high).all():
-                break
+        samples = distribution.sample(size, self._rng)
 
         if q is None:
             return samples
         else:
             return np.round(samples / q) * q
 
-    def _gmm_log_pdf(
-        self,
-        samples,  # type: np.ndarray
-        parzen_estimator,  # type: _ParzenEstimator
-        low,  # type: float
-        high,  # type: float
-        q=None,  # type: Optional[float]
-    ):
-        # type: (...) -> np.ndarray
+    @staticmethod
+    def _log_pdf(
+        samples: np.ndarray,
+        distribution: "_TruncatedMixturedDistribution",
+        q: Optional[float] = None,
+    ) -> np.ndarray:
 
-        weights = parzen_estimator.weights
-        mus = parzen_estimator.mus
-        sigmas = parzen_estimator.sigmas
-        samples, weights, mus, sigmas = map(np.asarray, (samples, weights, mus, sigmas))
         if samples.size == 0:
             return np.asarray([], dtype=float)
-        if weights.ndim != 1:
-            raise ValueError(
-                "The 'weights' should be 2-dimension. "
-                "But weights.shape = {}".format(weights.shape)
-            )
-        if mus.ndim != 1:
-            raise ValueError(
-                "The 'mus' should be 2-dimension. " "But mus.shape = {}".format(mus.shape)
-            )
-        if sigmas.ndim != 1:
-            raise ValueError(
-                "The 'sigmas' should be 2-dimension. " "But sigmas.shape = {}".format(sigmas.shape)
-            )
-
-        p_accept = np.sum(
-            weights
-            * (
-                TPESampler._normal_cdf(high, mus, sigmas)
-                - TPESampler._normal_cdf(low, mus, sigmas)
-            )
-        )
 
         if q is None:
-            distance = samples[..., None] - mus
-            mahalanobis = (distance / np.maximum(sigmas, EPS)) ** 2
-            Z = np.sqrt(2 * np.pi) * sigmas
-            coefficient = weights / Z / p_accept
-            return TPESampler._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
+            return distribution.log_pdf(samples)
         else:
-            cdf_func = TPESampler._normal_cdf
-            upper_bound = np.minimum(samples + q / 2.0, high)
-            lower_bound = np.maximum(samples - q / 2.0, low)
-            probabilities = np.sum(
-                weights[..., None]
-                * (
-                    cdf_func(upper_bound[None], mus[..., None], sigmas[..., None])
-                    - cdf_func(lower_bound[None], mus[..., None], sigmas[..., None])
-                ),
-                axis=0,
-            )
-            return np.log(probabilities + EPS) - np.log(p_accept + EPS)
+            return distribution.quantized_log_pdf(samples, q)
 
     def _sample_from_categorical_dist(self, probabilities, size):
         # type: (np.ndarray, Tuple[int]) -> np.ndarray
@@ -496,36 +438,6 @@ class TPESampler(base.BaseSampler):
             return np.asarray([samples[best]] * samples.size)
         else:
             return np.asarray([])
-
-    @classmethod
-    def _logsum_rows(cls, x):
-        # type: (np.ndarray) -> np.ndarray
-
-        x = np.asarray(x)
-        m = x.max(axis=1)
-        return np.log(np.exp(x - m[:, None]).sum(axis=1)) + m
-
-    @classmethod
-    def _normal_cdf(cls, x, mu, sigma):
-        # type: (float, np.ndarray, np.ndarray) -> np.ndarray
-
-        mu, sigma = map(np.asarray, (mu, sigma))
-        denominator = x - mu
-        numerator = np.maximum(np.sqrt(2) * sigma, EPS)
-        z = denominator / numerator
-        return 0.5 * (1 + scipy.special.erf(z))
-
-    @classmethod
-    def _log_normal_cdf(cls, x, mu, sigma):
-        # type: (float, np.ndarray, np.ndarray) -> np.ndarray
-
-        mu, sigma = map(np.asarray, (mu, sigma))
-        if x < 0:
-            raise ValueError("Negative argument is given to _lognormal_cdf. x: {}".format(x))
-        denominator = np.log(np.maximum(x, EPS)) - mu
-        numerator = np.maximum(np.sqrt(2) * sigma, EPS)
-        z = denominator / numerator
-        return 0.5 + 0.5 * scipy.special.erf(z)
 
     @staticmethod
     def hyperopt_parameters():
@@ -619,3 +531,108 @@ def _get_observation_pairs(study, param_name, trial):
         scores.append(score)
 
     return values, scores
+
+
+class _TruncatedMixturedDistribution:
+    def __init__(
+        self, low: float, high: float, loc: np.ndarray, scale: np.ndarray, weights: np.ndarray
+    ) -> None:
+        if weights.ndim != 1:
+            raise ValueError(
+                "The 'weights' should be 1-dimension. "
+                "But weights.shape = {}".format(weights.shape)
+            )
+        if loc.ndim != 1:
+            raise ValueError(
+                "The 'loc' should be 1-dimension. " "But loc.shape = {}".format(loc.shape)
+            )
+        if scale.ndim != 1:
+            raise ValueError(
+                "The 'scale' should be 1-dimension. " "But scale.shape = {}".format(scale.shape)
+            )
+
+        self.low = low
+        self.high = high
+        self.loc = loc
+        self.scale = scale
+        self.weights = weights
+        self.normalization_constant = np.sum(
+            self.unnormalized_cdf(np.asarray([high])) - self.unnormalized_cdf(np.asarray([low]))
+        )
+
+    def sample(self, size: Tuple, random_state: np.random.RandomState,) -> np.ndarray:
+        raise NotImplementedError()
+
+    def unnormalized_cdf(self, x: np.ndarray) -> np.ndarray:
+        raise NotImplementedError()
+
+    def log_pdf(self, x: np.ndarray) -> np.ndarray:
+        raise NotImplementedError()
+
+    def quantized_log_pdf(self, x: np.ndarray, q: float) -> np.ndarray:
+        upper_bound = np.minimum(x + q / 2.0, self.high)
+        lower_bound = np.maximum(x - q / 2.0, self.low)
+        probabilities = self.unnormalized_cdf(upper_bound) - self.unnormalized_cdf(lower_bound)
+        return np.log(probabilities + EPS) - np.log(self.normalization_constant + EPS)
+
+
+class _GMM(_TruncatedMixturedDistribution):
+    def sample(self, size: Tuple, random_state: np.random.RandomState,) -> np.ndarray:
+        active = np.argmax(random_state.multinomial(1, self.weights, size=size), axis=-1)
+        loc = self.loc[active]
+        scale = self.scale[active]
+        trunc_low = (self.low - loc) / scale
+        trunc_high = (self.high - loc) / scale
+
+        while True:
+            samples = truncnorm.rvs(
+                trunc_low, trunc_high, size=size, loc=loc, scale=scale, random_state=random_state,
+            )
+            if (samples < self.high).all():
+                break
+        return samples
+
+    def unnormalized_cdf(self, x: np.ndarray) -> np.ndarray:
+        x = x[None]
+        loc = self.loc[..., None]
+        scale = self.scale[..., None]
+        weights = self.weights[..., None]
+        denominator = x - loc
+        numerator = np.maximum(np.sqrt(2) * scale, EPS)
+        z = denominator / numerator
+        return np.sum(0.5 * (1 + scipy.special.erf(z)) * weights, axis=0)
+
+    def log_pdf(self, x: np.ndarray) -> np.ndarray:
+        distance = x[..., None] - self.loc
+        mahalanobis = (distance / np.maximum(self.scale, EPS)) ** 2
+        Z = np.sqrt(2 * np.pi) * self.scale
+        coefficient = self.weights / Z / self.normalization_constant
+        return self._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
+
+    @staticmethod
+    def _logsum_rows(x: np.ndarray) -> np.ndarray:
+        m = np.max(x, axis=1)
+        return np.log(np.exp(x - m[:, None]).sum(axis=1)) + m
+
+
+class _LMM(_TruncatedMixturedDistribution):
+    def sample(self, size: Tuple, random_state: np.random.RandomState,) -> np.ndarray:
+        active = np.argmax(random_state.multinomial(1, self.weights, size=size), axis=-1)
+        loc = self.loc[active]
+        scale = self.scale[active]
+        trunc_low = 1 / (1 + np.exp(-(self.low - loc) / scale))
+        trunc_high = 1 / (1 + np.exp(-(self.high - loc) / scale))
+
+        p = random_state.uniform(trunc_low, trunc_high, size=size)
+        return loc - scale * np.log(1 / p - 1)
+
+    def unnormalized_cdf(self, x: np.ndarray) -> np.ndarray:
+        x = x[None]
+        loc = self.loc[..., None]
+        scale = self.scale[..., None]
+        weights = self.weights[..., None]
+        return np.sum(weights / (1 + np.exp((x - loc) / np.maximum(scale, EPS))), axis=0)
+
+    def log_pdf(self, x: np.ndarray) -> np.ndarray:
+        p = self.unnormalized_cdf(x) * (1 - self.unnormalized_cdf(x))
+        return np.log(p / np.maximum(self.normalization_constant, EPS))
