@@ -1,8 +1,8 @@
 from optuna.distributions import LogUniformDistribution
 from optuna.visualization import plotly_imports
 
-from typing import List
 from optuna.trial import FrozenTrial
+from typing import List
 
 
 __all__ = ["is_available"]
