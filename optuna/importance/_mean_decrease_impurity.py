@@ -96,8 +96,8 @@ def _encode_categorical(
 
     for col, distribution in enumerate(distributions):
         if isinstance(distribution, CategoricalDistribution):
-            categories.append(numpy.arange(len(distribution.choices)))
             categorical_cols.append(col)
+            categories.append(list(range(len(distribution.choices))))
         else:
             numerical_cols.append(col)
     assert col == params_data.shape[1] - 1
@@ -115,8 +115,8 @@ def _encode_categorical(
     cols_to_raw_cols = numpy.empty((params_data.shape[1],), dtype=numpy.int32)
 
     i = 0
-    for categorical_col in categorical_cols:
-        for _ in range(len(categories[i])):
+    for categorical_col, cats in zip(categorical_cols, categories):
+        for _ in range(len(cats)):
             cols_to_raw_cols[i] = categorical_col
             i += 1
     for numerical_col in numerical_cols:
