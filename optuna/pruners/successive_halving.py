@@ -1,8 +1,8 @@
 import math
 
 from optuna.pruners.base import BasePruner
-from optuna.structs import StudyDirection
-from optuna.structs import TrialState
+from optuna.study import StudyDirection
+from optuna.trial._state import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -10,8 +10,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
     from typing import Union  # NOQA
 
-    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
 
 class SuccessiveHalvingPruner(BasePruner):
@@ -41,7 +41,7 @@ class SuccessiveHalvingPruner(BasePruner):
             np.random.seed(seed=0)
             X = np.random.randn(200).reshape(-1, 1)
             y = np.where(X[:, 0] < 0.5, 0, 1)
-            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+            X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
             classes = np.unique(y)
 
         .. testcode::
@@ -57,13 +57,13 @@ class SuccessiveHalvingPruner(BasePruner):
                 for step in range(n_train_iter):
                     clf.partial_fit(X_train, y_train, classes=classes)
 
-                    intermediate_value = clf.score(X_test, y_test)
+                    intermediate_value = clf.score(X_valid, y_valid)
                     trial.report(intermediate_value, step)
 
                     if trial.should_prune():
                         raise optuna.exceptions.TrialPruned()
 
-                return clf.score(X_test, y_test)
+                return clf.score(X_valid, y_valid)
 
             study = optuna.create_study(direction='maximize',
                                         pruner=optuna.pruners.SuccessiveHalvingPruner())
@@ -92,6 +92,10 @@ class SuccessiveHalvingPruner(BasePruner):
             (\\mathsf{min}\\_\\mathsf{early}\\_\\mathsf{stopping}\\_\\mathsf{rate}
             + \\mathsf{rung})}` steps)
             and repeats the same procedure.
+
+            .. note::
+                If the step of the last intermediate value may change with each trial, please
+                manually specify the minimum possible step to ``min_resource``.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
@@ -104,10 +108,10 @@ class SuccessiveHalvingPruner(BasePruner):
             referred to as :math:`s`).
     """
 
-    def __init__(self, min_resource='auto', reduction_factor=4, min_early_stopping_rate=0):
+    def __init__(self, min_resource="auto", reduction_factor=4, min_early_stopping_rate=0):
         # type: (Union[str, int], int, int) -> None
 
-        if isinstance(min_resource, str) and min_resource != 'auto':
+        if isinstance(min_resource, str) and min_resource != "auto":
             raise ValueError(
                 "The value of `min_resource` is {}, "
                 "but must be either `min_resource` >= 1 or 'auto'".format(min_resource)
@@ -115,18 +119,21 @@ class SuccessiveHalvingPruner(BasePruner):
 
         if isinstance(min_resource, int) and min_resource < 1:
             raise ValueError(
-                'The value of `min_resource` is {}, '
-                "but must be either `min_resource >= 1` or 'auto'".format(min_resource))
+                "The value of `min_resource` is {}, "
+                "but must be either `min_resource >= 1` or 'auto'".format(min_resource)
+            )
 
         if reduction_factor < 2:
-            raise ValueError('The value of `reduction_factor` is {}, '
-                             'but must be `reduction_factor >= 2`'.format(reduction_factor))
+            raise ValueError(
+                "The value of `reduction_factor` is {}, "
+                "but must be `reduction_factor >= 2`".format(reduction_factor)
+            )
 
         if min_early_stopping_rate < 0:
             raise ValueError(
-                'The value of `min_early_stopping_rate` is {}, '
-                "but must be `min_early_stopping_rate >= 0`".format(
-                    min_early_stopping_rate))
+                "The value of `min_early_stopping_rate` is {}, "
+                "but must be `min_early_stopping_rate >= 0`".format(min_early_stopping_rate)
+            )
 
         self._min_resource = None  # type: Optional[int]
         if isinstance(min_resource, int):
@@ -154,8 +161,9 @@ class SuccessiveHalvingPruner(BasePruner):
                     return False
 
             assert self._min_resource is not None
-            rung_promotion_step = self._min_resource * \
-                (self._reduction_factor ** (self._min_early_stopping_rate + rung))
+            rung_promotion_step = self._min_resource * (
+                self._reduction_factor ** (self._min_early_stopping_rate + rung)
+            )
             if step < rung_promotion_step:
                 return False
 
@@ -170,8 +178,11 @@ class SuccessiveHalvingPruner(BasePruner):
             study._storage.set_trial_system_attr(trial._trial_id, rung_key, value)
 
             if not _is_trial_promotable_to_next_rung(
-                    value, _get_competing_values(trials, value, rung_key),
-                    self._reduction_factor, study.direction):
+                value,
+                _get_competing_values(trials, value, rung_key),
+                self._reduction_factor,
+                study.direction,
+            ):
                 return True
 
             rung += 1
@@ -181,8 +192,7 @@ def _estimate_min_resource(trials):
     # type: (List[FrozenTrial]) -> Optional[int]
 
     n_steps = [
-        t.last_step for t in trials
-        if t.state == TrialState.COMPLETE and t.last_step is not None
+        t.last_step for t in trials if t.state == TrialState.COMPLETE and t.last_step is not None
     ]
 
     if not n_steps:
@@ -206,7 +216,7 @@ def _get_current_rung(trial):
 def _completed_rung_key(rung):
     # type: (int) -> str
 
-    return 'completed_rung_{}'.format(rung)
+    return "completed_rung_{}".format(rung)
 
 
 def _get_competing_values(trials, value, rung_key):

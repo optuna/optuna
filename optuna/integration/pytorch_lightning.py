@@ -6,6 +6,9 @@ if optuna.type_checking.TYPE_CHECKING:
 
 try:
     from pytorch_lightning.callbacks import EarlyStopping
+    from pytorch_lightning import LightningModule
+    from pytorch_lightning import Trainer
+
     _available = True
 except (ImportError, SyntaxError) as e:
     # SyntaxError is raised with Python versions below 3.6 since PyTorch Lightning does not
@@ -19,14 +22,9 @@ except (ImportError, SyntaxError) as e:
 class PyTorchLightningPruningCallback(EarlyStopping):
     """PyTorch Lightning callback to prune unpromising trials.
 
-    Example:
-
-        Add a pruning callback which observes validation accuracy.
-
-        .. code::
-
-            trainer.pytorch_lightning.Trainer(
-                early_stop_callback=PyTorchLightningPruningCallback(trial, monitor='avg_val_acc'))
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pytorch_lightning_simple.py>`__
+    if you want to add a pruning callback which observes accuracy.
 
     Args:
         trial:
@@ -43,17 +41,17 @@ class PyTorchLightningPruningCallback(EarlyStopping):
     def __init__(self, trial, monitor):
         # type: (optuna.trial.Trial, str) -> None
 
-        super(PyTorchLightningPruningCallback, self).__init__()
+        super(PyTorchLightningPruningCallback, self).__init__(monitor=monitor)
 
         _check_pytorch_lightning_availability()
 
         self._trial = trial
         self._monitor = monitor
 
-    def on_epoch_end(self, epoch, logs=None):
-        # type: (int, Optional[Dict[str, float]]) -> None
-
-        logs = logs or {}
+    def on_epoch_end(self, trainer, pl_module):
+        # type: (Trainer, LightningModule) -> None
+        logs = trainer.callback_metrics
+        epoch = pl_module.current_epoch
         current_score = logs.get(self._monitor)
         if current_score is None:
             return
@@ -68,8 +66,10 @@ def _check_pytorch_lightning_availability():
 
     if not _available:
         raise ImportError(
-            'PyTorch Lightning is not available. Please install PyTorch Lightning to use this '
-            'feature. PyTorch Lightning can be installed by executing `$ pip install '
-            'pytorch-lightning`. For further information, please refer to the installation guide '
-            'of PyTorch Lightining. (The actual import error is as follows: '
-            + str(_import_error) + ')')
+            "PyTorch Lightning is not available. Please install PyTorch Lightning to use this "
+            "feature. PyTorch Lightning can be installed by executing `$ pip install "
+            "pytorch-lightning`. For further information, please refer to the installation guide "
+            "of PyTorch Lightning. (The actual import error is as follows: "
+            + str(_import_error)
+            + ")"
+        )

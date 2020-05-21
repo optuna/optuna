@@ -86,6 +86,32 @@ If you want to save and resume studies,  it's handy to use SQLite as the local s
 Please see :ref:`rdb` for more details.
 
 
+How can I save and resume studies?
+----------------------------------------------------
+
+There are two ways of persisting studies, which depends if you are using
+in-memory storage (default) or remote databases (RDB). In-memory studies can be
+saved and loaded like usual Python objects using ``pickle`` or ``joblib``. For
+example, using ``joblib``:
+
+.. code-block:: python
+
+    study = optuna.create_study()
+    joblib.dump(study, 'study.pkl')
+
+And to resume the study:
+
+.. code-block:: python
+
+    study = joblib.load('study.pkl')
+    print('Best trial until now:')
+    print(' Value: ', study.best_trial.value)
+    print(' Params: ')
+    for key, value in study.best_trial.params.items():
+        print(f'    {key}: {value}')
+
+If you are using RDBs, see :ref:`rdb` for more details.
+
 How to suppress log messages of Optuna?
 ---------------------------------------
 
@@ -126,7 +152,7 @@ For example, you can save SVM models trained in the objective function as follow
         # Save a trained model to a file.
         with open('{}.pickle'.format(trial.number), 'wb') as fout:
             pickle.dump(clf, fout)
-        return 1.0 - accuracy_score(y_test, clf.predict(X_test))
+        return 1.0 - accuracy_score(y_valid, clf.predict(X_valid))
 
 
     study = optuna.create_study()
@@ -135,7 +161,7 @@ For example, you can save SVM models trained in the objective function as follow
     # Load the best model.
     with open('{}.pickle'.format(study.best_trial.number), 'rb') as fin:
         best_clf = pickle.load(fin)
-    print(accuracy_score(y_test, best_clf.predict(X_test)))
+    print(accuracy_score(y_valid, best_clf.predict(X_valid)))
 
 
 How can I obtain reproducible optimization results?
@@ -162,7 +188,7 @@ To deal with this problem, please set an option (e.g., random seed) to make the 
 How are exceptions from trials handled?
 ---------------------------------------
 
-Trials that raise exceptions without catching them will be treated as failures, i.e. with the :obj:`~optuna.structs.TrialState.FAIL` status.
+Trials that raise exceptions without catching them will be treated as failures, i.e. with the :obj:`~optuna.trial.TrialState.FAIL` status.
 
 By default, all exceptions except :class:`~optuna.exceptions.TrialPruned` raised in objective functions are propagated to the caller of :func:`~optuna.study.Study.optimize`.
 In other words, studies are aborted when such exceptions are raised.

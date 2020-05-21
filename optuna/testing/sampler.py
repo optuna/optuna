@@ -6,8 +6,8 @@ if optuna.type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
 
 class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
@@ -61,5 +61,6 @@ class FirstTrialOnlyRandomSampler(optuna.samplers.RandomSampler):
         if len(study.trials) > 1:
             raise RuntimeError("`FirstTrialOnlyRandomSampler` only works on the first trial.")
 
-        return super(FirstTrialOnlyRandomSampler,
-                     self).sample_independent(study, trial, param_name, param_distribution)
+        return super(FirstTrialOnlyRandomSampler, self).sample_independent(
+            study, trial, param_name, param_distribution
+        )

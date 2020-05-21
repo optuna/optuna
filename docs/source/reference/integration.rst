@@ -28,6 +28,19 @@ Integration
 
 .. autofunction:: optuna.integration.lightgbm.train
 
+.. autoclass:: optuna.integration.lightgbm_tuner.LightGBMTuner
+    :members:
+    :inherited-members:
+    :exclude-members: sample_train_set
+
+.. autoclass:: optuna.integration.lightgbm_tuner.LightGBMTunerCV
+    :members:
+    :inherited-members:
+    :exclude-members: sample_train_set
+
+.. autoclass:: MLflowCallback
+    :members:
+
 .. autoclass:: MXNetPruningCallback
     :members:
 
@@ -49,3 +62,8 @@ Integration
 
 .. autoclass:: OptunaSearchCV
     :members:
+
+.. autoclass:: AllenNLPExecutor
+    :members:
+
+.. autofunction:: optuna.integration.allennlp.dump_best_config

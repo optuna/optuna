@@ -6,7 +6,6 @@ if type_checking.TYPE_CHECKING:
 
 
 class UnsupportedDistribution(BaseDistribution):
-
     def single(self):
         # type: () -> bool
 

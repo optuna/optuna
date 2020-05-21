@@ -36,26 +36,26 @@ def load_data():
     classes.sort()
 
     ref_index = np.argmax(target == classes[:, None], axis=1)
-    test_index = np.delete(np.arange(len(faces)), ref_index)
+    valid_index = np.delete(np.arange(len(faces)), ref_index)
 
     x_ref = faces[ref_index]
     y_ref = target[ref_index]
-    x_test = faces[test_index]
-    y_test = target[test_index]
-    return x_ref, x_test, y_ref, y_test
+    x_valid = faces[valid_index]
+    y_valid = target[valid_index]
+    return x_ref, x_valid, y_ref, y_valid
 
 
 def get_lbp_hist(img, P, R, method):
     lbp = ft.local_binary_pattern(img, P, R, method)
-    if method == 'uniform':
+    if method == "uniform":
         bin_max = P + 3
         range_max = P + 2
-    elif method == 'default':
-        bin_max = 2**P
-        range_max = 2**P - 1
-    hist, _ = np.histogram(lbp.ravel(), density=True,
-                           bins=np.arange(0, bin_max),
-                           range=(0, range_max))
+    elif method == "default":
+        bin_max = 2 ** P
+        range_max = 2 ** P - 1
+    hist, _ = np.histogram(
+        lbp.ravel(), density=True, bins=np.arange(0, bin_max), range=(0, range_max)
+    )
     return hist
 
 
@@ -88,36 +88,36 @@ def calc_cos_dist(p, q):
 
 
 def calc_dist(p, q, metric):
-    if metric == 'kl':
+    if metric == "kl":
         dist = calc_kl_dist(p, q)
-    elif metric == 'cos':
+    elif metric == "cos":
         dist = calc_cos_dist(p, q)
-    elif metric == 'euc':
+    elif metric == "euc":
         dist = calc_euc_dist(p, q)
     return dist
 
 
 def objective(trial):
     # Get Olivetti faces dataset.
-    x_ref, x_test, y_ref, y_test = load_data()
+    x_ref, x_valid, y_ref, y_valid = load_data()
 
     # We optimize parameters of local_binary_pattern function in skimage
     # and the choice of distance metric classes.
-    P = trial.suggest_int('P', 1, 15)
-    R = trial.suggest_uniform('R', 1, 10)
-    method = trial.suggest_categorical('method', ['default', 'uniform'])
-    metric = trial.suggest_categorical('metric', ['kl', 'cos', 'euc'])
+    P = trial.suggest_int("P", 1, 15)
+    R = trial.suggest_uniform("R", 1, 10)
+    method = trial.suggest_categorical("method", ["default", "uniform"])
+    metric = trial.suggest_categorical("metric", ["kl", "cos", "euc"])
 
     x_ref_hist = img2hist(x_ref, P, R, method)
-    x_test_hist = img2hist(x_test, P, R, method)
-    dist = calc_dist(x_ref_hist, x_test_hist, metric)
+    x_valid_hist = img2hist(x_valid, P, R, method)
+    dist = calc_dist(x_ref_hist, x_valid_hist, metric)
 
     y_pred = np.argmin(dist, axis=1)
-    accuracy = sklearn.metrics.accuracy_score(y_test, y_pred)
+    accuracy = sklearn.metrics.accuracy_score(y_valid, y_pred)
     return accuracy
 
 
-if __name__ == '__main__':
-    study = optuna.create_study(direction='maximize')
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=50, timeout=600)
     print(study.best_trial)

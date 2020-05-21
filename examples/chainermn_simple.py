@@ -22,18 +22,18 @@ import numpy as np
 import optuna
 
 N_TRAIN_EXAMPLES = 3000
-N_TEST_EXAMPLES = 1000
+N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
 
 
 def create_model(trial):
     # We optimize the numbers of layers and their units.
-    n_layers = trial.suggest_int('n_layers', 1, 3)
+    n_layers = trial.suggest_int("n_layers", 1, 3)
 
     layers = []
     for i in range(n_layers):
-        n_units = int(trial.suggest_loguniform('n_units_l{}'.format(i), 4, 128))
+        n_units = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
         layers.append(L.Linear(None, n_units))
         layers.append(F.relu)
     layers.append(L.Linear(None, 10))
@@ -55,24 +55,26 @@ def objective(trial, comm):
     # Setup dataset and iterator. Only worker 0 loads the whole dataset.
     # The dataset of worker 0 is evenly split and distributed to all workers.
     if comm.rank == 0:
-        train, test = chainer.datasets.get_mnist()
+        train, valid = chainer.datasets.get_mnist()
         rng = np.random.RandomState(0)
         train = chainer.datasets.SubDataset(
-            train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train)))
-        test = chainer.datasets.SubDataset(
-            test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
+            train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))
+        )
+        valid = chainer.datasets.SubDataset(
+            valid, 0, N_VALID_EXAMPLES, order=rng.permutation(len(valid))
+        )
     else:
-        train, test = None, None
+        train, valid = None, None
 
     train = chainermn.scatter_dataset(train, comm, shuffle=True)
-    test = chainermn.scatter_dataset(test, comm)
+    valid = chainermn.scatter_dataset(valid, comm)
 
     train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE, shuffle=True)
-    test_iter = chainer.iterators.SerialIterator(test, BATCHSIZE, repeat=False, shuffle=False)
+    valid_iter = chainer.iterators.SerialIterator(valid, BATCHSIZE, repeat=False, shuffle=False)
 
     # Setup trainer.
     updater = chainer.training.StandardUpdater(train_iter, optimizer)
-    trainer = chainer.training.Trainer(updater, (EPOCH, 'epoch'))
+    trainer = chainer.training.Trainer(updater, (EPOCH, "epoch"))
 
     if comm.rank == 0:
         trainer.extend(chainer.training.extensions.ProgressBar())
@@ -81,34 +83,34 @@ def objective(trial, comm):
     trainer.run()
 
     # Evaluate.
-    evaluator = chainer.training.extensions.Evaluator(test_iter, model)
+    evaluator = chainer.training.extensions.Evaluator(valid_iter, model)
     evaluator = chainermn.create_multi_node_evaluator(evaluator, comm)
     report = evaluator()
 
-    return report['main/accuracy']
+    return report["main/accuracy"]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Please make sure common study and storage are shared among nodes.
     study_name = sys.argv[1]
     storage_url = sys.argv[2]
 
     study = optuna.load_study(study_name, storage_url)
-    comm = chainermn.create_communicator('naive')
+    comm = chainermn.create_communicator("naive")
     if comm.rank == 0:
-        print('Study name:', study_name)
-        print('Storage URL:', storage_url)
-        print('Number of nodes:', comm.size)
+        print("Study name:", study_name)
+        print("Storage URL:", storage_url)
+        print("Number of nodes:", comm.size)
 
     # Run optimization!
     chainermn_study = optuna.integration.ChainerMNStudy(study, comm)
     chainermn_study.optimize(objective, n_trials=25)
 
     if comm.rank == 0:
-        print('Number of finished trials: ', len(study.trials))
-        print('Best trial:')
+        print("Number of finished trials: ", len(study.trials))
+        print("Best trial:")
         trial = study.best_trial
-        print('  Value: ', trial.value)
-        print('  Params: ')
+        print("  Value: ", trial.value)
+        print("  Params: ")
         for key, value in trial.params.items():
-            print('    {}: {}'.format(key, value))
+            print("    {}: {}".format(key, value))

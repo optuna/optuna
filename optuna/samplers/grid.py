@@ -11,11 +11,13 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
+    from typing import Mapping  # NOQA
+    from typing import Sequence  # NOQA
     from typing import Union
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.structs import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
+    from optuna.trial import FrozenTrial  # NOQA
 
     GridValueType = Union[str, float, int, bool, None]
 
@@ -23,7 +25,7 @@ if type_checking.TYPE_CHECKING:
 _logger = get_logger(__name__)
 
 
-@experimental('1.2.0')
+@experimental("1.5.0")
 class GridSampler(BaseSampler):
     """Sampler using grid search.
 
@@ -83,7 +85,7 @@ class GridSampler(BaseSampler):
     """
 
     def __init__(self, search_space):
-        # type: (Dict[str, List[GridValueType]]) -> None
+        # type: (Mapping[str, Sequence[GridValueType]]) -> None
 
         for param_name, param_values in search_space.items():
             for value in param_values:
@@ -113,9 +115,9 @@ class GridSampler(BaseSampler):
         target_grids = self._get_unvisited_grid_ids(study)
 
         if len(target_grids) == 0:
-            _logger.warning('`GridSampler` is evaluating a duplicated point because all grids '
-                            'have been evaluated. This may happen due to a timing issue during '
-                            'distributed optimization or an unnecessary number of `n_trials`.')
+            _logger.warning("`GridSampler` is evaluating a duplicated point because all grids "
+                            "have been evaluated. This may happen due to a timing issue during "
+                            "distributed optimization or an unnecessary number of `n_trials`.")
 
             study.stop()
             target_grids = list(range(len(self._all_grids)))
@@ -124,8 +126,8 @@ class GridSampler(BaseSampler):
         # To make the conflict less frequent, the grid is chosen randomly.
         grid_id = random.choice(target_grids)
 
-        study._storage.set_trial_system_attr(trial._trial_id, 'search_space', self._search_space)
-        study._storage.set_trial_system_attr(trial._trial_id, 'grid_id', grid_id)
+        study._storage.set_trial_system_attr(trial._trial_id, "search_space", self._search_space)
+        study._storage.set_trial_system_attr(trial._trial_id, "grid_id", grid_id)
 
         # Once all grids are picked up, optimization stops after the current trial finishes.
         if len(self._get_unvisited_grid_ids(study, include_unfinished=True)) == 0:
@@ -137,18 +139,24 @@ class GridSampler(BaseSampler):
         # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
 
         if param_name not in self._search_space:
-            message = 'The parameter name, {}, is not found in the given grid.'.format(param_name)
+            message = "The parameter name, {}, is not found in the given grid.".format(param_name)
             raise ValueError(message)
 
-        grid_id = trial.system_attrs['grid_id']
+        # TODO(c-bata): Reduce the number of duplicated evaluations on multiple workers.
+        # Current selection logic may evaluate the same parameters multiple times.
+        # See https://gist.github.com/c-bata/f759f64becb24eea2040f4b2e3afce8f for details.
+        grid_id = trial.system_attrs["grid_id"]
         param_value = self._all_grids[grid_id][self._param_names.index(param_name)]
         contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))
         if not contains:
-            raise ValueError('The value `{}` is out of range of the parameter `{}`. Please make '
-                             'sure the search space of the `GridSampler` only contains values '
-                             'consistent with the distribution specified in the objective '
-                             'function. The distribution is: `{}`.'
-                             .format(param_value, param_name, param_distribution))
+            raise ValueError(
+                "The value `{}` is out of range of the parameter `{}`. Please make "
+                "sure the search space of the `GridSampler` only contains values "
+                "consistent with the distribution specified in the objective "
+                "function. The distribution is: `{}`.".format(
+                    param_value, param_name, param_distribution
+                )
+            )
 
         return param_value
 
@@ -159,9 +167,11 @@ class GridSampler(BaseSampler):
         if param_value is None or isinstance(param_value, (str, int, float, bool)):
             return
 
-        raise ValueError('{} contains a value with the type of {}, which is not supported by '
-                         '`GridSampler`. Please make sure a value is `str`, `int`, `float`, `bool`'
-                         ' or `None`.'.format(param_name, type(param_value)))
+        raise ValueError(
+            "{} contains a value with the type of {}, which is not supported by "
+            "`GridSampler`. Please make sure a value is `str`, `int`, `float`, `bool`"
+            " or `None`.".format(param_name, type(param_value))
+        )
 
     def _get_unvisited_grid_ids(self, study, include_unfinished=False):
         # type: (Study, bool) -> List[int]
@@ -169,9 +179,11 @@ class GridSampler(BaseSampler):
         # List up unvisited grids based on already finished ones.
         visited_grids = []
         for t in study.trials:
-            if ((t.state.is_finished() or include_unfinished)
-                    and 'grid_id' in t.system_attrs
-                    and self._same_search_space(t.system_attrs['search_space'])):
+            if (
+                (t.state.is_finished() or include_unfinished)
+                and 'grid_id' in t.system_attrs
+                and self._same_search_space(t.system_attrs['search_space'])
+            ):
                 visited_grids.append(t.system_attrs['grid_id'])
 
         unvisited_grids = set(range(self._n_min_trials)) - set(visited_grids)
@@ -179,7 +191,7 @@ class GridSampler(BaseSampler):
         return list(unvisited_grids)
 
     def _same_search_space(self, search_space):
-        # type: (Dict[str, List[GridValueType]]) -> bool
+        # type: (Mapping[str, Sequence[GridValueType]]) -> bool
 
         if set(search_space.keys()) != set(self._search_space.keys()):
             return False
