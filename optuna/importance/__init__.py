@@ -4,7 +4,8 @@ from typing import Optional
 
 from optuna._experimental import experimental
 from optuna.importance._base import BaseImportanceEvaluator
-from optuna.importance._fanova import FanovaImportanceEvaluator
+from optuna.importance._fanova import FanovaImportanceEvaluator  # NOQA
+from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
 from optuna.study import Study
 
 
@@ -42,7 +43,8 @@ def get_param_importances(
         evaluator:
             An importance evaluator object that specifies which algorithm to base the importance
             assessment on.
-            Defaults to :class:`~optuna.importance._fanova.FanovaImportanceEvaluator`.
+            Defaults to
+            :class:`~optuna.importance._mean_decrease_impurity.MeanDecreaseImpurityImportanceEvaluator`.
         params:
             A list of names of parameters to assess.
             If :obj:`None`, all parameters that are present in all of the completed trials are
@@ -53,7 +55,7 @@ def get_param_importances(
         assessed importances.
     """
     if evaluator is None:
-        evaluator = FanovaImportanceEvaluator()
+        evaluator = MeanDecreaseImpurityImportanceEvaluator()
 
     if not isinstance(evaluator, BaseImportanceEvaluator):
         raise TypeError("Evaluator must be a subclass of BaseImportanceEvaluator.")
