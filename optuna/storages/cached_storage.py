@@ -1,9 +1,11 @@
 import copy
+import datetime
 import threading
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Set
 from typing import Tuple
 
 from optuna import distributions
@@ -24,11 +26,13 @@ class _TrialUpdate:
         self.system_attrs = dict()  # type: Dict[str, Any]
         self.params = dict()  # type: Dict[str, Any]
         self.distributions = dict()  # type: Dict[str, distributions.BaseDistribution]
+        self.datetime_complete = None  # type: Optional[datetime.datetime]
 
 
 class _StudyInfo:
     def __init__(self) -> None:
-        self.trials = dict()  # type: Dict[int, FrozenTrial]
+        self.trials = []  # type: List[FrozenTrial]
+        self.cached_trial_ids = set()  # type: Set[int]
         self.updates = dict()  # type: Dict[int, _TrialUpdate]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
 
@@ -48,7 +52,7 @@ class _CachedStorage(base.BaseStorage):
         self._backend = backend
         self._studies = {}  # type: Dict[int, _StudyInfo]
         self._trial_id_to_study_id_and_number = dict()  # type: Dict[int, Tuple[int, int]]
-        self._lock = threading.RLock()
+        self._lock = threading.Lock()
 
     def __getstate__(self) -> Dict[Any, Any]:
         state = self.__dict__.copy()
@@ -57,7 +61,7 @@ class _CachedStorage(base.BaseStorage):
 
     def __setstate__(self, state: Dict[Any, Any]) -> None:
         self.__dict__.update(state)
-        self._lock = threading.RLock()
+        self._lock = threading.Lock()
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
 
@@ -70,8 +74,9 @@ class _CachedStorage(base.BaseStorage):
 
         with self._lock:
             if study_id in self._studies:
-                for trial_id in self._studies[study_id].trials:
+                for trial in self._studies[study_id].trials:
                     trial_ids_to_delete = []
+                    trial_id = trial._trial_id
                     if trial_id in self._trial_id_to_study_id_and_number:
                         trial_ids_to_delete.append(trial_id)
                     for trial_id in trial_ids_to_delete:
@@ -120,33 +125,63 @@ class _CachedStorage(base.BaseStorage):
 
         return self._backend.get_all_study_summaries()
 
+    @staticmethod
+    def _create_dummy_trial(number: int) -> FrozenTrial:
+
+        return FrozenTrial(
+            number=number,
+            state=TrialState.WAITING,
+            value=None,
+            datetime_start=None,
+            datetime_complete=None,
+            params={},
+            distributions={},
+            user_attrs={},
+            system_attrs={},
+            intermediate_values={},
+            trial_id=-1,
+        )
+
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 
         frozen_trial = self._backend._create_new_trial(study_id, template_trial)
         trial_id = frozen_trial._trial_id
-        with self._lock:
-            if study_id not in self._studies:
-                self._studies[study_id] = _StudyInfo()
-            self._trial_id_to_study_id_and_number[trial_id] = study_id, frozen_trial.number
-            if frozen_trial.state == TrialState.RUNNING:
-                self._studies[study_id].trials[frozen_trial.number] = frozen_trial
-            return trial_id
+        # We cannot cache a WAITING trial.
+        if frozen_trial.state != TrialState.WAITING:
+            with self._lock:
+                if study_id not in self._studies:
+                    self._studies[study_id] = _StudyInfo()
+                study = self._studies[study_id]
+                self._trial_id_to_study_id_and_number[trial_id] = study_id, frozen_trial.number
+                study.cached_trial_ids.add(frozen_trial._trial_id)
+                self._add_trials_to_cache(study_id, [frozen_trial])
+        return trial_id
 
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
 
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
+                self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
                 cached_trial.state = state
                 updates.state = state
-                ret = self._flush_trial(trial_id)
-                if cached_trial.state != TrialState.RUNNING:
-                    study_id, number = self._trial_id_to_study_id_and_number[trial_id]
-                    del self._studies[study_id].trials[number]
-                return ret
+                if cached_trial.state.is_finished():
+                    updates.datetime_complete = datetime.datetime.now()
+                    cached_trial.datetime_complete = datetime.datetime.now()
+                return self._flush_trial(trial_id)
 
-        return self._backend.set_trial_state(trial_id, state)
+        ret = self._backend.set_trial_state(trial_id, state)
+        if (
+            ret
+            and state == TrialState.RUNNING
+            and trial_id in self._trial_id_to_study_id_and_number
+        ):
+            # Cache when the local thread pop WAITING trial and start evaluation.
+            with self._lock:
+                study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
+                self._add_trials_to_cache(study_id, [self._backend.get_trial(trial_id)])
+        return ret
 
     def set_trial_param(
         self,
@@ -159,6 +194,7 @@ class _CachedStorage(base.BaseStorage):
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
+                self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
                 study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
                 cached_dist = self._studies[study_id].param_distribution.get(param_name, None)
@@ -203,6 +239,7 @@ class _CachedStorage(base.BaseStorage):
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
+                self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
                 cached_trial.value = value
                 updates.value = value
@@ -218,6 +255,7 @@ class _CachedStorage(base.BaseStorage):
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
+                self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
                 if step in cached_trial.intermediate_values:
                     return False
@@ -235,6 +273,7 @@ class _CachedStorage(base.BaseStorage):
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
+                self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
                 attrs = copy.copy(cached_trial.user_attrs)
                 attrs[key] = value
@@ -250,6 +289,7 @@ class _CachedStorage(base.BaseStorage):
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
+                self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
                 attrs = copy.copy(cached_trial.system_attrs)
                 attrs[key] = value
@@ -264,7 +304,8 @@ class _CachedStorage(base.BaseStorage):
         if trial_id not in self._trial_id_to_study_id_and_number:
             return None
         study_id, number = self._trial_id_to_study_id_and_number[trial_id]
-        return self._studies[study_id].trials.get(number, None)
+        study = self._studies[study_id]
+        return study.trials[number] if trial_id in study.cached_trial_ids else None
 
     def _get_updates(self, trial_id: int) -> _TrialUpdate:
         study_id, number = self._trial_id_to_study_id_and_number[trial_id]
@@ -287,11 +328,16 @@ class _CachedStorage(base.BaseStorage):
     def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
 
         with self._lock:
-            trials = self._backend.get_all_trials(study_id, deepcopy=False)
-            if study_id in self._studies:
-                for key, trial in self._studies[study_id].trials.items():
-                    trials[trial.number] = trial
-            return copy.deepcopy(trials) if deepcopy else trials
+            if study_id not in self._studies:
+                self._studies[study_id] = _StudyInfo()
+            study = self._studies[study_id]
+            trials = self._backend._get_uncached_trials(study_id, study.cached_trial_ids)
+            if trials:
+                self._add_trials_to_cache(study_id, trials)
+                for trial in trials:
+                    if trial.state.is_finished():
+                        study.cached_trial_ids.add(trial._trial_id)
+            return copy.deepcopy(study.trials) if deepcopy else study.trials[:]
 
     def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
 
@@ -317,4 +363,29 @@ class _CachedStorage(base.BaseStorage):
             distributions_=updates.distributions,
             user_attrs=updates.user_attrs,
             system_attrs=updates.system_attrs,
+            datetime_complete=updates.datetime_complete,
         )
+
+    def _add_trials_to_cache(self, study_id: int, trials: List[FrozenTrial]) -> None:
+        study = self._studies[study_id]
+        max_trial_number = max(trial.number for trial in trials)
+        if len(study.trials) <= max_trial_number:
+            study.trials.extend(
+                [
+                    self._create_dummy_trial(i)
+                    for i in range(len(study.trials), max_trial_number + 1)
+                ]
+            )
+        for trial in trials:
+            self._trial_id_to_study_id_and_number[trial._trial_id] = (
+                study_id,
+                trial.number,
+            )
+            study.trials[trial.number] = trial
+
+    @staticmethod
+    def _check_trial_is_updatable(trial: FrozenTrial) -> None:
+        if trial.state.is_finished():
+            raise RuntimeError(
+                "Trial#{} has already finished and can not be updated.".format(trial.number)
+            )

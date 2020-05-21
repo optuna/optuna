@@ -11,7 +11,7 @@ from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
+from typing import Set
 from typing import Tuple
 import uuid
 import weakref
@@ -555,6 +555,7 @@ class RDBStorage(BaseStorage):
         distributions_: Optional[Dict[str, distributions.BaseDistribution]] = None,
         user_attrs: Optional[Dict[str, Any]] = None,
         system_attrs: Optional[Dict[str, Any]] = None,
+        datetime_complete: Optional[datetime] = None,
     ) -> bool:
         """Sync latest trial updates to a database.
 
@@ -604,9 +605,10 @@ class RDBStorage(BaseStorage):
             return False
 
         if state:
-            if state.is_finished():
-                trial_model.datetime_complete = datetime.now()
             trial_model.state = state
+
+        if datetime_complete:
+            trial_model.datetime_complete = datetime_complete
 
         if value is not None:
             trial_model.value = value
@@ -938,13 +940,11 @@ class RDBStorage(BaseStorage):
     def get_all_trials(self, study_id, deepcopy=True):
         # type: (int, bool) -> List[FrozenTrial]
 
-        trials = self._get_uncached_trials(study_id, [])
+        trials = self._get_uncached_trials(study_id, set())
 
         return copy.deepcopy(trials) if deepcopy else trials
 
-    def _get_uncached_trials(
-        self, study_id: int, cached_trial_ids: Sequence[int]
-    ) -> List[FrozenTrial]:
+    def _get_uncached_trials(self, study_id: int, cached_trial_ids: Set[int]) -> List[FrozenTrial]:
 
         session = self.scoped_session()
 
@@ -966,7 +966,7 @@ class RDBStorage(BaseStorage):
             )
             .all()
         )
-        trials = self._get_trials_from_trial_models(session, trial_models)
+        trials = self._get_trials_from_trial_models(session, trial_models) if trial_models else []
 
         self._commit(session)
 
