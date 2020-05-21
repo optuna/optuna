@@ -92,13 +92,15 @@ class TPESampler(base.BaseSampler):
             either :class:`~optuna.distributions.UniformDistribution`,
             :class:`~optuna.distributions.DiscreteUniformDistribution`,
             :class:`~optuna.distributions.LogUniformDistribution`,
-            or :class:`~optuna.distributions.IntUniformDistribution`.
+            :class:`~optuna.distributions.IntUniformDistribution`,
+            or :class:`~optuna.distributions.IntLogUniformDistribution`.
         prior_weight:
             The weight of the prior. This argument is used in
             :class:`~optuna.distributions.UniformDistribution`,
             :class:`~optuna.distributions.DiscreteUniformDistribution`,
             :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.IntUniformDistribution` and
+            :class:`~optuna.distributions.IntUniformDistribution`,
+            :class:`~optuna.distributions.IntLogUniformDistribution`, and
             :class:`~optuna.distributions.CategoricalDistribution`.
         consider_magic_clip:
             Enable a heuristic to limit the smallest variances of Gaussians used in
@@ -110,7 +112,7 @@ class TPESampler(base.BaseSampler):
         n_startup_trials:
             The random sampling is used instead of the TPE algorithm until the given number
             of trials finish in the same study.
-        n_ei_candidate:
+        n_ei_candidates:
             Number of candidate samples used to calculate the expected improvement.
         gamma:
             A function that takes the number of finished trials and returns the number
@@ -191,6 +193,10 @@ class TPESampler(base.BaseSampler):
             )
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
             return self._sample_int(param_distribution, below_param_values, above_param_values)
+        elif isinstance(param_distribution, distributions.IntLogUniformDistribution):
+            return self._sample_int_loguniform(
+                param_distribution, below_param_values, above_param_values
+            )
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             index = self._sample_categorical_index(
                 param_distribution, below_param_values, above_param_values
@@ -202,6 +208,7 @@ class TPESampler(base.BaseSampler):
                 distributions.LogUniformDistribution.__name__,
                 distributions.DiscreteUniformDistribution.__name__,
                 distributions.IntUniformDistribution.__name__,
+                distributions.IntLogUniformDistribution.__name__,
                 distributions.CategoricalDistribution.__name__,
             ]
             raise NotImplementedError(
@@ -266,6 +273,19 @@ class TPESampler(base.BaseSampler):
             low=distribution.low, high=distribution.high, q=distribution.step
         )
         return int(self._sample_discrete_uniform(d, below, above))
+
+    def _sample_int_loguniform(self, distribution, below, above):
+        # type: (distributions.IntLogUniformDistribution, np.ndarray, np.ndarray) -> int
+
+        low = distribution.low - 0.5
+        high = distribution.high + 0.5
+
+        log_sample = self._sample_numerical(low, high, below, above, is_log=True)
+        best_sample = (
+            np.round((log_sample - distribution.low) / distribution.step) * distribution.step
+            + distribution.low
+        )
+        return int(min(max(best_sample, distribution.low), distribution.high))
 
     def _sample_numerical(
         self,

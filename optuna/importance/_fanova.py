@@ -7,6 +7,7 @@ from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
@@ -102,6 +103,8 @@ def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -
         hp = UniformFloatHyperparameter(name, lower=d.low, upper=d.high, q=d.q)
     elif isinstance(d, IntUniformDistribution):
         hp = UniformIntegerHyperparameter(name, lower=d.low, upper=d.high, q=d.step)
+    elif isinstance(d, IntLogUniformDistribution):
+        hp = UniformIntegerHyperparameter(name, lower=d.low, upper=d.high, q=d.step, log=True)
     elif isinstance(d, CategoricalDistribution):
         hp = CategoricalHyperparameter(name, choices=[d.to_internal_repr(c) for c in d.choices])
     else:
@@ -110,6 +113,7 @@ def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -
             LogUniformDistribution.__name__,
             DiscreteUniformDistribution.__name__,
             IntUniformDistribution.__name__,
+            IntLogUniformDistribution.__name__,
             CategoricalDistribution.__name__,
         ]
         raise NotImplementedError(
