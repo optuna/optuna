@@ -14,8 +14,7 @@ fashion_mnist = tf.keras.datasets.fashion_mnist
 x_train, x_test = x_train / 255.0, x_test / 255.0
 
 
-def train_test_model(num_units, dropout_rate, optimizer):
-    # type: (int, float, str) -> float
+def train_test_model(num_units: "int", dropout_rate: "float", optimizer: "str") -> float:
     model = tf.keras.models.Sequential(
         [
             tf.keras.layers.Flatten(),
@@ -39,8 +38,7 @@ param_distributions["DROPOUT_RATE"] = ("uniform", (0.1, 0.2))
 param_distributions["OPTIMIZER"] = ("categorical", (["sgd", "adam"],))
 
 
-def objective(trial):
-    # type: (optuna.trial.Trial) -> float
+def objective(trial: "optuna.trial.Trial") -> float:
 
     num_units = trial.suggest_int(
         "NUM_UNITS", param_distributions["NUM_UNITS"][1][0], param_distributions["NUM_UNITS"][1][1]

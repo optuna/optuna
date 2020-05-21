@@ -8,8 +8,7 @@ from optuna.integration.tensorboard import TensorBoardCallback
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 
-def _objective_func(trial):
-    # type: (optuna.trial.Trial) -> float
+def _objective_func(trial: "optuna.trial.Trial") -> float:
 
     x = trial.suggest_uniform("x", -1.0, 1.0)
     y = trial.suggest_loguniform("y", 20, 30)
@@ -19,8 +18,7 @@ def _objective_func(trial):
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
-def test_study_name():
-    # type: () -> None
+def test_study_name() -> None:
 
     distributions = {
         "x": ("uniform", (-1.0, 1.0)),

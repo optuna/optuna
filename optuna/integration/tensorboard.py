@@ -22,8 +22,7 @@ except ImportError as e:
     tensorflow = object
 
 
-def _check_tensorboard_availability():
-    # type: () -> None
+def _check_tensorboard_availability() -> None:
 
     if not _available:
         raise ImportError(
@@ -53,8 +52,9 @@ class TensorBoardCallback(object):
             if it was roc-auc or accuracy.
     """
 
-    def __init__(self, dirname, param_distributions, metric_name):
-        # type: (str, Dict[str, Tuple[str, Any]], str) -> None
+    def __init__(
+        self, dirname: "str", param_distributions: "Dict[str, Tuple[str, Any]]", metric_name: "str"
+    ) -> None:
 
         _check_tensorboard_availability()
 
@@ -139,8 +139,7 @@ class TensorBoardCallback(object):
                     )
                 )
 
-    def __call__(self, study, trial):
-        # type: (optuna.study.Study, optuna.trial.FrozenTrial) -> None
+    def __call__(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> None:
 
         trial_value = trial.value if trial.value is not None else float("nan")
 
