@@ -256,8 +256,8 @@ class HyperbandPruner(BasePruner):
             )
             self._pruners.append(pruner)
 
-    def _calculate_trial_allocation_budget(self, pruner_index: int) -> int:
-        """Compute the trial allocated budget for a bracket of ``pruner_index``.
+    def _calculate_trial_allocation_budget(self, bracket_id: int) -> int:
+        """Compute the trial allocated budget for a bracket of ``bracket_id``.
 
         In the `original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`, the
         number of trials per one bracket is referred as ``n`` in Algorithm 1. Since we do not know
@@ -266,7 +266,7 @@ class HyperbandPruner(BasePruner):
         """
 
         assert self._n_brackets is not None
-        s = self._n_brackets - 1 - pruner_index
+        s = self._n_brackets - 1 - bracket_id
         return math.ceil(self._n_brackets * (self._reduction_factor ** s) / (s + 1))
 
     def _get_bracket_id(
@@ -293,8 +293,17 @@ class HyperbandPruner(BasePruner):
 
         assert False, "This line should be unreachable."
 
+    def _calculate_bracket_max_resource(self, bracket_id: int) -> int:
+        """Compute the maximum resource for a bracket of ``bracket_id``.
+        
+        The maximum resource for each bracket with a bracket id :math:`s` is calculated according 
+        to `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
+        """
+        s = self._n_brackets - 1 - bracket_id
+        return self._min_resource * (self._reduction_factor ** s)
+
     def _create_bracket_study(
-        self, study: "optuna.study.Study", bracket_index: int
+        self, study: "optuna.study.Study", bracket_id: int
     ) -> "optuna.study.Study":
         # This class is assumed to be passed to
         # `SuccessiveHalvingPruner.prune` in which `get_trials`,
@@ -322,12 +331,14 @@ class HyperbandPruner(BasePruner):
                     pruner=study.pruner,
                 )
                 self._bracket_id = bracket_id
+                self._expected_maximum_resource = self.pruner._calculate_bracket_max_resource(bracket_id)
 
             def get_trials(self, deepcopy: bool = True) -> List["optuna.trial.FrozenTrial"]:
                 trials = super().get_trials(deepcopy=deepcopy)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
-                return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]
+                return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id
+                        or self._expected_maximum_resource <= t.last_step]
 
             def __getattribute__(self, attr_name):  # type: ignore
                 if attr_name not in _BracketStudy._VALID_ATTRS:
@@ -337,4 +348,4 @@ class HyperbandPruner(BasePruner):
                 else:
                     return object.__getattribute__(self, attr_name)
 
-        return _BracketStudy(study, bracket_index)
+        return _BracketStudy(study, bracket_id)
