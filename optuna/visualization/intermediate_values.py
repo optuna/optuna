@@ -1,11 +1,9 @@
 from optuna.logging import get_logger
 from optuna.trial import TrialState
-from optuna import type_checking
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import is_available
 
-if type_checking.TYPE_CHECKING:
-    from optuna.study import Study  # NOQA
+from optuna.study import Study
 
 if is_available():
     from optuna.visualization.plotly_imports import go
@@ -13,8 +11,7 @@ if is_available():
 logger = get_logger(__name__)
 
 
-def plot_intermediate_values(study):
-    # type: (Study) -> go.Figure
+def plot_intermediate_values(study: Study) -> "go.Figure":
     """Plot intermediate values of all trials in a study.
 
     Example:
@@ -71,8 +68,7 @@ def plot_intermediate_values(study):
     return _get_intermediate_plot(study)
 
 
-def _get_intermediate_plot(study):
-    # type: (Study) -> go.Figure
+def _get_intermediate_plot(study: Study) -> "go.Figure":
 
     layout = go.Layout(
         title="Intermediate Values Plot",
