@@ -293,15 +293,6 @@ class HyperbandPruner(BasePruner):
 
         assert False, "This line should be unreachable."
 
-    def _calculate_bracket_max_resource(self, bracket_id: int) -> int:
-        """Compute the maximum resource for a bracket of ``bracket_id``.
-        
-        The maximum resource for each bracket with a bracket id :math:`s` is calculated according 
-        to `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
-        """
-        s = self._n_brackets - 1 - bracket_id
-        return self._min_resource * (self._reduction_factor ** s)
-
     def _create_bracket_study(
         self, study: "optuna.study.Study", bracket_id: int
     ) -> "optuna.study.Study":
@@ -331,14 +322,12 @@ class HyperbandPruner(BasePruner):
                     pruner=study.pruner,
                 )
                 self._bracket_id = bracket_id
-                self._expected_maximum_resource = self.pruner._calculate_bracket_max_resource(bracket_id)
 
             def get_trials(self, deepcopy: bool = True) -> List["optuna.trial.FrozenTrial"]:
                 trials = super().get_trials(deepcopy=deepcopy)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
-                return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id
-                        or self._expected_maximum_resource <= t.last_step]
+                return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]
 
             def __getattribute__(self, attr_name):  # type: ignore
                 if attr_name not in _BracketStudy._VALID_ATTRS:
