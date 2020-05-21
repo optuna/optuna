@@ -295,10 +295,15 @@ class HyperbandPruner(BasePruner):
 
     def _calculate_bracket_max_resource(self, bracket_id: int) -> int:
         """Compute the maximum resource for a bracket of ``bracket_id``.
-        
-        The maximum resource for each bracket with a bracket id :math:`s` is calculated according 
+
+        The maximum resource for each bracket with a bracket id :math:`s` is calculated according
         to `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_.
         """
+
+        if len(self._pruners) == 0:
+            return 0
+
+        assert self._n_brackets is not None
         s = self._n_brackets - 1 - bracket_id
         return self._min_resource * (self._reduction_factor ** s)
 
@@ -319,6 +324,7 @@ class HyperbandPruner(BasePruner):
                 "pruner",
                 "study_name",
                 "_bracket_id",
+                "_expected_maximum_resource",
                 "sampler",
                 "trials",
             )
@@ -331,14 +337,21 @@ class HyperbandPruner(BasePruner):
                     pruner=study.pruner,
                 )
                 self._bracket_id = bracket_id
-                self._expected_maximum_resource = self.pruner._calculate_bracket_max_resource(bracket_id)
+                assert isinstance(self.pruner, HyperbandPruner)
+                self._expected_maximum_resource = self.pruner._calculate_bracket_max_resource(
+                    bracket_id
+                )
 
             def get_trials(self, deepcopy: bool = True) -> List["optuna.trial.FrozenTrial"]:
                 trials = super().get_trials(deepcopy=deepcopy)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
-                return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id
-                        or self._expected_maximum_resource <= t.last_step]
+                return [
+                    t
+                    for t in trials
+                    if pruner._get_bracket_id(self, t) == self._bracket_id
+                    or (t.last_step is not None and self._expected_maximum_resource <= t.last_step)
+                ]
 
             def __getattribute__(self, attr_name):  # type: ignore
                 if attr_name not in _BracketStudy._VALID_ATTRS:
