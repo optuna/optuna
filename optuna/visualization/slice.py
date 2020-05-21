@@ -20,27 +20,39 @@ logger = get_logger(__name__)
 
 def plot_slice(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
     """Plot the parameter relationship as slice plot in a study.
+
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
+
     Example:
+
         The following code snippet shows how to plot the parameter relationship as slice plot.
+
         .. testcode::
+
             import optuna
+
             def objective(trial):
                 x = trial.suggest_uniform('x', -100, 100)
                 y = trial.suggest_categorical('y', [-1, 0, 1])
                 return x ** 2 + y
+
             study = optuna.create_study()
             study.optimize(objective, n_trials=10)
+
             optuna.visualization.plot_slice(study, params=['x', 'y'])
+
         .. raw:: html
+
             <iframe src="../_static/plot_slice.html" width="100%" height="500px" frameborder="0">
             </iframe>
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
             values.
         params:
             Parameter list to visualize. The default is all parameters.
+
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
     """
