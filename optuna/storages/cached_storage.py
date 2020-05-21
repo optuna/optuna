@@ -280,7 +280,7 @@ class _CachedStorage(base.BaseStorage):
         with self._lock:
             trial = self._get_cached_trial(trial_id)
             if trial is not None:
-                return copy.deepcopy(trial)
+                return trial
 
         return self._backend.get_trial(trial_id)
 

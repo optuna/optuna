@@ -1,3 +1,4 @@
+import copy
 import datetime
 import warnings
 
@@ -768,7 +769,7 @@ class Trial(BaseTrial):
             A dictionary containing all distributions.
         """
 
-        return self.storage.get_trial(self._trial_id).distributions
+        return copy.deepcopy(self.storage.get_trial(self._trial_id).distributions)
 
     @property
     def user_attrs(self):
