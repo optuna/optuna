@@ -1,18 +1,14 @@
 from optuna.distributions import LogUniformDistribution
-from optuna import type_checking
 from optuna.visualization import plotly_imports
 
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-
-    from optuna.trial import FrozenTrial  # NOQA
+from typing import List
+from optuna.trial import FrozenTrial
 
 
 __all__ = ["is_available"]
 
 
-def is_available():
-    # type: () -> bool
+def is_available() -> bool:
     """Returns whether visualization is available or not.
 
     .. note::
@@ -29,8 +25,7 @@ def is_available():
     return plotly_imports._available
 
 
-def _check_plotly_availability():
-    # type: () -> None
+def _check_plotly_availability() -> None:
 
     if not is_available():
         raise ImportError(
@@ -52,8 +47,7 @@ def _check_plotly_availability():
         )
 
 
-def _is_log_scale(trials, param):
-    # type: (List[FrozenTrial], str) -> bool
+def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
 
     return any(
         isinstance(t.distributions[param], LogUniformDistribution)
