@@ -25,7 +25,7 @@ if type_checking.TYPE_CHECKING:
 _logger = get_logger(__name__)
 
 
-@experimental("1.5.0")
+@experimental("1.2.0")
 class GridSampler(BaseSampler):
     """Sampler using grid search.
 
