@@ -123,9 +123,7 @@ class _StudySetUserAttribute(_BaseCommand):
 
         parser = super(_StudySetUserAttribute, self).get_parser(prog_name)
         parser.add_argument(
-            "--study",
-            default=None,
-            help="This argument is deprecated. Use --study-name instead.",
+            "--study", default=None, help="This argument is deprecated. Use --study-name instead.",
         )
         parser.add_argument(
             "--study-name",
@@ -147,10 +145,7 @@ class _StudySetUserAttribute(_BaseCommand):
                 "Please remove the `--study` flag."
             )
         elif parsed_args.study:
-            message = (
-                "The use of `--study` is deprecated. "
-                "Please use `--study-name` instead."
-            )
+            message = "The use of `--study` is deprecated. Please use `--study-name` instead."
             warnings.warn(message, DeprecationWarning)
             self.logger.warning(message)
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
@@ -203,9 +198,7 @@ class _Dashboard(_BaseCommand):
 
         parser = super(_Dashboard, self).get_parser(prog_name)
         parser.add_argument(
-            "--study",
-            default=None,
-            help="This argument is deprecated. Use --study-name instead.",
+            "--study", default=None, help="This argument is deprecated. Use --study-name instead.",
         )
         parser.add_argument(
             "--study-name",
@@ -243,10 +236,7 @@ class _Dashboard(_BaseCommand):
                 "Please remove the `--study` flag."
             )
         elif parsed_args.study:
-            message = (
-                "The use of `--study` is deprecated. "
-                "Please use `--study-name` instead."
-            )
+            message = "The use of `--study` is deprecated. Please use `--study-name` instead."
             warnings.warn(message, DeprecationWarning)
             self.logger.warning(message)
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
@@ -289,9 +279,7 @@ class _StudyOptimize(_BaseCommand):
             "number is set to CPU counts.",
         )
         parser.add_argument(
-            "--study",
-            default=None,
-            help="This argument is deprecated. Use --study-name instead.",
+            "--study", default=None, help="This argument is deprecated. Use --study-name instead.",
         )
         parser.add_argument(
             "--study-name",
@@ -315,10 +303,7 @@ class _StudyOptimize(_BaseCommand):
                 "Please remove the `--study` flag."
             )
         elif parsed_args.study:
-            message = (
-                "The use of `--study` is deprecated. "
-                "Please use `--study-name` instead."
-            )
+            message = "The use of `--study` is deprecated. Please use `--study-name` instead."
             warnings.warn(message, DeprecationWarning)
             self.logger.warning(message)
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
