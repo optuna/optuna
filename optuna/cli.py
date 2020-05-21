@@ -154,8 +154,10 @@ class _StudySetUserAttribute(_BaseCommand):
             warnings.warn(message, DeprecationWarning)
             self.logger.warning(message)
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
-        else:
+        elif parsed_args.study_name:
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        else:
+            raise ValueError("Missing study name. Please use `--study-name`.")
 
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
@@ -248,8 +250,10 @@ class _Dashboard(_BaseCommand):
             warnings.warn(message, DeprecationWarning)
             self.logger.warning(message)
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
-        else:
+        elif parsed_args.study_name:
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        else:
+            raise ValueError("Missing study name. Please use `--study-name`.")
 
         if parsed_args.out is None:
             optuna.dashboard._serve(study, parsed_args.bokeh_allow_websocket_origins)
@@ -318,8 +322,10 @@ class _StudyOptimize(_BaseCommand):
             warnings.warn(message, DeprecationWarning)
             self.logger.warning(message)
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
-        else:
+        elif parsed_args.study_name:
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        else:
+            raise ValueError("Missing study name. Please use `--study-name`.")
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.
