@@ -13,6 +13,7 @@ from importlib.machinery import SourceFileLoader
 import logging
 import sys
 import types
+import warnings
 
 from cliff.app import App
 from cliff.command import Command
@@ -122,8 +123,13 @@ class _StudySetUserAttribute(_BaseCommand):
 
         parser = super(_StudySetUserAttribute, self).get_parser(prog_name)
         parser.add_argument(
+            "--study",
+            default=None,
+            help="This argument is deprecated. Use --study-name instead.",
+        )
+        parser.add_argument(
             "--study-name",
-            required=True,
+            default=None,
             help="A human-readable name of a study to distinguish it from others.",
         )
         parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
@@ -134,7 +140,23 @@ class _StudySetUserAttribute(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
-        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+
+        if parsed_args.study and parsed_args.study_name:
+            raise ValueError(
+                "Both `--study-name` and the deprecated `--study` was specified. "
+                "Please remove the `--study` flag."
+            )
+        elif parsed_args.study:
+            message = (
+                "The use of `--study` is deprecated. "
+                "Please use `--study-name` instead."
+            )
+            warnings.warn(message, DeprecationWarning)
+            self.logger.warning(message)
+            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
+        else:
+            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+
         study.set_user_attr(parsed_args.key, parsed_args.value)
 
         self.logger.info("Attribute successfully written.")
@@ -179,8 +201,13 @@ class _Dashboard(_BaseCommand):
 
         parser = super(_Dashboard, self).get_parser(prog_name)
         parser.add_argument(
+            "--study",
+            default=None,
+            help="This argument is deprecated. Use --study-name instead.",
+        )
+        parser.add_argument(
             "--study-name",
-            required=True,
+            default=None,
             help="A human-readable name of a study to distinguish it from others.",
         )
         parser.add_argument(
@@ -207,7 +234,22 @@ class _Dashboard(_BaseCommand):
         # type: (Namespace) -> None
 
         storage_url = _check_storage_url(self.app_args.storage)
-        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+
+        if parsed_args.study and parsed_args.study_name:
+            raise ValueError(
+                "Both `--study-name` and the deprecated `--study` was specified. "
+                "Please remove the `--study` flag."
+            )
+        elif parsed_args.study:
+            message = (
+                "The use of `--study` is deprecated. "
+                "Please use `--study-name` instead."
+            )
+            warnings.warn(message, DeprecationWarning)
+            self.logger.warning(message)
+            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
+        else:
+            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
 
         if parsed_args.out is None:
             optuna.dashboard._serve(study, parsed_args.bokeh_allow_websocket_origins)
@@ -243,8 +285,13 @@ class _StudyOptimize(_BaseCommand):
             "number is set to CPU counts.",
         )
         parser.add_argument(
+            "--study",
+            default=None,
+            help="This argument is deprecated. Use --study-name instead.",
+        )
+        parser.add_argument(
             "--study-name",
-            required=True,
+            default=None,
             help="A human-readable name of a study to distinguish it from others.",
         )
         parser.add_argument(
@@ -257,7 +304,22 @@ class _StudyOptimize(_BaseCommand):
         # type: (Namespace) -> int
 
         storage_url = _check_storage_url(self.app_args.storage)
-        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+
+        if parsed_args.study and parsed_args.study_name:
+            raise ValueError(
+                "Both `--study-name` and the deprecated `--study` was specified. "
+                "Please remove the `--study` flag."
+            )
+        elif parsed_args.study:
+            message = (
+                "The use of `--study` is deprecated. "
+                "Please use `--study-name` instead."
+            )
+            warnings.warn(message, DeprecationWarning)
+            self.logger.warning(message)
+            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
+        else:
+            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
 
         # We force enabling the debug flag. As we are going to execute user codes, we want to show
         # exception stack traces by default.
