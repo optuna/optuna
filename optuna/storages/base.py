@@ -21,7 +21,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     This class is not supposed to be directly accessed by library users.
 
-    A storage class abstract a backend database and provide library internal interfaces to
+    A storage class abstracts a backend database and provide library internal interfaces to
     read/write histories of studies and trials.
 
     **Thread safety**
