@@ -152,7 +152,7 @@ For example, you can save SVM models trained in the objective function as follow
         # Save a trained model to a file.
         with open('{}.pickle'.format(trial.number), 'wb') as fout:
             pickle.dump(clf, fout)
-        return 1.0 - accuracy_score(y_test, clf.predict(X_test))
+        return 1.0 - accuracy_score(y_valid, clf.predict(X_valid))
 
 
     study = optuna.create_study()
@@ -161,7 +161,7 @@ For example, you can save SVM models trained in the objective function as follow
     # Load the best model.
     with open('{}.pickle'.format(study.best_trial.number), 'rb') as fin:
         best_clf = pickle.load(fin)
-    print(accuracy_score(y_test, best_clf.predict(X_test)))
+    print(accuracy_score(y_valid, best_clf.predict(X_valid)))
 
 
 How can I obtain reproducible optimization results?

@@ -31,7 +31,7 @@ MODEL_DIR = tempfile.mkdtemp()
 BATCH_SIZE = 128
 TRAIN_STEPS = 1000
 N_TRAIN_BATCHES = 3000
-N_TEST_BATCHES = 1000
+N_VALID_BATCHES = 1000
 
 
 def preprocess(image, label):
@@ -51,9 +51,9 @@ def train_input_fn():
 
 def eval_input_fn():
     data = tfds.load(name="mnist", as_supervised=True)
-    test_ds = data["test"]
-    test_ds = test_ds.map(preprocess).shuffle(10000).batch(BATCH_SIZE).take(N_TEST_BATCHES)
-    return test_ds
+    valid_ds = data["test"]
+    valid_ds = valid_ds.map(preprocess).shuffle(10000).batch(BATCH_SIZE).take(N_VALID_BATCHES)
+    return valid_ds
 
 
 def create_optimizer(trial):

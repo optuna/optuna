@@ -108,13 +108,18 @@ class CmaEsSampler(BaseSampler):
         self._warn_independent_sampling = warn_independent_sampling
         self._logger = optuna.logging.get_logger(__name__)
         self._cma_rng = np.random.RandomState(seed)
+        self._search_space = optuna.samplers.IntersectionSearchSpace()
+
+    def reseed_rng(self) -> None:
+        # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
+        self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
         self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial",
     ) -> Dict[str, BaseDistribution]:
 
         search_space = {}  # type: Dict[str, BaseDistribution]
-        for name, distribution in optuna.samplers.intersection_search_space(study).items():
+        for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
                 # `cma` cannot handle distributions that contain just a single value, so we skip
                 # them. Note that the parameter values for such distributions are sampled in
@@ -190,7 +195,10 @@ class CmaEsSampler(BaseSampler):
             solutions = []  # type: List[Tuple[np.ndarray, float]]
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
-                x = np.array([_to_cma_param(search_space[k], t.params[k]) for k in ordered_keys])
+                x = np.array(
+                    [_to_cma_param(search_space[k], t.params[k]) for k in ordered_keys],
+                    dtype=float,
+                )
                 solutions.append((x, t.value))
 
             optimizer.tell(solutions)
@@ -236,14 +244,14 @@ class CmaEsSampler(BaseSampler):
         else:
             sigma0 = self._sigma0
         sigma0 = max(sigma0, _MIN_SIGMA0)
-        mean = np.array([self._x0[k] for k in ordered_keys])
+        mean = np.array([self._x0[k] for k in ordered_keys], dtype=float)
         bounds = _get_search_space_bound(ordered_keys, search_space)
         n_dimension = len(ordered_keys)
         return CMA(
             mean=mean,
             sigma=sigma0,
             bounds=bounds,
-            seed=self._cma_rng.randint(1, 2 ** 32),
+            seed=self._cma_rng.randint(1, 2 ** 31 - 2),
             n_max_resampling=10 * n_dimension,
         )
 
@@ -363,4 +371,4 @@ def _get_search_space_bound(
             bounds.append([dist.low, dist.high])
         else:
             raise NotImplementedError("The distribution {} is not implemented.".format(dist))
-    return np.array(bounds)
+    return np.array(bounds, dtype=float)

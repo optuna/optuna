@@ -28,7 +28,7 @@ if pkg_resources.parse_version(tf.__version__) < pkg_resources.parse_version("2.
     raise RuntimeError("tensorflow>=2.0.0 is required for this example.")
 
 N_TRAIN_EXAMPLES = 3000
-N_TEST_EXAMPLES = 1000
+N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 1
@@ -96,26 +96,26 @@ def learn(model, optimizer, dataset, mode="eval"):
 
 
 def get_mnist():
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    (x_train, y_train), (x_valid, y_valid) = mnist.load_data()
     x_train = x_train.astype("float32") / 255
-    x_test = x_test.astype("float32") / 255
+    x_valid = x_valid.astype("float32") / 255
 
     y_train = y_train.astype("int32")
-    y_test = y_test.astype("int32")
+    y_valid = y_valid.astype("int32")
 
     train_ds = tf.data.Dataset.from_tensor_slices((x_train, y_train))
     train_ds = train_ds.shuffle(60000).batch(BATCHSIZE).take(N_TRAIN_EXAMPLES)
 
-    test_ds = tf.data.Dataset.from_tensor_slices((x_test, y_test))
-    test_ds = test_ds.shuffle(10000).batch(BATCHSIZE).take(N_TEST_EXAMPLES)
-    return train_ds, test_ds
+    valid_ds = tf.data.Dataset.from_tensor_slices((x_valid, y_valid))
+    valid_ds = valid_ds.shuffle(10000).batch(BATCHSIZE).take(N_VALID_EXAMPLES)
+    return train_ds, valid_ds
 
 
 # FYI: Objective functions can take additional arguments
 # (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     # Get MNIST data.
-    train_ds, test_ds = get_mnist()
+    train_ds, valid_ds = get_mnist()
 
     # Build model and optimizer.
     model = create_model(trial)
@@ -126,7 +126,7 @@ def objective(trial):
         for _ in range(EPOCHS):
             learn(model, optimizer, train_ds, "train")
 
-        accuracy = learn(model, optimizer, test_ds, "eval")
+        accuracy = learn(model, optimizer, valid_ds, "eval")
 
     # Return last validation accuracy.
     return accuracy.result()

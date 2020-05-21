@@ -2,7 +2,7 @@ import math
 
 from optuna.pruners.base import BasePruner
 from optuna.study import StudyDirection
-from optuna.trial import TrialState
+from optuna.trial._state import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -41,7 +41,7 @@ class SuccessiveHalvingPruner(BasePruner):
             np.random.seed(seed=0)
             X = np.random.randn(200).reshape(-1, 1)
             y = np.where(X[:, 0] < 0.5, 0, 1)
-            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+            X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
             classes = np.unique(y)
 
         .. testcode::
@@ -57,13 +57,13 @@ class SuccessiveHalvingPruner(BasePruner):
                 for step in range(n_train_iter):
                     clf.partial_fit(X_train, y_train, classes=classes)
 
-                    intermediate_value = clf.score(X_test, y_test)
+                    intermediate_value = clf.score(X_valid, y_valid)
                     trial.report(intermediate_value, step)
 
                     if trial.should_prune():
                         raise optuna.exceptions.TrialPruned()
 
-                return clf.score(X_test, y_test)
+                return clf.score(X_valid, y_valid)
 
             study = optuna.create_study(direction='maximize',
                                         pruner=optuna.pruners.SuccessiveHalvingPruner())
@@ -92,6 +92,10 @@ class SuccessiveHalvingPruner(BasePruner):
             (\\mathsf{min}\\_\\mathsf{early}\\_\\mathsf{stopping}\\_\\mathsf{rate}
             + \\mathsf{rung})}` steps)
             and repeats the same procedure.
+
+            .. note::
+                If the step of the last intermediate value may change with each trial, please
+                manually specify the minimum possible step to ``min_resource``.
         reduction_factor:
             A parameter for specifying reduction factor of promotable trials
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is

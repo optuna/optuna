@@ -32,9 +32,9 @@ import optuna
 # (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     (data, target) = sklearn.datasets.load_breast_cancer(return_X_y=True)
-    train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.25)
+    train_x, valid_x, train_y, valid_y = train_test_split(data, target, test_size=0.25)
     dtrain = xgb.DMatrix(train_x, label=train_y)
-    dtest = xgb.DMatrix(test_x, label=test_y)
+    dvalid = xgb.DMatrix(valid_x, label=valid_y)
 
     param = {
         "silent": 1,
@@ -56,9 +56,9 @@ def objective(trial):
         param["skip_drop"] = trial.suggest_loguniform("skip_drop", 1e-8, 1.0)
 
     bst = xgb.train(param, dtrain)
-    preds = bst.predict(dtest)
+    preds = bst.predict(dvalid)
     pred_labels = np.rint(preds)
-    accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
+    accuracy = sklearn.metrics.accuracy_score(valid_y, pred_labels)
     return accuracy
 
 

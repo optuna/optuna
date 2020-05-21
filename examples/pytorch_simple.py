@@ -38,7 +38,7 @@ DIR = os.getcwd()
 EPOCHS = 10
 LOG_INTERVAL = 10
 N_TRAIN_EXAMPLES = BATCHSIZE * 30
-N_TEST_EXAMPLES = BATCHSIZE * 10
+N_VALID_EXAMPLES = BATCHSIZE * 10
 
 
 def define_model(trial):
@@ -68,13 +68,13 @@ def get_mnist():
         batch_size=BATCHSIZE,
         shuffle=True,
     )
-    test_loader = torch.utils.data.DataLoader(
+    valid_loader = torch.utils.data.DataLoader(
         datasets.MNIST(DIR, train=False, transform=transforms.ToTensor()),
         batch_size=BATCHSIZE,
         shuffle=True,
     )
 
-    return train_loader, test_loader
+    return train_loader, valid_loader
 
 
 def objective(trial):
@@ -88,7 +88,7 @@ def objective(trial):
     optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
 
     # Get the MNIST dataset.
-    train_loader, test_loader = get_mnist()
+    train_loader, valid_loader = get_mnist()
 
     # Training of the model.
     model.train()
@@ -98,33 +98,36 @@ def objective(trial):
             if batch_idx * BATCHSIZE >= N_TRAIN_EXAMPLES:
                 break
 
-            data, target = data.view(-1, 28 * 28).to(DEVICE), target.to(DEVICE)
+            data, target = data.view(data.size(0), -1).to(DEVICE), target.to(DEVICE)
 
-            # Zeroing out gradient buffers.
             optimizer.zero_grad()
-            # Performing a forward pass.
             output = model(data)
-            # Computing negative Log Likelihood loss.
             loss = F.nll_loss(output, target)
-            # Performing a backward pass.
             loss.backward()
-            # Updating the weights.
             optimizer.step()
 
-    # Validation of the model.
-    model.eval()
-    correct = 0
-    with torch.no_grad():
-        for batch_idx, (data, target) in enumerate(test_loader):
-            # Limiting testing data.
-            if batch_idx * BATCHSIZE >= N_TEST_EXAMPLES:
-                break
-            data, target = data.view(-1, 28 * 28).to(DEVICE), target.to(DEVICE)
-            output = model(data)
-            pred = output.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability.
-            correct += pred.eq(target.view_as(pred)).sum().item()
+        # Validation of the model.
+        model.eval()
+        correct = 0
+        with torch.no_grad():
+            for batch_idx, (data, target) in enumerate(valid_loader):
+                # Limiting validation data.
+                if batch_idx * BATCHSIZE >= N_VALID_EXAMPLES:
+                    break
+                data, target = data.view(data.size(0), -1).to(DEVICE), target.to(DEVICE)
+                output = model(data)
+                # Get the index of the max log-probability.
+                pred = output.argmax(dim=1, keepdim=True)
+                correct += pred.eq(target.view_as(pred)).sum().item()
 
-    accuracy = correct / N_TEST_EXAMPLES
+        accuracy = correct / min(len(valid_loader.dataset), N_VALID_EXAMPLES)
+
+        trial.report(accuracy, epoch)
+
+        # Handle pruning based on the intermediate value.
+        if trial.should_prune():
+            raise optuna.exceptions.TrialPruned()
+
     return accuracy
 
 
@@ -132,7 +135,13 @@ if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100)
 
-    print("Number of finished trials: ", len(study.trials))
+    pruned_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]
+    complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+
+    print("Study statistics: ")
+    print("  Number of finished trials: ", len(study.trials))
+    print("  Number of pruned trials: ", len(pruned_trials))
+    print("  Number of complete trials: ", len(complete_trials))
 
     print("Best trial:")
     trial = study.best_trial

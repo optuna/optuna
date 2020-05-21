@@ -24,7 +24,7 @@ import optuna
 def objective(trial):
     iris = sklearn.datasets.load_iris()
     classes = list(set(iris.target))
-    train_x, test_x, train_y, test_y = sklearn.model_selection.train_test_split(
+    train_x, valid_x, train_y, valid_y = sklearn.model_selection.train_test_split(
         iris.data, iris.target, test_size=0.25
     )
 
@@ -35,14 +35,14 @@ def objective(trial):
         clf.partial_fit(train_x, train_y, classes=classes)
 
         # Report intermediate objective value.
-        intermediate_value = clf.score(test_x, test_y)
+        intermediate_value = clf.score(valid_x, valid_y)
         trial.report(intermediate_value, step)
 
         # Handle pruning based on the intermediate value.
         if trial.should_prune():
             raise optuna.exceptions.TrialPruned()
 
-    return clf.score(test_x, test_y)
+    return clf.score(valid_x, valid_y)
 
 
 if __name__ == "__main__":

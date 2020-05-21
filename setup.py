@@ -32,7 +32,7 @@ def get_install_requires() -> List[str]:
     return [
         "alembic",
         "cliff",
-        "cmaes>=0.3.2",
+        "cmaes>=0.5.0",
         "colorlog",
         "joblib",
         "numpy",
@@ -50,17 +50,17 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["black", "hacking", "mypy",],
-        "codecov": ["codecov", "pytest-cov",],
+        "checking": ["black", "hacking", "mypy"],
+        "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
             "pandas",
             "plotly>=4.0.0",
-            "scikit-learn>=0.19.0",
+            "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
             "mlflow",
         ],
-        "document": ["sphinx", "sphinx_rtd_theme",],
+        "document": ["sphinx", "sphinx_rtd_theme"],
         "example": [
             "catboost",
             "chainer",
@@ -72,22 +72,21 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-ignite",
             "scikit-image",
             "scikit-learn",
-            "torch==1.4.0+cpu",
-            "torchvision==0.5.0+cpu",
+            "thop",
+            "torch==1.4.0" if sys.platform == "darwin" else "torch==1.4.0+cpu",
+            "torchvision==0.5.0" if sys.platform == "darwin" else "torchvision==0.5.0+cpu",
             "xgboost",
         ]
-        + (["allennlp", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (
-            [
-                "dask[dataframe]",
-                "dask-ml",
-                "keras",
-                # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-                # https://github.com/optuna/optuna/issues/997.
-                "pytorch-lightning<0.7.0",
-                "tensorflow>=2.0.0",
-                "tensorflow-datasets",
-            ]
+            ["allennlp<1", "fastai<2", "pytorch-lightning>=0.7.1"]
+            if (3, 5) < sys.version_info[:2] < (3, 8)
+            else []
+        )
+        + (
+            ["llvmlite<=0.31.0"] if (3, 5) == sys.version_info[:2] else []
+        )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
+        + (
+            ["dask[dataframe]", "dask-ml", "keras", "tensorflow>=2.0.0", "tensorflow-datasets"]
             if sys.version_info[:2] < (3, 8)
             else []
         ),
@@ -108,24 +107,19 @@ def get_extras_require() -> Dict[str, List[str]]:
             "plotly>=4.0.0",
             "pytest",
             "pytorch-ignite",
-            "scikit-learn>=0.19.0",
+            "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
-            "torch==1.4.0+cpu",
-            "torchvision==0.5.0+cpu",
+            "torch==1.4.0" if sys.platform == "darwin" else "torch==1.4.0+cpu",
+            "torchvision==0.5.0" if sys.platform == "darwin" else "torchvision==0.5.0+cpu",
             "xgboost",
         ]
-        + (["fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (
-            [
-                "keras",
-                # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-                # https://github.com/optuna/optuna/issues/997.
-                "pytorch-lightning<0.7.0",
-                "tensorflow",
-                "tensorflow-datasets",
-            ]
-            if sys.version_info[:2] < (3, 8)
+            ["allennlp<1", "fastai<2", "pytorch-lightning>=0.7.1"]
+            if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
+        )
+        + (
+            ["keras", "tensorflow", "tensorflow-datasets"] if sys.version_info[:2] < (3, 8) else []
         ),
     }
 

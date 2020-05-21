@@ -30,7 +30,7 @@ import optuna
 
 
 N_TRAIN_EXAMPLES = 3000
-N_TEST_EXAMPLES = 1000
+N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 10
@@ -40,12 +40,12 @@ def objective(trial):
     # Clear clutter from previous Keras session graphs.
     clear_session()
 
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    (x_train, y_train), (x_valid, y_valid) = mnist.load_data()
     img_x, img_y = x_train.shape[1], x_train.shape[2]
     x_train = x_train.reshape(-1, img_x, img_y, 1)[:N_TRAIN_EXAMPLES].astype("float32") / 255
-    x_test = x_test.reshape(-1, img_x, img_y, 1)[:N_TEST_EXAMPLES].astype("float32") / 255
+    x_valid = x_valid.reshape(-1, img_x, img_y, 1)[:N_VALID_EXAMPLES].astype("float32") / 255
     y_train = y_train[:N_TRAIN_EXAMPLES]
-    y_test = y_test[:N_TEST_EXAMPLES]
+    y_valid = y_valid[:N_VALID_EXAMPLES]
     input_shape = (img_x, img_y, 1)
 
     model = Sequential()
@@ -70,15 +70,15 @@ def objective(trial):
     model.fit(
         x_train,
         y_train,
-        validation_data=(x_test, y_test),
+        validation_data=(x_valid, y_valid),
         shuffle=True,
         batch_size=BATCHSIZE,
         epochs=EPOCHS,
         verbose=False,
     )
 
-    # Evaluate the model accuracy on the test set.
-    score = model.evaluate(x_test, y_test, verbose=0)
+    # Evaluate the model accuracy on the validation set.
+    score = model.evaluate(x_valid, y_valid, verbose=0)
     return score[1]
 
 

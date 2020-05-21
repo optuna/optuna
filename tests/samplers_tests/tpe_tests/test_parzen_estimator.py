@@ -37,12 +37,13 @@ class TestParzenEstimator(object):
             weights_func=default_weights,
         )
 
-        # Result contains an additional value for a prior distribution if prior is True.
-        assert len(s_weights) == len(mus) + int(prior)
-        assert len(s_mus) == len(mus) + int(prior)
-        assert len(s_sigmas) == len(mus) + int(prior)
+        # Result contains an additional value for a prior distribution if prior is True or
+        # len(mus) == 0 (in this case, prior is always used).
+        assert len(s_weights) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
+        assert len(s_mus) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
+        assert len(s_sigmas) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
 
-    # TODO(Yanase): Improve test coverage for prior, magic_clip, and endpoints.
+    # TODO(ytsmiling): Improve test coverage for weights_func.
     @staticmethod
     @pytest.mark.parametrize(
         "mus, flags, expected",
@@ -50,7 +51,7 @@ class TestParzenEstimator(object):
             [
                 [],
                 {"prior": False, "magic_clip": False, "endpoints": True},
-                {"weights": [], "mus": [], "sigmas": []},
+                {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
             ],
             [
                 [],
@@ -71,6 +72,34 @@ class TestParzenEstimator(object):
                 [-0.4, 0.4],
                 {"prior": True, "magic_clip": False, "endpoints": True},
                 {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.0, 0.4], "sigmas": [0.6, 2.0, 0.6]},
+            ],
+            [
+                [-0.4, 0.4],
+                {"prior": True, "magic_clip": False, "endpoints": False},
+                {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.0, 0.4], "sigmas": [0.4, 2.0, 0.4]},
+            ],
+            [
+                [-0.4, 0.4],
+                {"prior": False, "magic_clip": False, "endpoints": True},
+                {"weights": [0.5, 0.5], "mus": [-0.4, 0.4], "sigmas": [0.8, 0.8]},
+            ],
+            [
+                [-0.4, 0.4, 0.41, 0.42],
+                {"prior": False, "magic_clip": False, "endpoints": True},
+                {
+                    "weights": [0.25, 0.25, 0.25, 0.25],
+                    "mus": [-0.4, 0.4, 0.41, 0.42],
+                    "sigmas": [0.8, 0.8, 0.01, 0.58],
+                },
+            ],
+            [
+                [-0.4, 0.4, 0.41, 0.42],
+                {"prior": False, "magic_clip": True, "endpoints": True},
+                {
+                    "weights": [0.25, 0.25, 0.25, 0.25],
+                    "mus": [-0.4, 0.4, 0.41, 0.42],
+                    "sigmas": [0.8, 0.8, 0.4, 0.58],
+                },
             ],
         ],
     )
