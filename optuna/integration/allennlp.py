@@ -26,11 +26,13 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
 
     Args:
         input_config_file:
-            Input configuration file used with :class:`~optuna.integration.AllenNLPExecutor`.
+            Input configuration file (Jsonnet) specified in
+            :class:`~optuna.integration.AllenNLPExecutor`.
         output_config_file:
-            Output configuration file.
+            Output configuration (Json) file.
         study:
-            An optimized study (``study.best_trial`` does not raise an error).
+            Instance of :class:`~optuna.study.Study`.
+            Note that :func:`~optuna.study.Study.optimize` mast have already called.
 
     """
     best_params = study.best_params
