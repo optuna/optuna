@@ -122,7 +122,8 @@ class _CachedStorage(base.BaseStorage):
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 
-        trial_id, frozen_trial = self._backend._create_new_trial(study_id, template_trial)
+        frozen_trial = self._backend._create_new_trial(study_id, template_trial)
+        trial_id = frozen_trial._trial_id
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()

@@ -23,7 +23,7 @@ def test_create_trial() -> None:
         intermediate_values={},
         trial_id=1,
     )
-    with patch.object(base_storage, "_create_new_trial", return_value=(1, frozen_trial)):
+    with patch.object(base_storage, "_create_new_trial", return_value=frozen_trial):
         storage.create_new_trial(study_id)
     storage.create_new_trial(study_id)
 

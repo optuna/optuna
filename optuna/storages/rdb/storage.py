@@ -448,11 +448,11 @@ class RDBStorage(BaseStorage):
     def create_new_trial(self, study_id, template_trial=None):
         # type: (int, Optional[FrozenTrial]) -> int
 
-        return self._create_new_trial(study_id, template_trial)[0]
+        return self._create_new_trial(study_id, template_trial)._trial_id
 
     def _create_new_trial(
         self, study_id: int, template_trial: Optional[FrozenTrial] = None
-    ) -> Tuple[int, FrozenTrial]:
+    ) -> FrozenTrial:
         """Create a new trial and returns its trial_id and a :class:`~optuna.trial.FrozenTrial`.
 
         Args:
@@ -462,8 +462,7 @@ class RDBStorage(BaseStorage):
                 A :class:`~optuna.trial.FrozenTrial` with default values for trial attributes.
 
         Returns:
-            A tuple of the trial_id of the created trial and the trial converted
-            into a :class:`~optuna.trial.FrozenTrial` instance.
+            A :class:`~optuna.trial.FrozenTrial` instance.
 
         """
 
@@ -545,7 +544,7 @@ class RDBStorage(BaseStorage):
                 trial_id=trial.trial_id,
             )
 
-        return trial.trial_id, frozen
+        return frozen
 
     def _update_trial(
         self,
