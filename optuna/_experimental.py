@@ -8,9 +8,6 @@ import warnings
 from optuna.exceptions import ExperimentalWarning
 
 
-# White spaces of each line are necessary to beautifully rendered documentation.
-# NOTE(crcrpar): When `experimental` decorator is applied to member methods, these lines require
-# another four spaces.
 _EXPERIMENTAL_DOCSTRING_TEMPLATE = """
 
 .. note::
