@@ -14,6 +14,6 @@ def _filter_study(
     if isinstance(study.pruner, HyperbandPruner):
         # Create `_BracketStudy` to use trials that have the same bracket id.
         pruner = study.pruner  # type: HyperbandPruner
-        return pruner._create_bracket_study(study, pruner._get_bracket_id(study, trial))
+        return pruner._create_study_for_sampler(study, pruner._get_bracket_id(study, trial))
     else:
         return study

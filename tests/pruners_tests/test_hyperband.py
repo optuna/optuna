@@ -68,7 +68,7 @@ def test_bracket_study() -> None:
         min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
     )
     study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
-    bracket_study = pruner._create_bracket_study(study, 0)
+    bracket_study = pruner._create_study_for_sampler(study, 0)
 
     with pytest.raises(AttributeError):
         bracket_study.optimize(lambda *args: 1.0)

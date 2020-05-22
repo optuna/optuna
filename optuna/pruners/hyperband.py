@@ -203,7 +203,7 @@ class HyperbandPruner(BasePruner):
 
         i = self._get_bracket_id(study, trial)
         _logger.debug("{}th bracket is selected".format(i))
-        bracket_study = self._create_bracket_study(study, i)
+        bracket_study = self._create_study_for_pruner(study, i)
         return self._pruners[i].prune(bracket_study, trial)
 
     def _try_initialization(self, study: "optuna.study.Study") -> None:
@@ -307,14 +307,14 @@ class HyperbandPruner(BasePruner):
         s = self._n_brackets - 1 - bracket_id
         return self._min_resource * (self._reduction_factor ** s)
 
-    def _create_bracket_study(
+    def _create_study_for_sampler(
         self, study: "optuna.study.Study", bracket_id: int
     ) -> "optuna.study.Study":
         # This class is assumed to be passed to
-        # `SuccessiveHalvingPruner.prune` in which `get_trials`,
+        # `Trial._init_relative_params` and `Trial._suggest` in which `get_trials`,
         # `direction`, and `storage` are used.
         # But for safety, prohibit the other attributes explicitly.
-        class _BracketStudy(optuna.study.Study):
+        class _FilteredStudy(optuna.study.Study):
 
             _VALID_ATTRS = (
                 "get_trials",
@@ -352,6 +352,50 @@ class HyperbandPruner(BasePruner):
                     if pruner._get_bracket_id(self, t) == self._bracket_id
                     or (t.last_step is not None and self._expected_maximum_resource <= t.last_step)
                 ]
+
+            def __getattribute__(self, attr_name):  # type: ignore
+                if attr_name not in _FilteredStudy._VALID_ATTRS:
+                    raise AttributeError(
+                        "_FilteredStudy does not have attribute of '{}'".format(attr_name)
+                    )
+                else:
+                    return object.__getattribute__(self, attr_name)
+
+        return _FilteredStudy(study, bracket_id)
+
+    def _create_study_for_pruner(
+        self, study: "optuna.study.Study", bracket_id: int
+    ) -> "optuna.study.Study":
+        # This class is assumed to be passed to
+        # `SuccessiveHalvingPruner.prune` in which `get_trials`,
+        # `direction`, and `storage` are used.
+        # But for safety, prohibit the other attributes explicitly.
+        class _BracketStudy(optuna.study.Study):
+
+            _VALID_ATTRS = (
+                "get_trials",
+                "direction",
+                "_storage",
+                "_study_id",
+                "pruner",
+                "study_name",
+                "_bracket_id",
+            )
+
+            def __init__(self, study: "optuna.study.Study", bracket_id: int) -> None:
+                super().__init__(
+                    study_name=study.study_name,
+                    storage=study._storage,
+                    sampler=study.sampler,
+                    pruner=study.pruner,
+                )
+                self._bracket_id = bracket_id
+
+            def get_trials(self, deepcopy: bool = True) -> List["optuna.trial.FrozenTrial"]:
+                trials = super().get_trials(deepcopy=deepcopy)
+                pruner = self.pruner
+                assert isinstance(pruner, HyperbandPruner)
+                return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]
 
             def __getattribute__(self, attr_name):  # type: ignore
                 if attr_name not in _BracketStudy._VALID_ATTRS:
