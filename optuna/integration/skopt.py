@@ -274,8 +274,6 @@ class _Optimizer(object):
                 param_value = (param_value - distribution.low) // distribution.q
             if isinstance(distribution, distributions.IntUniformDistribution):
                 param_value = (param_value - distribution.low) // distribution.step
-            if isinstance(distribution, distributions.IntLogUniformDistribution):
-                param_value = np.log(param_value)
 
             param_values.append(param_value)
 
