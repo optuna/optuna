@@ -84,8 +84,6 @@ def experimental(version: str, name: str = None) -> Any:
             # TODO(crcrpar): Annotate this correctly.
             @functools.wraps(func)
             def new_func(*args: Any, **kwargs: Any) -> Any:
-                """Wrapped function."""
-
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
                     "The interface can change in the future.".format(
