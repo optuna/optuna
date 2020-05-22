@@ -5,17 +5,15 @@ from typing import Optional
 from typing import Tuple
 
 from optuna.logging import get_logger
+from optuna.study import Study
 from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import _is_log_scale
 from optuna.visualization.utils import is_available
 
-from optuna.study import Study
-from optuna.trial import FrozenTrial
-
 if is_available():
-
     from optuna.visualization.plotly_imports import Contour
     from optuna.visualization.plotly_imports import go
     from optuna.visualization.plotly_imports import make_subplots
@@ -110,7 +108,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
             figure.update_yaxes(range=log_range, type="log")
     else:
         figure = make_subplots(
-            rows=len(sorted_params), cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True,
+            rows=len(sorted_params), cols=len(sorted_params), shared_xaxes=True, shared_yaxes=True
         )
         figure.update_layout(layout)
         showscale = True  # showscale option only needs to be specified once
@@ -199,7 +197,7 @@ def _generate_contour_subplot(
     )
 
     scatter = go.Scatter(
-        x=x_values, y=y_values, marker={"color": "black"}, mode="markers", showlegend=False,
+        x=x_values, y=y_values, marker={"color": "black"}, mode="markers", showlegend=False
     )
 
     return (contour, scatter)
