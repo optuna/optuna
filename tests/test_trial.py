@@ -1,6 +1,7 @@
 import copy
 import datetime
 import math
+from typing import Callable
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -27,7 +28,6 @@ from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
-    from typing import Callable  # NOQA
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
@@ -119,32 +119,21 @@ def test_check_distribution_suggest_discrete_uniform(storage_init_func):
 
 
 @parametrize_storage
-def test_check_distribution_suggest_int(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+@pytest.mark.parametrize("enable_log", [False, True])
+def test_check_distribution_suggest_int(
+    storage_init_func: Callable[[], storages.BaseStorage], enable_log: bool
+) -> None:
 
     sampler = samplers.RandomSampler()
     study = create_study(storage_init_func(), sampler=sampler)
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
     with pytest.warns(None) as record:
-        trial.suggest_int("x", 10, 20)
-        trial.suggest_int("x", 10, 20)
-        trial.suggest_int("x", 10, 22)
+        trial.suggest_int("x", 10, 20, log=enable_log)
+        trial.suggest_int("x", 10, 20, log=enable_log)
+        trial.suggest_int("x", 10, 22, log=enable_log)
 
-    # we expect exactly one warning
-    assert len(record) == 1
-
-    # log test
-    sampler = samplers.RandomSampler()
-    study = create_study(storage_init_func(), sampler=sampler)
-    trial = Trial(study, study._storage.create_new_trial(study._study_id))
-
-    with pytest.warns(None) as record:
-        trial.suggest_int("x", 10, 20, log=True)
-        trial.suggest_int("x", 10, 20, log=True)
-        trial.suggest_int("x", 10, 22, log=True)
-
-    # we expect exactly one warning
+    # We expect exactly one warning.
     assert len(record) == 1
 
 
