@@ -1,4 +1,5 @@
 import decimal
+import warnings
 
 from optuna import logging
 
@@ -17,7 +18,7 @@ def _adjust_discrete_uniform_high(name, low, high, q):
 
     if d_r % d_q != decimal.Decimal("0"):
         high = float((d_r // d_q) * d_q + d_low)
-        _logger.warning(
+        warnings.warn(
             "The range of parameter `{}` is not divisible by `q`, and is "
             "replaced by [{}, {}].".format(name, low, high)
         )

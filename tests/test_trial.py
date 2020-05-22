@@ -2,6 +2,7 @@ import copy
 import datetime
 import math
 from typing import Callable
+from typing import Dict
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -28,7 +29,6 @@ from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
-    from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
     from typing import Tuple  # NOQA
@@ -250,10 +250,6 @@ def test_suggest_low_equals_high(storage_init_func):
         {"low": 0.0, "high": 10.0, "q": 3.0, "mod_high": 9.0},
         {"low": 1.0, "high": 11.0, "q": 3.0, "mod_high": 10.0},
         {"low": 64.0, "high": 1312.0, "q": 160.0, "mod_high": 1184.0},
-        # high is excluded due to the round-off error of 10 // 0.1.
-        {"low": 0.0, "high": 10.0, "q": 0.1, "mod_high": 10.0},
-        # high is excluded doe to the round-off error of 10.1 // 0.1
-        {"low": 0.0, "high": 10.1, "q": 0.1, "mod_high": 10.1},
         {"low": 0.0, "high": 10.0, "q": math.pi, "mod_high": 3 * math.pi},
         {"low": 0.0, "high": 3.45, "q": 0.1, "mod_high": 3.4},
     ],
@@ -270,9 +266,10 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-        x = trial.suggest_discrete_uniform(
-            "x", range_config["low"], range_config["high"], range_config["q"]
-        )
+        with pytest.warns(UserWarning):
+            x = trial.suggest_discrete_uniform(
+                "x", range_config["low"], range_config["high"], range_config["q"]
+            )
         assert x == range_config["mod_high"]
         assert mock_object.call_count == 1
 
@@ -283,9 +280,10 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-        x = trial.suggest_discrete_uniform(
-            "x", range_config["low"], range_config["high"], range_config["q"]
-        )
+        with pytest.warns(UserWarning):
+            x = trial.suggest_discrete_uniform(
+                "x", range_config["low"], range_config["high"], range_config["q"]
+            )
         assert x == range_config["low"]
         assert mock_object.call_count == 1
 
@@ -308,6 +306,50 @@ def test_suggest_int(storage_init_func):
         assert trial._suggest("y", distribution) == 3  # Test suggesting a different param.
         assert trial.params == {"x": 1, "y": 3}
         assert mock_object.call_count == 3
+
+
+@parametrize_storage
+@pytest.mark.parametrize(
+    "range_config",
+    [
+        {"low": 0, "high": 10, "step": 3, "mod_high": 9},
+        {"low": 1, "high": 11, "step": 3, "mod_high": 10},
+        {"low": 64, "high": 1312, "step": 160, "mod_high": 1184},
+    ],
+)
+def test_suggest_int_range(
+    storage_init_func: Callable[[], storages.BaseStorage], range_config: Dict[str, int]
+) -> None:
+
+    sampler = samplers.RandomSampler()
+
+    # Check upper endpoints.
+    mock = Mock()
+    mock.side_effect = lambda study, trial, param_name, distribution: distribution.high
+    with patch.object(sampler, "sample_independent", mock) as mock_object:
+        study = create_study(storage_init_func(), sampler=sampler)
+        trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+        with pytest.warns(UserWarning):
+            x = trial.suggest_int(
+                "x", range_config["low"], range_config["high"], step=range_config["step"]
+            )
+        assert x == range_config["mod_high"]
+        assert mock_object.call_count == 1
+
+    # Check lower endpoints.
+    mock = Mock()
+    mock.side_effect = lambda study, trial, param_name, distribution: distribution.low
+    with patch.object(sampler, "sample_independent", mock) as mock_object:
+        study = create_study(storage_init_func(), sampler=sampler)
+        trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+        with pytest.warns(UserWarning):
+            x = trial.suggest_int(
+                "x", range_config["low"], range_config["high"], step=range_config["step"]
+            )
+        assert x == range_config["low"]
+        assert mock_object.call_count == 1
 
 
 @parametrize_storage
