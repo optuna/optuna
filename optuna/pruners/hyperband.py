@@ -201,10 +201,10 @@ class HyperbandPruner(BasePruner):
             if len(self._pruners) == 0:
                 return False
 
-        i = self._get_bracket_id(study, trial)
-        _logger.debug("{}th bracket is selected".format(i))
-        bracket_study = self._create_bracket_study(study, i)
-        return self._pruners[i].prune(bracket_study, trial)
+        bracket_id = self._get_bracket_id(study, trial)
+        _logger.debug("{}th bracket is selected".format(bracket_id))
+        bracket_study = self._create_bracket_study(study, bracket_id)
+        return self._pruners[bracket_id].prune(bracket_study, trial)
 
     def _try_initialization(self, study: "optuna.study.Study") -> None:
         if self._max_resource == "auto":
@@ -233,19 +233,19 @@ class HyperbandPruner(BasePruner):
 
         _logger.debug("Hyperband has {} brackets".format(self._n_brackets))
 
-        for i in range(self._n_brackets):
-            trial_allocation_budget = self._calculate_trial_allocation_budget(i)
+        for bracket_id in range(self._n_brackets):
+            trial_allocation_budget = self._calculate_trial_allocation_budget(bracket_id)
             self._total_trial_allocation_budget += trial_allocation_budget
             self._trial_allocation_budgets.append(trial_allocation_budget)
 
             if self._min_early_stopping_rate_low is None:
-                min_early_stopping_rate = i
+                min_early_stopping_rate = bracket_id
             else:
-                min_early_stopping_rate = self._min_early_stopping_rate_low + i
+                min_early_stopping_rate = self._min_early_stopping_rate_low + bracket_id
 
             _logger.debug(
                 "{}th bracket has minimum early stopping rate of {}".format(
-                    i, min_early_stopping_rate
+                    bracket_id, min_early_stopping_rate
                 )
             )
 
@@ -256,8 +256,8 @@ class HyperbandPruner(BasePruner):
             )
             self._pruners.append(pruner)
 
-    def _calculate_trial_allocation_budget(self, pruner_index: int) -> int:
-        """Compute the trial allocated budget for a bracket of ``pruner_index``.
+    def _calculate_trial_allocation_budget(self, bracket_id: int) -> int:
+        """Compute the trial allocated budget for a bracket of ``bracket_id``.
 
         In the `original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`, the
         number of trials per one bracket is referred as ``n`` in Algorithm 1. Since we do not know
@@ -266,7 +266,7 @@ class HyperbandPruner(BasePruner):
         """
 
         assert self._n_brackets is not None
-        s = self._n_brackets - 1 - pruner_index
+        s = self._n_brackets - 1 - bracket_id
         return math.ceil(self._n_brackets * (self._reduction_factor ** s) / (s + 1))
 
     def _get_bracket_id(
@@ -286,15 +286,15 @@ class HyperbandPruner(BasePruner):
             hash("{}_{}".format(study.study_name, trial.number))
             % self._total_trial_allocation_budget
         )
-        for i in range(self._n_brackets):
-            n -= self._trial_allocation_budgets[i]
+        for bracket_id in range(self._n_brackets):
+            n -= self._trial_allocation_budgets[bracket_id]
             if n < 0:
-                return i
+                return bracket_id
 
         assert False, "This line should be unreachable."
 
     def _create_bracket_study(
-        self, study: "optuna.study.Study", bracket_index: int
+        self, study: "optuna.study.Study", bracket_id: int
     ) -> "optuna.study.Study":
         # This class is assumed to be passed to
         # `SuccessiveHalvingPruner.prune` in which `get_trials`,
@@ -337,4 +337,4 @@ class HyperbandPruner(BasePruner):
                 else:
                     return object.__getattribute__(self, attr_name)
 
-        return _BracketStudy(study, bracket_index)
+        return _BracketStudy(study, bracket_id)

@@ -2,6 +2,12 @@ import datetime
 import warnings
 
 from optuna import distributions
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna import logging
 from optuna import pruners
 from optuna.trial._base import BaseTrial
@@ -19,9 +25,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
 
-    FloatingPointDistributionType = Union[
-        distributions.UniformDistribution, distributions.LogUniformDistribution
-    ]
+    FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
 
 
 class Trial(BaseTrial):
@@ -206,7 +210,7 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = distributions.UniformDistribution(low=low, high=high)
+        distribution = UniformDistribution(low=low, high=high)
 
         self._check_distribution(name, distribution)
 
@@ -265,7 +269,7 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = distributions.LogUniformDistribution(low=low, high=high)
+        distribution = LogUniformDistribution(low=low, high=high)
 
         self._check_distribution(name, distribution)
 
@@ -332,7 +336,7 @@ class Trial(BaseTrial):
         """
 
         high = _adjust_discrete_uniform_high(name, low, high, q)
-        distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+        distribution = DiscreteUniformDistribution(low=low, high=high, q=q)
 
         self._check_distribution(name, distribution)
 
@@ -341,8 +345,8 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
+    def suggest_int(self, name, low, high, step=1, log=False):
+        # type: (str, int, int, int, bool) -> int
         """Suggest a value for the integer parameter.
 
         The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
@@ -384,14 +388,28 @@ class Trial(BaseTrial):
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
-            step:
-                A step of spacing between values.
-
-        Returns:
-            A suggested integer value.
+            log:
+                A flag to sample the value from the log domain or not.
+                If ``log`` is true, at first, the range of suggested values is divided into grid
+                points of width ``step``. The range of suggested values is then converted to a log
+                domain, from which a value is uniformly sampled. The uniformly sampled value is
+                re-converted to the original domain and rounded to the nearest grid point that we
+                just split, and the suggested value is determined.
+                For example,
+                if `low = 2`, `high = 8` and `step = 2`,
+                then the range of suggested values is divided by ``step`` as `[2, 4, 6, 8]`
+                and lower values tend to be more sampled than higher values.
         """
 
-        distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
+        distribution = IntUniformDistribution(
+            low=low, high=high, step=step
+        )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+
+        if log:
+            high = (
+                distribution.high - distribution.low
+            ) // distribution.step * distribution.step + distribution.low
+            distribution = IntLogUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
 
@@ -454,7 +472,7 @@ class Trial(BaseTrial):
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
 
-        return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
+        return self._suggest(name, CategoricalDistribution(choices=choices))
 
     def report(self, value, step):
         # type: (float, int) -> None

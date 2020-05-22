@@ -10,6 +10,7 @@ import pytest
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
@@ -133,6 +134,19 @@ def test_check_distribution_suggest_int(storage_init_func):
     # we expect exactly one warning
     assert len(record) == 1
 
+    # log test
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    with pytest.warns(None) as record:
+        trial.suggest_int("x", 10, 20, log=True)
+        trial.suggest_int("x", 10, 20, log=True)
+        trial.suggest_int("x", 10, 22, log=True)
+
+    # we expect exactly one warning
+    assert len(record) == 1
+
 
 @parametrize_storage
 def test_suggest_uniform(storage_init_func):
@@ -235,6 +249,9 @@ def test_suggest_low_equals_high(storage_init_func):
         assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting a param.
         assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting the same param.
         assert mock_object.call_count == 0
+        assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting a param.
+        assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting the same param.
+        assert mock_object.call_count == 0
 
 
 @parametrize_storage
@@ -305,6 +322,26 @@ def test_suggest_int(storage_init_func):
 
 
 @parametrize_storage
+def test_suggest_int_log(storage_init_func):
+    # type: (Callable[[], storages.BaseStorage]) -> None
+
+    mock = Mock()
+    mock.side_effect = [1, 2, 3]
+    sampler = samplers.RandomSampler()
+
+    with patch.object(sampler, "sample_independent", mock) as mock_object:
+        study = create_study(storage_init_func(), sampler=sampler)
+        trial = Trial(study, study._storage.create_new_trial(study._study_id))
+        distribution = IntLogUniformDistribution(low=1, high=3)
+
+        assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
+        assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
+        assert trial._suggest("y", distribution) == 3  # Test suggesting a different param.
+        assert trial.params == {"x": 1, "y": 3}
+        assert mock_object.call_count == 3
+
+
+@parametrize_storage
 def test_distributions(storage_init_func):
     # type: (Callable[[], storages.BaseStorage]) -> None
 
@@ -316,6 +353,7 @@ def test_distributions(storage_init_func):
         trial.suggest_discrete_uniform("c", 0, 10, 1)
         trial.suggest_int("d", 0, 10)
         trial.suggest_categorical("e", ["foo", "bar", "baz"])
+        trial.suggest_int("f", 1, 10, log=True)
 
         return 1.0
 
@@ -328,6 +366,7 @@ def test_distributions(storage_init_func):
         "c": DiscreteUniformDistribution(low=0, high=10, q=1),
         "d": IntUniformDistribution(low=0, high=10),
         "e": CategoricalDistribution(choices=("foo", "bar", "baz")),
+        "f": IntLogUniformDistribution(low=1, high=10),
     }
 
 
@@ -389,6 +428,16 @@ def test_fixed_trial_suggest_int():
 
     with pytest.raises(ValueError):
         trial.suggest_int("y", 0, 10)
+
+
+def test_fixed_trial_suggest_int_log():
+    # type: () -> None
+
+    trial = FixedTrial({"x": 1})
+    assert trial.suggest_int("x", 1, 10, log=True) == 1
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("y", 1, 10, log=True)
 
 
 def test_fixed_trial_suggest_categorical():
@@ -525,6 +574,12 @@ def test_relative_parameters(storage_init_func):
     distribution4 = UniformDistribution(low=0, high=10)
     with pytest.raises(ValueError):
         trial4._suggest("z", distribution4)
+
+    # Error (due to incompatible distribution class).
+    trial5 = create_trial()
+    distribution5 = IntLogUniformDistribution(low=1, high=100)
+    with pytest.raises(ValueError):
+        trial5._suggest("y", distribution5)
 
 
 @parametrize_storage

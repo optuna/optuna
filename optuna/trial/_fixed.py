@@ -105,11 +105,16 @@ class FixedTrial(BaseTrial):
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
-        sample = self._suggest(
-            name, distributions.IntUniformDistribution(low=low, high=high, step=step)
-        )
+    def suggest_int(self, name, low, high, step=1, log=False):
+        # type: (str, int, int, int, bool) -> int
+        if log:
+            sample = self._suggest(
+                name, distributions.IntLogUniformDistribution(low=low, high=high, step=step)
+            )
+        else:
+            sample = self._suggest(
+                name, distributions.IntUniformDistribution(low=low, high=high, step=step)
+            )
         return int(sample)
 
     def suggest_categorical(self, name, choices):
