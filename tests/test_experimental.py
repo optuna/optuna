@@ -62,10 +62,8 @@ def test_experimental_raises_error_for_invalid_version(version: Any) -> None:
 def test_experimental_decorator() -> None:
     version = "1.1.0"
     decorator_experimental = _experimental.experimental(version)
-    assert (
-        callable(decorator_experimental)
-        and decorator_experimental.__name__ == "_experimental_wrapper"
-    )
+    assert callable(decorator_experimental)
+    assert decorator_experimental.__name__ == "_experimental_wrapper"
 
     decorated_sample_func = decorator_experimental(_sample_func)
     assert decorated_sample_func.__name__ == "_sample_func"
@@ -94,10 +92,8 @@ def test_experimental_method_decorator() -> None:
 def test_experimental_class_decorator() -> None:
     version = "1.1.0"
     decorator_experimental = _experimental.experimental(version)
-    assert (
-        callable(decorator_experimental)
-        and decorator_experimental.__name__ == "_experimental_wrapper"
-    )
+    assert callable(decorator_experimental)
+    assert decorator_experimental.__name__ == "_experimental_wrapper"
 
     decorated_sample = decorator_experimental(_Sample)
     assert decorated_sample.__name__ == "_Sample"
