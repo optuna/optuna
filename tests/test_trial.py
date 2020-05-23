@@ -332,7 +332,7 @@ def test_suggest_int_log(storage_init_func):
     with pytest.raises(ValueError):
         study = create_study(storage_init_func(), sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        trial.suggest_int("z", 0.5, 10, log=True)
+        trial.suggest_int("z", 0.5, 10, log=True)  # type: ignore
 
 
 @parametrize_storage
