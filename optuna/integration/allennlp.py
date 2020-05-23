@@ -22,14 +22,14 @@ except ImportError as e:
 
 
 def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
-    """Save jsonnet after updating with parameters from the best trial in the study.
+    """Save JSON after updating with parameters from the best trial in the study.
 
     Args:
         input_config_file:
-            Input configuration file (Jsonnet) specified in
+            Input configuration Jsonnet file used with
             :class:`~optuna.integration.AllenNLPExecutor`.
         output_config_file:
-            Output configuration (JSON) file.
+            Output configuration JSON file.
         study:
             Instance of :class:`~optuna.study.Study`.
             Note that :func:`~optuna.study.Study.optimize` must have been called.
