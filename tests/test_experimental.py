@@ -53,28 +53,29 @@ def test_str() -> None:
     assert _experimental._make_func_spec_str(_h) == "_h(a=None, b=10)\n\n    "
 
 
-@pytest.mark.parametrize("version", ["1.1.0", "1.1", 100, None])
-def test_experimental_decorator(version: str) -> None:
+@pytest.mark.parametrize("version", ["1.1", 100, None])
+def test_experimental_raises_error_for_invalid_version(version: Any) -> None:
+    with pytest.raises(ValueError):
+        _experimental.experimental(version)
 
-    if version != "1.1.0":
-        with pytest.raises(ValueError):
-            _experimental.experimental(version)
-    else:
-        decorator_experimental = _experimental.experimental(version)
-        assert (
-            callable(decorator_experimental)
-            and decorator_experimental.__name__ == "_experimental_wrapper"
-        )
 
-        decorated_sample_func = decorator_experimental(_sample_func)
-        assert decorated_sample_func.__name__ == "_sample_func"
-        assert (
-            decorated_sample_func.__doc__
-            == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
-        )
+def test_experimental_decorator() -> None:
+    version = "1.1.0"
+    decorator_experimental = _experimental.experimental(version)
+    assert (
+        callable(decorator_experimental)
+        and decorator_experimental.__name__ == "_experimental_wrapper"
+    )
 
-        with pytest.warns(ExperimentalWarning):
-            decorated_sample_func(None)
+    decorated_sample_func = decorator_experimental(_sample_func)
+    assert decorated_sample_func.__name__ == "_sample_func"
+    assert (
+        decorated_sample_func.__doc__
+        == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+    )
+
+    with pytest.warns(ExperimentalWarning):
+        decorated_sample_func(None)
 
 
 def test_experimental_method_decorator() -> None:
@@ -91,29 +92,24 @@ def test_experimental_method_decorator() -> None:
         decorated_method(None)
 
 
-@pytest.mark.parametrize("version", ["1.1.0", "1.1", 100, None])
-def test_experimental_class_decorator(version: str) -> None:
+def test_experimental_class_decorator() -> None:
+    version = "1.1.0"
+    decorator_experimental = _experimental.experimental(version)
+    assert (
+        callable(decorator_experimental)
+        and decorator_experimental.__name__ == "_experimental_wrapper"
+    )
 
-    if version != "1.1.0":
-        with pytest.raises(ValueError):
-            _experimental.experimental(version)
-    else:
-        decorator_experimental = _experimental.experimental(version)
-        assert (
-            callable(decorator_experimental)
-            and decorator_experimental.__name__ == "_experimental_wrapper"
-        )
+    decorated_sample = decorator_experimental(_Sample)
+    assert decorated_sample.__name__ == "_Sample"
+    assert (
+        decorated_sample.__doc__
+        == "__init__(a, b, c)\n\n    "
+        + _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+    )
 
-        decorated_sample = decorator_experimental(_Sample)
-        assert decorated_sample.__name__ == "_Sample"
-        assert (
-            decorated_sample.__doc__
-            == "__init__(a, b, c)\n\n    "
-            + _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
-        )
-
-        with pytest.warns(ExperimentalWarning):
-            decorated_sample("a", "b", "c")
+    with pytest.warns(ExperimentalWarning):
+        decorated_sample("a", "b", "c")
 
 
 def test_experimental_decorator_name() -> None:
