@@ -101,9 +101,9 @@ def experimental(version: str, name: str = None) -> Any:
 
             This decorator is supposed to be applied to the experimental class.
             """
-
             _original_init = cls.__init__
 
+            @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
                 warnings.warn(
                     "{} is experimental (supported from v{}). "

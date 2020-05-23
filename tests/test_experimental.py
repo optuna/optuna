@@ -97,6 +97,7 @@ def test_experimental_class_decorator() -> None:
 
     decorated_sample = decorator_experimental(_Sample)
     assert decorated_sample.__name__ == _Sample.__name__
+    assert decorated_sample.__init__.__name__ == "__init__"
     assert (
         decorated_sample.__doc__
         == "__init__(a, b, c)\n\n    "
