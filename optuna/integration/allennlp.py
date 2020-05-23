@@ -47,7 +47,7 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
 
 @experimental("1.4.0")
 class AllenNLPExecutor(object):
-    """AllenNLP extension to use optuna with a jsonnet config file.
+    """AllenNLP extension to use optuna with Jsonnet config file.
 
     This feature is experimental since AllenNLP major release will come soon.
     The interface may change without prior notice to correspond to the update.
