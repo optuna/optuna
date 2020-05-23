@@ -65,14 +65,14 @@ def test_experimental_decorator() -> None:
     assert callable(decorator_experimental)
     assert decorator_experimental.__name__ == "_experimental_wrapper"
 
-    decorated_sample_func = decorator_experimental(_sample_func)
-    assert decorated_sample_func.__name__ == _sample_func.__name__
-    assert decorated_sample_func.__doc__ == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(
+    decorated_func = decorator_experimental(_sample_func)
+    assert decorated_func.__name__ == _sample_func.__name__
+    assert decorated_func.__doc__ == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(
         ver=version
     )
 
     with pytest.warns(ExperimentalWarning):
-        decorated_sample_func(None)
+        decorated_func(None)
 
 
 def test_experimental_method_decorator() -> None:
@@ -95,17 +95,17 @@ def test_experimental_class_decorator() -> None:
     assert callable(decorator_experimental)
     assert decorator_experimental.__name__ == "_experimental_wrapper"
 
-    decorated_sample = decorator_experimental(_Sample)
-    assert decorated_sample.__name__ == _Sample.__name__
-    assert decorated_sample.__init__.__name__ == "__init__"
+    decorated_class = decorator_experimental(_Sample)
+    assert decorated_class.__name__ == _Sample.__name__
+    assert decorated_class.__init__.__name__ == "__init__"
     assert (
-        decorated_sample.__doc__
+        decorated_class.__doc__
         == "__init__(a, b, c)\n\n    "
         + _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
     )
 
     with pytest.warns(ExperimentalWarning):
-        decorated_sample("a", "b", "c")
+        decorated_class("a", "b", "c")
 
 
 def test_experimental_decorator_name() -> None:
