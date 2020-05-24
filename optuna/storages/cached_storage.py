@@ -148,15 +148,15 @@ class _CachedStorage(base.BaseStorage):
 
         frozen_trial = self._backend._create_new_trial(study_id, template_trial)
         trial_id = frozen_trial._trial_id
-        # We cannot cache a WAITING trial.
-        if frozen_trial.state != TrialState.WAITING:
-            with self._lock:
-                if study_id not in self._studies:
-                    self._studies[study_id] = _StudyInfo()
-                study = self._studies[study_id]
-                self._trial_id_to_study_id_and_number[trial_id] = study_id, frozen_trial.number
+        with self._lock:
+            if study_id not in self._studies:
+                self._studies[study_id] = _StudyInfo()
+            study = self._studies[study_id]
+            self._trial_id_to_study_id_and_number[trial_id] = study_id, frozen_trial.number
+            self._add_trials_to_cache(study_id, [frozen_trial])
+            # We cannot cache a WAITING trial.
+            if frozen_trial.state != TrialState.WAITING:
                 study.cached_trial_ids.add(frozen_trial._trial_id)
-                self._add_trials_to_cache(study_id, [frozen_trial])
         return trial_id
 
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
