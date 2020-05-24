@@ -63,12 +63,12 @@ def test_experimental_decorator() -> None:
     version = "1.1.0"
     decorator_experimental = _experimental.experimental(version)
     assert callable(decorator_experimental)
-    assert decorator_experimental.__name__ == "_experimental_wrapper"
 
     decorated_func = decorator_experimental(_sample_func)
     assert decorated_func.__name__ == _sample_func.__name__
-    assert decorated_func.__doc__ == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(
-        ver=version
+    assert (
+        decorated_func.__doc__
+        == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
     )
 
     with pytest.warns(ExperimentalWarning):
@@ -79,7 +79,6 @@ def test_experimental_method_decorator() -> None:
     version = "1.1.0"
     decorator_experimental = _experimental.experimental(version)
     assert callable(decorator_experimental)
-    assert decorator_experimental.__name__ == "_experimental_wrapper"
 
     decorated_method = decorator_experimental(_Sample._method)
     assert decorated_method.__name__ == _Sample._method.__name__
@@ -93,7 +92,6 @@ def test_experimental_class_decorator() -> None:
     version = "1.1.0"
     decorator_experimental = _experimental.experimental(version)
     assert callable(decorator_experimental)
-    assert decorator_experimental.__name__ == "_experimental_wrapper"
 
     decorated_class = decorator_experimental(_Sample)
     assert decorated_class.__name__ == _Sample.__name__
