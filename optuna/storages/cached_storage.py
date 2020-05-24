@@ -126,7 +126,12 @@ class _CachedStorage(base.BaseStorage):
                 if name is not None:
                     return name
 
-        return self._backend.get_study_name_from_id(study_id)
+        name = self._backend.get_study_name_from_id(study_id)
+        with self._lock:
+            if study_id not in self._studies:
+                self._studies[study_id] = _StudyInfo()
+            self._studies[study_id].name = name
+        return name
 
     def get_study_direction(self, study_id: int) -> StudyDirection:
 
@@ -136,7 +141,12 @@ class _CachedStorage(base.BaseStorage):
                 if direction != StudyDirection.NOT_SET:
                     return direction
 
-        return self._backend.get_study_direction(study_id)
+        direction = self._backend.get_study_direction(study_id)
+        with self._lock:
+            if study_id not in self._studies:
+                self._studies[study_id] = _StudyInfo()
+            self._studies[study_id].direction = direction
+        return direction
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
