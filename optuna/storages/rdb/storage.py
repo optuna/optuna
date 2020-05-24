@@ -966,6 +966,7 @@ class RDBStorage(BaseStorage):
             )
             .all()
         )
+        # On single-worker training, ``trial_models`` is always an empty list.
         trials = self._get_trials_from_trial_models(session, trial_models) if trial_models else []
 
         self._commit(session)
@@ -1053,6 +1054,8 @@ class RDBStorage(BaseStorage):
     ) -> List[FrozenTrial]:
 
         trial_ids = [trial.trial_id for trial in trial_models]
+        # The following four lines build a mapping from ``trial_id`` to a dict of required
+        # information.
         params_dict = self._build_params_from_trial_ids(session, trial_ids)
         user_attrs_dict = self._build_user_attrs_from_trial_ids(session, trial_ids)
         system_attrs_dict = self._build_system_attrs_from_trial_ids(session, trial_ids)

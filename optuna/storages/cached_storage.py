@@ -31,6 +31,8 @@ class _TrialUpdate:
 
 class _StudyInfo:
     def __init__(self) -> None:
+        # The `get_all_trials` method is a typical bottleneck, and we use a list
+        # to manage trials to reduce the latency of the method.
         self.trials = []  # type: List[FrozenTrial]
         self.cached_trial_ids = set()  # type: Set[int]
         self.updates = dict()  # type: Dict[int, _TrialUpdate]
@@ -328,15 +330,18 @@ class _CachedStorage(base.BaseStorage):
     def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
 
         with self._lock:
+            # The cache update will be moved into another method in the future.
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
             trials = self._backend._get_uncached_trials(study_id, study.cached_trial_ids)
             if trials:
                 self._add_trials_to_cache(study_id, trials)
+                # ``self._study[study_id].trials`` should not have any dummy tirals.
                 for trial in trials:
                     if trial.state.is_finished():
                         study.cached_trial_ids.add(trial._trial_id)
+            # The following line is latency-sensitive.
             return copy.deepcopy(study.trials) if deepcopy else study.trials[:]
 
     def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
