@@ -96,7 +96,6 @@ class Trial(BaseTrial):
             Suggest a momentum, learning rate and scaling factor of learning rate
             for neural network training.
 
-
             .. testcode::
 
                 import numpy as np
