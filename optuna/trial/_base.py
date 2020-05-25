@@ -33,6 +33,8 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     def suggest_float(self, name, low, high, *, log=False, step=None):
         # type: (str, float, float, bool, Optional[float])-> float
 
+        # TODO(nzw0301) swap log's position for step's one to match suggest_int for consistency.
+
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -54,8 +56,8 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
+    def suggest_int(self, name, low, high, step=1, log=False):
+        # type: (str, int, int, int, bool) -> int
 
         raise NotImplementedError
 

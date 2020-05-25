@@ -2,6 +2,12 @@ import datetime
 import warnings
 
 from optuna import distributions
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna import logging
 from optuna import pruners
 from optuna.trial._base import BaseTrial
@@ -19,9 +25,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
 
-    FloatingPointDistributionType = Union[
-        distributions.UniformDistribution, distributions.LogUniformDistribution
-    ]
+    FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
 
 
 class Trial(BaseTrial):
@@ -92,20 +96,17 @@ class Trial(BaseTrial):
             Suggest a momentum, learning rate and scaling factor of learning rate
             for neural network training.
 
-            .. testsetup::
+            .. testcode::
 
                 import numpy as np
-                import optuna
+                from sklearn.datasets import load_iris
                 from sklearn.model_selection import train_test_split
                 from sklearn.neural_network import MLPClassifier
 
-                np.random.seed(seed=0)
-                X = np.random.randn(200).reshape(-1, 1)
-                y = np.random.randint(0, 2, 200)
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
                 X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
-
-            .. testcode::
 
                 def objective(trial):
                     momentum = trial.suggest_float('momentum', 0.0, 1.0)
@@ -167,20 +168,17 @@ class Trial(BaseTrial):
 
             Suggest a momentum for neural network training.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(200).reshape(-1, 1)
-                y = np.random.randint(0, 2, 200)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
                 from sklearn.neural_network import MLPClassifier
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     momentum = trial.suggest_uniform('momentum', 0.0, 1.0)
@@ -206,7 +204,7 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = distributions.UniformDistribution(low=low, high=high)
+        distribution = UniformDistribution(low=low, high=high)
 
         self._check_distribution(name, distribution)
 
@@ -228,20 +226,17 @@ class Trial(BaseTrial):
             Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/
             generated/sklearn.svm.SVC.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
                 from sklearn.svm import SVC
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     c = trial.suggest_loguniform('c', 1e-5, 1e2)
@@ -265,7 +260,7 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = distributions.LogUniformDistribution(low=low, high=high)
+        distribution = LogUniformDistribution(low=low, high=high)
 
         self._check_distribution(name, distribution)
 
@@ -293,20 +288,17 @@ class Trial(BaseTrial):
             `GradientBoostingClassifier <https://scikit-learn.org/stable/modules/generated/
             sklearn.ensemble.GradientBoostingClassifier.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
                 from sklearn.ensemble import GradientBoostingClassifier
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
@@ -332,7 +324,7 @@ class Trial(BaseTrial):
         """
 
         high = _adjust_discrete_uniform_high(name, low, high, q)
-        distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+        distribution = DiscreteUniformDistribution(low=low, high=high, q=q)
 
         self._check_distribution(name, distribution)
 
@@ -341,8 +333,8 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
+    def suggest_int(self, name, low, high, step=1, log=False):
+        # type: (str, int, int, int, bool) -> int
         """Suggest a value for the integer parameter.
 
         The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
@@ -352,20 +344,17 @@ class Trial(BaseTrial):
             Suggest the number of trees in `RandomForestClassifier <https://scikit-learn.org/
             stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
                 from sklearn.ensemble import RandomForestClassifier
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     n_estimators = trial.suggest_int('n_estimators', 50, 400)
@@ -384,14 +373,28 @@ class Trial(BaseTrial):
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
-            step:
-                A step of spacing between values.
-
-        Returns:
-            A suggested integer value.
+            log:
+                A flag to sample the value from the log domain or not.
+                If ``log`` is true, at first, the range of suggested values is divided into grid
+                points of width ``step``. The range of suggested values is then converted to a log
+                domain, from which a value is uniformly sampled. The uniformly sampled value is
+                re-converted to the original domain and rounded to the nearest grid point that we
+                just split, and the suggested value is determined.
+                For example,
+                if `low = 2`, `high = 8` and `step = 2`,
+                then the range of suggested values is divided by ``step`` as `[2, 4, 6, 8]`
+                and lower values tend to be more sampled than higher values.
         """
 
-        distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
+        distribution = IntUniformDistribution(
+            low=low, high=high, step=step
+        )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+
+        if log:
+            high = (
+                distribution.high - distribution.low
+            ) // distribution.step * distribution.step + distribution.low
+            distribution = IntLogUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
 
@@ -411,20 +414,17 @@ class Trial(BaseTrial):
             Suggest a kernel function of `SVC <https://scikit-learn.org/stable/modules/generated/
             sklearn.svm.SVC.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
                 from sklearn.svm import SVC
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     kernel = trial.suggest_categorical('kernel', ['linear', 'poly', 'rbf'])
@@ -454,7 +454,7 @@ class Trial(BaseTrial):
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
 
-        return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
+        return self._suggest(name, CategoricalDistribution(choices=choices))
 
     def report(self, value, step):
         # type: (float, int) -> None
@@ -476,20 +476,17 @@ class Trial(BaseTrial):
             Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
             generated/sklearn.linear_model.SGDClassifier.html>`_ training.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
                 from sklearn.linear_model import SGDClassifier
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     clf = SGDClassifier(random_state=0)
@@ -573,20 +570,17 @@ class Trial(BaseTrial):
 
             Save fixed hyperparameters of neural network training.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
                 from sklearn.neural_network import MLPClassifier
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
                 def objective(trial):
                     trial.set_user_attr('BATCHSIZE', 128)
