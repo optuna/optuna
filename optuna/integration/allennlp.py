@@ -3,6 +3,7 @@ import os
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Union
 import warnings
 
@@ -82,7 +83,7 @@ class AllenNLPExecutor(object):
         serialization_dir: str,
         metrics: str = "best_validation_accuracy",
         *,
-        include_package: Union[str, List[str]] = []
+        include_package: Optional[Union[str, List[str]]] = None
     ):
 
         _check_allennlp_availability()
@@ -91,6 +92,8 @@ class AllenNLPExecutor(object):
         self._config_file = config_file
         self._serialization_dir = serialization_dir
         self._metrics = metrics
+        if include_package is None:
+            include_package = []
         if isinstance(include_package, str):
             self._include_package = [include_package]
         else:
