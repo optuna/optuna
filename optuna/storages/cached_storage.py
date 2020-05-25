@@ -31,6 +31,8 @@ class _StudyInfo:
         self.trials = dict()  # type: Dict[int, FrozenTrial]
         self.updates = dict()  # type: Dict[int, _TrialUpdate]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
+        self.direction = StudyDirection.NOT_SET  # type: StudyDirection
+        self.name = None  # type: Optional[str]
 
 
 class _CachedStorage(base.BaseStorage):
@@ -63,7 +65,9 @@ class _CachedStorage(base.BaseStorage):
 
         study_id = self._backend.create_new_study(study_name)
         with self._lock:
-            self._studies[study_id] = _StudyInfo()
+            study = _StudyInfo()
+            study.name = study_name
+            self._studies[study_id] = study
         return study_id
 
     def delete_study(self, study_id: int) -> None:
@@ -82,6 +86,16 @@ class _CachedStorage(base.BaseStorage):
 
     def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
 
+        with self._lock:
+            if study_id in self._studies:
+                current_direction = self._studies[study_id].direction
+                if direction == current_direction:
+                    return
+                elif current_direction == StudyDirection.NOT_SET:
+                    self._studies[study_id].direction = direction
+                    self._backend.set_study_direction(study_id, direction)
+                    return
+
         self._backend.set_study_direction(study_id, direction)
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
@@ -98,15 +112,41 @@ class _CachedStorage(base.BaseStorage):
 
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
 
+        with self._lock:
+            if trial_id in self._trial_id_to_study_id_and_number:
+                return self._trial_id_to_study_id_and_number[trial_id][0]
+
         return self._backend.get_study_id_from_trial_id(trial_id)
 
     def get_study_name_from_id(self, study_id: int) -> str:
 
-        return self._backend.get_study_name_from_id(study_id)
+        with self._lock:
+            if study_id in self._studies:
+                name = self._studies[study_id].name
+                if name is not None:
+                    return name
+
+        name = self._backend.get_study_name_from_id(study_id)
+        with self._lock:
+            if study_id not in self._studies:
+                self._studies[study_id] = _StudyInfo()
+            self._studies[study_id].name = name
+        return name
 
     def get_study_direction(self, study_id: int) -> StudyDirection:
 
-        return self._backend.get_study_direction(study_id)
+        with self._lock:
+            if study_id in self._studies:
+                direction = self._studies[study_id].direction
+                if direction != StudyDirection.NOT_SET:
+                    return direction
+
+        direction = self._backend.get_study_direction(study_id)
+        with self._lock:
+            if study_id not in self._studies:
+                self._studies[study_id] = _StudyInfo()
+            self._studies[study_id].direction = direction
+        return direction
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
