@@ -1,10 +1,9 @@
 from optuna.logging import get_logger
+from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna.visualization.utils import _check_plotly_availability
 from optuna.visualization.utils import is_available
-
-from optuna.study import Study
 
 if is_available():
     from optuna.visualization.plotly_imports import go
