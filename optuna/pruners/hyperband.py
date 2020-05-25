@@ -1,4 +1,5 @@
 import math
+from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Union
@@ -201,10 +202,10 @@ class HyperbandPruner(BasePruner):
             if len(self._pruners) == 0:
                 return False
 
-        i = self._get_bracket_id(study, trial)
-        _logger.debug("{}th bracket is selected".format(i))
-        bracket_study = self._create_study_for_pruner(study, i)
-        return self._pruners[i].prune(bracket_study, trial)
+        bracket_id = self._get_bracket_id(study, trial)
+        _logger.debug("{}th bracket is selected".format(bracket_id))
+        bracket_study = self._create_study_for_pruner(study, bracket_id)
+        return self._pruners[bracket_id].prune(bracket_study, trial)
 
     def _try_initialization(self, study: "optuna.study.Study") -> None:
         if self._max_resource == "auto":
@@ -233,19 +234,19 @@ class HyperbandPruner(BasePruner):
 
         _logger.debug("Hyperband has {} brackets".format(self._n_brackets))
 
-        for i in range(self._n_brackets):
-            trial_allocation_budget = self._calculate_trial_allocation_budget(i)
+        for bracket_id in range(self._n_brackets):
+            trial_allocation_budget = self._calculate_trial_allocation_budget(bracket_id)
             self._total_trial_allocation_budget += trial_allocation_budget
             self._trial_allocation_budgets.append(trial_allocation_budget)
 
             if self._min_early_stopping_rate_low is None:
-                min_early_stopping_rate = i
+                min_early_stopping_rate = bracket_id
             else:
-                min_early_stopping_rate = self._min_early_stopping_rate_low + i
+                min_early_stopping_rate = self._min_early_stopping_rate_low + bracket_id
 
             _logger.debug(
                 "{}th bracket has minimum early stopping rate of {}".format(
-                    i, min_early_stopping_rate
+                    bracket_id, min_early_stopping_rate
                 )
             )
 
@@ -286,10 +287,10 @@ class HyperbandPruner(BasePruner):
             hash("{}_{}".format(study.study_name, trial.number))
             % self._total_trial_allocation_budget
         )
-        for i in range(self._n_brackets):
-            n -= self._trial_allocation_budgets[i]
+        for bracket_id in range(self._n_brackets):
+            n -= self._trial_allocation_budgets[bracket_id]
             if n < 0:
-                return i
+                return bracket_id
 
         assert False, "This line should be unreachable."
 
@@ -307,15 +308,13 @@ class HyperbandPruner(BasePruner):
         s = self._n_brackets - 1 - bracket_id
         return self._min_resource * (self._reduction_factor ** s)
 
-    def _create_study_for_sampler(
-        self, study: "optuna.study.Study", bracket_id: int
+    def _create_study_base(
+        self,
+        study: "optuna.study.Study",
+        bracket_id: int,
+        filter_func: Callable[["optuna.study.Study", "optuna.trial.FrozenTrial", int], bool],
     ) -> "optuna.study.Study":
-        # This class is assumed to be passed to
-        # `Trial._init_relative_params` and `Trial._suggest` in which `get_trials`,
-        # `direction`, and `storage` are used.
-        # But for safety, prohibit the other attributes explicitly.
         class _FilteredStudy(optuna.study.Study):
-
             _VALID_ATTRS = (
                 "get_trials",
                 "direction",
@@ -324,12 +323,19 @@ class HyperbandPruner(BasePruner):
                 "pruner",
                 "study_name",
                 "_bracket_id",
-                "_expected_maximum_resource",
+                "_filter_func",
                 "sampler",
                 "trials",
             )
 
-            def __init__(self, study: "optuna.study.Study", bracket_id: int) -> None:
+            def __init__(
+                self,
+                study: "optuna.study.Study",
+                bracket_id: int,
+                filter_func: Callable[
+                    ["optuna.study.Study", "optuna.trial.FrozenTrial", int], bool
+                ],
+            ) -> None:
                 super().__init__(
                     study_name=study.study_name,
                     storage=study._storage,
@@ -337,21 +343,11 @@ class HyperbandPruner(BasePruner):
                     pruner=study.pruner,
                 )
                 self._bracket_id = bracket_id
-                assert isinstance(self.pruner, HyperbandPruner)
-                self._expected_maximum_resource = self.pruner._calculate_bracket_max_resource(
-                    bracket_id
-                )
+                self._filter_func = filter_func
 
             def get_trials(self, deepcopy: bool = True) -> List["optuna.trial.FrozenTrial"]:
                 trials = super().get_trials(deepcopy=deepcopy)
-                pruner = self.pruner
-                assert isinstance(pruner, HyperbandPruner)
-                return [
-                    t
-                    for t in trials
-                    if pruner._get_bracket_id(self, t) == self._bracket_id
-                    or (t.last_step is not None and self._expected_maximum_resource <= t.last_step)
-                ]
+                return [t for t in trials if self._filter_func(self, t, self._bracket_id)]
 
             def __getattribute__(self, attr_name):  # type: ignore
                 if attr_name not in _FilteredStudy._VALID_ATTRS:
@@ -361,48 +357,39 @@ class HyperbandPruner(BasePruner):
                 else:
                     return object.__getattribute__(self, attr_name)
 
-        return _FilteredStudy(study, bracket_id)
+        return _FilteredStudy(study, bracket_id, filter_func)
+
+    def _create_study_for_sampler(
+        self, study: "optuna.study.Study", bracket_id: int
+    ) -> "optuna.study.Study":
+        # The returned class object is assumed to be passed to
+        # `Trial._init_relative_params` and `Trial._suggest` in which `get_trials`,
+        # `direction`, and `storage` are used.
+        # But for safety, prohibit the other attributes explicitly.
+        def _filter_func(
+            study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial", bracket_id: int
+        ) -> bool:
+            pruner = study.pruner
+            assert isinstance(pruner, HyperbandPruner)
+            expected_max_resource = pruner._calculate_bracket_max_resource(bracket_id)
+            return pruner._get_bracket_id(study, trial) == bracket_id or (
+                trial.last_step is not None and expected_max_resource <= trial.last_step
+            )
+
+        return self._create_study_base(study, bracket_id, _filter_func)
 
     def _create_study_for_pruner(
         self, study: "optuna.study.Study", bracket_id: int
     ) -> "optuna.study.Study":
-        # This class is assumed to be passed to
+        # The returned class object is assumed to be passed to
         # `SuccessiveHalvingPruner.prune` in which `get_trials`,
         # `direction`, and `storage` are used.
         # But for safety, prohibit the other attributes explicitly.
-        class _BracketStudy(optuna.study.Study):
+        def _filter_func(
+            study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial", bracket_id: int
+        ) -> bool:
+            pruner = study.pruner
+            assert isinstance(pruner, HyperbandPruner)
+            return pruner._get_bracket_id(study, trial) == bracket_id
 
-            _VALID_ATTRS = (
-                "get_trials",
-                "direction",
-                "_storage",
-                "_study_id",
-                "pruner",
-                "study_name",
-                "_bracket_id",
-            )
-
-            def __init__(self, study: "optuna.study.Study", bracket_id: int) -> None:
-                super().__init__(
-                    study_name=study.study_name,
-                    storage=study._storage,
-                    sampler=study.sampler,
-                    pruner=study.pruner,
-                )
-                self._bracket_id = bracket_id
-
-            def get_trials(self, deepcopy: bool = True) -> List["optuna.trial.FrozenTrial"]:
-                trials = super().get_trials(deepcopy=deepcopy)
-                pruner = self.pruner
-                assert isinstance(pruner, HyperbandPruner)
-                return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]
-
-            def __getattribute__(self, attr_name):  # type: ignore
-                if attr_name not in _BracketStudy._VALID_ATTRS:
-                    raise AttributeError(
-                        "_BracketStudy does not have attribute of '{}'".format(attr_name)
-                    )
-                else:
-                    return object.__getattribute__(self, attr_name)
-
-        return _BracketStudy(study, bracket_id)
+        return self._create_study_base(study, bracket_id, _filter_func)
