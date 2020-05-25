@@ -323,9 +323,9 @@ class IntLogUniformDistribution(BaseDistribution):
                 "The `step` value must be non-zero positive value, but step={}.".format(step)
             )
 
-        if low <= 0.0:
+        if low < 1.0:
             raise ValueError(
-                "The `low` value must be larger than 0 for a log distribution "
+                "The `low` value must be equal to or greater than 1 for a log distribution "
                 "(low={}, high={}).".format(low, high)
             )
 
