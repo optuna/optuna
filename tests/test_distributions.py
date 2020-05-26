@@ -1,5 +1,6 @@
 import copy
 import json
+import warnings
 
 import pytest
 
@@ -14,8 +15,8 @@ if type_checking.TYPE_CHECKING:
 EXAMPLE_DISTRIBUTIONS = {
     "u": distributions.UniformDistribution(low=1.0, high=2.0),
     "l": distributions.LogUniformDistribution(low=0.001, high=100),
-    "du": distributions.DiscreteUniformDistribution(low=1.0, high=10.0, q=2.0),
-    "iu": distributions.IntUniformDistribution(low=1, high=10, step=2),
+    "du": distributions.DiscreteUniformDistribution(low=1.0, high=9.0, q=2.0),
+    "iu": distributions.IntUniformDistribution(low=1, high=9, step=2),
     "c1": distributions.CategoricalDistribution(choices=(2.71, -float("inf"))),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
     "ilu": distributions.IntLogUniformDistribution(low=2, high=12, step=2),
@@ -25,8 +26,8 @@ EXAMPLE_JSONS = {
     "u": '{"name": "UniformDistribution", "attributes": {"low": 1.0, "high": 2.0}}',
     "l": '{"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}}',
     "du": '{"name": "DiscreteUniformDistribution",'
-    '"attributes": {"low": 1.0, "high": 10.0, "q": 2.0}}',
-    "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10, "step": 2}}',
+    '"attributes": {"low": 1.0, "high": 9.0, "q": 2.0}}',
+    "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 9, "step": 2}}',
     "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
     "ilu": '{"name": "IntLogUniformDistribution",'
@@ -97,7 +98,7 @@ def test_check_distribution_compatibility():
     )
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["du"],
-        distributions.DiscreteUniformDistribution(low=-1.0, high=10.0, q=3.0),
+        distributions.DiscreteUniformDistribution(low=-1.0, high=11.0, q=3.0),
     )
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["iu"], distributions.IntUniformDistribution(low=-1, high=1)
@@ -108,9 +109,7 @@ def test_check_distribution_compatibility():
     )
 
 
-def test_contains():
-    # type: () -> None
-
+def test_contains() -> None:
     u = distributions.UniformDistribution(low=1.0, high=2.0)
     assert not u._contains(0.9)
     assert u._contains(1)
@@ -123,13 +122,18 @@ def test_contains():
     assert lu._contains(12.3)
     assert not lu._contains(100)
 
-    du = distributions.DiscreteUniformDistribution(low=1.0, high=10.0, q=2.0)
+    with warnings.catch_warnings():
+        # UserWarning will be raised since the range is not divisible by 2.
+        # The range will be replaced with [1.0, 9.0].
+        warnings.simplefilter("ignore", category=UserWarning)
+        du = distributions.DiscreteUniformDistribution(low=1.0, high=10.0, q=2.0)
     assert not du._contains(0.9)
     assert du._contains(1.0)
     assert du._contains(3.5)
     assert du._contains(6)
-    assert du._contains(10)
-    assert not du._contains(10.1)
+    assert du._contains(9)
+    assert not du._contains(9.1)
+    assert not du._contains(10)
 
     iu = distributions.IntUniformDistribution(low=1, high=10)
     assert not iu._contains(0.9)
@@ -141,14 +145,18 @@ def test_contains():
     assert not iu._contains(11)
 
     # IntUniformDistribution with a 'step' parameter.
-    iuq = distributions.IntUniformDistribution(low=1, high=10, step=2)
+    with warnings.catch_warnings():
+        # UserWarning will be raised since the range is not divisible by 2.
+        # The range will be replaced with [1, 9].
+        warnings.simplefilter("ignore", category=UserWarning)
+        iuq = distributions.IntUniformDistribution(low=1, high=10, step=2)
     assert not iuq._contains(0.9)
     assert iuq._contains(1)
     assert iuq._contains(4)
     assert iuq._contains(6)
-    assert iuq._contains(10)
-    assert not iuq._contains(10.1)
-    assert not iuq._contains(11)
+    assert iuq._contains(9)
+    assert not iuq._contains(9.1)
+    assert not iuq._contains(10)
 
     c = distributions.CategoricalDistribution(choices=("Roppongi", "Azabu"))
     assert not c._contains(-1)
@@ -167,15 +175,18 @@ def test_contains():
     assert not ilu._contains(13)
 
     # IntLogUniformDistribution with a 'step' parameter.
-    iluq = distributions.IntLogUniformDistribution(low=2, high=7, step=2)
+    with warnings.catch_warnings():
+        # UserWarning will be raised since the range is not divisible by 2.
+        # The range will be replaced with [2, 6].
+        warnings.simplefilter("ignore", category=UserWarning)
+        iluq = distributions.IntLogUniformDistribution(low=2, high=7, step=2)
     assert not iluq._contains(0.9)
     assert iluq._contains(2)
     assert iluq._contains(4)
     assert iluq._contains(5)
     assert iluq._contains(6)
-    assert iluq._contains(7)
-    assert not iluq._contains(7.1)
-    assert not iluq._contains(8)
+    assert not iluq._contains(6.1)
+    assert not iluq._contains(7)
 
 
 def test_empty_range_contains():
@@ -220,17 +231,20 @@ def test_empty_range_contains():
 def test_single():
     # type: () -> None
 
-    single_distributions = [
-        distributions.UniformDistribution(low=1.0, high=1.0),
-        distributions.LogUniformDistribution(low=7.3, high=7.3),
-        distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
-        distributions.DiscreteUniformDistribution(low=2.22, high=2.24, q=0.3),
-        distributions.IntUniformDistribution(low=-123, high=-123),
-        distributions.IntUniformDistribution(low=-123, high=-120, step=4),
-        distributions.CategoricalDistribution(choices=("foo",)),
-        distributions.IntLogUniformDistribution(low=2, high=2),
-        distributions.IntLogUniformDistribution(low=2, high=2, step=2),
-    ]  # type: List[distributions.BaseDistribution]
+    with warnings.catch_warnings():
+        # UserWarning will be raised since the range is not divisible by step.
+        warnings.simplefilter("ignore", category=UserWarning)
+        single_distributions = [
+            distributions.UniformDistribution(low=1.0, high=1.0),
+            distributions.LogUniformDistribution(low=7.3, high=7.3),
+            distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
+            distributions.DiscreteUniformDistribution(low=2.22, high=2.24, q=0.3),
+            distributions.IntUniformDistribution(low=-123, high=-123),
+            distributions.IntUniformDistribution(low=-123, high=-120, step=4),
+            distributions.CategoricalDistribution(choices=("foo",)),
+            distributions.IntLogUniformDistribution(low=2, high=2),
+            distributions.IntLogUniformDistribution(low=2, high=2, step=2),
+        ]  # type: List[distributions.BaseDistribution]
     for distribution in single_distributions:
         assert distribution.single()
 
@@ -263,13 +277,19 @@ def test_empty_distribution():
         distributions.LogUniformDistribution(low=7.3, high=7.2)
 
     with pytest.raises(ValueError):
-        distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3)
+        with warnings.catch_warnings():
+            # UserWarning will be raised since the range is not divisible by 3.
+            warnings.simplefilter("ignore", category=UserWarning)
+            distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3)
 
     with pytest.raises(ValueError):
         distributions.IntUniformDistribution(low=123, high=100)
 
     with pytest.raises(ValueError):
-        distributions.IntUniformDistribution(low=123, high=100, step=2)
+        with warnings.catch_warnings():
+            # UserWarning will be raised since the range is not divisible by 2.
+            warnings.simplefilter("ignore", category=UserWarning)
+            distributions.IntUniformDistribution(low=123, high=100, step=2)
 
     with pytest.raises(ValueError):
         distributions.CategoricalDistribution(choices=())
@@ -278,7 +298,10 @@ def test_empty_distribution():
         distributions.IntLogUniformDistribution(low=123, high=100)
 
     with pytest.raises(ValueError):
-        distributions.IntLogUniformDistribution(low=123, high=100, step=2)
+        with warnings.catch_warnings():
+            # UserWarning will be raised since the range is not divisible by 2.
+            warnings.simplefilter("ignore", category=UserWarning)
+            distributions.IntLogUniformDistribution(low=123, high=100, step=2)
 
 
 def test_invalid_distribution():
@@ -344,13 +367,13 @@ def test_log_uniform_distribution_asdict():
 def test_discrete_uniform_distribution_asdict():
     # type: () -> None
 
-    assert EXAMPLE_DISTRIBUTIONS["du"]._asdict() == {"low": 1.0, "high": 10.0, "q": 2.0}
+    assert EXAMPLE_DISTRIBUTIONS["du"]._asdict() == {"low": 1.0, "high": 9.0, "q": 2.0}
 
 
 def test_int_uniform_distribution_asdict():
     # type: () -> None
 
-    assert EXAMPLE_DISTRIBUTIONS["iu"]._asdict() == {"low": 1, "high": 10, "step": 2}
+    assert EXAMPLE_DISTRIBUTIONS["iu"]._asdict() == {"low": 1, "high": 9, "step": 2}
 
 
 def test_int_log_uniform_distribution_asdict():

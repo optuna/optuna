@@ -11,7 +11,6 @@ from optuna.distributions import UniformDistribution
 from optuna import logging
 from optuna import pruners
 from optuna.trial._base import BaseTrial
-from optuna.trial._util import _adjust_discrete_uniform_high
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -323,7 +322,6 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        high = _adjust_discrete_uniform_high(name, low, high, q)
         distribution = DiscreteUniformDistribution(low=low, high=high, q=q)
 
         self._check_distribution(name, distribution)
@@ -394,14 +392,6 @@ class Trial(BaseTrial):
                 and lower values tend to be more sampled than higher values.
         """
 
-        r = high - low
-        if r % step != 0:
-            high = r // step * step + low
-            warnings.warn(
-                "The range of parameter `{}` is not divisible by `step`, and is "
-                "replaced by [{}, {}].".format(name, low, high)
-            )
-
         if log:
             distribution = IntLogUniformDistribution(
                 low=low, high=high, step=step
@@ -411,8 +401,8 @@ class Trial(BaseTrial):
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return int(self._suggest(name, distribution))
 
