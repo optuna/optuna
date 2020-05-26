@@ -935,7 +935,7 @@ class RDBStorage(BaseStorage):
 
         frozen_trial = self._get_trials_from_trial_models(session, [trial_model])[0]
 
-        return copy.deepcopy(frozen_trial)
+        return frozen_trial
 
     def get_all_trials(self, study_id, deepcopy=True):
         # type: (int, bool) -> List[FrozenTrial]
