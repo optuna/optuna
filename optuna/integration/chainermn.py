@@ -1,11 +1,11 @@
 import gc
 import warnings
 
-from optuna.exceptions import TrialPruned
 from optuna.logging import get_logger
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.trial import BaseTrial
+from optuna import TrialPruned
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -227,14 +227,17 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
+    def suggest_int(self, name, low, high, step=1, log=False):
+        # type: (str, int, int, int, bool) -> int
+
+        if log:
+            raise NotImplementedError
 
         def func():
             # type: () -> int
 
             assert self.delegate is not None
-            return self.delegate.suggest_int(name, low, high, step)
+            return self.delegate.suggest_int(name, low, high, step=step, log=log)
 
         return self._call_with_mpi(func)
 

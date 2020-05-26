@@ -127,7 +127,7 @@ def test_successive_halving_pruner_with_auto_min_resource(n_reports, n_trials):
         for i in range(n_reports):
             trial.report(1.0 / (i + 1), i)
             if trial.should_prune():
-                raise optuna.exceptions.TrialPruned()
+                raise optuna.TrialPruned()
         return 1.0
 
     study.optimize(objective, n_trials=n_trials)

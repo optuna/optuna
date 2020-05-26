@@ -10,9 +10,9 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.exceptions import TrialPruned
 from optuna.samplers import tpe
 from optuna.samplers import TPESampler
+from optuna import TrialPruned
 
 if optuna.type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA

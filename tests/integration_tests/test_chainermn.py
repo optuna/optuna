@@ -4,7 +4,6 @@ import pytest
 
 from optuna import create_study
 from optuna import distributions
-from optuna.exceptions import TrialPruned
 from optuna import integration
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
@@ -16,6 +15,7 @@ from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
+from optuna import TrialPruned
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -406,10 +406,10 @@ class TestChainerMNTrial(object):
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_int("x", low, high, step)
+                x1 = mn_trial.suggest_int("x", low, high, step=step)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_int("x", low, high, step)
+                x2 = mn_trial.suggest_int("x", low, high, step=step)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
@@ -419,10 +419,10 @@ class TestChainerMNTrial(object):
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_int("x", low, high, step)
+                x1 = mn_trial.suggest_int("x", low, high, step=step)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_int("x", low, high, step)
+                x2 = mn_trial.suggest_int("x", low, high, step=step)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):

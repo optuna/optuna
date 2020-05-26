@@ -1,4 +1,5 @@
 import collections
+import copy
 import datetime
 import gc
 import math
@@ -93,7 +94,7 @@ class BaseStudy(object):
             A :class:`~optuna.FrozenTrial` object of the best trial.
         """
 
-        return self._storage.get_best_trial(self._study_id)
+        return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
     @property
     def direction(self):
@@ -248,7 +249,7 @@ class Study(BaseStudy):
             A dictionary containing all user attributes.
         """
 
-        return self._storage.get_study_user_attrs(self._study_id)
+        return copy.deepcopy(self._storage.get_study_user_attrs(self._study_id))
 
     @property
     def system_attrs(self):
@@ -259,7 +260,7 @@ class Study(BaseStudy):
             A dictionary containing all system attributes.
         """
 
-        return self._storage.get_study_system_attrs(self._study_id)
+        return copy.deepcopy(self._storage.get_study_system_attrs(self._study_id))
 
     def optimize(
         self,
@@ -711,7 +712,7 @@ class Study(BaseStudy):
 
         trial = self._run_trial(func, catch, gc_after_trial)
         if callbacks is not None:
-            frozen_trial = self._storage.get_trial(trial._trial_id)
+            frozen_trial = copy.deepcopy(self._storage.get_trial(trial._trial_id))
             for callback in callbacks:
                 callback(self, frozen_trial)
 

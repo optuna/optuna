@@ -24,6 +24,7 @@ class BasePruner(object, metaclass=abc.ABCMeta):
                 Study object of the target study.
             trial:
                 FrozenTrial object of the target trial.
+                Take a copy before modifying this object.
 
         Returns:
             A boolean value representing whether the trial should be pruned.
