@@ -2,7 +2,6 @@ import datetime
 
 from optuna import distributions
 from optuna.trial._base import BaseTrial
-from optuna.trial._util import _adjust_discrete_uniform_high
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -98,10 +97,7 @@ class FixedTrial(BaseTrial):
 
         return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
 
-    def suggest_discrete_uniform(self, name, low, high, q):
-        # type: (str, float, float, float) -> float
-
-        high = _adjust_discrete_uniform_high(name, low, high, q)
+    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float):
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
