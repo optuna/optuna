@@ -323,7 +323,6 @@ class _CachedStorage(base.BaseStorage):
             trials = self._backend._get_trials(study_id, excluded_trial_ids=study.cached_trial_ids)
             if trials:
                 self._add_trials_to_cache(study_id, trials)
-                # All elements in ``self._study[study_id].trials`` should not be None.
                 for trial in trials:
                     if trial.state.is_finished():
                         study.cached_trial_ids.add(trial._trial_id)
