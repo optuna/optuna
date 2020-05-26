@@ -48,8 +48,8 @@ class MultiObjectiveTrial(object):
         low: float,
         high: float,
         *,
-        log: bool = False,
-        step: Optional[float] = None
+        step: Optional[float] = None,
+        log: bool = False
     ) -> float:
         """Suggest a value for the floating point parameter.
 
@@ -57,7 +57,7 @@ class MultiObjectiveTrial(object):
         for further details.
         """
 
-        return self._trial.suggest_float(name, low, high, log=log, step=step)
+        return self._trial.suggest_float(name, low, high, step=step, log=log)
 
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.

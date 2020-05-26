@@ -1,5 +1,6 @@
 import copy
 import datetime
+from typing import Optional
 import warnings
 
 from optuna import distributions
@@ -18,7 +19,6 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
@@ -77,8 +77,15 @@ class Trial(BaseTrial):
             study, trial, self.relative_search_space
         )
 
-    def suggest_float(self, name, low, high, *, log=False, step=None):
-        # type: (str, float, float, bool, Optional[float]) -> float
+    def suggest_float(
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: Optional[float] = None,
+        log: bool = False
+    ) -> float:
         """Suggest a value for the floating point parameter.
 
         Note that this is a wrapper method for :func:`~optuna.trial.Trial.suggest_uniform`,

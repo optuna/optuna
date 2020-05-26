@@ -1,5 +1,6 @@
 import abc
 import datetime
+from typing import Optional
 
 from optuna import distributions
 from optuna import logging
@@ -8,7 +9,6 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
@@ -30,10 +30,15 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def suggest_float(self, name, low, high, *, log=False, step=None):
-        # type: (str, float, float, bool, Optional[float])-> float
-
-        # TODO(nzw0301) swap log's position for step's one to match suggest_int for consistency.
+    def suggest_float(
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: Optional[float] = None,
+        log: bool = False
+    ) -> float:
 
         raise NotImplementedError
 
