@@ -237,6 +237,7 @@ class _Optimizer(object):
                     np.round((value - distribution.low) / distribution.step) * distribution.step
                     + distribution.low
                 )
+                value = int(min(max(value, distribution.low), distribution.high))
 
             params[name] = value
 
