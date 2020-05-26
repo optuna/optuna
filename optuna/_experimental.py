@@ -102,6 +102,7 @@ def experimental(version: str, name: str = None) -> Any:
 
             _original_init = cls.__init__
 
+            @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
@@ -117,10 +118,8 @@ def experimental(version: str, name: str = None) -> Any:
 
             if cls.__doc__ is None:
                 cls.__doc__ = ""
-            cls.__doc__ = (
-                _make_func_spec_str(_original_init)
-                + cls.__doc__
-                + _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+            cls.__doc__ = cls.__doc__ + _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(
+                ver=version
             )
             return cls
 
