@@ -635,7 +635,7 @@ class Trial(BaseTrial):
         # type: (str, BaseDistribution) -> Any
 
         if self._is_fixed_param(name, distribution):
-            param_value = self.system_attrs["fixed_params"][name]
+            param_value = self.storage.get_trial_system_attrs(self._trial_id)["fixed_params"][name]
         elif self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
@@ -663,13 +663,14 @@ class Trial(BaseTrial):
     def _is_fixed_param(self, name, distribution):
         # type: (str, BaseDistribution) -> bool
 
-        if "fixed_params" not in self.system_attrs:
+        system_attrs = self.storage.get_trial_system_attrs(self._trial_id)
+        if "fixed_params" not in system_attrs:
             return False
 
-        if name not in self.system_attrs["fixed_params"]:
+        if name not in system_attrs["fixed_params"]:
             return False
 
-        param_value = self.system_attrs["fixed_params"][name]
+        param_value = system_attrs["fixed_params"][name]
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
 
         contained = distribution._contains(param_value_in_internal_repr)
@@ -702,7 +703,9 @@ class Trial(BaseTrial):
     def _check_distribution(self, name, distribution):
         # type: (str, BaseDistribution) -> None
 
-        old_distribution = self.distributions.get(name, distribution)
+        old_distribution = self.storage.get_trial(self._trial_id).distributions.get(
+            name, distribution
+        )
         if old_distribution != distribution:
             warnings.warn(
                 'Inconsistent parameter values for distribution with name "{}"! '
