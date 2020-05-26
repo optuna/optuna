@@ -1,4 +1,6 @@
 import math
+from typing import Any
+from typing import Dict
 from unittest.mock import call
 from unittest.mock import patch
 
@@ -19,10 +21,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 if optuna.type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-
-    from optuna.distributions import BaseDistribution  # NOQA
+    from optuna.distributions import BaseDistribution
 
 
 class TestCmaEsSampler(object):
@@ -83,8 +82,7 @@ class TestCmaEsSampler(object):
             assert original_seed != sampler._cma_opts["seed"]
 
     @staticmethod
-    def test_infer_relative_search_space_1d():
-        # type: () -> None
+    def test_infer_relative_search_space_1d() -> None:
 
         sampler = optuna.integration.CmaEsSampler()
         study = optuna.create_study(sampler=sampler)
@@ -94,8 +92,7 @@ class TestCmaEsSampler(object):
         assert sampler.infer_relative_search_space(study, study.best_trial) == {}
 
     @staticmethod
-    def test_sample_relative_1d():
-        # type: () -> None
+    def test_sample_relative_1d() -> None:
 
         independent_sampler = DeterministicRelativeSampler({}, {})
         sampler = optuna.integration.CmaEsSampler(independent_sampler=independent_sampler)
@@ -109,8 +106,7 @@ class TestCmaEsSampler(object):
             assert mock_object.call_count == 2
 
     @staticmethod
-    def test_sample_relative_n_startup_trials():
-        # type: () -> None
+    def test_sample_relative_n_startup_trials() -> None:
 
         independent_sampler = DeterministicRelativeSampler({}, {})
         sampler = optuna.integration.CmaEsSampler(
@@ -132,15 +128,13 @@ class TestCmaEsSampler(object):
             assert mock_relative.call_count == 3
 
     @staticmethod
-    def test_initialize_x0_with_unsupported_distribution():
-        # type: () -> None
+    def test_initialize_x0_with_unsupported_distribution() -> None:
 
         with pytest.raises(NotImplementedError):
             optuna.integration.CmaEsSampler._initialize_x0({"x": UnsupportedDistribution()})
 
     @staticmethod
-    def test_initialize_sigma0_with_unsupported_distribution():
-        # type: () -> None
+    def test_initialize_sigma0_with_unsupported_distribution() -> None:
 
         with pytest.raises(NotImplementedError):
             optuna.integration.CmaEsSampler._initialize_sigma0({"x": UnsupportedDistribution()})
@@ -149,8 +143,7 @@ class TestCmaEsSampler(object):
 class TestOptimizer(object):
     @staticmethod
     @pytest.fixture
-    def search_space():
-        # type: () -> Dict[str, BaseDistribution]
+    def search_space() -> Dict[str, BaseDistribution]:
 
         return {
             "c": CategoricalDistribution(("a", "b")),
@@ -163,8 +156,7 @@ class TestOptimizer(object):
 
     @staticmethod
     @pytest.fixture
-    def x0():
-        # type: () -> Dict[str, Any]
+    def x0() -> Dict[str, Any]:
 
         return {
             "c": "a",
@@ -176,8 +168,7 @@ class TestOptimizer(object):
         }
 
     @staticmethod
-    def test_init(search_space, x0):
-        # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
+    def test_init(search_space: Dict[str, BaseDistribution], x0: Dict[str, Any]) -> None:
 
         with patch("cma.CMAEvolutionStrategy") as mock_obj:
             optuna.integration.cma._Optimizer(
@@ -198,8 +189,7 @@ class TestOptimizer(object):
             )
 
     @staticmethod
-    def test_init_with_unsupported_distribution():
-        # type: () -> None
+    def test_init_with_unsupported_distribution() -> None:
 
         with pytest.raises(NotImplementedError):
             optuna.integration.cma._Optimizer(
@@ -208,8 +198,9 @@ class TestOptimizer(object):
 
     @staticmethod
     @pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
-    def test_tell(search_space, x0, direction):
-        # type: (Dict[str, BaseDistribution], Dict[str, Any], StudyDirection) -> None
+    def test_tell(
+        search_space: Dict[str, BaseDistribution], x0: Dict[str, Any], direction: StudyDirection
+    ) -> None:
 
         optimizer = optuna.integration.cma._Optimizer(
             search_space, x0, 0.2, None, {"popsize": 3, "seed": 1}
@@ -223,8 +214,9 @@ class TestOptimizer(object):
 
     @staticmethod
     @pytest.mark.parametrize("state", [TrialState.FAIL, TrialState.RUNNING, TrialState.PRUNED])
-    def test_tell_filter_by_state(search_space, x0, state):
-        # type: (Dict[str, BaseDistribution], Dict[str, Any], TrialState) -> None
+    def test_tell_filter_by_state(
+        search_space: Dict[str, BaseDistribution], x0: Dict[str, Any], state: TrialState
+    ) -> None:
 
         optimizer = optuna.integration.cma._Optimizer(
             search_space, x0, 0.2, None, {"popsize": 2, "seed": 1}
@@ -235,8 +227,9 @@ class TestOptimizer(object):
         assert -1 == optimizer.tell(trials, StudyDirection.MINIMIZE)
 
     @staticmethod
-    def test_tell_filter_by_distribution(search_space, x0):
-        # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
+    def test_tell_filter_by_distribution(
+        search_space: Dict[str, BaseDistribution], x0: Dict[str, Any]
+    ) -> None:
 
         optimizer = optuna.integration.cma._Optimizer(
             search_space, x0, 0.2, None, {"popsize": 2, "seed": 1}
@@ -249,8 +242,7 @@ class TestOptimizer(object):
         assert 1 == optimizer.tell(trials, StudyDirection.MINIMIZE)
 
     @staticmethod
-    def test_ask(search_space, x0):
-        # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
+    def test_ask(search_space: Dict[str, BaseDistribution], x0: Dict[str, Any]) -> None:
 
         trials = [_create_frozen_trial(x0, search_space, number=i) for i in range(3)]
 
@@ -289,8 +281,7 @@ class TestOptimizer(object):
         assert params2 != params3
 
     @staticmethod
-    def test_is_compatible(search_space, x0):
-        # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
+    def test_is_compatible(search_space: Dict[str, BaseDistribution], x0: Dict[str, Any]) -> None:
 
         optimizer = optuna.integration.cma._Optimizer(search_space, x0, 0.1, None, {})
 
@@ -328,8 +319,12 @@ class TestOptimizer(object):
             optimizer._is_compatible(trial)
 
 
-def _create_frozen_trial(params, param_distributions, state=TrialState.COMPLETE, number=0):
-    # type: (Dict[str, Any], Dict[str, BaseDistribution], TrialState, int) -> FrozenTrial
+def _create_frozen_trial(
+    params: Dict[str, Any],
+    param_distributions: Dict[str, BaseDistribution],
+    state: TrialState = TrialState.COMPLETE,
+    number=0,
+) -> FrozenTrial:
 
     return FrozenTrial(
         number=number,
