@@ -97,7 +97,7 @@ class FixedTrial(BaseTrial):
 
         return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
 
-    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float):
+    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
