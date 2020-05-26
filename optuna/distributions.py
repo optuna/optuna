@@ -3,7 +3,6 @@ import decimal
 import json
 import warnings
 
-from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -408,9 +407,6 @@ class CategoricalDistribution(BaseDistribution):
                     "{}.".format(choice, type(choice).__name__)
                 )
                 warnings.warn(message)
-
-                logger = logging._get_library_root_logger()
-                logger.warning(message)
 
         self.choices = choices
 
