@@ -56,9 +56,8 @@ def test_experimental_class_decorator(version: str) -> None:
         decorated_sample = decorator_experimental(_Sample)
         assert decorated_sample.__name__ == "_Sample"
         assert decorated_sample.__init__.__name__ == "__init__"
-        assert (
-            decorated_sample.__doc__
-            == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+        assert decorated_sample.__doc__ == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(
+            ver=version
         )
 
         with pytest.warns(ExperimentalWarning):
