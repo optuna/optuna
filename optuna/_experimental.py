@@ -70,7 +70,10 @@ def experimental(version: str, name: str = None) -> Any:
 
             This decorator is supposed to be applied to the experimental class.
             """
-            @functools.wraps(cls.__init__)
+
+            _original_init = cls.__init__
+
+            @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
@@ -80,7 +83,7 @@ def experimental(version: str, name: str = None) -> Any:
                     ExperimentalWarning,
                 )
 
-                cls.__init__(self, *args, **kwargs)
+                _original_init(self, *args, **kwargs)
 
             cls.__init__ = wrapped_init
 
