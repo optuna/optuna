@@ -339,9 +339,9 @@ class Trial(BaseTrial):
         step of discretization is :math:`\\mathsf{step}`. More specifically, this method returns
         one of the values in the sequence :math:`\\mathsf{low}, \\mathsf{low} + \\mathsf{step},
         \\mathsf{low} + 2 * \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step} \\le
-        \\mathsf{high}`, where :math:`k` denotes an integer. Note that :math:`\\mathsf{high}` may
-        be modified if the range is not divisible by :math:`\\mathsf{step}`. Please check the
-        warning messages to find the changed values.
+        \\mathsf{high}`, where :math:`k` denotes an integer. Note that :math:`\\mathsf{high}` is
+        modified if the range is not divisible by :math:`\\mathsf{step}`. Please check the warning
+        messages to find the changed values.
 
         Example:
 
