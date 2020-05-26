@@ -966,7 +966,7 @@ class RDBStorage(BaseStorage):
             )
             .all()
         )
-        # On single-worker training, ``trial_models`` is always an empty list.
+        # On single-worker optimization, ``trial_models`` is always an empty list.
         trials = self._get_trials_from_trial_models(session, trial_models) if trial_models else []
 
         self._commit(session)
