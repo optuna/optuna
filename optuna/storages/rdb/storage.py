@@ -1,18 +1,14 @@
-from collections import defaultdict
 import copy
 from datetime import datetime
-import functools
 import json
 import logging
 import os
 import sys
 from typing import Any
-from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Set
-from typing import Tuple
 import uuid
 import weakref
 
@@ -917,15 +913,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         trial_model = (
-            session.query(
-                models.TrialModel.trial_id,
-                models.TrialModel.state,
-                models.TrialModel.value,
-                models.TrialModel.datetime_start,
-                models.TrialModel.datetime_complete,
-                models.TrialModel.number,
-                models.TrialModel.study_id,
-            )
+            session.query(models.TrialModel)
             .filter(models.TrialModel.trial_id == trial_id)
             .one_or_none()
         )
@@ -933,7 +921,7 @@ class RDBStorage(BaseStorage):
         if not trial_model:
             raise KeyError("No trial with trial-id {} found.".format(trial_id))
 
-        frozen_trial = self._get_trials_from_trial_models(session, [trial_model])[0]
+        frozen_trial = self._build_frozen_trial_from_trial_model(trial_model)
 
         return frozen_trial
 
@@ -952,133 +940,44 @@ class RDBStorage(BaseStorage):
         models.StudyModel.find_or_raise_by_id(study_id, session)
 
         trial_models = (
-            session.query(
-                models.TrialModel.trial_id,
-                models.TrialModel.state,
-                models.TrialModel.value,
-                models.TrialModel.datetime_start,
-                models.TrialModel.datetime_complete,
-                models.TrialModel.number,
-            )
+            session.query(models.TrialModel)
             .filter(
                 ~models.TrialModel.trial_id.in_(excluded_trial_ids),
                 models.TrialModel.study_id == study_id,
             )
             .all()
         )
-        # On single-worker optimization, ``trial_models`` is always an empty list.
-        trials = self._get_trials_from_trial_models(session, trial_models) if trial_models else []
+        trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
 
         self._commit(session)
 
         return trials
 
     @staticmethod
-    def _reduce_fn(
-        accumulator: DefaultDict[int, Dict], node: Dict[int, Dict]
-    ) -> DefaultDict[int, Dict]:
-        for i in node.keys():
-            accumulator[i].update(node[i])
-        return accumulator
-
-    def _build_params_from_trial_ids(
-        self, session: orm.Session, trial_ids: List[int]
-    ) -> DefaultDict[int, Dict[str, Tuple[float, optuna.distributions.BaseDistribution]]]:
-        params = [
-            {
-                param.trial_id: {
-                    param.param_name: (
-                        param.param_value,
-                        distributions.json_to_distribution(param.distribution_json),
-                    )
-                }
-            }
-            for param in session.query(
-                models.TrialParamModel.trial_id,
-                models.TrialParamModel.param_name,
-                models.TrialParamModel.param_value,
-                models.TrialParamModel.distribution_json,
-            )
-            .filter(models.TrialParamModel.trial_id.in_(trial_ids))
-            .all()
-        ]  # type: List[Dict[int, Dict[str, Tuple[float, optuna.distributions.BaseDistribution]]]]
-        return functools.reduce(self._reduce_fn, params, defaultdict(dict))
-
-    def _build_user_attrs_from_trial_ids(
-        self, session: orm.Session, trial_ids: List[int]
-    ) -> DefaultDict[int, Dict[str, float]]:
-        user_attrs = [
-            {user_attr.trial_id: {user_attr.key: json.loads(user_attr.value_json)}}
-            for user_attr in session.query(
-                models.TrialUserAttributeModel.trial_id,
-                models.TrialUserAttributeModel.key,
-                models.TrialUserAttributeModel.value_json,
-            )
-            .filter(models.TrialUserAttributeModel.trial_id.in_(trial_ids))
-            .all()
-        ]  # type: List[Dict[int, Dict[str, float]]]
-        return functools.reduce(self._reduce_fn, user_attrs, defaultdict(dict))
-
-    def _build_system_attrs_from_trial_ids(
-        self, session: orm.Session, trial_ids: List[int]
-    ) -> DefaultDict[int, Dict[str, float]]:
-        system_attrs = [
-            {system_attr.trial_id: {system_attr.key: json.loads(system_attr.value_json)}}
-            for system_attr in session.query(
-                models.TrialSystemAttributeModel.trial_id,
-                models.TrialSystemAttributeModel.key,
-                models.TrialSystemAttributeModel.value_json,
-            )
-            .filter(models.TrialSystemAttributeModel.trial_id.in_(trial_ids))
-            .all()
-        ]  # type: List[Dict[int, Dict[str, float]]]
-        return functools.reduce(self._reduce_fn, system_attrs, defaultdict(dict))
-
-    def _build_intermediate_values_from_trial_ids(
-        self, session: orm.Session, trial_ids: List[int]
-    ) -> DefaultDict[int, Dict[int, float]]:
-        intermediates = [
-            {value.trial_id: {value.step: value.value}}
-            for value in session.query(
-                models.TrialValueModel.trial_id,
-                models.TrialValueModel.step,
-                models.TrialValueModel.value,
-            )
-            .filter(models.TrialValueModel.trial_id.in_(trial_ids))
-            .all()
-        ]  # type: List[Dict[int, Dict[int, float]]]
-        return functools.reduce(self._reduce_fn, intermediates, defaultdict(dict))
-
-    def _get_trials_from_trial_models(
-        self, session: orm.Session, trial_models: List[models.TrialModel]
-    ) -> List[FrozenTrial]:
-
-        trial_ids = [trial.trial_id for trial in trial_models]
-        # The following four lines build a mapping from ``trial_id`` to a dict of required
-        # information.
-        params_dict = self._build_params_from_trial_ids(session, trial_ids)
-        user_attrs_dict = self._build_user_attrs_from_trial_ids(session, trial_ids)
-        system_attrs_dict = self._build_system_attrs_from_trial_ids(session, trial_ids)
-        intermediates_dict = self._build_intermediate_values_from_trial_ids(session, trial_ids)
-
-        return [
-            FrozenTrial(
-                number=trial.number,
-                state=trial.state,
-                value=trial.value,
-                datetime_start=trial.datetime_start,
-                datetime_complete=trial.datetime_complete,
-                params={
-                    k: v[1].to_external_repr(v[0]) for k, v in params_dict[trial.trial_id].items()
-                },
-                distributions={k: v[1] for k, v in params_dict[trial.trial_id].items()},
-                user_attrs=user_attrs_dict[trial.trial_id],
-                system_attrs=system_attrs_dict[trial.trial_id],
-                intermediate_values=intermediates_dict[trial.trial_id],
-                trial_id=trial.trial_id,
-            )
-            for trial in sorted(trial_models, key=lambda t: t.trial_id)
-        ]
+    def _build_frozen_trial_from_trial_model(trial: models.TrialModel) -> FrozenTrial:
+        return FrozenTrial(
+            number=trial.number,
+            state=trial.state,
+            value=trial.value,
+            datetime_start=trial.datetime_start,
+            datetime_complete=trial.datetime_complete,
+            params={
+                p.param_name: distributions.json_to_distribution(
+                    p.distribution_json
+                ).to_external_repr(p.param_value)
+                for p in trial.params
+            },
+            distributions={
+                p.param_name: distributions.json_to_distribution(p.distribution_json)
+                for p in trial.params
+            },
+            user_attrs={attr.key: json.loads(attr.value_json) for attr in trial.user_attributes},
+            system_attrs={
+                attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
+            },
+            intermediate_values={value.step: value.value for value in trial.values},
+            trial_id=trial.trial_id,
+        )
 
     def get_best_trial(self, study_id):
         # type: (int) -> FrozenTrial
