@@ -33,8 +33,11 @@ class _StudyInfo:
     def __init__(self) -> None:
         # Trial number to corresponding FrozenTrial.
         self.trials = {}  # type: Dict[int, FrozenTrial]
+        # A list of trials which do not require storage access to read latest attributes.
         self.cached_trial_ids = set()  # type: Set[int]
+        # Cache any writes which are not reflected to the actual storage yet in updates.
         self.updates = dict()  # type: Dict[int, _TrialUpdate]
+        # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
 
 
@@ -131,7 +134,13 @@ class _CachedStorage(base.BaseStorage):
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
             self._add_trials_to_cache(study_id, [frozen_trial])
-            # We cannot cache a WAITING trial.
+            # Running trials can be modified from only one worker.
+            # If the state is RUNNING, since this worker is an owner of the trial, we do not need
+            # to access to the storage to get the latest attributes of the trial.
+            # Since finished trials will not be modified by any worker, we do not
+            # need storage access for them, too.
+            # WAITING trials are exception and they can be modified from arbitral worker.
+            # Thus, we cannot add them to a list of cached trials.
             if frozen_trial.state != TrialState.WAITING:
                 study.cached_trial_ids.add(frozen_trial._trial_id)
         return trial_id
@@ -318,6 +327,7 @@ class _CachedStorage(base.BaseStorage):
                 for trial in trials:
                     if trial.state.is_finished():
                         study.cached_trial_ids.add(trial._trial_id)
+            # We need to sort trials by their number because some samplers assume this behavior.
             # The following two lines are latency-sensitive.
             trials = list(sorted(study.trials.values(), key=lambda t: t.number))
             return copy.deepcopy(trials) if deepcopy else trials
