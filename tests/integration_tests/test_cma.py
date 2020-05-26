@@ -26,8 +26,7 @@ if optuna.type_checking.TYPE_CHECKING:
 
 class TestCmaEsSampler(object):
     @staticmethod
-    def test_init_cma_opts():
-        # type: () -> None
+    def test_init_cma_opts() -> None:
 
         sampler = optuna.integration.CmaEsSampler(
             x0={"x": 0, "y": 0},
@@ -56,8 +55,7 @@ class TestCmaEsSampler(object):
             )
 
     @staticmethod
-    def test_init_default_values():
-        # type: () -> None
+    def test_init_default_values() -> None:
 
         sampler = optuna.integration.CmaEsSampler()
         seed = sampler._cma_opts.get("seed")
@@ -323,7 +321,7 @@ def _create_frozen_trial(
     params: Dict[str, Any],
     param_distributions: Dict[str, BaseDistribution],
     state: TrialState = TrialState.COMPLETE,
-    number=0,
+    number: int = 0,
 ) -> FrozenTrial:
 
     return FrozenTrial(
