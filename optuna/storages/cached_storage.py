@@ -33,7 +33,7 @@ class _StudyInfo:
     def __init__(self) -> None:
         # The `get_all_trials` method is a typical bottleneck, and we use a list
         # to manage trials to reduce the latency of the method.
-        self.trials = []  # type: List[FrozenTrial]
+        self.trials = []  # type: List[Optional[FrozenTrial]]
         self.cached_trial_ids = set()  # type: Set[int]
         self.updates = dict()  # type: Dict[int, _TrialUpdate]
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
@@ -77,12 +77,10 @@ class _CachedStorage(base.BaseStorage):
         with self._lock:
             if study_id in self._studies:
                 for trial in self._studies[study_id].trials:
-                    trial_ids_to_delete = []
-                    trial_id = trial._trial_id
-                    if trial_id in self._trial_id_to_study_id_and_number:
-                        trial_ids_to_delete.append(trial_id)
-                    for trial_id in trial_ids_to_delete:
-                        del self._trial_id_to_study_id_and_number[trial_id]
+                    if trial is not None:
+                        trial_id = trial._trial_id
+                        if trial_id in self._trial_id_to_study_id_and_number:
+                            del self._trial_id_to_study_id_and_number[trial_id]
                 del self._studies[study_id]
 
         self._backend.delete_study(study_id)
@@ -126,23 +124,6 @@ class _CachedStorage(base.BaseStorage):
     def get_all_study_summaries(self) -> List[StudySummary]:
 
         return self._backend.get_all_study_summaries()
-
-    @staticmethod
-    def _create_dummy_trial(number: int) -> FrozenTrial:
-
-        return FrozenTrial(
-            number=number,
-            state=TrialState.WAITING,
-            value=None,
-            datetime_start=None,
-            datetime_complete=None,
-            params={},
-            distributions={},
-            user_attrs={},
-            system_attrs={},
-            intermediate_values={},
-            trial_id=-1,
-        )
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 
@@ -337,12 +318,13 @@ class _CachedStorage(base.BaseStorage):
             trials = self._backend._get_uncached_trials(study_id, study.cached_trial_ids)
             if trials:
                 self._add_trials_to_cache(study_id, trials)
-                # ``self._study[study_id].trials`` should not have any dummy tirals.
+                # All elements in ``self._study[study_id].trials`` should not be None.
                 for trial in trials:
                     if trial.state.is_finished():
                         study.cached_trial_ids.add(trial._trial_id)
-            # The following line is latency-sensitive.
-            return copy.deepcopy(study.trials) if deepcopy else study.trials[:]
+            # The following two lines are latency-sensitive.
+            trials = [t for t in study.trials if t is not None]
+            return copy.deepcopy(trials) if deepcopy else trials
 
     def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
 
@@ -377,8 +359,7 @@ class _CachedStorage(base.BaseStorage):
         if len(study.trials) <= max_trial_number:
             study.trials.extend(
                 [
-                    self._create_dummy_trial(i)
-                    for i in range(len(study.trials), max_trial_number + 1)
+                    None for _ in range(len(study.trials), max_trial_number + 1)
                 ]
             )
         for trial in trials:
