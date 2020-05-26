@@ -1,13 +1,12 @@
 import logging
 
-import _pytest.capture  # NOQA
-import _pytest.logging  # NOQA
+import _pytest.capture
+import _pytest.logging
 
 import optuna.logging
 
 
-def test_get_logger(caplog):
-    # type: (_pytest.logging.LogCaptureFixture) -> None
+def test_get_logger(caplog: _pytest.logging.LogCaptureFixture) -> None:
 
     # Log propagation is necessary for caplog to capture log outputs.
     optuna.logging.enable_propagation()
@@ -18,8 +17,7 @@ def test_get_logger(caplog):
     assert "hello" in caplog.text
 
 
-def test_default_handler(capsys):
-    # type: (_pytest.capture.CaptureFixture) -> None
+def test_default_handler(capsys: _pytest.capture.CaptureFixture) -> None:
 
     # We need to reconstruct our default handler to properly capture stderr.
     optuna.logging._reset_library_root_logger()
@@ -44,8 +42,7 @@ def test_default_handler(capsys):
     assert "yoyo" not in err
 
 
-def test_verbosity(capsys):
-    # type: (_pytest.capture.CaptureFixture) -> None
+def test_verbosity(capsys: _pytest.capture.CaptureFixture) -> None:
 
     # We need to reconstruct our default handler to properly capture stderr.
     optuna.logging._reset_library_root_logger()
@@ -76,8 +73,7 @@ def test_verbosity(capsys):
     assert "bye-debug" not in err
 
 
-def test_propagation(caplog):
-    # type: (_pytest.capture.CaptureFixture) -> None
+def test_propagation(caplog: _pytest.capture.CaptureFixture) -> None:
 
     optuna.logging._reset_library_root_logger()
     logger = optuna.logging.get_logger("optuna.foo")
