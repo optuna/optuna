@@ -1,5 +1,4 @@
 import abc
-import copy
 from typing import Any
 from typing import Dict
 from typing import List
@@ -595,7 +594,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         else:
             best_trial = min(all_trials, key=lambda t: t.value)
 
-        return copy.deepcopy(best_trial)
+        return best_trial
 
     def get_trial_params(self, trial_id: int) -> Dict[str, Any]:
         """Read the parameter dictionary of a trial.

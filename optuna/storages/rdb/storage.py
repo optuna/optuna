@@ -912,7 +912,7 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id):
         # type: (int) -> FrozenTrial
 
-        return self._get_and_cache_trial(trial_id)
+        return self._get_and_cache_trial(trial_id, deepcopy=False)
 
     def _get_and_cache_trial(self, trial_id, deepcopy=True):
         # type: (int, bool) -> FrozenTrial

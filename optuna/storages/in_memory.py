@@ -146,14 +146,14 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             self._check_study_id(study_id)
-            return copy.deepcopy(self._studies[study_id].user_attrs)
+            return self._studies[study_id].user_attrs
 
     def get_study_system_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
 
         with self._lock:
             self._check_study_id(study_id)
-            return copy.deepcopy(self._studies[study_id].system_attrs)
+            return self._studies[study_id].system_attrs
 
     def get_all_study_summaries(self):
         # type: () -> List[StudySummary]
@@ -396,7 +396,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int) -> FrozenTrial
 
         with self._lock:
-            return copy.deepcopy(self._get_trial(trial_id))
+            return self._get_trial(trial_id)
 
     def _get_trial(self, trial_id: int) -> FrozenTrial:
 
