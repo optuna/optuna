@@ -4,7 +4,6 @@ import pytest
 
 from optuna import create_study
 from optuna import distributions
-from optuna.exceptions import TrialPruned
 from optuna import integration
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
@@ -16,6 +15,7 @@ from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
+from optuna import TrialPruned
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

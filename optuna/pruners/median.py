@@ -36,7 +36,7 @@ class MedianPruner(PercentilePruner):
                     trial.report(intermediate_value, step)
 
                     if trial.should_prune():
-                        raise optuna.exceptions.TrialPruned()
+                        raise optuna.TrialPruned()
 
                 return clf.score(X_valid, y_valid)
 

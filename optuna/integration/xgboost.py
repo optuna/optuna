@@ -67,7 +67,7 @@ class XGBoostPruningCallback(object):
         self._trial.report(current_score, step=env.iteration)
         if self._trial.should_prune():
             message = "Trial was pruned at iteration {}.".format(env.iteration)
-            raise optuna.exceptions.TrialPruned(message)
+            raise optuna.TrialPruned(message)
 
 
 def _check_xgboost_availability():

@@ -110,7 +110,7 @@ def test_get_param_importances_invalid_empty_study(
         get_param_importances(study, evaluator=evaluator_init_func())
 
     def objective(trial: Trial) -> float:
-        raise optuna.exceptions.TrialPruned
+        raise optuna.TrialPruned
 
     study.optimize(objective, n_trials=3)
 
@@ -153,7 +153,7 @@ def test_get_param_importances_invalid_no_completed_trials_params(
         x1 = trial.suggest_uniform("x1", 0.1, 3)
         if trial.number % 2 == 0:
             _ = trial.suggest_loguniform("x2", 0.1, 3)
-            raise optuna.exceptions.TrialPruned
+            raise optuna.TrialPruned
         return x1 ** 2
 
     study = create_study()

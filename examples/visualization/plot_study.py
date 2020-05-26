@@ -53,7 +53,7 @@ def objective(trial):
 
         # Handle pruning based on the intermediate value.
         if trial.should_prune(step):
-            raise optuna.exceptions.TrialPruned()
+            raise optuna.TrialPruned()
 
     return value
 

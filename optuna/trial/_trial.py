@@ -496,7 +496,7 @@ class Trial(BaseTrial):
                         intermediate_value = clf.score(X_valid, y_valid)
                         trial.report(intermediate_value, step=step)
                         if trial.should_prune():
-                            raise TrialPruned()
+                            raise optuna.TrialPruned()
 
                     return clf.score(X_valid, y_valid)
 
