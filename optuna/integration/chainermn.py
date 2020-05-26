@@ -230,9 +230,6 @@ class ChainerMNTrial(BaseTrial):
     def suggest_int(self, name, low, high, step=1, log=False):
         # type: (str, int, int, int, bool) -> int
 
-        if log:
-            raise NotImplementedError
-
         def func():
             # type: () -> int
 

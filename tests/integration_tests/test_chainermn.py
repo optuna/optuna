@@ -395,21 +395,21 @@ class TestChainerMNTrial(object):
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_suggest_int(storage_mode, comm):
-        # type: (str, CommunicatorBase) -> None
+    @pytest.mark.parametrize("enable_log", [False, True])
+    def test_suggest_int(storage_mode: str, comm: CommunicatorBase, enable_log: bool) -> None:
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
-            low = 0
+            low = 1
             high = 10
             step = 1
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_int("x", low, high, step=step)
+                x1 = mn_trial.suggest_int("x", low, high, step=step, log=enable_log)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_int("x", low, high, step=step)
+                x2 = mn_trial.suggest_int("x", low, high, step=step, log=enable_log)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
@@ -419,10 +419,10 @@ class TestChainerMNTrial(object):
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_int("x", low, high, step=step)
+                x1 = mn_trial.suggest_int("x", low, high, step=step, log=enable_log)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_int("x", low, high, step=step)
+                x2 = mn_trial.suggest_int("x", low, high, step=step, log=enable_log)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
