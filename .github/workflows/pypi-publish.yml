@@ -5,10 +5,6 @@ on:
   push:
     tags:
       - v*
-  # TODO(toshihikoyanase): Remove pull_request when you enable PyPI upload.
-  pull_request:
-    branches:
-      - master
 
 jobs:
   build-n-publish:
@@ -32,11 +28,13 @@ jobs:
     - name: Verify the distributions
       run: twine check dist/*
 
-    # Save the package to the GitHub Actions' artifact. It will be deleted after 90 days.
-    - name: Save dist directory
-      uses: actions/upload-artifact@v1
+    - name: Publish distribution to Test PyPI
+      # The following upload action cannot be executed in the forked repository.
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') && github.repository == 'optuna/optuna'
+      uses: pypa/gh-action-pypi-publish@v1.1.0
       with:
-        name: optuna-dist
-        path: dist
+        user: __token__
+        password: ${{ secrets.test_pypi_password }}
+        repository_url: https://test.pypi.org/legacy/
 
-    # TODO(toshihikoyanase): Add tasks to upload packages to TestPyPI and PyPI.
+    # TODO(toshihikoyanase): Add tasks to upload packages to PyPI.
