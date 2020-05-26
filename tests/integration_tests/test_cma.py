@@ -279,7 +279,9 @@ class TestOptimizer(object):
         assert params2 != params3
 
     @staticmethod
-    def test_is_compatible(search_space: Dict[str, "BaseDistribution"], x0: Dict[str, Any]) -> None:
+    def test_is_compatible(
+        search_space: Dict[str, "BaseDistribution"], x0: Dict[str, Any]
+    ) -> None:
 
         optimizer = optuna.integration.cma._Optimizer(search_space, x0, 0.1, None, {})
 
