@@ -11,28 +11,9 @@ def _sample_func(_: Any) -> int:
     return 10
 
 
-def _f() -> None:
-    pass
-
-
-def _g(a: Any, b: Any = None) -> None:
-    pass
-
-
-def _h(a: Any = None, b: int = 10) -> None:
-    pass
-
-
 class _Sample(object):
     def __init__(self, a: Any, b: Any, c: Any) -> None:
         pass
-
-
-def test_str() -> None:
-
-    assert _experimental._make_func_spec_str(_f) == "_f()\n\n    "
-    assert _experimental._make_func_spec_str(_g) == "_g(a, b=None)\n\n    "
-    assert _experimental._make_func_spec_str(_h) == "_h(a=None, b=10)\n\n    "
 
 
 @pytest.mark.parametrize("version", ["1.1.0", "1.1", 100, None])
@@ -74,10 +55,10 @@ def test_experimental_class_decorator(version: str) -> None:
 
         decorated_sample = decorator_experimental(_Sample)
         assert decorated_sample.__name__ == "_Sample"
+        assert decorated_sample.__init__.__name__ == "__init__"
         assert (
             decorated_sample.__doc__
-            == "__init__(a, b, c)\n\n    "
-            + _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+            == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
         )
 
         with pytest.warns(ExperimentalWarning):
