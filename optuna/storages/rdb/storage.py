@@ -1063,17 +1063,19 @@ class RDBStorage(BaseStorage):
 
         return [
             FrozenTrial(
-                trial.number,
-                trial.state,
-                trial.value,
-                trial.datetime_start,
-                trial.datetime_complete,
-                {k: v[1].to_external_repr(v[0]) for k, v in params_dict[trial.trial_id].items()},
-                {k: v[1] for k, v in params_dict[trial.trial_id].items()},
-                user_attrs_dict[trial.trial_id],
-                system_attrs_dict[trial.trial_id],
-                intermediates_dict[trial.trial_id],
-                trial.trial_id,
+                number=trial.number,
+                state=trial.state,
+                value=trial.value,
+                datetime_start=trial.datetime_start,
+                datetime_complete=trial.datetime_complete,
+                params={
+                    k: v[1].to_external_repr(v[0]) for k, v in params_dict[trial.trial_id].items()
+                },
+                distributions={k: v[1] for k, v in params_dict[trial.trial_id].items()},
+                user_attrs=user_attrs_dict[trial.trial_id],
+                system_attrs=system_attrs_dict[trial.trial_id],
+                intermediate_values=intermediates_dict[trial.trial_id],
+                trial_id=trial.trial_id,
             )
             for trial in sorted(trial_models, key=lambda t: t.trial_id)
         ]
