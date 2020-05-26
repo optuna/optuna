@@ -315,7 +315,7 @@ class _CachedStorage(base.BaseStorage):
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
-            trials = self._backend._get_uncached_trials(study_id, study.cached_trial_ids)
+            trials = self._backend._get_trials(study_id, excluded_trial_ids=study.cached_trial_ids)
             if trials:
                 self._add_trials_to_cache(study_id, trials)
                 # All elements in ``self._study[study_id].trials`` should not be None.
@@ -357,11 +357,7 @@ class _CachedStorage(base.BaseStorage):
         study = self._studies[study_id]
         max_trial_number = max(trial.number for trial in trials)
         if len(study.trials) <= max_trial_number:
-            study.trials.extend(
-                [
-                    None for _ in range(len(study.trials), max_trial_number + 1)
-                ]
-            )
+            study.trials.extend([None for _ in range(len(study.trials), max_trial_number + 1)])
         for trial in trials:
             self._trial_id_to_study_id_and_number[trial._trial_id] = (
                 study_id,

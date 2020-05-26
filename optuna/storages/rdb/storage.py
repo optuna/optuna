@@ -940,11 +940,11 @@ class RDBStorage(BaseStorage):
     def get_all_trials(self, study_id, deepcopy=True):
         # type: (int, bool) -> List[FrozenTrial]
 
-        trials = self._get_uncached_trials(study_id, set())
+        trials = self._get_trials(study_id, set())
 
         return copy.deepcopy(trials) if deepcopy else trials
 
-    def _get_uncached_trials(self, study_id: int, cached_trial_ids: Set[int]) -> List[FrozenTrial]:
+    def _get_trials(self, study_id: int, excluded_trial_ids: Set[int]) -> List[FrozenTrial]:
 
         session = self.scoped_session()
 
@@ -961,7 +961,7 @@ class RDBStorage(BaseStorage):
                 models.TrialModel.number,
             )
             .filter(
-                ~models.TrialModel.trial_id.in_(cached_trial_ids),
+                ~models.TrialModel.trial_id.in_(excluded_trial_ids),
                 models.TrialModel.study_id == study_id,
             )
             .all()
