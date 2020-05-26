@@ -572,6 +572,9 @@ class RDBStorage(BaseStorage):
                 New user_attr. None when there are no updates.
             system_attrs:
                 New system_attr. None when there are no updates.
+            datetime_complete:
+                Completion time of the trial. Set only if and only if this method
+                change the state of trial into one of the finished states.
 
         Returns:
             True when success.
