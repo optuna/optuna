@@ -758,7 +758,7 @@ class Trial(BaseTrial):
             A dictionary containing all parameters.
         """
 
-        return self.storage.get_trial_params(self._trial_id)
+        return copy.deepcopy(self.storage.get_trial_params(self._trial_id))
 
     @property
     def distributions(self):
@@ -780,7 +780,7 @@ class Trial(BaseTrial):
             A dictionary containing all user attributes.
         """
 
-        return self.storage.get_trial_user_attrs(self._trial_id)
+        return copy.deepcopy(self.storage.get_trial_user_attrs(self._trial_id))
 
     @property
     def system_attrs(self):
@@ -791,7 +791,7 @@ class Trial(BaseTrial):
             A dictionary containing all system attributes.
         """
 
-        return self.storage.get_trial_system_attrs(self._trial_id)
+        return copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
 
     @property
     def datetime_start(self):
