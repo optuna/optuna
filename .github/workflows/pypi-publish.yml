@@ -38,7 +38,7 @@ jobs:
         repository_url: https://test.pypi.org/legacy/
 
     - name: Publish distribution to PyPI
-      # Do not upload the package from forked repository.
+      # The following upload action cannot be executed in the forked repository.
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')  && github.repository == 'optuna/optuna'
       uses: pypa/gh-action-pypi-publish@v1.1.0
       with:
