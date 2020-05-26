@@ -207,8 +207,8 @@ class Trial(BaseTrial):
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -263,8 +263,8 @@ class Trial(BaseTrial):
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -326,8 +326,8 @@ class Trial(BaseTrial):
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
