@@ -6,7 +6,6 @@ except ImportError:
 import optuna
 from optuna.integration import CatalystPruningCallback
 from optuna.testing.integration import DeterministicPruner
-from optuna import type_checking
 
 import pytest
 import sys
