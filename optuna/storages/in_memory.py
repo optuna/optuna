@@ -430,6 +430,9 @@ class InMemoryStorage(base.BaseStorage):
                 trial.state == state for trial in self.get_all_trials(study_id, deepcopy=False)
             )
 
+    def read_from_remote_storage(self, study_id: int) -> None:
+        self._check_study_id(study_id)
+
     def _check_study_id(self, study_id):
         # type: (int) -> None
 

@@ -353,9 +353,21 @@ class _CachedStorage(base.BaseStorage):
         return self._backend.get_trial(trial_id)
 
     def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
-
         with self._lock:
-            # The cache update will be moved into another method in the future.
+            if study_id not in self._studies:
+                self.read_from_remote_storage(study_id)
+            study = self._studies[study_id]
+            # We need to sort trials by their number because some samplers assume this behavior.
+            # The following two lines are latency-sensitive.
+            trials = list(sorted(study.trials.values(), key=lambda t: t.number))
+            return copy.deepcopy(trials) if deepcopy else trials
+
+    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
+
+        return self._backend.get_n_trials(study_id, state)
+
+    def read_from_remote_storage(self, study_id: int) -> None:
+        with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
@@ -367,14 +379,6 @@ class _CachedStorage(base.BaseStorage):
                 for trial in trials:
                     if trial.state.is_finished():
                         study.owned_or_finished_trial_ids.add(trial._trial_id)
-            # We need to sort trials by their number because some samplers assume this behavior.
-            # The following two lines are latency-sensitive.
-            trials = list(sorted(study.trials.values(), key=lambda t: t.number))
-            return copy.deepcopy(trials) if deepcopy else trials
-
-    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
-
-        return self._backend.get_n_trials(study_id, state)
 
     def _flush_trial(self, trial_id: int) -> bool:
         if trial_id not in self._trial_id_to_study_id_and_number:
