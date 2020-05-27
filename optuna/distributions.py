@@ -212,13 +212,13 @@ class DiscreteUniformDistribution(BaseDistribution):
     """
 
     def __init__(self, low: float, high: float, q: float) -> None:
-        high = _adjust_discrete_uniform_high(low, high, q)
-
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}, q={}).".format(low, high, q)
             )
+
+        high = _adjust_discrete_uniform_high(low, high, q)
 
         self.low = low
         self.high = high
@@ -265,8 +265,6 @@ class IntUniformDistribution(BaseDistribution):
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
-        high = _adjust_int_uniform_high(low, high, step)
-
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
@@ -276,6 +274,8 @@ class IntUniformDistribution(BaseDistribution):
             raise ValueError(
                 "The `step` value must be non-zero positive value, but step={}.".format(step)
             )
+
+        high = _adjust_int_uniform_high(low, high, step)
 
         self.low = low
         self.high = high
@@ -327,13 +327,12 @@ class IntLogUniformDistribution(BaseDistribution):
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
-        high = _adjust_int_uniform_high(low, high, step)
-
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}).".format(low, high)
             )
+
         if step <= 0:
             raise ValueError(
                 "The `step` value must be non-zero positive value, but step={}.".format(step)
@@ -344,6 +343,8 @@ class IntLogUniformDistribution(BaseDistribution):
                 "The `low` value must be equal to or greater than 1 for a log distribution "
                 "(low={}, high={}).".format(low, high)
             )
+
+        high = _adjust_int_uniform_high(low, high, step)
 
         self.low = low
         self.high = high
