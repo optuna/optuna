@@ -46,7 +46,7 @@ jobs:
 
     - name: Login & Push to Docker Hub
       # The following push action cannot be executed in the forked repository.
-      if: github.repository == 'optuna/optuna'
+      if: github.repository == 'optuna/optuna' && env.DOCKER_HUB_USER != ''
       env:
         DOCKER_HUB_USER: ${{ secrets.DOCKER_HUB_USER }}
         DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
