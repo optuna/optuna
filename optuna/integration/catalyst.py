@@ -1,8 +1,6 @@
 import optuna
 
-
-if optuna.type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
+from typing import Any  # NOQA
 
 
 try:
