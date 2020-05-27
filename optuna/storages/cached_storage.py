@@ -353,9 +353,10 @@ class _CachedStorage(base.BaseStorage):
         return self._backend.get_trial(trial_id)
 
     def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
+        if study_id not in self._studies:
+            self.read_from_remote_storage(study_id)
+
         with self._lock:
-            if study_id not in self._studies:
-                self.read_from_remote_storage(study_id)
             study = self._studies[study_id]
             # We need to sort trials by their number because some samplers assume this behavior.
             # The following two lines are latency-sensitive.
