@@ -359,7 +359,9 @@ class _CachedStorage(base.BaseStorage):
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
-            trials = self._backend._get_trials(study_id, excluded_trial_ids=study.owned_or_finished_trial_ids)
+            trials = self._backend._get_trials(
+                study_id, excluded_trial_ids=study.owned_or_finished_trial_ids
+            )
             if trials:
                 self._add_trials_to_cache(study_id, trials)
                 for trial in trials:
