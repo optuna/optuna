@@ -34,7 +34,7 @@ class _StudyInfo:
         # Trial number to corresponding FrozenTrial.
         self.trials = {}  # type: Dict[int, FrozenTrial]
         # A list of trials which do not require storage access to read latest attributes.
-        self.cached_trial_ids = set()  # type: Set[int]
+        self.owned_or_finished_trial_ids = set()  # type: Set[int]
         # Cache any writes which are not reflected to the actual storage yet in updates.
         self.updates = dict()  # type: Dict[int, _TrialUpdate]
         # Cache distributions to avoid storage access on distribution consistency check.
@@ -182,7 +182,7 @@ class _CachedStorage(base.BaseStorage):
             # WAITING trials are exception and they can be modified from arbitral worker.
             # Thus, we cannot add them to a list of cached trials.
             if frozen_trial.state != TrialState.WAITING:
-                study.cached_trial_ids.add(frozen_trial._trial_id)
+                study.owned_or_finished_trial_ids.add(frozen_trial._trial_id)
         return trial_id
 
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
@@ -332,7 +332,7 @@ class _CachedStorage(base.BaseStorage):
             return None
         study_id, number = self._trial_id_to_study_id_and_number[trial_id]
         study = self._studies[study_id]
-        return study.trials[number] if trial_id in study.cached_trial_ids else None
+        return study.trials[number] if trial_id in study.owned_or_finished_trial_ids else None
 
     def _get_updates(self, trial_id: int) -> _TrialUpdate:
         study_id, number = self._trial_id_to_study_id_and_number[trial_id]
@@ -359,12 +359,12 @@ class _CachedStorage(base.BaseStorage):
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
-            trials = self._backend._get_trials(study_id, excluded_trial_ids=study.cached_trial_ids)
+            trials = self._backend._get_trials(study_id, excluded_trial_ids=study.owned_or_finished_trial_ids)
             if trials:
                 self._add_trials_to_cache(study_id, trials)
                 for trial in trials:
                     if trial.state.is_finished():
-                        study.cached_trial_ids.add(trial._trial_id)
+                        study.owned_or_finished_trial_ids.add(trial._trial_id)
             # We need to sort trials by their number because some samplers assume this behavior.
             # The following two lines are latency-sensitive.
             trials = list(sorted(study.trials.values(), key=lambda t: t.number))
