@@ -725,6 +725,9 @@ class Study(BaseStudy):
     ):
         # type: (...) -> trial_module.Trial
 
+        # Sync storage once at the beginning of the objective evaluation.
+        self._storage.read_from_remote_storage(self._study_id)
+
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
             trial_id = self._storage.create_new_trial(self._study_id)
