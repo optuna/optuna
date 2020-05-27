@@ -142,6 +142,7 @@ class BaseStudy(object):
             A list of :class:`~optuna.FrozenTrial` objects.
         """
 
+        self._storage.read_from_remote_storage(self._study_id)
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
 
     @property
