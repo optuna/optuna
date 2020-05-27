@@ -271,7 +271,6 @@ class _CachedStorage(base.BaseStorage):
                 updates = self._get_updates(trial_id)
                 cached_trial.value = value
                 updates.value = value
-                self._flush_trial(trial_id)
                 return
 
         self._backend._update_trial(trial_id, value=value)
