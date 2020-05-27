@@ -1,4 +1,5 @@
 import gc
+from typing import Optional
 import warnings
 
 from optuna.logging import get_logger
@@ -13,7 +14,6 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import Tuple  # NOQA
     from typing import Type  # NOQA
@@ -183,12 +183,16 @@ class ChainerMNTrial(BaseTrial):
         self.delegate = trial
         self.comm = comm
 
-    def suggest_float(self, name, low, high, *, log=False, step=None):
-        # type: (str, float, float, bool, Optional[float]) -> float
-
-        def func():
-            # type: () -> float
-
+    def suggest_float(
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: Optional[float] = None,
+        log: bool = False
+    ) -> float:
+        def func() -> float:
             assert self.delegate is not None
             return self.delegate.suggest_float(name, low, high, log=log, step=step)
 

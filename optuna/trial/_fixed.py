@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 from optuna import distributions
 from optuna.trial._base import BaseTrial
@@ -8,7 +9,6 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
@@ -68,8 +68,15 @@ class FixedTrial(BaseTrial):
         self._datetime_start = datetime.datetime.now()
         self._number = number
 
-    def suggest_float(self, name, low, high, *, log=False, step=None):
-        # type: (str, float, float, bool, Optional[float]) -> float
+    def suggest_float(
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: Optional[float] = None,
+        log: bool = False
+    ) -> float:
 
         if step is not None:
             if log:
