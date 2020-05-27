@@ -277,19 +277,13 @@ def test_empty_distribution():
         distributions.LogUniformDistribution(low=7.3, high=7.2)
 
     with pytest.raises(ValueError):
-        with warnings.catch_warnings():
-            # UserWarning will be raised since the range is not divisible by 3.
-            warnings.simplefilter("ignore", category=UserWarning)
-            distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3)
+        distributions.DiscreteUniformDistribution(low=-30, high=-40, q=3)
 
     with pytest.raises(ValueError):
         distributions.IntUniformDistribution(low=123, high=100)
 
     with pytest.raises(ValueError):
-        with warnings.catch_warnings():
-            # UserWarning will be raised since the range is not divisible by 2.
-            warnings.simplefilter("ignore", category=UserWarning)
-            distributions.IntUniformDistribution(low=123, high=100, step=2)
+        distributions.IntUniformDistribution(low=123, high=100, step=2)
 
     with pytest.raises(ValueError):
         distributions.CategoricalDistribution(choices=())
@@ -298,10 +292,7 @@ def test_empty_distribution():
         distributions.IntLogUniformDistribution(low=123, high=100)
 
     with pytest.raises(ValueError):
-        with warnings.catch_warnings():
-            # UserWarning will be raised since the range is not divisible by 2.
-            warnings.simplefilter("ignore", category=UserWarning)
-            distributions.IntLogUniformDistribution(low=123, high=100, step=2)
+        distributions.IntLogUniformDistribution(low=123, high=100, step=2)
 
 
 def test_invalid_distribution():
