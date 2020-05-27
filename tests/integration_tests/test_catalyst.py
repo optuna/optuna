@@ -12,10 +12,6 @@ import sys
 
 import torch
 
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Union  # NOQA
 
 
 @pytest.mark.skipif(sys.version_info < (3, 6), reason="catalyst requires python3.6 or higher")
