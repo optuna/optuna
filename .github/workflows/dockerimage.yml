@@ -43,3 +43,13 @@ jobs:
     - name: Build the Docker image
       run: |
         docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
+
+    - name: Login & Push to Docker Hub
+      # The following push action cannot be executed in the forked repository.
+      if: github.repository == 'optuna/optuna'
+      env:
+        DOCKER_HUB_USER: ${{ secrets.DOCKER_HUB_USER }}
+        DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      run: |
+        echo "${DOCKER_HUB_TOKEN}" | docker login -u ${DOCKER_HUB_USER} --password-stdin
+        docker push "${HUB_TAG}"
