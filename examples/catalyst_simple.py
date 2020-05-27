@@ -2,8 +2,7 @@
 Optuna example that optimizes multi-layer perceptrons using Catalyst.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-Catalyst, and MNIST. We optimize the neural network architecture. As it is too time
-consuming to use the whole MNIST dataset, we here use a small subset of it.
+Catalyst, and MNIST. We optimize the neural network architecture.
 
 We have the following two ways to execute this example:
 
@@ -34,6 +33,7 @@ from torchvision.datasets import MNIST
 from torchvision import transforms
 
 
+CLASSES = 10
 class Net(nn.Module):
     def __init__(self, trial):
         super(Net, self).__init__()
@@ -44,7 +44,6 @@ class Net(nn.Module):
         n_layers = trial.suggest_int("n_layers", 1, 3)
         dropout = trial.suggest_uniform("dropout", 0.2, 0.5)
         input_dim = 28 * 28
-        CLASSES = 10
         for i in range(n_layers):
             output_dim = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
             self.layers.append(nn.Linear(input_dim, output_dim))

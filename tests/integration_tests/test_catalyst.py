@@ -1,7 +1,4 @@
-try:
-    from catalyst.dl import SupervisedRunner
-except ImportError:
-    pass
+from catalyst.dl import SupervisedRunner
 
 import optuna
 from optuna.integration import CatalystPruningCallback
@@ -11,7 +8,6 @@ import pytest
 import sys
 
 import torch
-
 
 
 @pytest.mark.skipif(sys.version_info < (3, 6), reason="catalyst requires python3.6 or higher")
