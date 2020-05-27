@@ -223,8 +223,14 @@ class HyperbandPruner(BasePruner):
             # inputs of Hyperband are `R`: max resource and `\eta`: reduction factor. The
             # number of brackets (this is referred as `s_{max} + 1` in the paper) is calculated
             # by s_{max} + 1 = \floor{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
+            # In this implementation, we combine this formula and that of ASHA paper
+            # https://arxiv.org/abs/1502.07943 as
+            # `n_brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`
             self._n_brackets = (
-                math.floor(math.log2(self._max_resource) / math.log2(self._reduction_factor)) + 1
+                math.floor(
+                    math.log(self._max_resource / self._min_resource, self._reduction_factor)
+                )
+                + 1
             )
 
         _logger.debug("Hyperband has {} brackets".format(self._n_brackets))
