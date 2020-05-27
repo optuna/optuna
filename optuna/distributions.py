@@ -3,7 +3,6 @@ import decimal
 import json
 import warnings
 
-from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -198,6 +197,11 @@ class DiscreteUniformDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and passed
     to :mod:`~optuna.samplers` in general.
 
+    .. note::
+        If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by :math:`q`,
+        :math:`\\mathsf{high}` will be replaced with the maximum of :math:`k q + \\mathsf{low}
+        \\lt \\mathsf{high}`, where :math:`k` is an integer.
+
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
@@ -207,14 +211,14 @@ class DiscreteUniformDistribution(BaseDistribution):
             A discretization step.
     """
 
-    def __init__(self, low, high, q):
-        # type: (float, float, float) -> None
-
+    def __init__(self, low: float, high: float, q: float) -> None:
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}, q={}).".format(low, high, q)
             )
+
+        high = _adjust_discrete_uniform_high(low, high, q)
 
         self.low = low
         self.high = high
@@ -245,6 +249,12 @@ class IntUniformDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
     :mod:`~optuna.samplers` in general.
 
+    .. note::
+        If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by
+        :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced with the maximum of
+        :math:`k \\times \\mathsf{step} + \\mathsf{low} \\lt \\mathsf{high}`, where :math:`k` is
+        an integer.
+
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
@@ -254,9 +264,7 @@ class IntUniformDistribution(BaseDistribution):
             A step for spacing between values.
     """
 
-    def __init__(self, low, high, step=1):
-        # type: (int, int, int) -> None
-
+    def __init__(self, low: int, high: int, step: int = 1) -> None:
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
@@ -266,6 +274,8 @@ class IntUniformDistribution(BaseDistribution):
             raise ValueError(
                 "The `step` value must be non-zero positive value, but step={}.".format(step)
             )
+
+        high = _adjust_int_uniform_high(low, high, step)
 
         self.low = low
         self.high = high
@@ -301,6 +311,12 @@ class IntLogUniformDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
     :mod:`~optuna.samplers` in general.
 
+    .. note::
+        If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by
+        :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced with the maximum of
+        :math:`k \\times \\mathsf{step} + \\mathsf{low} \\lt \\mathsf{high}`, where :math:`k` is
+        an integer.
+
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
@@ -310,14 +326,13 @@ class IntLogUniformDistribution(BaseDistribution):
             A step for spacing between values.
     """
 
-    def __init__(self, low, high, step=1):
-        # type: (int, int, int) -> None
-
+    def __init__(self, low: int, high: int, step: int = 1) -> None:
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}).".format(low, high)
             )
+
         if step <= 0:
             raise ValueError(
                 "The `step` value must be non-zero positive value, but step={}.".format(step)
@@ -328,6 +343,8 @@ class IntLogUniformDistribution(BaseDistribution):
                 "The `low` value must be equal to or greater than 1 for a log distribution "
                 "(low={}, high={}).".format(low, high)
             )
+
+        high = _adjust_int_uniform_high(low, high, step)
 
         self.low = low
         self.high = high
@@ -391,9 +408,6 @@ class CategoricalDistribution(BaseDistribution):
                     "{}.".format(choice, type(choice).__name__)
                 )
                 warnings.warn(message)
-
-                logger = logging._get_library_root_logger()
-                logger.warning(message)
 
         self.choices = choices
 
@@ -497,3 +511,37 @@ def check_distribution_compatibility(dist_old, dist_new):
         raise ValueError(
             CategoricalDistribution.__name__ + " does not support dynamic value space."
         )
+
+
+def _adjust_discrete_uniform_high(low: float, high: float, q: float) -> float:
+    d_high = decimal.Decimal(str(high))
+    d_low = decimal.Decimal(str(low))
+    d_q = decimal.Decimal(str(q))
+
+    d_r = d_high - d_low
+
+    if d_r % d_q != decimal.Decimal("0"):
+        old_high = high
+        high = float((d_r // d_q) * d_q + d_low)
+        warnings.warn(
+            "The distribution is specified by [{low}, {old_high}] and q={step}, but the range "
+            "is not divisible by `q`. It will be replaced by [{low}, {high}].".format(
+                low=low, old_high=old_high, high=high, step=q
+            )
+        )
+
+    return high
+
+
+def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
+    r = high - low
+    if r % step != 0:
+        old_high = high
+        high = r // step * step + low
+        warnings.warn(
+            "The distribution is specified by [{low}, {old_high}] and step={step}, but the range "
+            "is not divisible by `step`. It will be replaced by [{low}, {high}].".format(
+                low=low, old_high=old_high, high=high, step=step
+            )
+        )
+    return high

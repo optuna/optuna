@@ -13,7 +13,6 @@ from optuna.distributions import UniformDistribution
 from optuna import logging
 from optuna import pruners
 from optuna.trial._base import BaseTrial
-from optuna.trial._util import _adjust_discrete_uniform_high
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -216,8 +215,8 @@ class Trial(BaseTrial):
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -272,8 +271,8 @@ class Trial(BaseTrial):
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -331,13 +330,12 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        high = _adjust_discrete_uniform_high(name, low, high, q)
         distribution = DiscreteUniformDistribution(low=low, high=high, q=q)
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -345,7 +343,13 @@ class Trial(BaseTrial):
         # type: (str, int, int, int, bool) -> int
         """Suggest a value for the integer parameter.
 
-        The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
+        The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`, and the
+        step of discretization is :math:`\\mathsf{step}`. More specifically, this method returns
+        one of the values in the sequence :math:`\\mathsf{low}, \\mathsf{low} + \\mathsf{step},
+        \\mathsf{low} + 2 * \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step} \\le
+        \\mathsf{high}`, where :math:`k` denotes an integer. Note that :math:`\\mathsf{high}` is
+        modified if the range is not divisible by :math:`\\mathsf{step}`. Please check the warning
+        messages to find the changed values.
 
         Example:
 
@@ -381,6 +385,8 @@ class Trial(BaseTrial):
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
+            step:
+                A step of discretization.
             log:
                 A flag to sample the value from the log domain or not.
                 If ``log`` is true, at first, the range of suggested values is divided into grid
@@ -394,20 +400,17 @@ class Trial(BaseTrial):
                 and lower values tend to be more sampled than higher values.
         """
 
-        distribution = IntUniformDistribution(
-            low=low, high=high, step=step
-        )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
-
         if log:
-            high = (
-                distribution.high - distribution.low
-            ) // distribution.step * distribution.step + distribution.low
-            distribution = IntLogUniformDistribution(low=low, high=high, step=step)
+            distribution = IntLogUniformDistribution(
+                low=low, high=high, step=step
+            )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+        else:
+            distribution = IntUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return int(self._suggest(name, distribution))
 
