@@ -32,7 +32,7 @@ def test_cached_set() -> None:
 
     """Test CachedStorage does not flush to persistent storages.
 
-     The CachedStorage does not flush when it modifies trial updates of params.
+     The CachedStorage does not flush when it modifies trial updates of params or value.
 
     """
 
@@ -50,13 +50,21 @@ def test_cached_set() -> None:
         assert update_mock.call_count == 0
         assert set_mock.call_count == 0
 
+    trial_id = storage.create_new_trial(study_id)
+    with patch.object(
+        base_storage, "_update_trial", return_value=True
+    ) as update_mock, patch.object(base_storage, "set_trial_value", return_value=None) as set_mock:
+        storage.set_trial_value(trial_id, 0.3)
+        assert update_mock.call_count == 0
+        assert set_mock.call_count == 0
+
 
 def test_uncached_set() -> None:
 
     """Test CachedStorage does flush to persistent storages.
 
      The CachedStorage flushes modifications of trials to a persistent storage when
-     it modifies either value, intermediate_values, state, user_attrs, or system_attrs.
+     it modifies either intermediate_values, state, user_attrs, or system_attrs.
 
     """
 
@@ -74,14 +82,6 @@ def test_uncached_set() -> None:
             storage.set_trial_state(trial_id, state)
             assert update_mock.call_count == 1
             assert set_mock.call_count == 0
-
-    trial_id = storage.create_new_trial(study_id)
-    with patch.object(
-        base_storage, "_update_trial", return_value=True
-    ) as update_mock, patch.object(base_storage, "set_trial_value", return_value=None) as set_mock:
-        storage.set_trial_value(trial_id, 0.3)
-        assert update_mock.call_count == 1
-        assert set_mock.call_count == 0
 
     trial_id = storage.create_new_trial(study_id)
     with patch.object(
