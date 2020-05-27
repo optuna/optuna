@@ -690,7 +690,7 @@ class Study(BaseStudy):
         # type: () -> Optional[int]
 
         # TODO(c-bata): Reduce database query counts for extracting waiting trials.
-        for trial in self.get_trials(deepcopy=False):
+        for trial in self._storage.get_all_trials(self._study_id, deepcopy=False):
             if trial.state != TrialState.WAITING:
                 continue
 

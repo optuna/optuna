@@ -153,7 +153,9 @@ class CmaEsSampler(BaseSampler):
             return {}
 
         completed_trials = [
-            t for t in study.get_trials(deepcopy=False) if t.state == TrialState.COMPLETE
+            t
+            for t in study._storage.get_all_trials(study._study_id, deepcopy=False)
+            if t.state == TrialState.COMPLETE
         ]
         if len(completed_trials) < self._n_startup_trials:
             return {}
