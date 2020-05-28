@@ -1,15 +1,13 @@
-import pytest
-
-catalyst = pytest.importorskip("catalyst")
-from catalyst.dl import SupervisedRunner
-
 import optuna
 from optuna.integration import CatalystPruningCallback
 from optuna.testing.integration import DeterministicPruner
 
+import pytest
 import sys
 
 import torch
+
+catalyst = pytest.importorskip("catalyst")
 
 
 @pytest.mark.skipif(sys.version_info < (3, 6), reason="catalyst requires python3.6 or higher")
@@ -31,7 +29,7 @@ def test_catalyst_pruning_callback():
         criterion = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters())
 
-        runner = SupervisedRunner()
+        runner = catalyst.dl.SupervisedRunner()
         runner.train(
             model=model,
             criterion=criterion,
