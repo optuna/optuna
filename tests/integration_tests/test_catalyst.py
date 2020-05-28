@@ -1,10 +1,12 @@
+import pytest
+
+catalyst = pytest.importorskip("catalyst")
 from catalyst.dl import SupervisedRunner
 
 import optuna
 from optuna.integration import CatalystPruningCallback
 from optuna.testing.integration import DeterministicPruner
 
-import pytest
 import sys
 
 import torch

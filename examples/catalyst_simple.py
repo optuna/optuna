@@ -34,6 +34,8 @@ from torchvision import transforms
 
 
 CLASSES = 10
+
+
 class Net(nn.Module):
     def __init__(self, trial):
         super(Net, self).__init__()
