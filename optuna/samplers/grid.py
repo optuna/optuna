@@ -53,7 +53,7 @@ class GridSampler(BaseSampler):
     Note:
 
         :class:`~optuna.samplers.GridSampler` automatically stops the optimization if all
-        combinations in the passed ``search_space`` has already been evaluated, internally
+        combinations in the passed ``search_space`` have already been evaluated, internally
         invoking the :func:`~optuna.study.Study.stop` method.
 
     Note:
