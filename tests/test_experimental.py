@@ -47,7 +47,7 @@ def test_experimental_decorator() -> None:
 
     decorated_func = decorator_experimental(_sample_func)
     assert decorated_func.__name__ == _sample_func.__name__
-    assert decorated_func.__doc__ == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(
+    assert decorated_func.__doc__ == _experimental._EXPERIMENTAL_NOTE_TEMPLATE.format(
         ver=version
     )
 
@@ -76,7 +76,7 @@ def test_experimental_class_decorator() -> None:
     decorated_class = decorator_experimental(_Sample)
     assert decorated_class.__name__ == "_Sample"
     assert decorated_class.__init__.__name__ == "__init__"
-    assert decorated_class.__doc__ == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(
+    assert decorated_class.__doc__ == _experimental._EXPERIMENTAL_NOTE_TEMPLATE.format(
         ver=version
     )
 

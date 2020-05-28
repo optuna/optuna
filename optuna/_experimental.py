@@ -8,7 +8,7 @@ import warnings
 from optuna.exceptions import ExperimentalWarning
 
 
-_EXPERIMENTAL_DOCSTRING_TEMPLATE = """
+_EXPERIMENTAL_NOTE_TEMPLATE = """
 
 .. note::
     Added in v{ver} as an experimental feature. The interface may change in newer versions
@@ -48,9 +48,9 @@ def experimental(version: str, name: str = None) -> Any:
             if func.__doc__ is None:
                 func.__doc__ = ""
 
-            docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+            note = _EXPERIMENTAL_NOTE_TEMPLATE.format(ver=version)
             indent = _get_docstring_indent(func.__doc__)
-            func.__doc__ = func.__doc__.strip() + textwrap.indent(docstring, indent) + indent
+            func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
 
             # TODO(crcrpar): Annotate this correctly.
             @functools.wraps(func)
@@ -91,9 +91,9 @@ def experimental(version: str, name: str = None) -> Any:
             if cls.__doc__ is None:
                 cls.__doc__ = ""
 
-            docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+            note = _EXPERIMENTAL_NOTE_TEMPLATE.format(ver=version)
             indent = _get_docstring_indent(cls.__doc__)
-            cls.__doc__ = cls.__doc__.strip() + textwrap.indent(docstring, indent) + indent
+            cls.__doc__ = cls.__doc__.strip() + textwrap.indent(note, indent) + indent
 
             return cls
 
