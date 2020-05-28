@@ -10,9 +10,9 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.exceptions import TrialPruned
 from optuna.samplers import tpe
 from optuna.samplers import TPESampler
+from optuna import TrialPruned
 
 if optuna.type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
@@ -340,7 +340,15 @@ def test_get_observation_pairs():
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
-    assert tpe.sampler._get_observation_pairs(study, "y", trial) == ([], [])
+    assert tpe.sampler._get_observation_pairs(study, "y", trial) == (
+        [None, None, None, None],
+        [
+            (-float("inf"), 5.0),  # COMPLETE
+            (-7, 2),  # PRUNED (with intermediate values)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        ],
+    )
 
     # Test direction=maximize.
     study = optuna.create_study(direction="maximize")
@@ -356,7 +364,15 @@ def test_get_observation_pairs():
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
-    assert tpe.sampler._get_observation_pairs(study, "y", trial) == ([], [])
+    assert tpe.sampler._get_observation_pairs(study, "y", trial) == (
+        [None, None, None, None],
+        [
+            (-float("inf"), -5.0),  # COMPLETE
+            (-7, -2),  # PRUNED (with intermediate values)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        ],
+    )
 
 
 def frozen_trial_factory(

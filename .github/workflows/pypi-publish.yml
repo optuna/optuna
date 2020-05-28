@@ -1,0 +1,42 @@
+name: Publish distributions to TestPyPI and PyPI
+
+# Only activate if the v* tag is pushed.
+on:
+  push:
+    tags:
+      - v*
+  # TODO(toshihikoyanase): Remove pull_request when you enable PyPI upload.
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-n-publish:
+    name: Build and publish Python distributions to TestPyPI and PyPI
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+
+    - name: Install twine
+      run: >-
+        python -m pip install -U twine
+
+    - name: Build a tar ball
+      run: >-
+        python setup.py sdist
+
+    - name: Verify the distributions
+      run: twine check dist/*
+
+    # Save the package to the GitHub Actions' artifact. It will be deleted after 90 days.
+    - name: Save dist directory
+      uses: actions/upload-artifact@v1
+      with:
+        name: optuna-dist
+        path: dist
+
+    # TODO(toshihikoyanase): Add tasks to upload packages to TestPyPI and PyPI.

@@ -1,17 +1,23 @@
-import abc
+import copy
 import datetime
-import decimal
-import enum
+from typing import Optional
 import warnings
 
 from optuna import distributions
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna import logging
+from optuna import pruners
+from optuna.trial._base import BaseTrial
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
@@ -19,362 +25,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
 
-    FloatingPointDistributionType = Union[
-        distributions.UniformDistribution, distributions.LogUniformDistribution
-    ]
-
-_logger = logging.get_logger(__name__)
-
-
-class TrialState(enum.Enum):
-    """State of a :class:`~optuna.trial.Trial`.
-
-    Attributes:
-        RUNNING:
-            The :class:`~optuna.trial.Trial` is running.
-        COMPLETE:
-            The :class:`~optuna.trial.Trial` has been finished without any error.
-        PRUNED:
-            The :class:`~optuna.trial.Trial` has been pruned with
-            :class:`~optuna.exceptions.TrialPruned`.
-        FAIL:
-            The :class:`~optuna.trial.Trial` has failed due to an uncaught error.
-
-            .. note::
-                The failed trials are ignored by any build-in samplers when they sample new
-                parameters. Thus, failed trials are regarded as deleted in the samplers'
-                perspective.
-    """
-
-    RUNNING = 0
-    COMPLETE = 1
-    PRUNED = 2
-    FAIL = 3
-    WAITING = 4
-
-    def __repr__(self):
-        # type: () -> str
-
-        return str(self)
-
-    def is_finished(self):
-        # type: () -> bool
-
-        return self != TrialState.RUNNING and self != TrialState.WAITING
-
-
-class FrozenTrial(object):
-    """Status and results of a :class:`~optuna.trial.Trial`.
-
-    Attributes:
-        number:
-            Unique and consecutive number of :class:`~optuna.trial.Trial` for each
-            :class:`~optuna.study.Study`. Note that this field uses zero-based numbering.
-        state:
-            :class:`TrialState` of the :class:`~optuna.trial.Trial`.
-        value:
-            Objective value of the :class:`~optuna.trial.Trial`.
-        datetime_start:
-            Datetime where the :class:`~optuna.trial.Trial` started.
-        datetime_complete:
-            Datetime where the :class:`~optuna.trial.Trial` finished.
-        params:
-            Dictionary that contains suggested parameters.
-        user_attrs:
-            Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
-            :func:`optuna.trial.Trial.set_user_attr`.
-        intermediate_values:
-            Intermediate objective values set with :func:`optuna.trial.Trial.report`.
-    """
-
-    def __init__(
-        self,
-        number,  # type: int
-        state,  # type: TrialState
-        value,  # type: Optional[float]
-        datetime_start,  # type: Optional[datetime.datetime]
-        datetime_complete,  # type: Optional[datetime.datetime]
-        params,  # type: Dict[str, Any]
-        distributions,  # type: Dict[str, BaseDistribution]
-        user_attrs,  # type: Dict[str, Any]
-        system_attrs,  # type: Dict[str, Any]
-        intermediate_values,  # type: Dict[int, float]
-        trial_id,  # type: int
-    ):
-        # type: (...) -> None
-
-        self.number = number
-        self.state = state
-        self.value = value
-        self.datetime_start = datetime_start
-        self.datetime_complete = datetime_complete
-        self.params = params
-        self.user_attrs = user_attrs
-        self.system_attrs = system_attrs
-        self.intermediate_values = intermediate_values
-        self._distributions = distributions
-        self._trial_id = trial_id
-
-    # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
-    # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
-    _ordered_fields = [
-        "number",
-        "value",
-        "datetime_start",
-        "datetime_complete",
-        "params",
-        "_distributions",
-        "user_attrs",
-        "system_attrs",
-        "intermediate_values",
-        "_trial_id",
-        "state",
-    ]
-
-    def __eq__(self, other):
-        # type: (Any) -> bool
-
-        if not isinstance(other, FrozenTrial):
-            return NotImplemented
-        return other.__dict__ == self.__dict__
-
-    def __lt__(self, other):
-        # type: (Any) -> bool
-
-        if not isinstance(other, FrozenTrial):
-            return NotImplemented
-
-        return self.number < other.number
-
-    def __le__(self, other):
-        # type: (Any) -> bool
-
-        if not isinstance(other, FrozenTrial):
-            return NotImplemented
-
-        return self.number <= other.number
-
-    def __hash__(self):
-        # type: () -> int
-
-        return hash(tuple(getattr(self, field) for field in self._ordered_fields))
-
-    def __repr__(self):
-        # type: () -> str
-
-        return "{cls}({kwargs})".format(
-            cls=self.__class__.__name__,
-            kwargs=", ".join(
-                "{field}={value}".format(
-                    field=field if not field.startswith("_") else field[1:],
-                    value=repr(getattr(self, field)),
-                )
-                for field in self._ordered_fields
-            ),
-        )
-
-    def _validate(self):
-        # type: () -> None
-
-        if self.datetime_start is None:
-            raise ValueError("`datetime_start` is supposed to be set.")
-
-        if self.state.is_finished():
-            if self.datetime_complete is None:
-                raise ValueError("`datetime_complete` is supposed to be set for a finished trial.")
-        else:
-            if self.datetime_complete is not None:
-                raise ValueError(
-                    "`datetime_complete` is supposed to be None for an unfinished trial."
-                )
-
-        if self.state == TrialState.COMPLETE and self.value is None:
-            raise ValueError("`value` is supposed to be set for a complete trial.")
-
-        if set(self.params.keys()) != set(self.distributions.keys()):
-            raise ValueError(
-                "Inconsistent parameters {} and distributions {}.".format(
-                    set(self.params.keys()), set(self.distributions.keys())
-                )
-            )
-
-        for param_name, param_value in self.params.items():
-            distribution = self.distributions[param_name]
-
-            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
-            if not distribution._contains(param_value_in_internal_repr):
-                raise ValueError(
-                    "The value {} of parameter '{}' isn't contained in the distribution "
-                    "{}.".format(param_value, param_name, distribution)
-                )
-
-    @property
-    def distributions(self):
-        # type: () -> Dict[str, BaseDistribution]
-        """Dictionary that contains the distributions of :attr:`params`."""
-
-        return self._distributions
-
-    @distributions.setter
-    def distributions(self, value):
-        # type: (Dict[str, BaseDistribution]) -> None
-        self._distributions = value
-
-    @property
-    def trial_id(self):
-        # type: () -> int
-        """Return the trial ID.
-
-        .. deprecated:: 0.19.0
-            The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.trial.FrozenTrial.number` instead.
-
-        Returns:
-            The trial ID.
-        """
-
-        warnings.warn(
-            "The use of `FrozenTrial.trial_id` is deprecated. "
-            "Please use `FrozenTrial.number` instead.",
-            DeprecationWarning,
-        )
-
-        _logger.warning(
-            "The use of `FrozenTrial.trial_id` is deprecated. "
-            "Please use `FrozenTrial.number` instead."
-        )
-
-        return self._trial_id
-
-    @property
-    def last_step(self):
-        # type: () -> Optional[int]
-
-        if len(self.intermediate_values) == 0:
-            return None
-        else:
-            return max(self.intermediate_values.keys())
-
-    @property
-    def duration(self):
-        # type: () -> Optional[datetime.timedelta]
-        """Return the elapsed time taken to complete the trial.
-
-        Returns:
-            The duration.
-        """
-
-        if self.datetime_start and self.datetime_complete:
-            return self.datetime_complete - self.datetime_start
-        else:
-            return None
-
-
-class BaseTrial(object, metaclass=abc.ABCMeta):
-    """Base class for trials.
-
-    Note that this class is not supposed to be directly accessed by library users.
-    """
-
-    @abc.abstractmethod
-    def suggest_float(self, name, low, high, *, log=False, step=None):
-        # type: (str, float, float, bool, Optional[float])-> float
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def suggest_uniform(self, name, low, high):
-        # type: (str, float, float) -> float
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def suggest_loguniform(self, name, low, high):
-        # type: (str, float, float) -> float
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def suggest_discrete_uniform(self, name, low, high, q):
-        # type: (str, float, float, float) -> float
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def report(self, value, step):
-        # type: (float, int) -> None
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def params(self):
-        # type: () -> Dict[str, Any]
-
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def distributions(self):
-        # type: () -> Dict[str, BaseDistribution]
-
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def user_attrs(self):
-        # type: () -> Dict[str, Any]
-
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def system_attrs(self):
-        # type: () -> Dict[str, Any]
-
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def datetime_start(self):
-        # type: () -> Optional[datetime.datetime]
-
-        raise NotImplementedError
-
-    @property
-    def number(self) -> int:
-
-        raise NotImplementedError
+    FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
 
 
 class Trial(BaseTrial):
@@ -418,15 +69,22 @@ class Trial(BaseTrial):
 
         trial = self.storage.get_trial(self._trial_id)
 
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(
-            self.study, trial
-        )
+        study = pruners._filter_study(self.study, trial)
+
+        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
         self.relative_params = self.study.sampler.sample_relative(
-            self.study, trial, self.relative_search_space
+            study, trial, self.relative_search_space
         )
 
-    def suggest_float(self, name, low, high, *, log=False, step=None):
-        # type: (str, float, float, bool, Optional[float]) -> float
+    def suggest_float(
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: Optional[float] = None,
+        log: bool = False
+    ) -> float:
         """Suggest a value for the floating point parameter.
 
         Note that this is a wrapper method for :func:`~optuna.trial.Trial.suggest_uniform`,
@@ -445,20 +103,17 @@ class Trial(BaseTrial):
             Suggest a momentum, learning rate and scaling factor of learning rate
             for neural network training.
 
-            .. testsetup::
+            .. testcode::
 
                 import numpy as np
-                import optuna
+                from sklearn.datasets import load_iris
                 from sklearn.model_selection import train_test_split
                 from sklearn.neural_network import MLPClassifier
 
-                np.random.seed(seed=0)
-                X = np.random.randn(200).reshape(-1, 1)
-                y = np.random.randint(0, 2, 200)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+                import optuna
 
-
-            .. testcode::
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
                 def objective(trial):
                     momentum = trial.suggest_float('momentum', 0.0, 1.0)
@@ -470,7 +125,7 @@ class Trial(BaseTrial):
                                         solver='sgd', random_state=0, power_t=power_t)
                     clf.fit(X_train, y_train)
 
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -483,13 +138,13 @@ class Trial(BaseTrial):
             high:
                 Upper endpoint of the range of suggested values. ``high`` is excluded from the
                 range.
+            step:
+                A step of discretization.
             log:
                 A flag to sample the value from the log domain or not.
                 If ``log`` is true, the value is sampled from the range in the log domain.
                 Otherwise, the value is sampled from the range in the linear domain.
                 See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
-            step:
-                A step of discretization.
 
         Returns:
             A suggested float value.
@@ -520,20 +175,17 @@ class Trial(BaseTrial):
 
             Suggest a momentum for neural network training.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(200).reshape(-1, 1)
-                y = np.random.randint(0, 2, 200)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
                 from sklearn.neural_network import MLPClassifier
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     momentum = trial.suggest_uniform('momentum', 0.0, 1.0)
@@ -541,7 +193,7 @@ class Trial(BaseTrial):
                                         solver='sgd', random_state=0)
                     clf.fit(X_train, y_train)
 
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -559,12 +211,12 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = distributions.UniformDistribution(low=low, high=high)
+        distribution = UniformDistribution(low=low, high=high)
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -581,26 +233,23 @@ class Trial(BaseTrial):
             Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/
             generated/sklearn.svm.SVC.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
                 from sklearn.svm import SVC
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     c = trial.suggest_loguniform('c', 1e-5, 1e2)
                     clf = SVC(C=c, gamma='scale', random_state=0)
                     clf.fit(X_train, y_train)
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -618,12 +267,12 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = distributions.LogUniformDistribution(low=low, high=high)
+        distribution = LogUniformDistribution(low=low, high=high)
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -646,26 +295,23 @@ class Trial(BaseTrial):
             `GradientBoostingClassifier <https://scikit-learn.org/stable/modules/generated/
             sklearn.ensemble.GradientBoostingClassifier.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
                 from sklearn.ensemble import GradientBoostingClassifier
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
                     clf = GradientBoostingClassifier(subsample=subsample, random_state=0)
                     clf.fit(X_train, y_train)
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -684,47 +330,49 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        high = _adjust_discrete_uniform_high(name, low, high, q)
-        distribution = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+        distribution = DiscreteUniformDistribution(low=low, high=high, q=q)
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
+    def suggest_int(self, name, low, high, step=1, log=False):
+        # type: (str, int, int, int, bool) -> int
         """Suggest a value for the integer parameter.
 
-        The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
+        The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`, and the
+        step of discretization is :math:`\\mathsf{step}`. More specifically, this method returns
+        one of the values in the sequence :math:`\\mathsf{low}, \\mathsf{low} + \\mathsf{step},
+        \\mathsf{low} + 2 * \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step} \\le
+        \\mathsf{high}`, where :math:`k` denotes an integer. Note that :math:`\\mathsf{high}` is
+        modified if the range is not divisible by :math:`\\mathsf{step}`. Please check the warning
+        messages to find the changed values.
 
         Example:
 
             Suggest the number of trees in `RandomForestClassifier <https://scikit-learn.org/
             stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
                 from sklearn.ensemble import RandomForestClassifier
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     n_estimators = trial.suggest_int('n_estimators', 50, 400)
                     clf = RandomForestClassifier(n_estimators=n_estimators, random_state=0)
                     clf.fit(X_train, y_train)
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -738,18 +386,31 @@ class Trial(BaseTrial):
             high:
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
             step:
-                A step of spacing between values.
-
-        Returns:
-            A suggested integer value.
+                A step of discretization.
+            log:
+                A flag to sample the value from the log domain or not.
+                If ``log`` is true, at first, the range of suggested values is divided into grid
+                points of width ``step``. The range of suggested values is then converted to a log
+                domain, from which a value is uniformly sampled. The uniformly sampled value is
+                re-converted to the original domain and rounded to the nearest grid point that we
+                just split, and the suggested value is determined.
+                For example,
+                if `low = 2`, `high = 8` and `step = 2`,
+                then the range of suggested values is divided by ``step`` as `[2, 4, 6, 8]`
+                and lower values tend to be more sampled than higher values.
         """
 
-        distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
+        if log:
+            distribution = IntLogUniformDistribution(
+                low=low, high=high, step=step
+            )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+        else:
+            distribution = IntUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
 
-        if low == high:
-            return self._set_new_param_or_get_existing(name, low, distribution)
+        if distribution.low == distribution.high:
+            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return int(self._suggest(name, distribution))
 
@@ -764,26 +425,23 @@ class Trial(BaseTrial):
             Suggest a kernel function of `SVC <https://scikit-learn.org/stable/modules/generated/
             sklearn.svm.SVC.html>`_.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
                 from sklearn.svm import SVC
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     kernel = trial.suggest_categorical('kernel', ['linear', 'poly', 'rbf'])
                     clf = SVC(kernel=kernel, gamma='scale', random_state=0)
                     clf.fit(X_train, y_train)
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -807,7 +465,7 @@ class Trial(BaseTrial):
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
 
-        return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
+        return self._suggest(name, CategoricalDistribution(choices=choices))
 
     def report(self, value, step):
         # type: (float, int) -> None
@@ -829,31 +487,28 @@ class Trial(BaseTrial):
             Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
             generated/sklearn.linear_model.SGDClassifier.html>`_ training.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
                 from sklearn.linear_model import SGDClassifier
+                from sklearn.model_selection import train_test_split
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
                 def objective(trial):
                     clf = SGDClassifier(random_state=0)
                     for step in range(100):
                         clf.partial_fit(X_train, y_train, np.unique(y))
-                        intermediate_value = clf.score(X_test, y_test)
+                        intermediate_value = clf.score(X_valid, y_valid)
                         trial.report(intermediate_value, step=step)
                         if trial.should_prune():
-                            raise TrialPruned()
+                            raise optuna.TrialPruned()
 
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -926,20 +581,17 @@ class Trial(BaseTrial):
 
             Save fixed hyperparameters of neural network training.
 
-            .. testsetup::
-
-                import numpy as np
-                from sklearn.model_selection import train_test_split
-
-                np.random.seed(seed=0)
-                X = np.random.randn(50).reshape(-1, 1)
-                y = np.random.randint(0, 2, 50)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-
             .. testcode::
 
-                import optuna
+                import numpy as np
+                from sklearn.datasets import load_iris
+                from sklearn.model_selection import train_test_split
                 from sklearn.neural_network import MLPClassifier
+
+                import optuna
+
+                X, y = load_iris(return_X_y=True)
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
                 def objective(trial):
                     trial.set_user_attr('BATCHSIZE', 128)
@@ -949,7 +601,7 @@ class Trial(BaseTrial):
                                         momentum=momentum, solver='sgd', random_state=0)
                     clf.fit(X_train, y_train)
 
-                    return clf.score(X_test, y_test)
+                    return clf.score(X_valid, y_valid)
 
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
@@ -987,14 +639,15 @@ class Trial(BaseTrial):
         # type: (str, BaseDistribution) -> Any
 
         if self._is_fixed_param(name, distribution):
-            param_value = self.system_attrs["fixed_params"][name]
+            param_value = self.storage.get_trial_system_attrs(self._trial_id)["fixed_params"][name]
         elif self._is_relative_param(name, distribution):
             param_value = self.relative_params[name]
         else:
             trial = self.storage.get_trial(self._trial_id)
-            param_value = self.study.sampler.sample_independent(
-                self.study, trial, name, distribution
-            )
+
+            study = pruners._filter_study(self.study, trial)
+
+            param_value = self.study.sampler.sample_independent(study, trial, name, distribution)
 
         return self._set_new_param_or_get_existing(name, param_value, distribution)
 
@@ -1014,13 +667,14 @@ class Trial(BaseTrial):
     def _is_fixed_param(self, name, distribution):
         # type: (str, BaseDistribution) -> bool
 
-        if "fixed_params" not in self.system_attrs:
+        system_attrs = self.storage.get_trial_system_attrs(self._trial_id)
+        if "fixed_params" not in system_attrs:
             return False
 
-        if name not in self.system_attrs["fixed_params"]:
+        if name not in system_attrs["fixed_params"]:
             return False
 
-        param_value = self.system_attrs["fixed_params"][name]
+        param_value = system_attrs["fixed_params"][name]
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
 
         contained = distribution._contains(param_value_in_internal_repr)
@@ -1053,7 +707,9 @@ class Trial(BaseTrial):
     def _check_distribution(self, name, distribution):
         # type: (str, BaseDistribution) -> None
 
-        old_distribution = self.distributions.get(name, distribution)
+        old_distribution = self.storage.get_trial(self._trial_id).distributions.get(
+            name, distribution
+        )
         if old_distribution != distribution:
             warnings.warn(
                 'Inconsistent parameter values for distribution with name "{}"! '
@@ -1109,7 +765,7 @@ class Trial(BaseTrial):
             A dictionary containing all parameters.
         """
 
-        return self.storage.get_trial_params(self._trial_id)
+        return copy.deepcopy(self.storage.get_trial_params(self._trial_id))
 
     @property
     def distributions(self):
@@ -1120,7 +776,7 @@ class Trial(BaseTrial):
             A dictionary containing all distributions.
         """
 
-        return self.storage.get_trial(self._trial_id).distributions
+        return copy.deepcopy(self.storage.get_trial(self._trial_id).distributions)
 
     @property
     def user_attrs(self):
@@ -1131,7 +787,7 @@ class Trial(BaseTrial):
             A dictionary containing all user attributes.
         """
 
-        return self.storage.get_trial_user_attrs(self._trial_id)
+        return copy.deepcopy(self.storage.get_trial_user_attrs(self._trial_id))
 
     @property
     def system_attrs(self):
@@ -1142,7 +798,7 @@ class Trial(BaseTrial):
             A dictionary containing all system attributes.
         """
 
-        return self.storage.get_trial_system_attrs(self._trial_id)
+        return copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
 
     @property
     def datetime_start(self):
@@ -1172,200 +828,3 @@ class Trial(BaseTrial):
         self.logger.warning(message)
 
         return self.study._study_id
-
-
-class FixedTrial(BaseTrial):
-    """A trial class which suggests a fixed value for each parameter.
-
-    This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests pre-defined
-    parameter values. The parameter values can be determined at the construction of the
-    :class:`~optuna.trial.FixedTrial` object. In contrast to :class:`~optuna.trial.Trial`,
-    :class:`~optuna.trial.FixedTrial` does not depend on :class:`~optuna.study.Study`, and it is
-    useful for deploying optimization results.
-
-    Example:
-
-        Evaluate an objective function with parameter values given by a user.
-
-        .. testcode::
-
-            import optuna
-
-            def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_categorical('y', [-1, 0, 1])
-                return x ** 2 + y
-
-            assert objective(optuna.trial.FixedTrial({'x': 1, 'y': 0})) == 1
-
-
-    .. note::
-        Please refer to :class:`~optuna.trial.Trial` for details of methods and properties.
-
-    Args:
-        params:
-            A dictionary containing all parameters.
-        number:
-            A trial number. Defaults to ``0``.
-
-    """
-
-    def __init__(self, params, number=0):
-        # type: (Dict[str, Any], int) -> None
-
-        self._params = params
-        self._suggested_params = {}  # type: Dict[str, Any]
-        self._distributions = {}  # type: Dict[str, BaseDistribution]
-        self._user_attrs = {}  # type: Dict[str, Any]
-        self._system_attrs = {}  # type: Dict[str, Any]
-        self._datetime_start = datetime.datetime.now()
-        self._number = number
-
-    def suggest_float(self, name, low, high, *, log=False, step=None):
-        # type: (str, float, float, bool, Optional[float]) -> float
-
-        if step is not None:
-            if log:
-                raise NotImplementedError(
-                    "The parameter `step` is not supported when `log` is True."
-                )
-            else:
-                return self._suggest(
-                    name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step)
-                )
-        else:
-            if log:
-                return self._suggest(
-                    name, distributions.LogUniformDistribution(low=low, high=high)
-                )
-            else:
-                return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
-
-    def suggest_uniform(self, name, low, high):
-        # type: (str, float, float) -> float
-
-        return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
-
-    def suggest_loguniform(self, name, low, high):
-        # type: (str, float, float) -> float
-
-        return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
-
-    def suggest_discrete_uniform(self, name, low, high, q):
-        # type: (str, float, float, float) -> float
-
-        high = _adjust_discrete_uniform_high(name, low, high, q)
-        discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
-        return self._suggest(name, discrete)
-
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
-        sample = self._suggest(
-            name, distributions.IntUniformDistribution(low=low, high=high, step=step)
-        )
-        return int(sample)
-
-    def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
-
-        choices = tuple(choices)
-        return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
-
-    def _suggest(self, name, distribution):
-        # type: (str, BaseDistribution) -> Any
-
-        if name not in self._params:
-            raise ValueError(
-                "The value of the parameter '{}' is not found. Please set it at "
-                "the construction of the FixedTrial object.".format(name)
-            )
-
-        value = self._params[name]
-        param_value_in_internal_repr = distribution.to_internal_repr(value)
-        if not distribution._contains(param_value_in_internal_repr):
-            raise ValueError(
-                "The value {} of the parameter '{}' is out of "
-                "the range of the distribution {}.".format(value, name, distribution)
-            )
-
-        if name in self._distributions:
-            distributions.check_distribution_compatibility(self._distributions[name], distribution)
-
-        self._suggested_params[name] = value
-        self._distributions[name] = distribution
-
-        return value
-
-    def report(self, value, step):
-        # type: (float, int) -> None
-
-        pass
-
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
-
-        return False
-
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._user_attrs[key] = value
-
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._system_attrs[key] = value
-
-    @property
-    def params(self):
-        # type: () -> Dict[str, Any]
-
-        return self._suggested_params
-
-    @property
-    def distributions(self):
-        # type: () -> Dict[str, BaseDistribution]
-
-        return self._distributions
-
-    @property
-    def user_attrs(self):
-        # type: () -> Dict[str, Any]
-
-        return self._user_attrs
-
-    @property
-    def system_attrs(self):
-        # type: () -> Dict[str, Any]
-
-        return self._system_attrs
-
-    @property
-    def datetime_start(self):
-        # type: () -> Optional[datetime.datetime]
-
-        return self._datetime_start
-
-    @property
-    def number(self) -> int:
-
-        return self._number
-
-
-def _adjust_discrete_uniform_high(name, low, high, q):
-    # type: (str, float, float, float) -> float
-
-    d_high = decimal.Decimal(str(high))
-    d_low = decimal.Decimal(str(low))
-    d_q = decimal.Decimal(str(q))
-
-    d_r = d_high - d_low
-
-    if d_r % d_q != decimal.Decimal("0"):
-        high = float((d_r // d_q) * d_q + d_low)
-        _logger.warning(
-            "The range of parameter `{}` is not divisible by `q`, and is "
-            "replaced by [{}, {}].".format(name, low, high)
-        )
-
-    return high

@@ -30,8 +30,8 @@ class ThresholdPruner(BasePruner):
         .. testcode::
 
             from optuna import create_study
-            from optuna.exceptions import TrialPruned
             from optuna.pruners import ThresholdPruner
+            from optuna import TrialPruned
 
             def objective_for_upper(trial):
                 for step, y in enumerate(ys_for_upper):
@@ -111,7 +111,7 @@ class ThresholdPruner(BasePruner):
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
 
-    def prune(self, study: "optuna.study.Study", trial: optuna.trial.FrozenTrial) -> bool:
+    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         step = trial.last_step
         if step is None:

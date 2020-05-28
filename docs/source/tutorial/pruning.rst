@@ -26,7 +26,7 @@ To turn on the pruning feature, you need to call :func:`~optuna.trial.Trial.repo
     def objective(trial):
         iris = sklearn.datasets.load_iris()
         classes = list(set(iris.target))
-        train_x, test_x, train_y, test_y = \
+        train_x, valid_x, train_y, valid_y = \
             sklearn.model_selection.train_test_split(iris.data, iris.target, test_size=0.25, random_state=0)
 
         alpha = trial.suggest_loguniform('alpha', 1e-5, 1e-1)
@@ -36,14 +36,14 @@ To turn on the pruning feature, you need to call :func:`~optuna.trial.Trial.repo
             clf.partial_fit(train_x, train_y, classes=classes)
 
             # Report intermediate objective value.
-            intermediate_value = 1.0 - clf.score(test_x, test_y)
+            intermediate_value = 1.0 - clf.score(valid_x, valid_y)
             trial.report(intermediate_value, step)
 
             # Handle pruning based on the intermediate value.
             if trial.should_prune():
-                raise optuna.exceptions.TrialPruned()
+                raise optuna.TrialPruned()
 
-        return 1.0 - clf.score(test_x, test_y)
+        return 1.0 - clf.score(valid_x, valid_y)
 
     # Set up the median stopping rule as the pruning condition.
     study = optuna.create_study(pruner=optuna.pruners.MedianPruner())
@@ -92,4 +92,4 @@ For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces prun
 .. code-block:: python
 
         pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'validation-error')
-        bst = xgb.train(param, dtrain, evals=[(dtest, 'validation')], callbacks=[pruning_callback])
+        bst = xgb.train(param, dtrain, evals=[(dvalid, 'validation')], callbacks=[pruning_callback])

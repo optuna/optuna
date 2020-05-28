@@ -5,7 +5,6 @@ import scipy.special
 from scipy.stats import truncnorm
 
 from optuna import distributions
-from optuna.pruners import HyperbandPruner
 from optuna.samplers import base
 from optuna.samplers import random
 from optuna.samplers.tpe.parzen_estimator import _ParzenEstimator
@@ -93,13 +92,15 @@ class TPESampler(base.BaseSampler):
             either :class:`~optuna.distributions.UniformDistribution`,
             :class:`~optuna.distributions.DiscreteUniformDistribution`,
             :class:`~optuna.distributions.LogUniformDistribution`,
-            or :class:`~optuna.distributions.IntUniformDistribution`.
+            :class:`~optuna.distributions.IntUniformDistribution`,
+            or :class:`~optuna.distributions.IntLogUniformDistribution`.
         prior_weight:
             The weight of the prior. This argument is used in
             :class:`~optuna.distributions.UniformDistribution`,
             :class:`~optuna.distributions.DiscreteUniformDistribution`,
             :class:`~optuna.distributions.LogUniformDistribution`,
-            :class:`~optuna.distributions.IntUniformDistribution` and
+            :class:`~optuna.distributions.IntUniformDistribution`,
+            :class:`~optuna.distributions.IntLogUniformDistribution`, and
             :class:`~optuna.distributions.CategoricalDistribution`.
         consider_magic_clip:
             Enable a heuristic to limit the smallest variances of Gaussians used in
@@ -111,7 +112,7 @@ class TPESampler(base.BaseSampler):
         n_startup_trials:
             The random sampling is used instead of the TPE algorithm until the given number
             of trials finish in the same study.
-        n_ei_candidate:
+        n_ei_candidates:
             Number of candidate samples used to calculate the expected improvement.
         gamma:
             A function that takes the number of finished trials and returns the number
@@ -178,7 +179,6 @@ class TPESampler(base.BaseSampler):
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )
-
         below_param_values, above_param_values = self._split_observation_pairs(values, scores)
 
         if isinstance(param_distribution, distributions.UniformDistribution):
@@ -193,6 +193,10 @@ class TPESampler(base.BaseSampler):
             )
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
             return self._sample_int(param_distribution, below_param_values, above_param_values)
+        elif isinstance(param_distribution, distributions.IntLogUniformDistribution):
+            return self._sample_int_loguniform(
+                param_distribution, below_param_values, above_param_values
+            )
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             index = self._sample_categorical_index(
                 param_distribution, below_param_values, above_param_values
@@ -204,6 +208,7 @@ class TPESampler(base.BaseSampler):
                 distributions.LogUniformDistribution.__name__,
                 distributions.DiscreteUniformDistribution.__name__,
                 distributions.IntUniformDistribution.__name__,
+                distributions.IntLogUniformDistribution.__name__,
                 distributions.CategoricalDistribution.__name__,
             ]
             raise NotImplementedError(
@@ -215,7 +220,7 @@ class TPESampler(base.BaseSampler):
 
     def _split_observation_pairs(
         self,
-        config_vals,  # type: List[float]
+        config_vals,  # type: List[Optional[float]]
         loss_vals,  # type: List[Tuple[float, float]]
     ):
         # type: (...) -> Tuple[np.ndarray, np.ndarray]
@@ -226,7 +231,9 @@ class TPESampler(base.BaseSampler):
         n_below = self._gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
         below = config_vals[np.sort(loss_ascending[:n_below])]
+        below = np.asarray([v for v in below if v is not None], dtype=float)
         above = config_vals[np.sort(loss_ascending[n_below:])]
+        above = np.asarray([v for v in above if v is not None], dtype=float)
         return below, above
 
     def _sample_uniform(self, distribution, below, above):
@@ -266,6 +273,19 @@ class TPESampler(base.BaseSampler):
             low=distribution.low, high=distribution.high, q=distribution.step
         )
         return int(self._sample_discrete_uniform(d, below, above))
+
+    def _sample_int_loguniform(self, distribution, below, above):
+        # type: (distributions.IntLogUniformDistribution, np.ndarray, np.ndarray) -> int
+
+        low = distribution.low - 0.5
+        high = distribution.high + 0.5
+
+        sample = self._sample_numerical(low, high, below, above, is_log=True)
+        best_sample = (
+            np.round((sample - distribution.low) / distribution.step) * distribution.step
+            + distribution.low
+        )
+        return int(min(max(best_sample, distribution.low), distribution.high))
 
     def _sample_numerical(
         self,
@@ -571,12 +591,11 @@ class TPESampler(base.BaseSampler):
 
 
 def _get_observation_pairs(study, param_name, trial):
-    # type: (Study, str, FrozenTrial) -> Tuple[List[float], List[Tuple[float, float]]]
+    # type: (Study, str, FrozenTrial) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]
     """Get observation pairs from the study.
 
        This function collects observation pairs from the complete or pruned trials of the study.
-       The trials that don't contain the parameter named ``param_name`` are excluded
-       from the result.
+       The values for trials that don't contain the parameter named ``param_name`` are set to None.
 
        An observation pair fundamentally consists of a parameter value and an objective value.
        However, due to the pruning mechanism of Optuna, final objective values are not always
@@ -594,17 +613,9 @@ def _get_observation_pairs(study, param_name, trial):
     if study.direction == StudyDirection.MAXIMIZE:
         sign = -1
 
-    if isinstance(study.pruner, HyperbandPruner):
-        # Create `_BracketStudy` to use trials that have the same bracket id.
-        pruner = study.pruner  # type: HyperbandPruner
-        study = pruner._create_bracket_study(study, pruner._get_bracket_id(study, trial))
-
     values = []
     scores = []
     for trial in study.get_trials(deepcopy=False):
-        if param_name not in trial.params:
-            continue
-
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
@@ -619,8 +630,11 @@ def _get_observation_pairs(study, param_name, trial):
         else:
             continue
 
-        distribution = trial.distributions[param_name]
-        param_value = distribution.to_internal_repr(trial.params[param_name])
+        param_value = None  # type: Optional[float]
+        if param_name in trial.params:
+            distribution = trial.distributions[param_name]
+            param_value = distribution.to_internal_repr(trial.params[param_name])
+
         values.append(param_value)
         scores.append(score)
 

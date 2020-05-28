@@ -73,7 +73,7 @@ def create_study(
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified,
-            :class:`~optuna.multi_objective.samplers.RandomMultiObjectiveSampler` is used
+            :class:`~optuna.multi_objective.samplers.NSGAIIMultiObjectiveSampler` is used
             as the default. See also :class:`~optuna.multi_objective.samplers`.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
@@ -87,7 +87,7 @@ def create_study(
     """
 
     # TODO(ohta): Support pruner.
-    mo_sampler = sampler or multi_objective.samplers.RandomMultiObjectiveSampler()
+    mo_sampler = sampler or multi_objective.samplers.NSGAIIMultiObjectiveSampler()
     sampler_adapter = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
     if not isinstance(directions, Iterable):
@@ -386,6 +386,10 @@ class MultiObjectiveStudy(object):
                 pareto_front.append(trial)
 
         return pareto_front
+
+    @property
+    def _storage(self) -> BaseStorage:
+        return self._study._storage
 
 
 def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:

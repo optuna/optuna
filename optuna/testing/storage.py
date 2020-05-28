@@ -1,5 +1,7 @@
 import tempfile
 
+import fakeredis
+
 import optuna
 from optuna import type_checking
 
@@ -14,9 +16,6 @@ SQLITE3_TIMEOUT = 300
 
 
 class StorageSupplier(object):
-
-    _common_tempfile = None  # type: Optional[IO[Any]]
-
     def __init__(self, storage_specifier):
         # type: (str) -> None
 
@@ -24,22 +23,28 @@ class StorageSupplier(object):
         self.tempfile = None  # type: Optional[IO[Any]]
 
     def __enter__(self):
-        # type: () -> Optional[optuna.storages.BaseStorage]
+        # type: () -> optuna.storages.BaseStorage
 
-        if self.storage_specifier == "none":
-            return None
-        elif self.storage_specifier == "new":
+        if self.storage_specifier == "inmemory":
+            return optuna.storages.InMemoryStorage()
+        elif self.storage_specifier == "sqlite":
             self.tempfile = tempfile.NamedTemporaryFile()
             url = "sqlite:///{}".format(self.tempfile.name)
             return optuna.storages.RDBStorage(
                 url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
             )
-        elif self.storage_specifier == "common":
-            assert self._common_tempfile is not None
-            url = "sqlite:///{}".format(self._common_tempfile.name)
-            return optuna.storages.RDBStorage(
-                url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
+        elif self.storage_specifier == "cache":
+            self.tempfile = tempfile.NamedTemporaryFile()
+            url = "sqlite:///{}".format(self.tempfile.name)
+            return optuna.storages.cached_storage._CachedStorage(
+                optuna.storages.RDBStorage(
+                    url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
+                )
             )
+        elif self.storage_specifier == "redis":
+            storage = optuna.storages.RedisStorage("redis://localhost")
+            storage._redis = fakeredis.FakeStrictRedis()
+            return storage
         else:
             assert False
 
@@ -48,16 +53,3 @@ class StorageSupplier(object):
 
         if self.tempfile:
             self.tempfile.close()
-
-    @classmethod
-    def setup_common_tempfile(cls):
-        # type: () -> None
-
-        cls._common_tempfile = tempfile.NamedTemporaryFile()
-
-    @classmethod
-    def teardown_common_tempfile(cls):
-        # type: () -> None
-
-        assert cls._common_tempfile is not None
-        cls._common_tempfile.close()

@@ -11,18 +11,6 @@ def _sample_func(_: Any) -> int:
     return 10
 
 
-def _f() -> None:
-    pass
-
-
-def _g(a: Any, b: Any = None) -> None:
-    pass
-
-
-def _h(a: Any = None, b: int = 10) -> None:
-    pass
-
-
 class _Sample(object):
     def __init__(self, a: Any, b: Any, c: Any) -> None:
         pass
@@ -46,13 +34,6 @@ class _Sample(object):
         pass
 
 
-def test_str() -> None:
-
-    assert _experimental._make_func_spec_str(_f) == "_f()\n\n    "
-    assert _experimental._make_func_spec_str(_g) == "_g(a, b=None)\n\n    "
-    assert _experimental._make_func_spec_str(_h) == "_h(a=None, b=10)\n\n    "
-
-
 @pytest.mark.parametrize("version", ["1.1", 100, None])
 def test_experimental_raises_error_for_invalid_version(version: Any) -> None:
     with pytest.raises(ValueError):
@@ -66,9 +47,8 @@ def test_experimental_decorator() -> None:
 
     decorated_func = decorator_experimental(_sample_func)
     assert decorated_func.__name__ == _sample_func.__name__
-    assert (
-        decorated_func.__doc__
-        == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+    assert decorated_func.__doc__ == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(
+        ver=version
     )
 
     with pytest.warns(ExperimentalWarning):
@@ -94,12 +74,10 @@ def test_experimental_class_decorator() -> None:
     assert callable(decorator_experimental)
 
     decorated_class = decorator_experimental(_Sample)
-    assert decorated_class.__name__ == _Sample.__name__
+    assert decorated_class.__name__ == "_Sample"
     assert decorated_class.__init__.__name__ == "__init__"
-    assert (
-        decorated_class.__doc__
-        == "__init__(a, b, c)\n\n    "
-        + _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+    assert decorated_class.__doc__ == _experimental._EXPERIMENTAL_DOCSTRING_TEMPLATE.format(
+        ver=version
     )
 
     with pytest.warns(ExperimentalWarning):
