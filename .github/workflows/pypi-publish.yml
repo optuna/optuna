@@ -4,7 +4,7 @@ name: Publish distributions to TestPyPI and PyPI
 on:
   push:
     tags:
-    - v*
+      - v*
   # TODO(toshihikoyanase): Remove pull_request when you enable PyPI upload.
   pull_request:
     branches:
