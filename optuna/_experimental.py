@@ -90,7 +90,11 @@ def experimental(version: str, name: str = None) -> Any:
 
             if cls.__doc__ is None:
                 cls.__doc__ = ""
-            cls.__doc__ += _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+
+            docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
+            indent = _get_docstring_indent(cls.__doc__)
+            cls.__doc__ = cls.__doc__.strip() + textwrap.indent(docstring, indent) + indent
+
             return cls
 
         return _experimental_class(f) if inspect.isclass(f) else _experimental_func(f)
