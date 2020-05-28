@@ -28,58 +28,37 @@ def plot_pareto_front(
 
 
 def _get_pareto_front_2d(study: MultiObjectiveStudy, names: Optional[List[str]]) -> "go.Figure":
-    if names is None:
-        names = ["Objective 0", "Objective 1"]
-    if len(names) == 0:
-        names.append("Objective 0")
-    if len(names) == 1:
-        names.append("Objective 1")
-
+    names = _fill_objective_names(2, names)
     trials = study.get_pareto_front_trials()
 
     if len(trials) == 0:
-        logger.warning("Your study does not have any completed trials.")
-        return go.Figure(data=[], layout=layout)
+        raise ValueError("There must be one or more completed trials to plot a study.")
 
     data = go.Scatter(
         x=[t.values[0] for t in trials],
         y=[t.values[1] for t in trials],
-        text=["NUMBER: {}, PARAMS:{}".format(t.number, t.params) for t in trials],
+        text=[_hovertext(t) for t in trials],
         mode="markers",
         showlegend=False,
     )
     layout = go.Layout(
-        title="Pareto-front Plot", xaxis={"title": names[0]}, yaxis={"title": names[1]}
+        title="Pareto-front Plot", scene={"xaxis_title": names[0], "yaxis_title": names[1]},
     )
     return go.Figure(data=data, layout=layout)
 
 
 def _get_pareto_front_3d(study: MultiObjectiveStudy, names: Optional[List[str]]) -> "go.Figure":
-    if names is None:
-        names = ["Objective 0", "Objective 1", "Objective 2"]
-    if len(names) == 0:
-        names.append("Objective 0")
-    if len(names) == 1:
-        names.append("Objective 1")
-    if len(names) == 2:
-        names.append("Objective 2")
-
+    names = _fill_objective_names(3, names)
     trials = study.get_pareto_front_trials()
 
     if len(trials) == 0:
-        logger.warning("Your study does not have any completed trials.")
-        return go.Figure(data=[], layout=layout)
+        raise ValueError("There must be one or more completed trials to plot a study.")
 
     data = go.Scatter3d(
         x=[t.values[0] for t in trials],
         y=[t.values[1] for t in trials],
         z=[t.values[2] for t in trials],
-        text=[
-            "<br>NUMBER: {}<br>PARAMS:<br>{}".format(
-                t.number, json.dumps(t.params, indent=2).replace("\n", "<br>")
-            )
-            for t in trials
-        ],
+        text=[_hovertext(t) for t in trials],
         mode="markers",
         showlegend=False,
     )
@@ -88,3 +67,18 @@ def _get_pareto_front_3d(study: MultiObjectiveStudy, names: Optional[List[str]])
         scene={"xaxis_title": names[0], "yaxis_title": names[1], "zaxis_title": names[2]},
     )
     return go.Figure(data=data, layout=layout)
+
+
+def _fill_objective_names(n_objectives: int, names: Optional[List[str]]) -> List[str]:
+    if names is None:
+        names = []
+    for i in range(n_objectives):
+        if len(names) == i:
+            names.append("Objective {}".format(i))
+    return names
+
+
+def _hovertext(trial: FrozenMultiObjectiveTrial) -> str:
+    return "NUMBER: {}<br>PARAMS:<br>{}".format(
+        trial.number, json.dumps(trial.params, indent=2).replace("\n", "<br>")
+    )
