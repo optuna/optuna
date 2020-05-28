@@ -56,7 +56,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     of a study, not necessarily for the attributes of a `Trial`.
     However, if the `read_from_remote_storage(study_id)` method is called, any successive reads on
     the `state` attribute of a `Trial` are guaranteed to return the same or more recent values than
-    the value at the time of call to the `load` method.
+    the value at the time of the call to the `read_from_remote_storage(study_id)` method.
     Let `T` be a `Trial`.
     Let `P` be the process that last updated the `state` attribute of `T`.
     Then, any reads on any attributes of `T` are guaranteed to return the same or
