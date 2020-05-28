@@ -106,7 +106,7 @@ class ChainerPruningExtension(Extension):
         self._trial.report(current_score, step=current_step)
         if self._trial.should_prune():
             message = "Trial was pruned at {} {}.".format(self._pruner_trigger.unit, current_step)
-            raise optuna.exceptions.TrialPruned(message)
+            raise optuna.TrialPruned(message)
 
 
 def _check_chainer_availability():

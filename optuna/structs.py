@@ -377,7 +377,7 @@ class TrialPruned(exceptions.TrialPruned):
 
         message = (
             "The use of `optuna.structs.TrialPruned` is deprecated. "
-            "Please use `optuna.exceptions.TrialPruned` instead."
+            "Please use `optuna.TrialPruned` instead."
         )
         warnings.warn(message, DeprecationWarning)
         _logger.warning(message)

@@ -40,7 +40,7 @@ def plot_intermediate_values(study):
 
                     trial.report(y, step=step)
                     if trial.should_prune():
-                        raise optuna.exceptions.TrialPruned()
+                        raise optuna.TrialPruned()
 
                     gy = df(x)
                     x -= gy * lr

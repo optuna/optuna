@@ -10,7 +10,6 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.exceptions import TrialPruned
 from optuna.integration.chainer import ChainerPruningExtension
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
@@ -96,7 +95,7 @@ def test_chainer_pruning_extension_observation_nan():
     trainer = MockTrainer(observation={"main/loss": float("nan")}, updater=MockUpdater(1))
 
     with patch.object(extension, "_observation_exists", Mock(return_value=True)) as mock:
-        with pytest.raises(TrialPruned):
+        with pytest.raises(optuna.TrialPruned):
             extension(trainer)
         assert mock.call_count == 1
 

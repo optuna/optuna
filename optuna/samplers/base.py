@@ -58,6 +58,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
                 Target study object.
             trial:
                 Target trial object.
+                Take a copy before modifying this object.
 
         Returns:
             A dictionary containing the parameter names and parameter's distributions.
@@ -88,6 +89,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
                 Target study object.
             trial:
                 Target trial object.
+                Take a copy before modifying this object.
             search_space:
                 The search space returned by
                 :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
@@ -119,6 +121,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
                 Target study object.
             trial:
                 Target trial object.
+                Take a copy before modifying this object.
             param_name:
                 Name of the sampled parameter.
             param_distribution:

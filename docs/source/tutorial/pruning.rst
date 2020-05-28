@@ -41,7 +41,7 @@ To turn on the pruning feature, you need to call :func:`~optuna.trial.Trial.repo
 
             # Handle pruning based on the intermediate value.
             if trial.should_prune():
-                raise optuna.exceptions.TrialPruned()
+                raise optuna.TrialPruned()
 
         return 1.0 - clf.score(valid_x, valid_y)
 

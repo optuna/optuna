@@ -13,7 +13,7 @@ We have the following two ways to execute this example:
 
 (2) Execute through CLI. Pruning is enabled automatically.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize pytorch_lightning_simple.py objective --n-trials=100 --study \
+    $ optuna study optimize pytorch_lightning_simple.py objective --n-trials=100 --study-name \
       $STUDY_NAME --storage sqlite:///example.db
 """
 

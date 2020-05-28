@@ -11,7 +11,6 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
 from optuna.exceptions import StorageInternalError
 from optuna.storages.rdb.models import SCHEMA_VERSION
-from optuna.storages.rdb.models import TrialModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
 from optuna.trial import FrozenTrial
@@ -151,7 +150,6 @@ def test_pickle_storage():
     assert storage.engine != restored_storage.engine
     assert storage.scoped_session != restored_storage.scoped_session
     assert storage._version_manager != restored_storage._version_manager
-    assert storage._finished_trials_cache != restored_storage._finished_trials_cache
 
 
 def test_commit():
@@ -178,44 +176,6 @@ def test_upgrade():
     new_version = storage.get_current_version()
 
     assert old_version == new_version
-
-
-def test_storage_cache():
-    # type: () -> None
-
-    def setup_trials(storage, study_id):
-        # type: (RDBStorage, int) -> List[FrozenTrial]
-
-        for state in [TrialState.RUNNING, TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
-            trial_id = storage.create_new_trial(study_id)
-            storage.set_trial_state(trial_id, state)
-
-        trials = storage.get_all_trials(study_id)
-        assert len(trials) == 4
-
-        return trials
-
-    storage = create_test_storage()
-    study_id = storage.create_new_study()
-    trials = setup_trials(storage, study_id)
-
-    with patch.object(
-        TrialModel, "find_or_raise_by_id", wraps=TrialModel.find_or_raise_by_id
-    ) as mock_object:
-        for trial in trials:
-            assert storage.get_trial(trial._trial_id) == trial
-        assert mock_object.call_count == 1  # Only a running trial was fetched from the storage.
-
-    # Running trials are fetched from the storage individually.
-    with patch.object(TrialModel, "where_study", wraps=TrialModel.where_study) as mock_object:
-        assert storage.get_all_trials(study_id) == trials
-        assert mock_object.call_count == 0  # `TrialModel.where_study` has not been called.
-
-    with patch.object(
-        TrialModel, "find_or_raise_by_id", wraps=TrialModel.find_or_raise_by_id
-    ) as mock_object:
-        assert storage.get_all_trials(study_id) == trials
-        assert mock_object.call_count == 1
 
 
 @pytest.mark.parametrize(
