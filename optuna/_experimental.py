@@ -26,7 +26,7 @@ def _validate_version(version: str) -> None:
         )
 
 
-def _get_indent(docstring: str) -> str:
+def _get_docstring_indent(docstring: str) -> str:
     return docstring.split("\n")[-1] if "\n" in docstring else ""
 
 
@@ -49,7 +49,7 @@ def experimental(version: str, name: str = None) -> Any:
                 func.__doc__ = ""
 
             docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
-            indent = _get_indent(func.__doc__)
+            indent = _get_docstring_indent(func.__doc__)
             func.__doc__ = func.__doc__.strip() + textwrap.indent(docstring, indent) + indent
 
             # TODO(crcrpar): Annotate this correctly.
