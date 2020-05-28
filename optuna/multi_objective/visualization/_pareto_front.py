@@ -14,7 +14,9 @@ if is_available():
 logger = get_logger(__name__)
 
 
-def plot_pareto_front(study: MultiObjectiveStudy, names: Optional[List[str]] = None) -> go.Figure:
+def plot_pareto_front(
+    study: MultiObjectiveStudy, names: Optional[List[str]] = None
+) -> "go.Figure":
     _check_plotly_availability()
 
     if study.n_objectives == 2:
@@ -25,7 +27,7 @@ def plot_pareto_front(study: MultiObjectiveStudy, names: Optional[List[str]] = N
         raise RuntimeError("`plot_pareto_front` function only supports 2 or 3 objective studies.")
 
 
-def _get_pareto_front_2d(study: MultiObjectiveStudy, names: Optional[List[str]]) -> go.Figure:
+def _get_pareto_front_2d(study: MultiObjectiveStudy, names: Optional[List[str]]) -> "go.Figure":
     if names is None:
         names = ["Objective 0", "Objective 1"]
     if len(names) == 0:
@@ -52,7 +54,7 @@ def _get_pareto_front_2d(study: MultiObjectiveStudy, names: Optional[List[str]])
     return go.Figure(data=data, layout=layout)
 
 
-def _get_pareto_front_3d(study: MultiObjectiveStudy, names: Optional[List[str]]) -> go.Figure:
+def _get_pareto_front_3d(study: MultiObjectiveStudy, names: Optional[List[str]]) -> "go.Figure":
     if names is None:
         names = ["Objective 0", "Objective 1", "Objective 2"]
     if len(names) == 0:
