@@ -18,35 +18,6 @@ _EXPERIMENTAL_DOCSTRING_TEMPLATE = """
 """
 
 
-def _make_func_spec_str(func: Callable[..., Any]) -> str:
-
-    name = func.__name__
-    argspec = inspect.getfullargspec(func)
-
-    n_defaults = len(argspec.defaults) if argspec.defaults is not None else 0
-    offset = int(len(argspec.args) > 0 and argspec.args[0] == "self")
-
-    if n_defaults > 0:
-        args = ", ".join(argspec.args[offset:-n_defaults])
-        with_default_values = ", ".join(
-            [
-                "{}={}".format(a, d)
-                for a, d in zip(argspec.args[-n_defaults:], argspec.defaults)  # type: ignore
-            ]
-        )
-    else:
-        args = ", ".join(argspec.args[offset:])
-        with_default_values = ""
-
-    if len(args) > 0 and len(with_default_values) > 0:
-        args += ", "
-
-    # NOTE(crcrpar): The four spaces are necessary to correctly render documentation.
-    # Different classes or methods require more spaces.
-    str_args_description = "(" + args + with_default_values + ")\n\n    "
-    return name + str_args_description
-
-
 def _validate_version(version: str) -> None:
 
     if not isinstance(version, str) or len(version.split(".")) != 3:
@@ -102,6 +73,7 @@ def experimental(version: str, name: str = None) -> Any:
 
             _original_init = cls.__init__
 
+            @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
@@ -117,11 +89,7 @@ def experimental(version: str, name: str = None) -> Any:
 
             if cls.__doc__ is None:
                 cls.__doc__ = ""
-            cls.__doc__ = (
-                _make_func_spec_str(_original_init)
-                + cls.__doc__
-                + _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
-            )
+            cls.__doc__ += _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
             return cls
 
         return _experimental_class(f) if inspect.isclass(f) else _experimental_func(f)
