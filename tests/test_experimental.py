@@ -22,7 +22,7 @@ class _Sample(object):
         """
         pass
 
-    def _method_experimental(self) -> None:
+    def _method_expected(self) -> None:
         """summary
 
         detail
@@ -60,7 +60,7 @@ def test_experimental_method_decorator() -> None:
 
     decorated_method = decorator_experimental(_Sample._method)
     assert decorated_method.__name__ == _Sample._method.__name__
-    assert decorated_method.__doc__ == _Sample._method_experimental.__doc__
+    assert decorated_method.__doc__ == _Sample._method_expected.__doc__
 
     with pytest.warns(ExperimentalWarning):
         decorated_method(None)
