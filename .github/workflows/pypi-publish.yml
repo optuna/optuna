@@ -37,4 +37,10 @@ jobs:
         password: ${{ secrets.test_pypi_password }}
         repository_url: https://test.pypi.org/legacy/
 
-    # TODO(toshihikoyanase): Add tasks to upload packages to PyPI.
+    - name: Publish distribution to PyPI
+      # The following upload action cannot be executed in the forked repository.
+      if: github.repository == 'optuna/optuna'
+      uses: pypa/gh-action-pypi-publish@v1.1.0
+      with:
+        user: __token__
+        password: ${{ secrets.pypi_password }}
