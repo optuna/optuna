@@ -1,10 +1,10 @@
 name: Publish distributions to TestPyPI and PyPI
 
-# Only activate if the v* tag is pushed.
+# Only activate if the release is published.
 on:
-  push:
-    tags:
-      - v*
+  release:
+    types:
+      - published
 
 jobs:
   build-n-publish:
@@ -30,7 +30,7 @@ jobs:
 
     - name: Publish distribution to Test PyPI
       # The following upload action cannot be executed in the forked repository.
-      if: startsWith(github.event.ref, 'refs/tags') && github.repository == 'optuna/optuna'
+      if: github.repository == 'optuna/optuna'
       uses: pypa/gh-action-pypi-publish@v1.1.0
       with:
         user: __token__
