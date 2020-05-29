@@ -44,6 +44,9 @@ def plot_param_importances(study: Study, params: Optional[List[str]] = None) -> 
              width="100%" height="500px" frameborder="0">
             </iframe>
 
+    .. seealso::
+        This function visualizes the results of :func:`optuna.importance.get_param_importances`.
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials will be used to assess
