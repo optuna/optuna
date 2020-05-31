@@ -4,7 +4,7 @@ API Reference
 .. toctree::
     :maxdepth: 2
 
-    public
+    core
     cli
     distributions
     exceptions

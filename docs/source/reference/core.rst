@@ -10,3 +10,6 @@ Core
 .. autofunction:: get_all_study_summaries
 
 .. autofunction:: load_study
+
+.. autoclass:: TrialPruned
+    :members:
