@@ -1009,7 +1009,7 @@ class RDBStorage(BaseStorage):
         self._commit(session)
         return n_trials
 
-    def read_from_remote_storage(self, study_id: int) -> None:
+    def read_trials_from_remote_storage(self, study_id: int) -> None:
         # Make sure that the given study exists.
         session = self.scoped_session()
         models.StudyModel.find_or_raise_by_id(study_id, session)

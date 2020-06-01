@@ -142,7 +142,7 @@ class BaseStudy(object):
             A list of :class:`~optuna.FrozenTrial` objects.
         """
 
-        self._storage.read_from_remote_storage(self._study_id)
+        self._storage.read_trials_from_remote_storage(self._study_id)
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
 
     @property
@@ -726,7 +726,7 @@ class Study(BaseStudy):
         # type: (...) -> trial_module.Trial
 
         # Sync storage once at the beginning of the objective evaluation.
-        self._storage.read_from_remote_storage(self._study_id)
+        self._storage.read_trials_from_remote_storage(self._study_id)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:

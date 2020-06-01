@@ -354,7 +354,7 @@ class _CachedStorage(base.BaseStorage):
 
     def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
         if study_id not in self._studies:
-            self.read_from_remote_storage(study_id)
+            self.read_trials_from_remote_storage(study_id)
 
         with self._lock:
             study = self._studies[study_id]
@@ -367,7 +367,7 @@ class _CachedStorage(base.BaseStorage):
 
         return self._backend.get_n_trials(study_id, state)
 
-    def read_from_remote_storage(self, study_id: int) -> None:
+    def read_trials_from_remote_storage(self, study_id: int) -> None:
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
