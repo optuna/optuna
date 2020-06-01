@@ -322,7 +322,7 @@ def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.nd
         elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
             log_high = math.log(distribution.high)
             log_low = math.log(distribution.low)
-            x0[name] = math.exp(np.mean([log_high, log_low]))
+            x0[name] = np.mean([log_high, log_low])
         else:
             raise NotImplementedError(
                 "The distribution {} is not implemented.".format(distribution)
@@ -382,7 +382,7 @@ def _get_search_space_bound(
                 optuna.distributions.IntUniformDistribution,
             ),
         ):
-            bounds.append([dist.low, dist.high])
+            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high)])
         else:
             raise NotImplementedError("The distribution {} is not implemented.".format(dist))
     return np.array(bounds, dtype=float)
