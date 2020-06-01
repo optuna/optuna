@@ -661,7 +661,7 @@ class LightGBMBaseTuner(BaseTuner):
         return _StepwiseStudy(study, step_name)
 
 
-@experimental("1.15.0")
+@experimental("1.5.0")
 class LightGBMTuner(LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM.
 
