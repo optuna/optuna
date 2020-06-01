@@ -891,7 +891,7 @@ class LightGBMTuner(LightGBMBaseTuner):
         )
 
 
-@experimental("1.15.0")
+@experimental("1.5.0")
 class LightGBMTunerCV(LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM with cross-validation.
 
