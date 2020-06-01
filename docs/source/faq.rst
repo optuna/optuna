@@ -152,7 +152,7 @@ For example, you can save SVM models trained in the objective function as follow
         # Save a trained model to a file.
         with open('{}.pickle'.format(trial.number), 'wb') as fout:
             pickle.dump(clf, fout)
-        return 1.0 - accuracy_score(y_test, clf.predict(X_test))
+        return 1.0 - accuracy_score(y_valid, clf.predict(X_valid))
 
 
     study = optuna.create_study()
@@ -161,7 +161,7 @@ For example, you can save SVM models trained in the objective function as follow
     # Load the best model.
     with open('{}.pickle'.format(study.best_trial.number), 'rb') as fin:
         best_clf = pickle.load(fin)
-    print(accuracy_score(y_test, best_clf.predict(X_test)))
+    print(accuracy_score(y_valid, best_clf.predict(X_valid)))
 
 
 How can I obtain reproducible optimization results?
@@ -258,13 +258,13 @@ If your optimization target supports GPU (CUDA) acceleration and you want to spe
     #
     # Specify to use the first GPU, and run an optimization.
     $ export CUDA_VISIBLE_DEVICES=0
-    $ optuna study optimize foo.py objective --study foo --storage sqlite:///example.db
+    $ optuna study optimize foo.py objective --study-name foo --storage sqlite:///example.db
 
     # On another terminal.
     #
     # Specify to use the second GPU, and run another optimization.
     $ export CUDA_VISIBLE_DEVICES=1
-    $ optuna study optimize bar.py objective --study bar --storage sqlite:///example.db
+    $ optuna study optimize bar.py objective --study-name bar --storage sqlite:///example.db
 
 Please refer to `CUDA C Programming Guide <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_ for further details.
 

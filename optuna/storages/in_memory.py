@@ -115,7 +115,7 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             if study_name not in self._study_name_to_id:
-                raise ValueError("No such study {}.".format(study_name))
+                raise KeyError("No such study {}.".format(study_name))
 
             return self._study_name_to_id[study_name]
 
@@ -146,14 +146,14 @@ class InMemoryStorage(base.BaseStorage):
 
         with self._lock:
             self._check_study_id(study_id)
-            return copy.deepcopy(self._studies[study_id].user_attrs)
+            return self._studies[study_id].user_attrs
 
     def get_study_system_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
 
         with self._lock:
             self._check_study_id(study_id)
-            return copy.deepcopy(self._studies[study_id].system_attrs)
+            return self._studies[study_id].system_attrs
 
     def get_all_study_summaries(self):
         # type: () -> List[StudySummary]
@@ -396,7 +396,7 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int) -> FrozenTrial
 
         with self._lock:
-            return copy.deepcopy(self._get_trial(trial_id))
+            return self._get_trial(trial_id)
 
     def _get_trial(self, trial_id: int) -> FrozenTrial:
 
@@ -434,12 +434,12 @@ class InMemoryStorage(base.BaseStorage):
         # type: (int) -> None
 
         if study_id not in self._studies:
-            raise ValueError("No study with study_id {} exists.".format(study_id))
+            raise KeyError("No study with study_id {} exists.".format(study_id))
 
     def _check_trial_id(self, trial_id: int) -> None:
 
         if trial_id not in self._trial_id_to_study_id_and_number:
-            raise ValueError("No trial with trial_id {} exists.".format(trial_id))
+            raise KeyError("No trial with trial_id {} exists.".format(trial_id))
 
 
 class _StudyInfo:

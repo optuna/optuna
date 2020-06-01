@@ -19,6 +19,7 @@ import numpy as np
 import tqdm
 
 import optuna
+from optuna._experimental import experimental
 from optuna.integration.lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
 from optuna.study import Study
@@ -660,6 +661,7 @@ class LightGBMBaseTuner(BaseTuner):
         return _StepwiseStudy(study, step_name)
 
 
+@experimental("1.5.0")
 class LightGBMTuner(LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM.
 
@@ -889,6 +891,7 @@ class LightGBMTuner(LightGBMBaseTuner):
         )
 
 
+@experimental("1.5.0")
 class LightGBMTunerCV(LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM with cross-validation.
 

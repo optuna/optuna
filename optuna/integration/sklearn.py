@@ -35,7 +35,7 @@ except ImportError as e:
     _available = False
 
 from optuna import distributions  # NOQA
-from optuna import exceptions  # NOQA
+from optuna import TrialPruned  # NOQA
 from optuna import logging  # NOQA
 from optuna import samplers  # NOQA
 from optuna import study as study_module  # NOQA
@@ -193,7 +193,7 @@ class _Objective(object):
 
         groups:
             Group labels for the samples used while splitting the dataset into
-            train/test set.
+            train/validation set.
 
         max_iter:
             Maximum number of epochs. This is only used if the underlying
@@ -314,7 +314,7 @@ class _Objective(object):
             if trial.should_prune():
                 self._store_scores(trial, scores)
 
-                raise exceptions.TrialPruned("trial was pruned at iteration {}.".format(step))
+                raise TrialPruned("trial was pruned at iteration {}.".format(step))
 
         return scores
 
@@ -412,7 +412,7 @@ class OptunaSearchCV(BaseEstimator):
 
             - integer to specify the number of folds in a CV splitter,
             - a CV splitter,
-            - an iterable yielding (train, test) splits as arrays of indices.
+            - an iterable yielding (train, validation) splits as arrays of indices.
 
             For integer, if :obj:`estimator` is a classifier and :obj:`y` is
             either binary or multiclass,
@@ -466,7 +466,7 @@ class OptunaSearchCV(BaseEstimator):
             performance.
 
         scoring:
-            String or callable to evaluate the predictions on the test data.
+            String or callable to evaluate the predictions on the validation data.
             If :obj:`None`, ``score`` on the estimator is used.
 
         study:
@@ -844,7 +844,7 @@ class OptunaSearchCV(BaseEstimator):
 
             groups:
                 Group labels for the samples used while splitting the dataset
-                into train/test set.
+                into train/validation set.
 
             **fit_params:
                 Parameters passed to ``fit`` on the estimator.

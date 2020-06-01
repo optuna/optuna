@@ -23,10 +23,10 @@ def test_create_study() -> None:
 
 
 def test_load_study() -> None:
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         study_name = str(uuid.uuid4())
 
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             # Test loading an unexisting study.
             optuna.multi_objective.study.load_study(study_name=study_name, storage=storage)
 

@@ -221,6 +221,7 @@ class CmaEsSampler(BaseSampler):
 
         x0 = {}
         for name, distribution in search_space.items():
+            # TODO(nzw0301) support IntLogUniform
             if isinstance(distribution, UniformDistribution):
                 x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, DiscreteUniformDistribution):
@@ -246,6 +247,7 @@ class CmaEsSampler(BaseSampler):
 
         sigma0s = []
         for name, distribution in search_space.items():
+            # TODO(nzw0301) support IntLogUniform
             if isinstance(distribution, UniformDistribution):
                 sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, DiscreteUniformDistribution):

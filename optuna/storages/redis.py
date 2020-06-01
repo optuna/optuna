@@ -108,7 +108,7 @@ class RedisStorage(base.BaseStorage):
                 user_attrs={},
                 system_attrs={},
                 n_trials=0,
-                datetime_start=datetime.now(),
+                datetime_start=None,
                 study_id=study_id,
             )
             pipe.rpush("study_list", pickle.dumps(study_id))
@@ -181,6 +181,8 @@ class RedisStorage(base.BaseStorage):
     def set_study_direction(self, study_id, direction):
         # type: (int, StudyDirection) -> None
 
+        self._check_study_id(study_id)
+
         if self._redis.exists(self._key_study_direction(study_id)):
             direction_pkl = self._redis.get(self._key_study_direction(study_id))
             assert direction_pkl is not None
@@ -203,12 +205,16 @@ class RedisStorage(base.BaseStorage):
     def set_study_user_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
 
+        self._check_study_id(study_id)
+
         study_summary = self._get_study_summary(study_id)
         study_summary.user_attrs[key] = value
         self._set_study_summary(study_id, study_summary)
 
     def set_study_system_attr(self, study_id, key, value):
         # type: (int, str, Any) -> None
+
+        self._check_study_id(study_id)
 
         study_summary = self._get_study_summary(study_id)
         study_summary.system_attrs[key] = value
@@ -218,7 +224,7 @@ class RedisStorage(base.BaseStorage):
         # type: (str) -> int
 
         if not self._redis.exists(self._key_study_name(study_name)):
-            raise ValueError("No such study {}.".format(study_name))
+            raise KeyError("No such study {}.".format(study_name))
         study_id_pkl = self._redis.get(self._key_study_name(study_name))
         assert study_id_pkl is not None
         return pickle.loads(study_id_pkl)
@@ -227,7 +233,8 @@ class RedisStorage(base.BaseStorage):
         # type: (int) -> int
 
         study_id_pkl = self._redis.get("trial_id:{:010d}:study_id".format(trial_id))
-        assert study_id_pkl is not None
+        if study_id_pkl is None:
+            raise KeyError("No such trial: {}.".format(trial_id))
         return pickle.loads(study_id_pkl)
 
     def get_study_name_from_id(self, study_id):
@@ -236,24 +243,30 @@ class RedisStorage(base.BaseStorage):
         self._check_study_id(study_id)
 
         study_name_pkl = self._redis.get("study_id:{:010d}:study_name".format(study_id))
-        assert study_name_pkl is not None
+        if study_name_pkl is None:
+            raise KeyError("No such study: {}.".format(study_id))
         return pickle.loads(study_name_pkl)
 
     def get_study_direction(self, study_id):
         # type: (int) -> StudyDirection
 
         direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
-        assert direction_pkl is not None
+        if direction_pkl is None:
+            raise KeyError("No such study: {}.".format(study_id))
         return pickle.loads(direction_pkl)
 
     def get_study_user_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
+
+        self._check_study_id(study_id)
 
         study_summary = self._get_study_summary(study_id)
         return copy.deepcopy(study_summary.user_attrs)
 
     def get_study_system_attrs(self, study_id):
         # type: (int) -> Dict[str, Any]
+
+        self._check_study_id(study_id)
 
         study_summary = self._get_study_summary(study_id)
         return copy.deepcopy(study_summary.system_attrs)
@@ -325,6 +338,9 @@ class RedisStorage(base.BaseStorage):
             pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
             pipe.execute()
 
+        if trial.state.is_finished():
+            self._update_cache(trial_id)
+
         return trial_id
 
     @staticmethod
@@ -348,6 +364,7 @@ class RedisStorage(base.BaseStorage):
     def set_trial_state(self, trial_id, state):
         # type: (int, TrialState) -> bool
 
+        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -367,6 +384,7 @@ class RedisStorage(base.BaseStorage):
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
         # type: (int, str, float, distributions.BaseDistribution) -> bool
 
+        self._check_trial_id(trial_id)
         self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
 
         # Check param distribution compatibility with previous trial(s).
@@ -454,6 +472,7 @@ class RedisStorage(base.BaseStorage):
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None
 
+        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -492,6 +511,7 @@ class RedisStorage(base.BaseStorage):
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
         # type: (int, int, float) -> bool
 
+        self._check_trial_id(trial_id)
         self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
 
         frozen_trial = self.get_trial(trial_id)
@@ -506,6 +526,7 @@ class RedisStorage(base.BaseStorage):
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
 
+        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
         trial.user_attrs[key] = value
@@ -514,6 +535,7 @@ class RedisStorage(base.BaseStorage):
     def set_trial_system_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
 
+        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
         trial.system_attrs[key] = value
@@ -527,6 +549,8 @@ class RedisStorage(base.BaseStorage):
 
     def get_trial(self, trial_id):
         # type: (int) -> FrozenTrial
+
+        self._check_trial_id(trial_id)
 
         frozen_trial_pkl = self._redis.get(self._key_trial(trial_id))
         assert frozen_trial_pkl is not None
@@ -583,4 +607,9 @@ class RedisStorage(base.BaseStorage):
         # type: (int) -> None
 
         if not self._redis.exists("study_id:{:010d}:study_name".format(study_id)):
-            raise ValueError("study_id {} does not exist.".format(study_id))
+            raise KeyError("study_id {} does not exist.".format(study_id))
+
+    def _check_trial_id(self, trial_id: int) -> None:
+
+        if not self._redis.exists(self._key_trial(trial_id)):
+            raise KeyError("study_id {} does not exist.".format(trial_id))

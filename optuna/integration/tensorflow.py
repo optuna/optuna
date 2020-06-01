@@ -80,7 +80,7 @@ class TensorFlowPruningHook(SessionRunHook):
                 self._current_summary_step = summary_step
             if self._trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(self._current_summary_step)
-                raise optuna.exceptions.TrialPruned(message)
+                raise optuna.TrialPruned(message)
 
 
 def _check_tensorflow_availability():

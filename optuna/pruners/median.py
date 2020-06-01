@@ -11,21 +11,18 @@ class MedianPruner(PercentilePruner):
 
         We minimize an objective function with the median stopping rule.
 
-        .. testsetup::
-
-            import numpy as np
-            from sklearn.model_selection import train_test_split
-
-            np.random.seed(seed=0)
-            X = np.random.randn(200).reshape(-1, 1)
-            y = np.where(X[:, 0] < 0.5, 0, 1)
-            X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-            classes = np.unique(y)
-
         .. testcode::
 
-            import optuna
+            import numpy as np
+            from sklearn.datasets import load_iris
             from sklearn.linear_model import SGDClassifier
+            from sklearn.model_selection import train_test_split
+
+            import optuna
+
+            X, y = load_iris(return_X_y=True)
+            X_train, X_valid, y_train, y_valid = train_test_split(X, y)
+            classes = np.unique(y)
 
             def objective(trial):
                 alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
@@ -35,13 +32,13 @@ class MedianPruner(PercentilePruner):
                 for step in range(n_train_iter):
                     clf.partial_fit(X_train, y_train, classes=classes)
 
-                    intermediate_value = clf.score(X_test, y_test)
+                    intermediate_value = clf.score(X_valid, y_valid)
                     trial.report(intermediate_value, step)
 
                     if trial.should_prune():
-                        raise optuna.exceptions.TrialPruned()
+                        raise optuna.TrialPruned()
 
-                return clf.score(X_test, y_test)
+                return clf.score(X_valid, y_valid)
 
             study = optuna.create_study(direction='maximize',
                                         pruner=optuna.pruners.MedianPruner(n_startup_trials=5,

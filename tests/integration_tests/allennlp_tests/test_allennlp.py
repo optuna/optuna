@@ -124,7 +124,7 @@ def test_dump_best_config() -> None:
         input_config_file = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "example.jsonnet"
         )
-        output_config_file = os.path.join(tmp_dir, "result.jsonnet")
+        output_config_file = os.path.join(tmp_dir, "result.json")
 
         study = optuna.create_study(direction="maximize")
         study.optimize(objective, n_trials=1)
