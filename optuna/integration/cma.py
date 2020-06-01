@@ -327,7 +327,7 @@ class _Optimizer(object):
                 lows.append(dist.low - 0.5 * dist.step)
                 highs.append(dist.high + 0.5 * dist.step)
             elif isinstance(dist, IntLogUniformDistribution):
-                # TODO(toshihikoyanase): Shiting 0.5 is not sufficient if step > 1.
+                # TODO(toshihikoyanase): Shifting 0.5 is not sufficient if step > 1.
                 lows.append(self._to_cma_params(search_space, param_name, dist.low - 0.5))
                 highs.append(self._to_cma_params(search_space, param_name, dist.high + 0.5))
             else:
