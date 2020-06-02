@@ -579,7 +579,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         Raises:
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
-            :exc:`RuntimeError`:
+            :exc:`ValueError`:
                 If no trials have been completed.
         """
         all_trials = self.get_all_trials(study_id, deepcopy=False)
