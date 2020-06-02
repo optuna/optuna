@@ -71,7 +71,7 @@ def plot_param_importances(study: Study, params: Optional[List[str]] = None) -> 
     # Return an empty figure for consistency with other visualization functions.
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
     if len(trials) == 0:
-        logger.warning("Study instance does not contain trials.")
+        logger.warning("Study instance does not contain completed trials.")
         return go.Figure(data=[], layout=layout)
 
     importances = optuna.importance.get_param_importances(study, params=params)
