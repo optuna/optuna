@@ -375,6 +375,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 If no trial with the matching ``trial_id`` exists.
             :exc:`RuntimeError`:
                 If the trial is already finished.
+            :exc:`ValueError`:
+                If the parameter is already set and the distribution is different.
         """
         raise NotImplementedError
 
