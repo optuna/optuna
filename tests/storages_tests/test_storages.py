@@ -846,10 +846,8 @@ def test_get_best_trial(storage_mode: str) -> None:
         with pytest.raises(KeyError):
             storage.get_best_trial(study_id + 1)
 
-    generator = random.Random(51)
-    with StorageSupplier(storage_mode) as storage:
-        study_id = storage.create_new_study()
         storage.set_study_direction(study_id, StudyDirection.MAXIMIZE)
+        generator = random.Random(51)
         for i in range(3):
             template_trial = _generate_trial(generator)
             template_trial.state = TrialState.COMPLETE
