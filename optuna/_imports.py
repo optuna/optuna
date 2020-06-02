@@ -11,7 +11,6 @@ class _DeferredExceptionContextManager(object):
     Args:
         catch:
             Exception types to defer.
-
         message:
             Message to prefix in deferred exception.
 
@@ -42,10 +41,8 @@ class _DeferredExceptionContextManager(object):
         Args:
             exc_type:
                 Raised exception type. :obj:`None` if nothing is raised.
-
             exc_value:
                 Raised exception object. :obj:`None` if nothing is raised.
-
             traceback:
                 Associated traceback. :obj:`None` if nothing is raised.
 
@@ -71,7 +68,7 @@ class _DeferredExceptionContextManager(object):
         return self._caught_exception is None
 
     def check(self) -> None:
-        """Checks whether the context manger has caught any exceptions.
+        """Check whether the context manger has caught any exceptions.
 
         Raises:
             :exc:`Exception`:
@@ -95,4 +92,6 @@ def try_import(
             Exception types to defer.
 
     """
-    return _DeferredExceptionContextManager(catch, "Failed to import an optional package. ",)
+    return _DeferredExceptionContextManager(
+        catch, message="Failed to import an optional package. "
+    )
