@@ -835,6 +835,29 @@ def test_get_n_trials(storage_mode: str) -> None:
             assert storage.get_n_trials(non_existent_study_id)
 
 
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_best_trial(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+        with pytest.raises(ValueError):
+            storage.get_best_trial(study_id)
+
+        with pytest.raises(KeyError):
+            storage.get_best_trial(study_id + 1)
+
+    generator = random.Random(51)
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+        storage.set_study_direction(study_id, StudyDirection.MAXIMIZE)
+        for i in range(3):
+            template_trial = _generate_trial(generator)
+            template_trial.state = TrialState.COMPLETE
+            template_trial.value = float(i)
+            storage.create_new_trial(study_id, template_trial=template_trial)
+        assert storage.get_best_trial(study_id).number == i
+
+
 def _setup_studies(
     storage: BaseStorage,
     n_study: int,
