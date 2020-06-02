@@ -37,6 +37,10 @@ def get_param_importances(
 
         If ``params`` is specified as an empty list, an empty dictionary is returned.
 
+    .. seealso::
+
+        See :func:`~optuna.visualization.plot_param_importances` to plot importances.
+
     Args:
         study:
             An optimized study.
