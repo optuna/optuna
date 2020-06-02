@@ -34,7 +34,9 @@ class XGBoostPruningCallback(object):
             objective function.
         observation_key:
             An evaluation metric for pruning, e.g., ``validation-error`` and
-            ``validation-merror``. Please refer to ``eval_metric`` in
+            ``validation-merror``. When using the Scikit-Learn API, the index number of
+            ``eval_set`` must be included in the ``observation_key``, e.g., ``validation_0-error``
+            and ``validation_0-merror``. Please refer to ``eval_metric`` in
             `XGBoost reference <https://xgboost.readthedocs.io/en/latest/parameter.html>`_
             for further details.
     """
@@ -59,4 +61,4 @@ class XGBoostPruningCallback(object):
         self._trial.report(current_score, step=env.iteration)
         if self._trial.should_prune():
             message = "Trial was pruned at iteration {}.".format(env.iteration)
-            raise optuna.exceptions.TrialPruned(message)
+            raise optuna.TrialPruned(message)

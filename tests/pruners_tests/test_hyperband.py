@@ -106,7 +106,7 @@ def test_hyperband_max_resource_is_auto() -> None:
         for i in range(N_REPORTS):
             trial.report(1.0, i)
             if trial.should_prune():
-                raise optuna.exceptions.TrialPruned()
+                raise optuna.TrialPruned()
 
         return 1.0
 
@@ -226,7 +226,7 @@ def test_hyperband_no_call_of_filter_study_in_should_prune(
                 trial.report(i, step=i)
                 if trial.should_prune():
                     method_mock.assert_not_called()
-                    raise optuna.exceptions.TrialPruned()
+                    raise optuna.TrialPruned()
                 else:
                     method_mock.assert_not_called()
 

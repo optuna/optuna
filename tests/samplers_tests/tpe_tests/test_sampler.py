@@ -10,9 +10,9 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.exceptions import TrialPruned
 from optuna.samplers import tpe
 from optuna.samplers import TPESampler
+from optuna import TrialPruned
 
 if optuna.type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
@@ -53,15 +53,15 @@ def test_sample_independent_seed_fix() -> None:
     # Prepare a trial and a sample for later checks.
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) == suggestion
 
     sampler = TPESampler(n_startup_trials=5, seed=1)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
@@ -73,15 +73,15 @@ def test_sample_independent_prior() -> None:
     # Prepare a trial and a sample for later checks.
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     sampler = TPESampler(consider_prior=False, n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = TPESampler(prior_weight=0.5, n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
@@ -92,14 +92,14 @@ def test_sample_independent_n_startup_trial() -> None:
 
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials[:4]):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials[:4]):
         with patch.object(
             optuna.samplers.random.RandomSampler, "sample_independent", return_value=1.0
         ) as sample_method:
             sampler.sample_independent(study, trial, "param-a", dist)
     assert sample_method.call_count == 1
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials[:5]):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         with patch.object(
             optuna.samplers.random.RandomSampler, "sample_independent", return_value=1.0
         ) as sample_method:
@@ -115,16 +115,16 @@ def test_sample_independent_misc_arguments() -> None:
     # Prepare a trial and a sample for later checks.
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     # Test misc. parameters.
     sampler = TPESampler(n_ei_candidates=13, n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = TPESampler(gamma=lambda _: 5, n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = TPESampler(
@@ -142,7 +142,7 @@ def test_sample_independent_uniform_distributions() -> None:
     past_trials = [frozen_trial_factory(i, dist=uni_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
     assert 1.0 <= uniform_suggestion < 100.0
 
@@ -155,7 +155,7 @@ def test_sample_independent_log_uniform_distributions() -> None:
     past_trials = [frozen_trial_factory(i, dist=uni_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
 
     # Test sample from log-uniform is different from uniform.
@@ -163,7 +163,7 @@ def test_sample_independent_log_uniform_distributions() -> None:
     past_trials = [frozen_trial_factory(i, dist=log_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         loguniform_suggestion = sampler.sample_independent(study, trial, "param-a", log_dist)
     assert 1.0 <= loguniform_suggestion < 100.0
     assert uniform_suggestion != loguniform_suggestion
@@ -206,7 +206,7 @@ def test_sample_independent_categorical_distributions() -> None:
     ]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         categorical_suggestion = sampler.sample_independent(study, trial, "param-a", cat_dist)
     assert categorical_suggestion in categories
 
@@ -226,7 +226,7 @@ def test_sample_int_uniform_distributions() -> None:
     ]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         int_suggestion = sampler.sample_independent(study, trial, "param-a", int_dist)
     assert 1 <= int_suggestion <= 100
     assert isinstance(int_suggestion, int)
@@ -249,7 +249,7 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 30)]
     trial = frozen_trial_factory(30)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         all_success_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     # Test unsuccessful trials are handled differently.
@@ -257,7 +257,7 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
     past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
     trial = frozen_trial_factory(30)
     sampler = TPESampler(n_startup_trials=5, seed=0)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         partial_unsuccessful_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
     assert partial_unsuccessful_suggestion != all_success_suggestion
 
@@ -277,7 +277,7 @@ def test_sample_independent_ignored_states() -> None:
         past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
         trial = frozen_trial_factory(30)
         sampler = TPESampler(n_startup_trials=5, seed=0)
-        with patch("optuna.Study.get_trials", return_value=past_trials):
+        with patch.object(study._storage, "get_all_trials", return_value=past_trials):
             suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
 
     assert len(set(suggestions)) == 1
@@ -298,7 +298,7 @@ def test_sample_independent_pruned_state() -> None:
         past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
         trial = frozen_trial_factory(30)
         sampler = TPESampler(n_startup_trials=5, seed=0)
-        with patch("optuna.Study.get_trials", return_value=past_trials):
+        with patch.object(study._storage, "get_all_trials", return_value=past_trials):
             suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
 
     assert len(set(suggestions)) == 3

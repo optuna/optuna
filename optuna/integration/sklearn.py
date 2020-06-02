@@ -10,7 +10,7 @@ import scipy as sp
 
 from optuna._imports import try_import
 from optuna import distributions  # NOQA
-from optuna import exceptions  # NOQA
+from optuna import TrialPruned  # NOQA
 from optuna import logging  # NOQA
 from optuna import samplers  # NOQA
 from optuna import study as study_module  # NOQA
@@ -298,7 +298,7 @@ class _Objective(object):
             if trial.should_prune():
                 self._store_scores(trial, scores)
 
-                raise exceptions.TrialPruned("trial was pruned at iteration {}.".format(step))
+                raise TrialPruned("trial was pruned at iteration {}.".format(step))
 
         return scores
 

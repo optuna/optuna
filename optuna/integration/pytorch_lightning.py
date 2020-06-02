@@ -52,4 +52,4 @@ class PyTorchLightningPruningCallback(EarlyStopping):
         self._trial.report(current_score, step=epoch)
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
-            raise optuna.exceptions.TrialPruned(message)
+            raise optuna.TrialPruned(message)

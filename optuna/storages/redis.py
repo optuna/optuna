@@ -595,6 +595,9 @@ class RedisStorage(base.BaseStorage):
 
         return len([t for t in self.get_all_trials(study_id) if t.state == state])
 
+    def read_trials_from_remote_storage(self, study_id: int) -> None:
+        self._check_study_id(study_id)
+
     def _check_study_id(self, study_id):
         # type: (int) -> None
 

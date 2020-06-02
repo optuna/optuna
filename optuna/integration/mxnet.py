@@ -52,4 +52,4 @@ class MXNetPruningCallback(object):
             self._trial.report(current_score, step=param.epoch)
             if self._trial.should_prune():
                 message = "Trial was pruned at epoch {}.".format(param.epoch)
-                raise optuna.exceptions.TrialPruned(message)
+                raise optuna.TrialPruned(message)

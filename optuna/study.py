@@ -1,4 +1,5 @@
 import collections
+import copy
 import datetime
 import gc
 import math
@@ -87,7 +88,7 @@ class BaseStudy(object):
             A :class:`~optuna.FrozenTrial` object of the best trial.
         """
 
-        return self._storage.get_best_trial(self._study_id)
+        return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
     @property
     def direction(self):
@@ -135,6 +136,7 @@ class BaseStudy(object):
             A list of :class:`~optuna.FrozenTrial` objects.
         """
 
+        self._storage.read_trials_from_remote_storage(self._study_id)
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
 
     @property
@@ -242,7 +244,7 @@ class Study(BaseStudy):
             A dictionary containing all user attributes.
         """
 
-        return self._storage.get_study_user_attrs(self._study_id)
+        return copy.deepcopy(self._storage.get_study_user_attrs(self._study_id))
 
     @property
     def system_attrs(self):
@@ -253,7 +255,7 @@ class Study(BaseStudy):
             A dictionary containing all system attributes.
         """
 
-        return self._storage.get_study_system_attrs(self._study_id)
+        return copy.deepcopy(self._storage.get_study_system_attrs(self._study_id))
 
     def optimize(
         self,
@@ -682,7 +684,7 @@ class Study(BaseStudy):
         # type: () -> Optional[int]
 
         # TODO(c-bata): Reduce database query counts for extracting waiting trials.
-        for trial in self.get_trials(deepcopy=False):
+        for trial in self._storage.get_all_trials(self._study_id, deepcopy=False):
             if trial.state != TrialState.WAITING:
                 continue
 
@@ -705,7 +707,7 @@ class Study(BaseStudy):
 
         trial = self._run_trial(func, catch, gc_after_trial)
         if callbacks is not None:
-            frozen_trial = self._storage.get_trial(trial._trial_id)
+            frozen_trial = copy.deepcopy(self._storage.get_trial(trial._trial_id))
             for callback in callbacks:
                 callback(self, frozen_trial)
 
@@ -716,6 +718,9 @@ class Study(BaseStudy):
         gc_after_trial,  # type: bool
     ):
         # type: (...) -> trial_module.Trial
+
+        # Sync storage once at the beginning of the objective evaluation.
+        self._storage.read_trials_from_remote_storage(self._study_id)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:

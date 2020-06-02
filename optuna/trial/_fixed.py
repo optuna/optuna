@@ -1,14 +1,13 @@
 import datetime
+from typing import Optional
 
 from optuna import distributions
 from optuna.trial._base import BaseTrial
-from optuna.trial._util import _adjust_discrete_uniform_high
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
@@ -68,8 +67,15 @@ class FixedTrial(BaseTrial):
         self._datetime_start = datetime.datetime.now()
         self._number = number
 
-    def suggest_float(self, name, low, high, *, log=False, step=None):
-        # type: (str, float, float, bool, Optional[float]) -> float
+    def suggest_float(
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: Optional[float] = None,
+        log: bool = False
+    ) -> float:
 
         if step is not None:
             if log:
@@ -98,18 +104,20 @@ class FixedTrial(BaseTrial):
 
         return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
 
-    def suggest_discrete_uniform(self, name, low, high, q):
-        # type: (str, float, float, float) -> float
-
-        high = _adjust_discrete_uniform_high(name, low, high, q)
+    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
-        sample = self._suggest(
-            name, distributions.IntUniformDistribution(low=low, high=high, step=step)
-        )
+    def suggest_int(self, name, low, high, step=1, log=False):
+        # type: (str, int, int, int, bool) -> int
+        if log:
+            sample = self._suggest(
+                name, distributions.IntLogUniformDistribution(low=low, high=high, step=step)
+            )
+        else:
+            sample = self._suggest(
+                name, distributions.IntUniformDistribution(low=low, high=high, step=step)
+            )
         return int(sample)
 
     def suggest_categorical(self, name, choices):

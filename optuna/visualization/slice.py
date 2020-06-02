@@ -1,26 +1,22 @@
+from typing import List
+from typing import Optional
+
 from optuna.logging import get_logger
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna import type_checking
 from optuna.visualization.plotly_imports import _imports
 from optuna.visualization.utils import _is_log_scale
-
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
-    from optuna.visualization.plotly_imports import Scatter  # NOQA
 
 if _imports.is_successful():
     from optuna.visualization.plotly_imports import go
     from optuna.visualization.plotly_imports import make_subplots
+    from optuna.visualization.plotly_imports import Scatter
 
 logger = get_logger(__name__)
 
 
-def plot_slice(study, params=None):
-    # type: (Study, Optional[List[str]]) -> go.Figure
+def plot_slice(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
     """Plot the parameter relationship as slice plot in a study.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
@@ -63,8 +59,7 @@ def plot_slice(study, params=None):
     return _get_slice_plot(study, params)
 
 
-def _get_slice_plot(study, params=None):
-    # type: (Study, Optional[List[str]]) -> go.Figure
+def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
     layout = go.Layout(title="Slice Plot",)
 
@@ -115,8 +110,7 @@ def _get_slice_plot(study, params=None):
     return figure
 
 
-def _generate_slice_subplot(study, trials, param):
-    # type: (Study, List[FrozenTrial], str) -> Scatter
+def _generate_slice_subplot(study: Study, trials: List[FrozenTrial], param: str) -> "Scatter":
 
     return go.Scatter(
         x=[t.params[param] for t in trials if param in t.params],

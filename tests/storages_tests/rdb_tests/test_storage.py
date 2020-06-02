@@ -1,26 +1,26 @@
 import pickle
 import sys
 import tempfile
+from typing import Any
+from typing import Dict
 from unittest.mock import patch
 
 import pytest
 
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import UniformDistribution
 from optuna.exceptions import StorageInternalError
 from optuna.storages.rdb.models import SCHEMA_VERSION
-from optuna.storages.rdb.models import TrialModel
 from optuna.storages.rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna import type_checking
 from optuna import version
 
 if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
-
-    from optuna.trial import FrozenTrial  # NOQA
 
 
 def test_init():
@@ -150,7 +150,6 @@ def test_pickle_storage():
     assert storage.engine != restored_storage.engine
     assert storage.scoped_session != restored_storage.scoped_session
     assert storage._version_manager != restored_storage._version_manager
-    assert storage._finished_trials_cache != restored_storage._finished_trials_cache
 
 
 def test_commit():
@@ -179,39 +178,102 @@ def test_upgrade():
     assert old_version == new_version
 
 
-def test_storage_cache():
-    # type: () -> None
-
-    def setup_trials(storage, study_id):
-        # type: (RDBStorage, int) -> List[FrozenTrial]
-
-        for state in [TrialState.RUNNING, TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
-            trial_id = storage.create_new_trial(study_id)
-            storage.set_trial_state(trial_id, state)
-
-        trials = storage.get_all_trials(study_id)
-        assert len(trials) == 4
-
-        return trials
-
+@pytest.mark.parametrize(
+    "fields_to_modify, kwargs",
+    [
+        (
+            {"state": TrialState.COMPLETE, "datetime_complete": None},
+            {"state": TrialState.COMPLETE},
+        ),
+        ({"value": 1.1}, {"value": 1.1}),
+        ({"intermediate_values": {1: 2.3, 3: 2.5}}, {"intermediate_values": {1: 2.3, 3: 2.5}}),
+        (
+            {
+                "params": {"paramA": 3, "paramB": "bar",},
+                "_distributions": {
+                    "paramA": UniformDistribution(0, 3),
+                    "paramB": CategoricalDistribution(("foo", "bar")),
+                },
+            },
+            {
+                "params": {
+                    "paramA": UniformDistribution(0, 3).to_internal_repr(3),
+                    "paramB": CategoricalDistribution(["foo", "bar"]).to_internal_repr("bar"),
+                },
+                "distributions_": {
+                    "paramA": UniformDistribution(0, 3),
+                    "paramB": CategoricalDistribution(["foo", "bar"]),
+                },
+            },
+        ),
+        (
+            {"user_attrs": {"attrA": 2.3, "attrB": "foo"}},
+            {"user_attrs": {"attrA": 2.3, "attrB": "foo"}},
+        ),
+        (
+            {"system_attrs": {"attrC": 2.3, "attrB": "bar"}},
+            {"system_attrs": {"attrC": 2.3, "attrB": "bar"}},
+        ),
+    ],
+)
+def test_update_trial(fields_to_modify: Dict[str, Any], kwargs: Dict[str, Any]) -> None:
     storage = create_test_storage()
     study_id = storage.create_new_study()
-    trials = setup_trials(storage, study_id)
 
-    with patch.object(
-        TrialModel, "find_or_raise_by_id", wraps=TrialModel.find_or_raise_by_id
-    ) as mock_object:
-        for trial in trials:
-            assert storage.get_trial(trial._trial_id) == trial
-        assert mock_object.call_count == 1  # Only a running trial was fetched from the storage.
+    trial_id = storage.create_new_trial(study_id)
+    trial_before_update = storage.get_trial(trial_id)
+    storage._update_trial(trial_id, **kwargs)
+    trial_after_update = storage.get_trial(trial_id)
+    for field in FrozenTrial._ordered_fields:
+        if field not in fields_to_modify:
+            assert getattr(trial_before_update, field) == getattr(trial_after_update, field)
+        for key, value in fields_to_modify.items():
+            if value is not None:
+                assert getattr(trial_after_update, key) == value
 
-    # Running trials are fetched from the storage individually.
-    with patch.object(TrialModel, "where_study", wraps=TrialModel.where_study) as mock_object:
-        assert storage.get_all_trials(study_id) == trials
-        assert mock_object.call_count == 0  # `TrialModel.where_study` has not been called.
 
-    with patch.object(
-        TrialModel, "find_or_raise_by_id", wraps=TrialModel.find_or_raise_by_id
-    ) as mock_object:
-        assert storage.get_all_trials(study_id) == trials
-        assert mock_object.call_count == 1
+def test_update_trial_second_write() -> None:
+    storage = create_test_storage()
+    study_id = storage.create_new_study()
+    template = FrozenTrial(
+        number=1,
+        state=TrialState.RUNNING,
+        value=0.1,
+        datetime_start=None,
+        datetime_complete=None,
+        params={"paramA": 0.1, "paramB": 1.1},
+        distributions={"paramA": UniformDistribution(0, 1), "paramB": UniformDistribution(0, 2)},
+        user_attrs={"userA": 2, "userB": 3},
+        system_attrs={"sysA": 4, "sysB": 5},
+        intermediate_values={3: 1.2, 5: 9.2},
+        trial_id=1,
+    )
+    trial_id = storage.create_new_trial(study_id, template)
+    trial_before_update = storage.get_trial(trial_id)
+    storage._update_trial(
+        trial_id,
+        state=None,
+        value=1.1,
+        intermediate_values={3: 2.3, 7: 3.3},
+        params={"paramA": 0.2, "paramC": 2.3},
+        distributions_={"paramA": UniformDistribution(0, 1), "paramC": UniformDistribution(0, 4)},
+        user_attrs={"userA": 1, "userC": "attr"},
+        system_attrs={"sysA": 6, "sysC": 8},
+    )
+    trial_after_update = storage.get_trial(trial_id)
+    expected_attrs = {
+        "_trial_id": trial_before_update._trial_id,
+        "number": trial_before_update.number,
+        "state": TrialState.RUNNING,
+        "value": 1.1,
+        "params": {"paramA": 0.1, "paramB": 1.1, "paramC": 2.3},
+        "_distributions": {
+            "paramA": UniformDistribution(0, 1),
+            "paramB": UniformDistribution(0, 2),
+            "paramC": UniformDistribution(0, 4),
+        },
+        "user_attrs": {"userA": 1, "userB": 3, "userC": "attr"},
+        "system_attrs": {"sysA": 6, "sysB": 5, "sysC": 8},
+    }
+    for key, value in expected_attrs.items():
+        assert getattr(trial_after_update, key) == value

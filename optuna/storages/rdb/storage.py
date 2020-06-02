@@ -1,11 +1,14 @@
-from collections import defaultdict
 import copy
 from datetime import datetime
 import json
 import logging
 import os
 import sys
-import threading
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
 import uuid
 import weakref
 
@@ -29,15 +32,8 @@ from optuna.study import StudyDirection
 from optuna.study import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna import type_checking
 from optuna import version
 
-from typing import List
-
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
 
 _logger = optuna.logging.get_logger(__name__)
 
@@ -120,7 +116,6 @@ class RDBStorage(BaseStorage):
         if not skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
 
-        self._finished_trials_cache = _FinishedTrialsCache()
         weakref.finalize(self, self._finalize)
 
     def __getstate__(self):
@@ -130,7 +125,6 @@ class RDBStorage(BaseStorage):
         del state["scoped_session"]
         del state["engine"]
         del state["_version_manager"]
-        del state["_finished_trials_cache"]
         return state
 
     def __setstate__(self, state):
@@ -150,7 +144,6 @@ class RDBStorage(BaseStorage):
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not self.skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
-        self._finished_trials_cache = _FinishedTrialsCache()
 
     def create_new_study(self, study_name=None):
         # type: (Optional[str]) -> int
@@ -450,13 +443,31 @@ class RDBStorage(BaseStorage):
     def create_new_trial(self, study_id, template_trial=None):
         # type: (int, Optional[FrozenTrial]) -> int
 
+        return self._create_new_trial(study_id, template_trial)._trial_id
+
+    def _create_new_trial(
+        self, study_id: int, template_trial: Optional[FrozenTrial] = None
+    ) -> FrozenTrial:
+        """Create a new trial and returns its trial_id and a :class:`~optuna.trial.FrozenTrial`.
+
+        Args:
+            study_id:
+                Study id.
+            template_trial:
+                A :class:`~optuna.trial.FrozenTrial` with default values for trial attributes.
+
+        Returns:
+            A :class:`~optuna.trial.FrozenTrial` instance.
+
+        """
+
         session = self.scoped_session()
 
-        # Ensure that the study exists.
+        # Ensure that that study exists.
         models.StudyModel.find_or_raise_by_id(study_id, session)
 
         if template_trial is None:
-            trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING,)
+            trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING)
         else:
             # Because only `RUNNING` trials can be updated,
             # we temporarily set the state of the new trial to `RUNNING`.
@@ -508,7 +519,172 @@ class RDBStorage(BaseStorage):
 
         self._commit(session)
 
-        return trial.trial_id
+        if template_trial:
+            frozen = copy.deepcopy(template_trial)
+            frozen.number = trial.number
+            frozen.datetime_start = trial.datetime_start
+            frozen._trial_id = trial.trial_id
+        else:
+            frozen = FrozenTrial(
+                number=trial.number,
+                state=trial.state,
+                value=None,
+                datetime_start=trial.datetime_start,
+                datetime_complete=None,
+                params={},
+                distributions={},
+                user_attrs={},
+                system_attrs={},
+                intermediate_values={},
+                trial_id=trial.trial_id,
+            )
+
+        return frozen
+
+    def _update_trial(
+        self,
+        trial_id: int,
+        state: Optional[TrialState] = None,
+        value: Optional[float] = None,
+        intermediate_values: Optional[Dict[int, float]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        distributions_: Optional[Dict[str, distributions.BaseDistribution]] = None,
+        user_attrs: Optional[Dict[str, Any]] = None,
+        system_attrs: Optional[Dict[str, Any]] = None,
+        datetime_complete: Optional[datetime] = None,
+    ) -> bool:
+        """Sync latest trial updates to a database.
+
+        Args:
+            trial_id:
+                Trial id of the trial to update.
+            state:
+                New state. None when there are no changes.
+            value:
+                New value. None when there are no changes.
+            intermediate_values:
+                New intermediate values. None when there are no updates.
+            params:
+                New parameter dictionary. None when there are no updates.
+            distributions_:
+                New parameter distributions. None when there are no updates.
+            user_attrs:
+                New user_attr. None when there are no updates.
+            system_attrs:
+                New system_attr. None when there are no updates.
+            datetime_complete:
+                Completion time of the trial. Set if and only if this method
+                change the state of trial into one of the finished states.
+
+        Returns:
+            True when success.
+
+        """
+
+        session = self.scoped_session()
+        trial_model = (
+            session.query(models.TrialModel)
+            .filter(models.TrialModel.trial_id == trial_id)
+            .with_for_update()
+            .one_or_none()
+        )
+        if trial_model is None:
+            session.rollback()
+            raise KeyError(models.NOT_FOUND_MSG)
+        if trial_model.state.is_finished():
+            session.rollback()
+            raise RuntimeError("Cannot change attributes of finished trial.")
+        if (
+            state
+            and trial_model.state != state
+            and state == TrialState.RUNNING
+            and trial_model.state != TrialState.WAITING
+        ):
+            session.rollback()
+            return False
+
+        if state:
+            trial_model.state = state
+
+        if datetime_complete:
+            trial_model.datetime_complete = datetime_complete
+
+        if value is not None:
+            trial_model.value = value
+
+        if user_attrs:
+            trial_user_attrs = (
+                session.query(models.TrialUserAttributeModel)
+                .filter(models.TrialUserAttributeModel.trial_id == trial_id)
+                .with_for_update()
+                .all()
+            )
+            trial_user_attrs_dict = {attr.key: attr for attr in trial_user_attrs}
+            for k, v in user_attrs.items():
+                if k in trial_user_attrs_dict:
+                    trial_user_attrs_dict[k].value_json = json.dumps(v)
+                    session.add(trial_user_attrs_dict[k])
+            trial_model.user_attributes.extend(
+                models.TrialUserAttributeModel(key=k, value_json=json.dumps(v))
+                for k, v in user_attrs.items()
+                if k not in trial_user_attrs_dict
+            )
+        if system_attrs:
+            trial_system_attrs = (
+                session.query(models.TrialSystemAttributeModel)
+                .filter(models.TrialSystemAttributeModel.trial_id == trial_id)
+                .with_for_update()
+                .all()
+            )
+            trial_system_attrs_dict = {attr.key: attr for attr in trial_system_attrs}
+            for k, v in system_attrs.items():
+                if k in trial_system_attrs_dict:
+                    trial_system_attrs_dict[k].value_json = json.dumps(v)
+                    session.add(trial_system_attrs_dict[k])
+            trial_model.system_attributes.extend(
+                models.TrialSystemAttributeModel(key=k, value_json=json.dumps(v))
+                for k, v in system_attrs.items()
+                if k not in trial_system_attrs_dict
+            )
+        if intermediate_values:
+            value_models = (
+                session.query(models.TrialValueModel)
+                .filter(models.TrialValueModel.trial_id == trial_id)
+                .with_for_update()
+                .all()
+            )
+            value_dict = {value_model.step: value_model for value_model in value_models}
+            for s, v in value_dict.items():
+                if s in value_dict:
+                    value_dict[s] = v
+                    session.add(value_dict[s])
+            trial_model.values.extend(
+                models.TrialValueModel(step=s, value=v)
+                for s, v in intermediate_values.items()
+                if s not in value_dict
+            )
+        if params and distributions_:
+            trial_param = (
+                session.query(models.TrialParamModel)
+                .filter(models.TrialParamModel.trial_id == trial_id)
+                .all()
+            )
+            param_keys = set(param.param_name for param in trial_param)
+            trial_model.params.extend(
+                models.TrialParamModel(
+                    param_name=param_name,
+                    param_value=param_value,
+                    distribution_json=distributions.distribution_to_json(
+                        distributions_[param_name]
+                    ),
+                )
+                for param_name, param_value in params.items()
+                if param_name not in param_keys
+            )
+        session.add(trial_model)
+        self._commit(session)
+
+        return True
 
     def set_trial_state(self, trial_id, state):
         # type: (int, TrialState) -> bool
@@ -518,7 +694,7 @@ class RDBStorage(BaseStorage):
         trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
         if trial is None:
             session.rollback()
-            raise ValueError(models.NOT_FOUND_MSG)
+            raise KeyError(models.NOT_FOUND_MSG)
 
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -579,6 +755,46 @@ class RDBStorage(BaseStorage):
         param.check_and_add(session)
 
         return True
+
+    def _check_or_set_param_distribution(
+        self,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: distributions.BaseDistribution,
+    ) -> None:
+
+        session = self.scoped_session()
+
+        # Acquire a lock of this trial.
+        trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
+        if trial is None:
+            raise KeyError(models.NOT_FOUND_MSG)
+
+        previous_record = (
+            session.query(models.TrialParamModel)
+            .join(models.TrialModel)
+            .filter(models.TrialModel.study_id == trial.study_id)
+            .filter(models.TrialParamModel.param_name == param_name)
+            .first()
+        )
+        if previous_record is not None:
+            distributions.check_distribution_compatibility(
+                distributions.json_to_distribution(previous_record.distribution_json),
+                distribution,
+            )
+        else:
+            session.add(
+                models.TrialParamModel(
+                    trial_id=trial_id,
+                    param_name=param_name,
+                    param_value=param_value_internal,
+                    distribution_json=distributions.distribution_to_json(distribution),
+                )
+            )
+
+        # Release lock.
+        session.commit()
 
     def get_trial_param(self, trial_id, param_name):
         # type: (int, str) -> float
@@ -697,50 +913,76 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id):
         # type: (int) -> FrozenTrial
 
-        return self._get_and_cache_trial(trial_id)
-
-    def _get_and_cache_trial(self, trial_id, deepcopy=True):
-        # type: (int, bool) -> FrozenTrial
-
-        cached_trial = self._finished_trials_cache.get_cached_trial(trial_id)
-        if cached_trial is not None:
-            if deepcopy:
-                return copy.deepcopy(cached_trial)
-            else:
-                return cached_trial
-
         session = self.scoped_session()
 
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        params = models.TrialParamModel.where_trial(trial, session)
-        values = models.TrialValueModel.where_trial(trial, session)
-        user_attributes = models.TrialUserAttributeModel.where_trial(trial, session)
-        system_attributes = models.TrialSystemAttributeModel.where_trial(trial, session)
+        trial_model = (
+            session.query(models.TrialModel)
+            .filter(models.TrialModel.trial_id == trial_id)
+            .one_or_none()
+        )
 
-        frozen_trial = self._merge_trials_orm(
-            [trial], params, values, user_attributes, system_attributes
-        )[0]
+        if not trial_model:
+            raise KeyError("No trial with trial-id {} found.".format(trial_id))
 
-        self._finished_trials_cache.cache_trial_if_finished(frozen_trial)
+        frozen_trial = self._build_frozen_trial_from_trial_model(trial_model)
 
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
-        return copy.deepcopy(frozen_trial) if deepcopy else frozen_trial
+        return frozen_trial
 
     def get_all_trials(self, study_id, deepcopy=True):
         # type: (int, bool) -> List[FrozenTrial]
 
-        if self._finished_trials_cache.is_empty():
-            trials = self._get_all_trials_without_cache(study_id)
-            for trial in trials:
-                self._finished_trials_cache.cache_trial_if_finished(trial)
+        trials = self._get_trials(study_id, set())
 
-            return copy.deepcopy(trials) if deepcopy else trials
+        return copy.deepcopy(trials) if deepcopy else trials
 
-        trial_ids = self._get_all_trial_ids(study_id)
-        trials = [self._get_and_cache_trial(trial_id, deepcopy) for trial_id in trial_ids]
+    def _get_trials(self, study_id: int, excluded_trial_ids: Set[int]) -> List[FrozenTrial]:
+
+        session = self.scoped_session()
+
+        # Ensure that the study exists.
+        models.StudyModel.find_or_raise_by_id(study_id, session)
+
+        trial_models = (
+            session.query(models.TrialModel)
+            .filter(
+                ~models.TrialModel.trial_id.in_(excluded_trial_ids),
+                models.TrialModel.study_id == study_id,
+            )
+            .all()
+        )
+        trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
+
+        self._commit(session)
+
         return trials
+
+    @staticmethod
+    def _build_frozen_trial_from_trial_model(trial: models.TrialModel) -> FrozenTrial:
+        return FrozenTrial(
+            number=trial.number,
+            state=trial.state,
+            value=trial.value,
+            datetime_start=trial.datetime_start,
+            datetime_complete=trial.datetime_complete,
+            params={
+                p.param_name: distributions.json_to_distribution(
+                    p.distribution_json
+                ).to_external_repr(p.param_value)
+                for p in trial.params
+            },
+            distributions={
+                p.param_name: distributions.json_to_distribution(p.distribution_json)
+                for p in trial.params
+            },
+            user_attrs={attr.key: json.loads(attr.value_json) for attr in trial.user_attributes},
+            system_attrs={
+                attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
+            },
+            intermediate_values={value.step: value.value for value in trial.values},
+            trial_id=trial.trial_id,
+        )
 
     def get_best_trial(self, study_id):
         # type: (int) -> FrozenTrial
@@ -756,38 +998,6 @@ class RDBStorage(BaseStorage):
 
         return self.get_trial(trial.trial_id)
 
-    def _get_all_trial_ids(self, study_id):
-        # type: (int) -> List[int]
-
-        session = self.scoped_session()
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        trial_ids = models.TrialModel.get_all_trial_ids_where_study(study, session)
-
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
-
-        return trial_ids
-
-    def _get_all_trials_without_cache(self, study_id):
-        # type: (int) -> List[FrozenTrial]
-
-        session = self.scoped_session()
-
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        trials = models.TrialModel.where_study(study, session)
-        params = models.TrialParamModel.where_study(study, session)
-        values = models.TrialValueModel.where_study(study, session)
-        user_attributes = models.TrialUserAttributeModel.where_study(study, session)
-        system_attributes = models.TrialSystemAttributeModel.where_study(study, session)
-
-        all_trials = self._merge_trials_orm(
-            trials, params, values, user_attributes, system_attributes
-        )
-
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
-        return all_trials
-
     def get_n_trials(self, study_id, state=None):
         # type: (int, Optional[TrialState]) -> int
 
@@ -799,78 +1009,11 @@ class RDBStorage(BaseStorage):
         self._commit(session)
         return n_trials
 
-    def _merge_trials_orm(
-        self,
-        trials,  # type: List[models.TrialModel]
-        trial_params,  # type: List[models.TrialParamModel]
-        trial_intermediate_values,  # type: List[models.TrialValueModel]
-        trial_user_attrs,  # type: List[models.TrialUserAttributeModel]
-        trial_system_attrs,  # type: List[models.TrialSystemAttributeModel]
-    ):
-        # type: (...) -> List[FrozenTrial]
-
-        id_to_trial = {}
-        for trial in trials:
-            id_to_trial[trial.trial_id] = trial
-
-        id_to_params = defaultdict(list)  # type: Dict[int, List[models.TrialParamModel]]
-        for param in trial_params:
-            id_to_params[param.trial_id].append(param)
-
-        id_to_values = defaultdict(list)  # type: Dict[int, List[models.TrialValueModel]]
-        for value in trial_intermediate_values:
-            id_to_values[value.trial_id].append(value)
-
-        id_to_user_attrs = defaultdict(
-            list
-        )  # type: Dict[int, List[models.TrialUserAttributeModel]]
-        for user_attr in trial_user_attrs:
-            id_to_user_attrs[user_attr.trial_id].append(user_attr)
-
-        id_to_system_attrs = defaultdict(
-            list
-        )  # type: Dict[int, List[models.TrialSystemAttributeModel]]
-        for system_attr in trial_system_attrs:
-            id_to_system_attrs[system_attr.trial_id].append(system_attr)
-
-        result = []
-        for trial_id, trial in id_to_trial.items():
-            params = {}
-            param_distributions = {}
-            for param in id_to_params[trial_id]:
-                distribution = distributions.json_to_distribution(param.distribution_json)
-                params[param.param_name] = distribution.to_external_repr(param.param_value)
-                param_distributions[param.param_name] = distribution
-
-            intermediate_values = {}
-            for value in id_to_values[trial_id]:
-                intermediate_values[value.step] = value.value
-
-            user_attrs = {}
-            for user_attr in id_to_user_attrs[trial_id]:
-                user_attrs[user_attr.key] = json.loads(user_attr.value_json)
-
-            system_attrs = {}
-            for system_attr in id_to_system_attrs[trial_id]:
-                system_attrs[system_attr.key] = json.loads(system_attr.value_json)
-
-            result.append(
-                FrozenTrial(
-                    number=trial.number,
-                    state=trial.state,
-                    params=params,
-                    distributions=param_distributions,
-                    user_attrs=user_attrs,
-                    system_attrs=system_attrs,
-                    value=trial.value,
-                    intermediate_values=intermediate_values,
-                    datetime_start=trial.datetime_start,
-                    datetime_complete=trial.datetime_complete,
-                    trial_id=trial_id,
-                )
-            )
-
-        return result
+    def read_trials_from_remote_storage(self, study_id: int) -> None:
+        # Make sure that the given study exists.
+        session = self.scoped_session()
+        models.StudyModel.find_or_raise_by_id(study_id, session)
+        self._commit(session)
 
     @staticmethod
     def _set_default_engine_kwargs_for_mysql(url, engine_kwargs):
@@ -1136,33 +1279,6 @@ class _VersionManager(object):
         config.set_main_option("script_location", escape_alembic_config_value(alembic_dir))
         config.set_main_option("sqlalchemy.url", escape_alembic_config_value(self.url))
         return config
-
-
-class _FinishedTrialsCache(object):
-    def __init__(self):
-        # type: () -> None
-
-        self._finished_trials = {}  # type: Dict[int, FrozenTrial]
-        self._lock = threading.Lock()
-
-    def is_empty(self):
-        # type: () -> bool
-
-        with self._lock:
-            return len(self._finished_trials) == 0
-
-    def cache_trial_if_finished(self, trial):
-        # type: (FrozenTrial) -> None
-
-        if trial.state.is_finished():
-            with self._lock:
-                self._finished_trials[trial._trial_id] = trial
-
-    def get_cached_trial(self, trial_id):
-        # type: (int) -> Optional[FrozenTrial]
-
-        with self._lock:
-            return self._finished_trials.get(trial_id)
 
 
 def escape_alembic_config_value(value):
