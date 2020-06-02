@@ -142,6 +142,7 @@ class BaseStudy(object):
             A list of :class:`~optuna.FrozenTrial` objects.
         """
 
+        self._storage.read_trials_from_remote_storage(self._study_id)
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
 
     @property
@@ -689,7 +690,7 @@ class Study(BaseStudy):
         # type: () -> Optional[int]
 
         # TODO(c-bata): Reduce database query counts for extracting waiting trials.
-        for trial in self.get_trials(deepcopy=False):
+        for trial in self._storage.get_all_trials(self._study_id, deepcopy=False):
             if trial.state != TrialState.WAITING:
                 continue
 
@@ -723,6 +724,9 @@ class Study(BaseStudy):
         gc_after_trial,  # type: bool
     ):
         # type: (...) -> trial_module.Trial
+
+        # Sync storage once at the beginning of the objective evaluation.
+        self._storage.read_trials_from_remote_storage(self._study_id)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:

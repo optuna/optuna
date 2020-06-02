@@ -615,7 +615,7 @@ def _get_observation_pairs(study, param_name, trial):
 
     values = []
     scores = []
-    for trial in study.get_trials(deepcopy=False):
+    for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
