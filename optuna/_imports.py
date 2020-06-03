@@ -77,9 +77,7 @@ class _DeferredExceptionContextManager(object):
         """
         if self._caught_exception is not None:
             exc_type, exc_value = self._caught_exception
-            raise exc_type(
-                "{message}{exc_value}".format(message=self._message, exc_value=exc_value,)
-            )
+            raise exc_type(self._message) from exc_value
 
 
 def try_import(
@@ -93,5 +91,5 @@ def try_import(
 
     """
     return _DeferredExceptionContextManager(
-        catch, message="Failed to import an optional package. "
+        catch, message="Failed to import an optional package. See causing exceptions for details."
     )
