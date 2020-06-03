@@ -8,6 +8,7 @@ stringData:
   POSTGRES_PASSWORD: "superSecretPassword"
   POSTGRES_USER: "optuna"
   POSTGRES_DB: "optunaDatabase"
+  POSTGRES_MLFLOW_DB: "mlflowDatabase"
 ---
 apiVersion: v1
 kind: Service
@@ -46,6 +47,49 @@ spec:
           ports:
             - containerPort: 5432
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-server
+spec:
+  type: ClusterIP
+  selector:
+    app: mlflow-server
+  ports:
+    - port: 5000
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mlflow-server
+  labels:
+    app: mlflow-server
+spec:
+  selector:
+    matchLabels:
+      app: mlflow-server
+  serviceName: mlflow-server
+  template:
+    metadata:
+      labels:
+        app: mlflow-server
+    spec:
+      containers:
+        - name: mlflow-server
+          image: optuna-kubernetes:example
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: postgres-secrets
+          ports:
+            - containerPort: 5000
+          env:
+          - name: FILE_DIR
+            value: /mnt/mlflow
+          volumeMounts:
+          - mountPath: /mnt/mlflow
+            name: mlflow-storage
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -70,6 +114,12 @@ spec:
           envFrom:
             - secretRef:
                 name: postgres-secrets
+        - name: start-mlflow-server
+          image: mlflow:server
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["run_mlflow.sh"]
+
       containers:
         - name: worker
           image: optuna-kubernetes:example
