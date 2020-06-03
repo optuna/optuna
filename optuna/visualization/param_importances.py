@@ -3,6 +3,7 @@ from typing import Optional
 
 import optuna
 from optuna._experimental import experimental
+from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -16,7 +17,9 @@ logger = get_logger(__name__)
 
 
 @experimental("1.5.0")
-def plot_param_importances(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
+def plot_param_importances(
+    study: Study, evaluator: BaseImportanceEvaluator = None, params: Optional[List[str]] = None
+) -> "go.Figure":
     """Plot hyperparameter importances.
 
     Example:
@@ -45,14 +48,21 @@ def plot_param_importances(study: Study, params: Optional[List[str]] = None) -> 
             </iframe>
 
     .. seealso::
+
         This function visualizes the results of :func:`optuna.importance.get_param_importances`.
 
     Args:
         study:
-            A :class:`~optuna.study.Study` object whose trials will be used to assess
-            parameter importances.
+            An optimized study.
+        evaluator:
+            An importance evaluator object that specifies which algorithm to base the importance
+            assessment on.
+            Defaults to
+            :class:`~optuna.importance._mean_decrease_impurity.MeanDecreaseImpurityImportanceEvaluator`.
         params:
-            Parameter list to visualize. The default is all parameters.
+            A list of names of parameters to assess.
+            If :obj:`None`, all parameters that are present in all of the completed trials are
+            assessed.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
@@ -74,7 +84,9 @@ def plot_param_importances(study: Study, params: Optional[List[str]] = None) -> 
         logger.warning("Study instance does not contain completed trials.")
         return go.Figure(data=[], layout=layout)
 
-    importances = optuna.importance.get_param_importances(study, params=params)
+    importances = optuna.importance.get_param_importances(
+        study, evaluator=evaluator, params=params
+    )
 
     fig = go.Figure(
         data=[go.Bar(x=list(importances.keys()), y=list(importances.values()))], layout=layout
