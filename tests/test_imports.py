@@ -22,5 +22,6 @@ def test_try_import_failing() -> None:
     # Non-default arguments.
     with try_import(catch=(SyntaxError,)) as imports:
         raise SyntaxError
+    assert not imports.is_successful()
     with pytest.raises(SyntaxError):
         imports.check()
