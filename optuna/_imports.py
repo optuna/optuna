@@ -12,7 +12,7 @@ class _DeferredExceptionContextManager(object):
         catch:
             Exception types to defer.
         message:
-            Message to prefix in deferred exception.
+            Message to include in deferred exception.
 
     """
 
