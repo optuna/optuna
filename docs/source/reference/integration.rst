@@ -9,7 +9,7 @@ Integration
 .. autoclass:: ChainerMNStudy
     :members:
 
-.. autoclass:: CmaEsSampler
+.. autoclass:: PyCmaSampler
     :members:
     :exclude-members: infer_relative_search_space, sample_relative, sample_independent
 

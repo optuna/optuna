@@ -21,7 +21,7 @@ try:
     _available = True
 except ImportError as e:
     _import_error = e
-    # CmaEsSampler is disabled because cma is not available.
+    # PyCmaSampler is disabled because cma is not available.
     _available = False
 
 if type_checking.TYPE_CHECKING:
@@ -39,12 +39,12 @@ if type_checking.TYPE_CHECKING:
 _MIN_SIGMA0 = 1e-10
 
 
-class CmaEsSampler(BaseSampler):
+class PyCmaSampler(BaseSampler):
     """A Sampler using cma library as the backend.
 
     Example:
 
-        Optimize a simple quadratic function by using :class:`~optuna.integration.CmaEsSampler`.
+        Optimize a simple quadratic function by using :class:`~optuna.integration.PyCmaSampler`.
 
         .. testcode::
 
@@ -55,7 +55,7 @@ class CmaEsSampler(BaseSampler):
                 y = trial.suggest_int('y', -1, 1)
                 return x**2 + y
 
-            sampler = optuna.integration.CmaEsSampler()
+            sampler = optuna.integration.PyCmaSampler()
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=20)
 
@@ -88,7 +88,7 @@ class CmaEsSampler(BaseSampler):
 
             Note that ``BoundaryHandler``, ``bounds``, ``CMA_stds`` and ``seed`` arguments in
             ``cma_opts`` will be ignored because it is added by
-            :class:`~optuna.integration.CmaEsSampler` automatically.
+            :class:`~optuna.integration.PyCmaSampler` automatically.
 
         n_startup_trials:
             The independent sampling is used instead of the CMA-ES algorithm until the given number
@@ -98,7 +98,7 @@ class CmaEsSampler(BaseSampler):
             A :class:`~optuna.samplers.BaseSampler` instance that is used for independent
             sampling. The parameters not contained in the relative search space are sampled
             by this sampler.
-            The search space for :class:`~optuna.integration.CmaEsSampler` is determined by
+            The search space for :class:`~optuna.integration.PyCmaSampler` is determined by
             :func:`~optuna.samplers.intersection_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
@@ -189,8 +189,8 @@ class CmaEsSampler(BaseSampler):
 
         if len(search_space) == 1:
             self._logger.info(
-                "`CmaEsSampler` does not support optimization of 1-D search space. "
-                "`{}` is used instead of `CmaEsSampler`.".format(
+                "`PyCmaSampler` does not support optimization of 1-D search space. "
+                "`{}` is used instead of `PyCmaSampler`.".format(
                     self._independent_sampler.__class__.__name__
                 )
             )
@@ -271,10 +271,10 @@ class CmaEsSampler(BaseSampler):
 
         self._logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
-            "by using `{}` instead of `CmaEsSampler` "
+            "by using `{}` instead of `PyCmaSampler` "
             "(optimization performance may be degraded). "
             "You can suppress this warning by setting `warn_independent_sampling` "
-            "to `False` in the constructor of `CmaEsSampler`, "
+            "to `False` in the constructor of `PyCmaSampler`, "
             "if this independent sampling is intended behavior.".format(
                 param_name, trial.number, self._independent_sampler.__class__.__name__
             )

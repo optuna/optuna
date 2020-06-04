@@ -25,12 +25,12 @@ if optuna.type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
 
 
-class TestCmaEsSampler(object):
+class TestPyCmaSampler(object):
     @staticmethod
     def test_init_cma_opts():
         # type: () -> None
 
-        sampler = optuna.integration.CmaEsSampler(
+        sampler = optuna.integration.PyCmaSampler(
             x0={"x": 0, "y": 0},
             sigma0=0.1,
             cma_stds={"x": 1, "y": 1},
@@ -60,7 +60,7 @@ class TestCmaEsSampler(object):
     def test_init_default_values():
         # type: () -> None
 
-        sampler = optuna.integration.CmaEsSampler()
+        sampler = optuna.integration.PyCmaSampler()
         seed = sampler._cma_opts.get("seed")
         assert isinstance(seed, int)
         assert 0 < seed
@@ -69,7 +69,7 @@ class TestCmaEsSampler(object):
 
     @staticmethod
     def test_reseed_rng() -> None:
-        sampler = optuna.integration.CmaEsSampler()
+        sampler = optuna.integration.PyCmaSampler()
         original_seed = sampler._cma_opts["seed"]
         sampler._independent_sampler.reseed_rng()
 
@@ -86,7 +86,7 @@ class TestCmaEsSampler(object):
     def test_infer_relative_search_space_1d():
         # type: () -> None
 
-        sampler = optuna.integration.CmaEsSampler()
+        sampler = optuna.integration.PyCmaSampler()
         study = optuna.create_study(sampler=sampler)
 
         # The distribution has only one candidate.
@@ -98,7 +98,7 @@ class TestCmaEsSampler(object):
         # type: () -> None
 
         independent_sampler = DeterministicRelativeSampler({}, {})
-        sampler = optuna.integration.CmaEsSampler(independent_sampler=independent_sampler)
+        sampler = optuna.integration.PyCmaSampler(independent_sampler=independent_sampler)
         study = optuna.create_study(sampler=sampler)
 
         # If search space is one dimensional, the independent sampler is always used.
@@ -113,7 +113,7 @@ class TestCmaEsSampler(object):
         # type: () -> None
 
         independent_sampler = DeterministicRelativeSampler({}, {})
-        sampler = optuna.integration.CmaEsSampler(
+        sampler = optuna.integration.PyCmaSampler(
             n_startup_trials=2, independent_sampler=independent_sampler
         )
         study = optuna.create_study(sampler=sampler)
@@ -136,14 +136,14 @@ class TestCmaEsSampler(object):
         # type: () -> None
 
         with pytest.raises(NotImplementedError):
-            optuna.integration.CmaEsSampler._initialize_x0({"x": UnsupportedDistribution()})
+            optuna.integration.PyCmaSampler._initialize_x0({"x": UnsupportedDistribution()})
 
     @staticmethod
     def test_initialize_sigma0_with_unsupported_distribution():
         # type: () -> None
 
         with pytest.raises(NotImplementedError):
-            optuna.integration.CmaEsSampler._initialize_sigma0({"x": UnsupportedDistribution()})
+            optuna.integration.PyCmaSampler._initialize_sigma0({"x": UnsupportedDistribution()})
 
 
 class TestOptimizer(object):
