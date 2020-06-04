@@ -27,6 +27,20 @@ with try_import() as _imports:
     import bokeh.themes
     import tornado.gen
 
+if _imports.is_successful():
+    from distutils.version import StrictVersion
+
+    from bokeh import __version__ as bokeh_version
+
+    if StrictVersion(bokeh_version) >= StrictVersion("2.0.0"):
+        raise ImportError(
+            "Your version of bokeh is " + bokeh_version + " . "
+            "Please install bokeh version earlier than 2.0.0. "
+            "Bokeh can be installed by executing `$ pip install 'bokeh<2.0.0'`. "
+            "For further information, please refer to the installation guide of bokeh. "
+        )
+
+
 _mode = None  # type: Optional[str]
 _study = None  # type: Optional[optuna.study.Study]
 
