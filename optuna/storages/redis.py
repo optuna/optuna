@@ -382,23 +382,14 @@ class RedisStorage(base.BaseStorage):
         return True
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
-        # type: (int, str, float, distributions.BaseDistribution) -> bool
+        # type: (int, str, float, distributions.BaseDistribution) -> None
 
         self._check_trial_id(trial_id)
         self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
 
-        # Check param distribution compatibility with previous trial(s).
+        trial = self.get_trial(trial_id)
         study_id = self.get_study_id_from_trial_id(trial_id)
         param_distribution = self._get_study_param_distribution(study_id)
-        if param_name in param_distribution:
-            distributions.check_distribution_compatibility(
-                param_distribution[param_name], distribution
-            )
-
-        trial = self.get_trial(trial_id)
-        # Check param has not been set; otherwise, return False.
-        if param_name in trial.params:
-            return False
 
         with self._redis.pipeline() as pipe:
             pipe.multi()
@@ -413,8 +404,6 @@ class RedisStorage(base.BaseStorage):
             trial.distributions[param_name] = distribution
             pipe.set(self._key_trial(trial_id), pickle.dumps(trial))
             pipe.execute()
-
-        return True
 
     def get_trial_number_from_id(self, trial_id):
         # type: (int) -> int

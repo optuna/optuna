@@ -354,8 +354,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         param_name: str,
         param_value_internal: float,
         distribution: "distributions.BaseDistribution",
-    ) -> bool:
-        """Add a parameter to a trial.
+    ) -> None:
+        """Set a parameter to a trial.
 
         Args:
             trial_id:
@@ -367,16 +367,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             distribution:
                 Sampled distribution of the parameter.
 
-        Returns:
-            :obj:`False` when the parameter is already set to the trial, :obj:`True` otherwise.
-
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
             :exc:`RuntimeError`:
                 If the trial is already finished.
-            :exc:`ValueError`:
-                If the parameter is already set and the distribution is different.
         """
         raise NotImplementedError
 

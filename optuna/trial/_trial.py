@@ -629,28 +629,27 @@ class Trial(BaseTrial):
         storage = self.storage
         trial_id = self._trial_id
 
-        # Do an early return if parameter with `name` is already suggested.
         prev_distributions = storage.get_trial(trial_id).distributions
         if name in prev_distributions:
+            # No need to sample if already suggested.
             distributions.check_distribution_compatibility(prev_distributions[name], distribution)
-            return distribution.to_external_repr(storage.get_trial_param(trial_id, name))
-
-        # Parameter has not yet been suggested and must be written to the storage.
-        if self._is_fixed_param(name, distribution):
-            param_value = storage.get_trial_system_attrs(trial_id)["fixed_params"][name]
-        elif distribution.single():
-            param_value = distributions._get_single_value(distribution)
-        elif self._is_relative_param(name, distribution):
-            param_value = self.relative_params[name]
+            param_value = distribution.to_external_repr(storage.get_trial_param(trial_id, name))
         else:
-            trial = storage.get_trial(trial_id)
-            study = pruners._filter_study(self.study, trial)
-            param_value = self.study.sampler.sample_independent(study, trial, name, distribution)
+            if self._is_fixed_param(name, distribution):
+                param_value = storage.get_trial_system_attrs(trial_id)["fixed_params"][name]
+            elif distribution.single():
+                param_value = distributions._get_single_value(distribution)
+            elif self._is_relative_param(name, distribution):
+                param_value = self.relative_params[name]
+            else:
+                trial = storage.get_trial(trial_id)
+                study = pruners._filter_study(self.study, trial)
+                param_value = self.study.sampler.sample_independent(
+                    study, trial, name, distribution
+                )
 
-        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
-        set_success = storage.set_trial_param(
-            trial_id, name, param_value_in_internal_repr, distribution
-        )
+            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            storage.set_trial_param(trial_id, name, param_value_in_internal_repr, distribution)
 
         return param_value
 

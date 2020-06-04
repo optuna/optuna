@@ -37,8 +37,6 @@ class _StudyInfo:
         self.owned_or_finished_trial_ids = set()  # type: Set[int]
         # Cache any writes which are not reflected to the actual storage yet in updates.
         self.updates = dict()  # type: Dict[int, _TrialUpdate]
-        # Cache distributions to avoid storage access on distribution consistency check.
-        self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
         self.direction = StudyDirection.NOT_SET  # type: StudyDirection
         self.name = None  # type: Optional[str]
 
@@ -217,24 +215,13 @@ class _CachedStorage(base.BaseStorage):
         param_name: str,
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
-    ) -> bool:
+    ) -> None:
 
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
-                study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
-                cached_dist = self._studies[study_id].param_distribution.get(param_name, None)
-                if cached_dist:
-                    distributions.check_distribution_compatibility(cached_dist, distribution)
-                else:
-                    self._backend._check_or_set_param_distribution(
-                        trial_id, param_name, param_value_internal, distribution
-                    )
-                    self._studies[study_id].param_distribution[param_name] = distribution
-                if param_name in cached_trial.params:
-                    return False
                 params = copy.copy(cached_trial.params)
                 params[param_name] = distribution.to_external_repr(param_value_internal)
                 cached_trial.params = params
@@ -243,11 +230,9 @@ class _CachedStorage(base.BaseStorage):
                 cached_trial.distributions = dists
                 updates.params[param_name] = param_value_internal
                 updates.distributions[param_name] = distribution
-                return True
+                return
 
-        return self._backend.set_trial_param(
-            trial_id, param_name, param_value_internal, distribution
-        )
+        self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
 
     def get_trial_number_from_id(self, trial_id: int) -> int:
 

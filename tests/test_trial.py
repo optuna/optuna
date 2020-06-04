@@ -215,9 +215,7 @@ def test_suggest_low_equals_high(storage_init_func):
     assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting a param.
     assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting the same param.
     assert trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0  # Suggesting a param.
-    assert (
-        trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0
-    )  # Suggesting the same param.
+    assert trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0  # Suggesting the same param.
     assert trial.suggest_int("d", 1, 1) == 1  # Suggesting a param.
     assert trial.suggest_int("d", 1, 1) == 1  # Suggesting the same param.
     assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting a param.
