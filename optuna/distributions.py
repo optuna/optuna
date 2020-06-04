@@ -1,17 +1,13 @@
 import abc
 import decimal
 import json
+from typing import Any  # NOQA
+from typing import Dict  # NOQA
+from typing import Sequence  # NOQA
+from typing import Union
 import warnings
 
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Sequence  # NOQA
-    from typing import Union  # NOQA
-
-    CategoricalChoiceType = Union[None, bool, int, float, str]
+CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
 class BaseDistribution(object, metaclass=abc.ABCMeta):
@@ -545,3 +541,22 @@ def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
             )
         )
     return high
+
+
+def _get_single_value(distribution: BaseDistribution) -> Union[int, float, CategoricalChoiceType]:
+    assert distribution.single()
+
+    if isinstance(
+        distribution,
+        (
+            UniformDistribution,
+            LogUniformDistribution,
+            DiscreteUniformDistribution,
+            IntUniformDistribution,
+            IntLogUniformDistribution,
+        ),
+    ):
+        return distribution.low
+    elif isinstance(distribution, CategoricalDistribution):
+        return distribution.choices[0]
+    assert False
