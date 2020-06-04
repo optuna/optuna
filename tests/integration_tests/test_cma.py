@@ -25,6 +25,11 @@ if optuna.type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
 
 
+def test_cmaes_deprecation_warning() -> None:
+    with pytest.deprecated_call():
+        optuna.integration.CmaEsSampler()
+
+
 class TestPyCmaSampler(object):
     @staticmethod
     def test_init_cma_opts():

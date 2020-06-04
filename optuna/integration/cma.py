@@ -1,5 +1,6 @@
 import math
 import random
+import warnings
 
 import numpy
 
@@ -10,6 +11,7 @@ from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+from optuna import logging
 from optuna.samplers import BaseSampler
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
@@ -34,6 +36,8 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
+
+_logger = logging.get_logger(__name__)
 
 # Minimum value of sigma0 to avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
 _MIN_SIGMA0 = 1e-10
@@ -61,6 +65,12 @@ class PyCmaSampler(BaseSampler):
 
     Note that parallel execution of trials may affect the optimization performance of CMA-ES,
     especially if the number of trials running in parallel exceeds the population size.
+
+    .. note::
+        :class:`~optuna.integration.CmaEsSampler` is deprecated and renamed as
+        :class:`~optuna.integration.PyCmaSampler` in v1.5.0. Please use
+        :class:`~optuna.integration.PyCmaSampler` instead of
+        :class:`~optuna.integration.CmaEsSampler`.
 
     Args:
 
@@ -458,4 +468,37 @@ def _check_cma_availability():
             "cma can be installed by executing `$ pip install cma`. "
             "For further information, please refer to the installation guide of cma. "
             "(The actual import error is as follows: " + str(_import_error) + ")"
+        )
+
+
+class CmaEsSampler(PyCmaSampler):
+    def __init__(
+        self,
+        x0=None,  # type: Optional[Dict[str, Any]]
+        sigma0=None,  # type: Optional[float]
+        cma_stds=None,  # type: Optional[Dict[str, float]]
+        seed=None,  # type: Optional[int]
+        cma_opts=None,  # type: Optional[Dict[str, Any]]
+        n_startup_trials=1,  # type: int
+        independent_sampler=None,  # type: Optional[BaseSampler]
+        warn_independent_sampling=True,  # type: bool
+    ):
+        # type: (...) -> None
+
+        message = (
+            "The class of `optuna.integration.CmaEsSampler` is deprecated. "
+            "Please use `optuna.integration.PyCmaSampler` instead."
+        )
+        warnings.warn(message, DeprecationWarning)
+        _logger.warning(message)
+
+        super(CmaEsSampler, self).__init__(
+            x0=x0,
+            sigma0=sigma0,
+            cma_stds=cma_stds,
+            seed=seed,
+            cma_opts=cma_opts,
+            n_startup_trials=n_startup_trials,
+            independent_sampler=independent_sampler,
+            warn_independent_sampling=warn_independent_sampling,
         )
