@@ -44,7 +44,7 @@ class CatalystPruningCallback(Callback):
         self._trial.report(current_score, state.epoch)
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(state.epoch)
-            raise optuna.exceptions.TrialPruned(message)
+            raise optuna.TrialPruned(message)
 
 
 def _check_catalyst_availability():
