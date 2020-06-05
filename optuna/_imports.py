@@ -2,7 +2,6 @@ from types import TracebackType
 from typing import Optional
 from typing import Tuple
 from typing import Type
-from typing import Union
 
 
 class _DeferredImportExceptionContextManager(object):
