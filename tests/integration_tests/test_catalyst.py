@@ -1,11 +1,11 @@
+import sys
+
+import pytest
+import torch
+
 import optuna
 from optuna.integration import CatalystPruningCallback
 from optuna.testing.integration import DeterministicPruner
-
-import pytest
-import sys
-
-import torch
 
 catalyst = pytest.importorskip("catalyst")
 
