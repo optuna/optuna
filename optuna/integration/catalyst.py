@@ -1,6 +1,6 @@
-import optuna
-
 from typing import Any  # NOQA
+
+import optuna
 
 
 try:
