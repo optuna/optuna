@@ -11,11 +11,11 @@ import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
 
-with try_import() as _allennlp_imports:
+with try_import() as _imports:
     import allennlp.commands
     import allennlp.common.util
 
-with try_import() as _jsonnet_imports:
+if _imports.is_successful():
     import _jsonnet
 
 
@@ -33,7 +33,7 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
             Note that :func:`~optuna.study.Study.optimize` must have been called.
 
     """
-    _jsonnet_imports.check()
+    _imports.check()
 
     best_params = study.best_params
     for key, value in best_params.items():
@@ -86,8 +86,7 @@ class AllenNLPExecutor(object):
         *,
         include_package: Optional[Union[str, List[str]]] = None
     ):
-        _allennlp_imports.check()
-        _jsonnet_imports.check()
+        _imports.check()
 
         self._params = trial.params
         self._config_file = config_file
