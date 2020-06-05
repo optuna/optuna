@@ -379,6 +379,11 @@ def test_suggest_int_log(storage_init_func):
             warnings.simplefilter("ignore", category=UserWarning)
             trial.suggest_int("z", 0.5, 10, log=True)  # type: ignore
 
+    with pytest.raises(ValueError):
+        study = create_study(storage_init_func(), sampler=sampler)
+        trial = Trial(study, study._storage.create_new_trial(study._study_id))
+        trial.suggest_int("w", 1, 3, step=2, log=True)
+
 
 @parametrize_storage
 def test_distributions(storage_init_func):

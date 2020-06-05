@@ -419,14 +419,14 @@ class TestChainerMNTrial(object):
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_int("x", low, high, step=step, log=enable_log)
+                x1 = mn_trial.suggest_int("y", low, high, step=step, log=False)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_int("x", low, high, step=step, log=enable_log)
+                x2 = mn_trial.suggest_int("y", low, high, step=step, log=False)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_uniform("x", low, high)
+                    mn_trial.suggest_uniform("y", low, high)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

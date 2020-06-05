@@ -140,11 +140,19 @@ class Trial(BaseTrial):
                 range.
             step:
                 A step of discretization.
+
+                .. note::
+                    The ``step`` and ``log`` arguments cannot be used at the same time. To set
+                    the ``step`` argument to a float number, set the ``log`` argument to ``False``.
             log:
                 A flag to sample the value from the log domain or not.
                 If ``log`` is true, the value is sampled from the range in the log domain.
                 Otherwise, the value is sampled from the range in the linear domain.
                 See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
+
+                .. note::
+                   The ``step`` and ``log`` arguments cannot be used at the same time. To set
+                   the ``log`` argument to ``True``, set the ``step`` argument to ``None``.
 
         Returns:
             A suggested float value.
@@ -339,17 +347,12 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high, step=1, log=False):
-        # type: (str, int, int, int, bool) -> int
+    def suggest_int(
+        self, name: str, low: int, high: int, step: Optional[int] = None, log: bool = False
+    ) -> int:
         """Suggest a value for the integer parameter.
 
-        The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`, and the
-        step of discretization is :math:`\\mathsf{step}`. More specifically, this method returns
-        one of the values in the sequence :math:`\\mathsf{low}, \\mathsf{low} + \\mathsf{step},
-        \\mathsf{low} + 2 * \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step} \\le
-        \\mathsf{high}`, where :math:`k` denotes an integer. Note that :math:`\\mathsf{high}` is
-        modified if the range is not divisible by :math:`\\mathsf{step}`. Please check the warning
-        messages to find the changed values.
+        The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
 
         Example:
 
@@ -387,25 +390,56 @@ class Trial(BaseTrial):
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
             step:
                 A step of discretization.
+
+                .. note::
+                    If the value of :math:`\\mathsf{step}` is None, it is automatically set to
+                    :math:`\\mathsf{1}.
+
+                .. note::
+                    Note that :math:`\\mathsf{high}` is modified if the range is not divisible by
+                    :math:`\\mathsf{step}`. Please check the warning messages to find the changed
+                    values.
+
+                .. note::
+                    Specifically, if the ``step`` is not None, the method returns one of the values
+                    in the sequence :math:`\\mathsf{low}, \\mathsf{low} + \\mathsf{step},
+                    \\mathsf{low} + 2 * \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step}
+                    \\le \\mathsf{high}`, where :math:`k` denotes an integer.
+
+                .. note::
+                    The ``step`` and ``log`` arguments cannot be used at the same time. To set
+                    the ``step`` argument to an integer, set the ``log`` argument to ``False``.
             log:
                 A flag to sample the value from the log domain or not.
-                If ``log`` is true, at first, the range of suggested values is divided into grid
-                points of width ``step``. The range of suggested values is then converted to a log
-                domain, from which a value is uniformly sampled. The uniformly sampled value is
-                re-converted to the original domain and rounded to the nearest grid point that we
-                just split, and the suggested value is determined.
-                For example,
-                if `low = 2`, `high = 8` and `step = 2`,
-                then the range of suggested values is divided by ``step`` as `[2, 4, 6, 8]`
-                and lower values tend to be more sampled than higher values.
+
+                .. note::
+                    If ``log`` is true, at first, the range of suggested values is divided into
+                    grid points of width ``1``. The range of suggested values is then converted to
+                    a log domain, from which a value is uniformly sampled. The uniformly sampled
+                    value is re-converted to the original domain and rounded to the nearest grid
+                    point that we just split, and the suggested value is determined.
+                    For example, if `low = 2` and `high = 8`, then the range of suggested values is
+                    `[2, 3, 4, 5, 6, 7, 8]` and lower values tend to be more sampled than higher
+                    values.
+
+                .. note::
+                    The ``step`` and ``log`` arguments cannot be used at the same time. To set
+                    the ``log`` argument to ``True``, set the ``step`` argument to ``None``.
         """
 
-        if log:
-            distribution = IntLogUniformDistribution(
-                low=low, high=high, step=step
-            )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+        if step is not None and step != 1:
+            if log:
+                raise ValueError("The parameter `step` is not supported when `log` is True.")
+            else:
+                distribution = IntUniformDistribution(
+                    low=low, high=high, step=step
+                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
         else:
-            distribution = IntUniformDistribution(low=low, high=high, step=step)
+            step = 1
+            if log:
+                distribution = IntLogUniformDistribution(low=low, high=high, step=step)
+            else:
+                distribution = IntUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
 
