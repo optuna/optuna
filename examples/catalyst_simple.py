@@ -21,16 +21,15 @@ import os
 
 from catalyst.dl import AccuracyCallback
 from catalyst.dl import SupervisedRunner
-
-import optuna
-from optuna.integration import CatalystPruningCallback
-
 import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
-from torchvision.datasets import MNIST
 from torchvision import transforms
+from torchvision.datasets import MNIST
+
+import optuna
+from optuna.integration import CatalystPruningCallback
 
 
 CLASSES = 10
