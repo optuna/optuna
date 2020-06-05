@@ -387,9 +387,15 @@ class RedisStorage(base.BaseStorage):
         self._check_trial_id(trial_id)
         self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
 
-        trial = self.get_trial(trial_id)
+        # Check param distribution compatibility with previous trial(s).
         study_id = self.get_study_id_from_trial_id(trial_id)
         param_distribution = self._get_study_param_distribution(study_id)
+        if param_name in param_distribution:
+            distributions.check_distribution_compatibility(
+                param_distribution[param_name], distribution
+            )
+
+        trial = self.get_trial(trial_id)
 
         with self._redis.pipeline() as pipe:
             pipe.multi()

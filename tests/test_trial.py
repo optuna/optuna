@@ -63,8 +63,16 @@ def test_check_distribution_suggest_float(storage_init_func):
     x6 = trial.suggest_discrete_uniform("x3", 10, 20, 1.0)
 
     assert x5 == x6
+
     with pytest.raises(NotImplementedError):
         trial.suggest_float("x4", 1e-5, 1e-2, step=1e-5, log=True)
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("x1", 10, 20)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("x1", 10, 20)
 
 
 @parametrize_storage
@@ -83,6 +91,13 @@ def test_check_distribution_suggest_uniform(storage_init_func):
     # we expect exactly one warning
     assert len(record) == 1
 
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
+
 
 @parametrize_storage
 def test_check_distribution_suggest_loguniform(storage_init_func):
@@ -100,6 +115,13 @@ def test_check_distribution_suggest_loguniform(storage_init_func):
     # we expect exactly one warning
     assert len(record) == 1
 
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
+
 
 @parametrize_storage
 def test_check_distribution_suggest_discrete_uniform(storage_init_func):
@@ -116,6 +138,13 @@ def test_check_distribution_suggest_discrete_uniform(storage_init_func):
 
     # we expect exactly one warning
     assert len(record) == 1
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20, 2)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20, 2)
 
 
 @parametrize_storage
@@ -135,6 +164,34 @@ def test_check_distribution_suggest_int(
 
     # We expect exactly one warning.
     assert len(record) == 1
+
+    with pytest.raises(ValueError):
+        trial.suggest_float("x", 10, 20, log=enable_log)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_float("x", 10, 20, log=enable_log)
+
+
+@parametrize_storage
+def test_check_distribution_suggest_categorical(storage_init_func):
+    # type: (Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    trial.suggest_categorical("x", [10, 20, 30])
+
+    with pytest.raises(ValueError):
+        trial.suggest_categorical("x", [10, 20])
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
 
 
 @parametrize_storage

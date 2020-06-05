@@ -732,6 +732,11 @@ class RDBStorage(BaseStorage):
         )
 
         if trial_param is not None:
+            # Raise error in case distribution is incompatible.
+            distributions.check_distribution_compatibility(
+                distributions.json_to_distribution(trial_param.distribution_json), distribution
+            )
+
             trial_param.param_value = param_value_internal
             trial_param.distribution_json = distributions.distribution_to_json(distribution)
         else:
@@ -743,6 +748,46 @@ class RDBStorage(BaseStorage):
             )
 
             trial_param.check_and_add(session)
+
+    def _check_or_set_param_distribution(
+        self,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: distributions.BaseDistribution,
+    ) -> None:
+
+        session = self.scoped_session()
+
+        # Acquire a lock of this trial.
+        trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
+        if trial is None:
+            raise KeyError(models.NOT_FOUND_MSG)
+
+        previous_record = (
+            session.query(models.TrialParamModel)
+            .join(models.TrialModel)
+            .filter(models.TrialModel.study_id == trial.study_id)
+            .filter(models.TrialParamModel.param_name == param_name)
+            .first()
+        )
+        if previous_record is not None:
+            distributions.check_distribution_compatibility(
+                distributions.json_to_distribution(previous_record.distribution_json),
+                distribution,
+            )
+        else:
+            session.add(
+                models.TrialParamModel(
+                    trial_id=trial_id,
+                    param_name=param_name,
+                    param_value=param_value_internal,
+                    distribution_json=distributions.distribution_to_json(distribution),
+                )
+            )
+
+        # Release lock.
+        session.commit()
 
     def get_trial_param(self, trial_id, param_name):
         # type: (int, str) -> float

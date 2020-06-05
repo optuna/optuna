@@ -251,6 +251,11 @@ class InMemoryStorage(base.BaseStorage):
             self.check_trial_is_updatable(trial_id, trial.state)
 
             study_id = self._trial_id_to_study_id_and_number[trial_id][0]
+            # Check param distribution compatibility with previous trial(s).
+            if param_name in self._studies[study_id].param_distribution:
+                distributions.check_distribution_compatibility(
+                    self._studies[study_id].param_distribution[param_name], distribution
+                )
 
             # Set param distribution.
             self._studies[study_id].param_distribution[param_name] = distribution

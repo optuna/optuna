@@ -533,6 +533,17 @@ def test_set_trial_param(storage_mode: str) -> None:
         assert storage.get_trial(trial_id_2).params == {"x": 0.3, "z": 0.1}
         assert storage.get_trial_params(trial_id_2) == {"x": 0.3, "z": 0.1}
 
+        # Set params with distributions that do not match previous ones.
+        with pytest.raises(ValueError):
+            storage.set_trial_param(trial_id_2, "x", 0.5, distribution_z)
+        with pytest.raises(ValueError):
+            storage.set_trial_param(trial_id_2, "y", 0.5, distribution_z)
+        # Choices in CategoricalDistribution should match including its order.
+        with pytest.raises(ValueError):
+            storage.set_trial_param(
+                trial_id_2, "y", 2, CategoricalDistribution(choices=("Meguro", "Shibuya", "Ebisu"))
+            )
+
         storage.set_trial_state(trial_id_2, TrialState.COMPLETE)
         # Cannot assign params to finished trial.
         with pytest.raises(RuntimeError):
