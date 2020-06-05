@@ -72,7 +72,7 @@ class Net(nn.Module):
 loaders = {
     "train": DataLoader(
         datasets.MNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()),
-        batch_size=100,
+        batch_size=100, shuffle=True
     ),
     "valid": DataLoader(
         datasets.MNIST(os.getcwd(), train=False, download=True, transform=transforms.ToTensor()),
