@@ -5,23 +5,18 @@ from typing import Type
 from typing import Union
 
 
-class _DeferredExceptionContextManager(object):
-    """Context manager to defer exceptions.
+class _DeferredImportExceptionContextManager(object):
+    """Context manager to defer exceptions from imports.
 
-    Args:
-        catch:
-            Exception types to defer.
-        message:
-            Message to include in deferred exception.
+    Catches :exc:`ImportError` and :exc:`SyntaxError`.
+    If any exception is caught, this class raises an :exc:`ImportError` when being checked.
 
     """
 
-    def __init__(self, catch: Union[Tuple[()], Tuple[Type[Exception], ...]], message: str) -> None:
-        self._catch = catch
-        self._message = message
-        self._caught_exception = None  # type: Optional[Tuple[Type[Exception], Exception]]
+    def __init__(self) -> None:
+        self._deferred = None  # type: Optional[Tuple[Exception, str]]
 
-    def __enter__(self) -> "_DeferredExceptionContextManager":
+    def __enter__(self) -> "_DeferredImportExceptionContextManager":
         """Enter the context manager.
 
         Returns:
@@ -47,14 +42,26 @@ class _DeferredExceptionContextManager(object):
                 Associated traceback. :obj:`None` if nothing is raised.
 
         Returns:
-            :obj:`None` if nothing was caught, otherwise :obj:`True`.
+            :obj:`None` if nothing is deferred, otherwise :obj:`True`.
             :obj:`True` will suppress any exceptions avoiding them from propagating.
 
         """
-        if isinstance(exc_value, self._catch):
-            assert exc_type is not None
-            assert exc_value is not None
-            self._caught_exception = (exc_type, exc_value)
+        if isinstance(exc_value, (ImportError, SyntaxError)):
+            if isinstance(exc_value, ImportError):
+                message = (
+                    "Tried to import '{}' but failed. Please make sure that the package is "
+                    "installed correctly to use this feature. Actual error: {}."
+                ).format(exc_value.name, exc_value)
+            elif isinstance(exc_value, SyntaxError):
+                message = (
+                    "Tried to import a package but failed due to a syntax error in {}. Please "
+                    "make sure that the Python version is correct to use this feature. Actual "
+                    "error: {}."
+                ).format(exc_value.filename, exc_value)
+            else:
+                assert False
+
+            self._deferred = (exc_value, message)
             return True
         return None
 
@@ -65,31 +72,26 @@ class _DeferredExceptionContextManager(object):
             :obj:`True` if no exceptions are caught, :obj:`False` otherwise.
 
         """
-        return self._caught_exception is None
+        return self._deferred is None
 
     def check(self) -> None:
         """Check whether the context manger has caught any exceptions.
 
         Raises:
-            :exc:`Exception`:
-                If any exception was caught, raises the caught exception with a modified message.
+            :exc:`ImportError`:
+                If any exception was caught from the caught exception.
 
         """
-        if self._caught_exception is not None:
-            exc_type, exc_value = self._caught_exception
-            raise exc_type(self._message) from exc_value
+        if self._deferred is not None:
+            exc_value, message = self._deferred
+            raise ImportError(message) from exc_value
 
 
-def try_import(
-    catch: Union[Tuple[()], Tuple[Type[Exception], ...]] = (ImportError,),
-) -> _DeferredExceptionContextManager:
+def try_import() -> _DeferredImportExceptionContextManager:
     """Create a context manager that can wrap imports of optional packages to defer exceptions.
 
-    Args:
-        catch:
-            Exception types to defer.
+    Returns:
+        Deferred import context manager.
 
     """
-    return _DeferredExceptionContextManager(
-        catch, message="Failed to import an optional package. See causing exceptions for details."
-    )
+    return _DeferredImportExceptionContextManager()

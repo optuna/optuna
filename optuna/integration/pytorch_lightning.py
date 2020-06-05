@@ -4,7 +4,7 @@ if optuna.type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
 
-with optuna._imports.try_import(catch=(ImportError, SyntaxError)) as _imports:
+with optuna._imports.try_import() as _imports:
     from pytorch_lightning.callbacks import EarlyStopping
     from pytorch_lightning import LightningModule
     from pytorch_lightning import Trainer
@@ -35,9 +35,9 @@ class PyTorchLightningPruningCallback(EarlyStopping):
     def __init__(self, trial, monitor):
         # type: (optuna.trial.Trial, str) -> None
 
-        super(PyTorchLightningPruningCallback, self).__init__(monitor=monitor)
-
         _imports.check()
+
+        super(PyTorchLightningPruningCallback, self).__init__(monitor=monitor)
 
         self._trial = trial
         self._monitor = monitor
