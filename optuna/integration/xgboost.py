@@ -1,13 +1,7 @@
 import optuna
 
-try:
+with optuna._imports.try_import() as _imports:
     import xgboost as xgb  # NOQA
-
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # XGBoostPruningCallback is disabled because XGBoost is not available.
-    _available = False
 
 
 def _get_callback_context(env):
@@ -50,7 +44,7 @@ class XGBoostPruningCallback(object):
     def __init__(self, trial, observation_key):
         # type: (optuna.trial.Trial, str) -> None
 
-        _check_xgboost_availability()
+        _imports.check()
 
         self._trial = trial
         self._observation_key = observation_key
@@ -68,15 +62,3 @@ class XGBoostPruningCallback(object):
         if self._trial.should_prune():
             message = "Trial was pruned at iteration {}.".format(env.iteration)
             raise optuna.TrialPruned(message)
-
-
-def _check_xgboost_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "XGBoost is not available. Please install XGBoost to use this feature. "
-            "XGBoost can be installed by executing `$ pip install xgboost`. "
-            "For further information, please refer to the installation guide of XGBoost. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )

@@ -5,11 +5,10 @@ from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.visualization.utils import _check_plotly_availability
+from optuna.visualization.plotly_imports import _imports
 from optuna.visualization.utils import _is_log_scale
-from optuna.visualization.utils import is_available
 
-if is_available():
+if _imports.is_successful():
     from optuna.visualization.plotly_imports import go
     from optuna.visualization.plotly_imports import make_subplots
     from optuna.visualization.plotly_imports import Scatter
@@ -56,7 +55,7 @@ def plot_slice(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
         A :class:`plotly.graph_objs.Figure` object.
     """
 
-    _check_plotly_availability()
+    _imports.check()
     return _get_slice_plot(study, params)
 
 

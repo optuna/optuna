@@ -9,17 +9,14 @@ import warnings
 
 import optuna
 from optuna._experimental import experimental
+from optuna._imports import try_import
 
-try:
-    import _jsonnet
+with try_import() as _imports:
     import allennlp.commands
     import allennlp.common.util
 
-    _available = True
-except ImportError as e:
-    _import_error = e
-    _available = False
-    TrackerCallback = object
+if _imports.is_successful():
+    import _jsonnet
 
 
 def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
@@ -36,6 +33,8 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
             Note that :func:`~optuna.study.Study.optimize` must have been called.
 
     """
+    _imports.check()
+
     best_params = study.best_params
     for key, value in best_params.items():
         best_params[key] = str(value)
@@ -87,8 +86,7 @@ class AllenNLPExecutor(object):
         *,
         include_package: Optional[Union[str, List[str]]] = None
     ):
-
-        _check_allennlp_availability()
+        _imports.check()
 
         self._params = trial.params
         self._config_file = config_file
@@ -130,13 +128,3 @@ class AllenNLPExecutor(object):
 
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]
-
-
-def _check_allennlp_availability() -> None:
-    if not _available:
-        raise ImportError(
-            "AllenNLP is not available. Please install AllenNLP to use this feature. "
-            "AllenNLP can be installed by executing `$ pip install allennlp`. "
-            "For further information, please refer to the installation guide of AllenNLP. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )

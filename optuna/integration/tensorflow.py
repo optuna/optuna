@@ -1,19 +1,16 @@
 import optuna
+from optuna._imports import try_import
 
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
-try:
+with try_import() as _imports:
     import tensorflow as tf
     from tensorflow.estimator import SessionRunHook
     from tensorflow_estimator.python.estimator.early_stopping import read_eval_metrics
 
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # TensorFlowPruningHook is disabled because TensorFlow is not available.
-    _available = False
-    SessionRunHook = object
+if not _imports.is_successful():
+    SessionRunHook = object  # NOQA
 
 
 class TensorFlowPruningHook(SessionRunHook):
@@ -38,7 +35,7 @@ class TensorFlowPruningHook(SessionRunHook):
     def __init__(self, trial, estimator, metric, run_every_steps):
         # type: (optuna.trial.Trial, tf.estimator.Estimator, str, int) -> None
 
-        _check_tensorflow_availability()
+        _imports.check()
 
         self._trial = trial
         self._estimator = estimator
@@ -81,15 +78,3 @@ class TensorFlowPruningHook(SessionRunHook):
             if self._trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(self._current_summary_step)
                 raise optuna.TrialPruned(message)
-
-
-def _check_tensorflow_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "TensorFlow is not available. Please install TensorFlow to use this feature. "
-            "TensorFlow can be installed by executing `$ pip install tensorflow`. "
-            "For further information, please refer to the installation guide of TensorFlow. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )

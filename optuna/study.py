@@ -11,18 +11,9 @@ from joblib import delayed
 from joblib import Parallel
 
 from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
-
-try:
-    import pandas as pd  # NOQA
-
-    _pandas_available = True
-except ImportError as e:
-    _pandas_import_error = e
-    # trials_dataframe is disabled because pandas is not available.
-    _pandas_available = False
-
 from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
@@ -49,6 +40,9 @@ if type_checking.TYPE_CHECKING:
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
+with try_import() as _pandas_imports:
+    # `trials_dataframe` is disabled if pandas is not available.
+    import pandas as pd  # NOQA
 
 _logger = logging.get_logger(__name__)
 
@@ -471,7 +465,7 @@ class Study(BaseStudy):
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
 
-        _check_pandas_availability()
+        _pandas_imports.check()
 
         trials = self.get_trials(deepcopy=False)
 
@@ -963,15 +957,3 @@ def get_all_study_summaries(storage):
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
-
-
-def _check_pandas_availability():
-    # type: () -> None
-
-    if not _pandas_available:
-        raise ImportError(
-            "pandas is not available. Please install pandas to use this feature. "
-            "pandas can be installed by executing `$ pip install pandas`. "
-            "For further information, please refer to the installation guide of pandas. "
-            "(The actual import error is as follows: " + str(_pandas_import_error) + ")"
-        )
