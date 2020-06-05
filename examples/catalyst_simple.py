@@ -25,8 +25,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
+from torchvision import datasets
 from torchvision import transforms
-from torchvision.datasets import MNIST
 
 import optuna
 from optuna.integration import CatalystPruningCallback
@@ -71,11 +71,11 @@ class Net(nn.Module):
 
 loaders = {
     "train": DataLoader(
-        MNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()),
+        datasets.MNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()),
         batch_size=100,
     ),
     "valid": DataLoader(
-        MNIST(os.getcwd(), train=False, download=True, transform=transforms.ToTensor()),
+        datasets.MNIST(os.getcwd(), train=False, download=True, transform=transforms.ToTensor()),
         batch_size=100,
     ),
 }
