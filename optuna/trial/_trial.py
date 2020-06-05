@@ -629,10 +629,12 @@ class Trial(BaseTrial):
         storage = self.storage
         trial_id = self._trial_id
 
-        prev_distributions = storage.get_trial(trial_id).distributions
-        if name in prev_distributions:
+        trial = storage.get_trial(trial_id)
+        trial_distributions = trial.distributions
+
+        if name in trial_distributions:
             # No need to sample if already suggested.
-            distributions.check_distribution_compatibility(prev_distributions[name], distribution)
+            distributions.check_distribution_compatibility(trial_distributions[name], distribution)
             param_value = distribution.to_external_repr(storage.get_trial_param(trial_id, name))
         else:
             if self._is_fixed_param(name, distribution):
@@ -642,7 +644,6 @@ class Trial(BaseTrial):
             elif self._is_relative_param(name, distribution):
                 param_value = self.relative_params[name]
             else:
-                trial = storage.get_trial(trial_id)
                 study = pruners._filter_study(self.study, trial)
                 param_value = self.study.sampler.sample_independent(
                     study, trial, name, distribution
