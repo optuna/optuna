@@ -4,6 +4,8 @@ import tempfile
 
 import _jsonnet
 import pytest
+import torch.optim
+from torch.utils.data import DataLoader
 
 import optuna
 
@@ -180,3 +182,49 @@ def test_dump_best_config() -> None:
         model_config = best_config["model"]
         target_config = model_config["text_field_embedder"]["token_embedders"]["token_characters"]
         assert target_config["dropout"] == dropout
+
+
+def test_allennlp_pruning_callback() -> None:
+    with tempfile.TemporaryDirectory() as tmp_dir:
+
+        def objective(trial: optuna.Trial) -> float:
+            reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
+                tokenizer=allennlp.data.tokenizers.SpacyTokenizer()
+            )
+            dataset = reader.read("tests/integration_tests/allennlp_tests/pruning_test.jsonl")
+            vocab = allennlp.data.Vocabulary.from_instances(dataset)
+            dataset.index_with(vocab)
+            embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(
+                {"tokens": allennlp.modules.Embedding(50, vocab=vocab)}
+            )
+            encoder = allennlp.modules.seq2vec_encoders.GruSeq2VecEncoder(
+                input_size=50, hidden_size=50
+            )
+            model = allennlp.models.BasicClassifier(
+                text_field_embedder=embedder, seq2vec_encoder=encoder, vocab=vocab
+            )
+            optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+            data_loader = DataLoader(
+                dataset, batch_size=10, collate_fn=allennlp.data.allennlp_collate
+            )
+            serialization_dir = os.path.join(tmp_dir, "trial_{}".format(trial.number))
+            trainer = allennlp.training.GradientDescentTrainer(
+                model=model,
+                optimizer=optimizer,
+                data_loader=data_loader,
+                patience=None,
+                num_epochs=1,
+                serialization_dir=serialization_dir,
+                epoch_callbacks=[AllenNLPPruningCallback(trial, "training_loss")],
+            )
+            trainer.train()
+            return 1.0
+
+        study = optuna.create_study(pruner=DeterministicPruner(True))
+        study.optimize(objective, n_trials=1)
+        assert study.trials[0].state == optuna.trial.TrialState.PRUNED
+
+        study = optuna.create_study(pruner=DeterministicPruner(False))
+        study.optimize(objective, n_trials=1)
+        assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
+        assert study.trials[0].value == 1.0
