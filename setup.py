@@ -73,12 +73,12 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-image",
             "scikit-learn",
             "thop",
-            "torch==1.4.0" if sys.platform == "darwin" else "torch==1.4.0+cpu",
+            "torch==1.5.0" if sys.platform == "darwin" else "torch==1.5.0+cpu",
             "torchvision==0.5.0" if sys.platform == "darwin" else "torchvision==0.5.0+cpu",
             "xgboost",
         ]
         + (
-            ["allennlp<1", "fastai<2", "pytorch-lightning>=0.7.1"]
+            ["allennlp==1.0.0", "fastai<2", "pytorch-lightning>=0.7.1"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
         )
@@ -109,12 +109,12 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-ignite",
             "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
-            "torch==1.4.0" if sys.platform == "darwin" else "torch==1.4.0+cpu",
+            "torch==1.5.0" if sys.platform == "darwin" else "torch==1.5.0+cpu",
             "torchvision==0.5.0" if sys.platform == "darwin" else "torchvision==0.5.0+cpu",
             "xgboost",
         ]
         + (
-            ["allennlp<1", "fastai<2", "pytorch-lightning>=0.7.1"]
+            ["allennlp==1.0.0", "fastai<2", "pytorch-lightning>=0.7.1"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
         )

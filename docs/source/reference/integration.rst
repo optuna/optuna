@@ -66,4 +66,7 @@ Integration
 .. autoclass:: AllenNLPExecutor
     :members:
 
+.. autoclass:: AllenNLPPruningCallback
+    :members:
+
 .. autofunction:: optuna.integration.allennlp.dump_best_config
