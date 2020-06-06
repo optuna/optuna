@@ -380,7 +380,6 @@ class Trial(BaseTrial):
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
-
         Args:
             name:
                 A parameter name.
