@@ -391,8 +391,7 @@ class Trial(BaseTrial):
                 A step of discretization.
 
                 .. note::
-                    If the value of :math:`\\mathsf{step}` is None, it is automatically set to
-                    :math:`\\mathsf{1}.
+                    If the value of :math:`\\mathsf{step}` is None, it is automatically set to 1.
 
                 .. note::
                     Note that :math:`\\mathsf{high}` is modified if the range is not divisible by
