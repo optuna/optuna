@@ -128,3 +128,42 @@ class AllenNLPExecutor(object):
 
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]
+
+
+@experimental("2.0.0")
+class AllenNLPPruningCallback(allennlp.training.EpochCallback):
+    """AllenNLP callback to prune unpromising trials.
+
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/allennlp/allennlp_simple.py>`__
+    if you want to add a proning callback which observes a metric.
+
+    Args:
+        trial:
+            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            objective function.
+        monitor:
+            An evaluation metric for pruning, e.g. ``validation_loss`` or
+            ``validation_accuracy``.
+    """
+
+    def __init__(self, trial: optuna.trial.Trial, monitor: str):
+        _imports.check()
+
+        self._trial = trial
+        self._monitor = monitor
+
+    def __call__(
+        self,
+        trainer: allennlp.training.GradientDescentTrainer,
+        metrics: Dict[str, Any],
+        epoch: int,
+        is_master: bool,
+    ) -> None:
+        value = metrics.get(self._monitor)
+        if not value:
+            return
+
+        self._trial.report(float(value), epoch)
+        if self._trial.should_prune():
+            raise optuna.TrialPruned()
