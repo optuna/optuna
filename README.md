@@ -26,9 +26,9 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 Optuna has modern functionalities as follows:
 
-- Parallel distributed optimization
-- Pruning of unpromising trials
-- Lightweight, versatile, and platform agnostic architecture
+- [Lightweight, versatile, and platform agnostic architecture](https://optuna.readthedocs.io/en/latest/tutorial/first.html)
+- [Parallel distributed optimization](https://optuna.readthedocs.io/en/latest/tutorial/distributed.html)
+- [Pruning of unpromising trials](https://optuna.readthedocs.io/en/latest/tutorial/pruning.html)
 
 
 ## Basic Concepts
