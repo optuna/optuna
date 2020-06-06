@@ -1,5 +1,6 @@
 import pytest
 
+from optuna import create_trial
 from optuna.distributions import CategoricalDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
@@ -60,21 +61,25 @@ def test_plot_parallel_coordinate():
 
     # Test with categorical params that cannot be converted to numeral.
     study_categorical_params = create_study()
-    study_categorical_params._append_trial(
-        value=0.0,
-        params={"category_a": "preferred", "category_b": "net",},
-        distributions={
-            "category_a": CategoricalDistribution(("preferred", "opt")),
-            "category_b": CategoricalDistribution(("net", "una")),
-        },
+    study_categorical_params.add_trial(
+        create_trial(
+            value=0.0,
+            params={"category_a": "preferred", "category_b": "net",},
+            distributions={
+                "category_a": CategoricalDistribution(("preferred", "opt")),
+                "category_b": CategoricalDistribution(("net", "una")),
+            },
+        )
     )
-    study_categorical_params._append_trial(
-        value=2.0,
-        params={"category_a": "opt", "category_b": "una",},
-        distributions={
-            "category_a": CategoricalDistribution(("preferred", "opt")),
-            "category_b": CategoricalDistribution(("net", "una")),
-        },
+    study_categorical_params.add_trial(
+        create_trial(
+            value=2.0,
+            params={"category_a": "opt", "category_b": "una",},
+            distributions={
+                "category_a": CategoricalDistribution(("preferred", "opt")),
+                "category_b": CategoricalDistribution(("net", "una")),
+            },
+        )
     )
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.data[0]["dimensions"]) == 3

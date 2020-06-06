@@ -4,6 +4,7 @@ from optuna.distributions import LogUniformDistribution
 from optuna.study import create_study
 from optuna.study import StudyDirection
 from optuna.testing.visualization import prepare_study_with_trials
+from optuna.trial import create_trial
 from optuna import type_checking
 from optuna.visualization.contour import _generate_contour_subplot
 from optuna.visualization.contour import plot_contour
@@ -95,21 +96,25 @@ def test_plot_contour_log_scale():
 
     # If the search space has two parameters, plot_contour generates a single plot.
     study = create_study()
-    study._append_trial(
-        value=0.0,
-        params={"param_a": 1e-6, "param_b": 1e-4,},
-        distributions={
-            "param_a": LogUniformDistribution(1e-7, 1e-2),
-            "param_b": LogUniformDistribution(1e-5, 1e-1),
-        },
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1e-6, "param_b": 1e-4,},
+            distributions={
+                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_b": LogUniformDistribution(1e-5, 1e-1),
+            },
+        )
     )
-    study._append_trial(
-        value=1.0,
-        params={"param_a": 1e-5, "param_b": 1e-3,},
-        distributions={
-            "param_a": LogUniformDistribution(1e-7, 1e-2),
-            "param_b": LogUniformDistribution(1e-5, 1e-1),
-        },
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 1e-5, "param_b": 1e-3,},
+            distributions={
+                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_b": LogUniformDistribution(1e-5, 1e-1),
+            },
+        )
     )
 
     figure = plot_contour(study)
@@ -120,23 +125,27 @@ def test_plot_contour_log_scale():
 
     # If the search space has three parameters, plot_contour generates nine plots.
     study = create_study()
-    study._append_trial(
-        value=0.0,
-        params={"param_a": 1e-6, "param_b": 1e-4, "param_c": 1e-2,},
-        distributions={
-            "param_a": LogUniformDistribution(1e-7, 1e-2),
-            "param_b": LogUniformDistribution(1e-5, 1e-1),
-            "param_c": LogUniformDistribution(1e-3, 10),
-        },
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1e-6, "param_b": 1e-4, "param_c": 1e-2,},
+            distributions={
+                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_b": LogUniformDistribution(1e-5, 1e-1),
+                "param_c": LogUniformDistribution(1e-3, 10),
+            },
+        )
     )
-    study._append_trial(
-        value=1.0,
-        params={"param_a": 1e-5, "param_b": 1e-3, "param_c": 1e-1,},
-        distributions={
-            "param_a": LogUniformDistribution(1e-7, 1e-2),
-            "param_b": LogUniformDistribution(1e-5, 1e-1),
-            "param_c": LogUniformDistribution(1e-3, 10),
-        },
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 1e-5, "param_b": 1e-3, "param_c": 1e-1,},
+            distributions={
+                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_b": LogUniformDistribution(1e-5, 1e-1),
+                "param_c": LogUniformDistribution(1e-3, 10),
+            },
+        )
     )
 
     figure = plot_contour(study)

@@ -1,19 +1,20 @@
 import datetime
+from typing import Any
+from typing import Dict
+from typing import Optional
 import warnings
 
+from optuna._experimental import experimental
 from optuna import distributions
+from optuna.distributions import BaseDistribution
 from optuna import logging
 from optuna.trial._state import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
-    from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
 
@@ -229,3 +230,79 @@ class FrozenTrial(object):
             return self.datetime_complete - self.datetime_start
         else:
             return None
+
+
+@experimental("2.0.0")
+def create_trial(
+    *,
+    params: Optional[Dict[str, Any]] = None,
+    distributions: Optional[Dict[str, BaseDistribution]] = None,
+    value: Optional[float] = None,
+    intermediate_values: Optional[Dict[int, float]] = None,
+    state: Optional[TrialState] = None,
+    user_attrs: Optional[Dict[str, Any]] = None,
+    system_attrs: Optional[Dict[str, Any]] = None,
+) -> FrozenTrial:
+    """Create trial.
+
+    Example:
+
+        .. testcode::
+
+            import optuna
+            from optuna.distributions import CategoricalDistribution
+            from optuna.distributions import UniformDistribution
+
+            trial = optuna.create_trial(
+                params={"x": 1.0, "y": 0},
+                distributions={
+                    "x": UniformDistribution(0, 10),
+                    "y": CategoricalDistribution([-1, 0, 1]),
+                },
+                value=5.0,
+            )
+
+            assert isinstance(trial, optuna.trial.FrozenTrial)
+            assert trial.value == 5.0
+            assert trial.params == {"x": 1.0, "y": 0}
+
+    .. seealso::
+
+        See :func:`~optuna.study.Study.add_trial` for how this function can be used to create a
+        study from existing trials.
+
+    Returns:
+        Created trial.
+
+    """
+
+    params = params or {}
+    distributions = distributions or {}
+    user_attrs = user_attrs or {}
+    system_attrs = system_attrs or {}
+    intermediate_values = intermediate_values or {}
+    state = state or TrialState.COMPLETE
+
+    datetime_start = datetime.datetime.now()
+    if state.is_finished():
+        datetime_complete = datetime.datetime.now()  # type: Optional[datetime.datetime]
+    else:
+        datetime_complete = None
+
+    trial = FrozenTrial(
+        number=-1,
+        trial_id=-1,
+        state=state,
+        value=value,
+        datetime_start=datetime_start,
+        datetime_complete=datetime_complete,
+        params=params,
+        distributions=distributions,
+        user_attrs=user_attrs,
+        system_attrs=system_attrs,
+        intermediate_values=intermediate_values,
+    )
+
+    trial._validate()
+
+    return trial

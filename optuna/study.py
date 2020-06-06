@@ -21,6 +21,7 @@ from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
+from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna import type_checking
@@ -580,51 +581,67 @@ class Study(BaseStudy):
                 Parameter values to pass your objective function.
         """
 
-        system_attrs = {"fixed_params": params}
-        self._append_trial(state=TrialState.WAITING, system_attrs=system_attrs)
-
-    def _append_trial(
-        self,
-        value=None,  # type: Optional[float]
-        params=None,  # type: Optional[Dict[str, Any]]
-        distributions=None,  # type: Optional[Dict[str, BaseDistribution]]
-        user_attrs=None,  # type: Optional[Dict[str, Any]]
-        system_attrs=None,  # type: Optional[Dict[str, Any]]
-        intermediate_values=None,  # type: Optional[Dict[int, float]]
-        state=TrialState.COMPLETE,  # type: TrialState
-        datetime_start=None,  # type: Optional[datetime.datetime]
-        datetime_complete=None,  # type: Optional[datetime.datetime]
-    ):
-        # type: (...) -> int
-
-        params = params or {}
-        distributions = distributions or {}
-        user_attrs = user_attrs or {}
-        system_attrs = system_attrs or {}
-        intermediate_values = intermediate_values or {}
-        datetime_start = datetime_start or datetime.datetime.now()
-
-        if state.is_finished():
-            datetime_complete = datetime_complete or datetime.datetime.now()
-
-        trial = FrozenTrial(
-            number=-1,  # dummy value.
-            trial_id=-1,  # dummy value.
-            state=state,
-            value=value,
-            datetime_start=datetime_start,
-            datetime_complete=datetime_complete,
-            params=params,
-            distributions=distributions,
-            user_attrs=user_attrs,
-            system_attrs=system_attrs,
-            intermediate_values=intermediate_values,
+        self.add_trial(
+            create_trial(state=TrialState.WAITING, system_attrs={"fixed_params": params})
         )
+
+    @experimental("2.0.0")
+    def add_trial(self, trial: FrozenTrial) -> None:
+        """Add trial to study.
+
+        The trial is validated before being added.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+                from optuna.distributions import UniformDistribution
+
+                def objective(trial):
+                    x = trial.suggest_uniform('x', 0, 10)
+                    return x ** 2
+
+                study = optuna.create_study()
+                assert len(study.trials) == 0
+
+                trial = optuna.create_trial(
+                    params={"x": 1.0},
+                    distributions={"x": UniformDistribution(0, 10)},
+                    value=5.0,
+                )
+
+                study.add_trial(trial)
+                assert len(study.trials) == 1
+
+                study.optimize(objective, n_trials=3)
+                assert len(study.trials) == 4
+
+                other_study = optuna.create_study()
+
+                for trial in study.trials:
+                    other_study.add_trial(trial)
+                assert len(other_study.trials) == len(study.trials)
+
+                other_study.optimize(objective, n_trials=2)
+                assert len(other_study.trials) == len(study.trials) + 2
+
+        .. seealso::
+
+            See :func:`~optuna.trial.create_trial` for how to create trials.
+
+        Args:
+            trial: Trial to add.
+
+        Raises:
+            :exc:`ValueError`:
+                If trial is an invalid state.
+
+        """
 
         trial._validate()
 
-        trial_id = self._storage.create_new_trial(self._study_id, template_trial=trial)
-        return trial_id
+        self._storage.create_new_trial(self._study_id, template_trial=trial)
 
     def _reseed_and_optimize_sequential(
         self,

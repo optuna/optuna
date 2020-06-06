@@ -1,8 +1,9 @@
 import pytest
 
+from optuna import create_study
+from optuna import create_trial
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna import type_checking
 from optuna.visualization.slice import plot_slice
@@ -55,13 +56,15 @@ def test_plot_slice_log_scale():
     # type: () -> None
 
     study = create_study()
-    study._append_trial(
-        value=0.0,
-        params={"x_linear": 1.0, "y_log": 1e-3,},
-        distributions={
-            "x_linear": UniformDistribution(0.0, 3.0),
-            "y_log": LogUniformDistribution(1e-5, 1.0),
-        },
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"x_linear": 1.0, "y_log": 1e-3,},
+            distributions={
+                "x_linear": UniformDistribution(0.0, 3.0),
+                "y_log": LogUniformDistribution(1e-5, 1.0),
+            },
+        )
     )
 
     # Plot a parameter.

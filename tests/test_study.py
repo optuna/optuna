@@ -14,6 +14,7 @@ import pandas as pd
 import pytest
 
 import optuna
+from optuna import create_trial
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 
@@ -750,16 +751,17 @@ def test_stop_outside_optimize() -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_append_trial(storage_mode):
+def test_add_trial(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         assert len(study.trials) == 0
 
-        trial_id = study._append_trial(value=0.8)
-        assert study.trials[0]._trial_id == trial_id
+        trial = create_trial(value=0.8)
+        study.add_trial(trial)
         assert len(study.trials) == 1
+        assert study.trials[0].number == 0
         assert study.best_value == 0.8
 
 
