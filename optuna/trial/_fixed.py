@@ -108,18 +108,15 @@ class FixedTrial(BaseTrial):
         discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
-    def suggest_int(
-        self, name: str, low: int, high: int, step: Optional[int] = None, log: bool = False
-    ) -> int:
-        if step is not None and step != 1:
+    def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
+        if step != 1:
             if log:
-                raise ValueError("The parameter `step` is not supported when `log` is True.")
+                raise ValueError("The parameter `step >= 2` is not supported when `log` is True.")
             else:
                 sample = self._suggest(
                     name, distributions.IntUniformDistribution(low=low, high=high, step=step)
                 )
         else:
-            step = 1
             if log:
                 sample = self._suggest(
                     name, distributions.IntLogUniformDistribution(low=low, high=high, step=step)

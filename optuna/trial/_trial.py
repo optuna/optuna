@@ -347,9 +347,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_int(
-        self, name: str, low: int, high: int, step: Optional[int] = None, log: bool = False
-    ) -> int:
+    def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         """Suggest a value for the integer parameter.
 
         The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
@@ -391,22 +389,20 @@ class Trial(BaseTrial):
                 A step of discretization.
 
                 .. note::
-                    If the value of :math:`\\mathsf{step}` is None, it is automatically set to 1.
-
-                .. note::
                     Note that :math:`\\mathsf{high}` is modified if the range is not divisible by
                     :math:`\\mathsf{step}`. Please check the warning messages to find the changed
                     values.
 
                 .. note::
-                    Specifically, if the ``step`` is not None, the method returns one of the values
-                    in the sequence :math:`\\mathsf{low}, \\mathsf{low} + \\mathsf{step},
-                    \\mathsf{low} + 2 * \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step}
-                    \\le \\mathsf{high}`, where :math:`k` denotes an integer.
+                    Specifically, the method returns one of the values in the sequence
+                    :math:`\\mathsf{low}, \\mathsf{low} + \\mathsf{step}, \\mathsf{low} + 2 *
+                    \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step} \\le
+                    \\mathsf{high}`, where :math:`k` denotes an integer.
 
                 .. note::
-                    The ``step`` and ``log`` arguments cannot be used at the same time. To set
-                    the ``step`` argument to an integer, set the ``log`` argument to ``False``.
+                    The ``step``:math:`\\le 2` and ``log`` arguments cannot be used at the same
+                    time. To set the ``step`` argument :math:`\\mathsf{step} \\le 2`, set the
+                    ``log`` argument to ``False``.
             log:
                 A flag to sample the value from the log domain or not.
 
@@ -421,19 +417,18 @@ class Trial(BaseTrial):
                     values.
 
                 .. note::
-                    The ``step`` and ``log`` arguments cannot be used at the same time. To set
-                    the ``log`` argument to ``True``, set the ``step`` argument to ``None``.
+                    The ``step``:math:`\\le 2` and ``log`` arguments cannot be used at the same
+                    time. To set the ``log`` argument to ``True``, set the ``step`` argument to 1.
         """
 
-        if step is not None and step != 1:
+        if step != 1:
             if log:
-                raise ValueError("The parameter `step` is not supported when `log` is True.")
+                raise ValueError("The parameter `step >= 2` is not supported when `log` is True.")
             else:
                 distribution = IntUniformDistribution(
                     low=low, high=high, step=step
                 )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
         else:
-            step = 1
             if log:
                 distribution = IntLogUniformDistribution(low=low, high=high, step=step)
             else:
