@@ -9,6 +9,9 @@ Exceptions
 .. autoclass:: TrialPruned
     :members:
 
+.. seealso::
+    :class:`optuna.TrialPruned`.
+
 .. autoclass:: CLIUsageError
     :members:
 
