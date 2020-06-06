@@ -80,7 +80,7 @@ def test_experimental_class_decorator() -> None:
         decorated_class("a", "b", "c")
 
 
-def test_experimental_decorator_name() -> None:
+def test_experimental_class_decorator_name() -> None:
 
     name = "foo"
     decorator_experimental = _experimental.experimental("1.1.0", name=name)
@@ -92,7 +92,7 @@ def test_experimental_decorator_name() -> None:
     assert name in record.list[0].message.args[0]
 
 
-def test_experimental_class_decorator_name() -> None:
+def test_experimental_decorator_name() -> None:
 
     name = "bar"
     decorator_experimental = _experimental.experimental("1.1.0", name=name)
