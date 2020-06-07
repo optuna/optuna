@@ -13,11 +13,7 @@ import allennlp.modules.text_field_embedders
 import allennlp.training
 import pytest
 import torch.optim
-<<<<<<< HEAD
 from torch.utils.data import DataLoader
-=======
-import torch.utils.data
->>>>>>> ce15e5b4... Add fixture for pruner test
 
 import optuna
 from optuna.integration.allennlp import AllenNLPPruningCallback

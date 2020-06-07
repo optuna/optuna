@@ -171,7 +171,7 @@ class AllenNLPPruningCallback(EpochCallback):
     def __init__(self, trial: optuna.trial.Trial, monitor: str):
         _imports.check()
 
-        if allennlp.__version__ < '1.0.0':
+        if allennlp.__version__ < "1.0.0":
             raise Exception("AllenNLPPruningCallback requires `allennlp`>=1.0.0.")
 
         self._trial = trial
