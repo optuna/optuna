@@ -241,7 +241,7 @@ def create_trial(
     intermediate_values: Optional[Dict[int, float]] = None,
     state: Optional[TrialState] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
-    system_attrs: Optional[Dict[str, Any]] = None,
+    system_attrs: Optional[Dict[str, Any]] = None
 ) -> FrozenTrial:
     """Create trial.
 
