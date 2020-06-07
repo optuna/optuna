@@ -3,11 +3,25 @@ import os
 import tempfile
 
 import _jsonnet
+import allennlp.data
+import allennlp.data.dataset_readers
+import allennlp.data.tokenizers
+import allennlp.models
+import allennlp.modules
+import allennlp.modules.seq2vec_encoders
+import allennlp.modules.text_field_embedders
+import allennlp.training
 import pytest
 import torch.optim
+<<<<<<< HEAD
 from torch.utils.data import DataLoader
+=======
+import torch.utils.data
+>>>>>>> ce15e5b4... Add fixture for pruner test
 
 import optuna
+from optuna.integration.allennlp import AllenNLPPruningCallback
+from optuna.testing.integration import DeterministicPruner
 
 
 def test_build_params() -> None:
