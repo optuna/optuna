@@ -71,7 +71,7 @@ def plot_param_importances(
 
     layout = go.Layout(
         title="Hyperparameter Importances",
-        xaxis={"title": "Feature"},
+        xaxis={"title": "Hyperparameter"},
         yaxis={"title": "Importance"},
         showlegend=False,
     )
