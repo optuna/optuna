@@ -162,19 +162,14 @@ def test_allennlp_pruning_callback() -> None:
                 {"tokens": allennlp.modules.Embedding(50, vocab=vocab)}
             )
             encoder = allennlp.modules.seq2vec_encoders.GruSeq2VecEncoder(
-                input_size=50,
-                hidden_size=50
+                input_size=50, hidden_size=50
             )
             model = allennlp.models.BasicClassifier(
-                text_field_embedder=embedder,
-                seq2vec_encoder=encoder,
-                vocab=vocab
+                text_field_embedder=embedder, seq2vec_encoder=encoder, vocab=vocab
             )
             optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
             data_loader = torch.utils.data.DataLoader(
-                dataset,
-                batch_size=10,
-                collate_fn=allennlp.data.allennlp_collate
+                dataset, batch_size=10, collate_fn=allennlp.data.allennlp_collate
             )
             serialization_dir = os.path.join(tmp_dir, "trial_{}".format(trial.number))
             trainer = allennlp.training.GradientDescentTrainer(
@@ -184,7 +179,7 @@ def test_allennlp_pruning_callback() -> None:
                 patience=None,
                 num_epochs=1,
                 serialization_dir=serialization_dir,
-                epoch_callbacks=[AllenNLPPruningCallback(trial, "training_loss")]
+                epoch_callbacks=[AllenNLPPruningCallback(trial, "training_loss")],
             )
             trainer.train()
             return 1.0

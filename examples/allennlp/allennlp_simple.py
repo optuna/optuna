@@ -108,14 +108,10 @@ def objective(trial):
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
     data_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=10,
-        collate_fn=allennlp.data.allennlp_collate
+        train_dataset, batch_size=10, collate_fn=allennlp.data.allennlp_collate
     )
     validation_data_loader = torch.utils.data.DataLoader(
-        valid_dataset,
-        batch_size=10,
-        collate_fn=allennlp.data.allennlp_collate
+        valid_dataset, batch_size=10, collate_fn=allennlp.data.allennlp_collate
     )
 
     serialization_dir = os.path.join(MODEL_DIR, "trial_{}".format(trial.number))
@@ -124,12 +120,12 @@ def objective(trial):
         optimizer=optimizer,
         data_loader=data_loader,
         validation_data_loader=validation_data_loader,
-        validation_metric='+accuracy',
+        validation_metric="+accuracy",
         patience=None,
         num_epochs=50,
         cuda_device=DEVICE,
         serialization_dir=serialization_dir,
-        epoch_callbacks=[AllenNLPPruningCallback(trial, TARGET_METRIC)]
+        epoch_callbacks=[AllenNLPPruningCallback(trial, TARGET_METRIC)],
     )
     metrics = trainer.train()
     return metrics["best_" + TARGET_METRIC]
