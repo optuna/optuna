@@ -46,7 +46,7 @@ def plot_pareto_front(
 
     Args:
         study:
-            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
+            A :class:`~optuna.multi_objective.study.MultiObjectiveStudy` object whose trials are plotted for their objective
             values.
         names:
             Objective name list used as the axis titles. If :obj:`None` is specified,
