@@ -1,21 +1,16 @@
 from optuna.logging import get_logger
+from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
-from optuna import type_checking
-from optuna.visualization.utils import _check_plotly_availability
-from optuna.visualization.utils import is_available
+from optuna.visualization.plotly_imports import _imports
 
-if type_checking.TYPE_CHECKING:
-    from optuna.study import Study  # NOQA
-
-if is_available():
+if _imports.is_successful():
     from optuna.visualization.plotly_imports import go
 
 logger = get_logger(__name__)
 
 
-def plot_optimization_history(study):
-    # type: (Study) -> go.Figure
+def plot_optimization_history(study: Study) -> "go.Figure":
     """Plot optimization history of all trials in a study.
 
     Example:
@@ -51,12 +46,11 @@ def plot_optimization_history(study):
         A :class:`plotly.graph_objs.Figure` object.
     """
 
-    _check_plotly_availability()
+    _imports.check()
     return _get_optimization_history_plot(study)
 
 
-def _get_optimization_history_plot(study):
-    # type: (Study) -> go.Figure
+def _get_optimization_history_plot(study: Study) -> "go.Figure":
 
     layout = go.Layout(
         title="Optimization History Plot",

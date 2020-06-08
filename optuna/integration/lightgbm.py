@@ -2,20 +2,16 @@ import sys
 
 import optuna
 
+from optuna._imports import try_import
 from optuna.integration import lightgbm_tuner as tuner
 
-try:
-    import lightgbm as lgb  # NOQA
 
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # LightGBMPruningCallback is disabled because LightGBM is not available.
-    _available = False
+with try_import() as _imports:
+    import lightgbm as lgb  # NOQA
 
 
 # Attach lightgbm API.
-if _available:
+if _imports.is_successful():
     # To pass tests/integration_tests/lightgbm_tuner_tests/test_optimize.py.
     from lightgbm import Dataset  # NOQA
     from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
@@ -69,7 +65,7 @@ class LightGBMPruningCallback(object):
     def __init__(self, trial, metric, valid_name="valid_0"):
         # type: (optuna.trial.Trial, str, str) -> None
 
-        _check_lightgbm_availability()
+        _imports.check()
 
         self._trial = trial
         self._valid_name = valid_name
@@ -126,16 +122,4 @@ class LightGBMPruningCallback(object):
             "is not found in the evaluation result list {}.".format(
                 target_valid_name, self._metric, str(env.evaluation_result_list)
             )
-        )
-
-
-def _check_lightgbm_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "LightGBM is not available. Please install LightGBM to use this feature. "
-            "LightGBM can be installed by executing `$ pip install lightgbm`. "
-            "For further information, please refer to the installation guide of LightGBM. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
         )
