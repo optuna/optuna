@@ -26,6 +26,7 @@ _import_structure = {
     "tfkeras": ["TFKerasPruningCallback"],
     "xgboost": ["XGBoostPruningCallback"],
     "fastai": ["FastAIPruningCallback"],
+    "mpi": ["MPIStudy"],
 }
 
 
