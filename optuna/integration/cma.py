@@ -463,7 +463,7 @@ class _Optimizer(object):
             exp_value = math.exp(cma_param_value)
             r = numpy.round((exp_value - dist.low) / dist.step)
             v = r * dist.step + dist.low
-            return int(v)
+            return int(min(max(v, dist.low), dist.high))
 
         if isinstance(dist, CategoricalDistribution):
             v = int(numpy.round(cma_param_value))
