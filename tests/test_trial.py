@@ -10,6 +10,7 @@ import warnings
 import numpy as np
 import pytest
 
+import optuna
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
@@ -267,24 +268,55 @@ def test_suggest_low_equals_high(storage_init_func):
     study = create_study(storage_init_func(), sampler=samplers.TPESampler(n_startup_trials=0))
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-    assert trial.suggest_uniform("a", 1.0, 1.0) == 1.0  # Suggesting a param.
-    assert trial.suggest_uniform("a", 1.0, 1.0) == 1.0  # Suggesting the same param.
-    assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting a param.
-    assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting the same param.
-    assert trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0  # Suggesting a param.
-    assert trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0  # Suggesting the same param.
-    assert trial.suggest_int("d", 1, 1) == 1  # Suggesting a param.
-    assert trial.suggest_int("d", 1, 1) == 1  # Suggesting the same param.
-    assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting a param.
-    assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting the same param.
-    assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting a param.
-    assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting the same param.
-    assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting a param.
-    assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting the same param.
-    assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting a param.
-    assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting the same param.
-    assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting a param.
-    assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting the same param.
+    with patch.object(
+        optuna.distributions, "_get_single_value", wraps=optuna.distributions._get_single_value
+    ) as mock_object:
+        assert trial.suggest_uniform("a", 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 1
+        assert trial.suggest_uniform("a", 1.0, 1.0) == 1.0  # Suggesting the same param.
+        assert mock_object.call_count == 1
+
+        assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 2
+        assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting the same param.
+        assert mock_object.call_count == 2
+
+        assert trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 3
+        assert (
+            trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0
+        )  # Suggesting the same param.
+        assert mock_object.call_count == 3
+
+        assert trial.suggest_int("d", 1, 1) == 1  # Suggesting a param.
+        assert mock_object.call_count == 4
+        assert trial.suggest_int("d", 1, 1) == 1  # Suggesting the same param.
+        assert mock_object.call_count == 4
+
+        assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 5
+        assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting the same param.
+        assert mock_object.call_count == 5
+
+        assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting a param.
+        assert mock_object.call_count == 6
+        assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting the same param.
+        assert mock_object.call_count == 6
+
+        assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting a param.
+        assert mock_object.call_count == 7
+        assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting the same param.
+        assert mock_object.call_count == 7
+
+        assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting a param.
+        assert mock_object.call_count == 8
+        assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting the same param.
+        assert mock_object.call_count == 8
+
+        assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting a param.
+        assert mock_object.call_count == 9
+        assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting the same param.
+        assert mock_object.call_count == 9
 
 
 @parametrize_storage
