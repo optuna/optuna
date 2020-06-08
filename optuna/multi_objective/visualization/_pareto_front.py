@@ -54,6 +54,10 @@ def plot_pareto_front(
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If the number of objectives of ``study`` isn't 2 or 3.
     """
 
     _check_plotly_availability()
