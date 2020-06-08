@@ -1,4 +1,5 @@
 import collections
+from distutils.version import StrictVersion
 import threading
 import time
 
@@ -18,8 +19,6 @@ if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
 with try_import() as _imports:
-    from distutils.version import StrictVersion
-
     from bokeh import __version__ as bokeh_version
     import bokeh.command.bootstrap
     import bokeh.document  # NOQA
