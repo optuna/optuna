@@ -171,7 +171,6 @@ class _Optimizer(object):
 
         dimensions = []
         for name, distribution in sorted(self._search_space.items()):
-            # TODO(nzw0301) support IntLogUniform
             if isinstance(distribution, distributions.UniformDistribution):
                 # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
                 high = np.nextafter(distribution.high, float("-inf"))
@@ -183,6 +182,10 @@ class _Optimizer(object):
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 count = (distribution.high - distribution.low) // distribution.step
                 dimension = space.Integer(0, count)
+            elif isinstance(distribution, distributions.IntLogUniformDistribution):
+                low = distribution.low - 0.5
+                high = distribution.high + 0.5
+                dimension = space.Real(low, high, prior="log-uniform")
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 count = int((distribution.high - distribution.low) // distribution.q)
                 dimension = space.Integer(0, count)
@@ -223,6 +226,12 @@ class _Optimizer(object):
                 value = value * distribution.q + distribution.low
             if isinstance(distribution, distributions.IntUniformDistribution):
                 value = value * distribution.step + distribution.low
+            if isinstance(distribution, distributions.IntLogUniformDistribution):
+                value = int(
+                    np.round((value - distribution.low) / distribution.step) * distribution.step
+                    + distribution.low
+                )
+                value = min(max(value, distribution.low), distribution.high)
 
             params[name] = value
 
