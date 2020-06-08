@@ -12,7 +12,7 @@ if is_available():
     from optuna.visualization.plotly_imports import go
 
 
-@experimental("1.5.0")
+@experimental("2.0.0")
 def plot_pareto_front(
     study: MultiObjectiveStudy, names: Optional[List[str]] = None
 ) -> "go.Figure":
