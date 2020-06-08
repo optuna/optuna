@@ -277,23 +277,21 @@ class _CachedStorage(base.BaseStorage):
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
-    ) -> bool:
+    ) -> None:
 
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
-                if step in cached_trial.intermediate_values:
-                    return False
                 intermediate_values = copy.copy(cached_trial.intermediate_values)
                 intermediate_values[step] = intermediate_value
                 cached_trial.intermediate_values = intermediate_values
                 updates.intermediate_values[step] = intermediate_value
                 self._flush_trial(trial_id)
-                return True
+                return
 
-        return self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
+        self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 

@@ -533,6 +533,13 @@ class Trial(BaseTrial):
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
+        intermediate_values = self.storage.get_trial(self._trial_id).intermediate_values
+
+        if step in intermediate_values:
+            # Do nothing if already reported.
+            # TODO(hvy): Consider raising an error.
+            return
+
         self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
     def should_prune(self, step=None):

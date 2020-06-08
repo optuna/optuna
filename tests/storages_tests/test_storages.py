@@ -611,18 +611,19 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         trial_id_3 = storage.create_new_trial(storage.create_new_study())
 
         # Test setting new values.
-        assert storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
-        assert storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
-        assert storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
-        assert storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
-        assert storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
+        storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+        storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
+        storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
+        storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
+        storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
 
         assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
         assert storage.get_trial(trial_id_2).intermediate_values == {}
         assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
 
         # Test setting existing step.
-        assert not storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+        storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
+        assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.2, 2: 0.4}
 
         non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3) + 1
         with pytest.raises(KeyError):
