@@ -5,10 +5,9 @@ from typing import Optional
 from optuna._experimental import experimental
 from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
-from optuna.visualization.utils import _check_plotly_availability
-from optuna.visualization.utils import is_available
+from optuna.visualization.plotly_imports import _imports
 
-if is_available():
+if _imports.is_successful():
     from optuna.visualization.plotly_imports import go
 
 
@@ -60,7 +59,7 @@ def plot_pareto_front(
             If the number of objectives of ``study`` isn't 2 or 3.
     """
 
-    _check_plotly_availability()
+    _imports.check()
 
     if study.n_objectives == 2:
         return _get_pareto_front_2d(study, names)
