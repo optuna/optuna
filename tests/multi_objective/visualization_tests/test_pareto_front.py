@@ -7,9 +7,10 @@ from optuna.multi_objective.visualization import plot_pareto_front
 def test_plot_pareto_front_2d() -> None:
     # Test with no trial.
     study = optuna.multi_objective.create_study(["minimize", "minimize"])
-
-    with pytest.raises(ValueError):
-        plot_pareto_front(study)
+    figure = plot_pareto_front(study)
+    assert len(figure.data) == 1
+    assert figure.data[0]["x"] == ()
+    assert figure.data[0]["y"] == ()
 
     # Test with tree trials.
     study.enqueue_trial({"x": 1, "y": 1})
@@ -43,9 +44,11 @@ def test_plot_pareto_front_2d() -> None:
 def test_plot_pareto_front_3d() -> None:
     # Test with no trial.
     study = optuna.multi_objective.create_study(["minimize", "minimize", "minimize"])
-
-    with pytest.raises(ValueError):
-        plot_pareto_front(study)
+    figure = plot_pareto_front(study)
+    assert len(figure.data) == 1
+    assert figure.data[0]["x"] == ()
+    assert figure.data[0]["y"] == ()
+    assert figure.data[0]["z"] == ()
 
     # Test with tree trials.
     study.enqueue_trial({"x": 1, "y": 1, "z": 1})

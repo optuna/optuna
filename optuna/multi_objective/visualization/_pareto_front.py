@@ -2,6 +2,7 @@ import json
 from typing import List
 from typing import Optional
 
+import optuna
 from optuna._experimental import experimental
 from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
@@ -9,6 +10,8 @@ from optuna.visualization.plotly_imports import _imports
 
 if _imports.is_successful():
     from optuna.visualization.plotly_imports import go
+
+_logger = optuna.logging.get_logger(__name__)
 
 
 @experimental("2.0.0")
@@ -76,9 +79,8 @@ def _get_pareto_front_2d(study: MultiObjectiveStudy, names: Optional[List[str]])
         raise ValueError("The length of `names` is supposed to be 2.")
 
     trials = study.get_pareto_front_trials()
-
     if len(trials) == 0:
-        raise ValueError("There must be one or more completed trials to plot a study.")
+        _logger.warning("Your study does not have any completed trials.")
 
     data = go.Scatter(
         x=[t.values[0] for t in trials],
@@ -98,9 +100,8 @@ def _get_pareto_front_3d(study: MultiObjectiveStudy, names: Optional[List[str]])
         raise ValueError("The length of `names` is supposed to be 3.")
 
     trials = study.get_pareto_front_trials()
-
     if len(trials) == 0:
-        raise ValueError("There must be one or more completed trials to plot a study.")
+        _logger.warning("Your study does not have any completed trials.")
 
     data = go.Scatter3d(
         x=[t.values[0] for t in trials],
