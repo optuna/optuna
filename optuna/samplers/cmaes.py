@@ -1,4 +1,5 @@
 import copy
+import logging
 import math
 import pickle
 from typing import Any
@@ -409,7 +410,7 @@ def _get_search_space_bound(
     return np.array(bounds, dtype=float)
 
 
-def log_trials(logger, completed_trials):
+def log_trials(logger: logging.Logger, completed_trials: List[FrozenTrial]) -> None:
     logger.debug("[CmaEsSampler Log] CmaEsSampler log for trials start")
     # for trial in completed_trials:
     #     logger.debug("[CmaEsSampler Log] (state, value, params)=({}, {}, {})".format(
@@ -417,25 +418,26 @@ def log_trials(logger, completed_trials):
     #         trial.value,
     #         trial.params
     #     ))
-    logger.debug("[CmaEsSampler Log] (n_COMPLETE, n_PRUNED) = ({}, {})".format(
-        len([t for t in completed_trials if t.state == TrialState.COMPLETE]),
-        len([t for t in completed_trials if t.state == TrialState.PRUNED])
-    ))
+    logger.debug(
+        "[CmaEsSampler Log] (n_COMPLETE, n_PRUNED) = ({}, {})".format(
+            len([t for t in completed_trials if t.state == TrialState.COMPLETE]),
+            len([t for t in completed_trials if t.state == TrialState.PRUNED]),
+        )
+    )
     logger.debug("[CmaEsSampler Log] CmaEsSampler log for trials end")
 
 
-def log_params(logger, names, params):
+def log_params(logger: logging.Logger, names: List[str], params: List[Any]) -> None:
     logger.debug("[CmaEsSampler Log] CmaEsSampler log for params start")
     for name, p in zip(names, params):
         logger.debug("[CmaEsSampler Log] {}={}".format(name, p))
     logger.debug("[CmaEsSampler Log] CmaEsSampler log for params end")
 
 
-def log_optimizer(logger, optimizer):
+def log_optimizer(logger: logging.Logger, optimizer: CMA) -> None:
     logger.debug("[CmaEsSampler Log] mean   = {}".format(optimizer._mean))
     logger.debug("[CmaEsSampler Log] sigma  = {}".format(optimizer._sigma))
     logger.debug("[CmaEsSampler Log] bounds = {}".format(optimizer._bounds))
     logger.debug("[CmaEsSampler Log] _B     = {}".format(optimizer._B))
     logger.debug("[CmaEsSampler Log] _D     = {}".format(optimizer._D))
     logger.debug("[CmaEsSampler Log] _C     = {}".format(optimizer._C))
-
