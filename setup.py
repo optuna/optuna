@@ -122,6 +122,40 @@ def get_extras_require() -> Dict[str, List[str]]:
         + (
             ["keras", "tensorflow", "tensorflow-datasets"] if sys.version_info[:2] < (3, 8) else []
         ),
+        "tests": ["fakeredis", "pytest"],
+        "optional": [
+            "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
+            "fanova",  # optuna/importance.
+            "pandas",  # optuna/study.py
+            "plotly>=4.0.0",  # optuna/visualization.
+            "redis",  # optuna/storages/redis.py.
+            "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
+        ],
+        "integration": [
+            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
+            # https://github.com/optuna/optuna/issues/1000.
+            "chainer>=5.0.0",
+            "cma",
+            "lightgbm",
+            "mlflow",
+            "mpi4py",
+            "mxnet",
+            "pandas",
+            "pytorch-ignite",
+            "scikit-learn>=0.19.0,<0.23.0",
+            "scikit-optimize",
+            "torch==1.4.0" if sys.platform == "darwin" else "torch==1.4.0+cpu",
+            "torchvision==0.5.0" if sys.platform == "darwin" else "torchvision==0.5.0+cpu",
+            "xgboost",
+        ]
+        + (
+            ["allennlp<1", "fastai<2", "pytorch-lightning>=0.7.1"]
+            if (3, 5) < sys.version_info[:2] < (3, 8)
+            else []
+        )
+        + (
+            ["keras", "tensorflow", "tensorflow-datasets"] if sys.version_info[:2] < (3, 8) else []
+        ),
     }
 
     return requirements

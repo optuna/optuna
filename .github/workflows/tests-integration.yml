@@ -1,0 +1,67 @@
+name: Tests (Integration)
+
+on:
+  push:
+    branches:
+      - master
+  pull_request: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Python${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Setup environment
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install openmpi-bin libopenmpi-dev
+
+    - name: Install
+      run: |
+        python -m pip install --upgrade pip
+        pip install --progress-bar off -U setuptools
+
+        # Install minimal dependencies and confirm that `import optuna` is successful.
+        pip install --progress-bar off .
+        python -c 'import optuna'
+        optuna --version
+
+        pip install --progress-bar off .[tests]
+        pip install --progress-bar off .[integration] -f https://download.pytorch.org/whl/torch_stable.html
+
+    - name: Tests
+      run: |
+        if [ ${{ matrix.python-version }} = 3.5 ]; then
+          pytest tests/integration_tests \
+            --ignore tests/integration_tests/test_pytorch_lightning.py \
+            --ignore tests/integration_tests/test_fastai.py \
+            --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
+        elif [ ${{ matrix.python-version }} = 3.8 ]; then
+          pytest tests/integration_tests \
+            --ignore tests/integration_tests/test_fastai.py \
+            --ignore tests/integration_tests/test_keras.py \
+            --ignore tests/integration_tests/test_pytorch_lightning.py \
+            --ignore tests/integration_tests/test_tensorflow.py \
+            --ignore tests/integration_tests/test_tfkeras.py \
+            --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
+        else
+          pytest tests/integration_tests
+        fi
+
+    - name: Tests MPI
+      run: |
+        mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+      env:
+        OMP_NUM_THREADS: 1
