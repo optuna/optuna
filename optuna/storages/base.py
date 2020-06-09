@@ -444,8 +444,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
-    ) -> bool:
+    ) -> None:
         """Report an intermediate value of an objective function.
+
+        This method overwrites any existing intermediate value associated with the given step.
 
         Args:
             trial_id:
@@ -454,9 +456,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 Step of the trial (e.g., the epoch when training a neural network).
             intermediate_value:
                 Intermediate value corresponding to the step.
-
-        Returns:
-            :obj:`False` when the step is already set, :obj:`True` otherwise.
 
         Raises:
             :exc:`KeyError`:
