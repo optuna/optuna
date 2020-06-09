@@ -1,8 +1,6 @@
 name: examples
 
-on:
-  schedule:
-    - cron: '0 15 * * *'
+on: [push, pull_request]
 
 jobs:
   build:
@@ -46,10 +44,10 @@ jobs:
         for file in `find examples -name '*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`
         do
           echo $file
-          python $file > /dev/null
+          time python $file > /dev/null 2>&1
           if grep -e '\-\-pruning' $file > /dev/null; then
             echo $file --pruning
-            python $file --pruning > /dev/null
+            time python $file --pruning > /dev/null 2>&1
           fi
         done
       env:
