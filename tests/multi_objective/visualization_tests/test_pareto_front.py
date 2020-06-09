@@ -50,7 +50,7 @@ def test_plot_pareto_front_3d() -> None:
     assert figure.data[0]["y"] == ()
     assert figure.data[0]["z"] == ()
 
-    # Test with tree trials.
+    # Test with three trials.
     study.enqueue_trial({"x": 1, "y": 1, "z": 1})
     study.enqueue_trial({"x": 1, "y": 0, "z": 1})
     study.enqueue_trial({"x": 1, "y": 1, "z": 0})
