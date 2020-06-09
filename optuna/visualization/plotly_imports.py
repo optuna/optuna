@@ -16,5 +16,6 @@ with try_import() as _imports:  # NOQA
             "Your version of Plotly is " + plotly_version + " . "
             "Please install plotly version 4.0.0 or higher. "
             "Plotly can be installed by executing `$ pip install -U plotly>=4.0.0`. "
-            "For further information, please refer to the installation guide of plotly. "
+            "For further information, please refer to the installation guide of plotly. ",
+            name="plotly",
         )
