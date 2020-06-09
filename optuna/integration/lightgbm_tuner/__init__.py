@@ -1,22 +1,15 @@
 from typing import Any
 
 from optuna._experimental import experimental
-from optuna.integration.lightgbm_tuner.optimize import _check_lightgbm_availability
+from optuna.integration.lightgbm_tuner.optimize import _imports as _imports
 from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration.lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
 from optuna import type_checking
 
-try:
+if _imports.is_successful():
     from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
     from optuna.integration.lightgbm_tuner.sklearn import LGBMModel  # NOQA
     from optuna.integration.lightgbm_tuner.sklearn import LGBMRegressor  # NOQA
-
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # LightGBMTuner is disabled because LightGBM is not available.
-    _available = False
-
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -40,7 +33,7 @@ def train(*args: Any, **kwargs: Any) -> Any:
 
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     """
-    _check_lightgbm_availability()
+    _imports.check()
 
     auto_booster = LightGBMTuner(*args, **kwargs)
     auto_booster.run()

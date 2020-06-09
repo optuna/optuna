@@ -60,7 +60,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-optimize",
             "mlflow",
         ],
-        "document": ["sphinx", "sphinx_rtd_theme"],
+        # TODO(hvy): Unpin `sphinx` version after https://github.com/sphinx-doc/sphinx/issues/7807.
+        "document": ["sphinx<3.1.0", "sphinx_rtd_theme"],
         "example": [
             "catboost",
             "chainer",
