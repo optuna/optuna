@@ -152,7 +152,7 @@ jobs:
           name: tests
           command: |
             . venv/bin/activate
-            pytest tests
+            pytest tests --durations=0
           environment:
             OMP_NUM_THREADS: 1
 
@@ -160,7 +160,7 @@ jobs:
           name: tests-mn
           command: |
             . venv/bin/activate
-            mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+            mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py --durations=0
           environment:
             OMP_NUM_THREADS: 1
 
@@ -184,7 +184,8 @@ jobs:
                 --ignore tests/integration_tests/test_pytorch_lightning.py \
                 --ignore tests/integration_tests/test_tensorflow.py \
                 --ignore tests/integration_tests/test_tfkeras.py \
-                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
+                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py \
+                --durations=0
 
       - run: *tests-mn
 
@@ -212,7 +213,8 @@ jobs:
             . venv/bin/activate
             pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py \
                 --ignore tests/integration_tests/test_fastai.py \
-                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
+                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py \
+                --durations=0
 
       - run: *tests-mn
 
@@ -237,7 +239,7 @@ jobs:
           name: codecov
           command: |
             . venv/bin/activate
-            pytest --cov=optuna tests
+            pytest --cov=optuna tests --durations=0
             codecov
           environment:
             OMP_NUM_THREADS: 1
