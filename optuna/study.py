@@ -378,7 +378,7 @@ class Study(BaseStudy):
 
                     parallel(
                         delayed(self._reseed_and_optimize_sequential)(
-                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start
+                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start,
                         )
                         for _ in _iter
                     )
@@ -697,7 +697,7 @@ class Study(BaseStudy):
             if not self._storage.set_trial_state(trial._trial_id, TrialState.RUNNING):
                 continue
 
-            _logger.debug("Trial#{} is popped from the trial queue.".format(trial.number))
+            _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
             return trial._trial_id
 
         return None
@@ -737,9 +737,7 @@ class Study(BaseStudy):
         try:
             result = func(trial)
         except exceptions.TrialPruned as e:
-            message = "Setting status of trial#{} as {}. {}".format(
-                trial_number, TrialState.PRUNED, str(e)
-            )
+            message = "Trial {} pruned. {}".format(trial_number, str(e))
             _logger.info(message)
 
             # Register the last intermediate value if present as the value of the trial.
@@ -753,8 +751,8 @@ class Study(BaseStudy):
             self._storage.set_trial_state(trial_id, TrialState.PRUNED)
             return trial
         except Exception as e:
-            message = "Setting status of trial#{} as {} because of the following error: {}".format(
-                trial_number, TrialState.FAIL, repr(e)
+            message = "Trial {} failed because of the following error: {}".format(
+                trial_number, repr(e)
             )
             _logger.warning(message, exc_info=True)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
@@ -778,9 +776,9 @@ class Study(BaseStudy):
             TypeError,
         ):
             message = (
-                "Setting status of trial#{} as {} because the returned value from the "
-                "objective function cannot be casted to float. Returned value is: "
-                "{}".format(trial_number, TrialState.FAIL, repr(result))
+                "Trial {} failed, because the returned value from the "
+                "objective function cannot be cast to float. Returned value is: "
+                "{}".format(trial_number, repr(result))
             )
             _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
@@ -788,9 +786,8 @@ class Study(BaseStudy):
             return trial
 
         if math.isnan(result):
-            message = (
-                "Setting status of trial#{} as {} because the objective function "
-                "returned {}.".format(trial_number, TrialState.FAIL, result)
+            message = "Trial {} failed, because the objective function " "returned {}.".format(
+                trial_number, result
             )
             _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
@@ -807,9 +804,9 @@ class Study(BaseStudy):
         # type: (trial_module.Trial, float) -> None
 
         _logger.info(
-            "Finished trial#{} with value: {} with parameters: {}. "
-            "Best is trial#{} with value: {}.".format(
-                trial.number, result, trial.params, self.best_trial.number, self.best_value
+            "Trial {} finished with value: {} and parameters: {}. "
+            "Best is trial {} with value: {}.".format(
+                trial.number, result, trial.params, self.best_trial.number, self.best_value,
             )
         )
 
