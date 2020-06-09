@@ -1,18 +1,13 @@
 import optuna
 from optuna import type_checking
 
-try:
+with optuna._imports.try_import() as _imports:
     import chainer
     from chainer.training.extension import Extension
     from chainer.training import triggers
 
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # ChainerPruningExtension is disabled because Chainer is not available.
-    _available = False
-    # This alias is required to avoid ImportError at ChainerPruningExtension definition.
-    Extension = object
+if not _imports.is_successful():
+    Extension = object  # NOQA
 
 if type_checking.TYPE_CHECKING:
     from typing import Tuple
@@ -55,7 +50,7 @@ class ChainerPruningExtension(Extension):
     def __init__(self, trial, observation_key, pruner_trigger):
         # type: (optuna.trial.Trial, str, TriggerType) -> None
 
-        _check_chainer_availability()
+        _imports.check()
 
         self._trial = trial
         self._observation_key = observation_key
@@ -75,7 +70,7 @@ class ChainerPruningExtension(Extension):
     def _get_float_value(observation_value):
         # type: (Union[float, chainer.Variable]) -> float
 
-        _check_chainer_availability()
+        _imports.check()
 
         if isinstance(observation_value, chainer.Variable):
             observation_value = observation_value.data
@@ -107,15 +102,3 @@ class ChainerPruningExtension(Extension):
         if self._trial.should_prune():
             message = "Trial was pruned at {} {}.".format(self._pruner_trigger.unit, current_step)
             raise optuna.TrialPruned(message)
-
-
-def _check_chainer_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "Chainer is not available. Please install Chainer to use this feature. "
-            "Chainer can be installed by executing `$ pip install chainer`. "
-            "For further information, please refer to the installation guide of Chainer. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )

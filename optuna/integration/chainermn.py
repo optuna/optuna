@@ -2,6 +2,7 @@ import gc
 from typing import Optional
 import warnings
 
+from optuna._imports import try_import
 from optuna.logging import get_logger
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
@@ -24,13 +25,9 @@ if type_checking.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
 
-try:
-    from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
 
-    _available = True
-except ImportError as e:
-    _import_error = e
-    _available = False
+with try_import() as _imports:
+    from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
 
 
 class _ChainerMNObjectiveFunc(object):
@@ -87,7 +84,7 @@ class ChainerMNStudy(object):
     ):
         # type: (...) -> None
 
-        _check_chainermn_availability()
+        _imports.check()
 
         if isinstance(study._storage, InMemoryStorage):
             raise ValueError("ChainerMN integration is not available with InMemoryStorage.")
@@ -399,15 +396,3 @@ class ChainerMNTrial(BaseTrial):
             if isinstance(result, Exception):
                 raise result
             return result
-
-
-def _check_chainermn_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "ChainerMN is not available. Please install ChainerMN to use this feature. "
-            "ChainerMN can be installed by executing `$ pip install chainermn`. "
-            "For further information, please refer to the installation guide of ChainerMN. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )
