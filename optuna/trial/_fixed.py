@@ -111,21 +111,20 @@ class FixedTrial(BaseTrial):
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         if step != 1:
             if log:
-                raise ValueError("The parameter `step >= 2` is not supported when `log` is True.")
-            else:
-                sample = self._suggest(
-                    name, distributions.IntUniformDistribution(low=low, high=high, step=step)
+                raise ValueError(
+                    "The parameter `step != 1` is not supported when `log` is True."
+                    "The specified `step` is {}".format(step)
                 )
+            else:
+                distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
         else:
             if log:
-                sample = self._suggest(
-                    name, distributions.IntLogUniformDistribution(low=low, high=high, step=step)
+                distribution = distributions.IntLogUniformDistribution(
+                    low=low, high=high, step=step
                 )
             else:
-                sample = self._suggest(
-                    name, distributions.IntUniformDistribution(low=low, high=high, step=step)
-                )
-        return int(sample)
+                distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
+        return int(self._suggest(name, distribution))
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType

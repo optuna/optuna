@@ -150,9 +150,10 @@ class Trial(BaseTrial):
                 Otherwise, the value is sampled from the range in the linear domain.
                 See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
 
-                .. note::
-                   The ``step`` and ``log`` arguments cannot be used at the same time. To set
-                   the ``log`` argument to ``True``, set the ``step`` argument to ``None``.
+                Raises:
+                    :exe:`ValueError`:
+                        The ``step`` and ``log`` arguments cannot be used at the same time. To set
+                        the ``log`` argument to ``True``, set the ``step`` argument to ``None``.
 
         Returns:
             A suggested float value.
@@ -160,7 +161,7 @@ class Trial(BaseTrial):
 
         if step is not None:
             if log:
-                raise NotImplementedError(
+                raise ValueError(
                     "The parameter `step` is not supported when `log` is True."
                 )
             else:
@@ -399,10 +400,11 @@ class Trial(BaseTrial):
                     \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step} \\le
                     \\mathsf{high}`, where :math:`k` denotes an integer.
 
-                .. note::
-                    The ``step``:math:`\\le 2` and ``log`` arguments cannot be used at the same
-                    time. To set the ``step`` argument :math:`\\mathsf{step} \\le 2`, set the
-                    ``log`` argument to ``False``.
+                Raises:
+                    :exc:`ValueError`:
+                        The ``step``:math:`\\le 2` and ``log`` arguments cannot be used at the same
+                        time. To set the ``step`` argument :math:`\\mathsf{step} \\le 2`, set the
+                        ``log`` argument to ``False``.
             log:
                 A flag to sample the value from the log domain or not.
 
@@ -416,14 +418,19 @@ class Trial(BaseTrial):
                     `[2, 3, 4, 5, 6, 7, 8]` and lower values tend to be more sampled than higher
                     values.
 
-                .. note::
-                    The ``step``:math:`\\le 2` and ``log`` arguments cannot be used at the same
-                    time. To set the ``log`` argument to ``True``, set the ``step`` argument to 1.
+                Raises:
+                    :exc:`ValueError`:
+                        The ``step``:math:`\\le 2` and ``log`` arguments cannot be used at the same
+                        time. To set the ``log`` argument to ``True``, set the ``step`` argument to
+                        1.
         """
 
         if step != 1:
             if log:
-                raise ValueError("The parameter `step >= 2` is not supported when `log` is True.")
+                raise ValueError(
+                    "The parameter `step != 1` is not supported when `log` is True."
+                    "The specified `step` is {}".format(step)
+                )
             else:
                 distribution = IntUniformDistribution(
                     low=low, high=high, step=step
