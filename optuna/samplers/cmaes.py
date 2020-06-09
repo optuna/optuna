@@ -215,7 +215,7 @@ class CmaEsSampler(BaseSampler):
         log_params(self._logger, [k for k in ordered_keys], params)
         if any([math.isnan(p) for p in params]):
             log_optimizer(self._logger, optimizer)
-            raise ValueError("Found Nan in suggested params: p = ".format(params))
+            raise ValueError("Found Nan in suggested params: p = {}".format(params))
 
         study._storage.set_trial_system_attr(
             trial._trial_id, "cma:generation", optimizer.generation
