@@ -161,9 +161,7 @@ class Trial(BaseTrial):
 
         if step is not None:
             if log:
-                raise ValueError(
-                    "The parameter `step` is not supported when `log` is True."
-                )
+                raise ValueError("The parameter `step` is not supported when `log` is True.")
             else:
                 return self.suggest_discrete_uniform(name, low, high, step)
         else:

@@ -2,6 +2,12 @@ import datetime
 from typing import Optional
 
 from optuna import distributions
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
 from optuna import type_checking
 
@@ -15,9 +21,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
 
-    FloatingPointDistributionType = Union[
-        distributions.UniformDistribution, distributions.LogUniformDistribution
-    ]
+    FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
 
 
 class FixedTrial(BaseTrial):
@@ -83,29 +87,25 @@ class FixedTrial(BaseTrial):
                     "The parameter `step` is not supported when `log` is True."
                 )
             else:
-                return self._suggest(
-                    name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step)
-                )
+                return self._suggest(name, DiscreteUniformDistribution(low=low, high=high, q=step))
         else:
             if log:
-                return self._suggest(
-                    name, distributions.LogUniformDistribution(low=low, high=high)
-                )
+                return self._suggest(name, LogUniformDistribution(low=low, high=high))
             else:
-                return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
+                return self._suggest(name, UniformDistribution(low=low, high=high))
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
+        return self._suggest(name, UniformDistribution(low=low, high=high))
 
     def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
+        return self._suggest(name, LogUniformDistribution(low=low, high=high))
 
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
-        discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+        discrete = DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
@@ -116,21 +116,21 @@ class FixedTrial(BaseTrial):
                     "The specified `step` is {}".format(step)
                 )
             else:
-                distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
+                distribution = IntUniformDistribution(
+                    low=low, high=high, step=step
+                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
         else:
             if log:
-                distribution = distributions.IntLogUniformDistribution(
-                    low=low, high=high, step=step
-                )
+                distribution = IntLogUniformDistribution(low=low, high=high, step=step)
             else:
-                distribution = distributions.IntUniformDistribution(low=low, high=high, step=step)
+                distribution = IntUniformDistribution(low=low, high=high, step=step)
         return int(self._suggest(name, distribution))
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
 
         choices = tuple(choices)
-        return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
+        return self._suggest(name, CategoricalDistribution(choices=choices))
 
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any

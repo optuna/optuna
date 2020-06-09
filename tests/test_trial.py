@@ -63,7 +63,7 @@ def test_check_distribution_suggest_float(storage_init_func):
     x6 = trial.suggest_discrete_uniform("x3", 10, 20, 1.0)
 
     assert x5 == x6
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError):
         trial.suggest_float("x4", 1e-5, 1e-2, step=1e-5, log=True)
 
 
