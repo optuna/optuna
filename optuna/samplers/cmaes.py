@@ -154,6 +154,7 @@ class CmaEsSampler(BaseSampler):
             return {}
 
         completed_trials = _get_complete_trials(study)
+        log_trials(self._logger, completed_trials)
         if len(completed_trials) < self._n_startup_trials:
             return {}
 
@@ -210,6 +211,10 @@ class CmaEsSampler(BaseSampler):
         seed = self._cma_rng.randint(1, 2 ** 16) + trial.number
         optimizer._rng = np.random.RandomState(seed)
         params = optimizer.ask()
+        log_params(self._logger, [k for k in ordered_keys], params)
+        if any([math.isnan(p) for p in params]):
+            log_optimizer(self._logger, optimizer)
+            raise ValueError("nan dayo...")
 
         study._storage.set_trial_system_attr(
             trial._trial_id, "cma:generation", optimizer.generation
@@ -265,6 +270,7 @@ class CmaEsSampler(BaseSampler):
 
         if self._warn_independent_sampling:
             complete_trials = _get_complete_trials(study)
+            log_trials(self._logger, complete_trials)
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -401,3 +407,35 @@ def _get_search_space_bound(
         else:
             raise NotImplementedError("The distribution {} is not implemented.".format(dist))
     return np.array(bounds, dtype=float)
+
+
+def log_trials(logger, completed_trials):
+    logger.debug("[CmaEsSampler Log] CmaEsSampler log for trials start")
+    # for trial in completed_trials:
+    #     logger.debug("[CmaEsSampler Log] (state, value, params)=({}, {}, {})".format(
+    #         trial.state,
+    #         trial.value,
+    #         trial.params
+    #     ))
+    logger.debug("[CmaEsSampler Log] (n_COMPLETE, n_PRUNED) = ({}, {})".format(
+        len([t for t in completed_trials if t.state == TrialState.COMPLETE]),
+        len([t for t in completed_trials if t.state == TrialState.PRUNED])
+    ))
+    logger.debug("[CmaEsSampler Log] CmaEsSampler log for trials end")
+
+
+def log_params(logger, names, params):
+    logger.debug("[CmaEsSampler Log] CmaEsSampler log for params start")
+    for name, p in zip(names, params):
+        logger.debug("[CmaEsSampler Log] {}={}".format(name, p))
+    logger.debug("[CmaEsSampler Log] CmaEsSampler log for params end")
+
+
+def log_optimizer(logger, optimizer):
+    logger.debug("[CmaEsSampler Log] mean   = {}".format(optimizer._mean))
+    logger.debug("[CmaEsSampler Log] sigma  = {}".format(optimizer._sigma))
+    logger.debug("[CmaEsSampler Log] bounds = {}".format(optimizer._bounds))
+    logger.debug("[CmaEsSampler Log] _B     = {}".format(optimizer._B))
+    logger.debug("[CmaEsSampler Log] _D     = {}".format(optimizer._D))
+    logger.debug("[CmaEsSampler Log] _C     = {}".format(optimizer._C))
+
