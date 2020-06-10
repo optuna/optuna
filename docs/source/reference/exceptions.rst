@@ -10,7 +10,7 @@ Exceptions
     :members:
 
 .. seealso::
-    :class:`optuna.TrialPruned`.
+    The alias also exists as :class:`optuna.TrialPruned`.
 
 .. autoclass:: CLIUsageError
     :members:
