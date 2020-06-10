@@ -392,11 +392,10 @@ class Trial(BaseTrial):
                     \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step} \\le
                     \\mathsf{high}`, where :math:`k` denotes an integer.
 
-                Raises:
-                    :exc:`ValueError`:
-                        The ``step != 1`` and ``log`` arguments cannot be used at the same time.
-                        To set the ``step`` argument :math:`\\mathsf{step} \\le 2`, set the
-                        ``log`` argument to ``False``.
+                .. note::
+                    The ``step != 1`` and ``log`` arguments cannot be used at the same time.
+                    To set the ``step`` argument :math:`\\mathsf{step} \\le 2`, set the
+                    ``log`` argument to ``False``.
             log:
                 A flag to sample the value from the log domain or not.
 
