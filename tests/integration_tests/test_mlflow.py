@@ -15,7 +15,7 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
-def test_study_name(tmpdir: optuna.trial.Trial) -> None:
+def test_study_name(tmpdir: py.path.local) -> None:
 
     tracking_file_name = "file:{}".format(tmpdir)
     study_name = "my_study"
