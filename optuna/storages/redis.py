@@ -374,7 +374,7 @@ class RedisStorage(base.BaseStorage):
         return True
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
-        # type: (int, str, float, distributions.BaseDistribution) -> bool
+        # type: (int, str, float, distributions.BaseDistribution) -> None
 
         self._check_trial_id(trial_id)
         self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
@@ -388,9 +388,6 @@ class RedisStorage(base.BaseStorage):
             )
 
         trial = self.get_trial(trial_id)
-        # Check param has not been set; otherwise, return False.
-        if param_name in trial.params:
-            return False
 
         with self._redis.pipeline() as pipe:
             pipe.multi()
@@ -405,8 +402,6 @@ class RedisStorage(base.BaseStorage):
             trial.distributions[param_name] = distribution
             pipe.set(self._key_trial(trial_id), pickle.dumps(trial))
             pipe.execute()
-
-        return True
 
     def get_trial_number_from_id(self, trial_id):
         # type: (int) -> int
@@ -501,19 +496,13 @@ class RedisStorage(base.BaseStorage):
         return
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
-        # type: (int, int, float) -> bool
+        # type: (int, int, float) -> None
 
         self._check_trial_id(trial_id)
-        self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
-
         frozen_trial = self.get_trial(trial_id)
-        if step in frozen_trial.intermediate_values:
-            return False
-
+        self.check_trial_is_updatable(trial_id, frozen_trial.state)
         frozen_trial.intermediate_values[step] = intermediate_value
         self._set_trial(trial_id, frozen_trial)
-
-        return True
 
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None
