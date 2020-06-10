@@ -396,7 +396,9 @@ class TestChainerMNTrial(object):
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     @pytest.mark.parametrize("enable_log", [False, True])
-    def test_suggest_int_step1(storage_mode: str, comm: CommunicatorBase, enable_log: bool) -> None:
+    def test_suggest_int_step1(
+        storage_mode: str, comm: CommunicatorBase, enable_log: bool
+    ) -> None:
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
