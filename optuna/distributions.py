@@ -545,3 +545,24 @@ def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
             )
         )
     return high
+
+
+def _get_single_value(distribution):
+    # type: (BaseDistribution) -> Union[int, float, CategoricalChoiceType]
+
+    assert distribution.single()
+
+    if isinstance(
+        distribution,
+        (
+            UniformDistribution,
+            LogUniformDistribution,
+            DiscreteUniformDistribution,
+            IntUniformDistribution,
+            IntLogUniformDistribution,
+        ),
+    ):
+        return distribution.low
+    elif isinstance(distribution, CategoricalDistribution):
+        return distribution.choices[0]
+    assert False

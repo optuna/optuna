@@ -243,7 +243,7 @@ class InMemoryStorage(base.BaseStorage):
             return True
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
-        # type: (int, str, float, distributions.BaseDistribution) -> bool
+        # type: (int, str, float, distributions.BaseDistribution) -> None
 
         with self._lock:
             trial = self._get_trial(trial_id)
@@ -257,10 +257,6 @@ class InMemoryStorage(base.BaseStorage):
                     self._studies[study_id].param_distribution[param_name], distribution
                 )
 
-            # Check param has not been set; otherwise, return False.
-            if param_name in trial.params:
-                return False
-
             # Set param distribution.
             self._studies[study_id].param_distribution[param_name] = distribution
 
@@ -271,8 +267,6 @@ class InMemoryStorage(base.BaseStorage):
             trial.distributions = copy.copy(trial.distributions)
             trial.distributions[param_name] = distribution
             self._set_trial(trial_id, trial)
-
-            return True
 
     def get_trial_number_from_id(self, trial_id):
         # type: (int) -> int

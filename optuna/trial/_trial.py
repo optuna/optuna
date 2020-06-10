@@ -215,9 +215,6 @@ class Trial(BaseTrial):
 
         self._check_distribution(name, distribution)
 
-        if distribution.low == distribution.high:
-            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
-
         return self._suggest(name, distribution)
 
     def suggest_loguniform(self, name, low, high):
@@ -270,9 +267,6 @@ class Trial(BaseTrial):
         distribution = LogUniformDistribution(low=low, high=high)
 
         self._check_distribution(name, distribution)
-
-        if distribution.low == distribution.high:
-            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -333,9 +327,6 @@ class Trial(BaseTrial):
         distribution = DiscreteUniformDistribution(low=low, high=high, q=q)
 
         self._check_distribution(name, distribution)
-
-        if distribution.low == distribution.high:
-            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -408,9 +399,6 @@ class Trial(BaseTrial):
             distribution = IntUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
-
-        if distribution.low == distribution.high:
-            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return int(self._suggest(name, distribution))
 
@@ -646,29 +634,30 @@ class Trial(BaseTrial):
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
 
-        if self._is_fixed_param(name, distribution):
-            param_value = self.storage.get_trial_system_attrs(self._trial_id)["fixed_params"][name]
-        elif self._is_relative_param(name, distribution):
-            param_value = self.relative_params[name]
+        storage = self.storage
+        trial_id = self._trial_id
+
+        trial = storage.get_trial(trial_id)
+
+        if name in trial.distributions:
+            # No need to sample if already suggested.
+            distributions.check_distribution_compatibility(trial.distributions[name], distribution)
+            param_value = distribution.to_external_repr(storage.get_trial_param(trial_id, name))
         else:
-            trial = self.storage.get_trial(self._trial_id)
+            if self._is_fixed_param(name, distribution):
+                param_value = storage.get_trial_system_attrs(trial_id)["fixed_params"][name]
+            elif distribution.single():
+                param_value = distributions._get_single_value(distribution)
+            elif self._is_relative_param(name, distribution):
+                param_value = self.relative_params[name]
+            else:
+                study = pruners._filter_study(self.study, trial)
+                param_value = self.study.sampler.sample_independent(
+                    study, trial, name, distribution
+                )
 
-            study = pruners._filter_study(self.study, trial)
-
-            param_value = self.study.sampler.sample_independent(study, trial, name, distribution)
-
-        return self._set_new_param_or_get_existing(name, param_value, distribution)
-
-    def _set_new_param_or_get_existing(self, name, param_value, distribution):
-        # type: (str, Any, BaseDistribution) -> Any
-
-        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
-        set_success = self.storage.set_trial_param(
-            self._trial_id, name, param_value_in_internal_repr, distribution
-        )
-        if not set_success:
-            param_value_in_internal_repr = self.storage.get_trial_param(self._trial_id, name)
-            param_value = distribution.to_external_repr(param_value_in_internal_repr)
+            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            storage.set_trial_param(trial_id, name, param_value_in_internal_repr, distribution)
 
         return param_value
 
