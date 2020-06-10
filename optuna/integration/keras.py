@@ -4,16 +4,11 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
 
-try:
+with optuna._imports.try_import() as _imports:
     from keras.callbacks import Callback
 
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # KerasPruningExtension is disabled because Keras is not available.
-    _available = False
-    # This alias is required to avoid ImportError at KerasPruningExtension definition.
-    Callback = object
+if not _imports.is_successful():
+    Callback = object  # NOQA
 
 
 class KerasPruningCallback(Callback):
@@ -42,7 +37,7 @@ class KerasPruningCallback(Callback):
 
         super(KerasPruningCallback, self).__init__()
 
-        _check_keras_availability()
+        _imports.check()
 
         self._trial = trial
         self._monitor = monitor
@@ -62,15 +57,3 @@ class KerasPruningCallback(Callback):
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
-
-
-def _check_keras_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "Keras is not available. Please install Keras to use this feature. "
-            "Keras can be installed by executing `$ pip install keras tensorflow`. "
-            "For further information, please refer to the installation guide of Keras. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )

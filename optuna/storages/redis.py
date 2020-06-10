@@ -3,6 +3,7 @@ from datetime import datetime
 import pickle
 
 from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna import distributions
 from optuna import exceptions
 from optuna.storages import base
@@ -13,13 +14,10 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna import type_checking
 
-try:
+
+with try_import() as _imports:
     import redis
 
-    _available = True
-except ImportError as e:
-    _import_error = e
-    _available = False
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -66,13 +64,7 @@ class RedisStorage(base.BaseStorage):
     def __init__(self, url):
         # type: (str) -> None
 
-        if not _available:
-            raise ImportError(
-                "Redis in not available. Please install redis to use this feature. "
-                "Redis can be installed by executing `$ pip install -U redis`. "
-                "For further information, please refer to the installation guide of redis. "
-                "(The actual import error is as follows: " + str(_import_error) + ")"
-            )
+        _imports.check()
 
         self._redis = redis.Redis.from_url(url)
 
@@ -382,7 +374,7 @@ class RedisStorage(base.BaseStorage):
         return True
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
-        # type: (int, str, float, distributions.BaseDistribution) -> bool
+        # type: (int, str, float, distributions.BaseDistribution) -> None
 
         self._check_trial_id(trial_id)
         self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
@@ -396,9 +388,6 @@ class RedisStorage(base.BaseStorage):
             )
 
         trial = self.get_trial(trial_id)
-        # Check param has not been set; otherwise, return False.
-        if param_name in trial.params:
-            return False
 
         with self._redis.pipeline() as pipe:
             pipe.multi()
@@ -413,8 +402,6 @@ class RedisStorage(base.BaseStorage):
             trial.distributions[param_name] = distribution
             pipe.set(self._key_trial(trial_id), pickle.dumps(trial))
             pipe.execute()
-
-        return True
 
     def get_trial_number_from_id(self, trial_id):
         # type: (int) -> int
@@ -509,19 +496,13 @@ class RedisStorage(base.BaseStorage):
         return
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
-        # type: (int, int, float) -> bool
+        # type: (int, int, float) -> None
 
         self._check_trial_id(trial_id)
-        self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
-
         frozen_trial = self.get_trial(trial_id)
-        if step in frozen_trial.intermediate_values:
-            return False
-
+        self.check_trial_is_updatable(trial_id, frozen_trial.state)
         frozen_trial.intermediate_values[step] = intermediate_value
         self._set_trial(trial_id, frozen_trial)
-
-        return True
 
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None

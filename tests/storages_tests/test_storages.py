@@ -512,21 +512,22 @@ def test_set_trial_param(storage_mode: str) -> None:
         distribution_z = LogUniformDistribution(low=1.0, high=100.0)
 
         # Set new params.
-        assert storage.set_trial_param(trial_id_1, "x", 0.5, distribution_x)
-        assert storage.set_trial_param(trial_id_1, "y", 2, distribution_y_1)
+        storage.set_trial_param(trial_id_1, "x", 0.5, distribution_x)
+        storage.set_trial_param(trial_id_1, "y", 2, distribution_y_1)
         assert storage.get_trial_param(trial_id_1, "x") == 0.5
         assert storage.get_trial_param(trial_id_1, "y") == 2
         # Check set_param breaks neither get_trial nor get_trial_params.
         assert storage.get_trial(trial_id_1).params == {"x": 0.5, "y": "Meguro"}
         assert storage.get_trial_params(trial_id_1) == {"x": 0.5, "y": "Meguro"}
-        # Duplicated registration should return False.
-        assert not storage.set_trial_param(trial_id_1, "x", 0.6, distribution_x)
-        # Duplicated registration should not change the existing value.
-        assert storage.get_trial_param(trial_id_1, "x") == 0.5
+        # Duplicated registration should overwrite.
+        storage.set_trial_param(trial_id_1, "x", 0.6, distribution_x)
+        assert storage.get_trial_param(trial_id_1, "x") == 0.6
+        assert storage.get_trial(trial_id_1).params == {"x": 0.6, "y": "Meguro"}
+        assert storage.get_trial_params(trial_id_1) == {"x": 0.6, "y": "Meguro"}
 
         # Set params to another trial.
-        assert storage.set_trial_param(trial_id_2, "x", 0.3, distribution_x)
-        assert storage.set_trial_param(trial_id_2, "z", 0.1, distribution_z)
+        storage.set_trial_param(trial_id_2, "x", 0.3, distribution_x)
+        storage.set_trial_param(trial_id_2, "z", 0.1, distribution_z)
         assert storage.get_trial_param(trial_id_2, "x") == 0.3
         assert storage.get_trial_param(trial_id_2, "z") == 0.1
         assert storage.get_trial(trial_id_2).params == {"x": 0.3, "z": 0.1}
@@ -555,7 +556,7 @@ def test_set_trial_param(storage_mode: str) -> None:
             storage.set_trial_param(trial_id_2, "y", 0.4, distribution_z)
 
         # Set params of trials in a different study.
-        assert storage.set_trial_param(trial_id_3, "y", 1, distribution_y_2)
+        storage.set_trial_param(trial_id_3, "y", 1, distribution_y_2)
         assert storage.get_trial_param(trial_id_3, "y") == 1
         assert storage.get_trial(trial_id_3).params == {"y": "Shinsen"}
         assert storage.get_trial_params(trial_id_3) == {"y": "Shinsen"}
@@ -611,18 +612,19 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         trial_id_3 = storage.create_new_trial(storage.create_new_study())
 
         # Test setting new values.
-        assert storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
-        assert storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
-        assert storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
-        assert storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
-        assert storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
+        storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+        storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
+        storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
+        storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
+        storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
 
         assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
         assert storage.get_trial(trial_id_2).intermediate_values == {}
         assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
 
         # Test setting existing step.
-        assert not storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+        storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
+        assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.2, 2: 0.4}
 
         non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3) + 1
         with pytest.raises(KeyError):
