@@ -164,6 +164,7 @@ setup(
             "storages/rdb/alembic/versions/*.*",
         ]
     },
+    python_requires=">=3.5",
     install_requires=get_install_requires(),
     tests_require=get_tests_require(),
     extras_require=get_extras_require(),
