@@ -150,10 +150,13 @@ class Trial(BaseTrial):
                 Otherwise, the value is sampled from the range in the linear domain.
                 See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
 
-                Raises:
-                    :exe:`ValueError`:
-                        The ``step`` and ``log`` arguments cannot be used at the same time. To set
-                        the ``log`` argument to ``True``, set the ``step`` argument to ``None``.
+                .. note::
+                    The ``step`` and ``log`` arguments cannot be used at the same time. To set
+                    the ``log`` argument to ``True``, set the ``step`` argument to ``None``.
+
+        Raises:
+            :exc:`ValueError`:
+                If ``step != 1`` and ``log = True`` are specified.
 
         Returns:
             A suggested float value.
@@ -393,15 +396,15 @@ class Trial(BaseTrial):
                     values.
 
                 .. note::
-                    Specifically, the method returns one of the values in the sequence
+                    The method returns one of the values in the sequence
                     :math:`\\mathsf{low}, \\mathsf{low} + \\mathsf{step}, \\mathsf{low} + 2 *
                     \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step} \\le
                     \\mathsf{high}`, where :math:`k` denotes an integer.
 
                 Raises:
                     :exc:`ValueError`:
-                        The ``step``:math:`\\le 2` and ``log`` arguments cannot be used at the same
-                        time. To set the ``step`` argument :math:`\\mathsf{step} \\le 2`, set the
+                        The ``step != 1`` and ``log`` arguments cannot be used at the same time.
+                        To set the ``step`` argument :math:`\\mathsf{step} \\le 2`, set the
                         ``log`` argument to ``False``.
             log:
                 A flag to sample the value from the log domain or not.
@@ -416,18 +419,20 @@ class Trial(BaseTrial):
                     `[2, 3, 4, 5, 6, 7, 8]` and lower values tend to be more sampled than higher
                     values.
 
-                Raises:
-                    :exc:`ValueError`:
-                        The ``step``:math:`\\le 2` and ``log`` arguments cannot be used at the same
-                        time. To set the ``log`` argument to ``True``, set the ``step`` argument to
-                        1.
+                .. note::
+                    The ``step != 1`` and ``log`` arguments cannot be used at the same time.
+                    To set the ``log`` argument to ``True``, set the ``step`` argument to 1.
+
+        Raises:
+            :exc:`ValueError`:
+                If ``step != 1`` and ``log = True`` are specified.
         """
 
         if step != 1:
             if log:
                 raise ValueError(
                     "The parameter `step != 1` is not supported when `log` is True."
-                    "The specified `step` is {}".format(step)
+                    "The specified `step` is {}.".format(step)
                 )
             else:
                 distribution = IntUniformDistribution(

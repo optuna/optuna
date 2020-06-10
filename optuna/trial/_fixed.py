@@ -113,7 +113,7 @@ class FixedTrial(BaseTrial):
             if log:
                 raise ValueError(
                     "The parameter `step != 1` is not supported when `log` is True."
-                    "The specified `step` is {}".format(step)
+                    "The specified `step` is {}.".format(step)
                 )
             else:
                 distribution = IntUniformDistribution(
