@@ -460,6 +460,7 @@ class CmaEsSampler(PyCmaSampler):
     .. depricated:: 1.5.0
         This class is renamed as :class:`~optuna.integrations.PyCmaSampler`.
     """
+
     def __init__(
         self,
         x0=None,  # type: Optional[Dict[str, Any]]
