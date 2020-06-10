@@ -156,7 +156,7 @@ class Trial(BaseTrial):
 
         Raises:
             :exc:`ValueError`:
-                If ``step != 1`` and ``log = True`` are specified.
+                If ``step`` is not None and ``log = True`` are specified.
 
         Returns:
             A suggested float value.

@@ -83,9 +83,7 @@ class FixedTrial(BaseTrial):
 
         if step is not None:
             if log:
-                raise NotImplementedError(
-                    "The parameter `step` is not supported when `log` is True."
-                )
+                raise ValueError("The parameter `step` is not supported when `log` is True.")
             else:
                 return self._suggest(name, DiscreteUniformDistribution(low=low, high=high, q=step))
         else:
