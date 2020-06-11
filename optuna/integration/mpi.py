@@ -116,11 +116,11 @@ class MPITrial(BaseTrial):
             self.delegate.report(value, step)
         self.comm.barrier()
 
-    def should_prune(self, step: Optional[int] = None) -> bool:
+    def should_prune(self) -> bool:
         def func() -> bool:
 
             assert self.delegate is not None
-            return self.delegate.should_prune(step)
+            return self.delegate.should_prune()
 
         return self._call_with_mpi(func)
 
@@ -283,12 +283,7 @@ class MPIStudy(object):
         _imports.check()
 
         if isinstance(study._storage, InMemoryStorage):
-            logger = get_logger(__name__)
-            logger.warning(
-                "Some methods such as `trials`, `best_trial` and `direction` of "
-                "`MPIStudy` only work in rank-0 node if it is used with "
-                "InMemoryStorage."
-            )
+            raise ValueError("MPI integration is not available with InMemoryStorage.")
 
         if isinstance(study._storage, RDBStorage):
             if study._storage.engine.dialect.name == "sqlite":
@@ -310,7 +305,7 @@ class MPIStudy(object):
         func: Callable[[MPITrial, Comm], float],
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
-        catch: Union[Tuple[()], Tuple[Type[Exception]]] = (Exception,),
+        catch: Union[Tuple[()], Tuple[Type[Exception]]] = (),
     ) -> None:
 
         if self.comm.rank == 0:
@@ -338,7 +333,7 @@ class MPIStudy(object):
                     # The following line mitigates memory problems that can be occurred in some
                     # environments (e.g., services that use computing containers such as CircleCI).
                     # Please refer to the following PR for further details:
-                    # https://github.com/pfnet/optuna/pull/325.
+                    # https://github.com/optuna/optuna/pull/325.
                     gc.collect()
 
     def __getattr__(self, attr_name: str) -> Any:
