@@ -156,7 +156,7 @@ class Trial(BaseTrial):
 
         Raises:
             :exc:`ValueError`:
-                If ``step`` is not ``None`` and ``log = True`` are specified.
+                If ``step is not None`` and ``log = True`` are specified.
 
         Returns:
             A suggested float value.
@@ -394,14 +394,14 @@ class Trial(BaseTrial):
 
                 .. note::
                     The ``step != 1`` and ``log`` arguments cannot be used at the same time.
-                    To set the ``step`` argument :math:`\\mathsf{step} \\le 2`, set the
+                    To set the ``step`` argument :math:`\\mathsf{step} \\ge 2`, set the
                     ``log`` argument to ``False``.
             log:
                 A flag to sample the value from the log domain or not.
 
                 .. note::
                     If ``log`` is true, at first, the range of suggested values is divided into
-                    grid points of width ``1``. The range of suggested values is then converted to
+                    grid points of width 1. The range of suggested values is then converted to
                     a log domain, from which a value is sampled. The uniformly sampled
                     value is re-converted to the original domain and rounded to the nearest grid
                     point that we just split, and the suggested value is determined.
