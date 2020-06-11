@@ -1,7 +1,7 @@
 .. module:: optuna.study
 
-Study
-=====
+optuna.study
+============
 
 .. autosummary::
    :toctree: generated/
