@@ -64,8 +64,7 @@ def test_check_distribution_suggest_float(storage_init_func):
     x6 = trial.suggest_discrete_uniform("x3", 10, 20, 1.0)
 
     assert x5 == x6
-
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError):
         trial.suggest_float("x4", 1e-5, 1e-2, step=1e-5, log=True)
 
     with pytest.raises(ValueError):
@@ -436,24 +435,28 @@ def test_suggest_int_log(storage_init_func):
     mock.side_effect = [1, 2]
     sampler = samplers.RandomSampler()
 
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    distribution = IntLogUniformDistribution(low=1, high=3)
     with patch.object(sampler, "sample_independent", mock) as mock_object:
-        study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = IntLogUniformDistribution(low=1, high=3)
-
         assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
         assert trial._suggest("y", distribution) == 2  # Test suggesting a different param.
         assert trial.params == {"x": 1, "y": 2}
         assert mock_object.call_count == 2
 
-    with pytest.raises(ValueError):
-        study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        with warnings.catch_warnings():
-            # UserWarning will be raised since [0.5, 10] is not divisible by 1.
-            warnings.simplefilter("ignore", category=UserWarning)
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with warnings.catch_warnings():
+        # UserWarning will be raised since [0.5, 10] is not divisible by 1.
+        warnings.simplefilter("ignore", category=UserWarning)
+        with pytest.raises(ValueError):
             trial.suggest_int("z", 0.5, 10, log=True)  # type: ignore
+
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("w", 1, 3, step=2, log=True)
 
 
 @parametrize_storage
@@ -500,6 +503,9 @@ def test_fixed_trial_suggest_float():
 
     trial = FixedTrial({"x": 1.0})
     assert trial.suggest_float("x", -100.0, 100.0) == 1.0
+
+    with pytest.raises(ValueError):
+        trial.suggest_float("x", -100, 100, step=10, log=True)
 
     with pytest.raises(ValueError):
         trial.suggest_uniform("y", -100.0, 100.0)
@@ -550,6 +556,9 @@ def test_fixed_trial_suggest_int_log():
 
     trial = FixedTrial({"x": 1})
     assert trial.suggest_int("x", 1, 10, log=True) == 1
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 1, 10, step=2, log=True)
 
     with pytest.raises(ValueError):
         trial.suggest_int("y", 1, 10, log=True)
