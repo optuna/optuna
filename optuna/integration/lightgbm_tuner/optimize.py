@@ -62,8 +62,7 @@ _logger = optuna.logging.get_logger(__name__)
 
 
 class BaseTuner(object):
-    def __init__(self, lgbm_params=None, lgbm_kwargs=None):
-        # type: (Dict[str, Any], Dict[str,Any]) -> None
+    def __init__(self, lgbm_params: Dict[str, Any] = None, lgbm_kwargs: Dict[str,Any] = None) -> None:
 
         # Handling alias metrics.
         if lgbm_params is not None:
@@ -88,8 +87,7 @@ class BaseTuner(object):
 
         return metric
 
-    def _get_booster_best_score(self, booster):
-        # type: (lgb.Booster) -> float
+    def _get_booster_best_score(self, booster: lgb.Booster) -> float:
 
         metric = self._get_metric_for_objective()
         valid_sets = self.lgbm_kwargs.get("valid_sets")  # type: Optional[VALID_SET_TYPE]
@@ -115,8 +113,7 @@ class BaseTuner(object):
         val_score = booster.best_score[valid_name][metric]
         return val_score
 
-    def _metric_with_eval_at(self, metric):
-        # type: (str) -> str
+    def _metric_with_eval_at(self, metric: str) -> str:
 
         if metric != "ndcg" and metric != "map":
             return metric
@@ -141,14 +138,12 @@ class BaseTuner(object):
             "'{}' is specified.".format(eval_at)
         )
 
-    def higher_is_better(self):
-        # type: () -> bool
+    def higher_is_better(self) -> bool:
 
         metric_name = self.lgbm_params.get("metric", "binary_logloss")
         return metric_name.startswith(("auc", "ndcg", "map"))
 
-    def compare_validation_metrics(self, val_score, best_score):
-        # type: (float, float) -> bool
+    def compare_validation_metrics(self, val_score: float, best_score: float) -> bool:
 
         if self.higher_is_better():
             return val_score > best_score
@@ -161,14 +156,14 @@ class OptunaObjective(BaseTuner):
 
     def __init__(
         self,
-        target_param_names,  # type: List[str]
-        lgbm_params,  # type: Dict[str, Any]
-        train_set,  # type: lgb.Dataset
-        lgbm_kwargs,  # type: Dict[str, Any]
-        best_score,  # type: float
-        step_name,  # type: str
-        model_dir,  # type: Optional[str]
-        pbar=None,  # type: Optional[tqdm.tqdm]
+        target_param_names: List[str],
+        lgbm_params: Dict[str, Any],
+        train_set: lgb.Dataset,
+        lgbm_kwargs: Dict[str, Any],
+        best_score: float,
+        step_name: str,
+        model_dir: Optional[str],
+        pbar: Optional[tqdm.tqdm] = None,
     ):
 
         self.target_param_names = target_param_names
@@ -187,8 +182,7 @@ class OptunaObjective(BaseTuner):
         self._check_target_names_supported()
         self.pbar_fmt = "{}, val_score: {:.6f}"
 
-    def _check_target_names_supported(self):
-        # type: () -> None
+    def _check_target_names_supported(self) -> None:
 
         supported_param_names = [
             "lambda_l1",
@@ -851,8 +845,7 @@ class LightGBMTuner(LightGBMBaseTuner):
 
         return booster
 
-    def tune_params(self, target_param_names, n_trials, sampler, step_name):
-        # type: (List[str], int, optuna.samplers.BaseSampler, str) -> OptunaObjective
+    def tune_params(self, target_param_names: List[str], n_trials: int, sampler: optuna.samplers.BaseSampler, step_name: str) -> OptunaObjective:
 
         objective = super(LightGBMTuner, self).tune_params(
             target_param_names, n_trials, sampler, step_name
