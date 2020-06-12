@@ -62,7 +62,9 @@ _logger = optuna.logging.get_logger(__name__)
 
 
 class BaseTuner(object):
-    def __init__(self, lgbm_params: Dict[str, Any] = None, lgbm_kwargs: Dict[str,Any] = None) -> None:
+    def __init__(
+        self, lgbm_params: Dict[str, Any] = None, lgbm_kwargs: Dict[str, Any] = None
+    ) -> None:
 
         # Handling alias metrics.
         if lgbm_params is not None:
@@ -845,7 +847,13 @@ class LightGBMTuner(LightGBMBaseTuner):
 
         return booster
 
-    def tune_params(self, target_param_names: List[str], n_trials: int, sampler: optuna.samplers.BaseSampler, step_name: str) -> OptunaObjective:
+    def tune_params(
+        self,
+        target_param_names: List[str],
+        n_trials: int,
+        sampler: optuna.samplers.BaseSampler,
+        step_name: str,
+    ) -> OptunaObjective:
 
         objective = super(LightGBMTuner, self).tune_params(
             target_param_names, n_trials, sampler, step_name
