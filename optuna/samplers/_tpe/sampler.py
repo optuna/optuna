@@ -5,10 +5,10 @@ import scipy.special
 from scipy.stats import truncnorm
 
 from optuna import distributions
-from optuna.samplers import base
-from optuna.samplers import random
-from optuna.samplers.tpe.parzen_estimator import _ParzenEstimator
-from optuna.samplers.tpe.parzen_estimator import _ParzenEstimatorParameters
+from optuna.samplers import BaseSampler
+from optuna.samplers import RandomSampler
+from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
+from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna import type_checking
@@ -53,7 +53,7 @@ def default_weights(x):
         return np.concatenate([ramp, flat], axis=0)
 
 
-class TPESampler(base.BaseSampler):
+class TPESampler(BaseSampler):
     """Sampler using TPE (Tree-structured Parzen Estimator) algorithm.
 
     This sampler is based on *independent sampling*.
@@ -151,7 +151,7 @@ class TPESampler(base.BaseSampler):
         self._weights = weights
 
         self._rng = np.random.RandomState(seed)
-        self._random_sampler = random.RandomSampler(seed=seed)
+        self._random_sampler = RandomSampler(seed=seed)
 
     def reseed_rng(self) -> None:
 
