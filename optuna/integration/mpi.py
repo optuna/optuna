@@ -30,7 +30,7 @@ if type_checking.TYPE_CHECKING:
 
 
 with try_import() as _imports:
-    from mpi4py.MPI import Comm
+    from mpi4py.MPI import Comm  # NOQA
 
 
 class MPITrial(BaseTrial):
@@ -49,7 +49,7 @@ class MPITrial(BaseTrial):
             A mpi4py communicator.
     """
 
-    def __init__(self, trial: Optional[Trial], comm: Comm) -> None:
+    def __init__(self, trial: Optional[Trial], comm: "Comm") -> None:
 
         self.delegate = trial
         self.comm = comm
@@ -240,7 +240,7 @@ class _MPIObjectiveFunc(object):
             An MPI communicator.
     """
 
-    def __init__(self, func: Callable[[MPITrial, Comm], float], comm: Comm) -> None:
+    def __init__(self, func: Callable[[MPITrial, "Comm"], float], comm: "Comm") -> None:
 
         self.comm = comm
         self.objective = func
@@ -278,7 +278,7 @@ class MPIStudy(object):
             An MPI communicator.
     """
 
-    def __init__(self, study: Study, comm: Comm,) -> None:
+    def __init__(self, study: Study, comm: "Comm",) -> None:
 
         _imports.check()
 
@@ -302,7 +302,7 @@ class MPIStudy(object):
 
     def optimize(
         self,
-        func: Callable[[MPITrial, Comm], float],
+        func: Callable[[MPITrial, "Comm"], float],
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
         catch: Union[Tuple[()], Tuple[Type[Exception]]] = (),
