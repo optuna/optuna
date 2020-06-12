@@ -19,15 +19,12 @@ class Exact2d(BaseHypervolume):
         if solution_set.shape == (1, 0):
             return 0.
 
-        assert all([solution_set[i].ndim == solution_set[0].ndim for i in range(solution_set.ndim)])
+        assert all(
+            [solution_set[i].ndim == solution_set[0].ndim for i in range(solution_set.ndim)]
+        )
         assert solution_set[0].shape == reference_point.shape
         assert reference_point.shape == (2,)
 
-        hypervolume = 0.
-        w = reference_point[0] - solution_set[0, 0]
-        for i in range(len(solution_set) - 1):
-            hypervolume += (solution_set[i+1, 1] - solution_set[i, 1]) * w
-            w = max(w, reference_point[0] - solution_set[i+1, 0])
-        hypervolume += (reference_point[1] - solution_set[-1, 1]) * w
-
+        weights = np.asarray([reference_point[0] - np.min(solution_set[:i+1, 0]) for i in range(len(solution_set))])
+        hypervolume = np.sum(weights * solution_set[:, 1])
         return hypervolume
