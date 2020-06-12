@@ -4,7 +4,7 @@ from typing import Optional
 
 import optuna
 from optuna.pruners import BasePruner
-from optuna.pruners.percentile import _is_first_in_interval_step
+from optuna.pruners._percentile import _is_first_in_interval_step
 
 
 def _check_value(value: Any) -> float:

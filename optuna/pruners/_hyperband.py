@@ -6,8 +6,8 @@ from typing import Union
 import optuna
 from optuna._experimental import experimental
 from optuna import logging
-from optuna.pruners.base import BasePruner
-from optuna.pruners.successive_halving import SuccessiveHalvingPruner
+from optuna.pruners._base import BasePruner
+from optuna.pruners._successive_halving import SuccessiveHalvingPruner
 from optuna.trial._state import TrialState
 
 _logger = logging.get_logger(__name__)
