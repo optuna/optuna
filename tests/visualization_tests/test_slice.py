@@ -5,7 +5,7 @@ from optuna.distributions import UniformDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna import type_checking
-from optuna.visualization.slice import plot_slice
+from optuna.visualization import plot_slice
 
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA

@@ -2,12 +2,12 @@ from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
-from optuna.visualization.plotly_imports import _imports
+from optuna.visualization._plotly_imports import _imports
 
 if _imports.is_successful():
-    from optuna.visualization.plotly_imports import go
+    from optuna.visualization._plotly_imports import go
 
-logger = get_logger(__name__)
+_logger = get_logger(__name__)
 
 
 def plot_optimization_history(study: Study) -> "go.Figure":
@@ -61,7 +61,7 @@ def _get_optimization_history_plot(study: Study) -> "go.Figure":
     trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
     if len(trials) == 0:
-        logger.warning("Study instance does not contain trials.")
+        _logger.warning("Study instance does not contain trials.")
         return go.Figure(data=[], layout=layout)
 
     best_values = [float("inf")] if study.direction == StudyDirection.MINIMIZE else [-float("inf")]
