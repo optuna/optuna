@@ -1,5 +1,4 @@
 import copy
-import logging
 import math
 import pickle
 from typing import Any
@@ -91,6 +90,15 @@ class CmaEsSampler(BaseSampler):
 
             Note that the parameters of the first trial in a study are always sampled
             via an independent sampler, so no warning messages are emitted in this case.
+
+        consider_pruned_trials:
+            If this is :obj:`True`, the PRUNED trials are considered for sampling.
+
+            .. note::
+                It is suggested to set this flag :obj:`False` when the `MedianPruner` is used.
+                On the other hand, it is suggested to set this flag :obj:`True` when the
+                `HyperbandPruner` is used. Please see `the benchmark result
+                <https://github.com/optuna/optuna/pull/1229>`_ for the details.
     """
 
     def __init__(
@@ -101,6 +109,7 @@ class CmaEsSampler(BaseSampler):
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
         seed: Optional[int] = None,
+        consider_pruned_trials: bool = False,
     ) -> None:
 
         self._x0 = x0
@@ -111,6 +120,7 @@ class CmaEsSampler(BaseSampler):
         self._logger = optuna.logging.get_logger(__name__)
         self._cma_rng = np.random.RandomState(seed)
         self._search_space = optuna.samplers.IntersectionSearchSpace()
+        self._consider_pruned_trials = consider_pruned_trials
 
     def reseed_rng(self) -> None:
         # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
@@ -154,8 +164,7 @@ class CmaEsSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        completed_trials = _get_complete_trials(study)
-        log_trials(self._logger, completed_trials)
+        completed_trials = self._get_complete_trials(study)
         if len(completed_trials) < self._n_startup_trials:
             return {}
 
@@ -212,10 +221,6 @@ class CmaEsSampler(BaseSampler):
         seed = self._cma_rng.randint(1, 2 ** 16) + trial.number
         optimizer._rng = np.random.RandomState(seed)
         params = optimizer.ask()
-        log_params(self._logger, [k for k in ordered_keys], params)
-        if any([math.isnan(p) for p in params]):
-            log_optimizer(self._logger, optimizer)
-            raise ValueError("Found Nan in suggested params: p = {}".format(params))
 
         study._storage.set_trial_system_attr(
             trial._trial_id, "cma:generation", optimizer.generation
@@ -270,8 +275,7 @@ class CmaEsSampler(BaseSampler):
     ) -> Any:
 
         if self._warn_independent_sampling:
-            complete_trials = _get_complete_trials(study)
-            log_trials(self._logger, complete_trials)
+            complete_trials = self._get_complete_trials(study)
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -291,6 +295,24 @@ class CmaEsSampler(BaseSampler):
                 param_name, trial.number, self._independent_sampler.__class__.__name__
             )
         )
+
+    def _get_complete_trials(self, study: "optuna.Study") -> List[FrozenTrial]:
+        complete_trials = []
+        for t in study.get_trials(deepcopy=False):
+            if t.state == TrialState.COMPLETE:
+                complete_trials.append(copy.deepcopy(t))
+            if (
+                t.state == TrialState.PRUNED
+                and len(t.intermediate_values) > 0
+                and self._consider_pruned_trials
+            ):
+                _, value = max(t.intermediate_values.items())
+                if value is None:
+                    continue
+                _t = copy.deepcopy(t)
+                _t.value = value
+                complete_trials.append(_t)
+        return complete_trials
 
 
 def _to_cma_param(distribution: BaseDistribution, optuna_param: Any) -> float:
@@ -372,21 +394,6 @@ def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
     return min(sigma0)
 
 
-def _get_complete_trials(study: "optuna.Study") -> List[FrozenTrial]:
-    complete_trials = []
-    for t in study.get_trials(deepcopy=False):
-        if t.state == TrialState.COMPLETE:
-            complete_trials.append(copy.deepcopy(t))
-        if t.state == TrialState.PRUNED and len(t.intermediate_values) > 0:
-            _, value = max(t.intermediate_values.items())
-            if value is None:
-                continue
-            _t = copy.deepcopy(t)
-            _t.value = value
-            complete_trials.append(_t)
-    return complete_trials
-
-
 def _get_search_space_bound(
     keys: List[str], search_space: Dict[str, BaseDistribution],
 ) -> np.ndarray:
@@ -408,36 +415,3 @@ def _get_search_space_bound(
         else:
             raise NotImplementedError("The distribution {} is not implemented.".format(dist))
     return np.array(bounds, dtype=float)
-
-
-def log_trials(logger: logging.Logger, completed_trials: List[FrozenTrial]) -> None:
-    logger.debug("[CmaEsSampler Log] CmaEsSampler log for trials start")
-    # for trial in completed_trials:
-    #     logger.debug("[CmaEsSampler Log] (state, value, params)=({}, {}, {})".format(
-    #         trial.state,
-    #         trial.value,
-    #         trial.params
-    #     ))
-    logger.debug(
-        "[CmaEsSampler Log] (n_COMPLETE, n_PRUNED) = ({}, {})".format(
-            len([t for t in completed_trials if t.state == TrialState.COMPLETE]),
-            len([t for t in completed_trials if t.state == TrialState.PRUNED]),
-        )
-    )
-    logger.debug("[CmaEsSampler Log] CmaEsSampler log for trials end")
-
-
-def log_params(logger: logging.Logger, names: List[str], params: List[Any]) -> None:
-    logger.debug("[CmaEsSampler Log] CmaEsSampler log for params start")
-    for name, p in zip(names, params):
-        logger.debug("[CmaEsSampler Log] {}={}".format(name, p))
-    logger.debug("[CmaEsSampler Log] CmaEsSampler log for params end")
-
-
-def log_optimizer(logger: logging.Logger, optimizer: CMA) -> None:
-    logger.debug("[CmaEsSampler Log] mean   = {}".format(optimizer._mean))
-    logger.debug("[CmaEsSampler Log] sigma  = {}".format(optimizer._sigma))
-    logger.debug("[CmaEsSampler Log] bounds = {}".format(optimizer._bounds))
-    logger.debug("[CmaEsSampler Log] _B     = {}".format(optimizer._B))
-    logger.debug("[CmaEsSampler Log] _D     = {}".format(optimizer._D))
-    logger.debug("[CmaEsSampler Log] _C     = {}".format(optimizer._C))
