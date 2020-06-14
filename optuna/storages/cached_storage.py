@@ -217,13 +217,13 @@ class _CachedStorage(base.BaseStorage):
         param_name: str,
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
-    ) -> bool:
+    ) -> None:
 
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
-                updates = self._get_updates(trial_id)
+
                 study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
                 cached_dist = self._studies[study_id].param_distribution.get(param_name, None)
                 if cached_dist:
@@ -233,21 +233,22 @@ class _CachedStorage(base.BaseStorage):
                         trial_id, param_name, param_value_internal, distribution
                     )
                     self._studies[study_id].param_distribution[param_name] = distribution
-                if param_name in cached_trial.params:
-                    return False
+
                 params = copy.copy(cached_trial.params)
                 params[param_name] = distribution.to_external_repr(param_value_internal)
                 cached_trial.params = params
+
                 dists = copy.copy(cached_trial.distributions)
                 dists[param_name] = distribution
                 cached_trial.distributions = dists
-                updates.params[param_name] = param_value_internal
-                updates.distributions[param_name] = distribution
-                return True
 
-        return self._backend.set_trial_param(
-            trial_id, param_name, param_value_internal, distribution
-        )
+                if cached_dist:
+                    updates = self._get_updates(trial_id)
+                    updates.params[param_name] = param_value_internal
+                    updates.distributions[param_name] = distribution
+                return
+
+        self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
 
     def get_trial_number_from_id(self, trial_id: int) -> int:
 
@@ -277,23 +278,21 @@ class _CachedStorage(base.BaseStorage):
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
-    ) -> bool:
+    ) -> None:
 
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
-                if step in cached_trial.intermediate_values:
-                    return False
                 intermediate_values = copy.copy(cached_trial.intermediate_values)
                 intermediate_values[step] = intermediate_value
                 cached_trial.intermediate_values = intermediate_values
                 updates.intermediate_values[step] = intermediate_value
                 self._flush_trial(trial_id)
-                return True
+                return
 
-        return self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
+        self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 

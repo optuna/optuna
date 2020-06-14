@@ -709,23 +709,20 @@ class RDBStorage(BaseStorage):
         return self._commit_with_integrity_check(session)
 
     def set_trial_param(self, trial_id, param_name, param_value_internal, distribution):
-        # type: (int, str, float, distributions.BaseDistribution) -> bool
+        # type: (int, str, float, distributions.BaseDistribution) -> None
 
         session = self.scoped_session()
 
-        if not self._set_trial_param_without_commit(
+        self._set_trial_param_without_commit(
             session, trial_id, param_name, param_value_internal, distribution
-        ):
-            return False
+        )
 
-        commit_success = self._commit_with_integrity_check(session)
-
-        return commit_success
+        self._commit_with_integrity_check(session)
 
     def _set_trial_param_without_commit(
         self, session, trial_id, param_name, param_value_internal, distribution
     ):
-        # type: (orm.Session, int, str, float, distributions.BaseDistribution) -> bool
+        # type: (orm.Session, int, str, float, distributions.BaseDistribution) -> None
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
@@ -740,21 +737,17 @@ class RDBStorage(BaseStorage):
                 distributions.json_to_distribution(trial_param.distribution_json), distribution
             )
 
-            # Terminate transaction explicitly to avoid connection timeout during transaction.
-            self._commit(session)
-            # Return False when distribution is compatible but parameter has already been set.
-            return False
+            trial_param.param_value = param_value_internal
+            trial_param.distribution_json = distributions.distribution_to_json(distribution)
+        else:
+            trial_param = models.TrialParamModel(
+                trial_id=trial_id,
+                param_name=param_name,
+                param_value=param_value_internal,
+                distribution_json=distributions.distribution_to_json(distribution),
+            )
 
-        param = models.TrialParamModel(
-            trial_id=trial_id,
-            param_name=param_name,
-            param_value=param_value_internal,
-            distribution_json=distributions.distribution_to_json(distribution),
-        )
-
-        param.check_and_add(session)
-
-        return True
+            trial_param.check_and_add(session)
 
     def _check_or_set_param_distribution(
         self,
@@ -823,38 +816,32 @@ class RDBStorage(BaseStorage):
         self._commit(session)
 
     def set_trial_intermediate_value(self, trial_id, step, intermediate_value):
-        # type: (int, int, float) -> bool
+        # type: (int, int, float) -> None
 
         session = self.scoped_session()
 
-        if not self._set_trial_intermediate_value_without_commit(
+        self._set_trial_intermediate_value_without_commit(
             session, trial_id, step, intermediate_value
-        ):
-            return False
+        )
 
-        commit_success = self._commit_with_integrity_check(session)
-
-        return commit_success
+        self._commit_with_integrity_check(session)
 
     def _set_trial_intermediate_value_without_commit(
         self, session, trial_id, step, intermediate_value
     ):
-        # type: (orm.Session, int, int, float) -> bool
+        # type: (orm.Session, int, int, float) -> None
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
         trial_value = models.TrialValueModel.find_by_trial_and_step(trial, step, session)
-        if trial_value is not None:
-            return False
-
-        trial_value = models.TrialValueModel(
-            trial_id=trial_id, step=step, value=intermediate_value
-        )
-
-        session.add(trial_value)
-
-        return True
+        if trial_value is None:
+            trial_value = models.TrialValueModel(
+                trial_id=trial_id, step=step, value=intermediate_value
+            )
+            session.add(trial_value)
+        else:
+            trial_value.value = intermediate_value
 
     def set_trial_user_attr(self, trial_id, key, value):
         # type: (int, str, Any) -> None

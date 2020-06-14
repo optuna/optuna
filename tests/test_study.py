@@ -814,6 +814,45 @@ def test_enqueue_trial_with_unfixed_parameters(storage_mode):
         assert -10 <= t.params["y"] <= 10
 
 
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_with_out_of_range_parameters(storage_mode):
+    # type: (str) -> None
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.enqueue_trial(params={"x": 11})
+
+        def objective(trial):
+            # type: (optuna.trial.Trial) -> float
+
+            return trial.suggest_int("x", -10, 10)
+
+        with pytest.warns(UserWarning):
+            study.optimize(objective, n_trials=1)
+        t = study.trials[0]
+        assert -10 <= t.params["x"] <= 10
+
+    # Internal logic might differ when distribution contains a single element.
+    # Test it explicitly.
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.enqueue_trial(params={"x": 11})
+
+        def objective(trial):
+            # type: (optuna.trial.Trial) -> float
+
+            return trial.suggest_int("x", 1, 1)  # Single element.
+
+        with pytest.warns(UserWarning):
+            study.optimize(objective, n_trials=1)
+        t = study.trials[0]
+        assert t.params["x"] == 1
+
+
 def test_storage_property():
     # type: () -> None
 

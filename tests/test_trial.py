@@ -10,6 +10,7 @@ import warnings
 import numpy as np
 import pytest
 
+import optuna
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
@@ -63,8 +64,15 @@ def test_check_distribution_suggest_float(storage_init_func):
     x6 = trial.suggest_discrete_uniform("x3", 10, 20, 1.0)
 
     assert x5 == x6
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError):
         trial.suggest_float("x4", 1e-5, 1e-2, step=1e-5, log=True)
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("x1", 10, 20)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("x1", 10, 20)
 
 
 @parametrize_storage
@@ -83,6 +91,13 @@ def test_check_distribution_suggest_uniform(storage_init_func):
     # we expect exactly one warning
     assert len(record) == 1
 
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
+
 
 @parametrize_storage
 def test_check_distribution_suggest_loguniform(storage_init_func):
@@ -100,6 +115,13 @@ def test_check_distribution_suggest_loguniform(storage_init_func):
     # we expect exactly one warning
     assert len(record) == 1
 
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
+
 
 @parametrize_storage
 def test_check_distribution_suggest_discrete_uniform(storage_init_func):
@@ -116,6 +138,13 @@ def test_check_distribution_suggest_discrete_uniform(storage_init_func):
 
     # we expect exactly one warning
     assert len(record) == 1
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20, 2)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20, 2)
 
 
 @parametrize_storage
@@ -136,13 +165,41 @@ def test_check_distribution_suggest_int(
     # We expect exactly one warning.
     assert len(record) == 1
 
+    with pytest.raises(ValueError):
+        trial.suggest_float("x", 10, 20, log=enable_log)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_float("x", 10, 20, log=enable_log)
+
+
+@parametrize_storage
+def test_check_distribution_suggest_categorical(storage_init_func):
+    # type: (Callable[[], storages.BaseStorage]) -> None
+
+    sampler = samplers.RandomSampler()
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    trial.suggest_categorical("x", [10, 20, 30])
+
+    with pytest.raises(ValueError):
+        trial.suggest_categorical("x", [10, 20])
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 10, 20)
+
 
 @parametrize_storage
 def test_suggest_uniform(storage_init_func):
     # type: (Callable[[], storages.BaseStorage]) -> None
 
     mock = Mock()
-    mock.side_effect = [1.0, 2.0, 3.0]
+    mock.side_effect = [1.0, 2.0]
     sampler = samplers.RandomSampler()
 
     with patch.object(sampler, "sample_independent", mock) as mock_object:
@@ -152,9 +209,9 @@ def test_suggest_uniform(storage_init_func):
 
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 3.0  # Test suggesting a different param.
-        assert trial.params == {"x": 1.0, "y": 3.0}
-        assert mock_object.call_count == 3
+        assert trial._suggest("y", distribution) == 2.0  # Test suggesting a different param.
+        assert trial.params == {"x": 1.0, "y": 2.0}
+        assert mock_object.call_count == 2
 
 
 @parametrize_storage
@@ -168,7 +225,7 @@ def test_suggest_loguniform(storage_init_func):
         LogUniformDistribution(low=0.0, high=0.9)
 
     mock = Mock()
-    mock.side_effect = [1.0, 2.0, 3.0]
+    mock.side_effect = [1.0, 2.0]
     sampler = samplers.RandomSampler()
 
     with patch.object(sampler, "sample_independent", mock) as mock_object:
@@ -178,9 +235,9 @@ def test_suggest_loguniform(storage_init_func):
 
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 3.0  # Test suggesting a different param.
-        assert trial.params == {"x": 1.0, "y": 3.0}
-        assert mock_object.call_count == 3
+        assert trial._suggest("y", distribution) == 2.0  # Test suggesting a different param.
+        assert trial.params == {"x": 1.0, "y": 2.0}
+        assert mock_object.call_count == 2
 
 
 @parametrize_storage
@@ -188,7 +245,7 @@ def test_suggest_discrete_uniform(storage_init_func):
     # type: (Callable[[], storages.BaseStorage]) -> None
 
     mock = Mock()
-    mock.side_effect = [1.0, 2.0, 3.0]
+    mock.side_effect = [1.0, 2.0]
     sampler = samplers.RandomSampler()
 
     with patch.object(sampler, "sample_independent", mock) as mock_object:
@@ -198,9 +255,9 @@ def test_suggest_discrete_uniform(storage_init_func):
 
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1.0  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 3.0  # Test suggesting a different param.
-        assert trial.params == {"x": 1.0, "y": 3.0}
-        assert mock_object.call_count == 3
+        assert trial._suggest("y", distribution) == 2.0  # Test suggesting a different param.
+        assert trial.params == {"x": 1.0, "y": 2.0}
+        assert mock_object.call_count == 2
 
 
 @parametrize_storage
@@ -210,37 +267,55 @@ def test_suggest_low_equals_high(storage_init_func):
     study = create_study(storage_init_func(), sampler=samplers.TPESampler(n_startup_trials=0))
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-    # Parameter values are determined without suggestion when low == high.
-    with patch.object(trial, "_suggest", wraps=trial._suggest) as mock_object:
+    with patch.object(
+        optuna.distributions, "_get_single_value", wraps=optuna.distributions._get_single_value
+    ) as mock_object:
         assert trial.suggest_uniform("a", 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 1
         assert trial.suggest_uniform("a", 1.0, 1.0) == 1.0  # Suggesting the same param.
-        assert mock_object.call_count == 0
+        assert mock_object.call_count == 1
+
         assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 2
         assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting the same param.
-        assert mock_object.call_count == 0
+        assert mock_object.call_count == 2
+
         assert trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 3
         assert (
             trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0
         )  # Suggesting the same param.
-        assert mock_object.call_count == 0
+        assert mock_object.call_count == 3
+
         assert trial.suggest_int("d", 1, 1) == 1  # Suggesting a param.
+        assert mock_object.call_count == 4
         assert trial.suggest_int("d", 1, 1) == 1  # Suggesting the same param.
-        assert mock_object.call_count == 0
+        assert mock_object.call_count == 4
+
         assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 5
         assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting the same param.
-        assert mock_object.call_count == 0
+        assert mock_object.call_count == 5
+
         assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting a param.
+        assert mock_object.call_count == 6
         assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting the same param.
-        assert mock_object.call_count == 0
+        assert mock_object.call_count == 6
+
         assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting a param.
+        assert mock_object.call_count == 7
         assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting the same param.
-        assert mock_object.call_count == 0
+        assert mock_object.call_count == 7
+
         assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting a param.
+        assert mock_object.call_count == 8
         assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting the same param.
-        assert mock_object.call_count == 0
+        assert mock_object.call_count == 8
+
         assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting a param.
+        assert mock_object.call_count == 9
         assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting the same param.
-        assert mock_object.call_count == 0
+        assert mock_object.call_count == 9
 
 
 @parametrize_storage
@@ -293,7 +368,7 @@ def test_suggest_int(storage_init_func):
     # type: (Callable[[], storages.BaseStorage]) -> None
 
     mock = Mock()
-    mock.side_effect = [1, 2, 3]
+    mock.side_effect = [1, 2]
     sampler = samplers.RandomSampler()
 
     with patch.object(sampler, "sample_independent", mock) as mock_object:
@@ -303,9 +378,9 @@ def test_suggest_int(storage_init_func):
 
         assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 3  # Test suggesting a different param.
-        assert trial.params == {"x": 1, "y": 3}
-        assert mock_object.call_count == 3
+        assert trial._suggest("y", distribution) == 2  # Test suggesting a different param.
+        assert trial.params == {"x": 1, "y": 2}
+        assert mock_object.call_count == 2
 
 
 @parametrize_storage
@@ -357,27 +432,31 @@ def test_suggest_int_log(storage_init_func):
     # type: (Callable[[], storages.BaseStorage]) -> None
 
     mock = Mock()
-    mock.side_effect = [1, 2, 3]
+    mock.side_effect = [1, 2]
     sampler = samplers.RandomSampler()
 
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    distribution = IntLogUniformDistribution(low=1, high=3)
     with patch.object(sampler, "sample_independent", mock) as mock_object:
-        study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = IntLogUniformDistribution(low=1, high=3)
-
         assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
-        assert trial._suggest("y", distribution) == 3  # Test suggesting a different param.
-        assert trial.params == {"x": 1, "y": 3}
-        assert mock_object.call_count == 3
+        assert trial._suggest("y", distribution) == 2  # Test suggesting a different param.
+        assert trial.params == {"x": 1, "y": 2}
+        assert mock_object.call_count == 2
 
-    with pytest.raises(ValueError):
-        study = create_study(storage_init_func(), sampler=sampler)
-        trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        with warnings.catch_warnings():
-            # UserWarning will be raised since [0.5, 10] is not divisible by 1.
-            warnings.simplefilter("ignore", category=UserWarning)
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with warnings.catch_warnings():
+        # UserWarning will be raised since [0.5, 10] is not divisible by 1.
+        warnings.simplefilter("ignore", category=UserWarning)
+        with pytest.raises(ValueError):
             trial.suggest_int("z", 0.5, 10, log=True)  # type: ignore
+
+    study = create_study(storage_init_func(), sampler=sampler)
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    with pytest.raises(ValueError):
+        trial.suggest_int("w", 1, 3, step=2, log=True)
 
 
 @parametrize_storage
@@ -424,6 +503,9 @@ def test_fixed_trial_suggest_float():
 
     trial = FixedTrial({"x": 1.0})
     assert trial.suggest_float("x", -100.0, 100.0) == 1.0
+
+    with pytest.raises(ValueError):
+        trial.suggest_float("x", -100, 100, step=10, log=True)
 
     with pytest.raises(ValueError):
         trial.suggest_uniform("y", -100.0, 100.0)
@@ -474,6 +556,9 @@ def test_fixed_trial_suggest_int_log():
 
     trial = FixedTrial({"x": 1})
     assert trial.suggest_int("x", 1, 10, log=True) == 1
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 1, 10, step=2, log=True)
 
     with pytest.raises(ValueError):
         trial.suggest_int("y", 1, 10, log=True)
