@@ -1,5 +1,4 @@
 import copy
-import datetime
 from typing import Optional
 import warnings
 
@@ -16,6 +15,7 @@ from optuna.trial._base import BaseTrial
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    import datetime  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Sequence  # NOQA
@@ -26,6 +26,9 @@ if type_checking.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
 
     FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
+
+
+_logger = logging.get_logger(__name__)
 
 
 class Trial(BaseTrial):
@@ -60,7 +63,6 @@ class Trial(BaseTrial):
         # TODO(Yanase): Remove _study_id attribute, and use study._study_id instead.
         self._study_id = self.study._study_id
         self.storage = self.study._storage
-        self.logger = logging.get_logger(__name__)
 
         self._init_relative_params()
 
@@ -783,7 +785,7 @@ class Trial(BaseTrial):
             DeprecationWarning,
         )
 
-        self.logger.warning(
+        _logger.warning(
             "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead."
         )
 
@@ -858,6 +860,6 @@ class Trial(BaseTrial):
 
         message = "The use of `Trial.study_id` is deprecated. Please use `Trial.study` instead."
         warnings.warn(message, DeprecationWarning)
-        self.logger.warning(message)
+        _logger.warning(message)
 
         return self.study._study_id
