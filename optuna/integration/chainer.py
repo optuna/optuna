@@ -85,7 +85,7 @@ class ChainerPruningExtension(Extension):
         except TypeError:
             raise TypeError(
                 "Type of observation value is not supported by ChainerPruningExtension.\n"
-                "{} cannot be casted to float.".format(type(observation_value))
+                "{} cannot be cast to float.".format(type(observation_value))
             )
 
         return observation_value

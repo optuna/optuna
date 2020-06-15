@@ -405,7 +405,7 @@ def test_run_trial(storage_mode):
 
         expected_message = (
             "Trial 3 failed, because the returned "
-            "value from the objective function cannot be casted to float. "
+            "value from the objective function cannot be cast to float. "
             "Returned value is: None"
         )
         assert frozen_trial.state == optuna.trial.TrialState.FAIL
