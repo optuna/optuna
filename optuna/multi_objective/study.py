@@ -20,7 +20,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
-ObjectiveFuncType = Callable[["multi_objective.trial.MultiObjectiveTrial"], Tuple[float]]
+ObjectiveFuncType = Callable[["multi_objective.trial.MultiObjectiveTrial"], Tuple[float, ...]]
 CallbackFuncType = Callable[
     [
         "multi_objective.study.MultiObjectiveStudy",
