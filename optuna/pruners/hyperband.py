@@ -199,10 +199,6 @@ class HyperbandPruner(BasePruner):
             self._total_trial_allocation_budget += trial_allocation_budget
             self._trial_allocation_budgets.append(trial_allocation_budget)
 
-            _logger.debug(
-                "{}th bracket has minimum early stopping rate of {}".format(bracket_id, bracket_id)
-            )
-
             pruner = SuccessiveHalvingPruner(
                 min_resource=self._min_resource,
                 reduction_factor=self._reduction_factor,
