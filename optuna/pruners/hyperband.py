@@ -2,7 +2,6 @@ import math
 from typing import List
 from typing import Optional
 from typing import Union
-import warnings
 
 import optuna
 from optuna._experimental import experimental
@@ -128,24 +127,6 @@ class HyperbandPruner(BasePruner):
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
-        n_brackets:
-
-            .. deprecated:: 1.4.0
-                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`. The
-                number of brackets are automatically determined based on ``min_resource``,
-                ``max_resource`` and ``reduction_factor``.
-
-            The number of :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s (brackets).
-            Defaults to :math:`4`.
-        min_early_stopping_rate_low:
-
-            .. deprecated:: 1.4.0
-                This argument will be removed from :class:`~optuna.pruners.HyperbandPruner`.
-
-            A parameter for specifying the minimum early-stopping rate.
-            This parameter is related to a parameter that is referred to as :math:`s` and used in
-            `Asynchronous SuccessiveHalving paper <http://arxiv.org/abs/1810.05934>`_.
-            The minimum early stopping rate for :math:`i` th bracket is :math:`i + s`.
     """
 
     def __init__(
@@ -153,43 +134,21 @@ class HyperbandPruner(BasePruner):
         min_resource: int = 1,
         max_resource: Union[str, int] = "auto",
         reduction_factor: int = 3,
-        n_brackets: Optional[int] = None,
-        min_early_stopping_rate_low: Optional[int] = None,
     ) -> None:
 
         self._min_resource = min_resource
         self._max_resource = max_resource
         self._reduction_factor = reduction_factor
-        self._n_brackets = n_brackets
-        self._min_early_stopping_rate_low = min_early_stopping_rate_low
         self._pruners = []  # type: List[SuccessiveHalvingPruner]
         self._total_trial_allocation_budget = 0
         self._trial_allocation_budgets = []  # type: List[int]
+        self._n_brackets = None  # type: Optional[int]
 
         if not isinstance(self._max_resource, int) and self._max_resource != "auto":
             raise ValueError(
                 "The 'max_resource' should be integer or 'auto'. "
                 "But max_resource = {}".format(self._max_resource)
             )
-
-        if n_brackets is not None:
-            message = (
-                "The argument of `n_brackets` is deprecated. "
-                "The number of brackets is automatically determined by `min_resource`, "
-                "`max_resource` and `reduction_factor` as "
-                "`n_brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`. "
-                "Please specify `reduction_factor` appropriately."
-            )
-            warnings.warn(message, DeprecationWarning)
-            _logger.warning(message)
-
-        if min_early_stopping_rate_low is not None:
-            message = (
-                "The argument of `min_early_stopping_rate_low` is deprecated. "
-                "Please specify `min_resource` appropriately."
-            )
-            warnings.warn(message, DeprecationWarning)
-            _logger.warning(message)
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
         if len(self._pruners) == 0:
@@ -240,21 +199,10 @@ class HyperbandPruner(BasePruner):
             self._total_trial_allocation_budget += trial_allocation_budget
             self._trial_allocation_budgets.append(trial_allocation_budget)
 
-            if self._min_early_stopping_rate_low is None:
-                min_early_stopping_rate = bracket_id
-            else:
-                min_early_stopping_rate = self._min_early_stopping_rate_low + bracket_id
-
-            _logger.debug(
-                "{}th bracket has minimum early stopping rate of {}".format(
-                    bracket_id, min_early_stopping_rate
-                )
-            )
-
             pruner = SuccessiveHalvingPruner(
                 min_resource=self._min_resource,
                 reduction_factor=self._reduction_factor,
-                min_early_stopping_rate=min_early_stopping_rate,
+                min_early_stopping_rate=bracket_id,
             )
             self._pruners.append(pruner)
 
