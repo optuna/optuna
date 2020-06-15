@@ -1,15 +1,15 @@
 from typing import Any
 
 from optuna._experimental import experimental
-from optuna.integration.lightgbm_tuner.optimize import _imports as _imports
-from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
-from optuna.integration.lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
+from optuna.integration.lightgbm_tuner._optimize import _imports as _imports
+from optuna.integration.lightgbm_tuner._optimize import LightGBMTuner
+from optuna.integration.lightgbm_tuner._optimize import LightGBMTunerCV  # NOQA
 from optuna import type_checking
 
 if _imports.is_successful():
-    from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
-    from optuna.integration.lightgbm_tuner.sklearn import LGBMModel  # NOQA
-    from optuna.integration.lightgbm_tuner.sklearn import LGBMRegressor  # NOQA
+    from optuna.integration.lightgbm_tuner._sklearn import LGBMClassifier  # NOQA
+    from optuna.integration.lightgbm_tuner._sklearn import LGBMModel  # NOQA
+    from optuna.integration.lightgbm_tuner._sklearn import LGBMRegressor  # NOQA
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA

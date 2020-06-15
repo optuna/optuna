@@ -21,8 +21,8 @@ import tqdm
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna.integration.lightgbm_tuner.alias import _handling_alias_metrics
-from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
+from optuna.integration.lightgbm_tuner._alias import _handling_alias_metrics
+from optuna.integration.lightgbm_tuner._alias import _handling_alias_parameters
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna import type_checking
