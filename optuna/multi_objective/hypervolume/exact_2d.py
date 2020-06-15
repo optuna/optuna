@@ -26,5 +26,5 @@ class Exact2d(BaseHypervolume):
         assert reference_point.shape == (2,)
 
         weights = np.asarray([reference_point[0] - np.min(solution_set[:i+1, 0]) for i in range(len(solution_set))])
-        hypervolume = np.sum(weights * solution_set[:, 1])
+        hypervolume = float(np.sum(weights * solution_set[:, 1]))
         return hypervolume
