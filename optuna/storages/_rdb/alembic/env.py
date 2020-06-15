@@ -21,7 +21,7 @@ if len(logging.getLogger().handlers) == 0:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = optuna.storages.rdb.models.BaseModel.metadata
+target_metadata = optuna.storages._rdb.models.BaseModel.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
