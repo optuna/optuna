@@ -584,8 +584,6 @@ class Trial(BaseTrial):
         .. seealso::
             Please refer to the example code in :func:`optuna.trial.Trial.report`.
 
-        Args:
-
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
