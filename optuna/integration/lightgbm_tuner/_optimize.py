@@ -852,7 +852,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         return booster
 
     def tune_params(self, target_param_names, n_trials, sampler, step_name):
-        # type: (List[str], int, optuna.samplers.BaseSampler, str) -> OptunaObjective
+        # type: (List[str], int, optuna.samplers.BaseSampler, str) -> _OptunaObjective
 
         objective = super(LightGBMTuner, self).tune_params(
             target_param_names, n_trials, sampler, step_name
