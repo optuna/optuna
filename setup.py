@@ -61,7 +61,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow",
         ],
         # TODO(hvy): Unpin `sphinx` version after https://github.com/sphinx-doc/sphinx/issues/7807.
-        "document": ["sphinx>=3.0.0,!=3.1.0", "sphinx_rtd_theme"],
+        "document": ["sphinx>=3.0.0,<3.1.0", "sphinx_rtd_theme"],
         "example": [
             "catboost",
             "chainer",
