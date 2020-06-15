@@ -431,11 +431,11 @@ class TPESampler(base.BaseSampler):
             )
         if mus.ndim != 1:
             raise ValueError(
-                "The 'mus' should be 2-dimension. " "But mus.shape = {}".format(mus.shape)
+                "The 'mus' should be 2-dimension. But mus.shape = {}".format(mus.shape)
             )
         if sigmas.ndim != 1:
             raise ValueError(
-                "The 'sigmas' should be 2-dimension. " "But sigmas.shape = {}".format(sigmas.shape)
+                "The 'sigmas' should be 2-dimension. But sigmas.shape = {}".format(sigmas.shape)
             )
 
         p_accept = np.sum(
