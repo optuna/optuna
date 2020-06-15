@@ -159,9 +159,9 @@ setup(
     packages=find_packages(),
     package_data={
         "optuna": [
-            "storages/rdb/alembic.ini",
-            "storages/rdb/alembic/*.*",
-            "storages/rdb/alembic/versions/*.*",
+            "storages/_rdb/alembic.ini",
+            "storages/_rdb/alembic/*.*",
+            "storages/_rdb/alembic/versions/*.*",
         ]
     },
     python_requires=">=3.5",
