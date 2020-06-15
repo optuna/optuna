@@ -9,7 +9,7 @@ from typing import Set
 from typing import Tuple
 
 from optuna import distributions
-from optuna.storages import base
+from optuna.storages import BaseStorage
 from optuna.storages.rdb.storage import RDBStorage
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
@@ -43,7 +43,7 @@ class _StudyInfo:
         self.name = None  # type: Optional[str]
 
 
-class _CachedStorage(base.BaseStorage):
+class _CachedStorage(BaseStorage):
     """A wrapper class of storage backends.
 
     This class is used in :func:`~optuna.get_storage` function and automatically

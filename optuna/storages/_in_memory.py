@@ -5,8 +5,8 @@ import uuid
 
 from optuna import distributions  # NOQA
 from optuna.exceptions import DuplicatedStudyError
-from optuna.storages import base
-from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages import BaseStorage
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
 from optuna.trial import FrozenTrial
@@ -21,7 +21,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
 
 
-class InMemoryStorage(base.BaseStorage):
+class InMemoryStorage(BaseStorage):
     """Storage class that stores data in memory of the Python process.
 
     This class is not supposed to be directly accessed by library users.

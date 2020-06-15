@@ -25,8 +25,8 @@ from sqlalchemy.sql import functions
 
 import optuna
 from optuna import distributions
-from optuna.storages.base import BaseStorage
-from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._base import BaseStorage
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.rdb import models
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
