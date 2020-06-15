@@ -14,7 +14,6 @@ if type_checking.TYPE_CHECKING:
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
-    from optuna.study import Study  # NOQA
 
     FloatingPointDistributionType = Union[
         distributions.UniformDistribution, distributions.LogUniformDistribution
@@ -79,8 +78,7 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
+    def should_prune(self) -> bool:
 
         raise NotImplementedError
 

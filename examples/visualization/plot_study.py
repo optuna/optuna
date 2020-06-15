@@ -52,7 +52,7 @@ def objective(trial):
         trial.report(value, step)
 
         # Handle pruning based on the intermediate value.
-        if trial.should_prune(step):
+        if trial.should_prune():
             raise optuna.TrialPruned()
 
     return value
