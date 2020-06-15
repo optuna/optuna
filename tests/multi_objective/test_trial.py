@@ -149,7 +149,7 @@ def test_dominates() -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
     def create_trial(
-        values: List[Optional[float]], state: TrialState = TrialState.COMPLETE,
+        values: List[float], state: TrialState = TrialState.COMPLETE,
     ) -> FrozenMultiObjectiveTrial:
         n_objectives = len(values)
         trial = optuna.trial.FrozenTrial(
