@@ -6,7 +6,6 @@ from typing import Generator
 from typing import List
 from typing import Optional
 from unittest import mock
-import warnings
 
 import numpy as np
 import pytest
@@ -299,24 +298,6 @@ class TestLightGBMTuner(object):
         assert str(excinfo.value) == "`valid_sets` is required."
 
     @pytest.mark.parametrize(
-        "best_params, tuning_history", [({}, None), (None, []),],
-    )
-    def test_deprecated_args(
-        self, best_params: Optional[Dict[str, Any]], tuning_history: Optional[List[Dict[str, Any]]]
-    ) -> None:
-        # Required keyword arguments.
-        params = {}  # type: Dict[str, Any]
-        train_set = lgb.Dataset(None)
-        with pytest.warns(DeprecationWarning):
-            lgb.LightGBMTuner(
-                params,
-                train_set,
-                valid_sets=[train_set],
-                best_params=best_params,
-                tuning_history=tuning_history,
-            )
-
-    @pytest.mark.parametrize(
         "metric, study_direction",
         [
             ("auc", "minimize"),
@@ -364,13 +345,10 @@ class TestLightGBMTuner(object):
             early_stopping_rounds=10,
             valid_sets=val_set,
             time_budget=600,
-            best_params={},
             sample_size=1000,
         )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-            runner = lgb.LightGBMTuner(params, train_set, **kwargs)
-        new_args = ["time_budget", "time_budget", "best_params", "sample_size"]
+        runner = lgb.LightGBMTuner(params, train_set, **kwargs)
+        new_args = ["time_budget", "time_budget", "sample_size"]
         for new_arg in new_args:
             assert new_arg not in runner.lgbm_kwargs
             assert new_arg in runner.auto_options
@@ -441,23 +419,15 @@ class TestLightGBMTuner(object):
         unexpected_value = 1.1  # out of scope.
 
         with turnoff_train():
-            tuning_history = []  # type: List[Dict[str, float]]
-            best_params = {}  # type: Dict[str, Any]
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tuner_object(
-                    params=dict(
-                        feature_fraction=unexpected_value,  # set default as unexpected value.
-                    ),
-                    kwargs_options=dict(tuning_history=tuning_history, best_params=best_params,),
-                )
-            assert len(tuning_history) == 0
+            runner = self._get_tuner_object(
+                params=dict(
+                    feature_fraction=unexpected_value,  # set default as unexpected value.
+                ),
+            )
             assert len(runner.study.trials) == 0
             runner.tune_feature_fraction()
 
             assert runner.lgbm_params["feature_fraction"] != unexpected_value
-            assert len(tuning_history) == 7
             assert len(runner.study.trials) == 7
 
     def test_tune_num_leaves(self):
@@ -466,20 +436,11 @@ class TestLightGBMTuner(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
-            tuning_history = []  # type: List[Dict[str, float]]
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tuner_object(
-                    params=dict(num_leaves=unexpected_value,),
-                    kwargs_options=dict(tuning_history=tuning_history, best_params={},),
-                )
-            assert len(tuning_history) == 0
+            runner = self._get_tuner_object(params=dict(num_leaves=unexpected_value))
             assert len(runner.study.trials) == 0
             runner.tune_num_leaves()
 
             assert runner.lgbm_params["num_leaves"] != unexpected_value
-            assert len(tuning_history) == 20
             assert len(runner.study.trials) == 20
 
     def test_tune_num_leaves_negative_max_depth(self):
@@ -494,19 +455,14 @@ class TestLightGBMTuner(object):
         train_dataset = lgb.Dataset(X_trn, label=y_trn)
         valid_dataset = lgb.Dataset(X_trn, label=y_trn)
 
-        tuning_history = []  # type: List[Dict[str, float]]
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-            runner = lgb.LightGBMTuner(
-                params,
-                train_dataset,
-                num_boost_round=3,
-                early_stopping_rounds=2,
-                valid_sets=valid_dataset,
-                tuning_history=tuning_history,
-            )
+        runner = lgb.LightGBMTuner(
+            params,
+            train_dataset,
+            num_boost_round=3,
+            early_stopping_rounds=2,
+            valid_sets=valid_dataset,
+        )
         runner.tune_num_leaves()
-        assert len(tuning_history) == 20
         assert len(runner.study.trials) == 20
 
     def test_tune_bagging(self):
@@ -515,20 +471,11 @@ class TestLightGBMTuner(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
-            tuning_history = []  # type: List[Dict[str, float]]
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tuner_object(
-                    params=dict(bagging_fraction=unexpected_value,),
-                    kwargs_options=dict(tuning_history=tuning_history, best_params={},),
-                )
-            assert len(tuning_history) == 0
+            runner = self._get_tuner_object(params=dict(bagging_fraction=unexpected_value))
             assert len(runner.study.trials) == 0
             runner.tune_bagging()
 
             assert runner.lgbm_params["bagging_fraction"] != unexpected_value
-            assert len(tuning_history) == 10
             assert len(runner.study.trials) == 10
 
     def test_tune_feature_fraction_stage2(self):
@@ -537,20 +484,11 @@ class TestLightGBMTuner(object):
         unexpected_value = 0.5
 
         with turnoff_train():
-            tuning_history = []  # type: List[Dict[str, float]]
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tuner_object(
-                    params=dict(feature_fraction=unexpected_value,),
-                    kwargs_options=dict(tuning_history=tuning_history, best_params={},),
-                )
-            assert len(tuning_history) == 0
+            runner = self._get_tuner_object(params=dict(feature_fraction=unexpected_value))
             assert len(runner.study.trials) == 0
             runner.tune_feature_fraction_stage2()
 
             assert runner.lgbm_params["feature_fraction"] != unexpected_value
-            assert len(tuning_history) == 6
             assert len(runner.study.trials) == 6
 
     def test_tune_regularization_factors(self):
@@ -559,20 +497,13 @@ class TestLightGBMTuner(object):
         unexpected_value = 20  # out of scope.
 
         with turnoff_train():
-            tuning_history = []  # type: List[Dict[str, float]]
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tuner_object(
-                    params=dict(lambda_l1=unexpected_value,),  # set default as unexpected value.
-                    kwargs_options=dict(tuning_history=tuning_history, best_params={},),
-                )
-            assert len(tuning_history) == 0
+            runner = self._get_tuner_object(
+                params=dict(lambda_l1=unexpected_value,),  # set default as unexpected value.
+            )
             assert len(runner.study.trials) == 0
             runner.tune_regularization_factors()
 
             assert runner.lgbm_params["lambda_l1"] != unexpected_value
-            assert len(tuning_history) == 20
             assert len(runner.study.trials) == 20
 
     def test_tune_min_data_in_leaf(self):
@@ -581,22 +512,15 @@ class TestLightGBMTuner(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_train():
-            tuning_history = []  # type: List[Dict[str, float]]
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tuner_object(
-                    params=dict(
-                        min_child_samples=unexpected_value,  # set default as unexpected value.
-                    ),
-                    kwargs_options=dict(tuning_history=tuning_history, best_params={},),
-                )
-            assert len(tuning_history) == 0
+            runner = self._get_tuner_object(
+                params=dict(
+                    min_child_samples=unexpected_value,  # set default as unexpected value.
+                ),
+            )
             assert len(runner.study.trials) == 0
             runner.tune_min_data_in_leaf()
 
             assert runner.lgbm_params["min_child_samples"] != unexpected_value
-            assert len(tuning_history) == 5
             assert len(runner.study.trials) == 5
 
     def test_when_a_step_does_not_improve_best_score(self):
@@ -606,9 +530,7 @@ class TestLightGBMTuner(object):
         valid_data = np.zeros((10, 10))
         valid_sets = lgb.Dataset(valid_data)
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-            tuner = LightGBMTuner(params, None, valid_sets=valid_sets)
+        tuner = LightGBMTuner(params, None, valid_sets=valid_sets)
         assert not tuner.higher_is_better()
 
         with mock.patch("lightgbm.train"), mock.patch.object(
@@ -799,13 +721,11 @@ class TestLightGBMTunerCV(object):
         unexpected_value = 1.1  # out of scope.
 
         with turnoff_cv():
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tunercv_object(
-                    params=dict(
-                        feature_fraction=unexpected_value,  # set default as unexpected value.
-                    ),
-                )
+            runner = self._get_tunercv_object(
+                params=dict(
+                    feature_fraction=unexpected_value,  # set default as unexpected value.
+                ),
+            )
             assert len(runner.study.trials) == 0
             runner.tune_feature_fraction()
 
@@ -816,9 +736,7 @@ class TestLightGBMTunerCV(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_cv():
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tunercv_object(params=dict(num_leaves=unexpected_value,),)
+            runner = self._get_tunercv_object(params=dict(num_leaves=unexpected_value))
             assert len(runner.study.trials) == 0
             runner.tune_num_leaves()
 
@@ -829,9 +747,7 @@ class TestLightGBMTunerCV(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_cv():
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tunercv_object(params=dict(bagging_fraction=unexpected_value,),)
+            runner = self._get_tunercv_object(params=dict(bagging_fraction=unexpected_value))
             assert len(runner.study.trials) == 0
             runner.tune_bagging()
 
@@ -842,9 +758,7 @@ class TestLightGBMTunerCV(object):
         unexpected_value = 0.5
 
         with turnoff_cv():
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tunercv_object(params=dict(feature_fraction=unexpected_value,),)
+            runner = self._get_tunercv_object(params=dict(feature_fraction=unexpected_value))
             assert len(runner.study.trials) == 0
             runner.tune_feature_fraction_stage2()
 
@@ -855,11 +769,9 @@ class TestLightGBMTunerCV(object):
         unexpected_value = 20  # out of scope.
 
         with turnoff_cv():
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tunercv_object(
-                    params=dict(lambda_l1=unexpected_value,),  # set default as unexpected value.
-                )
+            runner = self._get_tunercv_object(
+                params=dict(lambda_l1=unexpected_value,),  # set default as unexpected value.
+            )
             assert len(runner.study.trials) == 0
             runner.tune_regularization_factors()
 
@@ -870,13 +782,11 @@ class TestLightGBMTunerCV(object):
         unexpected_value = 1  # out of scope.
 
         with turnoff_cv():
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-                runner = self._get_tunercv_object(
-                    params=dict(
-                        min_child_samples=unexpected_value,  # set default as unexpected value.
-                    ),
-                )
+            runner = self._get_tunercv_object(
+                params=dict(
+                    min_child_samples=unexpected_value,  # set default as unexpected value.
+                ),
+            )
             assert len(runner.study.trials) == 0
             runner.tune_min_data_in_leaf()
 

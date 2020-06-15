@@ -442,13 +442,7 @@ class LightGBMBaseTuner(BaseTuner):
 
         self.auto_options = {
             option_name: kwargs.get(option_name)
-            for option_name in [
-                "time_budget",
-                "sample_size",
-                "best_params",
-                "tuning_history",
-                "verbosity",
-            ]
+            for option_name in ["time_budget", "sample_size", "verbosity"]
         }
 
         # Split options.
@@ -676,19 +670,6 @@ class LightGBMTuner(LightGBMBaseTuner):
         time_budget:
             A time budget for parameter tuning in seconds.
 
-        best_params:
-            A dictionary to store the best parameters.
-
-            .. deprecated:: 1.4.0
-                Please use the ``params`` attribute of the best booster, which is obtained by
-                :meth:`~optuna.integration.lightgbm.LightGBMTuner.get_best_booster`.
-
-        tuning_history:
-            A List to store the history of parameter tuning.
-
-            .. deprecated:: 1.4.0
-                Please use the ``study`` argument to access optimization history.
-
         study:
             A :class:`~optuna.study.Study` instance to store optimization results. The
             :class:`~optuna.trial.Trial` instances in it has the following user attributes:
@@ -733,8 +714,6 @@ class LightGBMTuner(LightGBMBaseTuner):
         callbacks: Optional[List[Callable[..., Any]]] = None,
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
-        best_params: Optional[Dict[str, Any]] = None,
-        tuning_history: Optional[List[Dict[str, Any]]] = None,
         study: Optional[optuna.study.Study] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         model_dir: Optional[str] = None,
@@ -765,35 +744,11 @@ class LightGBMTuner(LightGBMBaseTuner):
         self.lgbm_kwargs["learning_rates"] = learning_rates
         self.lgbm_kwargs["keep_training_booster"] = keep_training_booster
 
-        self.auto_options["best_params"] = best_params
-        self.auto_options["tuning_history"] = tuning_history
-
-        # TODO(toshihikoyanase): Remove _best_params updates after removing best_params argument.
-        self._best_params = {} if best_params is None else best_params
-        # Set default parameters as best.
-        self._best_params.update(DEFAULT_LIGHTGBM_PARAMETERS)
-
         self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
         self._model_dir = model_dir
 
         if self._model_dir is not None and not os.path.exists(self._model_dir):
             os.mkdir(self._model_dir)
-
-        if best_params is not None:
-            warnings.warn(
-                "The `best_params` argument is deprecated. "
-                "Please get the parameter values via `lightgbm.basic.Booster.params`.",
-                DeprecationWarning,
-            )
-
-        if tuning_history is not None:
-            warnings.warn(
-                "The `tuning_history` argument is deprecated. "
-                "Please use the `study` argument to access optimization history.",
-                DeprecationWarning,
-            )
-
-        self.tuning_history = [] if tuning_history is None else tuning_history
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
@@ -857,9 +812,6 @@ class LightGBMTuner(LightGBMBaseTuner):
         objective = super(LightGBMTuner, self).tune_params(
             target_param_names, n_trials, sampler, step_name
         )
-
-        # Add tuning history.
-        self.tuning_history += objective.report
 
         if objective.best_booster_with_trial_number is not None:
             self._best_booster_with_trial_number = objective.best_booster_with_trial_number
