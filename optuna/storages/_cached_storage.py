@@ -9,8 +9,8 @@ from typing import Set
 from typing import Tuple
 
 from optuna import distributions
-from optuna.storages import BaseStorage
 from optuna.storages._rdb.storage import RDBStorage
+from optuna.storages import BaseStorage
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
 from optuna.trial import FrozenTrial
