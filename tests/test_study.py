@@ -386,7 +386,7 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_value_error, catch=(ValueError,), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = "Trial 1 failed because of the " "following error: ValueError()"
+        expected_message = "Trial 1 failed because of the following error: ValueError()"
         assert frozen_trial.state == optuna.trial.TrialState.FAIL
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
@@ -420,7 +420,7 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_nan, catch=(Exception,), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = "Trial 4 failed, because the objective " "function returned nan."
+        expected_message = "Trial 4 failed, because the objective function returned nan."
         assert frozen_trial.state == optuna.trial.TrialState.FAIL
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
