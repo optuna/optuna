@@ -606,9 +606,9 @@ class Study(BaseStudy):
                 assert len(study.trials) == 0
 
                 trial = optuna.create_trial(
-                    params={"x": 1.0},
+                    params={"x": 2.0},
                     distributions={"x": UniformDistribution(0, 10)},
-                    value=5.0,
+                    value=4.0,
                 )
 
                 study.add_trial(trial)
