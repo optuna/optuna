@@ -1,12 +1,11 @@
 import abc
-import datetime
 from typing import Optional
 
 from optuna import distributions
-from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    import datetime  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Sequence  # NOQA
@@ -18,8 +17,6 @@ if type_checking.TYPE_CHECKING:
     FloatingPointDistributionType = Union[
         distributions.UniformDistribution, distributions.LogUniformDistribution
     ]
-
-_logger = logging.get_logger(__name__)
 
 
 class BaseTrial(object, metaclass=abc.ABCMeta):
