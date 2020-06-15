@@ -5,8 +5,8 @@ import scipy.special
 from scipy.stats import truncnorm
 
 from optuna import distributions
-from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
-from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
+from optuna.samplers._tpe._parzen_estimator import _ParzenEstimator
+from optuna.samplers._tpe._parzen_estimator import _ParzenEstimatorParameters
 from optuna.samplers import BaseSampler
 from optuna.samplers import RandomSampler
 from optuna.study import StudyDirection
