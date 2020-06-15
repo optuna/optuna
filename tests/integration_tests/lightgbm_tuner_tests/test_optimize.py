@@ -13,11 +13,11 @@ import pytest
 
 import optuna
 import optuna.integration.lightgbm as lgb
-from optuna.integration.lightgbm_tuner._optimize import BaseTuner
+from optuna.integration.lightgbm_tuner._optimize import _BaseTuner
+from optuna.integration.lightgbm_tuner._optimize import _OptunaObjective
+from optuna.integration.lightgbm_tuner._optimize import _OptunaObjectiveCV
 from optuna.integration.lightgbm_tuner._optimize import LightGBMTuner
 from optuna.integration.lightgbm_tuner._optimize import LightGBMTunerCV
-from optuna.integration.lightgbm_tuner._optimize import OptunaObjective
-from optuna.integration.lightgbm_tuner._optimize import OptunaObjectiveCV
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -68,7 +68,7 @@ class TestOptunaObjective(object):
         target_param_names = ["learning_rate"]  # Invalid parameter name.
 
         with pytest.raises(NotImplementedError) as execinfo:
-            OptunaObjective(target_param_names, {}, None, {}, 0, "tune_learning_rate", None)
+            _OptunaObjective(target_param_names, {}, None, {}, 0, "tune_learning_rate", None)
 
         assert execinfo.type is NotImplementedError
 
@@ -84,7 +84,7 @@ class TestOptunaObjective(object):
         best_score = -np.inf
 
         with turnoff_train():
-            objective = OptunaObjective(
+            objective = _OptunaObjective(
                 target_param_names,
                 lgbm_params,
                 train_set,
@@ -108,7 +108,7 @@ class TestOptunaObjectiveCV(object):
         best_score = -np.inf
 
         with turnoff_cv():
-            objective = OptunaObjectiveCV(
+            objective = _OptunaObjectiveCV(
                 target_param_names,
                 lgbm_params,
                 train_set,
@@ -138,7 +138,7 @@ class TestBaseTuner(object):
         booster = DummyBooster()
         dummy_dataset = lgb.Dataset(None)
 
-        tuner = BaseTuner(lgbm_kwargs=dict(valid_sets=dummy_dataset))
+        tuner = _BaseTuner(lgbm_kwargs=dict(valid_sets=dummy_dataset))
         val_score = tuner._get_booster_best_score(booster)
         assert val_score == expected_value
 
@@ -157,11 +157,11 @@ class TestBaseTuner(object):
             "map",
             "mean_average_precision",
         ]:
-            tuner = BaseTuner(lgbm_params={"metric": metric})
+            tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert tuner.higher_is_better()
 
         for metric in ["rmsle", "rmse", "binary_logloss"]:
-            tuner = BaseTuner(lgbm_params={"metric": metric})
+            tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert not tuner.higher_is_better()
 
     def test_get_booster_best_score__using_valid_names_as_str(self):
@@ -178,7 +178,7 @@ class TestBaseTuner(object):
         booster = DummyBooster()
         dummy_dataset = lgb.Dataset(None)
 
-        tuner = BaseTuner(lgbm_kwargs={"valid_names": "dev", "valid_sets": dummy_dataset,})
+        tuner = _BaseTuner(lgbm_kwargs={"valid_names": "dev", "valid_sets": dummy_dataset,})
         val_score = tuner._get_booster_best_score(booster)
         assert val_score == expected_value
 
@@ -201,7 +201,7 @@ class TestBaseTuner(object):
         dummy_train_dataset = lgb.Dataset(None)
         dummy_val_dataset = lgb.Dataset(None)
 
-        tuner = BaseTuner(
+        tuner = _BaseTuner(
             lgbm_kwargs={
                 "valid_names": ["train", "val"],
                 "valid_sets": [dummy_train_dataset, dummy_val_dataset],
@@ -225,13 +225,13 @@ class TestBaseTuner(object):
             "map",
             "mean_average_precision",
         ]:
-            tuner = BaseTuner(lgbm_params={"metric": metric})
+            tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert tuner.compare_validation_metrics(0.5, 0.1)
             assert not tuner.compare_validation_metrics(0.5, 0.5)
             assert not tuner.compare_validation_metrics(0.1, 0.5)
 
         for metric in ["rmsle", "rmse", "binary_logloss"]:
-            tuner = BaseTuner(lgbm_params={"metric": metric})
+            tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert not tuner.compare_validation_metrics(0.5, 0.1)
             assert not tuner.compare_validation_metrics(0.5, 0.5)
             assert tuner.compare_validation_metrics(0.1, 0.5)
@@ -261,13 +261,13 @@ class TestBaseTuner(object):
 
         params = {"metric": metric}  # type: Dict[str, Union[str, int, List[int]]]
         params.update(eval_at_param)
-        tuner = BaseTuner(lgbm_params=params)
+        tuner = _BaseTuner(lgbm_params=params)
         assert tuner._metric_with_eval_at(metric) == expected
 
     def test_metric_with_eval_at_error(self):
         # type: () -> None
 
-        tuner = BaseTuner(lgbm_params={"metric": "ndcg", "eval_at": "1"})
+        tuner = _BaseTuner(lgbm_params={"metric": "ndcg", "eval_at": "1"})
         with pytest.raises(ValueError):
             tuner._metric_with_eval_at("ndcg")
 
@@ -612,7 +612,7 @@ class TestLightGBMTuner(object):
         assert not tuner.higher_is_better()
 
         with mock.patch("lightgbm.train"), mock.patch.object(
-            BaseTuner, "_get_booster_best_score", return_value=0.9
+            _BaseTuner, "_get_booster_best_score", return_value=0.9
         ):
             tuner.tune_feature_fraction()
 
@@ -621,7 +621,7 @@ class TestLightGBMTuner(object):
 
         # Assume that tuning `num_leaves` doesn't improve the `best_score`.
         with mock.patch("lightgbm.train"), mock.patch.object(
-            BaseTuner, "_get_booster_best_score", return_value=1.1
+            _BaseTuner, "_get_booster_best_score", return_value=1.1
         ):
             tuner.tune_num_leaves()
 
@@ -632,14 +632,14 @@ class TestLightGBMTuner(object):
         study = optuna.create_study()
         tuner = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
-        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
+        with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=1.0):
             tuner.tune_regularization_factors()
 
         n_trials = len(study.trials)
         assert n_trials == len(study.trials)
 
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
-        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
+        with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=1.0):
             tuner2.tune_regularization_factors()
         assert n_trials == len(study.trials)
 
@@ -655,7 +655,7 @@ class TestLightGBMTuner(object):
         with pytest.raises(ValueError):
             tuner.get_best_booster()
 
-        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=0.0):
+        with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=0.0):
             tuner.tune_regularization_factors()
 
         best_booster = tuner.get_best_booster()
@@ -681,7 +681,7 @@ class TestLightGBMTuner(object):
                 params, dataset, valid_sets=dataset, study=study, model_dir=tmpdir
             )
 
-            with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=0.0):
+            with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=0.0):
                 tuner.tune_regularization_factors()
 
             best_booster = tuner.get_best_booster()
@@ -741,7 +741,7 @@ class TestLightGBMTuner(object):
             params, dataset, valid_sets=dataset, study=study, optuna_callbacks=[callback_mock],
         )
 
-        with mock.patch.object(BaseTuner, "_get_booster_best_score", return_value=1.0):
+        with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=1.0):
             tuner.tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
 
         assert callback_mock.call_count == 10
@@ -890,14 +890,14 @@ class TestLightGBMTunerCV(object):
         study = optuna.create_study()
         tuner = LightGBMTunerCV(params, dataset, study=study)
 
-        with mock.patch.object(OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+        with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
             tuner.tune_regularization_factors()
 
         n_trials = len(study.trials)
         assert n_trials == len(study.trials)
 
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
-        with mock.patch.object(OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+        with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
             tuner2.tune_regularization_factors()
         assert n_trials == len(study.trials)
 
@@ -910,7 +910,7 @@ class TestLightGBMTunerCV(object):
         study = optuna.create_study()
         tuner = LightGBMTunerCV(params, dataset, study=study, optuna_callbacks=[callback_mock],)
 
-        with mock.patch.object(OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+        with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
             tuner.tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
 
         assert callback_mock.call_count == 10

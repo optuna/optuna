@@ -61,7 +61,7 @@ DEFAULT_LIGHTGBM_PARAMETERS = {
 _logger = optuna.logging.get_logger(__name__)
 
 
-class BaseTuner(object):
+class _BaseTuner(object):
     def __init__(self, lgbm_params=None, lgbm_kwargs=None):
         # type: (Dict[str, Any], Dict[str,Any]) -> None
 
@@ -156,7 +156,7 @@ class BaseTuner(object):
             return val_score < best_score
 
 
-class OptunaObjective(BaseTuner):
+class _OptunaObjective(_BaseTuner):
     """Objective for hyperparameter-tuning with Optuna."""
 
     def __init__(
@@ -290,7 +290,7 @@ class OptunaObjective(BaseTuner):
         self.trial_count += 1
 
 
-class OptunaObjectiveCV(OptunaObjective):
+class _OptunaObjectiveCV(_OptunaObjective):
     def __init__(
         self,
         target_param_names: List[str],
@@ -302,7 +302,7 @@ class OptunaObjectiveCV(OptunaObjective):
         pbar: Optional[tqdm.tqdm] = None,
     ):
 
-        super(OptunaObjectiveCV, self).__init__(
+        super(_OptunaObjectiveCV, self).__init__(
             target_param_names,
             lgbm_params,
             train_set,
@@ -339,7 +339,7 @@ class OptunaObjectiveCV(OptunaObjective):
         return val_score
 
 
-class LightGBMBaseTuner(BaseTuner):
+class _LightGBMBaseTuner(_BaseTuner):
     """Base class of LightGBM Tuners.
 
     This class has common attributes and method of
@@ -552,7 +552,7 @@ class LightGBMBaseTuner(BaseTuner):
         n_trials: int,
         sampler: optuna.samplers.BaseSampler,
         step_name: str,
-    ) -> OptunaObjective:
+    ) -> _OptunaObjective:
         pbar = tqdm.tqdm(total=n_trials, ascii=True)
 
         # Set current best parameters.
@@ -607,7 +607,7 @@ class LightGBMBaseTuner(BaseTuner):
         train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
-    ) -> OptunaObjective:
+    ) -> _OptunaObjective:
 
         raise NotImplementedError
 
@@ -656,7 +656,7 @@ class LightGBMBaseTuner(BaseTuner):
 
 
 @experimental("1.5.0")
-class LightGBMTuner(LightGBMBaseTuner):
+class LightGBMTuner(_LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM.
 
     It optimizes the following hyperparameters in a stepwise manner:
@@ -872,8 +872,8 @@ class LightGBMTuner(LightGBMBaseTuner):
         train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
-    ) -> OptunaObjective:
-        return OptunaObjective(
+    ) -> _OptunaObjective:
+        return _OptunaObjective(
             target_param_names,
             self.lgbm_params,
             train_set,
@@ -886,7 +886,7 @@ class LightGBMTuner(LightGBMBaseTuner):
 
 
 @experimental("1.5.0")
-class LightGBMTunerCV(LightGBMBaseTuner):
+class LightGBMTunerCV(_LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM with cross-validation.
 
     It employs the same stepwise approach as
@@ -988,8 +988,8 @@ class LightGBMTunerCV(LightGBMBaseTuner):
         train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
-    ) -> OptunaObjective:
-        return OptunaObjectiveCV(
+    ) -> _OptunaObjective:
+        return _OptunaObjectiveCV(
             target_param_names,
             self.lgbm_params,
             train_set,
