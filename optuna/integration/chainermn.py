@@ -1,5 +1,6 @@
 import gc
 from typing import Optional
+import warnings
 
 from optuna._imports import try_import
 from optuna.logging import get_logger
@@ -293,6 +294,17 @@ class ChainerMNTrial(BaseTrial):
             return self.delegate.number
 
         return self._call_with_mpi(func)
+
+    @property
+    def trial_id(self):
+        # type: () -> int
+
+        warnings.warn(
+            "The use of `ChainerMNTrial.trial_id` is deprecated. "
+            "Please use `ChainerMNTrial.number` instead.",
+            DeprecationWarning,
+        )
+        return self._trial_id
 
     @property
     def _trial_id(self):
