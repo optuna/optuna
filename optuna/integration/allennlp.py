@@ -18,6 +18,7 @@ with try_import() as _imports:
 
 if _imports.is_successful():
     import _jsonnet
+else:
     EpochCallback = object  # NOQA
 
 
