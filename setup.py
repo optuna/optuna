@@ -61,7 +61,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow",
         ],
         # TODO(hvy): Unpin `sphinx` version after https://github.com/sphinx-doc/sphinx/issues/7807.
-        "document": ["sphinx>=3.0.0,!=3.1.0", "sphinx_rtd_theme"],
+        "document": ["sphinx>=3.0.0,<3.1.0", "sphinx_rtd_theme"],
         "example": [
             "catboost",
             "chainer",
@@ -159,9 +159,9 @@ setup(
     packages=find_packages(),
     package_data={
         "optuna": [
-            "storages/rdb/alembic.ini",
-            "storages/rdb/alembic/*.*",
-            "storages/rdb/alembic/versions/*.*",
+            "storages/_rdb/alembic.ini",
+            "storages/_rdb/alembic/*.*",
+            "storages/_rdb/alembic/versions/*.*",
         ]
     },
     python_requires=">=3.5",
@@ -180,4 +180,22 @@ setup(
             "storage upgrade = optuna.cli:_StorageUpgrade",
         ],
     },
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3 :: Only",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Mathematics",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Software Development",
+        "Topic :: Software Development :: Libraries",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
 )

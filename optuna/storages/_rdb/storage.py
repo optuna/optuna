@@ -25,9 +25,9 @@ from sqlalchemy.sql import functions
 
 import optuna
 from optuna import distributions
-from optuna.storages.base import BaseStorage
-from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages.rdb import models
+from optuna.storages._base import BaseStorage
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._rdb import models
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
 from optuna.trial import FrozenTrial
@@ -1197,7 +1197,7 @@ class _VersionManager(object):
             )
         else:
             message += (
-                "Please try updating optuna to the latest version by " "`$ pip install -U optuna`."
+                "Please try updating optuna to the latest version by `$ pip install -U optuna`."
             )
 
         raise RuntimeError(message)

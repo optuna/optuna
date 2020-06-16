@@ -1,6 +1,5 @@
 import gc
 from typing import Optional
-import warnings
 
 from optuna._imports import try_import
 from optuna.logging import get_logger
@@ -258,14 +257,12 @@ class ChainerMNTrial(BaseTrial):
             self.delegate.report(value, step)
         self.comm.mpi_comm.barrier()
 
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
-
+    def should_prune(self) -> bool:
         def func():
             # type: () -> bool
 
             assert self.delegate is not None
-            return self.delegate.should_prune(step)
+            return self.delegate.should_prune()
 
         return self._call_with_mpi(func)
 
@@ -296,17 +293,6 @@ class ChainerMNTrial(BaseTrial):
             return self.delegate.number
 
         return self._call_with_mpi(func)
-
-    @property
-    def trial_id(self):
-        # type: () -> int
-
-        warnings.warn(
-            "The use of `ChainerMNTrial.trial_id` is deprecated. "
-            "Please use `ChainerMNTrial.number` instead.",
-            DeprecationWarning,
-        )
-        return self._trial_id
 
     @property
     def _trial_id(self):
