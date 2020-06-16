@@ -321,7 +321,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
         return val_score
 
 
-class LightGBMBaseTuner(_BaseTuner):
+class _LightGBMBaseTuner(_BaseTuner):
     """Base class of LightGBM Tuners.
 
     This class has common attributes and method of
@@ -632,7 +632,7 @@ class LightGBMBaseTuner(_BaseTuner):
 
 
 @experimental("1.5.0")
-class LightGBMTuner(LightGBMBaseTuner):
+class LightGBMTuner(_LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM.
 
     It optimizes the following hyperparameters in a stepwise manner:
@@ -789,7 +789,7 @@ class LightGBMTuner(LightGBMBaseTuner):
         return booster
 
     def tune_params(self, target_param_names, n_trials, sampler, step_name):
-        # type: (List[str], int, optuna.samplers.BaseSampler, str) -> OptunaObjective
+        # type: (List[str], int, optuna.samplers.BaseSampler, str) -> _OptunaObjective
 
         objective = super(LightGBMTuner, self).tune_params(
             target_param_names, n_trials, sampler, step_name
@@ -820,7 +820,7 @@ class LightGBMTuner(LightGBMBaseTuner):
 
 
 @experimental("1.5.0")
-class LightGBMTunerCV(LightGBMBaseTuner):
+class LightGBMTunerCV(_LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM with cross-validation.
 
     It employs the same stepwise approach as
