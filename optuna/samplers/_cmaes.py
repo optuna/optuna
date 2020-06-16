@@ -95,6 +95,11 @@ class CmaEsSampler(BaseSampler):
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
 
             .. note::
+                Added in v2.0.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.0.0.
+
+            .. note::
                 It is suggested to set this flag :obj:`False` when the `MedianPruner` is used.
                 On the other hand, it is suggested to set this flag :obj:`True` when the
                 `HyperbandPruner` is used. Please see `the benchmark result
@@ -109,6 +114,7 @@ class CmaEsSampler(BaseSampler):
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
         seed: Optional[int] = None,
+        *,
         consider_pruned_trials: bool = False,
     ) -> None:
 
@@ -164,7 +170,7 @@ class CmaEsSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        completed_trials = self._get_complete_trials(study)
+        completed_trials = self._get_trials(study)
         if len(completed_trials) < self._n_startup_trials:
             return {}
 
@@ -275,7 +281,7 @@ class CmaEsSampler(BaseSampler):
     ) -> Any:
 
         if self._warn_independent_sampling:
-            complete_trials = self._get_complete_trials(study)
+            complete_trials = self._get_trials(study)
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -296,12 +302,12 @@ class CmaEsSampler(BaseSampler):
             )
         )
 
-    def _get_complete_trials(self, study: "optuna.Study") -> List[FrozenTrial]:
+    def _get_trials(self, study: "optuna.Study") -> List[FrozenTrial]:
         complete_trials = []
         for t in study.get_trials(deepcopy=False):
             if t.state == TrialState.COMPLETE:
-                complete_trials.append(copy.deepcopy(t))
-            if (
+                complete_trials.append(t)
+            elif (
                 t.state == TrialState.PRUNED
                 and len(t.intermediate_values) > 0
                 and self._consider_pruned_trials
@@ -309,9 +315,10 @@ class CmaEsSampler(BaseSampler):
                 _, value = max(t.intermediate_values.items())
                 if value is None:
                     continue
-                _t = copy.deepcopy(t)
-                _t.value = value
-                complete_trials.append(_t)
+                # We rewrite the value of the trial `t` for sampling, so we need a deepcopy.
+                copied_t = copy.deepcopy(t)
+                copied_t.value = value
+                complete_trials.append(copied_t)
         return complete_trials
 
 
