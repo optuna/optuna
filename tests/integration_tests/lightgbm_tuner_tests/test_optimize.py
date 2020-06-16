@@ -12,11 +12,11 @@ import pytest
 
 import optuna
 import optuna.integration.lightgbm as lgb
-from optuna.integration.lightgbm_tuner.optimize import BaseTuner
-from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
-from optuna.integration.lightgbm_tuner.optimize import LightGBMTunerCV
-from optuna.integration.lightgbm_tuner.optimize import OptunaObjective
-from optuna.integration.lightgbm_tuner.optimize import OptunaObjectiveCV
+from optuna.integration._lightgbm_tuner.optimize import BaseTuner
+from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
+from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV
+from optuna.integration._lightgbm_tuner.optimize import OptunaObjective
+from optuna.integration._lightgbm_tuner.optimize import OptunaObjectiveCV
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -623,7 +623,7 @@ class TestLightGBMTuner(object):
         def objective(trial: optuna.trial.Trial, value: float) -> float:
 
             trial.set_system_attr(
-                optuna.integration.lightgbm_tuner.optimize._STEP_NAME_KEY,
+                optuna.integration._lightgbm_tuner.optimize._STEP_NAME_KEY,
                 "step{:.0f}".format(value),
             )
             return trial.suggest_uniform("x", value, value)

@@ -21,8 +21,8 @@ import tqdm
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna.integration.lightgbm_tuner.alias import _handling_alias_metrics
-from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
+from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
+from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna import type_checking
@@ -325,8 +325,8 @@ class LightGBMBaseTuner(BaseTuner):
     """Base class of LightGBM Tuners.
 
     This class has common attributes and method of
-    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` and
-    :class:`~optuna.integration.lightgbm_tuner.LightGBMTunerCV`.
+    :class:`~optuna.integration.lightgbm.LightGBMTuner` and
+    :class:`~optuna.integration.lightgbm.LightGBMTunerCV`.
     """
 
     def __init__(
@@ -645,7 +645,7 @@ class LightGBMTuner(LightGBMBaseTuner):
 
     Arguments and keyword arguments for `lightgbm.train()
     <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
-    The arguments that only :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` has are
+    The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTuner` has are
     listed below:
 
     Args:
@@ -824,16 +824,16 @@ class LightGBMTunerCV(LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM with cross-validation.
 
     It employs the same stepwise approach as
-    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner`.
-    :class:`~optuna.integration.lightgbm_tuner.LightGBMTunerCV` invokes `lightgbm.cv()`_ to train
-    and validate boosters while :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` invokes
+    :class:`~optuna.integration.lightgbm.LightGBMTuner`.
+    :class:`~optuna.integration.lightgbm.LightGBMTunerCV` invokes `lightgbm.cv()`_ to train
+    and validate boosters while :class:`~optuna.integration.lightgbm.LightGBMTuner` invokes
     `lightgbm.train()`_. See
     `a simple example <https://github.com/optuna/optuna/blob/master/examples/lightgbm_tuner_cv.
     py>`_ which optimizes the validation log loss of cancer detection.
 
     Arguments and keyword arguments for `lightgbm.cv()`_ can be passed except
     ``metrics``, ``init_model`` and ``eval_train_metric``.
-    The arguments that only :class:`~optuna.integration.lightgbm_tuner.LightGBMTunerCV` has are
+    The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTunerCV` has are
     listed below:
 
     Args:
