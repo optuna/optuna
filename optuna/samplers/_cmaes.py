@@ -115,7 +115,7 @@ class CmaEsSampler(BaseSampler):
         warn_independent_sampling: bool = True,
         seed: Optional[int] = None,
         *,
-        consider_pruned_trials: bool = False,
+        consider_pruned_trials: bool = False
     ) -> None:
 
         self._x0 = x0
