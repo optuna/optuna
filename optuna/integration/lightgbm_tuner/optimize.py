@@ -89,7 +89,7 @@ class BaseTuner(object):
 
         return metric
 
-    def _get_booster_best_score(self, booster: lgb.Booster) -> float:
+    def _get_booster_best_score(self, booster: "lgb.Booster") -> float:
 
         metric = self._get_metric_for_objective()
         valid_sets = self.lgbm_kwargs.get("valid_sets")  # type: Optional[VALID_SET_TYPE]
@@ -160,7 +160,7 @@ class OptunaObjective(BaseTuner):
         self,
         target_param_names: List[str],
         lgbm_params: Dict[str, Any],
-        train_set: lgb.Dataset,
+        train_set: "lgb.Dataset",
         lgbm_kwargs: Dict[str, Any],
         best_score: float,
         step_name: str,
@@ -177,7 +177,7 @@ class OptunaObjective(BaseTuner):
         self.report = []  # type: List[Dict[str, Any]]
         self.trial_count = 0
         self.best_score = best_score
-        self.best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
+        self.best_booster_with_trial_number = None  # type: Optional[Tuple["lgb.Booster", int]]
         self.step_name = step_name
         self.model_dir = model_dir
 
@@ -769,7 +769,7 @@ class LightGBMTuner(LightGBMBaseTuner):
         # Set default parameters as best.
         self._best_params.update(DEFAULT_LIGHTGBM_PARAMETERS)
 
-        self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
+        self._best_booster_with_trial_number = None  # type: Optional[Tuple["lgb.Booster", int]]
         self._model_dir = model_dir
 
         if self._model_dir is not None and not os.path.exists(self._model_dir):
