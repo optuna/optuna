@@ -664,7 +664,7 @@ class TestLightGBMTuner(object):
         )
 
         with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=1.0):
-            tuner.tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
+            tuner._tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
 
         assert callback_mock.call_count == 10
 
@@ -821,6 +821,6 @@ class TestLightGBMTunerCV(object):
         tuner = LightGBMTunerCV(params, dataset, study=study, optuna_callbacks=[callback_mock],)
 
         with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
-            tuner.tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
+            tuner._tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
 
         assert callback_mock.call_count == 10

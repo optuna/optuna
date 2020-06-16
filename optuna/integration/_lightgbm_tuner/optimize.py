@@ -480,13 +480,13 @@ class _LightGBMBaseTuner(_BaseTuner):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
             sampler = optuna.samplers.GridSampler({param_name: param_values})
-        self.tune_params([param_name], len(param_values), sampler, "feature_fraction")
+        self._tune_params([param_name], len(param_values), sampler, "feature_fraction")
 
     def tune_num_leaves(self, n_trials: int = 20) -> None:
-        self.tune_params(["num_leaves"], n_trials, optuna.samplers.TPESampler(), "num_leaves")
+        self._tune_params(["num_leaves"], n_trials, optuna.samplers.TPESampler(), "num_leaves")
 
     def tune_bagging(self, n_trials: int = 10) -> None:
-        self.tune_params(
+        self._tune_params(
             ["bagging_fraction", "bagging_freq"], n_trials, optuna.samplers.TPESampler(), "bagging"
         )
 
@@ -502,10 +502,10 @@ class _LightGBMBaseTuner(_BaseTuner):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
             sampler = optuna.samplers.GridSampler({param_name: param_values})
-        self.tune_params([param_name], len(param_values), sampler, "feature_fraction_stage2")
+        self._tune_params([param_name], len(param_values), sampler, "feature_fraction_stage2")
 
     def tune_regularization_factors(self, n_trials: int = 20) -> None:
-        self.tune_params(
+        self._tune_params(
             ["lambda_l1", "lambda_l2"],
             n_trials,
             optuna.samplers.TPESampler(),
@@ -520,9 +520,9 @@ class _LightGBMBaseTuner(_BaseTuner):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
             sampler = optuna.samplers.GridSampler({param_name: param_values})
-        self.tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
+        self._tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
 
-    def tune_params(
+    def _tune_params(
         self,
         target_param_names: List[str],
         n_trials: int,
@@ -788,10 +788,10 @@ class LightGBMTuner(_LightGBMBaseTuner):
 
         return booster
 
-    def tune_params(self, target_param_names, n_trials, sampler, step_name):
+    def _tune_params(self, target_param_names, n_trials, sampler, step_name):
         # type: (List[str], int, optuna.samplers.BaseSampler, str) -> _OptunaObjective
 
-        objective = super(LightGBMTuner, self).tune_params(
+        objective = super(LightGBMTuner, self)._tune_params(
             target_param_names, n_trials, sampler, step_name
         )
 
