@@ -6,8 +6,8 @@ from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna import distributions
 from optuna import exceptions
-from optuna.storages import base
-from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages import BaseStorage
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
 from optuna.trial import FrozenTrial
@@ -27,7 +27,7 @@ if type_checking.TYPE_CHECKING:
 
 
 @experimental("1.4.0")
-class RedisStorage(base.BaseStorage):
+class RedisStorage(BaseStorage):
     """Storage class for Redis backend.
 
     Note that library users can instantiate this class, but the attributes
@@ -35,7 +35,7 @@ class RedisStorage(base.BaseStorage):
 
     Example:
 
-        We create an :class:`~optuna.storages.redis.RedisStorage` instance using
+        We create an :class:`~optuna.storages.RedisStorage` instance using
         the given redis database URL.
 
         .. code::
@@ -45,7 +45,7 @@ class RedisStorage(base.BaseStorage):
             >>> def objective(trial):
             >>>     ...
             >>>
-            >>> storage = optuna.storages.redis.RedisStorage(
+            >>> storage = optuna.storages.RedisStorage(
             >>>     url='redis://passwd@localhost:port/db',
             >>> )
             >>>

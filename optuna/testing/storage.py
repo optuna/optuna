@@ -36,7 +36,7 @@ class StorageSupplier(object):
         elif self.storage_specifier == "cache":
             self.tempfile = tempfile.NamedTemporaryFile()
             url = "sqlite:///{}".format(self.tempfile.name)
-            return optuna.storages.cached_storage._CachedStorage(
+            return optuna.storages._CachedStorage(
                 optuna.storages.RDBStorage(
                     url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
                 )
