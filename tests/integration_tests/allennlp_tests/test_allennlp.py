@@ -168,7 +168,7 @@ def test_allennlp_pruning_callback() -> None:
                 text_field_embedder=embedder, seq2vec_encoder=encoder, vocab=vocab
             )
             optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-            data_loader = torch.utils.data.DataLoader(
+            data_loader = allennlp.data.DataLoader(
                 dataset, batch_size=10, collate_fn=allennlp.data.allennlp_collate
             )
             serialization_dir = os.path.join(tmp_dir, "trial_{}".format(trial.number))
