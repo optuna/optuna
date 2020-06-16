@@ -177,7 +177,6 @@ class OptunaObjective(BaseTuner):
         self.lgbm_kwargs = lgbm_kwargs
         self.train_set = train_set
 
-        self.report = []  # type: List[Dict[str, Any]]
         self.trial_count = 0
         self.best_score = best_score
         self.best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
@@ -254,33 +253,16 @@ class OptunaObjective(BaseTuner):
             self.best_score = val_score
             self.best_booster_with_trial_number = (booster, trial.number)
 
-        self._postprocess(trial, val_score, elapsed_secs, average_iteration_time)
+        self._postprocess(trial, elapsed_secs, average_iteration_time)
 
         return val_score
 
     def _postprocess(
-        self,
-        trial: optuna.trial.Trial,
-        val_score: float,
-        elapsed_secs: float,
-        average_iteration_time: float,
+        self, trial: optuna.trial.Trial, elapsed_secs: float, average_iteration_time: float,
     ) -> None:
         if self.pbar is not None:
             self.pbar.set_description(self.pbar_fmt.format(self.step_name, self.best_score))
             self.pbar.update(1)
-
-        self.report.append(
-            dict(
-                # Since v1.2.0, action was concatenation of parameter names. Currently, it is
-                # explicitly given to distinguish steps which tune the same parameters.
-                action=self.step_name,
-                trial=self.trial_count,
-                value=str(trial.params),
-                val_score=val_score,
-                elapsed_secs=elapsed_secs,
-                average_iteration_time=average_iteration_time,
-            )
-        )
 
         trial.set_system_attr(_ELAPSED_SECS_KEY, elapsed_secs)
         trial.set_system_attr(_AVERAGE_ITERATION_TIME_KEY, average_iteration_time)
@@ -334,7 +316,7 @@ class OptunaObjectiveCV(OptunaObjective):
         if self.compare_validation_metrics(val_score, self.best_score):
             self.best_score = val_score
 
-        self._postprocess(trial, val_score, elapsed_secs, average_iteration_time)
+        self._postprocess(trial, elapsed_secs, average_iteration_time)
 
         return val_score
 
