@@ -42,13 +42,13 @@ _STEP_NAME_KEY = "lightgbm_tuner:step_name"
 _LGBM_PARAMS_KEY = "lightgbm_tuner:lgbm_params"
 
 # EPS is used to ensure that a sampled parameter value is in pre-defined value range.
-EPS = 1e-12
+_EPS = 1e-12
 
 # Default value of tree_depth, used for upper bound of num_leaves.
-DEFAULT_TUNER_TREE_DEPTH = 8
+_DEFAULT_TUNER_TREE_DEPTH = 8
 
 # Default parameter values described in the official webpage.
-DEFAULT_LIGHTGBM_PARAMETERS = {
+_DEFAULT_LIGHTGBM_PARAMETERS = {
     "lambda_l1": 0.0,
     "lambda_l2": 0.0,
     "num_leaves": 31,
@@ -61,7 +61,7 @@ DEFAULT_LIGHTGBM_PARAMETERS = {
 _logger = optuna.logging.get_logger(__name__)
 
 
-class BaseTuner(object):
+class _BaseTuner(object):
     def __init__(self, lgbm_params=None, lgbm_kwargs=None):
         # type: (Dict[str, Any], Dict[str,Any]) -> None
 
@@ -156,7 +156,7 @@ class BaseTuner(object):
             return val_score < best_score
 
 
-class OptunaObjective(BaseTuner):
+class _OptunaObjective(_BaseTuner):
     """Objective for hyperparameter-tuning with Optuna."""
 
     def __init__(
@@ -211,25 +211,25 @@ class OptunaObjective(BaseTuner):
         if "lambda_l2" in self.target_param_names:
             self.lgbm_params["lambda_l2"] = trial.suggest_loguniform("lambda_l2", 1e-8, 10.0)
         if "num_leaves" in self.target_param_names:
-            tree_depth = self.lgbm_params.get("max_depth", DEFAULT_TUNER_TREE_DEPTH)
-            max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** DEFAULT_TUNER_TREE_DEPTH
+            tree_depth = self.lgbm_params.get("max_depth", _DEFAULT_TUNER_TREE_DEPTH)
+            max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** _DEFAULT_TUNER_TREE_DEPTH
             self.lgbm_params["num_leaves"] = trial.suggest_int("num_leaves", 2, max_num_leaves)
         if "feature_fraction" in self.target_param_names:
             # `GridSampler` is used for sampling feature_fraction value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = min(trial.suggest_uniform("feature_fraction", 0.4, 1.0 + EPS), 1.0)
+            param_value = min(trial.suggest_uniform("feature_fraction", 0.4, 1.0 + _EPS), 1.0)
             self.lgbm_params["feature_fraction"] = param_value
         if "bagging_fraction" in self.target_param_names:
             # `TPESampler` is used for sampling bagging_fraction value.
             # The value 1.0 for the hyperparameter might by sampled.
-            param_value = min(trial.suggest_uniform("bagging_fraction", 0.4, 1.0 + EPS), 1.0)
+            param_value = min(trial.suggest_uniform("bagging_fraction", 0.4, 1.0 + _EPS), 1.0)
             self.lgbm_params["bagging_fraction"] = param_value
         if "bagging_freq" in self.target_param_names:
             self.lgbm_params["bagging_freq"] = trial.suggest_int("bagging_freq", 1, 7)
         if "min_child_samples" in self.target_param_names:
             # `GridSampler` is used for sampling min_child_samples value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + EPS))
+            param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + _EPS))
             self.lgbm_params["min_child_samples"] = param_value
 
     def __call__(self, trial: optuna.trial.Trial) -> float:
@@ -272,7 +272,7 @@ class OptunaObjective(BaseTuner):
         self.trial_count += 1
 
 
-class OptunaObjectiveCV(OptunaObjective):
+class _OptunaObjectiveCV(_OptunaObjective):
     def __init__(
         self,
         target_param_names: List[str],
@@ -284,7 +284,7 @@ class OptunaObjectiveCV(OptunaObjective):
         pbar: Optional[tqdm.tqdm] = None,
     ):
 
-        super(OptunaObjectiveCV, self).__init__(
+        super(_OptunaObjectiveCV, self).__init__(
             target_param_names,
             lgbm_params,
             train_set,
@@ -321,7 +321,7 @@ class OptunaObjectiveCV(OptunaObjective):
         return val_score
 
 
-class LightGBMBaseTuner(BaseTuner):
+class LightGBMBaseTuner(_BaseTuner):
     """Base class of LightGBM Tuners.
 
     This class has common attributes and method of
@@ -375,7 +375,7 @@ class LightGBMBaseTuner(BaseTuner):
         self._best_params = {}
 
         # Set default parameters as best.
-        self._best_params.update(DEFAULT_LIGHTGBM_PARAMETERS)
+        self._best_params.update(_DEFAULT_LIGHTGBM_PARAMETERS)
 
         if study is None:
             self.study = optuna.create_study(
@@ -415,7 +415,7 @@ class LightGBMBaseTuner(BaseTuner):
             return json.loads(self.study.best_trial.system_attrs[_LGBM_PARAMS_KEY])
         except ValueError:
             # Return the default score because no trials have completed.
-            params = copy.deepcopy(DEFAULT_LIGHTGBM_PARAMETERS)
+            params = copy.deepcopy(_DEFAULT_LIGHTGBM_PARAMETERS)
             # self.lgbm_params may contain parameters given by users.
             params.update(self.lgbm_params)
             return params
@@ -528,7 +528,7 @@ class LightGBMBaseTuner(BaseTuner):
         n_trials: int,
         sampler: optuna.samplers.BaseSampler,
         step_name: str,
-    ) -> OptunaObjective:
+    ) -> _OptunaObjective:
         pbar = tqdm.tqdm(total=n_trials, ascii=True)
 
         # Set current best parameters.
@@ -583,7 +583,7 @@ class LightGBMBaseTuner(BaseTuner):
         train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
-    ) -> OptunaObjective:
+    ) -> _OptunaObjective:
 
         raise NotImplementedError
 
@@ -806,8 +806,8 @@ class LightGBMTuner(LightGBMBaseTuner):
         train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
-    ) -> OptunaObjective:
-        return OptunaObjective(
+    ) -> _OptunaObjective:
+        return _OptunaObjective(
             target_param_names,
             self.lgbm_params,
             train_set,
@@ -922,8 +922,8 @@ class LightGBMTunerCV(LightGBMBaseTuner):
         train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
-    ) -> OptunaObjective:
-        return OptunaObjectiveCV(
+    ) -> _OptunaObjective:
+        return _OptunaObjectiveCV(
             target_param_names,
             self.lgbm_params,
             train_set,
