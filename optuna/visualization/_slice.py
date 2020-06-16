@@ -5,15 +5,15 @@ from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.visualization.plotly_imports import _imports
-from optuna.visualization.utils import _is_log_scale
+from optuna.visualization._plotly_imports import _imports
+from optuna.visualization._utils import _is_log_scale
 
 if _imports.is_successful():
-    from optuna.visualization.plotly_imports import go
-    from optuna.visualization.plotly_imports import make_subplots
-    from optuna.visualization.plotly_imports import Scatter
+    from optuna.visualization._plotly_imports import go
+    from optuna.visualization._plotly_imports import make_subplots
+    from optuna.visualization._plotly_imports import Scatter
 
-logger = get_logger(__name__)
+_logger = get_logger(__name__)
 
 
 def plot_slice(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
@@ -66,7 +66,7 @@ def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> "go.Fig
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
     if len(trials) == 0:
-        logger.warning("Your study does not have any completed trials.")
+        _logger.warning("Your study does not have any completed trials.")
         return go.Figure(data=[], layout=layout)
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}

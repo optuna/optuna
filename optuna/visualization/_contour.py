@@ -8,17 +8,17 @@ from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.visualization.plotly_imports import _imports
-from optuna.visualization.utils import _is_log_scale
+from optuna.visualization._plotly_imports import _imports
+from optuna.visualization._utils import _is_log_scale
 
 if _imports.is_successful():
-    from optuna.visualization.plotly_imports import Contour
-    from optuna.visualization.plotly_imports import go
-    from optuna.visualization.plotly_imports import make_subplots
-    from optuna.visualization.plotly_imports import plotly
-    from optuna.visualization.plotly_imports import Scatter
+    from optuna.visualization._plotly_imports import Contour
+    from optuna.visualization._plotly_imports import go
+    from optuna.visualization._plotly_imports import make_subplots
+    from optuna.visualization._plotly_imports import plotly
+    from optuna.visualization._plotly_imports import Scatter
 
-logger = get_logger(__name__)
+_logger = get_logger(__name__)
 
 
 def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
@@ -71,14 +71,14 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
     if len(trials) == 0:
-        logger.warning("Your study does not have any completed trials.")
+        _logger.warning("Your study does not have any completed trials.")
         return go.Figure(data=[], layout=layout)
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
     if params is None:
         sorted_params = sorted(list(all_params))
     elif len(params) <= 1:
-        logger.warning("The length of params must be greater than 1.")
+        _logger.warning("The length of params must be greater than 1.")
         return go.Figure(data=[], layout=layout)
     else:
         for input_p_name in params:
@@ -148,10 +148,10 @@ def _generate_contour_subplot(
     x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
     y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
     if len(x_indices) < 2:
-        logger.warning("Param {} unique value length is less than 2.".format(x_param))
+        _logger.warning("Param {} unique value length is less than 2.".format(x_param))
         return go.Contour(), go.Scatter()
     if len(y_indices) < 2:
-        logger.warning("Param {} unique value length is less than 2.".format(y_param))
+        _logger.warning("Param {} unique value length is less than 2.".format(y_param))
         return go.Contour(), go.Scatter()
     z = [[float("nan") for _ in range(len(x_indices))] for _ in range(len(y_indices))]
 

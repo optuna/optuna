@@ -1,7 +1,7 @@
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna import type_checking
-from optuna.visualization.intermediate_values import plot_intermediate_values
+from optuna.visualization import plot_intermediate_values
 
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
