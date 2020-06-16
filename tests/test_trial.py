@@ -633,7 +633,6 @@ def test_fixed_trial_should_prune():
 
     # FixedTrial never prunes trials.
     assert FixedTrial({}).should_prune() is False
-    assert FixedTrial({}).should_prune(1) is False
 
 
 def test_fixed_trial_datetime_start():
@@ -761,12 +760,7 @@ def test_study_id():
     study = create_study()
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=DeprecationWarning)
-        assert trial.study_id == trial.study._study_id
-
-    with pytest.warns(DeprecationWarning):
-        trial.study_id
+    assert trial._study_id == trial.study._study_id
 
 
 def test_frozen_trial_validate():

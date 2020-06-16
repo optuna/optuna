@@ -258,14 +258,12 @@ class ChainerMNTrial(BaseTrial):
             self.delegate.report(value, step)
         self.comm.mpi_comm.barrier()
 
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
-
+    def should_prune(self) -> bool:
         def func():
             # type: () -> bool
 
             assert self.delegate is not None
-            return self.delegate.should_prune(step)
+            return self.delegate.should_prune()
 
         return self._call_with_mpi(func)
 

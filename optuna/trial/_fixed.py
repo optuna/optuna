@@ -19,7 +19,6 @@ if type_checking.TYPE_CHECKING:
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
-    from optuna.study import Study  # NOQA
 
     FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
 
@@ -160,8 +159,7 @@ class FixedTrial(BaseTrial):
 
         pass
 
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
+    def should_prune(self) -> bool:
 
         return False
 

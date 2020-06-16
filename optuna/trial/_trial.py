@@ -569,8 +569,7 @@ class Trial(BaseTrial):
 
         self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
+    def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.
 
         The suggestion is made by a pruning algorithm associated with the trial and is based on
@@ -585,22 +584,10 @@ class Trial(BaseTrial):
         .. seealso::
             Please refer to the example code in :func:`optuna.trial.Trial.report`.
 
-        Args:
-            step:
-                Deprecated since 0.12.0: Step of the trial (e.g., epoch of neural network
-                training). Deprecated in favor of always considering the most recent step.
-
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
         """
-        if step is not None:
-            warnings.warn(
-                "The use of `step` argument is deprecated. "
-                "The last reported step is used instead of "
-                "the step given by the argument.",
-                DeprecationWarning,
-            )
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
@@ -769,29 +756,6 @@ class Trial(BaseTrial):
         return self.storage.get_trial_number_from_id(self._trial_id)
 
     @property
-    def trial_id(self):
-        # type: () -> int
-        """Return trial ID.
-
-        Note that the use of this is deprecated.
-        Please use :attr:`~optuna.trial.Trial.number` instead.
-
-        Returns:
-            A trial ID.
-        """
-
-        warnings.warn(
-            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead.",
-            DeprecationWarning,
-        )
-
-        _logger.warning(
-            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead."
-        )
-
-        return self._trial_id
-
-    @property
     def params(self):
         # type: () -> Dict[str, Any]
         """Return parameters to be optimized.
@@ -844,22 +808,3 @@ class Trial(BaseTrial):
             Datetime where the :class:`~optuna.trial.Trial` started.
         """
         return self.storage.get_trial(self._trial_id).datetime_start
-
-    @property
-    def study_id(self):
-        # type: () -> int
-        """Return the study ID.
-
-        .. deprecated:: 0.20.0
-            The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.trial.Trial.study` instead.
-
-        Returns:
-            The study ID.
-        """
-
-        message = "The use of `Trial.study_id` is deprecated. Please use `Trial.study` instead."
-        warnings.warn(message, DeprecationWarning)
-        _logger.warning(message)
-
-        return self.study._study_id
