@@ -67,8 +67,7 @@ Executing the script above:
     [I 2020-06-12 16:54:24,629] Trial 9 pruned. 
     ...
 
-We can see ``Trial 5 pruned.`` in the log messages.
-This means several trials are stopped before they finish all iterations.
+``Trial 5 pruned.``, etc. in the log messages means several trials were stopped before they finished all of the iterations.
 
 
 Integration Modules for Pruning
