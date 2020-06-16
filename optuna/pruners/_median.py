@@ -1,4 +1,4 @@
-from optuna.pruners.percentile import PercentilePruner
+from optuna.pruners._percentile import PercentilePruner
 
 
 class MedianPruner(PercentilePruner):
