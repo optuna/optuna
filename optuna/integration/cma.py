@@ -62,8 +62,8 @@ class PyCmaSampler(BaseSampler):
     especially if the number of trials running in parallel exceeds the population size.
 
     .. note::
-        :class:`~optuna.integration.CmaEsSampler` is deprecated and renamed as
-        :class:`~optuna.integration.PyCmaSampler` in v1.5.0. Please use
+        :class:`~optuna.integration.CmaEsSampler` is deprecated and renamed to
+        :class:`~optuna.integration.PyCmaSampler` in v2.0.0. Please use
         :class:`~optuna.integration.PyCmaSampler` instead of
         :class:`~optuna.integration.CmaEsSampler`.
 
@@ -475,7 +475,7 @@ class CmaEsSampler(PyCmaSampler):
         # type: (...) -> None
 
         message = (
-            "The class of `optuna.integration.CmaEsSampler` is deprecated. "
+            "`optuna.integration.CmaEsSampler` is deprecated. "
             "Please use `optuna.integration.PyCmaSampler` instead."
         )
         warnings.warn(message, DeprecationWarning)
