@@ -160,7 +160,7 @@ class AllenNLPPruningCallback(EpochCallback):
 
     def __call__(
         self,
-        trainer: allennlp.training.GradientDescentTrainer,
+        trainer: "allennlp.training.GradientDescentTrainer",
         metrics: Dict[str, Any],
         epoch: int,
     ) -> None:
