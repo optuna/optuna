@@ -139,35 +139,6 @@ class BaseStudy(object):
         self._storage.read_trials_from_remote_storage(self._study_id)
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
 
-    @property
-    def storage(self):
-        # type: () -> storages.BaseStorage
-        """Return the storage object used by the study.
-
-        .. deprecated:: 0.15.0
-            The direct use of storage is deprecated.
-            Please access to storage via study's public methods
-            (e.g., :meth:`~optuna.study.Study.set_user_attr`).
-
-        Returns:
-            A storage object.
-        """
-
-        warnings.warn(
-            "The direct use of storage is deprecated. "
-            "Please access to storage via study's public methods "
-            "(e.g., `Study.set_user_attr`)",
-            DeprecationWarning,
-        )
-
-        _logger.warning(
-            "The direct use of storage is deprecated. "
-            "Please access to storage via study's public methods "
-            "(e.g., `Study.set_user_attr`)"
-        )
-
-        return self._storage
-
 
 class Study(BaseStudy):
     """A study corresponds to an optimization task, i.e., a set of trials.
@@ -213,27 +184,6 @@ class Study(BaseStudy):
 
         self.__dict__.update(state)
         self._optimize_lock = threading.Lock()
-
-    @property
-    def study_id(self):
-        # type: () -> int
-        """Return the study ID.
-
-        .. deprecated:: 0.20.0
-            The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.study.Study.study_name` instead.
-
-        Returns:
-            The study ID.
-        """
-
-        message = (
-            "The use of `Study.study_id` is deprecated. Please use `Study.study_name` instead."
-        )
-        warnings.warn(message, DeprecationWarning)
-        _logger.warning(message)
-
-        return self._study_id
 
     @property
     def user_attrs(self):

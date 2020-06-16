@@ -7,7 +7,6 @@ import time
 from unittest.mock import Mock  # NOQA
 from unittest.mock import patch
 import uuid
-import warnings
 
 import joblib
 import pandas as pd
@@ -853,13 +852,6 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode):
         assert t.params["x"] == 1
 
 
-def test_storage_property():
-    # type: () -> None
-
-    study = optuna.create_study()
-    assert study.storage == study._storage
-
-
 @patch("optuna.study.gc.collect")
 def test_optimize_with_gc(collect_mock):
     # type: (Mock) -> None
@@ -970,36 +962,6 @@ def test_get_trials(storage_mode):
             trials2 = study.trials
             assert mock_object.call_count > old_count
             assert trials0 == trials2
-
-
-def test_study_id():
-    # type: () -> None
-
-    study = optuna.create_study()
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=DeprecationWarning)
-        assert study.study_id == study._study_id
-
-    with pytest.warns(DeprecationWarning):
-        study.study_id
-
-
-def test_study_summary_study_id():
-    # type: () -> None
-
-    study = optuna.create_study()
-    summaries = study._storage.get_all_study_summaries()
-    assert len(summaries) == 1
-
-    summary = summaries[0]
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=DeprecationWarning)
-        assert summary.study_id == summary._study_id
-
-    with pytest.warns(DeprecationWarning):
-        summary.study_id
 
 
 def test_study_summary_eq_ne():
