@@ -786,7 +786,7 @@ class Study(BaseStudy):
             return trial
 
         if math.isnan(result):
-            message = "Trial {} failed, because the objective function " "returned {}.".format(
+            message = "Trial {} failed, because the objective function returned {}.".format(
                 trial_number, result
             )
             _logger.warning(message)
