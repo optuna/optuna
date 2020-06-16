@@ -31,6 +31,8 @@ if _imports.is_successful():
 else:
     # To create docstring of train.
     setattr(sys.modules[__name__], "train", tuner.__dict__["train"])
+    setattr(sys.modules[__name__], "LightGBMTuner", tuner.__dict__["LightGBMTuner"])
+    setattr(sys.modules[__name__], "LightGBMTunerCV", tuner.__dict__["LightGBMTunerCV"])
 
 
 class LightGBMPruningCallback(object):
