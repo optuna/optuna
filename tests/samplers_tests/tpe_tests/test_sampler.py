@@ -331,7 +331,7 @@ def test_get_observation_pairs():
     trial_number = study._storage.create_new_trial(study._study_id)  # Create a running trial.
     trial = study._storage.get_trial(trial_number)
 
-    assert _tpe._sampler._get_observation_pairs(study, "x", trial) == (
+    assert _tpe.sampler._get_observation_pairs(study, "x", trial) == (
         [5.0, 5.0, 5.0, 5.0],
         [
             (-float("inf"), 5.0),  # COMPLETE
@@ -340,7 +340,7 @@ def test_get_observation_pairs():
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
-    assert _tpe._sampler._get_observation_pairs(study, "y", trial) == (
+    assert _tpe.sampler._get_observation_pairs(study, "y", trial) == (
         [None, None, None, None],
         [
             (-float("inf"), 5.0),  # COMPLETE
@@ -355,7 +355,7 @@ def test_get_observation_pairs():
     study.optimize(objective, n_trials=4)
     study._storage.create_new_trial(study._study_id)  # Create a running trial.
 
-    assert _tpe._sampler._get_observation_pairs(study, "x", trial) == (
+    assert _tpe.sampler._get_observation_pairs(study, "x", trial) == (
         [5.0, 5.0, 5.0, 5.0],
         [
             (-float("inf"), -5.0),  # COMPLETE
@@ -364,7 +364,7 @@ def test_get_observation_pairs():
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
-    assert _tpe._sampler._get_observation_pairs(study, "y", trial) == (
+    assert _tpe.sampler._get_observation_pairs(study, "y", trial) == (
         [None, None, None, None],
         [
             (-float("inf"), -5.0),  # COMPLETE

@@ -3,8 +3,8 @@ import itertools
 import numpy as np
 import pytest
 
-from optuna.samplers._tpe._parzen_estimator import _ParzenEstimator
-from optuna.samplers._tpe._sampler import default_weights
+from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
+from optuna.samplers._tpe.sampler import default_weights
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
