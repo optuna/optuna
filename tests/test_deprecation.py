@@ -1,0 +1,103 @@
+from typing import Any
+
+import pytest
+
+from optuna import _deprecation
+
+
+def _sample_func(_: Any) -> int:
+
+    return 10
+
+
+class _Sample(object):
+    def __init__(self, a: Any, b: Any, c: Any) -> None:
+        pass
+
+    def _method(self) -> None:
+        """summary
+
+        detail
+        """
+        pass
+
+    def _method_expected(self) -> None:
+        """summary
+
+        detail
+
+        .. note::
+            Deprecated in v1.1.0. This feature will be removed in the future. See
+            https://github.com/optuna/optuna/releases/tag/v1.1.0.
+        """
+        pass
+
+
+@pytest.mark.parametrize("version", ["1.1", 100, None])
+def test_deprecation_raises_error_for_invalid_version(version: Any) -> None:
+    with pytest.raises(ValueError):
+        _deprecation.deprecation(version)
+
+
+def test_deprecation_decorator() -> None:
+    version = "1.1.0"
+    decorator_deprecation = _deprecation.deprecation(version)
+    assert callable(decorator_deprecation)
+
+    decorated_func = decorator_deprecation(_sample_func)
+    assert decorated_func.__name__ == _sample_func.__name__
+    assert decorated_func.__doc__ == _deprecation._DEPRECATION_NOTE_TEMPLATE.format(ver=version)
+
+    with pytest.warns(DeprecationWarning):
+        decorated_func(None)
+
+
+def test_deprecation_method_decorator() -> None:
+    version = "1.1.0"
+    decorator_deprecation = _deprecation.deprecation(version)
+    assert callable(decorator_deprecation)
+
+    decorated_method = decorator_deprecation(_Sample._method)
+    assert decorated_method.__name__ == _Sample._method.__name__
+    assert decorated_method.__doc__ == _Sample._method_expected.__doc__
+
+    with pytest.warns(DeprecationWarning):
+        decorated_method(None)
+
+
+def test_deprecation_class_decorator() -> None:
+    version = "1.1.0"
+    decorator_deprecation = _deprecation.deprecation(version)
+    assert callable(decorator_deprecation)
+
+    decorated_class = decorator_deprecation(_Sample)
+    assert decorated_class.__name__ == "_Sample"
+    assert decorated_class.__init__.__name__ == "__init__"
+    assert decorated_class.__doc__ == _deprecation._DEPRECATION_NOTE_TEMPLATE.format(ver=version)
+
+    with pytest.warns(DeprecationWarning):
+        decorated_class("a", "b", "c")
+
+
+def test_deprecation_class_decorator_name() -> None:
+
+    name = "foo"
+    decorator_deprecation = _deprecation.deprecation("1.1.0", name=name)
+    decorated_sample = decorator_deprecation(_Sample)
+
+    with pytest.warns(DeprecationWarning) as record:
+        decorated_sample("a", "b", "c")
+
+    assert name in record.list[0].message.args[0]
+
+
+def test_deprecation_decorator_name() -> None:
+
+    name = "bar"
+    decorator_deprecation = _deprecation.deprecation("1.1.0", name=name)
+    decorated_sample_func = decorator_deprecation(_sample_func)
+
+    with pytest.warns(DeprecationWarning) as record:
+        decorated_sample_func(None)
+
+    assert name in record.list[0].message.args[0]

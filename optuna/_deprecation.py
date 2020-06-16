@@ -5,14 +5,14 @@ from typing import Any
 from typing import Callable
 import warnings
 
-from optuna._experimental import _validate_version
 from optuna._experimental import _get_docstring_indent
+from optuna._experimental import _validate_version
 
 
 _DEPRECATION_NOTE_TEMPLATE = """
 
 .. note::
-    Deprecated in v{ver}. This feature will be removed in the future. See 
+    Deprecated in v{ver}. This feature will be removed in the future. See
     https://github.com/optuna/optuna/releases/tag/v{ver}.
 """
 
