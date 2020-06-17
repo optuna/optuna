@@ -28,12 +28,12 @@ Integration
 
 .. autofunction:: optuna.integration.lightgbm.train
 
-.. autoclass:: optuna.integration.lightgbm_tuner.LightGBMTuner
+.. autoclass:: optuna.integration.lightgbm.LightGBMTuner
     :members:
     :inherited-members:
     :exclude-members: sample_train_set
 
-.. autoclass:: optuna.integration.lightgbm_tuner.LightGBMTunerCV
+.. autoclass:: optuna.integration.lightgbm.LightGBMTunerCV
     :members:
     :inherited-members:
     :exclude-members: sample_train_set
