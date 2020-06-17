@@ -6,15 +6,20 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+import warnings
 
 from cmaes import CMA
 import numpy as np
 
 import optuna
 from optuna.distributions import BaseDistribution
+from optuna.exceptions import ExperimentalWarning
+from optuna import logging
 from optuna.samplers import BaseSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+_logger = logging.get_logger(__name__)
 
 # Minimum value of sigma0 to avoid ZeroDivisionError.
 _MIN_SIGMA0 = 1e-10
@@ -127,6 +132,14 @@ class CmaEsSampler(BaseSampler):
         self._cma_rng = np.random.RandomState(seed)
         self._search_space = optuna.samplers.IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
+
+        if self._consider_pruned_trials:
+            _message = (
+                "`consider_pruned_trials = True` is experimental (supported frmo v2.0.0)."
+                "The interface can change in the future."
+            )
+            warnings.warn(_message, ExperimentalWarning)
+            _logger.warning(_message)
 
     def reseed_rng(self) -> None:
         # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
