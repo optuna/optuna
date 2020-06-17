@@ -1,12 +1,12 @@
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import TrialState
-from optuna.visualization.plotly_imports import _imports
+from optuna.visualization._plotly_imports import _imports
 
 if _imports.is_successful():
-    from optuna.visualization.plotly_imports import go
+    from optuna.visualization._plotly_imports import go
 
-logger = get_logger(__name__)
+_logger = get_logger(__name__)
 
 
 def plot_intermediate_values(study: Study) -> "go.Figure":
@@ -79,7 +79,7 @@ def _get_intermediate_plot(study: Study) -> "go.Figure":
     trials = [trial for trial in study.trials if trial.state in target_state]
 
     if len(trials) == 0:
-        logger.warning("Study instance does not contain trials.")
+        _logger.warning("Study instance does not contain trials.")
         return go.Figure(data=[], layout=layout)
 
     traces = []
@@ -96,7 +96,7 @@ def _get_intermediate_plot(study: Study) -> "go.Figure":
             traces.append(trace)
 
     if not traces:
-        logger.warning(
+        _logger.warning(
             "You need to set up the pruning feature to utilize `plot_intermediate_values()`"
         )
         return go.Figure(data=[], layout=layout)

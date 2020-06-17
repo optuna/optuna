@@ -59,7 +59,7 @@ In addition, integration modules are available for the following libraries, prov
 
 ### Examples of Visualization
 
-* [Visualizing study](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
+* [Visualizing study](https://colab.research.google.com/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
 
 ### Examples of MLflow
 

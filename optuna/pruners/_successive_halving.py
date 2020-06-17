@@ -1,6 +1,6 @@
 import math
 
-from optuna.pruners.base import BasePruner
+from optuna.pruners._base import BasePruner
 from optuna.study import StudyDirection
 from optuna.trial._state import TrialState
 from optuna import type_checking

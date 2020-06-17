@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.samplers.cmaes import _initialize_sigma0
-from optuna.samplers.cmaes import _initialize_x0
+from optuna.samplers._cmaes import _initialize_sigma0
+from optuna.samplers._cmaes import _initialize_x0
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 
@@ -22,7 +22,7 @@ def test_init_cmaes_opts() -> None:
     )
     study = optuna.create_study(sampler=sampler)
 
-    with patch("optuna.samplers.cmaes.CMA") as cma_class:
+    with patch("optuna.samplers._cmaes.CMA") as cma_class:
         cma_obj = MagicMock()
         cma_obj.ask.return_value = np.array((-1, -1))
         cma_obj.generation = 0

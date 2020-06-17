@@ -104,7 +104,7 @@ def objective(trial):
 
 def main():
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=25)
+    study.optimize(objective, n_trials=25, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
 
