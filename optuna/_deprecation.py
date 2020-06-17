@@ -12,25 +12,28 @@ from optuna._experimental import _validate_version
 _DEPRECATION_NOTE_TEMPLATE = """
 
 .. note::
-    Deprecated in v{ver}. This feature will be removed in the future. See
-    https://github.com/optuna/optuna/releases/tag/v{ver}.
+    Deprecated in v{d_ver}. This feature will be removed in the future. The removal of this
+    feature is currently scheduled for v{r_ver}, but this schedule is subject to change.
+    See https://github.com/optuna/optuna/releases/tag/v{d_ver}.
 """
 
 
-def deprecation(version: str, name: str = None) -> Any:
-    """Decorate class or function as deprecation.
+def deprecated(deprecated_version: str, removed_version: str, name: str = None) -> Any:
+    """Decorate class or function as deprecated.
 
     Args:
-        version: The first version that supports the target feature.
+        deprecated_version: The version in which the target feature is deprecated.
+        removed_version: The version in which the target feature will be removed.
         name: The name of the feature. Defaults to the function or class name. Optional.
     """
 
-    _validate_version(version)
+    _validate_version(deprecated_version)
+    _validate_version(removed_version)
 
-    def _deprecation_wrapper(f: Any) -> Any:
+    def _deprecated_wrapper(f: Any) -> Any:
         # f is either func or class.
 
-        def _deprecation_func(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        def _deprecated_func(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
             """Decorates a function as deprecated.
 
             This decorator is supposed to be applied to the deprecated function.
@@ -38,17 +41,21 @@ def deprecation(version: str, name: str = None) -> Any:
             if func.__doc__ is None:
                 func.__doc__ = ""
 
-            note = _DEPRECATION_NOTE_TEMPLATE.format(ver=version)
+            note = _DEPRECATION_NOTE_TEMPLATE.format(
+                d_ver=deprecated_version, r_ver=removed_version
+            )
             indent = _get_docstring_indent(func.__doc__)
             func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
 
-            # TODO(crcrpar): Annotate this correctly.
+            # TODO(mamu): Annotate this correctly.
             @functools.wraps(func)
             def new_func(*args: Any, **kwargs: Any) -> Any:
                 warnings.warn(
-                    "{} is deprecated in v{}. "
-                    "This feature will be removed in the future.".format(
-                        name if name is not None else func.__name__, version
+                    "{} has been deprecated in v{}. "
+                    "This feature will be removed in v{}.".format(
+                        name if name is not None else func.__name__,
+                        deprecated_version,
+                        removed_version,
                     ),
                     DeprecationWarning,
                 )
@@ -57,7 +64,7 @@ def deprecation(version: str, name: str = None) -> Any:
 
             return new_func
 
-        def _deprecation_class(cls: Any) -> Any:
+        def _deprecated_class(cls: Any) -> Any:
             """Decorates a class as deprecated.
 
             This decorator is supposed to be applied to the deprecated class.
@@ -67,9 +74,11 @@ def deprecation(version: str, name: str = None) -> Any:
             @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
                 warnings.warn(
-                    "{} is deprecated in v{}. "
-                    "This feature will be removed in the future.".format(
-                        name if name is not None else cls.__name__, version
+                    "{} has been deprecated in v{}. "
+                    "This feature will be removed in v{}.".format(
+                        name if name is not None else cls.__name__,
+                        deprecated_version,
+                        removed_version,
                     ),
                     DeprecationWarning,
                 )
@@ -81,12 +90,14 @@ def deprecation(version: str, name: str = None) -> Any:
             if cls.__doc__ is None:
                 cls.__doc__ = ""
 
-            note = _DEPRECATION_NOTE_TEMPLATE.format(ver=version)
+            note = _DEPRECATION_NOTE_TEMPLATE.format(
+                d_ver=deprecated_version, r_ver=removed_version
+            )
             indent = _get_docstring_indent(cls.__doc__)
             cls.__doc__ = cls.__doc__.strip() + textwrap.indent(note, indent) + indent
 
             return cls
 
-        return _deprecation_class(f) if inspect.isclass(f) else _deprecation_func(f)
+        return _deprecated_class(f) if inspect.isclass(f) else _deprecated_func(f)
 
-    return _deprecation_wrapper
+    return _deprecated_wrapper
