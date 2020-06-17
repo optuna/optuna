@@ -114,14 +114,26 @@ class GridSampler(BaseSampler):
         target_grids = self._get_unvisited_grid_ids(study)
 
         if len(target_grids) == 0:
+            # This case may occur with distributed optimization or trial queue. If there is no
+            # target grid, `GridSampler` evaluates a visited, duplicated point with the current
+            # trial. After that, the optimization stops.
+
             _logger.warning(
-                "`GridSampler` is evaluating a duplicated point because all grids "
-                "have been evaluated. This may happen due to a timing issue during "
-                "distributed optimization or an unnecessary number of `n_trials`."
+                "`GridSampler` is evaluating a duplicated point because all grids  have been "
+                "evaluated. This may happen due to a timing issue during distributed optimization "
+                "or an unnecessary number of `n_trials`."
             )
 
-            study.stop()
+            # One of all grids is randomly picked up in this case.
             target_grids = list(range(len(self._all_grids)))
+
+            study.stop()
+
+        elif len(target_grids) == 1:
+            # When there is only one target grid, optimization stops after the current trial
+            # finishes.
+
+            study.stop()
 
         # In distributed optimization, multiple workers may simultaneously pick up the same grid.
         # To make the conflict less frequent, the grid is chosen randomly.
@@ -129,10 +141,6 @@ class GridSampler(BaseSampler):
 
         study._storage.set_trial_system_attr(trial._trial_id, "search_space", self._search_space)
         study._storage.set_trial_system_attr(trial._trial_id, "grid_id", grid_id)
-
-        # Once all grids are picked up, optimization stops after the current trial finishes.
-        if len(self._get_unvisited_grid_ids(study, include_unfinished=True)) == 0:
-            study.stop()
 
         return {}
 
@@ -174,14 +182,14 @@ class GridSampler(BaseSampler):
             " or `None`.".format(param_name, type(param_value))
         )
 
-    def _get_unvisited_grid_ids(self, study, include_unfinished=False):
-        # type: (Study, bool) -> List[int]
+    def _get_unvisited_grid_ids(self, study):
+        # type: (Study) -> List[int]
 
         # List up unvisited grids based on already finished ones.
         visited_grids = []
         for t in study.trials:
             if (
-                (t.state.is_finished() or include_unfinished)
+                t.state.is_finished()
                 and "grid_id" in t.system_attrs
                 and self._same_search_space(t.system_attrs["search_space"])
             ):
