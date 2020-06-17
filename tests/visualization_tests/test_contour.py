@@ -5,8 +5,8 @@ from optuna.study import create_study
 from optuna.study import StudyDirection
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna import type_checking
-from optuna.visualization.contour import _generate_contour_subplot
-from optuna.visualization.contour import plot_contour
+from optuna.visualization._contour import _generate_contour_subplot
+from optuna.visualization import plot_contour
 
 if type_checking.TYPE_CHECKING:
     from typing import List, Optional  # NOQA

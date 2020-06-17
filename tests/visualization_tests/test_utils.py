@@ -1,8 +1,8 @@
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.study import create_study
-from optuna.visualization.utils import _is_log_scale
-from optuna.visualization.utils import is_available
+from optuna.visualization._utils import _is_log_scale
+from optuna.visualization import is_available
 
 
 def test_is_log_scale():

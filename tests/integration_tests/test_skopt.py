@@ -28,6 +28,10 @@ def test_conversion_from_distribution_to_dimension():
             space.Real(-3.3, 5.2),
             # Original: trial.suggest_uniform('p1', 2.0, 2.0)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
+            # Original: trial.suggest_discrete_uniform('p9', 2.2, 2.2, 0.5)
+            # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
+            # Original: trial.suggest_categorical('p10', ['9', '3', '0', '8'])
+            space.Categorical(("9", "3", "0", "8")),
             # Original: trial.suggest_loguniform('p2', 0.0001, 0.3)
             space.Real(0.0001, 0.3, prior="log-uniform"),
             # Original: trial.suggest_loguniform('p3', 1.1, 1.1)
@@ -36,15 +40,14 @@ def test_conversion_from_distribution_to_dimension():
             space.Integer(0, 108),
             # Original: trial.suggest_int('p5', -20, -20)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
-            # Original: trial.suggest_discrete_uniform('p6', 10, 20, 2)
+            # Original: trial.suggest_int('p6', 1, 8, log=True)
+            space.Real(0.5, 8.5, prior="log-uniform"),
+            # Original: trial.suggest_discrete_uniform('p7', 10, 20, 2)
             space.Integer(0, 5),
-            # Original: trial.suggest_discrete_uniform('p7', 0.1, 1.0, 0.1)
+            # Original: trial.suggest_discrete_uniform('p8', 0.1, 1.0, 0.1)
             space.Integer(0, 8),
-            # Original: trial.suggest_discrete_uniform('p8', 2.2, 2.2, 0.5)
-            # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
-            # Original: trial.suggest_categorical('p9', ['9', '3', '0', '8'])
-            space.Categorical(("9", "3", "0", "8")),
         ]
+
         assert mock_object.mock_calls[0] == call(dimensions)
 
 
@@ -149,13 +152,14 @@ def _objective(trial):
     p3 = trial.suggest_loguniform("p3", 1.1, 1.1)
     p4 = trial.suggest_int("p4", -100, 8)
     p5 = trial.suggest_int("p5", -20, -20)
-    p6 = trial.suggest_discrete_uniform("p6", 10, 20, 2)
-    p7 = trial.suggest_discrete_uniform("p7", 0.1, 1.0, 0.1)
-    p8 = trial.suggest_discrete_uniform("p8", 2.2, 2.2, 0.5)
-    p9 = trial.suggest_categorical("p9", ["9", "3", "0", "8"])
-    assert isinstance(p9, str)
+    p6 = trial.suggest_int("p6", 1, 8, log=True)
+    p7 = trial.suggest_discrete_uniform("p7", 10, 20, 2)
+    p8 = trial.suggest_discrete_uniform("p8", 0.1, 1.0, 0.1)
+    p9 = trial.suggest_discrete_uniform("p9", 2.2, 2.2, 0.5)
+    p10 = trial.suggest_categorical("p10", ["9", "3", "0", "8"])
+    assert isinstance(p10, str)
 
-    return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + int(p9)
+    return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + int(p10)
 
 
 def test_sample_relative_n_startup_trials():

@@ -208,32 +208,6 @@ class FrozenTrial(object):
         self._distributions = value
 
     @property
-    def trial_id(self):
-        # type: () -> int
-        """Return the trial ID.
-
-        .. deprecated:: 0.19.0
-            The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.trial.FrozenTrial.number` instead.
-
-        Returns:
-            The trial ID.
-        """
-
-        warnings.warn(
-            "The use of `FrozenTrial.trial_id` is deprecated. "
-            "Please use `FrozenTrial.number` instead.",
-            DeprecationWarning,
-        )
-
-        _logger.warning(
-            "The use of `FrozenTrial.trial_id` is deprecated. "
-            "Please use `FrozenTrial.number` instead."
-        )
-
-        return self._trial_id
-
-    @property
     def last_step(self):
         # type: () -> Optional[int]
 
@@ -338,29 +312,6 @@ class StudySummary(object):
             return NotImplemented
 
         return self._study_id <= other._study_id
-
-    @property
-    def study_id(self):
-        # type: () -> int
-        """Return the study ID.
-
-        .. deprecated:: 0.20.0
-            The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.study.StudySummary.study_name` instead.
-
-        Returns:
-            The study ID.
-        """
-
-        message = (
-            "The use of `StudySummary.study_id` is deprecated. "
-            "Please use `StudySummary.study_name` instead."
-        )
-        warnings.warn(message, DeprecationWarning)
-
-        _logger.warning(message)
-
-        return self._study_id
 
 
 class TrialPruned(exceptions.TrialPruned):

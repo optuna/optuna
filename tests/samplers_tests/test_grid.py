@@ -15,7 +15,7 @@ if optuna.type_checking.TYPE_CHECKING:
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
-    from optuna.samplers.grid import GridValueType  # NOQA
+    from optuna.samplers._grid import GridValueType  # NOQA
     from optuna.trial import Trial  # NOQA
 
 

@@ -8,7 +8,7 @@ import pytest
 import optuna
 from optuna.cli import _Studies
 from optuna.exceptions import CLIUsageError
-from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
 from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier

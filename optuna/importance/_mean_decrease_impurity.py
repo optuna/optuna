@@ -8,6 +8,7 @@ from typing import ValuesView
 import numpy
 
 from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.importance._base import _get_distributions
@@ -15,15 +16,10 @@ from optuna.importance._base import _get_study_data
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
 
-try:
+with try_import() as _imports:
     from sklearn.compose import ColumnTransformer
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.preprocessing import OneHotEncoder
-
-    _available = True
-except ImportError as e:
-    _import_error = e
-    _available = False
 
 
 @experimental("1.5.0")
@@ -51,7 +47,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
     def __init__(
         self, n_estimators: int = 16, max_depth: int = 64, random_state: Optional[int] = None
     ) -> None:
-        _check_sklearn_availability()
+        _imports.check()
 
         self._forest = RandomForestRegressor(
             n_estimators=n_estimators,
@@ -125,14 +121,3 @@ def _encode_categorical(
     assert i == cols_to_raw_cols.size
 
     return params_data, cols_to_raw_cols
-
-
-def _check_sklearn_availability() -> None:
-    if not _available:
-        raise ImportError(
-            "scikit-learn is not available. Please install scikit-learn to "
-            "use this feature. scikit-learn can be installed by executing "
-            "`$ pip install scikit-learn>=0.19.0`. For further information, "
-            "please refer to the installation guide of scikit-learn. (The "
-            "actual import error is as follows: " + str(_import_error) + ")"
-        )
