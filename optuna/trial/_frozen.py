@@ -1,4 +1,7 @@
 import datetime
+from typing import Any
+from typing import Dict
+from typing import Optional
 
 from optuna._experimental import experimental
 from optuna import distributions
@@ -8,12 +11,7 @@ from optuna.trial._state import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
     from typing import Union  # NOQA
-
-    from optuna.distributions import BaseDistribution  # NOQA
 
     FloatingPointDistributionType = Union[
         distributions.UniformDistribution, distributions.LogUniformDistribution
