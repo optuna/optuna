@@ -296,8 +296,8 @@ class _StudyOptimize(_BaseCommand):
         # type: (Namespace) -> int
 
         message = (
-            "The use of the `study optimize` command is deprecated. Please execute your Python script directly "
-            "instead."
+            "The use of the `study optimize` command is deprecated. Please execute your Python "
+            "script directly instead."
         )
         warnings.warn(message, DeprecationWarning)
         self.logger.warning(message)
