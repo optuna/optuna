@@ -28,13 +28,34 @@ def _validate_two_version(old_version: str, new_version: str) -> None:
         )
 
 
-def deprecated(deprecated_version: str, removed_version: str, name: str = None) -> Any:
+def _formatting_note(note: str) -> str:
+    return "\n\n.. note::\n" + "".join(["    " + s + "\n" for s in note.split(sep="\n")])
+
+
+def deprecated(
+    deprecated_version: str, removed_version: str, name: str = None, deprecation_note: str = None
+) -> Any:
     """Decorate class or function as deprecated.
 
     Args:
         deprecated_version: The version in which the target feature is deprecated.
         removed_version: The version in which the target feature will be removed.
         name: The name of the feature. Defaults to the function or class name. Optional.
+        deprecation_note:
+            The text for the deprecation note. The default note is build using specified
+            ``deprecated_version`` and ``removed_version``. If you want to provide additional
+            information, please specify this argument yourself.
+
+
+            .. note::
+                The default deprecation note is as follows: "Deprecated in v{d_ver}. This feature
+                will be removed in the future. The removal of this feature is currently scheduled
+                for v{r_ver}, but this schedule is subject to change. See
+                https://github.com/optuna/optuna/releases/tag/v{d_ver}."
+
+            .. note::
+                The specified text must be separated by the newline characters, and each line
+                should not contain more than 92 characters without the added newline character.
     """
 
     _validate_version(deprecated_version)
@@ -52,8 +73,10 @@ def deprecated(deprecated_version: str, removed_version: str, name: str = None) 
             if func.__doc__ is None:
                 func.__doc__ = ""
 
-            note = _DEPRECATION_NOTE_TEMPLATE.format(
-                d_ver=deprecated_version, r_ver=removed_version
+            note = (
+                _DEPRECATION_NOTE_TEMPLATE.format(d_ver=deprecated_version, r_ver=removed_version)
+                if deprecation_note is None
+                else _formatting_note(deprecation_note)
             )
             indent = _get_docstring_indent(func.__doc__)
             func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
@@ -101,8 +124,10 @@ def deprecated(deprecated_version: str, removed_version: str, name: str = None) 
             if cls.__doc__ is None:
                 cls.__doc__ = ""
 
-            note = _DEPRECATION_NOTE_TEMPLATE.format(
-                d_ver=deprecated_version, r_ver=removed_version
+            note = (
+                _DEPRECATION_NOTE_TEMPLATE.format(d_ver=deprecated_version, r_ver=removed_version)
+                if deprecation_note is None
+                else _formatting_note(deprecation_note)
             )
             indent = _get_docstring_indent(cls.__doc__)
             cls.__doc__ = cls.__doc__.strip() + textwrap.indent(note, indent) + indent

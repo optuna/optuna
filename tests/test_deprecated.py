@@ -10,6 +10,11 @@ def _sample_func(_: Any) -> int:
     return 10
 
 
+def _sample_func2(_: Any) -> int:
+
+    return 10
+
+
 class _Sample(object):
     def __init__(self, a: Any, b: Any, c: Any) -> None:
         pass
@@ -112,3 +117,18 @@ def test_deprecation_decorator_name() -> None:
         decorated_sample_func(None)
 
     assert name in record.list[0].message.args[0]
+
+
+def test_deprecation_note_specified() -> None:
+
+    note = (
+        "Deprecated in v1.1.0. This feature will be removed in the future. The removal of this\n"
+        "feature is currently scheduled for v3.0.0, but this schedule is subject to change.\n"
+        "See https://github.com/optuna/optuna/releases/tag/v1.1.0."
+    )
+    decorator_deprecation = _deprecated.deprecated("1.1.0", "3.0.0", deprecation_note=note)
+    decorated_func = decorator_deprecation(_sample_func2)
+    assert decorated_func.__name__ == _sample_func2.__name__
+    assert decorated_func.__doc__ == _deprecated._DEPRECATION_NOTE_TEMPLATE.format(
+        d_ver="1.1.0", r_ver="3.0.0"
+    )
