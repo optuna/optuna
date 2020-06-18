@@ -46,7 +46,6 @@ def deprecated(
             ``deprecated_version`` and ``removed_version``. If you want to provide additional
             information, please specify this argument yourself.
 
-
             .. note::
                 The default deprecation note is as follows: "Deprecated in v{d_ver}. This feature
                 will be removed in the future. The removal of this feature is currently scheduled
