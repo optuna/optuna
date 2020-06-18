@@ -1,5 +1,6 @@
 import functools
 import inspect
+from packaging import version
 import textwrap
 from typing import Any
 from typing import Callable
@@ -18,6 +19,15 @@ _DEPRECATION_NOTE_TEMPLATE = """
 """
 
 
+def _validate_two_version(old_version: str, new_version: str) -> None:
+    if version.parse(old_version) > version.parse(new_version):
+        raise ValueError(
+            "Invalid version relationship. The deprecated version must be smaller than "
+            "the removed version, but (deprecated version, removed version) = ({}, {}) are "
+            "specified.".format(old_version, new_version)
+        )
+
+
 def deprecated(deprecated_version: str, removed_version: str, name: str = None) -> Any:
     """Decorate class or function as deprecated.
 
@@ -29,6 +39,7 @@ def deprecated(deprecated_version: str, removed_version: str, name: str = None) 
 
     _validate_version(deprecated_version)
     _validate_version(removed_version)
+    _validate_two_version(deprecated_version, removed_version)
 
     def _deprecated_wrapper(f: Any) -> Any:
         # f is either func or class.
