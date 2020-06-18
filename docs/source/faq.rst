@@ -296,3 +296,28 @@ Using :class:`~optuna.trial.FixedTrial`, you can write unit tests as follows:
         assert 1.0 == objective(FixedTrial({'x': 1.0, 'y': 0}))
         assert -1.0 == objective(FixedTrial({'x': 0.0, 'y': -1}))
         assert 0.0 == objective(FixedTrial({'x': -1.0, 'y': 1}))
+
+
+.. _out-of-memory-gc-collect:
+
+How do I avoid running out of memory when optimizing studies?
+-------------------------------------------------------------
+
+If the memory footprint increases as you run more trials, try to periodically run the garbage collector.
+Specify ``gc_after_trial`` to :obj:`True` when calling :func:`~optuna.study.Study.optimize` or call :func:`gc.collect` inside a callback.
+
+.. code-block:: python
+
+    def objective(trial):
+        x = trial.suggest_uniform('x', -1.0, 1.0)
+        y = trial.suggest_int('y', -5, 5)
+        return x + y
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=10, gc_after_trial=True)
+
+    # `gc_after_trial=True` is more or less identical to the following.
+    study.optimize(objective, n_trials=10, callbacks=[lambda study, trial: gc.collect()])
+
+There is a performance trade-off for running the garbage collector, which could be non-negligible depending on how fast your objective function otherwise is. Therefore, ``gc_after_trial`` is :obj:`False` by default.
+Note that the above examples are similar to running the garbage collector inside the objective function, except for the fact that :func:`gc.collect` is called even when errors, including :class:`~optuna.exceptions.TrialPruned` are raised.

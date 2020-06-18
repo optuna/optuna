@@ -257,6 +257,11 @@ class Study(BaseStudy):
                 When it runs, it runs a full collection by internally calling :func:`gc.collect`.
                 If you see an increase in memory consumption over several trials, try setting this
                 flag to :obj:`True`.
+
+                .. seealso::
+
+                    :ref:`out-of-memory-gc-collect`
+
             show_progress_bar:
                 Flag to show progress bars or not. To disable progress bar, set this ``False``.
                 Currently, progress bar is experimental feature and disabled
