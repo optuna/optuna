@@ -1,5 +1,5 @@
-from optuna.integration.lightgbm_tuner.alias import _handling_alias_metrics
-from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
+from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
+from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
 
 
 def test__handling_alias_parameters():
