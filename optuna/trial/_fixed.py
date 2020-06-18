@@ -118,7 +118,7 @@ class FixedTrial(BaseTrial):
                 )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
         else:
             if log:
-                distribution = IntLogUniformDistribution(low=low, high=high, step=step)
+                distribution = IntLogUniformDistribution(low=low, high=high)
             else:
                 distribution = IntUniformDistribution(low=low, high=high, step=step)
         return int(self._suggest(name, distribution))

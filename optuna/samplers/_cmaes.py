@@ -358,8 +358,8 @@ def _to_optuna_param(distribution: BaseDistribution, cma_param: float) -> Any:
         v = r * distribution.step + distribution.low
         return int(v)
     if isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
-        r = np.round((cma_param - math.log(distribution.low)) / math.log(distribution.step))
-        v = r * math.log(distribution.step) + math.log(distribution.low)
+        r = np.round(cma_param - math.log(distribution.low))
+        v = r + math.log(distribution.low)
         return int(math.exp(v))
     return cma_param
 

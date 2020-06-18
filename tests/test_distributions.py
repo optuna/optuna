@@ -19,7 +19,7 @@ EXAMPLE_DISTRIBUTIONS = {
     "iu": distributions.IntUniformDistribution(low=1, high=9, step=2),
     "c1": distributions.CategoricalDistribution(choices=(2.71, -float("inf"))),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
-    "ilu": distributions.IntLogUniformDistribution(low=2, high=12, step=2),
+    "ilu": distributions.IntLogUniformDistribution(low=2, high=12),
 }  # type: Dict[str, Any]
 
 EXAMPLE_JSONS = {
@@ -30,8 +30,7 @@ EXAMPLE_JSONS = {
     "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 9, "step": 2}}',
     "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
-    "ilu": '{"name": "IntLogUniformDistribution",'
-    '"attributes": {"low": 2, "high": 12, "step": 2}}',
+    "ilu": '{"name": "IntLogUniformDistribution", "attributes": {"low": 2, "high": 12}}',
 }
 
 
@@ -104,8 +103,7 @@ def test_check_distribution_compatibility():
         EXAMPLE_DISTRIBUTIONS["iu"], distributions.IntUniformDistribution(low=-1, high=1)
     )
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["ilu"],
-        distributions.IntLogUniformDistribution(low=1, high=13, step=1),
+        EXAMPLE_DISTRIBUTIONS["ilu"], distributions.IntLogUniformDistribution(low=1, high=13),
     )
 
 
@@ -174,19 +172,14 @@ def test_contains() -> None:
     assert not ilu._contains(12.1)
     assert not ilu._contains(13)
 
-    # IntLogUniformDistribution with a 'step' parameter.
-    with warnings.catch_warnings():
-        # UserWarning will be raised since the range is not divisible by 2.
-        # The range will be replaced with [2, 6].
-        warnings.simplefilter("ignore", category=UserWarning)
-        iluq = distributions.IntLogUniformDistribution(low=2, high=7, step=2)
+    iluq = distributions.IntLogUniformDistribution(low=2, high=7)
     assert not iluq._contains(0.9)
     assert iluq._contains(2)
     assert iluq._contains(4)
     assert iluq._contains(5)
     assert iluq._contains(6)
-    assert not iluq._contains(6.1)
-    assert not iluq._contains(7)
+    assert not iluq._contains(7.1)
+    assert not iluq._contains(8)
 
 
 def test_empty_range_contains():
@@ -243,7 +236,6 @@ def test_single():
             distributions.IntUniformDistribution(low=-123, high=-120, step=4),
             distributions.CategoricalDistribution(choices=("foo",)),
             distributions.IntLogUniformDistribution(low=2, high=2),
-            distributions.IntLogUniformDistribution(low=2, high=2, step=2),
         ]  # type: List[distributions.BaseDistribution]
     for distribution in single_distributions:
         assert distribution.single()
@@ -260,7 +252,6 @@ def test_single():
         distributions.IntUniformDistribution(low=-123, high=0, step=123),
         distributions.CategoricalDistribution(choices=("foo", "bar")),
         distributions.IntLogUniformDistribution(low=2, high=4),
-        distributions.IntLogUniformDistribution(low=2, high=4, step=2),
     ]  # type: List[distributions.BaseDistribution]
     for distribution in nonsingle_distributions:
         assert not distribution.single()
@@ -290,9 +281,6 @@ def test_empty_distribution():
 
     with pytest.raises(ValueError):
         distributions.IntLogUniformDistribution(low=123, high=100)
-
-    with pytest.raises(ValueError):
-        distributions.IntLogUniformDistribution(low=123, high=100, step=2)
 
 
 def test_invalid_distribution():
@@ -370,4 +358,4 @@ def test_int_uniform_distribution_asdict():
 def test_int_log_uniform_distribution_asdict():
     # type: () -> None
 
-    assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12, "step": 2}
+    assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12}

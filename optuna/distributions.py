@@ -311,31 +311,18 @@ class IntLogUniformDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
     :mod:`~optuna.samplers` in general.
 
-    .. note::
-        If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by
-        :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced with the maximum of
-        :math:`k \\times \\mathsf{step} + \\mathsf{low} \\lt \\mathsf{high}`, where :math:`k` is
-        an integer.
-
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
-        step:
-            A step for spacing between values.
     """
 
-    def __init__(self, low: int, high: int, step: int = 1) -> None:
+    def __init__(self, low: int, high: int) -> None:
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}).".format(low, high)
-            )
-
-        if step <= 0:
-            raise ValueError(
-                "The `step` value must be non-zero positive value, but step={}.".format(step)
             )
 
         if low < 1.0:
@@ -344,11 +331,8 @@ class IntLogUniformDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
-        high = _adjust_int_uniform_high(low, high, step)
-
         self.low = low
         self.high = high
-        self.step = step
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
@@ -363,9 +347,7 @@ class IntLogUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        if self.low == self.high:
-            return True
-        return (self.high - self.low) < self.step
+        return self.low == self.high
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool
