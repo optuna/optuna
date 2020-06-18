@@ -28,12 +28,15 @@ def _validate_two_version(old_version: str, new_version: str) -> None:
         )
 
 
-def _formatting_note(note: str) -> str:
-    return "\n\n.. note::\n" + "".join(["    " + s + "\n" for s in note.split(sep="\n")])
+def _formatting_text(note: str) -> str:
+    if note == "":
+        return note
+    else:
+        return "".join(["    " + s + "\n" for s in note.split(sep="\n") if len(s) > 0])
 
 
 def deprecated(
-    deprecated_version: str, removed_version: str, name: str = None, deprecation_note: str = None
+    deprecated_version: str, removed_version: str, name: str = None, additional_text: str = ""
 ) -> Any:
     """Decorate class or function as deprecated.
 
@@ -41,8 +44,8 @@ def deprecated(
         deprecated_version: The version in which the target feature is deprecated.
         removed_version: The version in which the target feature will be removed.
         name: The name of the feature. Defaults to the function or class name. Optional.
-        deprecation_note:
-            The text for the deprecation note. The default note is build using specified
+        additional_text:
+            The additional text for the deprecation note. The default note is build using specified
             ``deprecated_version`` and ``removed_version``. If you want to provide additional
             information, please specify this argument yourself.
 
@@ -53,8 +56,12 @@ def deprecated(
                 https://github.com/optuna/optuna/releases/tag/v{d_ver}."
 
             .. note::
-                The specified text must be separated by the newline characters, and each line
-                should not contain more than 92 characters without the added newline character.
+                The specified text is concatenated after the default deprecation note.
+
+            .. note::
+                Each line of the specified text must be ended with the newline characters, and
+                each line should not contain more than 92 characters without the added newline
+                character.
     """
 
     _validate_version(deprecated_version)
@@ -72,11 +79,9 @@ def deprecated(
             if func.__doc__ is None:
                 func.__doc__ = ""
 
-            note = (
-                _DEPRECATION_NOTE_TEMPLATE.format(d_ver=deprecated_version, r_ver=removed_version)
-                if deprecation_note is None
-                else _formatting_note(deprecation_note)
-            )
+            note = _DEPRECATION_NOTE_TEMPLATE.format(
+                d_ver=deprecated_version, r_ver=removed_version
+            ) + _formatting_text(additional_text)
             indent = _get_docstring_indent(func.__doc__)
             func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
 
@@ -123,11 +128,9 @@ def deprecated(
             if cls.__doc__ is None:
                 cls.__doc__ = ""
 
-            note = (
-                _DEPRECATION_NOTE_TEMPLATE.format(d_ver=deprecated_version, r_ver=removed_version)
-                if deprecation_note is None
-                else _formatting_note(deprecation_note)
-            )
+            note = _DEPRECATION_NOTE_TEMPLATE.format(
+                d_ver=deprecated_version, r_ver=removed_version
+            ) + _formatting_text(additional_text)
             indent = _get_docstring_indent(cls.__doc__)
             cls.__doc__ = cls.__doc__.strip() + textwrap.indent(note, indent) + indent
 
