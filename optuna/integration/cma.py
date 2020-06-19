@@ -457,8 +457,8 @@ class _Optimizer(object):
 class CmaEsSampler(PyCmaSampler):
     """Wrapper class of PyCmaSampler for backward compatibility.
 
-    .. deprecated:: 1.5.0
-        This class is renamed as :class:`~optuna.integrations.PyCmaSampler`.
+    .. deprecated:: 2.0.0
+        This class is renamed to :class:`~optuna.integration.PyCmaSampler`.
     """
 
     def __init__(
