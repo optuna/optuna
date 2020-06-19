@@ -4,6 +4,7 @@ from packaging import version
 import textwrap
 from typing import Any
 from typing import Callable
+from typing import Optional
 import warnings
 
 from optuna._experimental import _get_docstring_indent
@@ -36,7 +37,10 @@ def _formatting_text(note: str) -> str:
 
 
 def deprecated(
-    deprecated_version: str, removed_version: str, name: str = None, additional_text: str = ""
+    deprecated_version: str,
+    removed_version: str,
+    name: Optional[str] = None,
+    additional_text: str = "",
 ) -> Any:
     """Decorate class or function as deprecated.
 
