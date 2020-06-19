@@ -10,7 +10,7 @@ _import_structure = {
     "allennlp": ["AllenNLPExecutor"],
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
-    "cma": ["CmaEsSampler"],
+    "cma": ["CmaEsSampler", "PyCmaSampler"],
     "mlflow": ["MLflowCallback"],
     "keras": ["KerasPruningCallback"],
     "lightgbm": ["LightGBMPruningCallback", "LightGBMTuner", "LightGBMTunerCV"],
@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from optuna.integration.chainer import ChainerPruningExtension  # NOQA
     from optuna.integration.chainermn import ChainerMNStudy  # NOQA
     from optuna.integration.cma import CmaEsSampler  # NOQA
+    from optuna.integration.cma import PyCmaSampler  # NOQA
     from optuna.integration.fastai import FastAIPruningCallback  # NOQA
     from optuna.integration.keras import KerasPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
