@@ -321,3 +321,8 @@ Specify ``gc_after_trial`` to :obj:`True` when calling :func:`~optuna.study.Stud
 
 There is a performance trade-off for running the garbage collector, which could be non-negligible depending on how fast your objective function otherwise is. Therefore, ``gc_after_trial`` is :obj:`False` by default.
 Note that the above examples are similar to running the garbage collector inside the objective function, except for the fact that :func:`gc.collect` is called even when errors, including :class:`~optuna.exceptions.TrialPruned` are raised.
+
+.. note::
+
+    :class:`~optuna.integration.ChainerMNStudy` does currently not provide ``gc_after_trial`` nor callbacks for :func:`~optuna.integration.ChainerMNStudy.optimize`.
+    When using this class, you will have to call the garbage collector inside the objective function.
