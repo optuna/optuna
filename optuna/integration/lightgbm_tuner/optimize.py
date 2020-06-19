@@ -27,8 +27,7 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from sklearn.model_selection import BaseCrossValidator  # NOQA
+from sklearn.model_selection import BaseCrossValidator
 
 with try_import() as _imports:
     import lightgbm as lgb
