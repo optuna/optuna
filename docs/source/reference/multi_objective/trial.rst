@@ -1,7 +1,7 @@
 .. module:: optuna.multi_objective.trial
 
-Trial
-=====
+optuna.multi_objective.trial
+============================
 
 .. autoclass:: MultiObjectiveTrial
     :members:
