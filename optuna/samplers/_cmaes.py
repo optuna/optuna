@@ -117,10 +117,10 @@ class CmaEsSampler(BaseSampler):
         sigma0: Optional[float] = None,
         n_startup_trials: int = 1,
         independent_sampler: Optional[BaseSampler] = None,
-        warn_independent_sampling: bool = True,
+        warn_independent_sampling: bool = False,
         seed: Optional[int] = None,
         *,
-        consider_pruned_trials: bool = False
+        consider_pruned_trials: bool = True
     ) -> None:
 
         self._x0 = x0
@@ -240,6 +240,9 @@ class CmaEsSampler(BaseSampler):
         seed = self._cma_rng.randint(1, 2 ** 16) + trial.number
         optimizer._rng = np.random.RandomState(seed)
         params = optimizer.ask()
+        if any([np.isnan(p) for p in params]):
+            _logger.error("Nan is detected: {}".format(params))
+            raise ValueError("Nan is detected: {}".format(params))
 
         study._storage.set_trial_system_attr(
             trial._trial_id, "cma:generation", optimizer.generation
