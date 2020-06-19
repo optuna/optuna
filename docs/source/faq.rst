@@ -300,8 +300,8 @@ Using :class:`~optuna.trial.FixedTrial`, you can write unit tests as follows:
 
 .. _out-of-memory-gc-collect:
 
-How do I avoid running out of memory when optimizing studies?
--------------------------------------------------------------
+How do I avoid running out of memory (OOM) when optimizing studies?
+-------------------------------------------------------------------
 
 If the memory footprint increases as you run more trials, try to periodically run the garbage collector.
 Specify ``gc_after_trial`` to :obj:`True` when calling :func:`~optuna.study.Study.optimize` or call :func:`gc.collect` inside a callback.
