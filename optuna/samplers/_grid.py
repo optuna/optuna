@@ -119,8 +119,8 @@ class GridSampler(BaseSampler):
             # trial. After that, the optimization stops.
 
             _logger.warning(
-                "`GridSampler` is evaluating a duplicated point because all grids  have been "
-                "evaluated. This may happen due to a timing issue during distributed optimization "
+                "`GridSampler` is re-evaluating a configuration because the grid has been "
+                "exhausted. This may happen due to a timing issue during distributed optimization "
                 "or an unnecessary number of `n_trials`."
             )
 
