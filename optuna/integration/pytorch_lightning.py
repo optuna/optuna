@@ -28,18 +28,15 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             how this dictionary is formatted.
     """
 
-    def __init__(self, trial, monitor):
-        # type: (optuna.trial.Trial, str) -> None
+    def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
 
         _imports.check()
 
         super(PyTorchLightningPruningCallback, self).__init__(monitor=monitor)
 
         self._trial = trial
-        self._monitor = monitor
 
-    def _process(self, trainer, pl_module):
-        # type: (Trainer, LightningModule) -> None
+    def _process(self, trainer: Trainer, pl_module: LightningModule) -> None:
         logs = trainer.callback_metrics
         epoch = pl_module.current_epoch
         current_score = logs.get(self.monitor)
@@ -51,11 +48,9 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             raise optuna.TrialPruned(message)
 
     # NOTE (crcrpar): This method is called <0.8.0
-    def on_epoch_end(self, trainer, pl_module):
-        # type: (Trainer, LightningModule) -> None
+    def on_epoch_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         return self._process(trainer, pl_module)
 
     # NOTE (crcrpar): This method is called >=0.8.0
-    def on_validation_end(self, trainer, pl_module):
-        # type: (Trainer, LightningModule) -> None
+    def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         return self._process(trainer, pl_module)
