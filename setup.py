@@ -79,7 +79,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "xgboost",
         ]
         + (
-            ["allennlp<1", "fastai<2", "pytorch-lightning>=0.7.1"]
+            ["allennlp<1", "fastai<2", "pytorch-lightning>=0.7.1,!=0.8.0"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
         )
@@ -121,7 +121,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "xgboost",
         ]
         + (
-            ["allennlp<1", "fastai<2", "pytorch-lightning>=0.7.1"]
+            ["allennlp<1", "fastai<2", "pytorch-lightning>=0.7.1,!=0.8.0"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
         )
