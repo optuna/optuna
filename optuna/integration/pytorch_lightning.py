@@ -7,6 +7,8 @@ with optuna._imports.try_import() as _imports:
 
 if not _imports.is_successful():
     EarlyStopping = object  # NOQA
+    LightningModule = object  # NOQA
+    Trainer = object  # NOQA
 
 
 class PyTorchLightningPruningCallback(EarlyStopping):
