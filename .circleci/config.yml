@@ -11,7 +11,6 @@ workflows:
       - tests-python37
       - tests-python36
       - tests-python35
-      - codecov
 
 jobs:
 
@@ -148,11 +147,17 @@ jobs:
             # Install all dependencies needed for testing.
             pip install --progress-bar off $(ls dist/*.tar.gz)[testing] -f https://download.pytorch.org/whl/torch_stable.html
 
+      - run:
+          name: install-codecov
+          command: |
+            . venv/bin/activate
+            pip install --progress-bar off .[codecov]
+
       - run: &tests
           name: tests
           command: |
             . venv/bin/activate
-            pytest tests
+            pytest --cov=optuna tests
           environment:
             OMP_NUM_THREADS: 1
 
@@ -161,6 +166,14 @@ jobs:
           command: |
             . venv/bin/activate
             mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+          environment:
+            OMP_NUM_THREADS: 1
+
+      - run:
+          name: codecov
+          command: |
+            . venv/bin/activate
+            codecov
           environment:
             OMP_NUM_THREADS: 1
 
@@ -193,7 +206,19 @@ jobs:
       - image: circleci/python:3.6
       - image: circleci/redis:5.0.7
     steps:
-      [checkout, run: *checkout-merge-master, run: *install, run: *tests, run: *tests-mn]
+      - checkout
+
+      - run: *checkout-merge-master
+
+      - run: *install
+
+      - run:
+          <<: *tests
+          command: |
+            . venv/bin/activate
+            pytest tests
+
+      - run: *tests-mn
 
   tests-python35:
     docker:
@@ -215,29 +240,3 @@ jobs:
                 --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
 
       - run: *tests-mn
-
-  codecov:
-    docker:
-      - image: circleci/python:3.7
-      - image: circleci/redis:5.0.7
-    steps:
-      - checkout
-
-      - run: *checkout-merge-master
-
-      - run: *install
-
-      - run:
-          name: install-codecov
-          command: |
-            . venv/bin/activate
-            pip install --progress-bar off .[codecov]
-
-      - run:
-          name: codecov
-          command: |
-            . venv/bin/activate
-            pytest --cov=optuna tests
-            codecov
-          environment:
-            OMP_NUM_THREADS: 1
