@@ -1,9 +1,5 @@
 import optuna
 
-if optuna.type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
-
 with optuna._imports.try_import() as _imports:
     from pytorch_lightning.callbacks import EarlyStopping
     from pytorch_lightning import LightningModule
