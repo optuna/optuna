@@ -21,8 +21,8 @@ import tqdm
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna.integration.lightgbm_tuner.alias import _handling_alias_metrics
-from optuna.integration.lightgbm_tuner.alias import _handling_alias_parameters
+from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
+from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna import type_checking
@@ -42,13 +42,13 @@ _STEP_NAME_KEY = "lightgbm_tuner:step_name"
 _LGBM_PARAMS_KEY = "lightgbm_tuner:lgbm_params"
 
 # EPS is used to ensure that a sampled parameter value is in pre-defined value range.
-EPS = 1e-12
+_EPS = 1e-12
 
 # Default value of tree_depth, used for upper bound of num_leaves.
-DEFAULT_TUNER_TREE_DEPTH = 8
+_DEFAULT_TUNER_TREE_DEPTH = 8
 
 # Default parameter values described in the official webpage.
-DEFAULT_LIGHTGBM_PARAMETERS = {
+_DEFAULT_LIGHTGBM_PARAMETERS = {
     "lambda_l1": 0.0,
     "lambda_l2": 0.0,
     "num_leaves": 31,
@@ -61,7 +61,7 @@ DEFAULT_LIGHTGBM_PARAMETERS = {
 _logger = optuna.logging.get_logger(__name__)
 
 
-class BaseTuner(object):
+class _BaseTuner(object):
     def __init__(self, lgbm_params=None, lgbm_kwargs=None):
         # type: (Dict[str, Any], Dict[str,Any]) -> None
 
@@ -156,7 +156,7 @@ class BaseTuner(object):
             return val_score < best_score
 
 
-class OptunaObjective(BaseTuner):
+class _OptunaObjective(_BaseTuner):
     """Objective for hyperparameter-tuning with Optuna."""
 
     def __init__(
@@ -211,25 +211,25 @@ class OptunaObjective(BaseTuner):
         if "lambda_l2" in self.target_param_names:
             self.lgbm_params["lambda_l2"] = trial.suggest_loguniform("lambda_l2", 1e-8, 10.0)
         if "num_leaves" in self.target_param_names:
-            tree_depth = self.lgbm_params.get("max_depth", DEFAULT_TUNER_TREE_DEPTH)
-            max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** DEFAULT_TUNER_TREE_DEPTH
+            tree_depth = self.lgbm_params.get("max_depth", _DEFAULT_TUNER_TREE_DEPTH)
+            max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** _DEFAULT_TUNER_TREE_DEPTH
             self.lgbm_params["num_leaves"] = trial.suggest_int("num_leaves", 2, max_num_leaves)
         if "feature_fraction" in self.target_param_names:
             # `GridSampler` is used for sampling feature_fraction value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = min(trial.suggest_uniform("feature_fraction", 0.4, 1.0 + EPS), 1.0)
+            param_value = min(trial.suggest_uniform("feature_fraction", 0.4, 1.0 + _EPS), 1.0)
             self.lgbm_params["feature_fraction"] = param_value
         if "bagging_fraction" in self.target_param_names:
             # `TPESampler` is used for sampling bagging_fraction value.
             # The value 1.0 for the hyperparameter might by sampled.
-            param_value = min(trial.suggest_uniform("bagging_fraction", 0.4, 1.0 + EPS), 1.0)
+            param_value = min(trial.suggest_uniform("bagging_fraction", 0.4, 1.0 + _EPS), 1.0)
             self.lgbm_params["bagging_fraction"] = param_value
         if "bagging_freq" in self.target_param_names:
             self.lgbm_params["bagging_freq"] = trial.suggest_int("bagging_freq", 1, 7)
         if "min_child_samples" in self.target_param_names:
             # `GridSampler` is used for sampling min_child_samples value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + EPS))
+            param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + _EPS))
             self.lgbm_params["min_child_samples"] = param_value
 
     def __call__(self, trial: optuna.trial.Trial) -> float:
@@ -272,7 +272,7 @@ class OptunaObjective(BaseTuner):
         self.trial_count += 1
 
 
-class OptunaObjectiveCV(OptunaObjective):
+class _OptunaObjectiveCV(_OptunaObjective):
     def __init__(
         self,
         target_param_names: List[str],
@@ -284,7 +284,7 @@ class OptunaObjectiveCV(OptunaObjective):
         pbar: Optional[tqdm.tqdm] = None,
     ):
 
-        super(OptunaObjectiveCV, self).__init__(
+        super(_OptunaObjectiveCV, self).__init__(
             target_param_names,
             lgbm_params,
             train_set,
@@ -321,12 +321,12 @@ class OptunaObjectiveCV(OptunaObjective):
         return val_score
 
 
-class LightGBMBaseTuner(BaseTuner):
+class _LightGBMBaseTuner(_BaseTuner):
     """Base class of LightGBM Tuners.
 
     This class has common attributes and method of
-    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` and
-    :class:`~optuna.integration.lightgbm_tuner.LightGBMTunerCV`.
+    :class:`~optuna.integration.lightgbm.LightGBMTuner` and
+    :class:`~optuna.integration.lightgbm.LightGBMTunerCV`.
     """
 
     def __init__(
@@ -375,7 +375,7 @@ class LightGBMBaseTuner(BaseTuner):
         self._best_params = {}
 
         # Set default parameters as best.
-        self._best_params.update(DEFAULT_LIGHTGBM_PARAMETERS)
+        self._best_params.update(_DEFAULT_LIGHTGBM_PARAMETERS)
 
         if study is None:
             self.study = optuna.create_study(
@@ -415,7 +415,7 @@ class LightGBMBaseTuner(BaseTuner):
             return json.loads(self.study.best_trial.system_attrs[_LGBM_PARAMS_KEY])
         except ValueError:
             # Return the default score because no trials have completed.
-            params = copy.deepcopy(DEFAULT_LIGHTGBM_PARAMETERS)
+            params = copy.deepcopy(_DEFAULT_LIGHTGBM_PARAMETERS)
             # self.lgbm_params may contain parameters given by users.
             params.update(self.lgbm_params)
             return params
@@ -480,13 +480,13 @@ class LightGBMBaseTuner(BaseTuner):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
             sampler = optuna.samplers.GridSampler({param_name: param_values})
-        self.tune_params([param_name], len(param_values), sampler, "feature_fraction")
+        self._tune_params([param_name], len(param_values), sampler, "feature_fraction")
 
     def tune_num_leaves(self, n_trials: int = 20) -> None:
-        self.tune_params(["num_leaves"], n_trials, optuna.samplers.TPESampler(), "num_leaves")
+        self._tune_params(["num_leaves"], n_trials, optuna.samplers.TPESampler(), "num_leaves")
 
     def tune_bagging(self, n_trials: int = 10) -> None:
-        self.tune_params(
+        self._tune_params(
             ["bagging_fraction", "bagging_freq"], n_trials, optuna.samplers.TPESampler(), "bagging"
         )
 
@@ -502,10 +502,10 @@ class LightGBMBaseTuner(BaseTuner):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
             sampler = optuna.samplers.GridSampler({param_name: param_values})
-        self.tune_params([param_name], len(param_values), sampler, "feature_fraction_stage2")
+        self._tune_params([param_name], len(param_values), sampler, "feature_fraction_stage2")
 
     def tune_regularization_factors(self, n_trials: int = 20) -> None:
-        self.tune_params(
+        self._tune_params(
             ["lambda_l1", "lambda_l2"],
             n_trials,
             optuna.samplers.TPESampler(),
@@ -520,15 +520,15 @@ class LightGBMBaseTuner(BaseTuner):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
             sampler = optuna.samplers.GridSampler({param_name: param_values})
-        self.tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
+        self._tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
 
-    def tune_params(
+    def _tune_params(
         self,
         target_param_names: List[str],
         n_trials: int,
         sampler: optuna.samplers.BaseSampler,
         step_name: str,
-    ) -> OptunaObjective:
+    ) -> _OptunaObjective:
         pbar = tqdm.tqdm(total=n_trials, ascii=True)
 
         # Set current best parameters.
@@ -583,7 +583,7 @@ class LightGBMBaseTuner(BaseTuner):
         train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
-    ) -> OptunaObjective:
+    ) -> _OptunaObjective:
 
         raise NotImplementedError
 
@@ -632,7 +632,7 @@ class LightGBMBaseTuner(BaseTuner):
 
 
 @experimental("1.5.0")
-class LightGBMTuner(LightGBMBaseTuner):
+class LightGBMTuner(_LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM.
 
     It optimizes the following hyperparameters in a stepwise manner:
@@ -645,7 +645,7 @@ class LightGBMTuner(LightGBMBaseTuner):
 
     Arguments and keyword arguments for `lightgbm.train()
     <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html>`_ can be passed.
-    The arguments that only :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` has are
+    The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTuner` has are
     listed below:
 
     Args:
@@ -788,10 +788,10 @@ class LightGBMTuner(LightGBMBaseTuner):
 
         return booster
 
-    def tune_params(self, target_param_names, n_trials, sampler, step_name):
-        # type: (List[str], int, optuna.samplers.BaseSampler, str) -> OptunaObjective
+    def _tune_params(self, target_param_names, n_trials, sampler, step_name):
+        # type: (List[str], int, optuna.samplers.BaseSampler, str) -> _OptunaObjective
 
-        objective = super(LightGBMTuner, self).tune_params(
+        objective = super(LightGBMTuner, self)._tune_params(
             target_param_names, n_trials, sampler, step_name
         )
 
@@ -806,8 +806,8 @@ class LightGBMTuner(LightGBMBaseTuner):
         train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
-    ) -> OptunaObjective:
-        return OptunaObjective(
+    ) -> _OptunaObjective:
+        return _OptunaObjective(
             target_param_names,
             self.lgbm_params,
             train_set,
@@ -820,20 +820,20 @@ class LightGBMTuner(LightGBMBaseTuner):
 
 
 @experimental("1.5.0")
-class LightGBMTunerCV(LightGBMBaseTuner):
+class LightGBMTunerCV(_LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM with cross-validation.
 
     It employs the same stepwise approach as
-    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner`.
-    :class:`~optuna.integration.lightgbm_tuner.LightGBMTunerCV` invokes `lightgbm.cv()`_ to train
-    and validate boosters while :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` invokes
+    :class:`~optuna.integration.lightgbm.LightGBMTuner`.
+    :class:`~optuna.integration.lightgbm.LightGBMTunerCV` invokes `lightgbm.cv()`_ to train
+    and validate boosters while :class:`~optuna.integration.lightgbm.LightGBMTuner` invokes
     `lightgbm.train()`_. See
     `a simple example <https://github.com/optuna/optuna/blob/master/examples/lightgbm_tuner_cv.
     py>`_ which optimizes the validation log loss of cancer detection.
 
     Arguments and keyword arguments for `lightgbm.cv()`_ can be passed except
     ``metrics``, ``init_model`` and ``eval_train_metric``.
-    The arguments that only :class:`~optuna.integration.lightgbm_tuner.LightGBMTunerCV` has are
+    The arguments that only :class:`~optuna.integration.lightgbm.LightGBMTunerCV` has are
     listed below:
 
     Args:
@@ -922,8 +922,8 @@ class LightGBMTunerCV(LightGBMBaseTuner):
         train_set: "lgb.Dataset",
         step_name: str,
         pbar: tqdm.tqdm,
-    ) -> OptunaObjective:
-        return OptunaObjectiveCV(
+    ) -> _OptunaObjective:
+        return _OptunaObjectiveCV(
             target_param_names,
             self.lgbm_params,
             train_set,

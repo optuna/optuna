@@ -1,15 +1,15 @@
 from typing import Any
 
 from optuna._experimental import experimental
-from optuna.integration.lightgbm_tuner.optimize import _imports as _imports
-from optuna.integration.lightgbm_tuner.optimize import LightGBMTuner
-from optuna.integration.lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
+from optuna.integration._lightgbm_tuner.optimize import _imports as _imports
+from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
+from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
 from optuna import type_checking
 
 if _imports.is_successful():
-    from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
-    from optuna.integration.lightgbm_tuner.sklearn import LGBMModel  # NOQA
-    from optuna.integration.lightgbm_tuner.sklearn import LGBMRegressor  # NOQA
+    from optuna.integration._lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
+    from optuna.integration._lightgbm_tuner.sklearn import LGBMModel  # NOQA
+    from optuna.integration._lightgbm_tuner.sklearn import LGBMRegressor  # NOQA
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -25,9 +25,9 @@ def train(*args: Any, **kwargs: Any) -> Any:
     htgbm_tuner_simple.py>`_ which optimizes the validation log loss of cancer detection.
 
     :func:`~optuna.integration.lightgbm.train` is a wrapper function of
-    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner`. To use feature in Optuna such as
+    :class:`~optuna.integration.lightgbm.LightGBMTuner`. To use feature in Optuna such as
     suspended/resumed optimization and/or parallelization, refer to
-    :class:`~optuna.integration.lightgbm_tuner.LightGBMTuner` instead of this function.
+    :class:`~optuna.integration.lightgbm.LightGBMTuner` instead of this function.
 
     Arguments and keyword arguments for `lightgbm.train()`_ can be passed.
 

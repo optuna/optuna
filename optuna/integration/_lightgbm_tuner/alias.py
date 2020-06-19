@@ -6,7 +6,7 @@ if type_checking.TYPE_CHECKING:
     from typing import List  # NOQA
 
 
-ALIAS_GROUP_LIST = [
+_ALIAS_GROUP_LIST = [
     {"param_name": "bagging_fraction", "alias_names": ["sub_row", "subsample", "bagging"],},
     {"param_name": "learning_rate", "alias_names": ["shrinkage_rate", "eta"],},
     {
@@ -34,7 +34,7 @@ def _handling_alias_parameters(lgbm_params):
     # type: (Dict[str, Any]) -> None
     """Handling alias parameters."""
 
-    for alias_group in ALIAS_GROUP_LIST:
+    for alias_group in _ALIAS_GROUP_LIST:
         param_name = alias_group["param_name"]
         alias_names = alias_group["alias_names"]
 
@@ -44,7 +44,7 @@ def _handling_alias_parameters(lgbm_params):
                 del lgbm_params[alias_name]
 
 
-ALIAS_METRIC_LIST = [
+_ALIAS_METRIC_LIST = [
     {
         "metric_name": "ndcg",
         "alias_names": [
@@ -67,7 +67,7 @@ def _handling_alias_metrics(lgbm_params):
     if "metric" not in lgbm_params.keys():
         return
 
-    for metric in ALIAS_METRIC_LIST:
+    for metric in _ALIAS_METRIC_LIST:
         metric_name = metric["metric_name"]
         alias_names = metric["alias_names"]
 
