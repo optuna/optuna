@@ -23,7 +23,7 @@ This page contains a list of example codes written with Optuna.
 * [PyTorch Lightning](./pytorch_lightning_simple.py)
 * [XGBoost](./xgboost_simple.py)
 * [Tensorflow](./tensorflow_estimator_simple.py)
-* [Tensorflow(eager)](./tensorflow_eager_simple.py)
+* [Tensorflow (eager)](./tensorflow_eager_simple.py)
 * [Keras](./keras_simple.py)
 * [FastAI](./fastai_simple.py)
 * [AllenNLP](./allennlp_simple.py)
