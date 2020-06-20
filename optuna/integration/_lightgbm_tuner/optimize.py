@@ -26,10 +26,9 @@ from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
-from sklearn.model_selection import BaseCrossValidator
-
 with try_import() as _imports:
     import lightgbm as lgb
+    from sklearn.model_selection import BaseCrossValidator
 
     VALID_SET_TYPE = Union[List[lgb.Dataset], Tuple[lgb.Dataset, ...], lgb.Dataset]
 
