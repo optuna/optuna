@@ -25,7 +25,6 @@ from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna import type_checking
 
 from sklearn.model_selection import BaseCrossValidator
 
