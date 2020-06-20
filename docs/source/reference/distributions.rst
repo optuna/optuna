@@ -1,31 +1,16 @@
-.. module:: optuna.distributions
-
 optuna.distributions
 ====================
 
-.. autoclass:: UniformDistribution
-    :members:
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autoclass:: LogUniformDistribution
-    :members:
-
-.. autoclass:: DiscreteUniformDistribution
-    :members:
-
-.. autoclass:: IntUniformDistribution
-    :members:
-    :exclude-members: to_external_repr, to_internal_repr
-
-.. autoclass:: IntLogUniformDistribution
-    :members:
-    :exclude-members: to_external_repr, to_internal_repr
-
-.. autoclass:: CategoricalDistribution
-    :members:
-    :exclude-members: to_external_repr, to_internal_repr
-
-.. autofunction:: distribution_to_json
-
-.. autofunction:: json_to_distribution
-
-.. autofunction:: check_distribution_compatibility
+   optuna.distributions.UniformDistribution
+   optuna.distributions.LogUniformDistribution
+   optuna.distributions.DiscreteUniformDistribution
+   optuna.distributions.IntUniformDistribution
+   optuna.distributions.IntLogUniformDistribution
+   optuna.distributions.CategoricalDistribution
+   optuna.distributions.distribution_to_json
+   optuna.distributions.json_to_distribution
+   optuna.distributions.check_distribution_compatibility

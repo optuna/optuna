@@ -1,5 +1,3 @@
-.. module:: optuna.multi_objective
-
 optuna.multi_objective
 ======================
 

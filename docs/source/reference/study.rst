@@ -1,35 +1,14 @@
-.. module:: optuna.study
-
 optuna.study
 ============
 
-.. autoclass:: Study
-    :members:
-    :inherited-members:
-    :exclude-members: system_attrs, set_system_attr, storage
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autofunction:: create_study
-
-.. seealso::
-    The alias also exists as :func:`optuna.create_study`.
-
-.. autofunction:: load_study
-
-.. seealso::
-    The alias also exists as :func:`optuna.load_study`.
-
-.. autofunction:: delete_study
-
-.. seealso::
-    The alias also exists as :func:`optuna.delete_study`.
-
-.. autofunction:: get_all_study_summaries
-
-.. seealso::
-    The alias also exists as :func:`optuna.get_all_study_summaries`.
-
-.. autoclass:: StudyDirection
-    :members:
-
-.. autoclass:: StudySummary
-    :members:
+   optuna.study.Study
+   optuna.study.create_study
+   optuna.study.load_study
+   optuna.study.delete_study
+   optuna.study.get_all_study_summaries
+   optuna.study.StudyDirection
+   optuna.study.StudySummary

@@ -106,3 +106,7 @@ ENV/
 
 # MyPy
 .mypy_cache
+
+# Sphinx
+docs/source/reference/generated/
+docs/source/reference/alias_generated/
