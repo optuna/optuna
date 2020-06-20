@@ -253,7 +253,7 @@ class _Dashboard(_BaseCommand):
 
 
 class _StudyOptimize(_BaseCommand):
-    """Start optimization of a study."""
+    """Start optimization of a study. Deprecated since version 2.0.0."""
 
     def get_parser(self, prog_name):
         # type: (str) -> ArgumentParser
@@ -294,6 +294,13 @@ class _StudyOptimize(_BaseCommand):
 
     def take_action(self, parsed_args):
         # type: (Namespace) -> int
+
+        message = (
+            "The use of the `study optimize` command is deprecated. Please execute your Python "
+            "script directly instead."
+        )
+        warnings.warn(message, DeprecationWarning)
+        self.logger.warning(message)
 
         storage_url = _check_storage_url(self.app_args.storage)
 

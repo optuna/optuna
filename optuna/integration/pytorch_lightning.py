@@ -1,9 +1,5 @@
 import optuna
 
-if optuna.type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
-
 with optuna._imports.try_import() as _imports:
     from pytorch_lightning.callbacks import EarlyStopping
     from pytorch_lightning import LightningModule
@@ -11,6 +7,8 @@ with optuna._imports.try_import() as _imports:
 
 if not _imports.is_successful():
     EarlyStopping = object  # NOQA
+    LightningModule = object  # NOQA
+    Trainer = object  # NOQA
 
 
 class PyTorchLightningPruningCallback(EarlyStopping):
@@ -32,24 +30,29 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             how this dictionary is formatted.
     """
 
-    def __init__(self, trial, monitor):
-        # type: (optuna.trial.Trial, str) -> None
+    def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
 
         _imports.check()
 
         super(PyTorchLightningPruningCallback, self).__init__(monitor=monitor)
 
         self._trial = trial
-        self._monitor = monitor
 
-    def on_epoch_end(self, trainer, pl_module):
-        # type: (Trainer, LightningModule) -> None
+    def _process(self, trainer: Trainer, pl_module: LightningModule) -> None:
         logs = trainer.callback_metrics
         epoch = pl_module.current_epoch
-        current_score = logs.get(self._monitor)
+        current_score = logs.get(self.monitor)
         if current_score is None:
             return
         self._trial.report(current_score, step=epoch)
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
+
+    # NOTE (crcrpar): This method is called <0.8.0
+    def on_epoch_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
+        return self._process(trainer, pl_module)
+
+    # NOTE (crcrpar): This method is called >=0.8.0
+    def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
+        return self._process(trainer, pl_module)

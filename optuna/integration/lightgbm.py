@@ -3,7 +3,7 @@ import sys
 import optuna
 
 from optuna._imports import try_import
-from optuna.integration import lightgbm_tuner as tuner
+from optuna.integration import _lightgbm_tuner as tuner
 
 
 with try_import() as _imports:
@@ -14,8 +14,8 @@ with try_import() as _imports:
 if _imports.is_successful():
     # To pass tests/integration_tests/lightgbm_tuner_tests/test_optimize.py.
     from lightgbm import Dataset  # NOQA
-    from optuna.integration.lightgbm_tuner import LightGBMTuner  # NOQA
-    from optuna.integration.lightgbm_tuner import LightGBMTunerCV  # NOQA
+    from optuna.integration._lightgbm_tuner import LightGBMTuner  # NOQA
+    from optuna.integration._lightgbm_tuner import LightGBMTunerCV  # NOQA
 
     _names_from_tuners = ["train", "LGBMModel", "LGBMClassifier", "LGBMRegressor"]
 
@@ -31,6 +31,8 @@ if _imports.is_successful():
 else:
     # To create docstring of train.
     setattr(sys.modules[__name__], "train", tuner.__dict__["train"])
+    setattr(sys.modules[__name__], "LightGBMTuner", tuner.__dict__["LightGBMTuner"])
+    setattr(sys.modules[__name__], "LightGBMTunerCV", tuner.__dict__["LightGBMTunerCV"])
 
 
 class LightGBMPruningCallback(object):

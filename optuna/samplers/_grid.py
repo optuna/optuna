@@ -3,7 +3,7 @@ import itertools
 import random
 
 from optuna._experimental import experimental
-from optuna.samplers.base import BaseSampler
+from optuna.samplers import BaseSampler
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:

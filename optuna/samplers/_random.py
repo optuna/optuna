@@ -1,7 +1,7 @@
 import numpy
 
 from optuna import distributions
-from optuna.samplers.base import BaseSampler
+from optuna.samplers import BaseSampler
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
