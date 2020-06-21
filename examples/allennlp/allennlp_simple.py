@@ -36,7 +36,7 @@ from optuna.integration import AllenNLPPruningCallback
 DEVICE = -1  # If you want to use GPU, use DEVICE = 0.
 MAX_DATA_SIZE = 3000
 MODEL_DIR = os.path.join(os.getcwd(), "result")
-TARGET_METRIC = "validation_accuracy"
+TARGET_METRIC = "accuracy"
 
 
 class SubsampledDatasetReader(allennlp.data.dataset_readers.TextClassificationJsonReader):
@@ -120,15 +120,15 @@ def objective(trial):
         optimizer=optimizer,
         data_loader=data_loader,
         validation_data_loader=validation_data_loader,
-        validation_metric="+accuracy",
+        validation_metric=f"+{TARGET_METRIC}",
         patience=None,
         num_epochs=50,
         cuda_device=DEVICE,
         serialization_dir=serialization_dir,
-        epoch_callbacks=[AllenNLPPruningCallback(trial, TARGET_METRIC)],
+        epoch_callbacks=[AllenNLPPruningCallback(trial, "validation_" + TARGET_METRIC)],
     )
     metrics = trainer.train()
-    return metrics["best_" + TARGET_METRIC]
+    return metrics["best_validation_" + TARGET_METRIC]
 
 
 if __name__ == "__main__":
