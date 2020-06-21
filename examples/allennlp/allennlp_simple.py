@@ -46,7 +46,7 @@ class SubsampledDatasetReader(allennlp.data.dataset_readers.TextClassificationJs
     def _read(self, datapath):
         data = list(super()._read(datapath))
         random.shuffle(data)
-        yield from data[:3000]
+        yield from data[:MAX_DATA_SIZE]
 
 
 def prepare_data():
