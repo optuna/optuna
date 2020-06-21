@@ -185,7 +185,7 @@ class AllenNLPPruningCallback(EpochCallback):
         is_master: bool,
     ) -> None:
         value = metrics.get(self._monitor)
-        if not value:
+        if value is None:
             return
 
         self._trial.report(float(value), epoch)
