@@ -5,6 +5,7 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Type
 from typing import Union
@@ -20,7 +21,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
-ObjectiveFuncType = Callable[["multi_objective.trial.MultiObjectiveTrial"], Tuple[float]]
+ObjectiveFuncType = Callable[["multi_objective.trial.MultiObjectiveTrial"], Sequence[float]]
 CallbackFuncType = Callable[
     [
         "multi_objective.study.MultiObjectiveStudy",

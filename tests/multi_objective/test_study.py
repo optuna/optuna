@@ -1,4 +1,5 @@
 from typing import List
+from typing import Tuple
 import uuid
 
 import pytest
@@ -125,7 +126,7 @@ def test_enqueue_trial() -> None:
 def test_callbacks() -> None:
     study = optuna.multi_objective.create_study(["minimize", "maximize"])
 
-    def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
+    def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> Tuple[float, float]:
         x = trial.suggest_float("x", 0, 10)
         y = trial.suggest_float("y", 0, 10)
         return x, y

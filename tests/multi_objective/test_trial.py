@@ -1,6 +1,7 @@
 import datetime
+from typing import cast
 from typing import List
-from typing import Optional
+from typing import Tuple
 
 import pytest
 
@@ -13,16 +14,19 @@ from optuna.trial import TrialState
 def test_suggest() -> None:
     study = optuna.multi_objective.create_study(["maximize", "maximize"])
 
-    def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
+    def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> Tuple[float, float]:
         p0 = trial.suggest_float("p0", -10, 10)
         p1 = trial.suggest_uniform("p1", 3, 5)
         p2 = trial.suggest_loguniform("p2", 0.00001, 0.1)
         p3 = trial.suggest_discrete_uniform("p3", 100, 200, q=5)
         p4 = trial.suggest_int("p4", -20, -15)
-        p5 = trial.suggest_categorical("p5", [7, 1, 100])
+        p5 = cast(int, trial.suggest_categorical("p5", [7, 1, 100]))
         p6 = trial.suggest_float("p6", -10, 10, step=1.0)
         p7 = trial.suggest_int("p7", 1, 7, log=True)
-        return [p0 + p1 + p2, p3 + p4 + p5 + p6 + p7]
+        return (
+            p0 + p1 + p2,
+            p3 + p4 + p5 + p6 + p7,
+        )
 
     study.optimize(objective, n_trials=10)
 
@@ -30,11 +34,13 @@ def test_suggest() -> None:
 def test_report() -> None:
     study = optuna.multi_objective.create_study(["maximize", "minimize", "maximize"])
 
-    def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
+    def objective(
+        trial: optuna.multi_objective.trial.MultiObjectiveTrial,
+    ) -> Tuple[float, float, float]:
         if trial.number == 0:
             trial.report((1, 2, 3), 1)
             trial.report((10, 20, 30), 2)
-        return [100, 200, 300]
+        return 100, 200, 300
 
     study.optimize(objective, n_trials=2)
 
@@ -142,7 +148,7 @@ def test_dominates() -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
     def create_trial(
-        values: List[Optional[float]], state: TrialState = TrialState.COMPLETE,
+        values: List[float], state: TrialState = TrialState.COMPLETE,
     ) -> FrozenMultiObjectiveTrial:
         n_objectives = len(values)
         trial = optuna.trial.FrozenTrial(

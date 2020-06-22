@@ -4,7 +4,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 
 from optuna._experimental import experimental
@@ -108,7 +107,7 @@ class MultiObjectiveTrial(object):
 
         return self._trial.suggest_categorical(name, choices)
 
-    def report(self, values: Tuple[float], step: int) -> None:
+    def report(self, values: Sequence[float], step: int) -> None:
         """Report intermediate objective function values for a given step.
 
         The reported values are used by the pruners to determine whether this trial should be
@@ -144,7 +143,7 @@ class MultiObjectiveTrial(object):
         for i, value in enumerate(values):
             self._trial.report(value, self._n_objectives * (step + 1) + i)
 
-    def _report_complete_values(self, values: Tuple[float]) -> None:
+    def _report_complete_values(self, values: Sequence[float]) -> None:
         if len(values) != self._n_objectives:
             raise ValueError(
                 "The number of the values {} is mismatched with the number of the objectives {}.",
