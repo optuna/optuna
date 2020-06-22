@@ -381,7 +381,7 @@ class Study(BaseStudy):
         multi_index=False,  # type: bool
     ):
         # type: (...) -> pd.DataFrame
-        """Export trials as a pandas DataFrame_.
+        """Export trials as a pandas DataFrame.
 
         The DataFrame_ provides various features to analyze studies. It is also useful to draw a
         histogram of objective values and to export trials as a CSV file.
