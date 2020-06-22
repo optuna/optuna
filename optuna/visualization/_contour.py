@@ -46,7 +46,8 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
 
         .. raw:: html
 
-            <iframe src="../../_static/plot_contour.html" width="100%" height="500px" frameborder="0">
+            <iframe src="../../_static/plot_contour.html"
+                width="100%" height="500px" frameborder="0">
             </iframe>
 
     Args:
