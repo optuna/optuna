@@ -29,18 +29,15 @@ def _validate_two_version(old_version: str, new_version: str) -> None:
         )
 
 
-def _formatting_text(note: str) -> str:
-    if note == "":
-        return note
-    else:
-        return "".join(["    " + s + "\n" for s in note.split(sep="\n") if len(s) > 0])
+def _format_text(text: str) -> str:
+    return "\n\n" + textwrap.indent(text.strip(), "    ") + "\n"
 
 
 def deprecated(
     deprecated_version: str,
     removed_version: str,
     name: Optional[str] = None,
-    additional_text: str = "",
+    text: Optional[str] = None,
 ) -> Any:
     """Decorate class or function as deprecated.
 
@@ -48,7 +45,7 @@ def deprecated(
         deprecated_version: The version in which the target feature is deprecated.
         removed_version: The version in which the target feature will be removed.
         name: The name of the feature. Defaults to the function or class name. Optional.
-        additional_text:
+        text:
             The additional text for the deprecation note. The default note is build using specified
             ``deprecated_version`` and ``removed_version``. If you want to provide additional
             information, please specify this argument yourself.
@@ -61,11 +58,6 @@ def deprecated(
 
             .. note::
                 The specified text is concatenated after the default deprecation note.
-
-            .. note::
-                Each line of the specified text must be ended with the newline characters, and
-                each line should not contain more than 92 characters without the added newline
-                character.
     """
 
     _validate_version(deprecated_version)
@@ -85,7 +77,9 @@ def deprecated(
 
             note = _DEPRECATION_NOTE_TEMPLATE.format(
                 d_ver=deprecated_version, r_ver=removed_version
-            ) + _formatting_text(additional_text)
+            )
+            if text is not None:
+                note += _format_text(text)
             indent = _get_docstring_indent(func.__doc__)
             func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
 
@@ -134,7 +128,9 @@ def deprecated(
 
             note = _DEPRECATION_NOTE_TEMPLATE.format(
                 d_ver=deprecated_version, r_ver=removed_version
-            ) + _formatting_text(additional_text)
+            )
+            if text is not None:
+                note += _format_text(text)
             indent = _get_docstring_indent(cls.__doc__)
             cls.__doc__ = cls.__doc__.strip() + textwrap.indent(note, indent) + indent
 
