@@ -6,14 +6,13 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-import warnings
 
 from cmaes import CMA
 import numpy as np
 
 import optuna
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
-from optuna.exceptions import ExperimentalWarning
 from optuna import logging
 from optuna.samplers import BaseSampler
 from optuna.trial import FrozenTrial
@@ -105,9 +104,10 @@ class CmaEsSampler(BaseSampler):
                 https://github.com/optuna/optuna/releases/tag/v2.0.0.
 
             .. note::
-                It is suggested to set this flag :obj:`False` when the `MedianPruner` is used.
-                On the other hand, it is suggested to set this flag :obj:`True` when the
-                `HyperbandPruner` is used. Please see `the benchmark result
+                It is suggested to set this flag :obj:`False` when the
+                :class:`~optuna.pruners.MedianPruner` is used. On the other hand, it is suggested
+                to set this flag :obj:`True` when the :class:`~optuna.pruners.HyperbandPruner` is
+                used. Please see `the benchmark result
                 <https://github.com/optuna/optuna/pull/1229>`_ for the details.
     """
 
@@ -134,12 +134,11 @@ class CmaEsSampler(BaseSampler):
         self._consider_pruned_trials = consider_pruned_trials
 
         if self._consider_pruned_trials:
-            _message = (
-                "`consider_pruned_trials = True` is experimental (supported frmo v2.0.0)."
-                "The interface can change in the future."
-            )
-            warnings.warn(_message, ExperimentalWarning)
-            _logger.warning(_message)
+            self._raise_experimental_warning_for_consider_pruned_trials()
+
+    @experimental("2.0.0")
+    def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
+        pass
 
     def reseed_rng(self) -> None:
         # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
