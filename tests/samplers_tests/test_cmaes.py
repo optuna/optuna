@@ -11,6 +11,11 @@ from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 
 
+def test_consider_pruned_trials_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.samplers.CmaEsSampler(consider_pruned_trials=True)
+
+
 def test_init_cmaes_opts() -> None:
 
     sampler = optuna.samplers.CmaEsSampler(

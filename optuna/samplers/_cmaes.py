@@ -1,3 +1,4 @@
+import copy
 import math
 import pickle
 from typing import Any
@@ -10,10 +11,14 @@ from cmaes import CMA
 import numpy as np
 
 import optuna
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
+from optuna import logging
 from optuna.samplers import BaseSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+_logger = logging.get_logger(__name__)
 
 # Minimum value of sigma0 to avoid ZeroDivisionError.
 _MIN_SIGMA0 = 1e-10
@@ -89,6 +94,21 @@ class CmaEsSampler(BaseSampler):
 
             Note that the parameters of the first trial in a study are always sampled
             via an independent sampler, so no warning messages are emitted in this case.
+
+        consider_pruned_trials:
+            If this is :obj:`True`, the PRUNED trials are considered for sampling.
+
+            .. note::
+                Added in v2.0.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.0.0.
+
+            .. note::
+                It is suggested to set this flag :obj:`False` when the
+                :class:`~optuna.pruners.MedianPruner` is used. On the other hand, it is suggested
+                to set this flag :obj:`True` when the :class:`~optuna.pruners.HyperbandPruner` is
+                used. Please see `the benchmark result
+                <https://github.com/optuna/optuna/pull/1229>`_ for the details.
     """
 
     def __init__(
@@ -99,6 +119,8 @@ class CmaEsSampler(BaseSampler):
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
         seed: Optional[int] = None,
+        *,
+        consider_pruned_trials: bool = False
     ) -> None:
 
         self._x0 = x0
@@ -109,6 +131,14 @@ class CmaEsSampler(BaseSampler):
         self._logger = optuna.logging.get_logger(__name__)
         self._cma_rng = np.random.RandomState(seed)
         self._search_space = optuna.samplers.IntersectionSearchSpace()
+        self._consider_pruned_trials = consider_pruned_trials
+
+        if self._consider_pruned_trials:
+            self._raise_experimental_warning_for_consider_pruned_trials()
+
+    @experimental("2.0.0")
+    def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
+        pass
 
     def reseed_rng(self) -> None:
         # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
@@ -152,11 +182,7 @@ class CmaEsSampler(BaseSampler):
         if len(search_space) == 0:
             return {}
 
-        completed_trials = [
-            t
-            for t in study._storage.get_all_trials(study._study_id, deepcopy=False)
-            if t.state == TrialState.COMPLETE
-        ]
+        completed_trials = self._get_trials(study)
         if len(completed_trials) < self._n_startup_trials:
             return {}
 
@@ -267,7 +293,7 @@ class CmaEsSampler(BaseSampler):
     ) -> Any:
 
         if self._warn_independent_sampling:
-            complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+            complete_trials = self._get_trials(study)
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -287,6 +313,25 @@ class CmaEsSampler(BaseSampler):
                 param_name, trial.number, self._independent_sampler.__class__.__name__
             )
         )
+
+    def _get_trials(self, study: "optuna.Study") -> List[FrozenTrial]:
+        complete_trials = []
+        for t in study.get_trials(deepcopy=False):
+            if t.state == TrialState.COMPLETE:
+                complete_trials.append(t)
+            elif (
+                t.state == TrialState.PRUNED
+                and len(t.intermediate_values) > 0
+                and self._consider_pruned_trials
+            ):
+                _, value = max(t.intermediate_values.items())
+                if value is None:
+                    continue
+                # We rewrite the value of the trial `t` for sampling, so we need a deepcopy.
+                copied_t = copy.deepcopy(t)
+                copied_t.value = value
+                complete_trials.append(copied_t)
+        return complete_trials
 
 
 def _to_cma_param(distribution: BaseDistribution, optuna_param: Any) -> float:
