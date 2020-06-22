@@ -394,6 +394,11 @@ class MultiObjectiveStudy(object):
 
 
 def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:
+    if logging.get_verbosity() > logging.INFO:
+        return
+    if not (logging._is_enabled_default_handler() or logging._is_enabled_propagation()):
+        return
+
     values = multi_objective.trial.MultiObjectiveTrial(trial)._get_values()
     _logger.info(
         "Trial {} finished with values: {} with parameters: {}.".format(

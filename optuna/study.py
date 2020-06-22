@@ -751,8 +751,12 @@ class Study(BaseStudy):
 
         return trial
 
-    def _log_completed_trial(self, trial, result):
-        # type: (trial_module.Trial, float) -> None
+    def _log_completed_trial(self, trial: trial_module.Trial, result: float) -> None:
+
+        if logging.get_verbosity() > logging.INFO:
+            return
+        if not (logging._is_enabled_default_handler() or logging._is_enabled_propagation()):
+            return
 
         _logger.info(
             "Trial {} finished with value: {} and parameters: {}. "
