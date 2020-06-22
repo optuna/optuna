@@ -121,7 +121,7 @@ class GridSampler(BaseSampler):
             _logger.warning(
                 "`GridSampler` is re-evaluating a configuration because the grid has been "
                 "exhausted. This may happen due to a timing issue during distributed optimization "
-                "or an unnecessary number of `n_trials`."
+                "or when re-running optimizations on already finished studies."
             )
 
             # One of all grids is randomly picked up in this case.
