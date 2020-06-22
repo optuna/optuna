@@ -118,11 +118,13 @@ class ChainerMNStudy(object):
 
         if self.comm.rank == 0:
             func_mn = _ChainerMNObjectiveFunc(func, self.comm)
-            self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
-            self.comm.mpi_comm.bcast(False)
+            try:
+                self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
+            finally:
+                self.comm.mpi_comm.bcast(False)
         else:
+            has_next_trial = self.comm.mpi_comm.bcast(None)
             while True:
-                has_next_trial = self.comm.mpi_comm.bcast(None)
                 if not has_next_trial:
                     break
                 try:
@@ -137,6 +139,8 @@ class ChainerMNStudy(object):
                     pass
                 except catch:
                     pass
+                finally:
+                    has_next_trial = self.comm.mpi_comm.bcast(None)
 
     def __getattr__(self, attr_name):
         # type: (str) -> Any
