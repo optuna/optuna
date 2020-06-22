@@ -165,4 +165,6 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 # -- Extension configuration -------------------------------------------------
 autosummary_generate = True
-autodoc_default_flags = ['members']
+autodoc_default_options = {
+    'members': True
+}
