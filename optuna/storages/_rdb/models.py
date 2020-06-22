@@ -163,6 +163,7 @@ class TrialModel(BaseModel):
     value = Column(Float)
     datetime_start = Column(DateTime, default=datetime.now)
     datetime_complete = Column(DateTime)
+    datetime_last_update = Column(DateTime, onupdate=func.now())
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("trials", cascade="all, delete-orphan")
