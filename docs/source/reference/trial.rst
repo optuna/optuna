@@ -1,8 +1,8 @@
 .. module:: optuna.trial
 
 
-Trial
-=====
+optuna.trial
+============
 
 .. autoclass:: Trial
     :members:

@@ -1,8 +1,8 @@
 .. module:: optuna.visualization
 
 
-Visualization
-=============
+optuna.visualization
+====================
 
 .. note::
     :mod:`~optuna.visualization` module uses plotly to create figures, but `JupyterLab`_ cannot

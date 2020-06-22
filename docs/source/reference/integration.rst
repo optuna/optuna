@@ -1,7 +1,7 @@
 .. module:: optuna.integration
 
-Integration
-===========
+optuna.integration
+==================
 
 .. autoclass:: ChainerPruningExtension
     :members:

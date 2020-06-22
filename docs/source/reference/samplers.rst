@@ -1,7 +1,7 @@
 .. module:: optuna.samplers
 
-Samplers
-========
+optuna.samplers
+===============
 
 .. autoclass:: BaseSampler
     :members:

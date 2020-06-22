@@ -1,7 +1,7 @@
 .. module:: optuna.exceptions
 
-Exceptions
-==========
+optuna.exceptions
+=================
 
 .. autoclass:: OptunaError
     :members:

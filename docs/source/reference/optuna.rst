@@ -1,7 +1,7 @@
 .. module:: optuna
 
-Core
-====
+optuna
+======
 
 .. autofunction:: create_study
 

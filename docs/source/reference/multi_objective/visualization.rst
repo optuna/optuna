@@ -1,7 +1,7 @@
 .. module:: optuna.multi_objective.visualization
 
-Visualization
-=============
+optuna.multi_objective.visualization
+====================================
 
 .. note::
     :mod:`~optuna.multi_objective.visualization` module uses plotly to create figures,

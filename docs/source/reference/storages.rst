@@ -1,7 +1,7 @@
 .. module:: optuna.storages
 
-Storages
-========
+optuna.storages
+===============
 
 .. autoclass:: RDBStorage
 .. autoclass:: RedisStorage
