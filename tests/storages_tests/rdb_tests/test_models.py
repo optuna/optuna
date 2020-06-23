@@ -1,4 +1,5 @@
 from datetime import datetime
+import time
 
 import pytest
 from sqlalchemy import create_engine
@@ -167,13 +168,17 @@ class TestTrialModel(object):
 
         trial_model = session.query(TrialModel).first()
 
-        assert trial_model.datetime_last_update is None
+        datetime_last_update = trial_model.datetime_last_update
+        assert datetime_last_update is not None
 
         # Any UPDATE on the row will trigger an update of its `datetime_last_update`.
+        time.sleep(1)
         trial_model.state = TrialState.COMPLETE
         session.commit()
 
-        assert trial_model.datetime_last_update is not None
+        datetime_last_update_updated = trial_model.datetime_last_update
+        assert datetime_last_update_updated is not None
+        assert datetime_last_update_updated != datetime_last_update
 
 
 class TestTrialUserAttributeModel(object):
