@@ -1047,6 +1047,7 @@ def test_log_completed_trial_skip_storage_access() -> None:
 
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
         study._log_completed_trial(trial, 1.0)
+        # Trial.best_trial and Trial.best_params access storage.
         assert mock_object.call_count == 2
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
