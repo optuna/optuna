@@ -21,3 +21,4 @@ jobs:
         stale-issue-label: 'stale'
         stale-pr-label: 'stale'
         exempt-issue-labels: 'no-stale'
+        remove-stale-when-updated: true
