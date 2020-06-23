@@ -755,8 +755,6 @@ class Study(BaseStudy):
 
         if not _logger.isEnabledFor(logging.INFO):
             return
-        if not (logging._is_enabled_default_handler() or logging._is_enabled_propagation()):
-            return
 
         _logger.info(
             "Trial {} finished with value: {} and parameters: {}. "

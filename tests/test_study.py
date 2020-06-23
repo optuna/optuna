@@ -1,6 +1,5 @@
 import copy
 import itertools
-import logging
 import multiprocessing
 import pickle
 import threading
@@ -1014,7 +1013,7 @@ def test_study_summary_lt_le():
     assert summaries[1] == summary_1
 
 
-def test_log_completed_trial_verbosity(capsys: _pytest.capture.CaptureFixture) -> None:
+def test_log_completed_trial(capsys: _pytest.capture.CaptureFixture) -> None:
 
     # We need to reconstruct our default handler to properly capture stderr.
     optuna.logging._reset_library_root_logger()
@@ -1034,36 +1033,3 @@ def test_log_completed_trial_verbosity(capsys: _pytest.capture.CaptureFixture) -
     study.optimize(lambda t: 1.0, n_trials=1)
     _, err = capsys.readouterr()
     assert "Trial 2" in err
-
-
-@pytest.mark.parametrize(
-    "handler, propagation, output",
-    [(False, False, False), (False, True, True), (True, False, True), (True, True, True),],
-)
-def test_log_completed_trial_handler_propagation(
-    capsys: _pytest.capture.CaptureFixture, handler: bool, propagation: bool, output: bool
-) -> None:
-
-    # We need to reconstruct our default handler to properly capture stderr.
-    optuna.logging._reset_library_root_logger()
-    optuna.logging.set_verbosity(optuna.logging.INFO)
-
-    # Set up the root logger.
-    logger = logging.getLogger()
-    logger.addHandler(logging.StreamHandler())
-    logger.setLevel(logging.INFO)
-
-    if handler:
-        optuna.logging.enable_default_handler()
-    else:
-        optuna.logging.disable_default_handler()
-
-    if propagation:
-        optuna.logging.enable_propagation()
-    else:
-        optuna.logging.disable_propagation()
-
-    study = optuna.create_study()
-    study.optimize(lambda t: 1.0, n_trials=1)
-    _, err = capsys.readouterr()
-    assert ("Trial 0" in err) is output

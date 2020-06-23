@@ -165,15 +165,6 @@ def enable_default_handler() -> None:
     _get_library_root_logger().addHandler(_default_handler)
 
 
-def _is_enabled_default_handler() -> bool:
-    """Check if the default handler of the Optuna's root logger is enabled."""
-
-    _configure_library_root_logger()
-
-    assert _default_handler is not None
-    return _default_handler in _get_library_root_logger().handlers
-
-
 def disable_propagation() -> None:
     """Disable propagation of the library log outputs.
 
@@ -227,10 +218,3 @@ def enable_propagation() -> None:
 
     _configure_library_root_logger()
     _get_library_root_logger().propagate = True
-
-
-def _is_enabled_propagation() -> bool:
-    """Check if propagation of the library log outputs is enabled."""
-
-    _configure_library_root_logger()
-    return _get_library_root_logger().propagate

@@ -33,7 +33,6 @@ def test_default_handler(capsys: _pytest.capture.CaptureFixture) -> None:
     example_logger.info("hey")
     _, err = capsys.readouterr()
     assert "hey" in err
-    assert optuna.logging._is_enabled_default_handler()
 
     # Default handler disabled
     optuna.logging.disable_default_handler()
@@ -41,7 +40,6 @@ def test_default_handler(capsys: _pytest.capture.CaptureFixture) -> None:
     example_logger.info("yoyo")
     _, err = capsys.readouterr()
     assert "yoyo" not in err
-    assert not optuna.logging._is_enabled_default_handler()
 
 
 def test_verbosity(capsys: _pytest.capture.CaptureFixture) -> None:
@@ -84,18 +82,15 @@ def test_propagation(caplog: _pytest.capture.CaptureFixture) -> None:
     with caplog.at_level(logging.INFO, logger="optuna"):
         logger.info("no-propagation")
     assert "no-propagation" not in caplog.text
-    assert not optuna.logging._is_enabled_propagation()
 
     # Enable propagation.
     optuna.logging.enable_propagation()
     with caplog.at_level(logging.INFO, logger="optuna"):
         logger.info("enable-propagate")
     assert "enable-propagate" in caplog.text
-    assert optuna.logging._is_enabled_propagation()
 
     # Disable propagation.
     optuna.logging.disable_propagation()
     with caplog.at_level(logging.INFO, logger="optuna"):
         logger.info("disable-propagation")
     assert "disable-propagation" not in caplog.text
-    assert not optuna.logging._is_enabled_propagation()
