@@ -9,7 +9,9 @@ import warnings
 
 from optuna._experimental import _get_docstring_indent
 from optuna._experimental import _validate_version
+from optuna import logging
 
+_logger = logging.get_logger(__name__)
 
 _DEPRECATION_NOTE_TEMPLATE = """
 
@@ -86,15 +88,18 @@ def deprecated(
             # TODO(mamu): Annotate this correctly.
             @functools.wraps(func)
             def new_func(*args: Any, **kwargs: Any) -> Any:
-                warnings.warn(
+                message = (
                     "{} has been deprecated in v{}. "
                     "This feature will be removed in v{}.".format(
                         name if name is not None else func.__name__,
                         deprecated_version,
                         removed_version,
-                    ),
-                    DeprecationWarning,
+                    )
                 )
+                warnings.warn(
+                    message, DeprecationWarning,
+                )
+                _logger.warning(message)
 
                 return func(*args, **kwargs)  # type: ignore
 
@@ -109,15 +114,18 @@ def deprecated(
 
             @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
-                warnings.warn(
+                message = (
                     "{} has been deprecated in v{}. "
                     "This feature will be removed in v{}.".format(
                         name if name is not None else cls.__name__,
                         deprecated_version,
                         removed_version,
-                    ),
-                    DeprecationWarning,
+                    )
                 )
+                warnings.warn(
+                    message, DeprecationWarning,
+                )
+                _logger.warning(message)
 
                 _original_init(self, *args, **kwargs)
 
