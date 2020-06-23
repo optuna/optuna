@@ -234,7 +234,7 @@ class PyCmaSampler(BaseSampler):
             elif isinstance(distribution, IntUniformDistribution):
                 x0[name] = int(numpy.mean([distribution.high, distribution.low]))
             elif isinstance(distribution, LogUniformDistribution) or isinstance(
-                dist, IntLogUniformDistribution
+                distribution, IntLogUniformDistribution
             ):
                 log_high = math.log(distribution.high)
                 log_low = math.log(distribution.low)
@@ -261,7 +261,7 @@ class PyCmaSampler(BaseSampler):
             elif isinstance(distribution, IntUniformDistribution):
                 sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, LogUniformDistribution) or isinstance(
-                dist, IntLogUniformDistribution
+                distribution, IntLogUniformDistribution
             ):
                 log_high = math.log(distribution.high)
                 log_low = math.log(distribution.low)
