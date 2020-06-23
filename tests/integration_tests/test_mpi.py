@@ -443,7 +443,7 @@ class TestMPITrial(object):
     @pytest.mark.parametrize("trial_init_func,comm", TRIAL_AND_COMM)
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
     @pytest.mark.parametrize("enable_log", [False, True])
-    def test_suggest_int(
+    def test_suggest_int_with_log(
         storage_mode: str,
         trial_init_func: "Callable[[Optional[Trial], COMM_TYPE], MPITrial]",
         comm: "COMM_TYPE",
