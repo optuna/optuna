@@ -5,6 +5,7 @@ on: status
 jobs:
   doc-link:
     runs-on: ubuntu-latest
+    if: contains(github.context.target_url, 'circle-artifacts.com')
     steps:
     - uses: larsoner/circleci-artifacts-redirector-action@master
       with:
