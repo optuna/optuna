@@ -319,6 +319,9 @@ class IntLogUniformDistribution(BaseDistribution):
         step:
             A step for spacing between values.
 
+            .. note::
+                This value is valid for only 1. Otherwise, the value is replaced with 1.
+
             .. deprecated:: 2.0.0
                 ``step`` argument will be removed in the future. The removal of this feature is
                 currently scheduled for v4.0.0, but this schedule is subject to change.
@@ -340,7 +343,9 @@ class IntLogUniformDistribution(BaseDistribution):
         if step != 1:
             warnings.warn(
                 "`step` accepts only `1`, so `step` is replaced with `1`. "
-                "`step` argument is deprecated and will be removed in the future."
+                "`step` argument is deprecated and will be removed in the future. "
+                "The removal of this feature is currently scheduled for v4.0.0, "
+                "but this schedule is subject to change."
             )
 
         self.low = low
