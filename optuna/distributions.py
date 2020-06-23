@@ -320,7 +320,8 @@ class IntLogUniformDistribution(BaseDistribution):
             A step for spacing between values.
 
             .. deprecated:: 2.0.0
-                ``step`` argument will be removed in the future. The removal of this feature is currently scheduled for v3.0.0, but this schedule is subject to change.
+                ``step`` argument will be removed in the future. The removal of this feature is
+                currently scheduled for v4.0.0, but this schedule is subject to change.
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
@@ -334,6 +335,12 @@ class IntLogUniformDistribution(BaseDistribution):
             raise ValueError(
                 "The `low` value must be equal to or greater than 1 for a log distribution "
                 "(low={}, high={}).".format(low, high)
+            )
+
+        if step != 1:
+            warnings.warn(
+                "`step` accepts only `1`, so `step` is replaced with `1`. "
+                "`step` argument is deprecated and will be removed in the future."
             )
 
         self.low = low
