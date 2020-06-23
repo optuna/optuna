@@ -753,7 +753,7 @@ class Study(BaseStudy):
 
     def _log_completed_trial(self, trial: trial_module.Trial, result: float) -> None:
 
-        if logging.get_verbosity() > logging.INFO:
+        if not _logger.isEnabledFor(logging.INFO):
             return
         if not (logging._is_enabled_default_handler() or logging._is_enabled_propagation()):
             return
