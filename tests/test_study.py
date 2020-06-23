@@ -1020,16 +1020,41 @@ def test_log_completed_trial(capsys: _pytest.capture.CaptureFixture) -> None:
     optuna.logging.set_verbosity(optuna.logging.INFO)
 
     study = optuna.create_study()
-    study.optimize(lambda t: 1.0, n_trials=1)
+    study.optimize(lambda _: 1.0, n_trials=1)
     _, err = capsys.readouterr()
     assert "Trial 0" in err
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
-    study.optimize(lambda t: 1.0, n_trials=1)
+    study.optimize(lambda _: 1.0, n_trials=1)
     _, err = capsys.readouterr()
     assert "Trial 1" not in err
 
     optuna.logging.set_verbosity(optuna.logging.DEBUG)
-    study.optimize(lambda t: 1.0, n_trials=1)
+    study.optimize(lambda _: 1.0, n_trials=1)
     _, err = capsys.readouterr()
     assert "Trial 2" in err
+
+
+def test_log_completed_trial_skip_storage_access() -> None:
+
+    study = optuna.create_study()
+
+    # Create a trial to retrieve it as the `study.best_trial`.
+    study.optimize(lambda _: 0.0, n_trials=1)
+    trial = optuna.Trial(study, study._storage.create_new_trial(study._study_id))
+
+    storage = study._storage
+
+    with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
+        study._log_completed_trial(trial, 1.0)
+        assert mock_object.call_count == 2
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
+        study._log_completed_trial(trial, 1.0)
+        assert mock_object.call_count == 0
+
+    optuna.logging.set_verbosity(optuna.logging.DEBUG)
+    with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
+        study._log_completed_trial(trial, 1.0)
+        assert mock_object.call_count == 2
