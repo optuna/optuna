@@ -158,6 +158,23 @@ class TestTrialModel(object):
 
         assert 0 == len(TrialModel.where_study(study, session))
 
+    @staticmethod
+    def test_datetime_last_update(session):
+        # type: (Session) -> None
+
+        session.add(TrialModel(state=TrialState.RUNNING))
+        session.commit()
+
+        trial_model = session.query(TrialModel).first()
+
+        assert trial_model.datetime_last_update is None
+
+        # Any UPDATE on the row will trigger an update of its `datetime_last_update`.
+        trial_model.state = TrialState.COMPLETE
+        session.commit()
+
+        assert trial_model.datetime_last_update is not None
+
 
 class TestTrialUserAttributeModel(object):
     @staticmethod
