@@ -3,6 +3,7 @@ import decimal
 import json
 import warnings
 
+from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -12,6 +13,9 @@ if type_checking.TYPE_CHECKING:
     from typing import Union  # NOQA
 
     CategoricalChoiceType = Union[None, bool, int, float, str]
+
+
+_logger = logging.get_logger(__name__)
 
 
 class BaseDistribution(object, metaclass=abc.ABCMeta):
@@ -341,7 +345,7 @@ class IntLogUniformDistribution(BaseDistribution):
             )
 
         if step != 1:
-            warnings.warn(
+            _logger.warning(
                 "`step` accepts only `1`, so `step` is replaced with `1`. "
                 "`step` argument is deprecated and will be removed in the future. "
                 "The removal of this feature is currently scheduled for v4.0.0, "
