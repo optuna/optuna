@@ -316,9 +316,14 @@ class IntLogUniformDistribution(BaseDistribution):
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+        step:
+            A step for spacing between values.
+
+            .. deprecated:: 2.0.0
+                ``step`` argument will be removed in the future. The removal of this feature is currently scheduled for v3.0.0, but this schedule is subject to change.
     """
 
-    def __init__(self, low: int, high: int) -> None:
+    def __init__(self, low: int, high: int, step: int = 1) -> None:
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
