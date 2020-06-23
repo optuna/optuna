@@ -166,5 +166,6 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 # -- Extension configuration -------------------------------------------------
 autosummary_generate = True
 autodoc_default_options = {
-    'members': True
+    'members': True,
+    'inherited-members': True,
 }
