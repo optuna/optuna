@@ -310,11 +310,13 @@ class MPIStudy(object):
 
         if self.comm.rank == 0:
             func_mn = _MPIObjectiveFunc(func, self.comm)
-            self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
-            self.comm.bcast(False)
+            try:
+                self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
+            finally:
+                self.comm.bcast(False)
         else:
+            has_next_trial = self.comm.bcast(None)
             while True:
-                has_next_trial = self.comm.bcast(None)
                 if not has_next_trial:
                     break
                 try:
@@ -330,11 +332,7 @@ class MPIStudy(object):
                 except catch:
                     pass
                 finally:
-                    # The following line mitigates memory problems that can be occurred in some
-                    # environments (e.g., services that use computing containers such as CircleCI).
-                    # Please refer to the following PR for further details:
-                    # https://github.com/optuna/optuna/pull/325.
-                    gc.collect()
+                    has_next_trial = self.comm.bcast(None)
 
     def __getattr__(self, attr_name: str) -> Any:
 
