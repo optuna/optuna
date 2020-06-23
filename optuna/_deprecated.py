@@ -13,7 +13,7 @@ from optuna._experimental import _validate_version
 
 _DEPRECATION_NOTE_TEMPLATE = """
 
-.. note::
+.. warning::
     Deprecated in v{d_ver}. This feature will be removed in the future. The removal of this
     feature is currently scheduled for v{r_ver}, but this schedule is subject to change.
     See https://github.com/optuna/optuna/releases/tag/v{d_ver}.
