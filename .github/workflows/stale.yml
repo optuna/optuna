@@ -11,7 +11,7 @@ jobs:
 
     if: github.repository == 'optuna/optuna'
     steps:
-    - uses: actions/stale@v2
+    - uses: actions/stale@v3
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-issue-message: 'This issue has not seen any recent activity.'
@@ -21,4 +21,3 @@ jobs:
         stale-issue-label: 'stale'
         stale-pr-label: 'stale'
         exempt-issue-labels: 'no-stale'
-        remove-stale-when-updated: true
