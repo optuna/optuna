@@ -96,9 +96,7 @@ def deprecated(
                         removed_version,
                     )
                 )
-                warnings.warn(
-                    message, DeprecationWarning,
-                )
+                warnings.warn(message, DeprecationWarning)
                 _logger.warning(message)
 
                 return func(*args, **kwargs)  # type: ignore
@@ -122,9 +120,7 @@ def deprecated(
                         removed_version,
                     )
                 )
-                warnings.warn(
-                    message, DeprecationWarning,
-                )
+                warnings.warn(message, DeprecationWarning)
                 _logger.warning(message)
 
                 _original_init(self, *args, **kwargs)
