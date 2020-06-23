@@ -394,6 +394,9 @@ class MultiObjectiveStudy(object):
 
 
 def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:
+    if not _logger.isEnabledFor(logging.INFO):
+        return
+
     values = multi_objective.trial.MultiObjectiveTrial(trial)._get_values()
     _logger.info(
         "Trial {} finished with values: {} with parameters: {}.".format(

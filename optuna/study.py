@@ -751,8 +751,10 @@ class Study(BaseStudy):
 
         return trial
 
-    def _log_completed_trial(self, trial, result):
-        # type: (trial_module.Trial, float) -> None
+    def _log_completed_trial(self, trial: trial_module.Trial, result: float) -> None:
+
+        if not _logger.isEnabledFor(logging.INFO):
+            return
 
         _logger.info(
             "Trial {} finished with value: {} and parameters: {}. "
