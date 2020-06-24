@@ -3,6 +3,7 @@ import itertools
 import random
 
 from optuna._experimental import experimental
+from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
 from optuna import type_checking
 
@@ -19,6 +20,9 @@ if type_checking.TYPE_CHECKING:
     from optuna.trial import FrozenTrial  # NOQA
 
     GridValueType = Union[str, float, int, bool, None]
+
+
+_logger = get_logger(__name__)
 
 
 @experimental("1.2.0")
@@ -48,10 +52,9 @@ class GridSampler(BaseSampler):
 
     Note:
 
-        :class:`~optuna.samplers.GridSampler` raises an error if all combinations in the passed
-        ``search_space`` has already been evaluated. Please make sure that unnecessary trials do
-        not run during optimization by properly setting ``n_trials`` in the
-        :func:`~optuna.study.Study.optimize` method.
+        :class:`~optuna.samplers.GridSampler` automatically stops the optimization if all
+        combinations in the passed ``search_space`` have already been evaluated, internally
+        invoking the :func:`~optuna.study.Study.stop` method.
 
     Note:
 
@@ -108,18 +111,33 @@ class GridSampler(BaseSampler):
         # object is hard to get at the beginning of trial, while we need the access to the object
         # to validate the sampled value.
 
-        unvisited_grids = self._get_unvisited_grid_ids(study)
+        target_grids = self._get_unvisited_grid_ids(study)
 
-        if len(unvisited_grids) == 0:
-            raise ValueError(
-                "All grids have been evaluated. If you want to avoid this error, "
-                "please make sure that unnecessary trials do not run during "
-                "optimization by properly setting `n_trials` in `study.optimize`."
+        if len(target_grids) == 0:
+            # This case may occur with distributed optimization or trial queue. If there is no
+            # target grid, `GridSampler` evaluates a visited, duplicated point with the current
+            # trial. After that, the optimization stops.
+
+            _logger.warning(
+                "`GridSampler` is re-evaluating a configuration because the grid has been "
+                "exhausted. This may happen due to a timing issue during distributed optimization "
+                "or when re-running optimizations on already finished studies."
             )
+
+            # One of all grids is randomly picked up in this case.
+            target_grids = list(range(len(self._all_grids)))
+
+            study.stop()
+
+        elif len(target_grids) == 1:
+            # When there is only one target grid, optimization stops after the current trial
+            # finishes.
+
+            study.stop()
 
         # In distributed optimization, multiple workers may simultaneously pick up the same grid.
         # To make the conflict less frequent, the grid is chosen randomly.
-        grid_id = random.choice(unvisited_grids)
+        grid_id = random.choice(target_grids)
 
         study._storage.set_trial_system_attr(trial._trial_id, "search_space", self._search_space)
         study._storage.set_trial_system_attr(trial._trial_id, "grid_id", grid_id)
