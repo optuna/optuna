@@ -41,7 +41,6 @@ TrialState = trial.TrialState
 
 @deprecated(
     "1.4.0",
-    "3.0.0",
     text=(
         "This class was moved to :mod:`~optuna.trial`. Please use "
         ":class:`~optuna.trial.FrozenTrial` instead."
@@ -230,7 +229,6 @@ class FrozenTrial(object):
 
 @deprecated(
     "1.4.0",
-    "3.0.0",
     text=(
         "This class was moved to :mod:`~optuna.study`. Please use "
         ":class:`~optuna.study.StudySummary` instead."
