@@ -31,7 +31,7 @@ class _Sample(object):
 
 
 @pytest.mark.parametrize("deprecated_version", ["1.1", 100, None, "2.0.0"])
-@pytest.mark.parametrize("removed_version", ["1.1", 10, None, "1.0.0"])
+@pytest.mark.parametrize("removed_version", ["1.1", 10, "1.0.0"])
 def test_deprecation_raises_error_for_invalid_version(
     deprecated_version: Any, removed_version: Any
 ) -> None:
@@ -155,3 +155,27 @@ def test_deprecation_class_text_specified(text: Optional[str]) -> None:
         expected_class_doc += "\n\n\n"
     assert decorated_class.__name__ == _Class.__name__
     assert decorated_class.__doc__ == expected_class_doc
+
+
+def test_deprecation_decorator_default_removed_version() -> None:
+    deprecated_version = "1.1.0"
+    decorator_deprecation = _deprecated.deprecated(deprecated_version)
+    assert callable(decorator_deprecation)
+
+    def _func(_: Any) -> int:
+
+        return 10
+
+    decorated_func = decorator_deprecation(_func)
+    assert decorated_func.__name__ == _func.__name__
+    assert decorated_func.__doc__ == _deprecated._DEPRECATION_NOTE_TEMPLATE.format(
+        d_ver=deprecated_version, r_ver="3.0.0"
+    )
+
+    with pytest.warns(DeprecationWarning):
+        decorated_func(None)
+
+
+def test_get_removed_version_from_deprecated_version() -> None:
+    assert _deprecated._get_removed_version_from_deprecated_version("1.0.0") == "3.0.0"
+    assert _deprecated._get_removed_version_from_deprecated_version("1.5.0") == "3.0.0"
