@@ -6,11 +6,11 @@ from optuna.distributions import UniformDistribution
 from optuna.structs import FrozenTrial
 from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
+from optuna.structs import TrialPruned
 from optuna.structs import TrialState
 
 
-def test_frozen_trial_deprecated():
-    # type: () -> None
+def test_frozen_trial_deprecated() -> None:
 
     with pytest.deprecated_call():
         FrozenTrial(
@@ -28,8 +28,7 @@ def test_frozen_trial_deprecated():
         )
 
 
-def test_study_summary_deprecated():
-    # type: () -> None
+def test_study_summary_deprecated() -> None:
 
     with pytest.deprecated_call():
         StudySummary(
@@ -42,3 +41,9 @@ def test_study_summary_deprecated():
             datetime_start=datetime.datetime.now(),
             study_id=0,
         )
+
+
+def test_trial_pruned_deprecated() -> None:
+
+    with pytest.deprecated_call():
+        TrialPruned()
