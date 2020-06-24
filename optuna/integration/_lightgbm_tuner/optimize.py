@@ -729,7 +729,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
 
-    @property
+    @property  # type: ignore
     @deprecated(
         "1.4.0",
         "3.0.0",
