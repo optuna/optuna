@@ -6,6 +6,10 @@ on:
       - master
   release:
     types: [published]
+  pull_request:
+    paths:
+      - Dockerfile
+      - setup.py
 
 env:
   DOCKER_HUB_BASE_NAME: optuna/optuna
@@ -43,6 +47,7 @@ jobs:
         docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
 
     - name: Login & Push to Docker Hub
+      if: ${{ github.event_name != 'pull_request' }}
       env:
         DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
       run: |
