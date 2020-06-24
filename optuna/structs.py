@@ -232,7 +232,7 @@ class FrozenTrial(object):
     "1.4.0",
     "3.0.0",
     text=(
-        "This class was moved to :mod:`~optuna.study`. Please use"
+        "This class was moved to :mod:`~optuna.study`. Please use "
         ":class:`~optuna.study.StudySummary` instead."
     ),
 )
@@ -318,7 +318,7 @@ class StudySummary(object):
     "0.19.0",
     "3.0.0",
     text=(
-        "This class was moved to :mod:`~optuna.exceptions`. Please use"
+        "This class was moved to :mod:`~optuna.exceptions`. Please use "
         ":class:`~optuna.exceptions.TrialPruned` instead."
     ),
 )
