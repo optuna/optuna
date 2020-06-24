@@ -215,7 +215,7 @@ class Study(BaseStudy):
         n_jobs=1,  # type: int
         catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
         callbacks=None,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial=True,  # type: bool
+        gc_after_trial=False,  # type: bool
         show_progress_bar=False,  # type: bool
     ):
         # type: (...) -> None
@@ -252,9 +252,16 @@ class Study(BaseStudy):
                 must accept two parameters with the following types in this order:
                 :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
             gc_after_trial:
-                Flag to execute garbage collection at the end of each trial. By default, garbage
-                collection is enabled, just in case. You can turn it off with this argument if
-                memory is safely managed in your objective function.
+                Flag to determine whether to automatically run garbage collection after each trial.
+                Set to :obj:`True` to run the garbage collection, :obj:`False` otherwise.
+                When it runs, it runs a full collection by internally calling :func:`gc.collect`.
+                If you see an increase in memory consumption over several trials, try setting this
+                flag to :obj:`True`.
+
+                .. seealso::
+
+                    :ref:`out-of-memory-gc-collect`
+
             show_progress_bar:
                 Flag to show progress bars or not. To disable progress bar, set this ``False``.
                 Currently, progress bar is experimental feature and disabled
@@ -744,8 +751,10 @@ class Study(BaseStudy):
 
         return trial
 
-    def _log_completed_trial(self, trial, result):
-        # type: (trial_module.Trial, float) -> None
+    def _log_completed_trial(self, trial: trial_module.Trial, result: float) -> None:
+
+        if not _logger.isEnabledFor(logging.INFO):
+            return
 
         _logger.info(
             "Trial {} finished with value: {} and parameters: {}. "

@@ -1,7 +1,7 @@
 .. module:: optuna.pruners
 
-Pruners
-=======
+optuna.pruners
+==============
 
 .. autoclass:: BasePruner
     :members:

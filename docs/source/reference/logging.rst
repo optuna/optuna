@@ -1,7 +1,7 @@
 .. module:: optuna.logging
 
-Logging
-=======
+optuna.logging
+==============
 
 .. autofunction:: get_verbosity
 

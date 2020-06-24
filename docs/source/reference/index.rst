@@ -4,7 +4,7 @@ API Reference
 .. toctree::
     :maxdepth: 2
 
-    core
+    optuna
     cli
     distributions
     exceptions

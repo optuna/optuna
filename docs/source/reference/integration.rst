@@ -1,13 +1,17 @@
 .. module:: optuna.integration
 
-Integration
-===========
+optuna.integration
+==================
 
 .. autoclass:: ChainerPruningExtension
     :members:
 
 .. autoclass:: ChainerMNStudy
     :members:
+
+.. autoclass:: PyCmaSampler
+    :members:
+    :exclude-members: infer_relative_search_space, sample_relative, sample_independent
 
 .. autoclass:: CmaEsSampler
     :members:
@@ -28,12 +32,12 @@ Integration
 
 .. autofunction:: optuna.integration.lightgbm.train
 
-.. autoclass:: optuna.integration.lightgbm_tuner.LightGBMTuner
+.. autoclass:: optuna.integration.lightgbm.LightGBMTuner
     :members:
     :inherited-members:
     :exclude-members: sample_train_set
 
-.. autoclass:: optuna.integration.lightgbm_tuner.LightGBMTunerCV
+.. autoclass:: optuna.integration.lightgbm.LightGBMTunerCV
     :members:
     :inherited-members:
     :exclude-members: sample_train_set
