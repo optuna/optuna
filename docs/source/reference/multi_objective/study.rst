@@ -1,7 +1,7 @@
 .. module:: optuna.multi_objective.study
 
-Study
-=====
+optuna.multi_objective.study
+============================
 
 .. autoclass:: MultiObjectiveStudy
     :members:

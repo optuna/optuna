@@ -1,7 +1,7 @@
 .. module:: optuna.multi_objective.samplers
 
-Samplers
-========
+optuna.multi_objective.samplers
+===============================
 
 .. autoclass:: BaseMultiObjectiveSampler
     :members:

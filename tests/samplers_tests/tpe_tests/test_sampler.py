@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.samplers import tpe
+from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
 from optuna import TrialPruned
 
@@ -94,14 +94,14 @@ def test_sample_independent_n_startup_trial() -> None:
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials[:4]):
         with patch.object(
-            optuna.samplers.random.RandomSampler, "sample_independent", return_value=1.0
+            optuna.samplers.RandomSampler, "sample_independent", return_value=1.0
         ) as sample_method:
             sampler.sample_independent(study, trial, "param-a", dist)
     assert sample_method.call_count == 1
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         with patch.object(
-            optuna.samplers.random.RandomSampler, "sample_independent", return_value=1.0
+            optuna.samplers.RandomSampler, "sample_independent", return_value=1.0
         ) as sample_method:
             sampler.sample_independent(study, trial, "param-a", dist)
     assert sample_method.call_count == 0
@@ -331,7 +331,7 @@ def test_get_observation_pairs():
     trial_number = study._storage.create_new_trial(study._study_id)  # Create a running trial.
     trial = study._storage.get_trial(trial_number)
 
-    assert tpe.sampler._get_observation_pairs(study, "x", trial) == (
+    assert _tpe.sampler._get_observation_pairs(study, "x", trial) == (
         [5.0, 5.0, 5.0, 5.0],
         [
             (-float("inf"), 5.0),  # COMPLETE
@@ -340,7 +340,7 @@ def test_get_observation_pairs():
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
-    assert tpe.sampler._get_observation_pairs(study, "y", trial) == (
+    assert _tpe.sampler._get_observation_pairs(study, "y", trial) == (
         [None, None, None, None],
         [
             (-float("inf"), 5.0),  # COMPLETE
@@ -355,7 +355,7 @@ def test_get_observation_pairs():
     study.optimize(objective, n_trials=4)
     study._storage.create_new_trial(study._study_id)  # Create a running trial.
 
-    assert tpe.sampler._get_observation_pairs(study, "x", trial) == (
+    assert _tpe.sampler._get_observation_pairs(study, "x", trial) == (
         [5.0, 5.0, 5.0, 5.0],
         [
             (-float("inf"), -5.0),  # COMPLETE
@@ -364,7 +364,7 @@ def test_get_observation_pairs():
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
-    assert tpe.sampler._get_observation_pairs(study, "y", trial) == (
+    assert _tpe.sampler._get_observation_pairs(study, "y", trial) == (
         [None, None, None, None],
         [
             (-float("inf"), -5.0),  # COMPLETE

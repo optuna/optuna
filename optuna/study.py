@@ -11,18 +11,9 @@ from joblib import delayed
 from joblib import Parallel
 
 from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
-
-try:
-    import pandas as pd  # NOQA
-
-    _pandas_available = True
-except ImportError as e:
-    _pandas_import_error = e
-    # trials_dataframe is disabled because pandas is not available.
-    _pandas_available = False
-
 from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
@@ -49,6 +40,9 @@ if type_checking.TYPE_CHECKING:
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
+with try_import() as _pandas_imports:
+    # `trials_dataframe` is disabled if pandas is not available.
+    import pandas as pd  # NOQA
 
 _logger = logging.get_logger(__name__)
 
@@ -145,35 +139,6 @@ class BaseStudy(object):
         self._storage.read_trials_from_remote_storage(self._study_id)
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
 
-    @property
-    def storage(self):
-        # type: () -> storages.BaseStorage
-        """Return the storage object used by the study.
-
-        .. deprecated:: 0.15.0
-            The direct use of storage is deprecated.
-            Please access to storage via study's public methods
-            (e.g., :meth:`~optuna.study.Study.set_user_attr`).
-
-        Returns:
-            A storage object.
-        """
-
-        warnings.warn(
-            "The direct use of storage is deprecated. "
-            "Please access to storage via study's public methods "
-            "(e.g., `Study.set_user_attr`)",
-            DeprecationWarning,
-        )
-
-        _logger.warning(
-            "The direct use of storage is deprecated. "
-            "Please access to storage via study's public methods "
-            "(e.g., `Study.set_user_attr`)"
-        )
-
-        return self._storage
-
 
 class Study(BaseStudy):
     """A study corresponds to an optimization task, i.e., a set of trials.
@@ -221,27 +186,6 @@ class Study(BaseStudy):
         self._optimize_lock = threading.Lock()
 
     @property
-    def study_id(self):
-        # type: () -> int
-        """Return the study ID.
-
-        .. deprecated:: 0.20.0
-            The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.study.Study.study_name` instead.
-
-        Returns:
-            The study ID.
-        """
-
-        message = (
-            "The use of `Study.study_id` is deprecated. Please use `Study.study_name` instead."
-        )
-        warnings.warn(message, DeprecationWarning)
-        _logger.warning(message)
-
-        return self._study_id
-
-    @property
     def user_attrs(self):
         # type: () -> Dict[str, Any]
         """Return user attributes.
@@ -271,7 +215,7 @@ class Study(BaseStudy):
         n_jobs=1,  # type: int
         catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
         callbacks=None,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial=True,  # type: bool
+        gc_after_trial=False,  # type: bool
         show_progress_bar=False,  # type: bool
     ):
         # type: (...) -> None
@@ -308,9 +252,16 @@ class Study(BaseStudy):
                 must accept two parameters with the following types in this order:
                 :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
             gc_after_trial:
-                Flag to execute garbage collection at the end of each trial. By default, garbage
-                collection is enabled, just in case. You can turn it off with this argument if
-                memory is safely managed in your objective function.
+                Flag to determine whether to automatically run garbage collection after each trial.
+                Set to :obj:`True` to run the garbage collection, :obj:`False` otherwise.
+                When it runs, it runs a full collection by internally calling :func:`gc.collect`.
+                If you see an increase in memory consumption over several trials, try setting this
+                flag to :obj:`True`.
+
+                .. seealso::
+
+                    :ref:`out-of-memory-gc-collect`
+
             show_progress_bar:
                 Flag to show progress bars or not. To disable progress bar, set this ``False``.
                 Currently, progress bar is experimental feature and disabled
@@ -378,7 +329,7 @@ class Study(BaseStudy):
 
                     parallel(
                         delayed(self._reseed_and_optimize_sequential)(
-                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start
+                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start,
                         )
                         for _ in _iter
                     )
@@ -471,7 +422,7 @@ class Study(BaseStudy):
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
 
-        _check_pandas_availability()
+        _pandas_imports.check()
 
         trials = self.get_trials(deepcopy=False)
 
@@ -697,7 +648,7 @@ class Study(BaseStudy):
             if not self._storage.set_trial_state(trial._trial_id, TrialState.RUNNING):
                 continue
 
-            _logger.debug("Trial#{} is popped from the trial queue.".format(trial.number))
+            _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
             return trial._trial_id
 
         return None
@@ -737,9 +688,7 @@ class Study(BaseStudy):
         try:
             result = func(trial)
         except exceptions.TrialPruned as e:
-            message = "Setting status of trial#{} as {}. {}".format(
-                trial_number, TrialState.PRUNED, str(e)
-            )
+            message = "Trial {} pruned. {}".format(trial_number, str(e))
             _logger.info(message)
 
             # Register the last intermediate value if present as the value of the trial.
@@ -753,8 +702,8 @@ class Study(BaseStudy):
             self._storage.set_trial_state(trial_id, TrialState.PRUNED)
             return trial
         except Exception as e:
-            message = "Setting status of trial#{} as {} because of the following error: {}".format(
-                trial_number, TrialState.FAIL, repr(e)
+            message = "Trial {} failed because of the following error: {}".format(
+                trial_number, repr(e)
             )
             _logger.warning(message, exc_info=True)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
@@ -778,9 +727,9 @@ class Study(BaseStudy):
             TypeError,
         ):
             message = (
-                "Setting status of trial#{} as {} because the returned value from the "
-                "objective function cannot be casted to float. Returned value is: "
-                "{}".format(trial_number, TrialState.FAIL, repr(result))
+                "Trial {} failed, because the returned value from the "
+                "objective function cannot be cast to float. Returned value is: "
+                "{}".format(trial_number, repr(result))
             )
             _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
@@ -788,9 +737,8 @@ class Study(BaseStudy):
             return trial
 
         if math.isnan(result):
-            message = (
-                "Setting status of trial#{} as {} because the objective function "
-                "returned {}.".format(trial_number, TrialState.FAIL, result)
+            message = "Trial {} failed, because the objective function returned {}.".format(
+                trial_number, result
             )
             _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
@@ -803,13 +751,15 @@ class Study(BaseStudy):
 
         return trial
 
-    def _log_completed_trial(self, trial, result):
-        # type: (trial_module.Trial, float) -> None
+    def _log_completed_trial(self, trial: trial_module.Trial, result: float) -> None:
+
+        if not _logger.isEnabledFor(logging.INFO):
+            return
 
         _logger.info(
-            "Finished trial#{} with value: {} with parameters: {}. "
-            "Best is trial#{} with value: {}.".format(
-                trial.number, result, trial.params, self.best_trial.number, self.best_value
+            "Trial {} finished with value: {} and parameters: {}. "
+            "Best is trial {} with value: {}.".format(
+                trial.number, result, trial.params, self.best_trial.number, self.best_value,
             )
         )
 
@@ -963,15 +913,3 @@ def get_all_study_summaries(storage):
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
-
-
-def _check_pandas_availability():
-    # type: () -> None
-
-    if not _pandas_available:
-        raise ImportError(
-            "pandas is not available. Please install pandas to use this feature. "
-            "pandas can be installed by executing `$ pip install pandas`. "
-            "For further information, please refer to the installation guide of pandas. "
-            "(The actual import error is as follows: " + str(_pandas_import_error) + ")"
-        )

@@ -1,5 +1,4 @@
 import copy
-import datetime
 from typing import Optional
 import warnings
 
@@ -16,6 +15,7 @@ from optuna.trial._base import BaseTrial
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    import datetime  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Sequence  # NOQA
@@ -26,6 +26,9 @@ if type_checking.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
 
     FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
+
+
+_logger = logging.get_logger(__name__)
 
 
 class Trial(BaseTrial):
@@ -60,7 +63,6 @@ class Trial(BaseTrial):
         # TODO(Yanase): Remove _study_id attribute, and use study._study_id instead.
         self._study_id = self.study._study_id
         self.storage = self.study._storage
-        self.logger = logging.get_logger(__name__)
 
         self._init_relative_params()
 
@@ -140,11 +142,23 @@ class Trial(BaseTrial):
                 range.
             step:
                 A step of discretization.
+
+                .. note::
+                    The ``step`` and ``log`` arguments cannot be used at the same time. To set
+                    the ``step`` argument to a float number, set the ``log`` argument to ``False``.
             log:
                 A flag to sample the value from the log domain or not.
                 If ``log`` is true, the value is sampled from the range in the log domain.
                 Otherwise, the value is sampled from the range in the linear domain.
                 See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
+
+                .. note::
+                    The ``step`` and ``log`` arguments cannot be used at the same time. To set
+                    the ``log`` argument to ``True``, set the ``step`` argument to ``None``.
+
+        Raises:
+            :exc:`ValueError`:
+                If ``step is not None`` and ``log = True`` are specified.
 
         Returns:
             A suggested float value.
@@ -152,9 +166,7 @@ class Trial(BaseTrial):
 
         if step is not None:
             if log:
-                raise NotImplementedError(
-                    "The parameter `step` is not supported when `log` is True."
-                )
+                raise ValueError("The parameter `step` is not supported when `log` is True.")
             else:
                 return self.suggest_discrete_uniform(name, low, high, step)
         else:
@@ -215,9 +227,6 @@ class Trial(BaseTrial):
 
         self._check_distribution(name, distribution)
 
-        if distribution.low == distribution.high:
-            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
-
         return self._suggest(name, distribution)
 
     def suggest_loguniform(self, name, low, high):
@@ -270,9 +279,6 @@ class Trial(BaseTrial):
         distribution = LogUniformDistribution(low=low, high=high)
 
         self._check_distribution(name, distribution)
-
-        if distribution.low == distribution.high:
-            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return self._suggest(name, distribution)
 
@@ -334,22 +340,12 @@ class Trial(BaseTrial):
 
         self._check_distribution(name, distribution)
 
-        if distribution.low == distribution.high:
-            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
-
         return self._suggest(name, distribution)
 
-    def suggest_int(self, name, low, high, step=1, log=False):
-        # type: (str, int, int, int, bool) -> int
+    def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         """Suggest a value for the integer parameter.
 
-        The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`, and the
-        step of discretization is :math:`\\mathsf{step}`. More specifically, this method returns
-        one of the values in the sequence :math:`\\mathsf{low}, \\mathsf{low} + \\mathsf{step},
-        \\mathsf{low} + 2 * \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step} \\le
-        \\mathsf{high}`, where :math:`k` denotes an integer. Note that :math:`\\mathsf{high}` is
-        modified if the range is not divisible by :math:`\\mathsf{step}`. Please check the warning
-        messages to find the changed values.
+        The value is sampled from the integers in :math:`[\\mathsf{low}, \\mathsf{high}]`.
 
         Example:
 
@@ -377,7 +373,6 @@ class Trial(BaseTrial):
                 study = optuna.create_study(direction='maximize')
                 study.optimize(objective, n_trials=3)
 
-
         Args:
             name:
                 A parameter name.
@@ -387,30 +382,61 @@ class Trial(BaseTrial):
                 Upper endpoint of the range of suggested values. ``high`` is included in the range.
             step:
                 A step of discretization.
+
+                .. note::
+                    Note that :math:`\\mathsf{high}` is modified if the range is not divisible by
+                    :math:`\\mathsf{step}`. Please check the warning messages to find the changed
+                    values.
+
+                .. note::
+                    The method returns one of the values in the sequence
+                    :math:`\\mathsf{low}, \\mathsf{low} + \\mathsf{step}, \\mathsf{low} + 2 *
+                    \\mathsf{step}, \\dots, \\mathsf{low} + k * \\mathsf{step} \\le
+                    \\mathsf{high}`, where :math:`k` denotes an integer.
+
+                .. note::
+                    The ``step != 1`` and ``log`` arguments cannot be used at the same time.
+                    To set the ``step`` argument :math:`\\mathsf{step} \\ge 2`, set the
+                    ``log`` argument to ``False``.
             log:
                 A flag to sample the value from the log domain or not.
-                If ``log`` is true, at first, the range of suggested values is divided into grid
-                points of width ``step``. The range of suggested values is then converted to a log
-                domain, from which a value is uniformly sampled. The uniformly sampled value is
-                re-converted to the original domain and rounded to the nearest grid point that we
-                just split, and the suggested value is determined.
-                For example,
-                if `low = 2`, `high = 8` and `step = 2`,
-                then the range of suggested values is divided by ``step`` as `[2, 4, 6, 8]`
-                and lower values tend to be more sampled than higher values.
+
+                .. note::
+                    If ``log`` is true, at first, the range of suggested values is divided into
+                    grid points of width 1. The range of suggested values is then converted to
+                    a log domain, from which a value is sampled. The uniformly sampled
+                    value is re-converted to the original domain and rounded to the nearest grid
+                    point that we just split, and the suggested value is determined.
+                    For example, if `low = 2` and `high = 8`, then the range of suggested values is
+                    `[2, 3, 4, 5, 6, 7, 8]` and lower values tend to be more sampled than higher
+                    values.
+
+                .. note::
+                    The ``step != 1`` and ``log`` arguments cannot be used at the same time.
+                    To set the ``log`` argument to ``True``, set the ``step`` argument to 1.
+
+        Raises:
+            :exc:`ValueError`:
+                If ``step != 1`` and ``log = True`` are specified.
         """
 
-        if log:
-            distribution = IntLogUniformDistribution(
-                low=low, high=high, step=step
-            )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+        if step != 1:
+            if log:
+                raise ValueError(
+                    "The parameter `step != 1` is not supported when `log` is True."
+                    "The specified `step` is {}.".format(step)
+                )
+            else:
+                distribution = IntUniformDistribution(
+                    low=low, high=high, step=step
+                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
         else:
-            distribution = IntUniformDistribution(low=low, high=high, step=step)
+            if log:
+                distribution = IntLogUniformDistribution(low=low, high=high, step=step)
+            else:
+                distribution = IntUniformDistribution(low=low, high=high, step=step)
 
         self._check_distribution(name, distribution)
-
-        if distribution.low == distribution.high:
-            return self._set_new_param_or_get_existing(name, distribution.low, distribution)
 
         return int(self._suggest(name, distribution))
 
@@ -533,10 +559,17 @@ class Trial(BaseTrial):
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
+        intermediate_values = self.storage.get_trial(self._trial_id).intermediate_values
+
+        if step in intermediate_values:
+            # Do nothing if already reported.
+            # TODO(hvy): Consider raising a warning or an error.
+            # See https://github.com/optuna/optuna/issues/852.
+            return
+
         self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
+    def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.
 
         The suggestion is made by a pruning algorithm associated with the trial and is based on
@@ -551,22 +584,10 @@ class Trial(BaseTrial):
         .. seealso::
             Please refer to the example code in :func:`optuna.trial.Trial.report`.
 
-        Args:
-            step:
-                Deprecated since 0.12.0: Step of the trial (e.g., epoch of neural network
-                training). Deprecated in favor of always considering the most recent step.
-
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
         """
-        if step is not None:
-            warnings.warn(
-                "The use of `step` argument is deprecated. "
-                "The last reported step is used instead of "
-                "the step given by the argument.",
-                DeprecationWarning,
-            )
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
@@ -638,29 +659,30 @@ class Trial(BaseTrial):
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
 
-        if self._is_fixed_param(name, distribution):
-            param_value = self.storage.get_trial_system_attrs(self._trial_id)["fixed_params"][name]
-        elif self._is_relative_param(name, distribution):
-            param_value = self.relative_params[name]
+        storage = self.storage
+        trial_id = self._trial_id
+
+        trial = storage.get_trial(trial_id)
+
+        if name in trial.distributions:
+            # No need to sample if already suggested.
+            distributions.check_distribution_compatibility(trial.distributions[name], distribution)
+            param_value = distribution.to_external_repr(storage.get_trial_param(trial_id, name))
         else:
-            trial = self.storage.get_trial(self._trial_id)
+            if self._is_fixed_param(name, distribution):
+                param_value = storage.get_trial_system_attrs(trial_id)["fixed_params"][name]
+            elif distribution.single():
+                param_value = distributions._get_single_value(distribution)
+            elif self._is_relative_param(name, distribution):
+                param_value = self.relative_params[name]
+            else:
+                study = pruners._filter_study(self.study, trial)
+                param_value = self.study.sampler.sample_independent(
+                    study, trial, name, distribution
+                )
 
-            study = pruners._filter_study(self.study, trial)
-
-            param_value = self.study.sampler.sample_independent(study, trial, name, distribution)
-
-        return self._set_new_param_or_get_existing(name, param_value, distribution)
-
-    def _set_new_param_or_get_existing(self, name, param_value, distribution):
-        # type: (str, Any, BaseDistribution) -> Any
-
-        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
-        set_success = self.storage.set_trial_param(
-            self._trial_id, name, param_value_in_internal_repr, distribution
-        )
-        if not set_success:
-            param_value_in_internal_repr = self.storage.get_trial_param(self._trial_id, name)
-            param_value = distribution.to_external_repr(param_value_in_internal_repr)
+            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            storage.set_trial_param(trial_id, name, param_value_in_internal_repr, distribution)
 
         return param_value
 
@@ -734,29 +756,6 @@ class Trial(BaseTrial):
         return self.storage.get_trial_number_from_id(self._trial_id)
 
     @property
-    def trial_id(self):
-        # type: () -> int
-        """Return trial ID.
-
-        Note that the use of this is deprecated.
-        Please use :attr:`~optuna.trial.Trial.number` instead.
-
-        Returns:
-            A trial ID.
-        """
-
-        warnings.warn(
-            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead.",
-            DeprecationWarning,
-        )
-
-        self.logger.warning(
-            "The use of `Trial.trial_id` is deprecated. Please use `Trial.number` instead."
-        )
-
-        return self._trial_id
-
-    @property
     def params(self):
         # type: () -> Dict[str, Any]
         """Return parameters to be optimized.
@@ -809,22 +808,3 @@ class Trial(BaseTrial):
             Datetime where the :class:`~optuna.trial.Trial` started.
         """
         return self.storage.get_trial(self._trial_id).datetime_start
-
-    @property
-    def study_id(self):
-        # type: () -> int
-        """Return the study ID.
-
-        .. deprecated:: 0.20.0
-            The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.trial.Trial.study` instead.
-
-        Returns:
-            The study ID.
-        """
-
-        message = "The use of `Trial.study_id` is deprecated. Please use `Trial.study` instead."
-        warnings.warn(message, DeprecationWarning)
-        self.logger.warning(message)
-
-        return self.study._study_id

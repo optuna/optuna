@@ -1,5 +1,4 @@
 import datetime
-import warnings
 
 from optuna import distributions
 from optuna import logging
@@ -10,12 +9,9 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Optional  # NOQA
-    from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.distributions import CategoricalChoiceType  # NOQA
-    from optuna.study import Study  # NOQA
 
     FloatingPointDistributionType = Union[
         distributions.UniformDistribution, distributions.LogUniformDistribution
@@ -180,32 +176,6 @@ class FrozenTrial(object):
     def distributions(self, value):
         # type: (Dict[str, BaseDistribution]) -> None
         self._distributions = value
-
-    @property
-    def trial_id(self):
-        # type: () -> int
-        """Return the trial ID.
-
-        .. deprecated:: 0.19.0
-            The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.trial.FrozenTrial.number` instead.
-
-        Returns:
-            The trial ID.
-        """
-
-        warnings.warn(
-            "The use of `FrozenTrial.trial_id` is deprecated. "
-            "Please use `FrozenTrial.number` instead.",
-            DeprecationWarning,
-        )
-
-        _logger.warning(
-            "The use of `FrozenTrial.trial_id` is deprecated. "
-            "Please use `FrozenTrial.number` instead."
-        )
-
-        return self._trial_id
 
     @property
     def last_step(self):

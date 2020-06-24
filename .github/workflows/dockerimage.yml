@@ -25,6 +25,8 @@ jobs:
         python_version: ['3.5', '3.6', '3.7', '3.8']
         build_type: ['', 'dev']  # "dev" installs all the dependencies including pytest.
 
+    # This action cannot be executed in the forked repository.
+    if: github.repository == 'optuna/optuna'
     steps:
     - uses: actions/checkout@v2
 
@@ -43,3 +45,11 @@ jobs:
     - name: Build the Docker image
       run: |
         docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
+
+    - name: Login & Push to Docker Hub
+      if: ${{ github.event_name != 'pull_request' }}
+      env:
+        DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      run: |
+        echo "${DOCKER_HUB_TOKEN}" | docker login -u optunabot --password-stdin
+        docker push "${HUB_TAG}"

@@ -24,26 +24,6 @@ def test_hyperband_experimental_warning() -> None:
         )
 
 
-def test_hyperband_deprecation_warning_n_brackets() -> None:
-    with pytest.deprecated_call():
-        optuna.pruners.HyperbandPruner(
-            min_resource=MIN_RESOURCE,
-            max_resource=MAX_RESOURCE,
-            reduction_factor=REDUCTION_FACTOR,
-            n_brackets=N_BRACKETS,
-        )
-
-
-def test_hyperband_deprecation_warning_min_early_stopping_rate_low() -> None:
-    with pytest.deprecated_call():
-        optuna.pruners.HyperbandPruner(
-            min_resource=MIN_RESOURCE,
-            max_resource=MAX_RESOURCE,
-            reduction_factor=REDUCTION_FACTOR,
-            min_early_stopping_rate_low=EARLY_STOPPING_RATE_LOW,
-        )
-
-
 def test_hyperband_pruner_intermediate_values() -> None:
     pruner = optuna.pruners.HyperbandPruner(
         min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR

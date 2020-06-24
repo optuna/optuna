@@ -23,10 +23,11 @@ This page contains a list of example codes written with Optuna.
 * [PyTorch Lightning](./pytorch_lightning_simple.py)
 * [XGBoost](./xgboost_simple.py)
 * [Tensorflow](./tensorflow_estimator_simple.py)
-* [Tensorflow(eager)](./tensorflow_eager_simple.py)
+* [Tensorflow (eager)](./tensorflow_eager_simple.py)
 * [Keras](./keras_simple.py)
 * [FastAI](./fastai_simple.py)
-* [AllenNLP](./allennlp_simple.py)
+* [AllenNLP](./allennlp/allennlp_simple.py)
+* [AllenNLP (Jsonnet)](./allennlp/allennlp_jsonnet.py)
 
 ### An example where an objective function uses additional arguments
 
@@ -59,7 +60,7 @@ In addition, integration modules are available for the following libraries, prov
 
 ### Examples of Visualization
 
-* [Visualizing study](https://nbviewer.jupyter.org/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
+* [Visualizing study](https://colab.research.google.com/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
 
 ### Examples of MLflow
 

@@ -39,15 +39,15 @@ Out:
 
 .. code-block:: console
 
-    [I 2020-04-08 10:42:09,028] Finished trial#0 with value: 25.77382032395108 with parameters: {'x': 7.076792326257898}. Best is trial#0 with value: 25.77382032395108.
-    [I 2020-04-08 10:42:09,064] Finished trial#1 with value: 1.5189812248635903 with parameters: {'x': 0.7675304365366298}. Best is trial#1 with value: 1.5189812248635903.
-    [I 2020-04-08 10:42:09,106] Finished trial#2 with value: 34.4074691838153 with parameters: {'x': -3.865788027521562}. Best is trial#1 with value: 1.5189812248635903.
-    [I 2020-04-08 10:42:09,145] Finished trial#3 with value: 3.3601305753722657 with parameters: {'x': 3.8330658949891205}. Best is trial#1 with value: 1.5189812248635903.
-    [I 2020-04-08 10:42:09,185] Finished trial#4 with value: 61.16797535698886 with parameters: {'x': -5.820995803412048}. Best is trial#1 with value: 1.5189812248635903.
-    [I 2020-04-08 10:42:09,228] Finished trial#5 with value: 90.08665552769618 with parameters: {'x': -7.491399028999686}. Best is trial#1 with value: 1.5189812248635903.
-    [I 2020-04-08 10:42:09,274] Finished trial#6 with value: 25.254236332163032 with parameters: {'x': 7.025359323686519}. Best is trial#1 with value: 1.5189812248635903.
+    [I 2020-04-08 10:42:09,028] Trial 0 finished with value: 25.77382032395108 with parameters: {'x': 7.076792326257898}. Best is trial 0 with value: 25.77382032395108.
+    [I 2020-04-08 10:42:09,064] Trial 1 finished with value: 1.5189812248635903 with parameters: {'x': 0.7675304365366298}. Best is trial 1 with value: 1.5189812248635903.
+    [I 2020-04-08 10:42:09,106] Trial 2 finished with value: 34.4074691838153 with parameters: {'x': -3.865788027521562}. Best is trial 1 with value: 1.5189812248635903.
+    [I 2020-04-08 10:42:09,145] Trial 3 finished with value: 3.3601305753722657 with parameters: {'x': 3.8330658949891205}. Best is trial 1 with value: 1.5189812248635903.
+    [I 2020-04-08 10:42:09,185] Trial 4 finished with value: 61.16797535698886 with parameters: {'x': -5.820995803412048}. Best is trial 1 with value: 1.5189812248635903.
+    [I 2020-04-08 10:42:09,228] Trial 5 finished with value: 90.08665552769618 with parameters: {'x': -7.491399028999686}. Best is trial 1 with value: 1.5189812248635903.
+    [I 2020-04-08 10:42:09,274] Trial 6 finished with value: 25.254236332163032 with parameters: {'x': 7.025359323686519}. Best is trial 1 with value: 1.5189812248635903.
     ...
-    [I 2020-04-08 10:42:14,237] Finished trial#99 with value: 0.5227007740782738 with parameters: {'x': 2.7229804797352926}. Best is trial#67 with value: 2.916284393762304e-06.
+    [I 2020-04-08 10:42:14,237] Trial 99 finished with value: 0.5227007740782738 with parameters: {'x': 2.7229804797352926}. Best is trial 67 with value: 2.916284393762304e-06.
 
 You can get the best parameter as follows.
 

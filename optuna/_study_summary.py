@@ -2,7 +2,6 @@ import datetime
 from typing import Any
 from typing import Dict
 from typing import Optional
-import warnings
 
 from optuna._study_direction import StudyDirection
 from optuna import logging
@@ -78,25 +77,3 @@ class StudySummary(object):
             return NotImplemented
 
         return self._study_id <= other._study_id
-
-    @property
-    def study_id(self) -> int:
-        """Return the study ID.
-
-        .. deprecated:: 0.20.0
-            The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.study.StudySummary.study_name` instead.
-
-        Returns:
-            The study ID.
-
-        """
-        message = (
-            "The use of `StudySummary.study_id` is deprecated. "
-            "Please use `StudySummary.study_name` instead."
-        )
-        warnings.warn(message, DeprecationWarning)
-
-        _logger.warning(message)
-
-        return self._study_id
