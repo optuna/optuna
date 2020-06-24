@@ -8,7 +8,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Set
+from typing import Tuple
 import uuid
 import weakref
 
@@ -920,30 +920,43 @@ class RDBStorage(BaseStorage):
     def get_all_trials(self, study_id, deepcopy=True):
         # type: (int, bool) -> List[FrozenTrial]
 
-        trials = self._get_trials(study_id, set())
+        trials, _ = self._get_trials(study_id, None)
 
         return copy.deepcopy(trials) if deepcopy else trials
 
-    def _get_trials(self, study_id: int, excluded_trial_ids: Set[int]) -> List[FrozenTrial]:
+    def _get_trials(
+        self, study_id: int, min_datetime_last_update: Optional[datetime]
+    ) -> Tuple[List[FrozenTrial], Optional[datetime]]:
 
         session = self.scoped_session()
 
         # Ensure that the study exists.
         models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        trial_models = (
-            session.query(models.TrialModel)
-            .filter(
-                ~models.TrialModel.trial_id.in_(excluded_trial_ids),
+        query = session.query(models.TrialModel)
+        if min_datetime_last_update is not None:
+            query = query.filter(
+                models.TrialModel.datetime_last_update > min_datetime_last_update,
                 models.TrialModel.study_id == study_id,
             )
-            .all()
-        )
-        trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
+        else:
+            query = query.filter(models.TrialModel.study_id == study_id)
+
+        trials = []
+        max_datetime_last_update = None
+
+        for trial_model in query.all():
+            if (
+                max_datetime_last_update is None
+                or max_datetime_last_update < trial_model.datetime_last_update
+            ):
+                max_datetime_last_update = trial_model.datetime_last_update
+
+            trials.append(self._build_frozen_trial_from_trial_model(trial_model))
 
         self._commit(session)
 
-        return trials
+        return trials, max_datetime_last_update
 
     @staticmethod
     def _build_frozen_trial_from_trial_model(trial: models.TrialModel) -> FrozenTrial:

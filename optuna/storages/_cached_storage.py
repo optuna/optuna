@@ -41,6 +41,7 @@ class _StudyInfo:
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
         self.direction = StudyDirection.NOT_SET  # type: StudyDirection
         self.name = None  # type: Optional[str]
+        self.max_datetime_last_update = None  # type: Optional[datetime.datetime]
 
 
 class _CachedStorage(BaseStorage):
@@ -371,14 +372,17 @@ class _CachedStorage(BaseStorage):
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
-            trials = self._backend._get_trials(
-                study_id, excluded_trial_ids=study.owned_or_finished_trial_ids
+            trials, max_datetime_last_update = self._backend._get_trials(
+                study_id, min_datetime_last_update=study.max_datetime_last_update
             )
             if trials:
                 self._add_trials_to_cache(study_id, trials)
                 for trial in trials:
                     if trial.state.is_finished():
                         study.owned_or_finished_trial_ids.add(trial._trial_id)
+
+                assert max_datetime_last_update is not None
+                study.max_datetime_last_update = max_datetime_last_update
 
     def _flush_trial(self, trial_id: int) -> bool:
         if trial_id not in self._trial_id_to_study_id_and_number:
