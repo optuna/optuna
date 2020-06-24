@@ -19,6 +19,7 @@ import numpy as np
 import tqdm
 
 import optuna
+from optuna._deprecated import deprecated
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
@@ -729,17 +730,16 @@ class LightGBMTuner(_LightGBMBaseTuner):
             raise ValueError("`valid_sets` is required.")
 
     @property
+    @deprecated(
+        "1.4.0",
+        "3.0.0",
+        text=(
+            "Please get the best booster via "
+            ":class:`~optuna.integration.lightgbm.LightGBMTuner.get_best_booster` instead."
+        ),
+    )
     def best_booster(self) -> "lgb.Booster":
-        """Return the best booster.
-
-        .. deprecated:: 1.4.0
-            Please get the best booster via
-            :class:`~optuna.integration.lightgbm.LightGBMTuner.get_best_booster` instead.
-        """
-        warnings.warn(
-            "The `best_booster` attribute is deprecated. Please use `get_best_booster` instead.",
-            DeprecationWarning,
-        )
+        """Return the best booster."""
 
         return self.get_best_booster()
 
