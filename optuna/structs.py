@@ -2,7 +2,6 @@ import warnings
 
 from optuna import _study_direction
 from optuna import exceptions
-from optuna import logging
 from optuna import trial
 from optuna import type_checking
 
@@ -16,8 +15,6 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
 
 
-_logger = logging.get_logger(__name__)
-
 _message = (
     "`structs` is deprecated. Classes have moved to the following modules. "
     "`structs.StudyDirection`->`study.StudyDirection`, "
@@ -27,7 +24,6 @@ _message = (
     "`structs.TrialPruned`->`exceptions.TrialPruned`."
 )
 warnings.warn(_message, DeprecationWarning)
-_logger.warning(_message)
 
 # The use of the structs.StudyDirection is deprecated and it is recommended that you use
 # study.StudyDirection instead. See the API reference for more details.
@@ -88,7 +84,6 @@ class FrozenTrial(object):
             "Please use `trial.FrozenTrial` instead."
         )
         warnings.warn(message, DeprecationWarning)
-        _logger.warning(message)
 
         self.number = number
         self.state = state
@@ -278,7 +273,6 @@ class StudySummary(object):
             "Please use `study.StudySummary` instead."
         )
         warnings.warn(message, DeprecationWarning)
-        _logger.warning(message)
 
         self.study_name = study_name
         self.direction = direction
@@ -331,4 +325,3 @@ class TrialPruned(exceptions.TrialPruned):
             "Please use `optuna.TrialPruned` instead."
         )
         warnings.warn(message, DeprecationWarning)
-        _logger.warning(message)
