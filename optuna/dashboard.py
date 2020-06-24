@@ -2,7 +2,6 @@ import collections
 from distutils.version import StrictVersion
 import threading
 import time
-import warnings
 
 import numpy as np
 
@@ -257,11 +256,11 @@ if _imports.is_successful():
             self.all_trials_widget.update(current_trials, new_trials)
 
 
-@experimental("0.1.0")
+@experimental("0.1.0", name="Optuna dashboard")
 def _show_experimental_warning():
     # type: () -> None
 
-    warnings.warn("Optuna dashboard is still highly experimental. Please use with caution!")
+    pass
 
 
 def _get_this_source_path():
