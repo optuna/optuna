@@ -94,6 +94,7 @@ def deprecated(
                         removed_version,
                     ),
                     DeprecationWarning,
+                    stacklevel=2,
                 )
 
                 return func(*args, **kwargs)  # type: ignore
@@ -117,6 +118,7 @@ def deprecated(
                         removed_version,
                     ),
                     DeprecationWarning,
+                    stacklevel=2,
                 )
 
                 _original_init(self, *args, **kwargs)
