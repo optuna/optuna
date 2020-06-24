@@ -45,7 +45,7 @@ def test_deprecation_decorator() -> None:
     decorator_deprecation = _deprecated.deprecated(deprecated_version, removed_version)
     assert callable(decorator_deprecation)
 
-    def _func(_: Any) -> int:
+    def _func() -> int:
 
         return 10
 
@@ -56,7 +56,7 @@ def test_deprecation_decorator() -> None:
     )
 
     with pytest.warns(DeprecationWarning):
-        decorated_func(None)
+        decorated_func()
 
 
 def test_deprecation_method_decorator() -> None:
@@ -103,7 +103,7 @@ def test_deprecation_class_decorator_name() -> None:
 
 
 def test_deprecation_decorator_name() -> None:
-    def _func(_: Any) -> int:
+    def _func() -> int:
 
         return 10
 
@@ -112,14 +112,14 @@ def test_deprecation_decorator_name() -> None:
     decorated_sample_func = decorator_deprecation(_func)
 
     with pytest.warns(DeprecationWarning) as record:
-        decorated_sample_func(None)
+        decorated_sample_func()
 
     assert name in record.list[0].message.args[0]
 
 
 @pytest.mark.parametrize("text", [None, "", "test", "test" * 100])
 def test_deprecation_text_specified(text: Optional[str]) -> None:
-    def _func(_: Any) -> int:
+    def _func() -> int:
 
         return 10
 
@@ -162,7 +162,7 @@ def test_deprecation_decorator_default_removed_version() -> None:
     decorator_deprecation = _deprecated.deprecated(deprecated_version)
     assert callable(decorator_deprecation)
 
-    def _func(_: Any) -> int:
+    def _func() -> int:
 
         return 10
 
@@ -173,7 +173,7 @@ def test_deprecation_decorator_default_removed_version() -> None:
     )
 
     with pytest.warns(DeprecationWarning):
-        decorated_func(None)
+        decorated_func()
 
 
 def test_get_removed_version_from_deprecated_version() -> None:
