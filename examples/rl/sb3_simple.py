@@ -1,5 +1,4 @@
-"""
-Optuna example that optimizes the hyperparameters of
+""" Optuna example that optimizes the hyperparameters of
 a reinforcement learning agent using A2C implementation from Stable-Baselines3
 on a OpenAI Gym environment.
 
@@ -9,17 +8,18 @@ You can run this example as follows:
     $ python sb3_simple.py
 
 """
-from typing import Dict, Any
+from typing import Any
+from typing import Dict
 
 import gym
-import torch as th
-import torch.nn as nn
 from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import EvalCallback
+import torch as th
+import torch.nn as nn
 
 import optuna
-from optuna.samplers import TPESampler
 from optuna.pruners import MedianPruner
+from optuna.samplers import TPESampler
 
 
 N_TRIALS = 100
@@ -36,8 +36,7 @@ DEFAULT_HYPERPARAMS = dict(policy="MlpPolicy", env=ENV_ID)
 
 
 def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
-    """
-    Sampler for A2C hyperparameters.
+    """Sampler for A2C hyperparameters.
 
     :param trial: (optuna.Trial)
     :return: (Dict[str, Any])
@@ -72,10 +71,7 @@ def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
 
 
 class TrialEvalCallback(EvalCallback):
-    """
-    Callback used for evaluating and reporting a trial.
-
-    """
+    """Callback used for evaluating and reporting a trial."""
 
     def __init__(
         self,
