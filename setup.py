@@ -78,11 +78,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.5.0" if sys.platform == "darwin" else "torchvision==0.5.0+cpu",
             "xgboost",
         ]
-        + (
-            ["stable-baselines3>=0.7.0"]
-            if (3, 5) < sys.version_info[:2]
-            else []
-        )
+        + (["stable-baselines3>=0.7.0"] if (3, 5) < sys.version_info[:2] else [])
         + (
             ["allennlp<1", "fastai<2", "pytorch_lightning>=0.7.1"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
