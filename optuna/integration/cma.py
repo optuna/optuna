@@ -1,10 +1,10 @@
 import math
 import random
-import warnings
 
 import numpy
 
 import optuna
+from optuna._deprecated import deprecated
 from optuna._imports import try_import
 from optuna import distributions
 from optuna.distributions import CategoricalDistribution
@@ -454,12 +454,11 @@ class _Optimizer(object):
         return cma_param_value
 
 
+@deprecated(
+    "2.0.0", "4.0.0", text="This class is renamed to :class:`~optuna.integration.PyCmaSampler`."
+)
 class CmaEsSampler(PyCmaSampler):
-    """Wrapper class of PyCmaSampler for backward compatibility.
-
-    .. deprecated:: 2.0.0
-        This class is renamed to :class:`~optuna.integration.PyCmaSampler`.
-    """
+    """Wrapper class of PyCmaSampler for backward compatibility."""
 
     def __init__(
         self,
@@ -473,13 +472,6 @@ class CmaEsSampler(PyCmaSampler):
         warn_independent_sampling=True,  # type: bool
     ):
         # type: (...) -> None
-
-        message = (
-            "`optuna.integration.CmaEsSampler` is deprecated. "
-            "Please use `optuna.integration.PyCmaSampler` instead."
-        )
-        warnings.warn(message, DeprecationWarning)
-        _logger.warning(message)
 
         super(CmaEsSampler, self).__init__(
             x0=x0,

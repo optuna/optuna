@@ -33,18 +33,30 @@ def _format_text(text: str) -> str:
     return "\n\n" + textwrap.indent(text.strip(), "    ") + "\n"
 
 
+def _get_removed_version_from_deprecated_version(deprecated_version: str) -> str:
+    parsed_deprecated_version = version.parse(deprecated_version)
+    assert isinstance(parsed_deprecated_version, version.Version)  # Required for mypy.
+    return "{}.0.0".format(parsed_deprecated_version.major + 2)
+
+
 def deprecated(
     deprecated_version: str,
-    removed_version: str,
+    removed_version: Optional[str] = None,
     name: Optional[str] = None,
     text: Optional[str] = None,
 ) -> Any:
     """Decorate class or function as deprecated.
 
     Args:
-        deprecated_version: The version in which the target feature is deprecated.
-        removed_version: The version in which the target feature will be removed.
-        name: The name of the feature. Defaults to the function or class name. Optional.
+        deprecated_version:
+            The version in which the target feature is deprecated.
+        removed_version:
+            The version in which the target feature will be removed. If :obj:`None`, determined
+            based on the deprecated version. In this case, it will become the next next major
+            version after the deprecated version. E.g. if ``deprecated_version`` is ``1.5.0``,
+            this version becomes ``3.0.0``.
+        name:
+            The name of the feature. Defaults to the function or class name. Optional.
         text:
             The additional text for the deprecation note. The default note is build using specified
             ``deprecated_version`` and ``removed_version``. If you want to provide additional
@@ -61,6 +73,8 @@ def deprecated(
     """
 
     _validate_version(deprecated_version)
+    if removed_version is None:
+        removed_version = _get_removed_version_from_deprecated_version(deprecated_version)
     _validate_version(removed_version)
     _validate_two_version(deprecated_version, removed_version)
 
