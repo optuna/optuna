@@ -551,18 +551,13 @@ class _LightGBMBaseTuner(_BaseTuner):
         else:
             _timeout = None
         if _n_trials > 0:
-            try:
-                study.optimize(
-                    objective,
-                    n_trials=_n_trials,
-                    timeout=_timeout,
-                    catch=(),
-                    callbacks=self._optuna_callbacks,
-                )
-            except ValueError:
-                # ValueError is raised by GridSampler when all combinations were examined.
-                # TODO(toshihikoyanase): Remove this try-except after Study.stop is implemented.
-                pass
+            study.optimize(
+                objective,
+                n_trials=_n_trials,
+                timeout=_timeout,
+                catch=(),
+                callbacks=self._optuna_callbacks,
+            )
 
         pbar.close()
         del pbar
