@@ -455,9 +455,7 @@ class _Optimizer(object):
 
 
 @deprecated(
-    "2.0.0",
-    "4.0.0",
-    text="This class is renamed to :class:`~optuna.integration.PyCmaSampler`."
+    "2.0.0", "4.0.0", text="This class is renamed to :class:`~optuna.integration.PyCmaSampler`."
 )
 class CmaEsSampler(PyCmaSampler):
     """Wrapper class of PyCmaSampler for backward compatibility."""
