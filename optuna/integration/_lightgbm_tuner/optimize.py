@@ -732,7 +732,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
     @property  # type: ignore
     @deprecated(
         "1.4.0",
-        "3.0.0",
         text=(
             "Please get the best booster via "
             ":class:`~optuna.integration.lightgbm.LightGBMTuner.get_best_booster` instead."
