@@ -107,7 +107,7 @@ def deprecated(
                         deprecated_version,
                         removed_version,
                     ),
-                    DeprecationWarning,
+                    FutureWarning,
                     stacklevel=2,
                 )
 
@@ -131,7 +131,7 @@ def deprecated(
                         deprecated_version,
                         removed_version,
                     ),
-                    DeprecationWarning,
+                    FutureWarning,
                     stacklevel=2,
                 )
 
