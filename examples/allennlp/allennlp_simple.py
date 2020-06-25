@@ -121,7 +121,7 @@ def objective(trial):
         data_loader=data_loader,
         validation_data_loader=validation_data_loader,
         validation_metric="+" + TARGET_METRIC,
-        patience=None,
+        patience=None,  # `patience=None` since it could conflict with AllenNLPPruningCallback
         num_epochs=50,
         cuda_device=DEVICE,
         serialization_dir=serialization_dir,
