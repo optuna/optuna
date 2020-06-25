@@ -8,6 +8,7 @@ from time import time
 import numpy as np
 import scipy as sp
 
+from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna import distributions  # NOQA
 from optuna import TrialPruned  # NOQA
@@ -373,12 +374,9 @@ class _Objective(object):
             trial.set_user_attr("std_{}".format(name), np.nanstd(array))
 
 
+@experimental("0.17.0")
 class OptunaSearchCV(BaseEstimator):
     """Hyperparameter search with cross-validation.
-
-    .. warning::
-
-        This feature is experimental. The interface may be changed in the future.
 
     Args:
         estimator:
