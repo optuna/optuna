@@ -1,4 +1,6 @@
+import shutil
 import sys
+import tempfile
 
 import pytest
 import torch
@@ -29,17 +31,21 @@ def test_catalyst_pruning_callback():
         criterion = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters())
 
+        dirpath = tempfile.mkdtemp()
+
         runner = catalyst.dl.SupervisedRunner()
         runner.train(
             model=model,
             criterion=criterion,
             optimizer=optimizer,
             loaders=loaders,
-            logdir="./logdir",
+            logdir=dirpath,
             num_epochs=2,
             verbose=True,
             callbacks=[CatalystPruningCallback(trial, metric="loss"),],
         )
+
+        shutil.rmtree(dirpath)
 
         return 1.0
 
