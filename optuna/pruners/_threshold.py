@@ -118,6 +118,9 @@ class ThresholdPruner(BasePruner):
             return False
 
         n_warmup_steps = self._n_warmup_steps
+        n_warmup_steps -= 1
+        if n_warmup_steps < 0:
+            return False
         if step <= n_warmup_steps:
             return False
 
