@@ -42,7 +42,7 @@ def objective(trial: "optuna.trial.Trial") -> float:
     return accuracy
 
 
-tensorboard_callback = TensorBoardCallback("logs/", param_distributions, metric_name="accuracy")
+tensorboard_callback = TensorBoardCallback("logs/", metric_name="accuracy")
 
 study = optuna.create_study(direction="maximize")
 study.optimize(objective, n_trials=10, timeout=600, callbacks=[tensorboard_callback])
