@@ -1,6 +1,5 @@
-import warnings
-
 from typing import Optional
+import warnings
 
 from optuna._imports import try_import
 from optuna.storages import InMemoryStorage
