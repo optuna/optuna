@@ -17,70 +17,36 @@ class TensorBoardCallback(object):
     Args:
         dirname:
             Directory to store TensorBoard logs.
-        param_distributions:
-            `dict` of parameters which should be saved to TensorBoard on each trial.
-            Entries in the dictionary have a form `param_name: (type, args)`, where
-            `param_name` is a `str` containing parameter name, type is `str` set to one of
-            `'uniform'`, `'loguniform'`, `'discrete_uniform'`, `'int_uniform'` or `'categorical'`,
-            and `args` is a tuple of parameters passed to respective constructor.
         metric_name:
             Name of the metric. Since the metric itself is just a number,
             `metric_name` can be used to give it a name. So you know later
             if it was roc-auc or accuracy.
     """
-
-    def __init__(
-        self, dirname: "str", param_distributions: "Dict[str, Tuple[str, Any]]", metric_name: "str"
-    ) -> None:
-
+    def __init__(self, dirname: str, metric_name: str) -> None:
         _imports.check()
-
         self._dirname = dirname
         self._metric_name = metric_name
         self._hp_params = dict()  # type: Dict[str, hp.HParam]
 
-        param_distributions_optuna_objects = (
-            dict()
-        )  # type: Dict[str, optuna.distributions.BaseDistribution]
+    def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+        if len(self._hp_params) == 0:
+            self._initialization(study)
+        trial_value = trial.value if trial.value is not None else float("nan")
+        hparams = dict()
+        for param_name, param_value in trial.params.items():
+            if param_name not in self._hp_params:
+                self._add_distributions(trial.distributions)
+            hparams[self._hp_params[param_name]] = param_value
+        run_name = "trial-%d" % trial.number
+        run_dir = os.path.join(self._dirname, run_name)
+        with tf.summary.create_file_writer(run_dir).as_default():
+            hp.hparams(hparams)  # record the values used in this trial
+            tf.summary.scalar(self._metric_name, trial_value, step=1)
 
-        for param_name, (distribution_type, args) in param_distributions.items():
-            if distribution_type == "uniform":
-                param_distributions_optuna_objects[
-                    param_name
-                ] = optuna.distributions.UniformDistribution(*args)
-            elif distribution_type == "loguniform":
-                param_distributions_optuna_objects[
-                    param_name
-                ] = optuna.distributions.LogUniformDistribution(*args)
-            elif distribution_type == "discrete_uniform":
-                param_distributions_optuna_objects[
-                    param_name
-                ] = optuna.distributions.DiscreteUniformDistribution(*args)
-            elif distribution_type == "int_uniform":
-                param_distributions_optuna_objects[
-                    param_name
-                ] = optuna.distributions.IntUniformDistribution(*args)
-            elif distribution_type == "categorical":
-                param_distributions_optuna_objects[
-                    param_name
-                ] = optuna.distributions.CategoricalDistribution(*args)
-            else:
-                distribution_list = [
-                    "uniform",
-                    "loguniform",
-                    "discrete_uniform",
-                    "int_uniform",
-                    "categorical",
-                ]
-                raise NotImplementedError(
-                    "The distribution {} is not implemented. "
-                    "The type of distribution should be one of the {}".format(
-                        distribution_type, distribution_list
-                    )
-                )
-
-        for param_name, param_distribution in param_distributions_optuna_objects.items():
-
+    def _add_distributions(
+        self, distributions: Dict[str, optuna.distributions.BaseDistribution]
+    ) -> None:
+        for param_name, param_distribution in distributions.items():
             if isinstance(param_distribution, optuna.distributions.UniformDistribution):
                 self._hp_params[param_name] = hp.HParam(
                     param_name, hp.RealInterval(param_distribution.low, param_distribution.high)
@@ -115,6 +81,15 @@ class TensorBoardCallback(object):
                         param_distribution, distribution_list
                     )
                 )
+
+    def _initialization(self, study: optuna.Study) -> None:
+        completed_trials = [
+            trial
+            for trial in study.get_trials(deepcopy=False)
+            if trial.state == optuna.trial.TrialState.COMPLETE
+        ]
+        for trial in completed_trials:
+            self._add_distributions(trial.distributions)
 
     def __call__(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> None:
 
