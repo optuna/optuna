@@ -32,12 +32,6 @@ def train_test_model(num_units: "int", dropout_rate: "float", optimizer: "str") 
     return accuracy
 
 
-param_distributions = dict()  # type: Dict[str, Any]
-param_distributions["NUM_UNITS"] = ("int_uniform", (16, 32))
-param_distributions["DROPOUT_RATE"] = ("uniform", (0.1, 0.2))
-param_distributions["OPTIMIZER"] = ("categorical", (["sgd", "adam"],))
-
-
 def objective(trial: "optuna.trial.Trial") -> float:
 
     num_units = trial.suggest_int(
