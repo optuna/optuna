@@ -294,7 +294,6 @@ class Study(BaseStudy):
                 if show_progress_bar:
                     msg = "Progress bar only supports serial execution (`n_jobs=1`)."
                     warnings.warn(msg)
-                    _logger.warning(msg)
 
                 time_start = datetime.datetime.now()
 
@@ -325,7 +324,6 @@ class Study(BaseStudy):
                             "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html."
                         )
                         warnings.warn(msg, UserWarning)
-                        _logger.warning(msg)
 
                     parallel(
                         delayed(self._reseed_and_optimize_sequential)(

@@ -1,7 +1,7 @@
 from typing import Optional
+import warnings
 
 from optuna._imports import try_import
-from optuna.logging import get_logger
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.trial import BaseTrial
@@ -89,8 +89,7 @@ class ChainerMNStudy(object):
 
         if isinstance(study._storage, RDBStorage):
             if study._storage.engine.dialect.name == "sqlite":
-                logger = get_logger(__name__)
-                logger.warning(
+                warnings.warn(
                     "SQLite may cause synchronization problems when used with "
                     "ChainerMN integration. Please use other DBs like PostgreSQL."
                 )
