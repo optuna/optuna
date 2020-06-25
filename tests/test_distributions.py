@@ -359,3 +359,11 @@ def test_int_log_uniform_distribution_asdict():
     # type: () -> None
 
     assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12}
+
+
+def test_int_log_uniform_distribution_deprecation():
+    # type: () -> None
+
+    # step != 1 is deprecated
+    with pytest.warns(FutureWarning):
+        distributions.IntLogUniformDistribution(low=1, high=100, step=2)
