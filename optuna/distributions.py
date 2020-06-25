@@ -347,7 +347,7 @@ class IntLogUniformDistribution(BaseDistribution):
                 "`step` argument is deprecated and will be removed in the future. "
                 "The removal of this feature is currently scheduled for v4.0.0, "
                 "but this schedule is subject to change.",
-                DeprecationWarning,
+                FutureWarning,
             )
 
         self.low = low
