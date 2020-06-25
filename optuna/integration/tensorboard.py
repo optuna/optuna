@@ -3,29 +3,11 @@ from typing import Dict
 
 import optuna
 
-try:
-    import tensorboard
+from optuna._imports import try_import
+
+with try_import() as _imports:
     from tensorboard.plugins.hparams import api as hp
     import tensorflow as tf
-
-    _available = True
-except ImportError as e:
-    _import_error = e
-    _available = False
-    hp = object
-    tensorboard = object
-    tensorflow = object
-
-
-def _check_tensorboard_availability() -> None:
-
-    if not _available:
-        raise ImportError(
-            "TensorBoard is not available. Please install TensorBoard to use this "
-            "feature. It can be installed by executing `$ pip install "
-            "tensorboard`. For further information, please refer to the installation guide "
-            "of TensorBoard. (The actual import error is as follows: " + str(_import_error) + ")"
-        )
 
 
 class TensorBoardCallback(object):
