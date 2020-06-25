@@ -33,7 +33,7 @@ class TensorBoardCallback(object):
         self, dirname: "str", param_distributions: "Dict[str, Tuple[str, Any]]", metric_name: "str"
     ) -> None:
 
-        _check_tensorboard_availability()
+        _imports.check()
 
         self._dirname = dirname
         self._metric_name = metric_name
