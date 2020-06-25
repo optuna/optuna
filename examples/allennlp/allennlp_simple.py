@@ -120,7 +120,7 @@ def objective(trial):
         optimizer=optimizer,
         data_loader=data_loader,
         validation_data_loader=validation_data_loader,
-        validation_metric=f"+{TARGET_METRIC}",
+        validation_metric="+" + TARGET_METRIC,
         patience=None,
         num_epochs=50,
         cuda_device=DEVICE,
