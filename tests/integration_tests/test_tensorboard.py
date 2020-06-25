@@ -30,7 +30,7 @@ def test_study_name() -> None:
     metric_name = "target"
     study_name = "test_tensorboard_integration"
 
-    tbcallback = TensorBoardCallback(dirname, distributions, metric_name)
+    tbcallback = TensorBoardCallback(dirname, metric_name)
     study = optuna.create_study(study_name=study_name)
     study.optimize(_objective_func, n_trials=1, callbacks=[tbcallback])
 
