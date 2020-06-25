@@ -23,4 +23,4 @@ RUN if [ "${BUILD_TYPE}" = "dev" ]; then \
     else \
         pip install --no-cache-dir -e .; \
     fi \
-    && pip install jupyter notebook
+    && pip install --no-cache-dir jupyter notebook
