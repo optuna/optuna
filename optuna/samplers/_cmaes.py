@@ -136,7 +136,7 @@ class CmaEsSampler(BaseSampler):
         if self._consider_pruned_trials:
             self._raise_experimental_warning_for_consider_pruned_trials()
 
-    @experimental("2.0.0")
+    @experimental("2.0.0", name="`consider_pruned_trials = True` in CmaEsSampler")
     def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
         pass
 
