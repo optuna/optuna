@@ -20,12 +20,6 @@ def _objective_func(trial: "optuna.trial.Trial") -> float:
 
 def test_study_name() -> None:
 
-    distributions = {
-        "x": ("uniform", (-1.0, 1.0)),
-        "y": ("loguniform", (20.0, 30.0)),
-        "z": ("categorical", ((-1.0, 1.0),)),
-    }
-
     dirname = tempfile.mkdtemp()
     metric_name = "target"
     study_name = "test_tensorboard_integration"
