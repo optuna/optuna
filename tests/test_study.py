@@ -7,8 +7,8 @@ import time
 from unittest.mock import Mock  # NOQA
 from unittest.mock import patch
 import uuid
-import warnings
 
+import _pytest.capture
 import joblib
 import pandas as pd
 import pytest
@@ -386,10 +386,7 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_value_error, catch=(ValueError,), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = (
-            "Setting status of trial#1 as TrialState.FAIL because of the "
-            "following error: ValueError()"
-        )
+        expected_message = "Trial 1 failed because of the following error: ValueError()"
         assert frozen_trial.state == optuna.trial.TrialState.FAIL
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
@@ -407,8 +404,8 @@ def test_run_trial(storage_mode):
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = (
-            "Setting status of trial#3 as TrialState.FAIL because the returned "
-            "value from the objective function cannot be casted to float. "
+            "Trial 3 failed, because the returned "
+            "value from the objective function cannot be cast to float. "
             "Returned value is: None"
         )
         assert frozen_trial.state == optuna.trial.TrialState.FAIL
@@ -423,10 +420,7 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_nan, catch=(Exception,), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = (
-            "Setting status of trial#4 as TrialState.FAIL because the objective "
-            "function returned nan."
-        )
+        expected_message = "Trial 4 failed, because the objective function returned nan."
         assert frozen_trial.state == optuna.trial.TrialState.FAIL
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
@@ -814,11 +808,43 @@ def test_enqueue_trial_with_unfixed_parameters(storage_mode):
         assert -10 <= t.params["y"] <= 10
 
 
-def test_storage_property():
-    # type: () -> None
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_with_out_of_range_parameters(storage_mode):
+    # type: (str) -> None
 
-    study = optuna.create_study()
-    assert study.storage == study._storage
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.enqueue_trial(params={"x": 11})
+
+        def objective(trial):
+            # type: (optuna.trial.Trial) -> float
+
+            return trial.suggest_int("x", -10, 10)
+
+        with pytest.warns(UserWarning):
+            study.optimize(objective, n_trials=1)
+        t = study.trials[0]
+        assert -10 <= t.params["x"] <= 10
+
+    # Internal logic might differ when distribution contains a single element.
+    # Test it explicitly.
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.enqueue_trial(params={"x": 11})
+
+        def objective(trial):
+            # type: (optuna.trial.Trial) -> float
+
+            return trial.suggest_int("x", 1, 1)  # Single element.
+
+        with pytest.warns(UserWarning):
+            study.optimize(objective, n_trials=1)
+        t = study.trials[0]
+        assert t.params["x"] == 1
 
 
 @patch("optuna.study.gc.collect")
@@ -933,36 +959,6 @@ def test_get_trials(storage_mode):
             assert trials0 == trials2
 
 
-def test_study_id():
-    # type: () -> None
-
-    study = optuna.create_study()
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=DeprecationWarning)
-        assert study.study_id == study._study_id
-
-    with pytest.warns(DeprecationWarning):
-        study.study_id
-
-
-def test_study_summary_study_id():
-    # type: () -> None
-
-    study = optuna.create_study()
-    summaries = study._storage.get_all_study_summaries()
-    assert len(summaries) == 1
-
-    summary = summaries[0]
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=DeprecationWarning)
-        assert summary.study_id == summary._study_id
-
-    with pytest.warns(DeprecationWarning):
-        summary.study_id
-
-
 def test_study_summary_eq_ne():
     # type: () -> None
 
@@ -1015,3 +1011,51 @@ def test_study_summary_lt_le():
     summaries.sort()
     assert summaries[0] == summary_0
     assert summaries[1] == summary_1
+
+
+def test_log_completed_trial(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    # We need to reconstruct our default handler to properly capture stderr.
+    optuna.logging._reset_library_root_logger()
+    optuna.logging.set_verbosity(optuna.logging.INFO)
+
+    study = optuna.create_study()
+    study.optimize(lambda _: 1.0, n_trials=1)
+    _, err = capsys.readouterr()
+    assert "Trial 0" in err
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    study.optimize(lambda _: 1.0, n_trials=1)
+    _, err = capsys.readouterr()
+    assert "Trial 1" not in err
+
+    optuna.logging.set_verbosity(optuna.logging.DEBUG)
+    study.optimize(lambda _: 1.0, n_trials=1)
+    _, err = capsys.readouterr()
+    assert "Trial 2" in err
+
+
+def test_log_completed_trial_skip_storage_access() -> None:
+
+    study = optuna.create_study()
+
+    # Create a trial to retrieve it as the `study.best_trial`.
+    study.optimize(lambda _: 0.0, n_trials=1)
+    trial = optuna.Trial(study, study._storage.create_new_trial(study._study_id))
+
+    storage = study._storage
+
+    with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
+        study._log_completed_trial(trial, 1.0)
+        # Trial.best_trial and Trial.best_params access storage.
+        assert mock_object.call_count == 2
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
+        study._log_completed_trial(trial, 1.0)
+        assert mock_object.call_count == 0
+
+    optuna.logging.set_verbosity(optuna.logging.DEBUG)
+    with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
+        study._log_completed_trial(trial, 1.0)
+        assert mock_object.call_count == 2

@@ -6,7 +6,7 @@ from optuna import _experimental
 from optuna.exceptions import ExperimentalWarning
 
 
-def _sample_func(_: Any) -> int:
+def _sample_func() -> int:
 
     return 10
 
@@ -50,7 +50,7 @@ def test_experimental_decorator() -> None:
     assert decorated_func.__doc__ == _experimental._EXPERIMENTAL_NOTE_TEMPLATE.format(ver=version)
 
     with pytest.warns(ExperimentalWarning):
-        decorated_func(None)
+        decorated_func()
 
 
 def test_experimental_method_decorator() -> None:
@@ -99,6 +99,6 @@ def test_experimental_decorator_name() -> None:
     decorated_sample_func = decorator_experimental(_sample_func)
 
     with pytest.warns(ExperimentalWarning) as record:
-        decorated_sample_func(None)
+        decorated_sample_func()
 
     assert name in record.list[0].message.args[0]

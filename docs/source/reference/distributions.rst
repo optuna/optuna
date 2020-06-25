@@ -1,7 +1,7 @@
 .. module:: optuna.distributions
 
-Distributions
-=============
+optuna.distributions
+====================
 
 .. autoclass:: UniformDistribution
     :members:

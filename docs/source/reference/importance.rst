@@ -1,7 +1,7 @@
 .. module:: optuna.importance
 
-Hyperparameter Importance
-=========================
+optuna.importance
+=================
 
 .. autofunction:: get_param_importances
 

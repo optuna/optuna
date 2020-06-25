@@ -10,8 +10,8 @@ import pytest
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
 from optuna.exceptions import StorageInternalError
-from optuna.storages.rdb.models import SCHEMA_VERSION
-from optuna.storages.rdb.models import VersionInfoModel
+from optuna.storages._rdb.models import SCHEMA_VERSION
+from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState

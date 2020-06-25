@@ -2,7 +2,7 @@ import pytest
 
 from optuna.study import create_study
 from optuna import type_checking
-from optuna.visualization.optimization_history import plot_optimization_history
+from optuna.visualization import plot_optimization_history
 
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA

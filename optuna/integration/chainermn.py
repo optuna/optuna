@@ -1,6 +1,4 @@
-import gc
 from typing import Optional
-import warnings
 
 from optuna._imports import try_import
 from optuna.logging import get_logger
@@ -120,11 +118,13 @@ class ChainerMNStudy(object):
 
         if self.comm.rank == 0:
             func_mn = _ChainerMNObjectiveFunc(func, self.comm)
-            self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
-            self.comm.mpi_comm.bcast(False)
+            try:
+                self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
+            finally:
+                self.comm.mpi_comm.bcast(False)
         else:
+            has_next_trial = self.comm.mpi_comm.bcast(None)
             while True:
-                has_next_trial = self.comm.mpi_comm.bcast(None)
                 if not has_next_trial:
                     break
                 try:
@@ -140,11 +140,7 @@ class ChainerMNStudy(object):
                 except catch:
                     pass
                 finally:
-                    # The following line mitigates memory problems that can be occurred in some
-                    # environments (e.g., services that use computing containers such as CircleCI).
-                    # Please refer to the following PR for further details:
-                    # https://github.com/optuna/optuna/pull/325.
-                    gc.collect()
+                    has_next_trial = self.comm.mpi_comm.bcast(None)
 
     def __getattr__(self, attr_name):
         # type: (str) -> Any
@@ -258,14 +254,12 @@ class ChainerMNTrial(BaseTrial):
             self.delegate.report(value, step)
         self.comm.mpi_comm.barrier()
 
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
-
+    def should_prune(self) -> bool:
         def func():
             # type: () -> bool
 
             assert self.delegate is not None
-            return self.delegate.should_prune(step)
+            return self.delegate.should_prune()
 
         return self._call_with_mpi(func)
 
@@ -296,17 +290,6 @@ class ChainerMNTrial(BaseTrial):
             return self.delegate.number
 
         return self._call_with_mpi(func)
-
-    @property
-    def trial_id(self):
-        # type: () -> int
-
-        warnings.warn(
-            "The use of `ChainerMNTrial.trial_id` is deprecated. "
-            "Please use `ChainerMNTrial.number` instead.",
-            DeprecationWarning,
-        )
-        return self._trial_id
 
     @property
     def _trial_id(self):
