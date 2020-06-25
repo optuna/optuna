@@ -15,7 +15,7 @@ We have the following two ways to execute this example:
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
     $ optuna study optimize tensorflow_estimator_simple.py objective --n-trials=100 \
-      --study $STUDY_NAME --storage sqlite:///example.db
+      --study-name $STUDY_NAME --storage sqlite:///example.db
 
 """
 
@@ -31,7 +31,7 @@ MODEL_DIR = tempfile.mkdtemp()
 BATCH_SIZE = 128
 TRAIN_STEPS = 1000
 N_TRAIN_BATCHES = 3000
-N_TEST_BATCHES = 1000
+N_VALID_BATCHES = 1000
 
 
 def preprocess(image, label):
@@ -51,9 +51,9 @@ def train_input_fn():
 
 def eval_input_fn():
     data = tfds.load(name="mnist", as_supervised=True)
-    test_ds = data["test"]
-    test_ds = test_ds.map(preprocess).shuffle(10000).batch(BATCH_SIZE).take(N_TEST_BATCHES)
-    return test_ds
+    valid_ds = data["test"]
+    valid_ds = valid_ds.map(preprocess).shuffle(10000).batch(BATCH_SIZE).take(N_VALID_BATCHES)
+    return valid_ds
 
 
 def create_optimizer(trial):
@@ -104,7 +104,7 @@ def objective(trial):
 
 def main():
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=25)
+    study.optimize(objective, n_trials=25, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
 

@@ -1,18 +1,16 @@
 import optuna
+from optuna._imports import try_import
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
 
-try:
+with try_import() as _imports:
     from fastai.basic_train import Learner  # NOQA
     from fastai.callbacks import TrackerCallback
 
-    _available = True
-except ImportError as e:
-    _import_error = e
-    _available = False
-    TrackerCallback = object
+if not _imports.is_successful():
+    TrackerCallback = object  # NOQA
 
 
 class FastAIPruningCallback(TrackerCallback):
@@ -55,7 +53,7 @@ class FastAIPruningCallback(TrackerCallback):
 
         super(FastAIPruningCallback, self).__init__(learn, monitor)
 
-        _check_fastai_availability()
+        _imports.check()
 
         self._trial = trial
 
@@ -72,16 +70,4 @@ class FastAIPruningCallback(TrackerCallback):
         self._trial.report(float(value), step=epoch)
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
-            raise optuna.exceptions.TrialPruned(message)
-
-
-def _check_fastai_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "fastai is not available. Please install fastai to use this feature. "
-            "fastai can be installed by executing `$ pip install fastai`. "
-            "For further information, please refer to the installation guide of fastai. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )
+            raise optuna.TrialPruned(message)

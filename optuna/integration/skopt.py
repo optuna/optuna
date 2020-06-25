@@ -10,15 +10,9 @@ from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna import type_checking
 
-try:
+with optuna._imports.try_import() as _imports:
     import skopt
     from skopt.space import space
-
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # SkoptSampler is disabled because Scikit-Optimize is not available.
-    _available = False
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -97,7 +91,7 @@ class SkoptSampler(BaseSampler):
     ):
         # type: (Optional[BaseSampler], bool, Optional[Dict[str, Any]], int) -> None
 
-        _check_skopt_availability()
+        _imports.check()
 
         self._skopt_kwargs = skopt_kwargs or {}
         if "dimensions" in self._skopt_kwargs:
@@ -190,6 +184,10 @@ class _Optimizer(object):
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 count = (distribution.high - distribution.low) // distribution.step
                 dimension = space.Integer(0, count)
+            elif isinstance(distribution, distributions.IntLogUniformDistribution):
+                low = distribution.low - 0.5
+                high = distribution.high + 0.5
+                dimension = space.Real(low, high, prior="log-uniform")
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 count = int((distribution.high - distribution.low) // distribution.q)
                 dimension = space.Integer(0, count)
@@ -230,6 +228,12 @@ class _Optimizer(object):
                 value = value * distribution.q + distribution.low
             if isinstance(distribution, distributions.IntUniformDistribution):
                 value = value * distribution.step + distribution.low
+            if isinstance(distribution, distributions.IntLogUniformDistribution):
+                value = int(
+                    np.round((value - distribution.low) / distribution.step) * distribution.step
+                    + distribution.low
+                )
+                value = min(max(value, distribution.low), distribution.high)
 
             params[name] = value
 
@@ -277,28 +281,3 @@ class _Optimizer(object):
             value = -value
 
         return param_values, value
-
-
-def _get_complete_trials(study):
-    # type: (Study) -> List[FrozenTrial]
-
-    complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
-    for t in study.get_trials(deepcopy=False):
-        if t.state == TrialState.PRUNED and len(t.intermediate_values) > 0:
-            _, value = max(t.intermediate_values.items())
-            _t = copy.deepcopy(t)
-            _t.value = value
-            complete_trials.append(_t)
-    return complete_trials
-
-
-def _check_skopt_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "Scikit-Optimize is not available. Please install it to use this feature. "
-            "Scikit-Optimize can be installed by executing `$ pip install scikit-optimize`. "
-            "For further information, please refer to the installation guide of Scikit-Optimize. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )

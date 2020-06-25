@@ -1,8 +1,7 @@
 import pytest
 
 
-def test_import():
-    # type: () -> None
+def test_import() -> None:
 
     from optuna.integration import chainer  # NOQA
     from optuna.integration import chainermn  # NOQA
@@ -24,8 +23,7 @@ def test_import():
         from optuna.integration import unknown_module  # type: ignore # NOQA
 
 
-def test_module_attributes():
-    # type: () -> None
+def test_module_attributes() -> None:
 
     import optuna
 

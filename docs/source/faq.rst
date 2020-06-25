@@ -152,7 +152,7 @@ For example, you can save SVM models trained in the objective function as follow
         # Save a trained model to a file.
         with open('{}.pickle'.format(trial.number), 'wb') as fout:
             pickle.dump(clf, fout)
-        return 1.0 - accuracy_score(y_test, clf.predict(X_test))
+        return 1.0 - accuracy_score(y_valid, clf.predict(X_valid))
 
 
     study = optuna.create_study()
@@ -161,7 +161,7 @@ For example, you can save SVM models trained in the objective function as follow
     # Load the best model.
     with open('{}.pickle'.format(study.best_trial.number), 'rb') as fin:
         best_clf = pickle.load(fin)
-    print(accuracy_score(y_test, best_clf.predict(X_test)))
+    print(accuracy_score(y_valid, best_clf.predict(X_valid)))
 
 
 How can I obtain reproducible optimization results?
@@ -258,13 +258,13 @@ If your optimization target supports GPU (CUDA) acceleration and you want to spe
     #
     # Specify to use the first GPU, and run an optimization.
     $ export CUDA_VISIBLE_DEVICES=0
-    $ optuna study optimize foo.py objective --study foo --storage sqlite:///example.db
+    $ optuna study optimize foo.py objective --study-name foo --storage sqlite:///example.db
 
     # On another terminal.
     #
     # Specify to use the second GPU, and run another optimization.
     $ export CUDA_VISIBLE_DEVICES=1
-    $ optuna study optimize bar.py objective --study bar --storage sqlite:///example.db
+    $ optuna study optimize bar.py objective --study-name bar --storage sqlite:///example.db
 
 Please refer to `CUDA C Programming Guide <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_ for further details.
 
@@ -296,3 +296,33 @@ Using :class:`~optuna.trial.FixedTrial`, you can write unit tests as follows:
         assert 1.0 == objective(FixedTrial({'x': 1.0, 'y': 0}))
         assert -1.0 == objective(FixedTrial({'x': 0.0, 'y': -1}))
         assert 0.0 == objective(FixedTrial({'x': -1.0, 'y': 1}))
+
+
+.. _out-of-memory-gc-collect:
+
+How do I avoid running out of memory (OOM) when optimizing studies?
+-------------------------------------------------------------------
+
+If the memory footprint increases as you run more trials, try to periodically run the garbage collector.
+Specify ``gc_after_trial`` to :obj:`True` when calling :func:`~optuna.study.Study.optimize` or call :func:`gc.collect` inside a callback.
+
+.. code-block:: python
+
+    def objective(trial):
+        x = trial.suggest_uniform('x', -1.0, 1.0)
+        y = trial.suggest_int('y', -5, 5)
+        return x + y
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=10, gc_after_trial=True)
+
+    # `gc_after_trial=True` is more or less identical to the following.
+    study.optimize(objective, n_trials=10, callbacks=[lambda study, trial: gc.collect()])
+
+There is a performance trade-off for running the garbage collector, which could be non-negligible depending on how fast your objective function otherwise is. Therefore, ``gc_after_trial`` is :obj:`False` by default.
+Note that the above examples are similar to running the garbage collector inside the objective function, except for the fact that :func:`gc.collect` is called even when errors, including :class:`~optuna.exceptions.TrialPruned` are raised.
+
+.. note::
+
+    :class:`~optuna.integration.ChainerMNStudy` does currently not provide ``gc_after_trial`` nor callbacks for :func:`~optuna.integration.ChainerMNStudy.optimize`.
+    When using this class, you will have to call the garbage collector inside the objective function.

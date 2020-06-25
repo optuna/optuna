@@ -4,7 +4,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna import type_checking
-from optuna.visualization.parallel_coordinate import plot_parallel_coordinate
+from optuna.visualization import plot_parallel_coordinate
 
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
@@ -44,7 +44,7 @@ def test_plot_parallel_coordinate():
     assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
 
     # Test with wrong params that do not exist in trials
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
         plot_parallel_coordinate(study, params=["optuna", "optuna"])
 
     # Ignore failed trials.

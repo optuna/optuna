@@ -14,7 +14,7 @@ We have the following two ways to execute this example:
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize chainer_simple.py objective --n-trials=100 --study $STUDY_NAME \
+    $ optuna study optimize chainer_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
       --storage sqlite:///example.db
 
 """
@@ -32,7 +32,7 @@ if pkg_resources.parse_version(chainer.__version__) < pkg_resources.parse_versio
     raise RuntimeError("Chainer>=4.0.0 is required for this example.")
 
 N_TRAIN_EXAMPLES = 3000
-N_TEST_EXAMPLES = 1000
+N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
 
@@ -76,18 +76,20 @@ def objective(trial):
 
     # Dataset
     rng = np.random.RandomState(0)
-    train, test = chainer.datasets.get_mnist()
+    train, valid = chainer.datasets.get_mnist()
     train = chainer.datasets.SubDataset(
         train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))
     )
-    test = chainer.datasets.SubDataset(test, 0, N_TEST_EXAMPLES, order=rng.permutation(len(test)))
+    valid = chainer.datasets.SubDataset(
+        valid, 0, N_VALID_EXAMPLES, order=rng.permutation(len(valid))
+    )
     train_iter = chainer.iterators.SerialIterator(train, BATCHSIZE)
-    test_iter = chainer.iterators.SerialIterator(test, BATCHSIZE, repeat=False, shuffle=False)
+    valid_iter = chainer.iterators.SerialIterator(valid, BATCHSIZE, repeat=False, shuffle=False)
 
     # Trainer
     updater = chainer.training.StandardUpdater(train_iter, optimizer)
     trainer = chainer.training.Trainer(updater, (EPOCH, "epoch"))
-    trainer.extend(chainer.training.extensions.Evaluator(test_iter, model))
+    trainer.extend(chainer.training.extensions.Evaluator(valid_iter, model))
     log_report_extension = chainer.training.extensions.LogReport(log_name=None)
     trainer.extend(
         chainer.training.extensions.PrintReport(
