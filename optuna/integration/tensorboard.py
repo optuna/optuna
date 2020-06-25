@@ -91,17 +91,3 @@ class TensorBoardCallback(object):
         for trial in completed_trials:
             self._add_distributions(trial.distributions)
 
-    def __call__(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> None:
-
-        trial_value = trial.value if trial.value is not None else float("nan")
-
-        hparams = dict()
-        for param_name, param_value in trial.params.items():
-            hparams[self._hp_params[param_name]] = param_value
-
-        run_name = "trial-%d" % trial.number
-        run_dir = os.path.join(self._dirname, run_name)
-
-        with tf.summary.create_file_writer(run_dir).as_default():
-            hp.hparams(hparams)  # record the values used in this trial
-            tf.summary.scalar(self._metric_name, trial_value, step=1)
