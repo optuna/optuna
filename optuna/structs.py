@@ -24,7 +24,7 @@ _message = (
     "`structs.TrialState`->`trial.TrialState`, "
     "`structs.TrialPruned`->`exceptions.TrialPruned`."
 )
-warnings.warn(_message, DeprecationWarning)
+warnings.warn(_message, FutureWarning)
 
 # The use of the structs.StudyDirection is deprecated and it is recommended that you use
 # study.StudyDirection instead. See the API reference for more details.
