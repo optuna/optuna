@@ -30,7 +30,7 @@ def test_pytorch_ignite_pruning_handler():
     handler = optuna.integration.PyTorchIgnitePruningHandler(trial, "accuracy", trainer)
     with patch.object(trainer, "state", epoch=3):
         with patch.object(evaluator, "state", metrics={"accuracy": 1}):
-            with pytest.raises(optuna.exceptions.TrialPruned):
+            with pytest.raises(optuna.TrialPruned):
                 handler(evaluator)
             assert study.trials[0].intermediate_values == {3: 1}
 

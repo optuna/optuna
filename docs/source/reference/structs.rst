@@ -1,7 +1,7 @@
 .. module:: optuna.structs
 
-Structs
-=======
+optuna.structs
+==============
 
 .. autoclass:: TrialState
     :members:

@@ -4,25 +4,22 @@ import random
 import numpy
 
 import optuna
+from optuna._deprecated import deprecated
+from optuna._imports import try_import
 from optuna import distributions
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+from optuna import logging
 from optuna.samplers import BaseSampler
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna import type_checking
 
-try:
+with try_import() as _imports:
     import cma
-
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # CmaEsSampler is disabled because cma is not available.
-    _available = False
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -35,16 +32,18 @@ if type_checking.TYPE_CHECKING:
     from optuna.trial import FrozenTrial  # NOQA
     from optuna.study import Study  # NOQA
 
+_logger = logging.get_logger(__name__)
+
 # Minimum value of sigma0 to avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
 _MIN_SIGMA0 = 1e-10
 
 
-class CmaEsSampler(BaseSampler):
+class PyCmaSampler(BaseSampler):
     """A Sampler using cma library as the backend.
 
     Example:
 
-        Optimize a simple quadratic function by using :class:`~optuna.integration.CmaEsSampler`.
+        Optimize a simple quadratic function by using :class:`~optuna.integration.PyCmaSampler`.
 
         .. testcode::
 
@@ -55,12 +54,18 @@ class CmaEsSampler(BaseSampler):
                 y = trial.suggest_int('y', -1, 1)
                 return x**2 + y
 
-            sampler = optuna.integration.CmaEsSampler()
+            sampler = optuna.integration.PyCmaSampler()
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=20)
 
     Note that parallel execution of trials may affect the optimization performance of CMA-ES,
     especially if the number of trials running in parallel exceeds the population size.
+
+    .. note::
+        :class:`~optuna.integration.CmaEsSampler` is deprecated and renamed to
+        :class:`~optuna.integration.PyCmaSampler` in v2.0.0. Please use
+        :class:`~optuna.integration.PyCmaSampler` instead of
+        :class:`~optuna.integration.CmaEsSampler`.
 
     Args:
 
@@ -88,7 +93,7 @@ class CmaEsSampler(BaseSampler):
 
             Note that ``BoundaryHandler``, ``bounds``, ``CMA_stds`` and ``seed`` arguments in
             ``cma_opts`` will be ignored because it is added by
-            :class:`~optuna.integration.CmaEsSampler` automatically.
+            :class:`~optuna.integration.PyCmaSampler` automatically.
 
         n_startup_trials:
             The independent sampling is used instead of the CMA-ES algorithm until the given number
@@ -98,7 +103,7 @@ class CmaEsSampler(BaseSampler):
             A :class:`~optuna.samplers.BaseSampler` instance that is used for independent
             sampling. The parameters not contained in the relative search space are sampled
             by this sampler.
-            The search space for :class:`~optuna.integration.CmaEsSampler` is determined by
+            The search space for :class:`~optuna.integration.PyCmaSampler` is determined by
             :func:`~optuna.samplers.intersection_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
@@ -133,7 +138,7 @@ class CmaEsSampler(BaseSampler):
     ):
         # type: (...) -> None
 
-        _check_cma_availability()
+        _imports.check()
 
         self._x0 = x0
         self._sigma0 = sigma0
@@ -189,8 +194,8 @@ class CmaEsSampler(BaseSampler):
 
         if len(search_space) == 1:
             self._logger.info(
-                "`CmaEsSampler` does not support optimization of 1-D search space. "
-                "`{}` is used instead of `CmaEsSampler`.".format(
+                "`PyCmaSampler` does not support optimization of 1-D search space. "
+                "`{}` is used instead of `PyCmaSampler`.".format(
                     self._independent_sampler.__class__.__name__
                 )
             )
@@ -221,6 +226,7 @@ class CmaEsSampler(BaseSampler):
 
         x0 = {}
         for name, distribution in search_space.items():
+            # TODO(nzw0301) support IntLogUniform
             if isinstance(distribution, UniformDistribution):
                 x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, DiscreteUniformDistribution):
@@ -246,6 +252,7 @@ class CmaEsSampler(BaseSampler):
 
         sigma0s = []
         for name, distribution in search_space.items():
+            # TODO(nzw0301) support IntLogUniform
             if isinstance(distribution, UniformDistribution):
                 sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, DiscreteUniformDistribution):
@@ -269,10 +276,10 @@ class CmaEsSampler(BaseSampler):
 
         self._logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
-            "by using `{}` instead of `CmaEsSampler` "
+            "by using `{}` instead of `PyCmaSampler` "
             "(optimization performance may be degraded). "
             "You can suppress this warning by setting `warn_independent_sampling` "
-            "to `False` in the constructor of `CmaEsSampler`, "
+            "to `False` in the constructor of `PyCmaSampler`, "
             "if this independent sampling is intended behavior.".format(
                 param_name, trial.number, self._independent_sampler.__class__.__name__
             )
@@ -447,13 +454,30 @@ class _Optimizer(object):
         return cma_param_value
 
 
-def _check_cma_availability():
-    # type: () -> None
+@deprecated("2.0.0", text="This class is renamed to :class:`~optuna.integration.PyCmaSampler`.")
+class CmaEsSampler(PyCmaSampler):
+    """Wrapper class of PyCmaSampler for backward compatibility."""
 
-    if not _available:
-        raise ImportError(
-            "cma library is not available. Please install cma to use this feature. "
-            "cma can be installed by executing `$ pip install cma`. "
-            "For further information, please refer to the installation guide of cma. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
+    def __init__(
+        self,
+        x0=None,  # type: Optional[Dict[str, Any]]
+        sigma0=None,  # type: Optional[float]
+        cma_stds=None,  # type: Optional[Dict[str, float]]
+        seed=None,  # type: Optional[int]
+        cma_opts=None,  # type: Optional[Dict[str, Any]]
+        n_startup_trials=1,  # type: int
+        independent_sampler=None,  # type: Optional[BaseSampler]
+        warn_independent_sampling=True,  # type: bool
+    ):
+        # type: (...) -> None
+
+        super(CmaEsSampler, self).__init__(
+            x0=x0,
+            sigma0=sigma0,
+            cma_stds=cma_stds,
+            seed=seed,
+            cma_opts=cma_opts,
+            n_startup_trials=n_startup_trials,
+            independent_sampler=independent_sampler,
+            warn_independent_sampling=warn_independent_sampling,
         )

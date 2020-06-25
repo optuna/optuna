@@ -11,10 +11,10 @@ _import_structure = {
     "catalyst": ["CatalystPruningCallback"],
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
-    "cma": ["CmaEsSampler"],
+    "cma": ["CmaEsSampler", "PyCmaSampler"],
     "mlflow": ["MLflowCallback"],
     "keras": ["KerasPruningCallback"],
-    "lightgbm": ["LightGBMPruningCallback", "LightGBMTuner"],
+    "lightgbm": ["LightGBMPruningCallback", "LightGBMTuner", "LightGBMTunerCV"],
     "pytorch_ignite": ["PyTorchIgnitePruningHandler"],
     "pytorch_lightning": ["PyTorchLightningPruningCallback"],
     "sklearn": ["OptunaSearchCV"],
@@ -36,10 +36,12 @@ if TYPE_CHECKING:
     from optuna.integration.chainer import ChainerPruningExtension  # NOQA
     from optuna.integration.chainermn import ChainerMNStudy  # NOQA
     from optuna.integration.cma import CmaEsSampler  # NOQA
+    from optuna.integration.cma import PyCmaSampler  # NOQA
     from optuna.integration.fastai import FastAIPruningCallback  # NOQA
     from optuna.integration.keras import KerasPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMTuner  # NOQA
+    from optuna.integration.lightgbm import LightGBMTunerCV  # NOQA
     from optuna.integration.mlflow import MLflowCallback  # NOQA
     from optuna.integration.mxnet import MXNetPruningCallback  # NOQA
     from optuna.integration.pytorch_ignite import PyTorchIgnitePruningHandler  # NOQA

@@ -54,7 +54,7 @@ class IntersectionSearchSpace(object):
                 raise ValueError("`IntersectionSearchSpace` cannot handle multiple studies.")
 
         next_cursor = self._cursor
-        for trial in reversed(study.get_trials(deepcopy=False)):
+        for trial in reversed(study._storage.get_all_trials(study._study_id, deepcopy=False)):
             if self._cursor > trial.number:
                 break
 

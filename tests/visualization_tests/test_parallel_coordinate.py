@@ -4,7 +4,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna import type_checking
-from optuna.visualization.parallel_coordinate import plot_parallel_coordinate
+from optuna.visualization import plot_parallel_coordinate
 
 if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA

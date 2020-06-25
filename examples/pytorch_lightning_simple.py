@@ -13,7 +13,7 @@ We have the following two ways to execute this example:
 
 (2) Execute through CLI. Pruning is enabled automatically.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize pytorch_lightning_simple.py objective --n-trials=100 --study \
+    $ optuna study optimize pytorch_lightning_simple.py objective --n-trials=100 --study-name \
       $STUDY_NAME --storage sqlite:///example.db
 """
 
@@ -108,8 +108,7 @@ class LightningNet(pl.LightningModule):
         data, target = batch
         output = self.forward(data)
         pred = output.argmax(dim=1, keepdim=True)
-        correct = pred.eq(target.view_as(pred)).sum().item()
-        accuracy = correct / data.size(0)
+        accuracy = pred.eq(target.view_as(pred)).float().mean()
         return {"batch_val_acc": accuracy}
 
     def validation_epoch_end(self, outputs):
@@ -158,7 +157,7 @@ def objective(trial):
     model = LightningNet(trial)
     trainer.fit(model)
 
-    return metrics_callback.metrics[-1]["val_acc"]
+    return metrics_callback.metrics[-1]["val_acc"].item()
 
 
 if __name__ == "__main__":

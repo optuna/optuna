@@ -1,7 +1,7 @@
 .. module:: optuna.distributions
 
-Distributions
-=============
+optuna.distributions
+====================
 
 .. autoclass:: UniformDistribution
     :members:
@@ -13,6 +13,10 @@ Distributions
     :members:
 
 .. autoclass:: IntUniformDistribution
+    :members:
+    :exclude-members: to_external_repr, to_internal_repr
+
+.. autoclass:: IntLogUniformDistribution
     :members:
     :exclude-members: to_external_repr, to_internal_repr
 

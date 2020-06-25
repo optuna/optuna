@@ -40,8 +40,7 @@ class Model(pl.LightningModule):
         data, target = batch
         output = self.forward(data)
         pred = output.argmax(dim=1, keepdim=True)
-        correct = pred.eq(target.view_as(pred)).sum()
-        accuracy = correct.double() / data.size(0)
+        accuracy = pred.eq(target.view_as(pred)).double().mean()
         return {"validation_accuracy": accuracy}
 
     def validation_end(self, outputs):
@@ -84,8 +83,8 @@ def test_pytorch_lightning_pruning_callback():
 
         trainer = pl.Trainer(
             early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="accuracy"),
-            min_nb_epochs=0,  # Required to fire the callback after the first epoch.
-            max_nb_epochs=2,
+            min_epochs=0,  # Required to fire the callback after the first epoch.
+            max_epochs=2,
         )
         trainer.checkpoint_callback = None  # Disable unrelated checkpoint callbacks.
 
