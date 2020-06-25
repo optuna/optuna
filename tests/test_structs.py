@@ -12,7 +12,7 @@ from optuna.structs import TrialState
 
 def test_frozen_trial_deprecated() -> None:
 
-    with pytest.deprecated_call():
+    with pytest.warns(FutureWarning):
         FrozenTrial(
             number=0,
             trial_id=0,
@@ -30,7 +30,7 @@ def test_frozen_trial_deprecated() -> None:
 
 def test_study_summary_deprecated() -> None:
 
-    with pytest.deprecated_call():
+    with pytest.warns(FutureWarning):
         StudySummary(
             study_name="test",
             direction=StudyDirection.NOT_SET,
@@ -45,5 +45,5 @@ def test_study_summary_deprecated() -> None:
 
 def test_trial_pruned_deprecated() -> None:
 
-    with pytest.deprecated_call():
+    with pytest.warns(FutureWarning):
         TrialPruned()
