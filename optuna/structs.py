@@ -271,13 +271,6 @@ class StudySummary(object):
     ):
         # type: (...) -> None
 
-        message = (
-            "The use of `structs.StudySummary` is deprecated. "
-            "Please use `study.StudySummary` instead."
-        )
-        warnings.warn(message, DeprecationWarning)
-        _logger.warning(message)
-
         self.study_name = study_name
         self.direction = direction
         self.best_trial = best_trial

@@ -55,7 +55,7 @@ def test_deprecation_decorator() -> None:
         d_ver=deprecated_version, r_ver=removed_version
     )
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         decorated_func()
 
 
@@ -69,7 +69,7 @@ def test_deprecation_method_decorator() -> None:
     assert decorated_method.__name__ == _Sample._method.__name__
     assert decorated_method.__doc__ == _Sample._method_expected.__doc__
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         decorated_method(None)
 
 
@@ -86,7 +86,7 @@ def test_deprecation_class_decorator() -> None:
         d_ver=deprecated_version, r_ver=removed_version
     )
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         decorated_class("a", "b", "c")
 
 
@@ -96,7 +96,7 @@ def test_deprecation_class_decorator_name() -> None:
     decorator_deprecation = _deprecated.deprecated("1.1.0", "3.0.0", name=name)
     decorated_sample = decorator_deprecation(_Sample)
 
-    with pytest.warns(DeprecationWarning) as record:
+    with pytest.warns(FutureWarning) as record:
         decorated_sample("a", "b", "c")
 
     assert name in record.list[0].message.args[0]
@@ -111,7 +111,7 @@ def test_deprecation_decorator_name() -> None:
     decorator_deprecation = _deprecated.deprecated("1.1.0", "3.0.0", name=name)
     decorated_sample_func = decorator_deprecation(_func)
 
-    with pytest.warns(DeprecationWarning) as record:
+    with pytest.warns(FutureWarning) as record:
         decorated_sample_func()
 
     assert name in record.list[0].message.args[0]
@@ -172,7 +172,7 @@ def test_deprecation_decorator_default_removed_version() -> None:
         d_ver=deprecated_version, r_ver="3.0.0"
     )
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         decorated_func()
 
 

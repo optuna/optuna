@@ -23,7 +23,7 @@ from optuna.trial import TrialState
 
 
 def test_cmaes_deprecation_warning() -> None:
-    with pytest.deprecated_call():
+    with pytest.warns(FutureWarning):
         optuna.integration.CmaEsSampler()
 
 
