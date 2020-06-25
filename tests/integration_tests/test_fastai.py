@@ -1,5 +1,6 @@
 from functools import partial
-import typing  # NOQA
+from typing import Any
+from typing import Tuple
 
 from fastai.basic_data import DataBunch
 from fastai.basic_train import Learner
@@ -18,32 +19,27 @@ from optuna.testing.integration import DeterministicPruner
 class ArrayDataset(Dataset):
     "Sample numpy array dataset"
 
-    def __init__(self, x, y):
-        # type: (typing.Any, typing.Any) -> None
+    def __init__(self, x: Any, y: Any) -> None:
 
         self.x, self.y = x, y
         self.c = 2
 
-    def __len__(self):
-        # type: () -> int
+    def __len__(self) -> int:
 
         return len(self.x)
 
-    def __getitem__(self, i):
-        # type: (int) -> typing.Tuple[typing.Any, typing.Any]
+    def __getitem__(self, i: int) -> Tuple[Any, Any]:
 
         return self.x[i], self.y[i]
 
 
 @pytest.fixture(scope="session")
-def tmpdir(tmpdir_factory):
-    # type: (typing.Any) -> typing.Any
+def tmpdir(tmpdir_factory: Any) -> Any:
 
     return tmpdir_factory.mktemp("fastai_integration_test")
 
 
-def test_fastai_pruning_callback(tmpdir):
-    # type: (typing.Any) -> None
+def test_fastai_pruning_callback(tmpdir: Any) -> None:
 
     train_x = np.zeros((16, 20), np.float32)
     train_y = np.zeros((16,), np.int64)
@@ -56,8 +52,7 @@ def test_fastai_pruning_callback(tmpdir):
         train_ds=train_ds, valid_ds=valid_ds, test_ds=None, path=tmpdir, bs=1  # batch size
     )
 
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+    def objective(trial: optuna.trial.Trial) -> float:
 
         model = nn.Sequential(nn.Linear(20, 1), nn.Sigmoid())
         learn = Learner(

@@ -1,6 +1,9 @@
 from typing import List
+from typing import Tuple
+from unittest.mock import patch
 import uuid
 
+import _pytest.capture
 import pytest
 
 import optuna
@@ -23,10 +26,10 @@ def test_create_study() -> None:
 
 
 def test_load_study() -> None:
-    with StorageSupplier("new") as storage:
+    with StorageSupplier("sqlite") as storage:
         study_name = str(uuid.uuid4())
 
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             # Test loading an unexisting study.
             optuna.multi_objective.study.load_study(study_name=study_name, storage=storage)
 
@@ -125,7 +128,7 @@ def test_enqueue_trial() -> None:
 def test_callbacks() -> None:
     study = optuna.multi_objective.create_study(["minimize", "maximize"])
 
-    def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
+    def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> Tuple[float, float]:
         x = trial.suggest_float("x", 0, 10)
         y = trial.suggest_float("y", 0, 10)
         return x, y
@@ -140,3 +143,49 @@ def test_callbacks() -> None:
 
     assert list0 == [0, 1]
     assert list1 == [0, 1]
+
+
+def test_log_completed_trial(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    # We need to reconstruct our default handler to properly capture stderr.
+    optuna.logging._reset_library_root_logger()
+    optuna.logging.set_verbosity(optuna.logging.INFO)
+
+    study = optuna.multi_objective.create_study(["minimize", "maximize"])
+    study.optimize(lambda t: (1.0, 1.0), n_trials=1)
+    _, err = capsys.readouterr()
+    assert "Trial 0" in err
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    study.optimize(lambda t: (1.0, 1.0), n_trials=1)
+    _, err = capsys.readouterr()
+    assert "Trial 1" not in err
+
+    optuna.logging.set_verbosity(optuna.logging.DEBUG)
+    study.optimize(lambda t: (1.0, 1.0), n_trials=1)
+    _, err = capsys.readouterr()
+    assert "Trial 2" in err
+
+
+def test_log_completed_trial_skip_storage_access() -> None:
+
+    study = optuna.multi_objective.create_study(["minimize", "maximize"])
+
+    new_trial_id = study._study._storage.create_new_trial(study._study._study_id)
+    trial = optuna.Trial(study._study, new_trial_id)
+    storage = study._storage
+
+    with patch.object(storage, "get_trial", wraps=storage.get_trial) as mock_object:
+        optuna.multi_objective.study._log_completed_trial(study, trial, 1.0)
+        # Trial.params and MultiObjectiveTrial._get_values access storage.
+        assert mock_object.call_count == 2
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    with patch.object(storage, "get_trial", wraps=storage.get_trial) as mock_object:
+        optuna.multi_objective.study._log_completed_trial(study, trial, 1.0)
+        assert mock_object.call_count == 0
+
+    optuna.logging.set_verbosity(optuna.logging.DEBUG)
+    with patch.object(storage, "get_trial", wraps=storage.get_trial) as mock_object:
+        optuna.multi_objective.study._log_completed_trial(study, trial, 1.0)
+        assert mock_object.call_count == 2

@@ -13,7 +13,11 @@ from optuna import multi_objective
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
 parametrize_sampler = pytest.mark.parametrize(
-    "sampler_class", [optuna.multi_objective.samplers.RandomMultiObjectiveSampler,],
+    "sampler_class",
+    [
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        optuna.multi_objective.samplers.NSGAIIMultiObjectiveSampler,
+    ],
 )
 
 

@@ -1,26 +1,22 @@
 import abc
-import datetime
+from typing import Optional
 
 from optuna import distributions
-from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
+    import datetime  # NOQA
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
-    from optuna.study import Study  # NOQA
 
     FloatingPointDistributionType = Union[
         distributions.UniformDistribution, distributions.LogUniformDistribution
     ]
-
-_logger = logging.get_logger(__name__)
 
 
 class BaseTrial(object, metaclass=abc.ABCMeta):
@@ -30,8 +26,15 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def suggest_float(self, name, low, high, *, log=False, step=None):
-        # type: (str, float, float, bool, Optional[float])-> float
+    def suggest_float(
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: Optional[float] = None,
+        log: bool = False
+    ) -> float:
 
         raise NotImplementedError
 
@@ -54,8 +57,8 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
+    def suggest_int(self, name, low, high, step=1, log=False):
+        # type: (str, int, int, int, bool) -> int
 
         raise NotImplementedError
 
@@ -72,8 +75,7 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
+    def should_prune(self) -> bool:
 
         raise NotImplementedError
 

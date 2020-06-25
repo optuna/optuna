@@ -1,8 +1,8 @@
 .. module:: optuna.visualization
 
 
-Visualization
-=============
+optuna.visualization
+====================
 
 .. note::
     :mod:`~optuna.visualization` module uses plotly to create figures, but `JupyterLab`_ cannot
@@ -19,6 +19,8 @@ Visualization
 .. autofunction:: plot_optimization_history
 
 .. autofunction:: plot_parallel_coordinate
+
+.. autofunction:: plot_param_importances
 
 .. autofunction:: plot_slice
 

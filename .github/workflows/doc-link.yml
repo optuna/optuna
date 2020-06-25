@@ -1,0 +1,14 @@
+name: Add Documentation Link
+
+on: status
+
+jobs:
+  doc-link:
+    runs-on: ubuntu-latest
+    if: "github.event.context == 'ci/circleci: document'"
+    steps:
+    - uses: larsoner/circleci-artifacts-redirector-action@master
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        artifact-path: 0/docs/build/html/index.html
+        circleci-jobs: document

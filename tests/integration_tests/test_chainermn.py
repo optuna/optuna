@@ -4,10 +4,10 @@ import pytest
 
 from optuna import create_study
 from optuna import distributions
-from optuna.exceptions import TrialPruned
 from optuna import integration
 from optuna.integration import ChainerMNStudy
 from optuna import pruners
+from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna import Study
 from optuna.testing.integration import DeterministicPruner
@@ -15,6 +15,7 @@ from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
+from optuna import TrialPruned
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -38,20 +39,8 @@ try:
 except ImportError:
     _available = False
 
-STORAGE_MODES = ["new", "common"]
+STORAGE_MODES = ["sqlite"]
 PRUNER_INIT_FUNCS = [lambda: pruners.MedianPruner(), lambda: pruners.SuccessiveHalvingPruner()]
-
-
-def setup_module():
-    # type: () -> None
-
-    StorageSupplier.setup_common_tempfile()
-
-
-def teardown_module():
-    # type: () -> None
-
-    StorageSupplier.teardown_common_tempfile()
 
 
 class Func(object):
@@ -150,7 +139,10 @@ class TestChainerMNStudy(object):
     def test_init_with_incompatible_storage(comm):
         # type: (CommunicatorBase) -> None
 
-        pass
+        study = create_study(InMemoryStorage(), study_name="in-memory-study")
+
+        with pytest.raises(ValueError):
+            ChainerMNStudy(study, comm)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -403,34 +395,44 @@ class TestChainerMNTrial(object):
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_suggest_int(storage_mode, comm):
-        # type: (str, CommunicatorBase) -> None
+    @pytest.mark.parametrize("enable_log", [False, True])
+    def test_suggest_int_step1(
+        storage_mode: str, comm: CommunicatorBase, enable_log: bool
+    ) -> None:
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
-            low = 0
+            low = 1
             high = 10
             step = 1
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_int("x", low, high, step)
+                x1 = mn_trial.suggest_int("x", low, high, step=step, log=enable_log)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_int("x", low, high, step)
+                x2 = mn_trial.suggest_int("x", low, high, step=step, log=enable_log)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
                     mn_trial.suggest_uniform("x", low, high)
 
+    @staticmethod
+    @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+    def test_suggest_int_step2(storage_mode: str, comm: CommunicatorBase) -> None:
+
+        with MultiNodeStorageSupplier(storage_mode, comm) as storage:
+            study = TestChainerMNStudy._create_shared_study(storage, comm)
+            low = 1
+            high = 10
             step = 2
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_int("x", low, high, step)
+                x1 = mn_trial.suggest_int("x", low, high, step=step, log=False)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_int("x", low, high, step)
+                x2 = mn_trial.suggest_int("x", low, high, step=step, log=False)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):

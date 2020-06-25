@@ -1,12 +1,9 @@
 import optuna
+from optuna._imports import try_import
 
-try:
+
+with try_import() as _imports:
     import mxnet as mx  # NOQA
-
-    _available = True
-except ImportError as e:
-    _import_error = e
-    _available = False
 
 
 class MXNetPruningCallback(object):
@@ -31,7 +28,7 @@ class MXNetPruningCallback(object):
     def __init__(self, trial, eval_metric):
         # type: (optuna.trial.Trial, str) -> None
 
-        _check_mxnet_availability()
+        _imports.check()
 
         self._trial = trial
         self._eval_metric = eval_metric
@@ -55,16 +52,4 @@ class MXNetPruningCallback(object):
             self._trial.report(current_score, step=param.epoch)
             if self._trial.should_prune():
                 message = "Trial was pruned at epoch {}.".format(param.epoch)
-                raise optuna.exceptions.TrialPruned(message)
-
-
-def _check_mxnet_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "MXNet is not available. Please install MXNet to use this feature. "
-            "MXNet can be installed by executing `$ pip install mxnet`. "
-            "For further information, please refer to the installation guide of MXNet. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )
+                raise optuna.TrialPruned(message)
