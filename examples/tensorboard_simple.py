@@ -34,15 +34,9 @@ def train_test_model(num_units: "int", dropout_rate: "float", optimizer: "str") 
 
 def objective(trial: "optuna.trial.Trial") -> float:
 
-    num_units = trial.suggest_int(
-        "NUM_UNITS", param_distributions["NUM_UNITS"][1][0], param_distributions["NUM_UNITS"][1][1]
-    )
-    dropout_rate = trial.suggest_uniform(
-        "DROPOUT_RATE",
-        param_distributions["DROPOUT_RATE"][1][0],
-        param_distributions["DROPOUT_RATE"][1][1],
-    )
-    optimizer = trial.suggest_categorical("OPTIMIZER", param_distributions["OPTIMIZER"][1][0])
+    num_units = trial.suggest_int("NUM_UNITS", 16, 32)
+    dropout_rate = trial.suggest_uniform("DROPOUT_RATE", 0.1, 0.2)
+    optimizer = trial.suggest_categorical("OPTIMIZER", ["sgd", "adam"])
 
     accuracy = train_test_model(num_units, dropout_rate, optimizer)  # type: ignore
     return accuracy
