@@ -1,12 +1,7 @@
-import optuna
-from optuna import type_checking
 import os
+from typing import Dict
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
+import optuna
 
 try:
     import tensorboard
