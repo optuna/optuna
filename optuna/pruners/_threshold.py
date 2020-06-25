@@ -120,7 +120,7 @@ class ThresholdPruner(BasePruner):
         n_warmup_steps = self._n_warmup_steps
         if n_warmup_steps < 1:
             return False
-        if step <= n_warmup_steps:
+        if step <= n_warmup_steps - 1:
             return False
 
         if not _is_first_in_interval_step(
