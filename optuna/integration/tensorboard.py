@@ -22,6 +22,7 @@ class TensorBoardCallback(object):
             `metric_name` can be used to give it a name. So you know later
             if it was roc-auc or accuracy.
     """
+
     def __init__(self, dirname: str, metric_name: str) -> None:
         _imports.check()
         self._dirname = dirname
@@ -90,4 +91,3 @@ class TensorBoardCallback(object):
         ]
         for trial in completed_trials:
             self._add_distributions(trial.distributions)
-
