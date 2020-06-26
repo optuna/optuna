@@ -1,12 +1,14 @@
+from typing import Optional
+
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna import structs
+from optuna.study import StudyDirection
+from optuna.trial import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
 
 
 with try_import() as _imports:
@@ -73,16 +75,14 @@ class MLflowCallback(object):
             if it was roc-auc or accuracy.
     """
 
-    def __init__(self, tracking_uri=None, metric_name="value"):
-        # type: (Optional[str], str) -> None
+    def __init__(self, tracking_uri: Optional[str] = None, metric_name: str = "value") -> None:
 
         _imports.check()
 
         self._tracking_uri = tracking_uri
         self._metric_name = metric_name
 
-    def __call__(self, study, trial):
-        # type: (optuna.study.Study, optuna.trial.FrozenTrial) -> None
+    def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
         # This sets the tracking_uri for MLflow.
         if self._tracking_uri is not None:
@@ -108,12 +108,12 @@ class MLflowCallback(object):
 
             # Set state and convert it to str and remove the common prefix.
             trial_state = trial.state
-            if isinstance(trial_state, structs.TrialState):
+            if isinstance(trial_state, TrialState):
                 tags["state"] = str(trial_state).split(".")[-1]
 
             # Set direction and convert it to str and remove the common prefix.
             study_direction = study.direction
-            if isinstance(study_direction, structs.StudyDirection):
+            if isinstance(study_direction, StudyDirection):
                 tags["direction"] = str(study_direction).split(".")[-1]
 
             tags.update(trial.user_attrs)
