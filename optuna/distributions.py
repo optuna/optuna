@@ -1,4 +1,5 @@
 import abc
+import copy
 import decimal
 import json
 import warnings
@@ -319,13 +320,16 @@ class IntLogUniformDistribution(BaseDistribution):
         step:
             A step for spacing between values.
 
-            .. note::
-                This value is valid for only 1. Otherwise, the value is replaced with 1.
-
             .. warning::
                 Deprecated in v2.0.0. ``step`` argument will be removed in the future.
                 The removal of this feature is currently scheduled for v4.0.0,
                 but this schedule is subject to change.
+
+                Samplers and other components in Optuna relying on this distribution will ignore
+                this value and assume that
+                :attr:`~optuna.distributions.IntLogUniformDistribution.step` is always 1.
+                User-defined samplers may continue to use other values besides 1 during the
+                deprecation.
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
@@ -342,16 +346,35 @@ class IntLogUniformDistribution(BaseDistribution):
             )
 
         if step != 1:
-            warnings.warn(
-                "`step` accepts only `1`, so `step` is replaced with `1`. "
-                "`step` argument is deprecated and will be removed in the future. "
-                "The removal of this feature is currently scheduled for v4.0.0, "
-                "but this schedule is subject to change.",
-                FutureWarning,
-            )
+            self._warn_step()
 
         self.low = low
         self.high = high
+        self._step = step
+
+    def __repr__(self):
+        # type: () -> str
+
+        # TODO(hvy): `BaseDistribution.__repr__` could rely on `_asdict` instead of `__dict__`.
+        # `IntLogUniformDistribution` would not have to override `__repr__`.
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
+
+    def _asdict(self):
+        # type: () -> Dict
+
+        d = copy.copy(self.__dict__)
+        d["step"] = d.pop("_step")
+        return d
+
+    def _warn_step(self) -> None:
+        warnings.warn(
+            "Samplers and other components in Optuna will assume that `step` is 1. "
+            "`step` argument is deprecated and will be removed in the future. "
+            "The removal of this feature is currently scheduled for v4.0.0, "
+            "but this schedule is subject to change.",
+            FutureWarning,
+        )
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
@@ -373,6 +396,16 @@ class IntLogUniformDistribution(BaseDistribution):
 
         value = param_value_in_internal_repr
         return self.low <= value <= self.high
+
+    @property
+    def step(self) -> int:
+        self._warn_step()
+        return self._step
+
+    @step.setter
+    def step(self, value: int) -> None:
+        self._warn_step()
+        self._step = value
 
 
 class CategoricalDistribution(BaseDistribution):
