@@ -14,7 +14,7 @@ from typing import Dict
 import gym
 from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import EvalCallback
-import torch as th
+import torch
 import torch.nn as nn
 
 import optuna
@@ -32,7 +32,10 @@ N_EVAL_EPISODES = 3
 
 ENV_ID = "CartPole-v1"
 
-DEFAULT_HYPERPARAMS = dict(policy="MlpPolicy", env=ENV_ID)
+DEFAULT_HYPERPARAMS = {
+    "policy": "MlpPolicy",
+    "env": ENV_ID,
+}
 
 
 def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
@@ -51,9 +54,7 @@ def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
     net_arch = trial.suggest_categorical("net_arch", ["tiny", "small"])
     activation_fn = trial.suggest_categorical("activation_fn", ["tanh", "relu"])
 
-    net_arch = {"tiny": [dict(pi=[64], vf=[64])], "small": [dict(pi=[64, 64], vf=[64, 64])],}[
-        net_arch
-    ]
+    net_arch = {"pi": [64], "vf": [64],} if net_arch == "tiny" else {"pi": [64, 64], "vf": [64, 64],}
 
     activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU,}[activation_fn]
 
@@ -64,9 +65,11 @@ def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
         "learning_rate": learning_rate,
         "ent_coef": ent_coef,
         "max_grad_norm": max_grad_norm,
-        "policy_kwargs": dict(
-            net_arch=net_arch, activation_fn=activation_fn, ortho_init=ortho_init
-        ),
+        "policy_kwargs": {
+            "net_arch": net_arch,
+            "activation_fn": activation_fn,
+            "ortho_init": ortho_init,
+        },
     }
 
 
@@ -83,7 +86,7 @@ class TrialEvalCallback(EvalCallback):
         verbose: int = 0,
     ):
 
-        super(TrialEvalCallback, self).__init__(
+        super().__init__(
             eval_env=eval_env,
             n_eval_episodes=n_eval_episodes,
             eval_freq=eval_freq,
@@ -96,7 +99,7 @@ class TrialEvalCallback(EvalCallback):
 
     def _on_step(self) -> bool:
         if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
-            super(TrialEvalCallback, self)._on_step()
+            super()._on_step()
             self.eval_idx += 1
             self.trial.report(self.last_mean_reward, self.eval_idx)
             # Prune trial if need
@@ -141,7 +144,7 @@ def objective(trial: optuna.Trial) -> float:
 
 if __name__ == "__main__":
     # Set pytorch num threads to 1 for faster training
-    th.set_num_threads(1)
+    torch.set_num_threads(1)
 
     sampler = TPESampler(n_startup_trials=N_STARTUP_TRIALS)
     # Do not prune before 1/3 of the max budget is used
