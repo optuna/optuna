@@ -54,7 +54,9 @@ def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
     net_arch = trial.suggest_categorical("net_arch", ["tiny", "small"])
     activation_fn = trial.suggest_categorical("activation_fn", ["tanh", "relu"])
 
-    net_arch = {"pi": [64], "vf": [64],} if net_arch == "tiny" else {"pi": [64, 64], "vf": [64, 64],}
+    net_arch = (
+        {"pi": [64], "vf": [64],} if net_arch == "tiny" else {"pi": [64, 64], "vf": [64, 64],}
+    )
 
     activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU,}[activation_fn]
 
@@ -152,7 +154,7 @@ if __name__ == "__main__":
 
     study = optuna.create_study(sampler=sampler, pruner=pruner, direction="maximize")
     try:
-        study.optimize(objective, n_trials=N_TRIALS, n_jobs=N_JOBS)
+        study.optimize(objective, n_trials=N_TRIALS, n_jobs=N_JOBS, timeout=600)
     except KeyboardInterrupt:
         pass
 
