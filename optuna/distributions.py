@@ -2,13 +2,13 @@ import abc
 import copy
 import decimal
 import json
+from typing import Dict
 import warnings
 
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
-    from typing import Dict  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
@@ -351,17 +351,13 @@ class IntLogUniformDistribution(BaseDistribution):
         self.high = high
         self._step = step
 
-    def __repr__(self):
-        # type: () -> str
-
+    def __repr__(self) -> str:
         # TODO(hvy): `BaseDistribution.__repr__` could rely on `_asdict` instead of `__dict__`.
         # `IntLogUniformDistribution` would not have to override `__repr__`.
         kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
         return "{}({})".format(self.__class__.__name__, kwargs)
 
-    def _asdict(self):
-        # type: () -> Dict
-
+    def _asdict(self) -> Dict:
         d = copy.copy(self.__dict__)
         d["step"] = d.pop("_step")
         return d
@@ -375,24 +371,16 @@ class IntLogUniformDistribution(BaseDistribution):
             FutureWarning,
         )
 
-    def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> int
-
+    def to_external_repr(self, param_value_in_internal_repr: float) -> int:
         return int(param_value_in_internal_repr)
 
-    def to_internal_repr(self, param_value_in_external_repr):
-        # type: (int) -> float
-
+    def to_internal_repr(self, param_value_in_external_repr: int) -> float:
         return float(param_value_in_external_repr)
 
-    def single(self):
-        # type: () -> bool
-
+    def single(self) -> bool:
         return self.low == self.high
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
-
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
         value = param_value_in_internal_repr
         return self.low <= value <= self.high
 
