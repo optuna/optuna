@@ -10,6 +10,7 @@ with try_import() as _imports:
 if not _imports.is_successful():
     Callback = object  # NOQA
 
+
 class CatalystPruningCallback(Callback):
     """Catalyst callback to prune unpromising trials.
 
