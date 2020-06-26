@@ -2,16 +2,10 @@ from typing import Any  # NOQA
 
 import optuna
 
+from optuna._imports import try_import
 
-try:
+with try_import() as _imports:
     from catalyst.dl import Callback
-
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # CatalystPruningCallback is disabled because Catalyst is not available.
-    _available = False
-    Callback = object
 
 
 class CatalystPruningCallback(Callback):
@@ -32,8 +26,8 @@ class CatalystPruningCallback(Callback):
 
         # set order=1000 to run pruning callback after other callbacks
         # refer to `catalyst.core.CallbackOrder`
+        _imports.check()
         super(CatalystPruningCallback, self).__init__(order=1000)
-        _check_catalyst_availability()
 
         self._trial = trial
         self.metric = metric
@@ -46,14 +40,3 @@ class CatalystPruningCallback(Callback):
             message = "Trial was pruned at epoch {}.".format(state.epoch)
             raise optuna.TrialPruned(message)
 
-
-def _check_catalyst_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "Catalyst is not available. Please install Catalyst to use this "
-            "feature. Catalyst can be installed by executing `$ pip install "
-            "catalyst`. For further information, please refer to the installation guide "
-            "of Catalyst. (The actual import error is as follows: " + str(_import_error) + ")"
-        )
