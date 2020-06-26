@@ -1,13 +1,18 @@
 import os
+import pytest
 import shutil
+import sys
 import tempfile
 
 import optuna
 from optuna.integration.tensorboard import TensorBoardCallback
 
-from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+try:
+    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+except:
+    pass
 
-
+@pytest.mark.skipif(sys.version_info > (3, 7), reason="Tensorflow is not installed for python 3.8.")
 def _objective_func(trial: "optuna.trial.Trial") -> float:
 
     x = trial.suggest_uniform("x", -1.0, 1.0)
@@ -18,6 +23,7 @@ def _objective_func(trial: "optuna.trial.Trial") -> float:
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
+@pytest.mark.skipif(sys.version_info > (3, 7), reason="Tensorflow is not installed for python 3.8.")
 def test_study_name() -> None:
 
     dirname = tempfile.mkdtemp()
