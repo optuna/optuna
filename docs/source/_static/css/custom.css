@@ -1,3 +1,7 @@
 .highlight-console pre {
-    background: #D3D5D4;
+  background: #d3d5d4;
+}
+
+.sig-param > span:nth-child(1) {
+  color: lightseagreen;
 }
