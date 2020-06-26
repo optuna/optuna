@@ -7,15 +7,12 @@ import tempfile
 import optuna
 from optuna.integration.tensorboard import TensorBoardCallback
 
-try:
+from optuna._imports import try_import
+
+with try_import() as _imports:
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-except:
-    pass
 
 
-@pytest.mark.skipif(
-    sys.version_info > (3, 7), reason="Tensorflow is not installed for python 3.8."
-)
 def _objective_func(trial: "optuna.trial.Trial") -> float:
 
     x = trial.suggest_uniform("x", -1.0, 1.0)
