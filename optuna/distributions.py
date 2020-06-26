@@ -311,12 +311,6 @@ class IntLogUniformDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
     :mod:`~optuna.samplers` in general.
 
-    .. note::
-        If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by
-        :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced with the maximum of
-        :math:`k \\times \\mathsf{step} + \\mathsf{low} \\lt \\mathsf{high}`, where :math:`k` is
-        an integer.
-
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
@@ -324,6 +318,14 @@ class IntLogUniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
         step:
             A step for spacing between values.
+
+            .. note::
+                This value is valid for only 1. Otherwise, the value is replaced with 1.
+
+            .. warning::
+                Deprecated in v2.0.0. ``step`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v4.0.0,
+                but this schedule is subject to change.
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
@@ -333,22 +335,23 @@ class IntLogUniformDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
-        if step <= 0:
-            raise ValueError(
-                "The `step` value must be non-zero positive value, but step={}.".format(step)
-            )
-
         if low < 1.0:
             raise ValueError(
                 "The `low` value must be equal to or greater than 1 for a log distribution "
                 "(low={}, high={}).".format(low, high)
             )
 
-        high = _adjust_int_uniform_high(low, high, step)
+        if step != 1:
+            warnings.warn(
+                "`step` accepts only `1`, so `step` is replaced with `1`. "
+                "`step` argument is deprecated and will be removed in the future. "
+                "The removal of this feature is currently scheduled for v4.0.0, "
+                "but this schedule is subject to change.",
+                FutureWarning,
+            )
 
         self.low = low
         self.high = high
-        self.step = step
 
     def to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
@@ -363,9 +366,7 @@ class IntLogUniformDistribution(BaseDistribution):
     def single(self):
         # type: () -> bool
 
-        if self.low == self.high:
-            return True
-        return (self.high - self.low) < self.step
+        return self.low == self.high
 
     def _contains(self, param_value_in_internal_repr):
         # type: (float) -> bool

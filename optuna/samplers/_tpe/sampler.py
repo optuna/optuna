@@ -281,10 +281,8 @@ class TPESampler(BaseSampler):
         high = distribution.high + 0.5
 
         sample = self._sample_numerical(low, high, below, above, is_log=True)
-        best_sample = (
-            np.round((sample - distribution.low) / distribution.step) * distribution.step
-            + distribution.low
-        )
+        best_sample = np.round(sample)
+
         return int(min(max(best_sample, distribution.low), distribution.high))
 
     def _sample_numerical(
