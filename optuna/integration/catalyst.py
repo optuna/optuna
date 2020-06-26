@@ -7,6 +7,8 @@ from optuna._imports import try_import
 with try_import() as _imports:
     from catalyst.dl import Callback
 
+if not _imports.is_successful():
+    Callback = object  # NOQA
 
 class CatalystPruningCallback(Callback):
     """Catalyst callback to prune unpromising trials.
@@ -39,4 +41,3 @@ class CatalystPruningCallback(Callback):
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(state.epoch)
             raise optuna.TrialPruned(message)
-
