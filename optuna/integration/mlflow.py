@@ -3,7 +3,7 @@ from typing import Optional
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna._study_direction import StudyDirection
+from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna import type_checking
 
