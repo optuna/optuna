@@ -3,7 +3,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
@@ -30,7 +29,6 @@ if not _imports.is_successful():
     fANOVA = None  # NOQA
 
 
-@experimental("1.3.0")
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     """fANOVA parameter importance evaluator.
 
@@ -42,12 +40,26 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
 
         `An Efficient Approach for Assessing Hyperparameter Importance
         <http://proceedings.mlr.press/v32/hutter14.html>`_.
+
+    Args:
+        n_trees:
+            Number of trees in the random forest.
+        max_depth:
+            The maximum depth of each tree in the random forest.
+        seed:
+            Seed for the random forest.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self, *, n_trees: int = 16, max_depth: int = 64, seed: Optional[int] = None
+    ) -> None:
         _imports.check()
 
-    def evaluate(self, study: Study, params: Optional[List[str]]) -> Dict[str, float]:
+        self._n_trees = n_trees
+        self._max_depth = max_depth
+        self._seed = seed
+
+    def evaluate(self, study: Study, params: Optional[List[str]] = None) -> Dict[str, float]:
         distributions = _get_distributions(study, params)
         params_data, values_data = _get_study_data(study, distributions)
 
@@ -55,7 +67,10 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             X=params_data,
             Y=values_data,
             config_space=_get_configuration_space(distributions),
+            n_trees=self._n_trees,
+            seed=self._seed,
             max_features=max(1, int(params_data.shape[1] * 0.7)),
+            max_depth=self._max_depth,
         )
 
         individual_importances = {}
