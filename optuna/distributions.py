@@ -326,8 +326,7 @@ class IntLogUniformDistribution(BaseDistribution):
                 but this schedule is subject to change.
 
                 Samplers and other components in Optuna relying on this distribution will ignore
-                this value and assume that
-                :attr:`~optuna.distributions.IntLogUniformDistribution.step` is always 1.
+                this value and assume that ``step`` is always 1.
                 User-defined samplers may continue to use other values besides 1 during the
                 deprecation.
     """
