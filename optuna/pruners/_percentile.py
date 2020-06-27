@@ -55,7 +55,7 @@ def _is_first_in_interval_step(step, intermediate_steps, n_warmup_steps, interva
     # type: (int, KeysView[int], int, int) -> bool
 
     nearest_lower_pruning_step = (
-        (step - n_warmup_steps - 1) // interval_steps * interval_steps + n_warmup_steps + 1
+        (step - n_warmup_steps) // interval_steps * interval_steps + n_warmup_steps
     )
     assert nearest_lower_pruning_step >= 0
 
