@@ -139,5 +139,5 @@ def test_median_pruner_interval_steps(
         if (i - base_index) % report_steps == 0:
             trial.report(2, i)
         assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id)) == (
-            i > n_warmup_steps and i in expected_prune_steps
+            i > n_warmup_steps and i+1 in expected_prune_steps
         )
