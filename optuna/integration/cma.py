@@ -4,6 +4,7 @@ import random
 import numpy
 
 import optuna
+from optuna._imports import try_import
 from optuna import distributions
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -15,14 +16,8 @@ from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna import type_checking
 
-try:
+with try_import() as _imports:
     import cma
-
-    _available = True
-except ImportError as e:
-    _import_error = e
-    # CmaEsSampler is disabled because cma is not available.
-    _available = False
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
@@ -133,7 +128,7 @@ class CmaEsSampler(BaseSampler):
     ):
         # type: (...) -> None
 
-        _check_cma_availability()
+        _imports.check()
 
         self._x0 = x0
         self._sigma0 = sigma0
@@ -221,6 +216,7 @@ class CmaEsSampler(BaseSampler):
 
         x0 = {}
         for name, distribution in search_space.items():
+            # TODO(nzw0301) support IntLogUniform
             if isinstance(distribution, UniformDistribution):
                 x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, DiscreteUniformDistribution):
@@ -246,6 +242,7 @@ class CmaEsSampler(BaseSampler):
 
         sigma0s = []
         for name, distribution in search_space.items():
+            # TODO(nzw0301) support IntLogUniform
             if isinstance(distribution, UniformDistribution):
                 sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, DiscreteUniformDistribution):
@@ -445,15 +442,3 @@ class _Optimizer(object):
             v = int(numpy.round(cma_param_value))
             return dist.choices[v]
         return cma_param_value
-
-
-def _check_cma_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "cma library is not available. Please install cma to use this feature. "
-            "cma can be installed by executing `$ pip install cma`. "
-            "For further information, please refer to the installation guide of cma. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )

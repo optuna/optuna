@@ -24,26 +24,6 @@ def test_hyperband_experimental_warning() -> None:
         )
 
 
-def test_hyperband_deprecation_warning_n_brackets() -> None:
-    with pytest.deprecated_call():
-        optuna.pruners.HyperbandPruner(
-            min_resource=MIN_RESOURCE,
-            max_resource=MAX_RESOURCE,
-            reduction_factor=REDUCTION_FACTOR,
-            n_brackets=N_BRACKETS,
-        )
-
-
-def test_hyperband_deprecation_warning_min_early_stopping_rate_low() -> None:
-    with pytest.deprecated_call():
-        optuna.pruners.HyperbandPruner(
-            min_resource=MIN_RESOURCE,
-            max_resource=MAX_RESOURCE,
-            reduction_factor=REDUCTION_FACTOR,
-            min_early_stopping_rate_low=EARLY_STOPPING_RATE_LOW,
-        )
-
-
 def test_hyperband_pruner_intermediate_values() -> None:
     pruner = optuna.pruners.HyperbandPruner(
         min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
@@ -106,7 +86,7 @@ def test_hyperband_max_resource_is_auto() -> None:
         for i in range(N_REPORTS):
             trial.report(1.0, i)
             if trial.should_prune():
-                raise optuna.exceptions.TrialPruned()
+                raise optuna.TrialPruned()
 
         return 1.0
 
@@ -226,7 +206,7 @@ def test_hyperband_no_call_of_filter_study_in_should_prune(
                 trial.report(i, step=i)
                 if trial.should_prune():
                     method_mock.assert_not_called()
-                    raise optuna.exceptions.TrialPruned()
+                    raise optuna.TrialPruned()
                 else:
                     method_mock.assert_not_called()
 

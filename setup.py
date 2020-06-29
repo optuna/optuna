@@ -60,7 +60,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-optimize",
             "mlflow",
         ],
-        "document": ["sphinx", "sphinx_rtd_theme"],
+        # TODO(hvy): Unpin `sphinx` version after https://github.com/sphinx-doc/sphinx/issues/7807.
+        "document": ["sphinx>=3.0.0,<3.1.0", "sphinx_rtd_theme"],
         "example": [
             "catboost",
             "chainer",
@@ -86,7 +87,13 @@ def get_extras_require() -> Dict[str, List[str]]:
             ["llvmlite<=0.31.0"] if (3, 5) == sys.version_info[:2] else []
         )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
         + (
-            ["dask[dataframe]", "dask-ml", "keras", "tensorflow>=2.0.0", "tensorflow-datasets"]
+            [
+                "dask[dataframe]",
+                "dask-ml",
+                "keras<2.4.0",
+                "tensorflow>=2.0.0",
+                "tensorflow-datasets",
+            ]
             if sys.version_info[:2] < (3, 8)
             else []
         ),
@@ -119,7 +126,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             else []
         )
         + (
-            ["keras", "tensorflow", "tensorflow-datasets"] if sys.version_info[:2] < (3, 8) else []
+            ["keras<2.4.0", "tensorflow", "tensorflow-datasets"]
+            if sys.version_info[:2] < (3, 8)
+            else []
         ),
     }
 
@@ -158,11 +167,12 @@ setup(
     packages=find_packages(),
     package_data={
         "optuna": [
-            "storages/rdb/alembic.ini",
-            "storages/rdb/alembic/*.*",
-            "storages/rdb/alembic/versions/*.*",
+            "storages/_rdb/alembic.ini",
+            "storages/_rdb/alembic/*.*",
+            "storages/_rdb/alembic/versions/*.*",
         ]
     },
+    python_requires=">=3.5",
     install_requires=get_install_requires(),
     tests_require=get_tests_require(),
     extras_require=get_extras_require(),
@@ -178,4 +188,22 @@ setup(
             "storage upgrade = optuna.cli:_StorageUpgrade",
         ],
     },
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3 :: Only",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Mathematics",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Software Development",
+        "Topic :: Software Development :: Libraries",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
 )

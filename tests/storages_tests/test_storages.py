@@ -14,7 +14,8 @@ import optuna
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages import _CachedStorage
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
@@ -38,13 +39,14 @@ STORAGE_MODES = [
     "inmemory",
     "sqlite",
     "redis",
+    "cache",
 ]
 
 
 def test_get_storage() -> None:
 
     assert isinstance(optuna.storages.get_storage(None), InMemoryStorage)
-    assert isinstance(optuna.storages.get_storage("sqlite:///:memory:"), RDBStorage)
+    assert isinstance(optuna.storages.get_storage("sqlite:///:memory:"), _CachedStorage)
     assert isinstance(
         optuna.storages.get_storage("redis://test_user:passwd@localhost:6379/0"), RedisStorage
     )
@@ -82,7 +84,7 @@ def test_create_new_study_unique_id(storage_mode: str) -> None:
         study_id3 = storage.create_new_study()
 
         # Study id must not be reused after deletion.
-        if not isinstance(storage, RDBStorage):
+        if not (isinstance(storage, RDBStorage) or isinstance(storage, _CachedStorage)):
             # TODO(ytsmiling) Fix RDBStorage so that it does not reuse study_id.
             assert len({study_id, study_id2, study_id3}) == 3
         summaries = storage.get_all_study_summaries()
@@ -510,21 +512,22 @@ def test_set_trial_param(storage_mode: str) -> None:
         distribution_z = LogUniformDistribution(low=1.0, high=100.0)
 
         # Set new params.
-        assert storage.set_trial_param(trial_id_1, "x", 0.5, distribution_x)
-        assert storage.set_trial_param(trial_id_1, "y", 2, distribution_y_1)
+        storage.set_trial_param(trial_id_1, "x", 0.5, distribution_x)
+        storage.set_trial_param(trial_id_1, "y", 2, distribution_y_1)
         assert storage.get_trial_param(trial_id_1, "x") == 0.5
         assert storage.get_trial_param(trial_id_1, "y") == 2
         # Check set_param breaks neither get_trial nor get_trial_params.
         assert storage.get_trial(trial_id_1).params == {"x": 0.5, "y": "Meguro"}
         assert storage.get_trial_params(trial_id_1) == {"x": 0.5, "y": "Meguro"}
-        # Duplicated registration should return False.
-        assert not storage.set_trial_param(trial_id_1, "x", 0.6, distribution_x)
-        # Duplicated registration should not change the existing value.
-        assert storage.get_trial_param(trial_id_1, "x") == 0.5
+        # Duplicated registration should overwrite.
+        storage.set_trial_param(trial_id_1, "x", 0.6, distribution_x)
+        assert storage.get_trial_param(trial_id_1, "x") == 0.6
+        assert storage.get_trial(trial_id_1).params == {"x": 0.6, "y": "Meguro"}
+        assert storage.get_trial_params(trial_id_1) == {"x": 0.6, "y": "Meguro"}
 
         # Set params to another trial.
-        assert storage.set_trial_param(trial_id_2, "x", 0.3, distribution_x)
-        assert storage.set_trial_param(trial_id_2, "z", 0.1, distribution_z)
+        storage.set_trial_param(trial_id_2, "x", 0.3, distribution_x)
+        storage.set_trial_param(trial_id_2, "z", 0.1, distribution_z)
         assert storage.get_trial_param(trial_id_2, "x") == 0.3
         assert storage.get_trial_param(trial_id_2, "z") == 0.1
         assert storage.get_trial(trial_id_2).params == {"x": 0.3, "z": 0.1}
@@ -553,7 +556,7 @@ def test_set_trial_param(storage_mode: str) -> None:
             storage.set_trial_param(trial_id_2, "y", 0.4, distribution_z)
 
         # Set params of trials in a different study.
-        assert storage.set_trial_param(trial_id_3, "y", 1, distribution_y_2)
+        storage.set_trial_param(trial_id_3, "y", 1, distribution_y_2)
         assert storage.get_trial_param(trial_id_3, "y") == 1
         assert storage.get_trial(trial_id_3).params == {"y": "Shinsen"}
         assert storage.get_trial_params(trial_id_3) == {"y": "Shinsen"}
@@ -609,18 +612,19 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         trial_id_3 = storage.create_new_trial(storage.create_new_study())
 
         # Test setting new values.
-        assert storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
-        assert storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
-        assert storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
-        assert storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
-        assert storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
+        storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+        storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
+        storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
+        storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
+        storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
 
         assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
         assert storage.get_trial(trial_id_2).intermediate_values == {}
         assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
 
         # Test setting existing step.
-        assert not storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
+        storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
+        assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.2, 2: 0.4}
 
         non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3) + 1
         with pytest.raises(KeyError):
@@ -831,6 +835,27 @@ def test_get_n_trials(storage_mode: str) -> None:
         non_existent_study_id = max(study_id_to_summaries.keys()) + 1
         with pytest.raises(KeyError):
             assert storage.get_n_trials(non_existent_study_id)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_best_trial(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+        with pytest.raises(ValueError):
+            storage.get_best_trial(study_id)
+
+        with pytest.raises(KeyError):
+            storage.get_best_trial(study_id + 1)
+
+        storage.set_study_direction(study_id, StudyDirection.MAXIMIZE)
+        generator = random.Random(51)
+        for i in range(3):
+            template_trial = _generate_trial(generator)
+            template_trial.state = TrialState.COMPLETE
+            template_trial.value = float(i)
+            storage.create_new_trial(study_id, template_trial=template_trial)
+        assert storage.get_best_trial(study_id).number == i
 
 
 def _setup_studies(

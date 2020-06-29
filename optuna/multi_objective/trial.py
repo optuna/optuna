@@ -48,8 +48,8 @@ class MultiObjectiveTrial(object):
         low: float,
         high: float,
         *,
-        log: bool = False,
-        step: Optional[float] = None
+        step: Optional[float] = None,
+        log: bool = False
     ) -> float:
         """Suggest a value for the floating point parameter.
 
@@ -57,7 +57,7 @@ class MultiObjectiveTrial(object):
         for further details.
         """
 
-        return self._trial.suggest_float(name, low, high, log=log, step=step)
+        return self._trial.suggest_float(name, low, high, step=step, log=log)
 
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
@@ -86,14 +86,16 @@ class MultiObjectiveTrial(object):
 
         return self._trial.suggest_discrete_uniform(name, low, high, q)
 
-    def suggest_int(self, name: str, low: int, high: int) -> int:
+    def suggest_int(
+        self, name: str, low: int, high: int, step: int = 1, log: bool = False,
+    ) -> int:
         """Suggest a value for the integer parameter.
 
         Please refer to the documentation of :func:`optuna.trial.Trial.suggest_int`
         for further details.
         """
 
-        return self._trial.suggest_int(name, low, high)
+        return self._trial.suggest_int(name, low, high, step=step, log=log)
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]

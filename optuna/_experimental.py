@@ -1,5 +1,6 @@
 import functools
 import inspect
+import textwrap
 from typing import Any
 from typing import Callable
 import warnings
@@ -7,44 +8,12 @@ import warnings
 from optuna.exceptions import ExperimentalWarning
 
 
-# White spaces of each line are necessary to beautifully rendered documentation.
-# NOTE(crcrpar): When `experimental` decorator is applied to member methods, these lines require
-# another four spaces.
-_EXPERIMENTAL_DOCSTRING_TEMPLATE = """
+_EXPERIMENTAL_NOTE_TEMPLATE = """
 
-    .. note::
-        Added in v{ver} as an experimental feature. The interface may change in newer versions
-        without prior notice. See https://github.com/optuna/optuna/releases/tag/v{ver}.
+.. note::
+    Added in v{ver} as an experimental feature. The interface may change in newer versions
+    without prior notice. See https://github.com/optuna/optuna/releases/tag/v{ver}.
 """
-
-
-def _make_func_spec_str(func: Callable[..., Any]) -> str:
-
-    name = func.__name__
-    argspec = inspect.getfullargspec(func)
-
-    n_defaults = len(argspec.defaults) if argspec.defaults is not None else 0
-    offset = int(len(argspec.args) > 0 and argspec.args[0] == "self")
-
-    if n_defaults > 0:
-        args = ", ".join(argspec.args[offset:-n_defaults])
-        with_default_values = ", ".join(
-            [
-                "{}={}".format(a, d)
-                for a, d in zip(argspec.args[-n_defaults:], argspec.defaults)  # type: ignore
-            ]
-        )
-    else:
-        args = ", ".join(argspec.args[offset:])
-        with_default_values = ""
-
-    if len(args) > 0 and len(with_default_values) > 0:
-        args += ", "
-
-    # NOTE(crcrpar): The four spaces are necessary to correctly render documentation.
-    # Different classes or methods require more spaces.
-    str_args_description = "(" + args + with_default_values + ")\n\n    "
-    return name + str_args_description
 
 
 def _validate_version(version: str) -> None:
@@ -55,6 +24,10 @@ def _validate_version(version: str) -> None:
                 version
             )
         )
+
+
+def _get_docstring_indent(docstring: str) -> str:
+    return docstring.split("\n")[-1] if "\n" in docstring else ""
 
 
 def experimental(version: str, name: str = None) -> Any:
@@ -72,16 +45,16 @@ def experimental(version: str, name: str = None) -> Any:
 
         def _experimental_func(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
 
-            docstring = _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
             if func.__doc__ is None:
                 func.__doc__ = ""
-            func.__doc__ += docstring
+
+            note = _EXPERIMENTAL_NOTE_TEMPLATE.format(ver=version)
+            indent = _get_docstring_indent(func.__doc__)
+            func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
 
             # TODO(crcrpar): Annotate this correctly.
             @functools.wraps(func)
             def new_func(*args: Any, **kwargs: Any) -> Any:
-                """Wrapped function."""
-
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
                     "The interface can change in the future.".format(
@@ -99,9 +72,9 @@ def experimental(version: str, name: str = None) -> Any:
 
             This decorator is supposed to be applied to the experimental class.
             """
-
             _original_init = cls.__init__
 
+            @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
                 warnings.warn(
                     "{} is experimental (supported from v{}). "
@@ -117,11 +90,11 @@ def experimental(version: str, name: str = None) -> Any:
 
             if cls.__doc__ is None:
                 cls.__doc__ = ""
-            cls.__doc__ = (
-                _make_func_spec_str(_original_init)
-                + cls.__doc__
-                + _EXPERIMENTAL_DOCSTRING_TEMPLATE.format(ver=version)
-            )
+
+            note = _EXPERIMENTAL_NOTE_TEMPLATE.format(ver=version)
+            indent = _get_docstring_indent(cls.__doc__)
+            cls.__doc__ = cls.__doc__.strip() + textwrap.indent(note, indent) + indent
+
             return cls
 
         return _experimental_class(f) if inspect.isclass(f) else _experimental_func(f)

@@ -10,11 +10,8 @@ from optuna.testing.integration import DeterministicPruner
 
 
 @pytest.mark.parametrize("interval, epochs", [(1, 1), (2, 1), (2, 2)])
-def test_keras_pruning_callback(interval, epochs):
-    # type: (int, int) -> None
-
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+def test_keras_pruning_callback(interval: int, epochs: int) -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
 
         model = Sequential()
         model.add(Dense(1, activation="sigmoid", input_dim=20))
@@ -43,15 +40,14 @@ def test_keras_pruning_callback(interval, epochs):
     assert study.trials[0].value == 1.0
 
 
-def test_keras_pruning_callback_observation_isnan():
-    # type: () -> None
+def test_keras_pruning_callback_observation_isnan() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)
     callback = KerasPruningCallback(trial, "loss")
 
-    with pytest.raises(optuna.exceptions.TrialPruned):
+    with pytest.raises(optuna.TrialPruned):
         callback.on_epoch_end(0, {"loss": 1.0})
 
-    with pytest.raises(optuna.exceptions.TrialPruned):
+    with pytest.raises(optuna.TrialPruned):
         callback.on_epoch_end(0, {"loss": float("nan")})

@@ -1,24 +1,11 @@
-try:
-    import bokeh.command.bootstrap
-    import bokeh.document  # NOQA
-    import bokeh.layouts
-    import bokeh.models
-    import bokeh.models.widgets
-    import bokeh.plotting
-    import bokeh.themes
-    import tornado.gen
-
-    _available = True
-except ImportError as e:
-    _available = False
-    _import_error = e
-
 import collections
+from distutils.version import StrictVersion
 import threading
 import time
 
 import numpy as np
 
+from optuna._imports import try_import
 import optuna.logging
 import optuna.study
 from optuna.study import StudyDirection
@@ -30,6 +17,27 @@ if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
     from typing import List  # NOQA
     from typing import Optional  # NOQA
+
+with try_import() as _imports:
+    from bokeh import __version__ as bokeh_version
+    import bokeh.command.bootstrap
+    import bokeh.document  # NOQA
+    import bokeh.layouts
+    import bokeh.models
+    import bokeh.models.widgets
+    import bokeh.plotting
+    import bokeh.themes
+    import tornado.gen
+
+    if StrictVersion(bokeh_version) >= StrictVersion("2.0.0"):
+        raise ImportError(
+            "Your version of bokeh is " + bokeh_version + " . "
+            "Please install bokeh version earlier than 2.0.0. "
+            "Bokeh can be installed by executing `$ pip install 'bokeh<2.0.0'`. "
+            "For further information, please refer to the installation guide of bokeh. ",
+            name="bokeh",
+        )
+
 
 _mode = None  # type: Optional[str]
 _study = None  # type: Optional[optuna.study.Study]
@@ -52,7 +60,7 @@ h1, p {{
 
 _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-if _available:
+if _imports.is_successful():
 
     class _CompleteTrialsWidget(object):
         def __init__(self, trials, direction):
@@ -247,18 +255,6 @@ if _available:
             self.all_trials_widget.update(current_trials, new_trials)
 
 
-def _check_bokeh_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "Bokeh is not available. Please install Bokeh to use the dashboard. "
-            "Bokeh can be installed by executing `$ pip install bokeh`. "
-            "For further information, please refer to the installation guide of Bokeh. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )
-
-
 def _show_experimental_warning():
     # type: () -> None
 
@@ -282,7 +278,7 @@ def _serve(study, bokeh_allow_websocket_origins):
 
     global _mode, _study
 
-    _check_bokeh_availability()
+    _imports.check()
     _show_experimental_warning()
 
     # We want to pass the mode (launching a server? or, just writing an HTML?) and a target study
@@ -311,7 +307,7 @@ def _write(study, out_path):
 
     global _mode, _study
 
-    _check_bokeh_availability()
+    _imports.check()
     _show_experimental_warning()
 
     _mode = "html"

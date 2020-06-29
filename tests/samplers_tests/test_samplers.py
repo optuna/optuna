@@ -296,7 +296,7 @@ def test_intersection_search_space() -> None:
         raise exception
 
     study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
-    study.optimize(lambda t: objective(t, optuna.exceptions.TrialPruned()), n_trials=1)
+    study.optimize(lambda t: objective(t, optuna.TrialPruned()), n_trials=1)
     assert search_space.calculate(study) == {"y": UniformDistribution(low=-3, high=3)}
     assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
 
