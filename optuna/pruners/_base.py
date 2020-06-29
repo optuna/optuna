@@ -2,9 +2,8 @@ import abc
 
 from optuna.type_checking import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 
 
 class BasePruner(object, metaclass=abc.ABCMeta):
