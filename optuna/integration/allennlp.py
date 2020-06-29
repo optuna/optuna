@@ -100,9 +100,17 @@ class AllenNLPExecutor(object):
             self._include_package = include_package
 
     def _build_params(self) -> Dict[str, Any]:
-        """Create a dict of params for AllenNLP."""
-        # _build_params is based on allentune's train_func.
-        # https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
+        """Create a dict of params for AllenNLP.
+
+        _build_params is based on allentune's train_func.
+        For more detail, please refer to
+        https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
+
+        :class:`~optuna.integration.AllenNLPExecutor` also reads environment variables.
+        If a value is set in both search space in Optuna and the environment variables,
+        the executor will use a value specified in a search space in Optuna.
+
+        """
         params = self._environment_variables()
         params.update({key: str(value) for key, value in self._params.items()})
 
