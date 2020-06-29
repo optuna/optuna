@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Optional
 import warnings
 
@@ -43,7 +41,7 @@ class _ChainerMNObjectiveFunc(object):
     """
 
     def __init__(
-        self, func: Callable[[ChainerMNTrial, CommunicatorBase], float], comm: CommunicatorBase
+        self, func: Callable[["ChainerMNTrial", CommunicatorBase], float], comm: CommunicatorBase
     ) -> None:
 
         self.comm = comm
@@ -99,7 +97,7 @@ class ChainerMNStudy(object):
 
     def optimize(
         self,
-        func: Callable[[ChainerMNTrial, CommunicatorBase], float],
+        func: Callable[["ChainerMNTrial", CommunicatorBase], float],
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
         catch: Union[Tuple[()], Tuple[Type[Exception]]] = (),

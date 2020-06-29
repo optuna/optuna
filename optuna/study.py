@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import collections
 import copy
 import datetime
@@ -203,7 +201,7 @@ class Study(BaseStudy):
         timeout: Optional[float] = None,
         n_jobs: int = 1,
         catch: Union[Tuple[()], Tuple[Type[Exception]]] = (),
-        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
+        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
     ) -> None:
@@ -569,7 +567,7 @@ class Study(BaseStudy):
         n_trials: Optional[int],
         timeout: Optional[float],
         catch: Union[Tuple[()], Tuple[Type[Exception]]],
-        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]],
+        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]],
         gc_after_trial: bool,
         time_start: Optional[datetime.datetime],
     ) -> None:
@@ -585,7 +583,7 @@ class Study(BaseStudy):
         n_trials: Optional[int],
         timeout: Optional[float],
         catch: Union[Tuple[()], Tuple[Type[Exception]]],
-        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]],
+        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]],
         gc_after_trial: bool,
         time_start: Optional[datetime.datetime],
     ) -> None:
@@ -634,7 +632,7 @@ class Study(BaseStudy):
         self,
         func: ObjectiveFuncType,
         catch: Union[Tuple[()], Tuple[Type[Exception]]],
-        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]],
+        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]],
         gc_after_trial: bool,
     ) -> None:
 
