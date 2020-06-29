@@ -22,7 +22,7 @@ docker build -t optuna-kubernetes-mlflow:example .
 3. Apply the kubernetes manifests:
 
 ```bash
-kubectl apply -f k8s-manifests.yaml
+kubectl apply -f k8s-manifest.yaml
 ```
 
 4. Track the progress of each worker by checking their logs:
