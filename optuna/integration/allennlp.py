@@ -103,14 +103,22 @@ class AllenNLPExecutor(object):
         """Create a dict of params for AllenNLP."""
         # _build_params is based on allentune's train_func.
         # https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
-        for key, value in self._params.items():
-            self._params[key] = str(value)
-        _params = json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=self._params))
+        params = self._environment_variables()
+        params.update({key: str(value) for key, value in self._params.items()})
 
-        # _params contains a list of string or string as value values.
+        allennlp_params = json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=params))
+        # allennlp_params contains a list of string or string as value values.
         # Some params couldn't be casted correctly and
         # infer_and_cast converts them into desired values.
-        return allennlp.common.params.infer_and_cast(_params)
+        return allennlp.common.params.infer_and_cast(allennlp_params)
+
+    @staticmethod
+    def _is_encodable(value: str) -> bool:
+        # https://github.com/allenai/allennlp/blob/master/allennlp/common/params.py#L77-L85
+        return (value == "") or (value.encode("utf-8", "ignore") != b"")
+
+    def _environment_variables(self) -> Dict[str, str]:
+        return {key: value for key, value in os.environ.items() if self._is_encodable(value)}
 
     def run(self) -> float:
         """Train a model using AllenNLP."""
