@@ -4,14 +4,13 @@ from optuna import distributions
 from optuna.samplers import BaseSampler
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
+from typing import Any
+from typing import Dict
+from typing import Optional
 
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
+from optuna.distributions import BaseDistribution
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 
 
 class RandomSampler(BaseSampler):
@@ -101,3 +100,4 @@ class RandomSampler(BaseSampler):
             return choices[index]
         else:
             raise NotImplementedError
+

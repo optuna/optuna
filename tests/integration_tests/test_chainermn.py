@@ -18,18 +18,17 @@ from optuna.trial import TrialState
 from optuna import TrialPruned
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from types import TracebackType  # NOQA
-    from typing import Any  # NOQA
-    from typing import Callable  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Type  # NOQA
+from types import TracebackType
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Optional
+from typing import Type
 
-    from optuna.integration.chainermn import ChainerMNTrial  # NOQA
-    from optuna.pruners import BasePruner  # NOQA
-    from optuna.samplers import BaseSampler  # NOQA
-    from optuna.storages import BaseStorage  # NOQA
+from optuna.integration.chainermn import ChainerMNTrial
+from optuna.pruners import BasePruner
+from optuna.samplers import BaseSampler
+from optuna.storages import BaseStorage
 
 try:
     import chainermn
@@ -544,3 +543,4 @@ def _create_new_chainermn_trial(
 
     comm.mpi_comm.barrier()
     return mn_trial
+

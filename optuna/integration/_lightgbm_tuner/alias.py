@@ -1,9 +1,8 @@
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
 
 
 _ALIAS_GROUP_LIST = [
@@ -73,3 +72,4 @@ def _handling_alias_metrics(lgbm_params: Dict[str, Any]) -> None:
             if lgbm_params["metric"] == alias_name:
                 lgbm_params["metric"] = metric_name
                 break
+

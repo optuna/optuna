@@ -17,16 +17,15 @@ import optuna
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Callable  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Optional
+from typing import Tuple
 
-    from _pytest.recwarn import WarningsRecorder  # NOQA
+from _pytest.recwarn import WarningsRecorder
 
-    CallbackFuncType = Callable[[optuna.study.Study, optuna.trial.FrozenTrial], None]
+CallbackFuncType = Callable[[optuna.study.Study, optuna.trial.FrozenTrial], None]
 
 # TODO(ytsmiling) Add tests for multi-worker settings.
 STORAGE_MODES = [
@@ -994,3 +993,4 @@ def test_log_completed_trial_skip_storage_access() -> None:
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
         study._log_completed_trial(trial, 1.0)
         assert mock_object.call_count == 2
+

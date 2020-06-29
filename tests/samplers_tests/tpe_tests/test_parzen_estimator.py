@@ -7,9 +7,8 @@ from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.sampler import default_weights
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
+from typing import Dict
+from typing import List
 
 
 class TestParzenEstimator(object):
@@ -123,3 +122,4 @@ class TestParzenEstimator(object):
         np.testing.assert_almost_equal(s_weights, expected["weights"])
         np.testing.assert_almost_equal(s_mus, expected["mus"])
         np.testing.assert_almost_equal(s_sigmas, expected["sigmas"])
+

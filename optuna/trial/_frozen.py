@@ -5,17 +5,16 @@ from optuna import logging
 from optuna.trial._state import TrialState
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Union  # NOQA
+from typing import Any
+from typing import Dict
+from typing import Optional
+from typing import Union
 
-    from optuna.distributions import BaseDistribution  # NOQA
+from optuna.distributions import BaseDistribution
 
-    FloatingPointDistributionType = Union[
-        distributions.UniformDistribution, distributions.LogUniformDistribution
-    ]
+FloatingPointDistributionType = Union[
+    distributions.UniformDistribution, distributions.LogUniformDistribution
+]
 
 _logger = logging.get_logger(__name__)
 
@@ -188,3 +187,4 @@ class FrozenTrial(object):
             return self.datetime_complete - self.datetime_start
         else:
             return None
+

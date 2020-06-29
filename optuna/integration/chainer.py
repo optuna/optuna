@@ -9,13 +9,12 @@ with optuna._imports.try_import() as _imports:
 if not _imports.is_successful():
     Extension = object  # NOQA
 
-if type_checking.TYPE_CHECKING:
-    from typing import Tuple
-    from typing import Union
+from typing import Tuple
+from typing import Union
 
-    TriggerType = Union[
-        Tuple[(int, str)], triggers.IntervalTrigger, triggers.ManualScheduleTrigger
-    ]
+TriggerType = Union[
+    Tuple[(int, str)], triggers.IntervalTrigger, triggers.ManualScheduleTrigger
+]
 
 
 class ChainerPruningExtension(Extension):
@@ -100,3 +99,4 @@ class ChainerPruningExtension(Extension):
         if self._trial.should_prune():
             message = "Trial was pruned at {} {}.".format(self._pruner_trigger.unit, current_step)
             raise optuna.TrialPruned(message)
+

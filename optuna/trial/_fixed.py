@@ -11,16 +11,15 @@ from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Sequence  # NOQA
-    from typing import Union  # NOQA
+from typing import Any
+from typing import Dict
+from typing import Sequence
+from typing import Union
 
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.distributions import CategoricalChoiceType  # NOQA
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
 
-    FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
+FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
 
 
 class FixedTrial(BaseTrial):
@@ -196,3 +195,4 @@ class FixedTrial(BaseTrial):
     def number(self) -> int:
 
         return self._number
+

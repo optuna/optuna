@@ -4,19 +4,18 @@ from typing import Optional
 from optuna import distributions
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    import datetime  # NOQA
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Sequence  # NOQA
-    from typing import Union  # NOQA
+import datetime
+from typing import Any
+from typing import Dict
+from typing import Sequence
+from typing import Union
 
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.distributions import CategoricalChoiceType  # NOQA
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
 
-    FloatingPointDistributionType = Union[
-        distributions.UniformDistribution, distributions.LogUniformDistribution
-    ]
+FloatingPointDistributionType = Union[
+    distributions.UniformDistribution, distributions.LogUniformDistribution
+]
 
 
 class BaseTrial(object, metaclass=abc.ABCMeta):
@@ -119,3 +118,4 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     def number(self) -> int:
 
         raise NotImplementedError
+

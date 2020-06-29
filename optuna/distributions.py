@@ -5,13 +5,12 @@ import warnings
 
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Sequence  # NOQA
-    from typing import Union  # NOQA
+from typing import Any
+from typing import Dict
+from typing import Sequence
+from typing import Union
 
-    CategoricalChoiceType = Union[None, bool, int, float, str]
+CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
 class BaseDistribution(object, metaclass=abc.ABCMeta):
@@ -536,3 +535,4 @@ def _get_single_value(distribution: BaseDistribution) -> Union[int, float, Categ
     elif isinstance(distribution, CategoricalDistribution):
         return distribution.choices[0]
     assert False
+

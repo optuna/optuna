@@ -5,12 +5,11 @@ import fakeredis
 import optuna
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from types import TracebackType  # NOQA
-    from typing import Any  # NOQA
-    from typing import IO  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Type  # NOQA
+from types import TracebackType
+from typing import Any
+from typing import IO
+from typing import Optional
+from typing import Type
 
 SQLITE3_TIMEOUT = 300
 
@@ -52,3 +51,4 @@ class StorageSupplier(object):
 
         if self.tempfile:
             self.tempfile.close()
+

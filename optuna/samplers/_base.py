@@ -2,13 +2,12 @@ import abc
 
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
+from typing import Any
+from typing import Dict
 
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
+from optuna.distributions import BaseDistribution
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 
 
 class BaseSampler(object, metaclass=abc.ABCMeta):
@@ -152,3 +151,4 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         """
 
         pass
+

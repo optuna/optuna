@@ -19,11 +19,10 @@ with try_import() as _imports:
     import redis
 
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
 
 @experimental("1.4.0")
@@ -561,3 +560,4 @@ class RedisStorage(BaseStorage):
 
         if not self._redis.exists(self._key_trial(trial_id)):
             raise KeyError("study_id {} does not exist.".format(trial_id))
+

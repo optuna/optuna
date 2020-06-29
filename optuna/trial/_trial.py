@@ -14,18 +14,17 @@ from optuna import pruners
 from optuna.trial._base import BaseTrial
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    import datetime  # NOQA
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Sequence  # NOQA
-    from typing import Union  # NOQA
+import datetime
+from typing import Any
+from typing import Dict
+from typing import Sequence
+from typing import Union
 
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.distributions import CategoricalChoiceType  # NOQA
-    from optuna.study import Study  # NOQA
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
+from optuna.study import Study
 
-    FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
+FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
 
 
 _logger = logging.get_logger(__name__)
@@ -787,3 +786,4 @@ class Trial(BaseTrial):
             Datetime where the :class:`~optuna.trial.Trial` started.
         """
         return self.storage.get_trial(self._trial_id).datetime_start
+

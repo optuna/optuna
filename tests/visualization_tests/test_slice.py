@@ -7,8 +7,7 @@ from optuna.testing.visualization import prepare_study_with_trials
 from optuna import type_checking
 from optuna.visualization import plot_slice
 
-if type_checking.TYPE_CHECKING:
-    from optuna.trial import Trial  # NOQA
+from optuna.trial import Trial
 
 
 def test_plot_slice() -> None:
@@ -71,3 +70,4 @@ def test_plot_slice_log_scale() -> None:
     figure = plot_slice(study)
     assert figure.layout["xaxis_type"] is None
     assert figure.layout["xaxis2_type"] == "log"
+

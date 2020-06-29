@@ -7,9 +7,8 @@ from numpy import ndarray
 
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Tuple  # NOQA
+from typing import List
+from typing import Tuple
 
 EPS = 1e-12
 
@@ -133,3 +132,4 @@ class _ParzenEstimator(object):
             sigma[prior_pos] = prior_sigma
 
         return sorted_weights, sorted_mus, sigma
+

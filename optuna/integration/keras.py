@@ -1,8 +1,7 @@
 import optuna
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
+from typing import Dict
 
 with optuna._imports.try_import() as _imports:
     from keras.callbacks import Callback
@@ -55,3 +54,4 @@ class KerasPruningCallback(Callback):
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
+

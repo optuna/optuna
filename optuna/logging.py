@@ -12,8 +12,7 @@ import colorlog
 
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Optional  # NOQA
+from typing import Optional
 
 _lock = threading.Lock()
 _default_handler = None  # type: Optional[logging.Handler]
@@ -218,3 +217,4 @@ def enable_propagation() -> None:
 
     _configure_library_root_logger()
     _get_library_root_logger().propagate = True
+

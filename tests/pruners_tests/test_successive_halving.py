@@ -3,8 +3,7 @@ import pytest
 import optuna
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Tuple  # NOQA
+from typing import Tuple
 
 
 @pytest.mark.parametrize("direction_value", [("minimize", 2), ("maximize", 0.5)])
@@ -251,3 +250,4 @@ def test_successive_halving_pruner_min_early_stopping_rate_parameter() -> None:
     assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
     assert "completed_rung_0" in trial.system_attrs
     assert "completed_rung_1" not in trial.system_attrs
+

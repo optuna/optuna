@@ -6,8 +6,7 @@ from optuna.testing.visualization import prepare_study_with_trials
 from optuna import type_checking
 from optuna.visualization import plot_parallel_coordinate
 
-if type_checking.TYPE_CHECKING:
-    from optuna.trial import Trial  # NOQA
+from optuna.trial import Trial
 
 
 def test_plot_parallel_coordinate() -> None:
@@ -87,3 +86,4 @@ def test_plot_parallel_coordinate() -> None:
     assert figure.data[0]["dimensions"][2]["range"] == (0, 1)
     assert figure.data[0]["dimensions"][2]["values"] == (0, 1)
     assert figure.data[0]["dimensions"][2]["ticktext"] == (["net", 0], ["una", 1])
+

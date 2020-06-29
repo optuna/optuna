@@ -18,9 +18,8 @@ from optuna.trial import TrialState
 from optuna import type_checking
 from optuna import version
 
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
+from typing import List
+from typing import Optional
 
 
 def test_init() -> None:
@@ -267,3 +266,4 @@ def test_update_trial_second_write() -> None:
     }
     for key, value in expected_attrs.items():
         assert getattr(trial_after_update, key) == value
+

@@ -3,8 +3,7 @@ from optuna.testing.visualization import prepare_study_with_trials
 from optuna import type_checking
 from optuna.visualization import plot_intermediate_values
 
-if type_checking.TYPE_CHECKING:
-    from optuna.trial import Trial  # NOQA
+from optuna.trial import Trial
 
 
 def test_plot_intermediate_values() -> None:
@@ -54,3 +53,4 @@ def test_plot_intermediate_values() -> None:
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_intermediate_values(study)
     assert not figure.data
+

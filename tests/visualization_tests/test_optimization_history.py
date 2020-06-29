@@ -4,8 +4,7 @@ from optuna.study import create_study
 from optuna import type_checking
 from optuna.visualization import plot_optimization_history
 
-if type_checking.TYPE_CHECKING:
-    from optuna.trial import Trial  # NOQA
+from optuna.trial import Trial
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -49,3 +48,4 @@ def test_plot_optimization_history(direction: str) -> None:
 
     figure = plot_optimization_history(study)
     assert len(figure.data) == 0
+

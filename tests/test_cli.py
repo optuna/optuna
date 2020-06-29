@@ -14,10 +14,9 @@ from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
+from typing import List
 
-    from optuna.trial import Trial  # NOQA
+from optuna.trial import Trial
 
 
 def test_create_study_command() -> None:
@@ -360,3 +359,4 @@ def test_storage_upgrade_command() -> None:
 
         command.extend(["--storage", storage_url])
         subprocess.check_call(command)
+

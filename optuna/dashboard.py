@@ -13,11 +13,10 @@ from optuna.study import StudyDirection
 import optuna.trial
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
 with try_import() as _imports:
     from bokeh import __version__ as bokeh_version
@@ -319,3 +318,4 @@ def _run() -> None:
 if __name__.startswith("bk_script_"):
     # Here, this module is loaded inside Bokeh. Therefore, we should launch the Bokeh app.
     _run()
+

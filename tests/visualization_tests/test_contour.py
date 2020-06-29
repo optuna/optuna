@@ -8,10 +8,9 @@ from optuna import type_checking
 from optuna.visualization._contour import _generate_contour_subplot
 from optuna.visualization import plot_contour
 
-if type_checking.TYPE_CHECKING:
-    from typing import List, Optional  # NOQA
+from typing import List, Optional
 
-    from optuna.trial import Trial  # NOQA
+from optuna.trial import Trial
 
 
 @pytest.mark.parametrize(
@@ -163,3 +162,4 @@ def test_plot_contour_log_scale() -> None:
     for axis, param_range in axis_to_range.items():
         assert figure.layout[axis]["range"] == param_range
         assert figure.layout[axis]["type"] == "log"
+

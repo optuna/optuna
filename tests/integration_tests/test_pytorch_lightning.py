@@ -8,10 +8,9 @@ from optuna.integration import PyTorchLightningPruningCallback
 from optuna.testing.integration import DeterministicPruner
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Union  # NOQA
+from typing import Dict
+from typing import List
+from typing import Union
 
 
 class Model(pl.LightningModule):
@@ -91,3 +90,4 @@ def test_pytorch_lightning_pruning_callback() -> None:
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+

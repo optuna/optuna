@@ -1,8 +1,7 @@
 import optuna
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from optuna.trial import Trial  # NOQA
+from optuna.trial import Trial
 
 with optuna._imports.try_import() as _imports:
     from ignite.engine import Engine  # NOQA
@@ -41,3 +40,4 @@ class PyTorchIgnitePruningHandler(object):
         if self._trial.should_prune():
             message = "Trial was pruned at {} epoch.".format(self._trainer.state.epoch)
             raise optuna.TrialPruned(message)
+

@@ -21,16 +21,15 @@ from optuna import type_checking
 with try_import() as _imports:
     import cma
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Set  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
 
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
-    from optuna.study import Study  # NOQA
+from optuna.distributions import BaseDistribution
+from optuna.trial import FrozenTrial
+from optuna.study import Study
 
 _logger = logging.get_logger(__name__)
 
@@ -485,3 +484,4 @@ class CmaEsSampler(PyCmaSampler):
             independent_sampler=independent_sampler,
             warn_independent_sampling=warn_independent_sampling,
         )
+

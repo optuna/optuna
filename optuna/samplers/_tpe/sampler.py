@@ -13,17 +13,16 @@ from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Callable  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
+from optuna.distributions import BaseDistribution
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 
 EPS = 1e-12
 
@@ -647,3 +646,4 @@ def _get_observation_pairs(
         scores.append(score)
 
     return values, scores
+

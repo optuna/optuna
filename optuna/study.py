@@ -27,20 +27,19 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Callable
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Set  # NOQA
-    from typing import Tuple  # NOQA
-    from typing import Type  # NOQA
-    from typing import Union  # NOQA
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import Tuple
+from typing import Type
+from typing import Union
 
-    from optuna.distributions import BaseDistribution  # NOQA
+from optuna.distributions import BaseDistribution
 
-    ObjectiveFuncType = Callable[[trial_module.Trial], float]
+ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 with try_import() as _pandas_imports:
     # `trials_dataframe` is disabled if pandas is not available.
@@ -882,3 +881,4 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
+

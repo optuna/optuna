@@ -13,12 +13,11 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 
 class InMemoryStorage(BaseStorage):
@@ -418,3 +417,4 @@ class _StudyInfo:
         self.name = name  # type: str
         self.direction = StudyDirection.NOT_SET
         self.best_trial_id = None  # type: Optional[int]
+

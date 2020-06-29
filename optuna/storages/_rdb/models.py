@@ -22,10 +22,9 @@ from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
+from typing import Any
+from typing import List
+from typing import Optional
 
 # Don't modify this version number anymore.
 # The schema management functionality has been moved to alembic.
@@ -525,3 +524,4 @@ class VersionInfoModel(BaseModel):
         version_info = session.query(cls).one_or_none()
 
         return version_info
+

@@ -4,9 +4,8 @@ import optuna
 from optuna.trial import TrialState
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Tuple  # NOQA
+from typing import List
+from typing import Tuple
 
 
 def test_median_pruner_with_one_trial() -> None:
@@ -135,3 +134,4 @@ def test_median_pruner_interval_steps(
         assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id)) == (
             i > n_warmup_steps and i in expected_prune_steps
         )
+

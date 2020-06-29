@@ -7,10 +7,9 @@ import pytest
 from optuna import distributions
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
 
 EXAMPLE_DISTRIBUTIONS = {
     "u": distributions.UniformDistribution(low=1.0, high=2.0),
@@ -351,3 +350,4 @@ def test_int_log_uniform_distribution_deprecation() -> None:
     # step != 1 is deprecated
     with pytest.warns(FutureWarning):
         distributions.IntLogUniformDistribution(low=1, high=100, step=2)
+

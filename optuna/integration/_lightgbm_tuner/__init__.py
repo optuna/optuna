@@ -11,8 +11,7 @@ if _imports.is_successful():
     from optuna.integration._lightgbm_tuner.sklearn import LGBMModel  # NOQA
     from optuna.integration._lightgbm_tuner.sklearn import LGBMRegressor  # NOQA
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
+from typing import Any
 
 
 @experimental("0.18.0")
@@ -38,3 +37,4 @@ def train(*args: Any, **kwargs: Any) -> Any:
     auto_booster = LightGBMTuner(*args, **kwargs)
     auto_booster.run()
     return auto_booster.get_best_booster()
+

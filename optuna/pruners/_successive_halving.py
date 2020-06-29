@@ -5,13 +5,12 @@ from optuna.study import StudyDirection
 from optuna.trial._state import TrialState
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Union  # NOQA
+from typing import List
+from typing import Optional
+from typing import Union
 
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 
 
 class SuccessiveHalvingPruner(BasePruner):
@@ -242,3 +241,4 @@ def _is_trial_promotable_to_next_rung(
     if study_direction == StudyDirection.MAXIMIZE:
         return value >= competing_values[-(promotable_idx + 1)]
     return value <= competing_values[promotable_idx]
+

@@ -8,11 +8,10 @@ from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Tuple  # NOQA
+from typing import List
+from typing import Tuple
 
-    from optuna.study import Study  # NOQA
+from optuna.study import Study
 
 
 def test_percentile_pruner_percentile() -> None:
@@ -234,3 +233,4 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
     assert math.isnan(
         _percentile._get_percentile_intermediate_result_over_trials(all_trials, direction, 2, 75)
     )
+

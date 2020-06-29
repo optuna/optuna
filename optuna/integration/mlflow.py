@@ -7,8 +7,7 @@ from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
+from typing import Dict
 
 
 with try_import() as _imports:
@@ -122,3 +121,4 @@ class MLflowCallback(object):
             }
             tags.update(distributions)
             mlflow.set_tags(tags)
+

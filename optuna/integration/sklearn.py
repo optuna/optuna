@@ -20,23 +20,22 @@ from optuna import trial as trial_module  # NOQA
 from optuna.trial import FrozenTrial  # NOQA
 from optuna import type_checking  # NOQA
 
-if type_checking.TYPE_CHECKING:
-    import pandas as pd  # NOQA
-    from scipy.sparse import spmatrix  # NOQA
-    from typing import Any  # NOQA
-    from typing import Callable  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Iterable  # NOQA
-    from typing import List  # NOQA
-    from typing import Mapping  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Union  # NOQA
+import pandas as pd
+from scipy.sparse import spmatrix
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Iterable
+from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import Union
 
-    ArrayLikeType = Union[List, np.ndarray, pd.Series, spmatrix]
-    OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
-    TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
-    IterableType = Union[List, pd.DataFrame, np.ndarray, pd.Series, spmatrix, None]
-    IndexableType = Union[Iterable, None]
+ArrayLikeType = Union[List, np.ndarray, pd.Series, spmatrix]
+OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
+TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
+IterableType = Union[List, pd.DataFrame, np.ndarray, pd.Series, spmatrix, None]
+IndexableType = Union[Iterable, None]
 
 with try_import() as _imports:
     import sklearn
@@ -900,3 +899,4 @@ class OptunaSearchCV(BaseEstimator):
         """
 
         return self.scorer_(self.best_estimator_, X, y)
+

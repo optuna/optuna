@@ -6,14 +6,13 @@ from optuna import exceptions
 from optuna import trial
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from datetime import datetime  # NOQA
-    from datetime import timedelta  # NOQA
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
+from datetime import datetime
+from datetime import timedelta
+from typing import Any
+from typing import Dict
+from typing import Optional
 
-    from optuna.distributions import BaseDistribution  # NOQA
+from optuna.distributions import BaseDistribution
 
 
 _message = (
@@ -297,3 +296,4 @@ class TrialPruned(exceptions.TrialPruned):
     """Exception for pruned trials."""
 
     pass
+

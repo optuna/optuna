@@ -7,19 +7,18 @@ from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Mapping  # NOQA
-    from typing import Sequence  # NOQA
-    from typing import Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Mapping
+from typing import Sequence
+from typing import Union
 
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
+from optuna.distributions import BaseDistribution
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 
-    GridValueType = Union[str, float, int, bool, None]
+GridValueType = Union[str, float, int, bool, None]
 
 
 _logger = get_logger(__name__)
@@ -217,3 +216,4 @@ class GridSampler(BaseSampler):
                     return False
 
         return True
+

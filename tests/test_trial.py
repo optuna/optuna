@@ -28,13 +28,12 @@ from optuna.trial import Trial
 from optuna.trial import TrialState
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
+from typing import Any
+from typing import List
+from typing import Optional
+from typing import Tuple
 
-    from optuna.distributions import BaseDistribution  # NOQA
+from optuna.distributions import BaseDistribution
 
 parametrize_storage = pytest.mark.parametrize(
     "storage_init_func",
@@ -862,3 +861,4 @@ def test_frozen_trial_repr() -> None:
     )
 
     assert trial == eval(repr(trial))
+

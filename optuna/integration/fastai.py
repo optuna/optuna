@@ -2,8 +2,7 @@ import optuna
 from optuna._imports import try_import
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
+from typing import Any
 
 with try_import() as _imports:
     from fastai.basic_train import Learner  # NOQA
@@ -69,3 +68,4 @@ class FastAIPruningCallback(TrackerCallback):
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
+

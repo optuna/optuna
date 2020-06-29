@@ -25,12 +25,11 @@ from optuna.exceptions import CLIUsageError
 from optuna.storages import RDBStorage
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 
 def _check_storage_url(storage_url: Optional[str]) -> str:
@@ -402,3 +401,4 @@ def main() -> int:
 
     argv = sys.argv[1:] if len(sys.argv) > 1 else ["help"]
     return _OptunaApp().run(argv)
+

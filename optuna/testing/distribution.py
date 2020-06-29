@@ -1,8 +1,7 @@
 from optuna.distributions import BaseDistribution
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
+from typing import Dict
 
 
 class UnsupportedDistribution(BaseDistribution):
@@ -17,3 +16,4 @@ class UnsupportedDistribution(BaseDistribution):
     def _asdict(self) -> Dict:
 
         return {}
+

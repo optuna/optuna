@@ -4,10 +4,9 @@ import lightgbm as lgb
 
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
 
 
 class LGBMModel(lgb.LGBMModel):
@@ -53,3 +52,4 @@ class LGBMRegressor(lgb.LGBMRegressor):
             "Use `train()` or `LightGBMTuner` for hyperparameter tuning."
         )
         super(LGBMRegressor, self).__init__(*args, **kwargs)
+

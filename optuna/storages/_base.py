@@ -8,9 +8,8 @@ from optuna import study
 from optuna.trial import TrialState
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from optuna import distributions  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
+from optuna import distributions
+from optuna.trial import FrozenTrial
 
 DEFAULT_STUDY_NAME_PREFIX = "no-name-"
 
@@ -676,3 +675,4 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             raise RuntimeError(
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
+

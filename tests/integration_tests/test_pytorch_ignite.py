@@ -8,8 +8,7 @@ from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Iterable  # NOQA
+from typing import Iterable
 
 
 def test_pytorch_ignite_pruning_handler() -> None:
@@ -40,3 +39,4 @@ def test_pytorch_ignite_pruning_handler() -> None:
         with patch.object(evaluator, "state", metrics={"accuracy": 2}):
             handler(evaluator)
             assert study.trials[0].intermediate_values == {5: 2}
+

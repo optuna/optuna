@@ -19,10 +19,9 @@ from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV
 import optuna.integration.lightgbm as lgb
 from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Union  # NOQA
+from typing import Union
 
-    from optuna.study import Study  # NOQA
+from optuna.study import Study
 
 
 @contextlib.contextmanager
@@ -805,3 +804,4 @@ class TestLightGBMTunerCV(object):
             tuner._tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
 
         assert callback_mock.call_count == 10
+
