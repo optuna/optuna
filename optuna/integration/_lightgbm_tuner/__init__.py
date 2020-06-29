@@ -1,6 +1,5 @@
 from typing import Any
 
-from optuna._experimental import experimental
 from optuna.integration._lightgbm_tuner.optimize import _imports as _imports
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
@@ -15,7 +14,6 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
 
 
-@experimental("0.18.0")
 def train(*args: Any, **kwargs: Any) -> Any:
     """Wrapper of LightGBM Training API to tune hyperparameters.
 
