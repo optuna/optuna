@@ -46,12 +46,53 @@ spec:
           ports:
             - containerPort: 5432
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+spec:
+  type: ClusterIP
+  selector:
+    app: mlflow
+  ports:
+    - port: 5000
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mlflow
+  labels:
+    app: mlflow
+spec:
+  selector:
+    matchLabels:
+      app: mlflow
+  serviceName: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      containers:
+        - name: mlflow
+          image: optuna-kubernetes-mlflow:example
+          imagePullPolicy: IfNotPresent
+          command:
+            - mlflow
+            - server
+            - --backend-store-uri
+            - /tmp/mlflow
+            - --host
+            - 0.0.0.0
+          ports:
+            - containerPort: 5000
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: worker
 spec:
-  parallelism: 5
+  parallelism: 2
   template:
     spec:
       restartPolicy: OnFailure
@@ -70,6 +111,17 @@ spec:
           envFrom:
             - secretRef:
                 name: postgres-secrets
+        - name: wait-for-mlflow
+          image: curlimages/curl:latest
+          imagePullPolicy: IfNotPresent
+          command:
+          - /bin/sh
+          - -c
+          - -e
+          - -x
+          - |
+            until curl http://mlflow:5000/;
+            do echo "waiting for mlflow"; sleep 2; done;
       containers:
         - name: worker
           image: optuna-kubernetes-mlflow:example
