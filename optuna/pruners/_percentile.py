@@ -195,4 +195,3 @@ class PercentilePruner(BasePruner):
         if direction == StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p
-

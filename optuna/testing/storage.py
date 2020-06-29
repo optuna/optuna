@@ -51,4 +51,3 @@ class StorageSupplier(object):
 
         if self.tempfile:
             self.tempfile.close()
-

@@ -70,4 +70,3 @@ def test_plot_slice_log_scale() -> None:
     figure = plot_slice(study)
     assert figure.layout["xaxis_type"] is None
     assert figure.layout["xaxis2_type"] == "log"
-

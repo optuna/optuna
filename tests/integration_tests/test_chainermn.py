@@ -543,4 +543,3 @@ def _create_new_chainermn_trial(
 
     comm.mpi_comm.barrier()
     return mn_trial
-

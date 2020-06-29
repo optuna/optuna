@@ -162,4 +162,3 @@ def test_plot_contour_log_scale() -> None:
     for axis, param_range in axis_to_range.items():
         assert figure.layout[axis]["range"] == param_range
         assert figure.layout[axis]["type"] == "log"
-

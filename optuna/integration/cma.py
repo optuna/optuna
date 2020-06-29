@@ -484,4 +484,3 @@ class CmaEsSampler(PyCmaSampler):
             independent_sampler=independent_sampler,
             warn_independent_sampling=warn_independent_sampling,
         )
-

@@ -296,4 +296,3 @@ class TrialPruned(exceptions.TrialPruned):
     """Exception for pruned trials."""
 
     pass
-

@@ -53,4 +53,3 @@ def test_plot_intermediate_values() -> None:
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_intermediate_values(study)
     assert not figure.data
-

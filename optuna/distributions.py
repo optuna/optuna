@@ -535,4 +535,3 @@ def _get_single_value(distribution: BaseDistribution) -> Union[int, float, Categ
     elif isinstance(distribution, CategoricalDistribution):
         return distribution.choices[0]
     assert False
-

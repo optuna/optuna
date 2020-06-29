@@ -350,4 +350,3 @@ def test_int_log_uniform_distribution_deprecation() -> None:
     # step != 1 is deprecated
     with pytest.warns(FutureWarning):
         distributions.IntLogUniformDistribution(low=1, high=100, step=2)
-

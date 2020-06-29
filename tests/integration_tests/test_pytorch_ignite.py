@@ -39,4 +39,3 @@ def test_pytorch_ignite_pruning_handler() -> None:
         with patch.object(evaluator, "state", metrics={"accuracy": 2}):
             handler(evaluator)
             assert study.trials[0].intermediate_values == {5: 2}
-

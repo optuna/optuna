@@ -118,4 +118,3 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
     def number(self) -> int:
 
         raise NotImplementedError
-

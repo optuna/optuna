@@ -216,4 +216,3 @@ class GridSampler(BaseSampler):
                     return False
 
         return True
-

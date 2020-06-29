@@ -187,4 +187,3 @@ class FrozenTrial(object):
             return self.datetime_complete - self.datetime_start
         else:
             return None
-

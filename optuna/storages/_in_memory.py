@@ -417,4 +417,3 @@ class _StudyInfo:
         self.name = name  # type: str
         self.direction = StudyDirection.NOT_SET
         self.best_trial_id = None  # type: Optional[int]
-

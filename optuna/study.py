@@ -881,4 +881,3 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
-

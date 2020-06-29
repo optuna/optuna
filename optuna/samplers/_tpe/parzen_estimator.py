@@ -132,4 +132,3 @@ class _ParzenEstimator(object):
             sigma[prior_pos] = prior_sigma
 
         return sorted_weights, sorted_mus, sigma
-

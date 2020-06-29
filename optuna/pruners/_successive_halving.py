@@ -241,4 +241,3 @@ def _is_trial_promotable_to_next_rung(
     if study_direction == StudyDirection.MAXIMIZE:
         return value >= competing_values[-(promotable_idx + 1)]
     return value <= competing_values[promotable_idx]
-

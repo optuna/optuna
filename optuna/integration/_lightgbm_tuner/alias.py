@@ -72,4 +72,3 @@ def _handling_alias_metrics(lgbm_params: Dict[str, Any]) -> None:
             if lgbm_params["metric"] == alias_name:
                 lgbm_params["metric"] = metric_name
                 break
-

@@ -899,4 +899,3 @@ class OptunaSearchCV(BaseEstimator):
         """
 
         return self.scorer_(self.best_estimator_, X, y)
-

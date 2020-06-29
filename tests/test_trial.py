@@ -861,4 +861,3 @@ def test_frozen_trial_repr() -> None:
     )
 
     assert trial == eval(repr(trial))
-

@@ -151,4 +151,3 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         """
 
         pass
-

@@ -993,4 +993,3 @@ def test_log_completed_trial_skip_storage_access() -> None:
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
         study._log_completed_trial(trial, 1.0)
         assert mock_object.call_count == 2
-

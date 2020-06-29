@@ -524,4 +524,3 @@ class VersionInfoModel(BaseModel):
         version_info = session.query(cls).one_or_none()
 
         return version_info
-

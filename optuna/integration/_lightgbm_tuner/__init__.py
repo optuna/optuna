@@ -37,4 +37,3 @@ def train(*args: Any, **kwargs: Any) -> Any:
     auto_booster = LightGBMTuner(*args, **kwargs)
     auto_booster.run()
     return auto_booster.get_best_booster()
-

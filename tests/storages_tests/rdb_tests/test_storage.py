@@ -266,4 +266,3 @@ def test_update_trial_second_write() -> None:
     }
     for key, value in expected_attrs.items():
         assert getattr(trial_after_update, key) == value
-

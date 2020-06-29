@@ -279,4 +279,3 @@ class _Optimizer(object):
             value = -value
 
         return param_values, value
-

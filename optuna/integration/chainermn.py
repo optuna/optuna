@@ -329,4 +329,3 @@ class ChainerMNTrial(BaseTrial):
             if isinstance(result, Exception):
                 raise result
             return result
-

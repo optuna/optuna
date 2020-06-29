@@ -233,4 +233,3 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
     assert math.isnan(
         _percentile._get_percentile_intermediate_result_over_trials(all_trials, direction, 2, 75)
     )
-

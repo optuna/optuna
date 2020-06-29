@@ -217,4 +217,3 @@ def enable_propagation() -> None:
 
     _configure_library_root_logger()
     _get_library_root_logger().propagate = True
-

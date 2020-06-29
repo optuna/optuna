@@ -48,4 +48,3 @@ def test_plot_optimization_history(direction: str) -> None:
 
     figure = plot_optimization_history(study)
     assert len(figure.data) == 0
-

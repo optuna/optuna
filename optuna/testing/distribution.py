@@ -16,4 +16,3 @@ class UnsupportedDistribution(BaseDistribution):
     def _asdict(self) -> Dict:
 
         return {}
-

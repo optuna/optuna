@@ -646,4 +646,3 @@ def _get_observation_pairs(
         scores.append(score)
 
     return values, scores
-

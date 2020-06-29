@@ -61,4 +61,3 @@ def test_tensorflow_pruning_hook() -> None:
         assert mock_obj.call_count == 1
         assert math.isnan(study.trials[0].intermediate_values[10])
         assert study.trials[0].state == optuna.trial.TrialState.PRUNED
-

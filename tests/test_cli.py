@@ -359,4 +359,3 @@ def test_storage_upgrade_command() -> None:
 
         command.extend(["--storage", storage_url])
         subprocess.check_call(command)
-

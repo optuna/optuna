@@ -52,4 +52,3 @@ class LGBMRegressor(lgb.LGBMRegressor):
             "Use `train()` or `LightGBMTuner` for hyperparameter tuning."
         )
         super(LGBMRegressor, self).__init__(*args, **kwargs)
-

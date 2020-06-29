@@ -122,4 +122,3 @@ class TestParzenEstimator(object):
         np.testing.assert_almost_equal(s_weights, expected["weights"])
         np.testing.assert_almost_equal(s_mus, expected["mus"])
         np.testing.assert_almost_equal(s_sigmas, expected["sigmas"])
-

@@ -250,4 +250,3 @@ def test_successive_halving_pruner_min_early_stopping_rate_parameter() -> None:
     assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
     assert "completed_rung_0" in trial.system_attrs
     assert "completed_rung_1" not in trial.system_attrs
-

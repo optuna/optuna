@@ -804,4 +804,3 @@ class TestLightGBMTunerCV(object):
             tuner._tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
 
         assert callback_mock.call_count == 10
-

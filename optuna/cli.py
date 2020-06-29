@@ -401,4 +401,3 @@ def main() -> int:
 
     argv = sys.argv[1:] if len(sys.argv) > 1 else ["help"]
     return _OptunaApp().run(argv)
-

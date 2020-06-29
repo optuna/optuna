@@ -12,9 +12,7 @@ if not _imports.is_successful():
 from typing import Tuple
 from typing import Union
 
-TriggerType = Union[
-    Tuple[(int, str)], triggers.IntervalTrigger, triggers.ManualScheduleTrigger
-]
+TriggerType = Union[Tuple[(int, str)], triggers.IntervalTrigger, triggers.ManualScheduleTrigger]
 
 
 class ChainerPruningExtension(Extension):
@@ -99,4 +97,3 @@ class ChainerPruningExtension(Extension):
         if self._trial.should_prune():
             message = "Trial was pruned at {} {}.".format(self._pruner_trigger.unit, current_step)
             raise optuna.TrialPruned(message)
-

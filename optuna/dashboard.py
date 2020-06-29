@@ -318,4 +318,3 @@ def _run() -> None:
 if __name__.startswith("bk_script_"):
     # Here, this module is loaded inside Bokeh. Therefore, we should launch the Bokeh app.
     _run()
-

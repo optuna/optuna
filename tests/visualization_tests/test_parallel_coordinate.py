@@ -86,4 +86,3 @@ def test_plot_parallel_coordinate() -> None:
     assert figure.data[0]["dimensions"][2]["range"] == (0, 1)
     assert figure.data[0]["dimensions"][2]["values"] == (0, 1)
     assert figure.data[0]["dimensions"][2]["ticktext"] == (["net", 0], ["una", 1])
-

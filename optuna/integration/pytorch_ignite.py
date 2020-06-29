@@ -40,4 +40,3 @@ class PyTorchIgnitePruningHandler(object):
         if self._trial.should_prune():
             message = "Trial was pruned at {} epoch.".format(self._trainer.state.epoch)
             raise optuna.TrialPruned(message)
-

@@ -100,4 +100,3 @@ class RandomSampler(BaseSampler):
             return choices[index]
         else:
             raise NotImplementedError
-

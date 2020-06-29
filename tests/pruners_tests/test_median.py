@@ -134,4 +134,3 @@ def test_median_pruner_interval_steps(
         assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id)) == (
             i > n_warmup_steps and i in expected_prune_steps
         )
-

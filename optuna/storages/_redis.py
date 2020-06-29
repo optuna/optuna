@@ -560,4 +560,3 @@ class RedisStorage(BaseStorage):
 
         if not self._redis.exists(self._key_trial(trial_id)):
             raise KeyError("study_id {} does not exist.".format(trial_id))
-

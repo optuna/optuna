@@ -195,4 +195,3 @@ class FixedTrial(BaseTrial):
     def number(self) -> int:
 
         return self._number
-

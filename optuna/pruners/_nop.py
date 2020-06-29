@@ -48,4 +48,3 @@ class NopPruner(BasePruner):
     def prune(self, study: Study, trial: FrozenTrial) -> bool:
 
         return False
-

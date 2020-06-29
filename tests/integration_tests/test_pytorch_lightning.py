@@ -90,4 +90,3 @@ def test_pytorch_lightning_pruning_callback() -> None:
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
-

@@ -68,4 +68,3 @@ class FastAIPruningCallback(TrackerCallback):
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
-

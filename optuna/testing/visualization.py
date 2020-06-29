@@ -69,4 +69,3 @@ def prepare_study_with_trials(
         else {"param_a": UniformDistribution(0.0, 3.0), "param_b": UniformDistribution(0.0, 3.0),},
     )
     return study
-
