@@ -43,8 +43,9 @@ parametrize_storage = pytest.mark.parametrize(
 
 
 @parametrize_storage
-def test_check_distribution_suggest_float(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_check_distribution_suggest_float(
+    storage_init_func: Callable[[], storages.BaseStorage]
+) -> None:
 
     sampler = samplers.RandomSampler()
     study = create_study(storage_init_func(), sampler=sampler)
@@ -76,8 +77,9 @@ def test_check_distribution_suggest_float(storage_init_func):
 
 
 @parametrize_storage
-def test_check_distribution_suggest_uniform(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_check_distribution_suggest_uniform(
+    storage_init_func: Callable[[], storages.BaseStorage]
+) -> None:
 
     sampler = samplers.RandomSampler()
     study = create_study(storage_init_func(), sampler=sampler)
@@ -100,8 +102,9 @@ def test_check_distribution_suggest_uniform(storage_init_func):
 
 
 @parametrize_storage
-def test_check_distribution_suggest_loguniform(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_check_distribution_suggest_loguniform(
+    storage_init_func: Callable[[], storages.BaseStorage]
+) -> None:
 
     sampler = samplers.RandomSampler()
     study = create_study(storage_init_func(), sampler=sampler)
@@ -124,8 +127,9 @@ def test_check_distribution_suggest_loguniform(storage_init_func):
 
 
 @parametrize_storage
-def test_check_distribution_suggest_discrete_uniform(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_check_distribution_suggest_discrete_uniform(
+    storage_init_func: Callable[[], storages.BaseStorage]
+) -> None:
 
     sampler = samplers.RandomSampler()
     study = create_study(storage_init_func(), sampler=sampler)
@@ -174,8 +178,9 @@ def test_check_distribution_suggest_int(
 
 
 @parametrize_storage
-def test_check_distribution_suggest_categorical(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_check_distribution_suggest_categorical(
+    storage_init_func: Callable[[], storages.BaseStorage]
+) -> None:
 
     sampler = samplers.RandomSampler()
     study = create_study(storage_init_func(), sampler=sampler)
@@ -195,8 +200,7 @@ def test_check_distribution_suggest_categorical(storage_init_func):
 
 
 @parametrize_storage
-def test_suggest_uniform(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_suggest_uniform(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
 
     mock = Mock()
     mock.side_effect = [1.0, 2.0]
@@ -215,8 +219,7 @@ def test_suggest_uniform(storage_init_func):
 
 
 @parametrize_storage
-def test_suggest_loguniform(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_suggest_loguniform(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
 
     with pytest.raises(ValueError):
         LogUniformDistribution(low=1.0, high=0.9)
@@ -241,8 +244,7 @@ def test_suggest_loguniform(storage_init_func):
 
 
 @parametrize_storage
-def test_suggest_discrete_uniform(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_suggest_discrete_uniform(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
 
     mock = Mock()
     mock.side_effect = [1.0, 2.0]
@@ -261,8 +263,7 @@ def test_suggest_discrete_uniform(storage_init_func):
 
 
 @parametrize_storage
-def test_suggest_low_equals_high(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_suggest_low_equals_high(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
 
     study = create_study(storage_init_func(), sampler=samplers.TPESampler(n_startup_trials=0))
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -329,8 +330,9 @@ def test_suggest_low_equals_high(storage_init_func):
         {"low": 0.0, "high": 3.45, "q": 0.1, "mod_high": 3.4},
     ],
 )
-def test_suggest_discrete_uniform_range(storage_init_func, range_config):
-    # type: (Callable[[], storages.BaseStorage], Dict[str, float]) -> None
+def test_suggest_discrete_uniform_range(
+    storage_init_func: Callable[[], storages.BaseStorage], range_config: Dict[str, float]
+) -> None:
 
     sampler = samplers.RandomSampler()
 
@@ -364,8 +366,7 @@ def test_suggest_discrete_uniform_range(storage_init_func, range_config):
 
 
 @parametrize_storage
-def test_suggest_int(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_suggest_int(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
 
     mock = Mock()
     mock.side_effect = [1, 2]
@@ -428,8 +429,7 @@ def test_suggest_int_range(
 
 
 @parametrize_storage
-def test_suggest_int_log(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_suggest_int_log(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
 
     mock = Mock()
     mock.side_effect = [1, 2]
@@ -460,11 +460,8 @@ def test_suggest_int_log(storage_init_func):
 
 
 @parametrize_storage
-def test_distributions(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
-
-    def objective(trial):
-        # type: (Trial) -> float
+def test_distributions(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
+    def objective(trial: Trial) -> float:
 
         trial.suggest_uniform("a", 0, 10)
         trial.suggest_loguniform("b", 0.1, 10)
@@ -488,8 +485,7 @@ def test_distributions(storage_init_func):
     }
 
 
-def test_trial_should_prune():
-    # type: () -> None
+def test_trial_should_prune() -> None:
 
     pruner = DeterministicPruner(True)
     study = create_study(pruner=pruner)
@@ -498,8 +494,7 @@ def test_trial_should_prune():
     assert trial.should_prune()
 
 
-def test_fixed_trial_suggest_float():
-    # type: () -> None
+def test_fixed_trial_suggest_float() -> None:
 
     trial = FixedTrial({"x": 1.0})
     assert trial.suggest_float("x", -100.0, 100.0) == 1.0
@@ -511,8 +506,7 @@ def test_fixed_trial_suggest_float():
         trial.suggest_uniform("y", -100.0, 100.0)
 
 
-def test_fixed_trial_suggest_uniform():
-    # type: () -> None
+def test_fixed_trial_suggest_uniform() -> None:
 
     trial = FixedTrial({"x": 1.0})
     assert trial.suggest_uniform("x", -100.0, 100.0) == 1.0
@@ -521,8 +515,7 @@ def test_fixed_trial_suggest_uniform():
         trial.suggest_uniform("y", -100.0, 100.0)
 
 
-def test_fixed_trial_suggest_loguniform():
-    # type: () -> None
+def test_fixed_trial_suggest_loguniform() -> None:
 
     trial = FixedTrial({"x": 0.99})
     assert trial.suggest_loguniform("x", 0.1, 1.0) == 0.99
@@ -531,8 +524,7 @@ def test_fixed_trial_suggest_loguniform():
         trial.suggest_loguniform("y", 0.0, 1.0)
 
 
-def test_fixed_trial_suggest_discrete_uniform():
-    # type: () -> None
+def test_fixed_trial_suggest_discrete_uniform() -> None:
 
     trial = FixedTrial({"x": 0.9})
     assert trial.suggest_discrete_uniform("x", 0.0, 1.0, 0.1) == 0.9
@@ -541,8 +533,7 @@ def test_fixed_trial_suggest_discrete_uniform():
         trial.suggest_discrete_uniform("y", 0.0, 1.0, 0.1)
 
 
-def test_fixed_trial_suggest_int():
-    # type: () -> None
+def test_fixed_trial_suggest_int() -> None:
 
     trial = FixedTrial({"x": 1})
     assert trial.suggest_int("x", 0, 10) == 1
@@ -551,8 +542,7 @@ def test_fixed_trial_suggest_int():
         trial.suggest_int("y", 0, 10)
 
 
-def test_fixed_trial_suggest_int_log():
-    # type: () -> None
+def test_fixed_trial_suggest_int_log() -> None:
 
     trial = FixedTrial({"x": 1})
     assert trial.suggest_int("x", 1, 10, log=True) == 1
@@ -564,8 +554,7 @@ def test_fixed_trial_suggest_int_log():
         trial.suggest_int("y", 1, 10, log=True)
 
 
-def test_fixed_trial_suggest_categorical():
-    # type: () -> None
+def test_fixed_trial_suggest_categorical() -> None:
 
     # Integer categories.
     trial = FixedTrial({"x": 1})
@@ -592,24 +581,21 @@ def test_fixed_trial_suggest_categorical():
             trial.suggest_categorical("x", [{"foo": "bar"}])  # type: ignore
 
 
-def test_fixed_trial_user_attrs():
-    # type: () -> None
+def test_fixed_trial_user_attrs() -> None:
 
     trial = FixedTrial({"x": 1})
     trial.set_user_attr("data", "MNIST")
     assert trial.user_attrs["data"] == "MNIST"
 
 
-def test_fixed_trial_system_attrs():
-    # type: () -> None
+def test_fixed_trial_system_attrs() -> None:
 
     trial = FixedTrial({"x": 1})
     trial.set_system_attr("system_message", "test")
     assert trial.system_attrs["system_message"] == "test"
 
 
-def test_fixed_trial_params():
-    # type: () -> None
+def test_fixed_trial_params() -> None:
 
     params = {"x": 1}
     trial = FixedTrial(params)
@@ -619,8 +605,7 @@ def test_fixed_trial_params():
     assert trial.params == params
 
 
-def test_fixed_trial_report():
-    # type: () -> None
+def test_fixed_trial_report() -> None:
 
     # FixedTrial ignores reported values.
     trial = FixedTrial({})
@@ -628,15 +613,13 @@ def test_fixed_trial_report():
     trial.report(2.0, 2)
 
 
-def test_fixed_trial_should_prune():
-    # type: () -> None
+def test_fixed_trial_should_prune() -> None:
 
     # FixedTrial never prunes trials.
     assert FixedTrial({}).should_prune() is False
 
 
-def test_fixed_trial_datetime_start():
-    # type: () -> None
+def test_fixed_trial_datetime_start() -> None:
 
     params = {"x": 1}
     trial = FixedTrial(params)
@@ -654,8 +637,7 @@ def test_fixed_trial_number() -> None:
 
 
 @parametrize_storage
-def test_relative_parameters(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_relative_parameters(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
 
     relative_search_space = {
         "x": UniformDistribution(low=5, high=6),
@@ -666,8 +648,7 @@ def test_relative_parameters(storage_init_func):
     sampler = DeterministicRelativeSampler(relative_search_space, relative_params)  # type: ignore
     study = create_study(storage=storage_init_func(), sampler=sampler)
 
-    def create_trial():
-        # type: () -> Trial
+    def create_trial() -> Trial:
 
         return Trial(study, study._storage.create_new_trial(study._study_id))
 
@@ -706,13 +687,11 @@ def test_relative_parameters(storage_init_func):
 
 
 @parametrize_storage
-def test_datetime_start(storage_init_func):
-    # type: (Callable[[], storages.BaseStorage]) -> None
+def test_datetime_start(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
 
     trial_datetime_start = [None]  # type: List[Optional[datetime.datetime]]
 
-    def objective(trial):
-        # type: (Trial) -> float
+    def objective(trial: Trial) -> float:
 
         trial_datetime_start[0] = trial.datetime_start
         return 1.0
@@ -723,8 +702,7 @@ def test_datetime_start(storage_init_func):
     assert study.trials[0].datetime_start == trial_datetime_start[0]
 
 
-def test_trial_report():
-    # type: () -> None
+def test_trial_report() -> None:
 
     study = create_study()
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -754,8 +732,7 @@ def test_trial_report():
         trial.report(1.23, -1)
 
 
-def test_study_id():
-    # type: () -> None
+def test_study_id() -> None:
 
     study = create_study()
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
@@ -763,8 +740,7 @@ def test_study_id():
     assert trial._study_id == trial.study._study_id
 
 
-def test_frozen_trial_validate():
-    # type: () -> None
+def test_frozen_trial_validate() -> None:
 
     # Valid.
     valid_trial = _create_frozen_trial()
@@ -814,8 +790,7 @@ def test_frozen_trial_validate():
             invalid_trial._validate()
 
 
-def test_frozen_trial_eq_ne():
-    # type: () -> None
+def test_frozen_trial_eq_ne() -> None:
 
     trial = _create_frozen_trial()
 
@@ -826,8 +801,7 @@ def test_frozen_trial_eq_ne():
     assert trial != trial_other
 
 
-def test_frozen_trial_lt():
-    # type: () -> None
+def test_frozen_trial_lt() -> None:
 
     trial = _create_frozen_trial()
 
@@ -854,8 +828,7 @@ def test_frozen_trial_lt():
     assert trials[1] is trial_other
 
 
-def _create_frozen_trial():
-    # type: () -> FrozenTrial
+def _create_frozen_trial() -> FrozenTrial:
 
     return FrozenTrial(
         number=0,
@@ -872,8 +845,7 @@ def _create_frozen_trial():
     )
 
 
-def test_frozen_trial_repr():
-    # type: () -> None
+def test_frozen_trial_repr() -> None:
 
     trial = FrozenTrial(
         number=0,

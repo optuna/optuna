@@ -7,8 +7,7 @@ from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
 
 
-def get_storage(storage):
-    # type: (Union[None, str, BaseStorage]) -> BaseStorage
+def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
 
     if storage is None:
         return InMemoryStorage()

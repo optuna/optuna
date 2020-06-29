@@ -11,8 +11,7 @@ class BasePruner(object, metaclass=abc.ABCMeta):
     """Base class for pruners."""
 
     @abc.abstractmethod
-    def prune(self, study, trial):
-        # type: (Study, FrozenTrial) -> bool
+    def prune(self, study: Study, trial: FrozenTrial) -> bool:
         """Judge whether the trial should be pruned based on the reported values.
 
         Note that this method is not supposed to be called by library users. Instead,

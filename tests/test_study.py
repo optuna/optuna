@@ -36,8 +36,7 @@ STORAGE_MODES = [
 ]
 
 
-def func(trial, x_max=1.0):
-    # type: (optuna.trial.Trial, float) -> float
+def func(trial: optuna.trial.Trial, x_max: float = 1.0) -> float:
 
     x = trial.suggest_uniform("x", -x_max, x_max)
     y = trial.suggest_loguniform("y", 20, 30)
@@ -47,16 +46,14 @@ def func(trial, x_max=1.0):
 
 
 class Func(object):
-    def __init__(self, sleep_sec=None):
-        # type: (Optional[float]) -> None
+    def __init__(self, sleep_sec: Optional[float] = None) -> None:
 
         self.n_calls = 0
         self.sleep_sec = sleep_sec
         self.lock = threading.Lock()
         self.x_max = 10.0
 
-    def __call__(self, trial):
-        # type: (optuna.trial.Trial) -> float
+    def __call__(self, trial: optuna.trial.Trial) -> float:
 
         with self.lock:
             self.n_calls += 1
@@ -72,29 +69,25 @@ class Func(object):
         return value
 
 
-def check_params(params):
-    # type: (Dict[str, Any]) -> None
+def check_params(params: Dict[str, Any]) -> None:
 
     assert sorted(params.keys()) == ["x", "y", "z"]
 
 
-def check_value(value):
-    # type: (Optional[float]) -> None
+def check_value(value: Optional[float]) -> None:
 
     assert isinstance(value, float)
     assert -1.0 <= value <= 12.0 ** 2 + 5.0 ** 2 + 1.0
 
 
-def check_frozen_trial(frozen_trial):
-    # type: (optuna.trial.FrozenTrial) -> None
+def check_frozen_trial(frozen_trial: optuna.trial.FrozenTrial) -> None:
 
     if frozen_trial.state == optuna.trial.TrialState.COMPLETE:
         check_params(frozen_trial.params)
         check_value(frozen_trial.value)
 
 
-def check_study(study):
-    # type: (optuna.Study) -> None
+def check_study(study: optuna.Study) -> None:
 
     for trial in study.trials:
         check_frozen_trial(trial)
@@ -113,16 +106,14 @@ def check_study(study):
         check_frozen_trial(study.best_trial)
 
 
-def test_optimize_trivial_in_memory_new():
-    # type: () -> None
+def test_optimize_trivial_in_memory_new() -> None:
 
     study = optuna.create_study()
     study.optimize(func, n_trials=10)
     check_study(study)
 
 
-def test_optimize_trivial_in_memory_resume():
-    # type: () -> None
+def test_optimize_trivial_in_memory_resume() -> None:
 
     study = optuna.create_study()
     study.optimize(func, n_trials=10)
@@ -130,16 +121,14 @@ def test_optimize_trivial_in_memory_resume():
     check_study(study)
 
 
-def test_optimize_trivial_rdb_resume_study():
-    # type: () -> None
+def test_optimize_trivial_rdb_resume_study() -> None:
 
     study = optuna.create_study("sqlite:///:memory:")
     study.optimize(func, n_trials=10)
     check_study(study)
 
 
-def test_optimize_with_direction():
-    # type: () -> None
+def test_optimize_with_direction() -> None:
 
     study = optuna.create_study(direction="minimize")
     study.optimize(func, n_trials=10)
@@ -161,8 +150,7 @@ def test_optimize_with_direction():
         (0, 1, 20), (1, 2, -1), STORAGE_MODES,  # n_trials  # n_jobs  # storage_mode
     ),
 )
-def test_optimize_parallel(n_trials, n_jobs, storage_mode):
-    # type: (int, int, str)-> None
+def test_optimize_parallel(n_trials: int, n_jobs: int, storage_mode: str) -> None:
 
     f = Func()
 
@@ -179,8 +167,7 @@ def test_optimize_parallel(n_trials, n_jobs, storage_mode):
         (0, 1, 20, None), (1, 2, -1), STORAGE_MODES,  # n_trials  # n_jobs  # storage_mode
     ),
 )
-def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
-    # type: (int, int, str) -> None
+def test_optimize_parallel_timeout(n_trials: int, n_jobs: int, storage_mode: str) -> None:
 
     sleep_sec = 0.1
     timeout_sec = 1.0
@@ -204,14 +191,12 @@ def test_optimize_parallel_timeout(n_trials, n_jobs, storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_optimize_with_catch(storage_mode):
-    # type: (str) -> None
+def test_optimize_with_catch(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
 
-        def func_value_error(_):
-            # type: (optuna.trial.Trial) -> float
+        def func_value_error(_: optuna.trial.Trial) -> float:
 
             raise ValueError
 
@@ -234,13 +219,11 @@ def test_optimize_with_catch(storage_mode):
 
 
 @pytest.mark.parametrize("catch", [[], [Exception], None, 1])
-def test_optimize_with_catch_invalid_type(catch):
-    # type: (Any) -> None
+def test_optimize_with_catch_invalid_type(catch: Any) -> None:
 
     study = optuna.create_study()
 
-    def func_value_error(_):
-        # type: (optuna.trial.Trial) -> float
+    def func_value_error(_: optuna.trial.Trial) -> float:
 
         raise ValueError
 
@@ -248,8 +231,7 @@ def test_optimize_with_catch_invalid_type(catch):
         study.optimize(func_value_error, n_trials=20, catch=catch)
 
 
-def test_optimize_parallel_storage_warning(recwarn):
-    # type: (WarningsRecorder) -> None
+def test_optimize_parallel_storage_warning(recwarn: WarningsRecorder) -> None:
 
     study = optuna.create_study()
 
@@ -265,8 +247,7 @@ def test_optimize_parallel_storage_warning(recwarn):
 @pytest.mark.parametrize(
     "n_jobs, storage_mode", itertools.product((2, -1), STORAGE_MODES,),  # n_jobs  # storage_mode
 )
-def test_optimize_with_reseeding(n_jobs, storage_mode):
-    # type: (int, str)-> None
+def test_optimize_with_reseeding(n_jobs: int, storage_mode: str) -> None:
 
     f = Func()
 
@@ -279,8 +260,7 @@ def test_optimize_with_reseeding(n_jobs, storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_study_set_and_get_user_attrs(storage_mode):
-    # type: (str) -> None
+def test_study_set_and_get_user_attrs(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
@@ -290,8 +270,7 @@ def test_study_set_and_get_user_attrs(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_study_set_and_get_system_attrs(storage_mode):
-    # type: (str) -> None
+def test_study_set_and_get_system_attrs(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
@@ -301,11 +280,8 @@ def test_study_set_and_get_system_attrs(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_trial_set_and_get_user_attrs(storage_mode):
-    # type: (str) -> None
-
-    def f(trial):
-        # type: (optuna.trial.Trial) -> float
+def test_trial_set_and_get_user_attrs(storage_mode: str) -> None:
+    def f(trial: optuna.trial.Trial) -> float:
 
         trial.set_user_attr("train_accuracy", 1)
         assert trial.user_attrs["train_accuracy"] == 1
@@ -319,11 +295,8 @@ def test_trial_set_and_get_user_attrs(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_trial_set_and_get_system_attrs(storage_mode):
-    # type: (str) -> None
-
-    def f(trial):
-        # type: (optuna.trial.Trial) -> float
+def test_trial_set_and_get_system_attrs(storage_mode: str) -> None:
+    def f(trial: optuna.trial.Trial) -> float:
 
         trial.set_system_attr("system_message", "test")
         assert trial.system_attrs["system_message"] == "test"
@@ -337,8 +310,7 @@ def test_trial_set_and_get_system_attrs(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_all_study_summaries(storage_mode):
-    # type: (str) -> None
+def test_get_all_study_summaries(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
@@ -352,8 +324,7 @@ def test_get_all_study_summaries(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_all_study_summaries_with_no_trials(storage_mode):
-    # type: (str) -> None
+def test_get_all_study_summaries_with_no_trials(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
@@ -367,8 +338,7 @@ def test_get_all_study_summaries_with_no_trials(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_run_trial(storage_mode):
-    # type: (str) -> None
+def test_run_trial(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
@@ -378,8 +348,7 @@ def test_run_trial(storage_mode):
         check_study(study)
 
         # Test trial with acceptable exception.
-        def func_value_error(_):
-            # type: (optuna.trial.Trial) -> float
+        def func_value_error(_: optuna.trial.Trial) -> float:
 
             raise ValueError
 
@@ -395,8 +364,7 @@ def test_run_trial(storage_mode):
             study._run_trial(func_value_error, catch=(ArithmeticError,), gc_after_trial=True)
 
         # Test trial with invalid objective value: None
-        def func_none(_):
-            # type: (optuna.trial.Trial) -> float
+        def func_none(_: optuna.trial.Trial) -> float:
 
             return None  # type: ignore
 
@@ -412,8 +380,7 @@ def test_run_trial(storage_mode):
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
         # Test trial with invalid objective value: nan
-        def func_nan(_):
-            # type: (optuna.trial.Trial) -> float
+        def func_nan(_: optuna.trial.Trial) -> float:
 
             return float("nan")
 
@@ -431,13 +398,13 @@ def test_run_trial(storage_mode):
     [optuna.TrialPruned, optuna.exceptions.TrialPruned, optuna.structs.TrialPruned],
 )
 @pytest.mark.parametrize("report_value", [None, 1.2])
-def test_run_trial_with_trial_pruned(trial_pruned_class, report_value):
-    # type: (Callable[[], optuna.exceptions.TrialPruned], Optional[float]) -> None
+def test_run_trial_with_trial_pruned(
+    trial_pruned_class: Callable[[], optuna.exceptions.TrialPruned], report_value: Optional[float]
+) -> None:
 
     study = optuna.create_study()
 
-    def func_with_trial_pruned(trial):
-        # type: (optuna.trial.Trial) -> float
+    def func_with_trial_pruned(trial: optuna.trial.Trial) -> float:
 
         if report_value is not None:
             trial.report(report_value, 1)
@@ -450,8 +417,7 @@ def test_run_trial_with_trial_pruned(trial_pruned_class, report_value):
     assert frozen_trial.state == optuna.trial.TrialState.PRUNED
 
 
-def test_study_pickle():
-    # type: () -> None
+def test_study_pickle() -> None:
 
     study_1 = optuna.create_study()
     study_1.optimize(func, n_trials=10)
@@ -468,8 +434,7 @@ def test_study_pickle():
     assert len(study_2.trials) == 20
 
 
-def test_study_trials_dataframe_with_no_trials():
-    # type: () -> None
+def test_study_trials_dataframe_with_no_trials() -> None:
 
     study_with_no_trials = optuna.create_study()
     trials_df = study_with_no_trials.trials_dataframe()
@@ -507,11 +472,8 @@ def test_study_trials_dataframe_with_no_trials():
     ],
 )
 @pytest.mark.parametrize("multi_index", [True, False])
-def test_trials_dataframe(storage_mode, attrs, multi_index):
-    # type: (str, Tuple[str, ...], bool) -> None
-
-    def f(trial):
-        # type: (optuna.trial.Trial) -> float
+def test_trials_dataframe(storage_mode: str, attrs: Tuple[str, ...], multi_index: bool) -> None:
+    def f(trial: optuna.trial.Trial) -> float:
 
         x = trial.suggest_int("x", 1, 1)
         y = trial.suggest_categorical("y", (2.5,))
@@ -586,11 +548,8 @@ def test_trials_dataframe(storage_mode, attrs, multi_index):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_trials_dataframe_with_failure(storage_mode):
-    # type: (str) -> None
-
-    def f(trial):
-        # type: (optuna.trial.Trial) -> float
+def test_trials_dataframe_with_failure(storage_mode: str) -> None:
+    def f(trial: optuna.trial.Trial) -> float:
 
         x = trial.suggest_int("x", 1, 1)
         y = trial.suggest_categorical("y", (2.5,))
@@ -621,8 +580,7 @@ def test_trials_dataframe_with_failure(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_create_study(storage_mode):
-    # type: (str) -> None
+def test_create_study(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         # Test creating a new study.
@@ -636,8 +594,7 @@ def test_create_study(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_load_study(storage_mode):
-    # type: (str) -> None
+def test_load_study(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         if storage is None:
@@ -659,8 +616,7 @@ def test_load_study(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_delete_study(storage_mode):
-    # type: (str) -> None
+def test_delete_study(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         # Get storage object because delete_study does not accept None.
@@ -680,11 +636,8 @@ def test_delete_study(storage_mode):
             optuna.delete_study(study.study_name, storage)
 
 
-def test_nested_optimization():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+def test_nested_optimization() -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
 
         with pytest.raises(RuntimeError):
             trial.study.optimize(lambda _: 0.0, n_trials=1)
@@ -744,8 +697,7 @@ def test_stop_outside_optimize() -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_append_trial(storage_mode):
-    # type: (str) -> None
+def test_append_trial(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
@@ -758,8 +710,7 @@ def test_append_trial(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_enqueue_trial_properly_sets_param_values(storage_mode):
-    # type: (str) -> None
+def test_enqueue_trial_properly_sets_param_values(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
@@ -768,8 +719,7 @@ def test_enqueue_trial_properly_sets_param_values(storage_mode):
         study.enqueue_trial(params={"x": -5, "y": 5})
         study.enqueue_trial(params={"x": -1, "y": 0})
 
-        def objective(trial):
-            # type: (optuna.trial.Trial) -> float
+        def objective(trial: optuna.trial.Trial) -> float:
 
             x = trial.suggest_int("x", -10, 10)
             y = trial.suggest_int("y", -10, 10)
@@ -786,8 +736,7 @@ def test_enqueue_trial_properly_sets_param_values(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_enqueue_trial_with_unfixed_parameters(storage_mode):
-    # type: (str) -> None
+def test_enqueue_trial_with_unfixed_parameters(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
@@ -795,8 +744,7 @@ def test_enqueue_trial_with_unfixed_parameters(storage_mode):
 
         study.enqueue_trial(params={"x": -5})
 
-        def objective(trial):
-            # type: (optuna.trial.Trial) -> float
+        def objective(trial: optuna.trial.Trial) -> float:
 
             x = trial.suggest_int("x", -10, 10)
             y = trial.suggest_int("y", -10, 10)
@@ -809,8 +757,7 @@ def test_enqueue_trial_with_unfixed_parameters(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_enqueue_trial_with_out_of_range_parameters(storage_mode):
-    # type: (str) -> None
+def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
@@ -818,8 +765,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode):
 
         study.enqueue_trial(params={"x": 11})
 
-        def objective(trial):
-            # type: (optuna.trial.Trial) -> float
+        def objective(trial: optuna.trial.Trial) -> float:
 
             return trial.suggest_int("x", -10, 10)
 
@@ -836,8 +782,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode):
 
         study.enqueue_trial(params={"x": 11})
 
-        def objective(trial):
-            # type: (optuna.trial.Trial) -> float
+        def objective(trial: optuna.trial.Trial) -> float:
 
             return trial.suggest_int("x", 1, 1)  # Single element.
 
@@ -848,8 +793,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode):
 
 
 @patch("optuna.study.gc.collect")
-def test_optimize_with_gc(collect_mock):
-    # type: (Mock) -> None
+def test_optimize_with_gc(collect_mock: Mock) -> None:
 
     study = optuna.create_study()
     study.optimize(func, n_trials=10, gc_after_trial=True)
@@ -858,8 +802,7 @@ def test_optimize_with_gc(collect_mock):
 
 
 @patch("optuna.study.gc.collect")
-def test_optimize_without_gc(collect_mock):
-    # type: (Mock) -> None
+def test_optimize_without_gc(collect_mock: Mock) -> None:
 
     study = optuna.create_study()
     study.optimize(func, n_trials=10, gc_after_trial=False)
@@ -868,16 +811,12 @@ def test_optimize_without_gc(collect_mock):
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
-def test_callbacks(n_jobs):
-    # type: (int) -> None
+def test_callbacks(n_jobs: int) -> None:
 
     lock = threading.Lock()
 
-    def with_lock(f):
-        # type: (CallbackFuncType) -> CallbackFuncType
-
-        def callback(study, trial):
-            # type: (optuna.study.Study, optuna.trial.FrozenTrial) -> None
+    def with_lock(f: CallbackFuncType) -> CallbackFuncType:
+        def callback(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
             with lock:
                 f(study, trial)
@@ -886,8 +825,7 @@ def test_callbacks(n_jobs):
 
     study = optuna.create_study()
 
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+    def objective(trial: optuna.trial.Trial) -> float:
 
         return trial.suggest_int("x", 1, 1)
 
@@ -934,8 +872,7 @@ def test_callbacks(n_jobs):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_trials(storage_mode):
-    # type: (str) -> None
+def test_get_trials(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         storage = optuna.storages.get_storage(storage=storage)
@@ -959,8 +896,7 @@ def test_get_trials(storage_mode):
             assert trials0 == trials2
 
 
-def test_study_summary_eq_ne():
-    # type: () -> None
+def test_study_summary_eq_ne() -> None:
 
     storage = optuna.storages.RDBStorage("sqlite:///:memory:")
 
@@ -980,8 +916,7 @@ def test_study_summary_eq_ne():
     assert summaries[0] != 1
 
 
-def test_study_summary_lt_le():
-    # type: () -> None
+def test_study_summary_lt_le() -> None:
 
     storage = optuna.storages.RDBStorage("sqlite:///:memory:")
 

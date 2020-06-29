@@ -9,11 +9,8 @@ from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
-def test_tfkeras_pruning_callback():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+def test_tfkeras_pruning_callback() -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
 
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.Dense(1, activation="sigmoid", input_dim=20))
@@ -45,8 +42,7 @@ def test_tfkeras_pruning_callback():
     assert study.trials[0].value == 1.0
 
 
-def test_tfkeras_pruning_callback_observation_isnan():
-    # type: () -> None
+def test_tfkeras_pruning_callback_observation_isnan() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)

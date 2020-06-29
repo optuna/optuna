@@ -6,17 +6,14 @@ if type_checking.TYPE_CHECKING:
 
 
 class UnsupportedDistribution(BaseDistribution):
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
 
         return False
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         return True
 
-    def _asdict(self):
-        # type: () -> Dict
+    def _asdict(self) -> Dict:
 
         return {}

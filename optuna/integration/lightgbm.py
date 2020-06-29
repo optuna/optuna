@@ -64,8 +64,9 @@ class LightGBMPruningCallback(object):
             instead of train method.
     """
 
-    def __init__(self, trial, metric, valid_name="valid_0"):
-        # type: (optuna.trial.Trial, str, str) -> None
+    def __init__(
+        self, trial: optuna.trial.Trial, metric: str, valid_name: str = "valid_0"
+    ) -> None:
 
         _imports.check()
 
@@ -73,8 +74,7 @@ class LightGBMPruningCallback(object):
         self._valid_name = valid_name
         self._metric = metric
 
-    def __call__(self, env):
-        # type: (lgb.callback.CallbackEnv) -> None
+    def __call__(self, env: lgb.callback.CallbackEnv) -> None:
 
         # If this callback has been passed to `lightgbm.cv` function,
         # the value of `is_cv` becomes `True`. See also:

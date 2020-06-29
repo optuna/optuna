@@ -11,8 +11,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
-def test_plot_slice():
-    # type: () -> None
+def test_plot_slice() -> None:
 
     # Test with no trial.
     study = prepare_study_with_trials(no_trials=True)
@@ -40,8 +39,7 @@ def test_plot_slice():
         plot_slice(study, params=["optuna"])
 
     # Ignore failed trials.
-    def fail_objective(_):
-        # type: (Trial) -> float
+    def fail_objective(_: Trial) -> float:
 
         raise ValueError
 
@@ -51,8 +49,7 @@ def test_plot_slice():
     assert len(figure.data) == 0
 
 
-def test_plot_slice_log_scale():
-    # type: () -> None
+def test_plot_slice_log_scale() -> None:
 
     study = create_study()
     study._append_trial(

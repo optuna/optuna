@@ -4,11 +4,8 @@ import optuna
 import optuna.trial
 
 
-def _create_some_study():
-    # type: () -> optuna.Study
-
-    def f(trial):
-        # type: (optuna.trial.Trial) -> float
+def _create_some_study() -> optuna.Study:
+    def f(trial: optuna.trial.Trial) -> float:
 
         x = trial.suggest_uniform("x", -10, 10)
         y = trial.suggest_loguniform("y", 10, 20)
@@ -22,8 +19,7 @@ def _create_some_study():
     return study
 
 
-def test_write():
-    # type: () -> None
+def test_write() -> None:
 
     study = _create_some_study()
 

@@ -16,8 +16,7 @@ class LGBMModel(lgb.LGBMModel):
     See: `pydoc lightgbm.LGBMModel`
     """
 
-    def __init__(self, *args, **kwargs):
-        # type: (List[Any], Dict[str, Any]) -> None
+    def __init__(self, *args: List[Any], **kwargs: Dict[str, Any]) -> None:
 
         warnings.warn(
             "LightGBMTuner doesn't support sklearn API. "
@@ -32,8 +31,7 @@ class LGBMClassifier(lgb.LGBMClassifier):
     See: `pydoc lightgbm.LGBMClassifier`
     """
 
-    def __init__(self, *args, **kwargs):
-        # type: (List[Any], Dict[str, Any]) -> None
+    def __init__(self, *args: List[Any], **kwargs: Dict[str, Any]) -> None:
 
         warnings.warn(
             "LightGBMTuner doesn't support sklearn API. "
@@ -48,8 +46,7 @@ class LGBMRegressor(lgb.LGBMRegressor):
     See: `pydoc lightgbm.LGBMRegressor`
     """
 
-    def __init__(self, *args, **kwargs):
-        # type: (List[Any], Dict[str, Any]) -> None
+    def __init__(self, *args: List[Any], **kwargs: Dict[str, Any]) -> None:
 
         warnings.warn(
             "LightGBMTuner doesn't support sklearn API. "

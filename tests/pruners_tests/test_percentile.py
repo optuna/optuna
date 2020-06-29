@@ -15,8 +15,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
 
 
-def test_percentile_pruner_percentile():
-    # type: () -> None
+def test_percentile_pruner_percentile() -> None:
 
     optuna.pruners.PercentilePruner(0.0)
     optuna.pruners.PercentilePruner(25.0)
@@ -29,8 +28,7 @@ def test_percentile_pruner_percentile():
         optuna.pruners.PercentilePruner(100.1)
 
 
-def test_percentile_pruner_n_startup_trials():
-    # type: () -> None
+def test_percentile_pruner_n_startup_trials() -> None:
 
     optuna.pruners.PercentilePruner(25.0, n_startup_trials=0)
     optuna.pruners.PercentilePruner(25.0, n_startup_trials=5)
@@ -39,8 +37,7 @@ def test_percentile_pruner_n_startup_trials():
         optuna.pruners.PercentilePruner(25.0, n_startup_trials=-1)
 
 
-def test_percentile_pruner_n_warmup_steps():
-    # type: () -> None
+def test_percentile_pruner_n_warmup_steps() -> None:
 
     optuna.pruners.PercentilePruner(25.0, n_warmup_steps=0)
     optuna.pruners.PercentilePruner(25.0, n_warmup_steps=5)
@@ -49,8 +46,7 @@ def test_percentile_pruner_n_warmup_steps():
         optuna.pruners.PercentilePruner(25.0, n_warmup_steps=-1)
 
 
-def test_percentile_pruner_interval_steps():
-    # type: () -> None
+def test_percentile_pruner_interval_steps() -> None:
 
     optuna.pruners.PercentilePruner(25.0, interval_steps=1)
     optuna.pruners.PercentilePruner(25.0, interval_steps=5)
@@ -62,8 +58,7 @@ def test_percentile_pruner_interval_steps():
         optuna.pruners.PercentilePruner(25.0, interval_steps=0)
 
 
-def test_percentile_pruner_with_one_trial():
-    # type: () -> None
+def test_percentile_pruner_with_one_trial() -> None:
 
     study = optuna.study.create_study()
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
@@ -77,8 +72,9 @@ def test_percentile_pruner_with_one_trial():
 @pytest.mark.parametrize(
     "direction_value", [("minimize", [1, 2, 3, 4, 5], 2.1), ("maximize", [1, 2, 3, 4, 5], 3.9),]
 )
-def test_25_percentile_pruner_intermediate_values(direction_value):
-    # type: (Tuple[str, List[float], float]) -> None
+def test_25_percentile_pruner_intermediate_values(
+    direction_value: Tuple[str, List[float], float]
+) -> None:
 
     direction, intermediate_values, latest_value = direction_value
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
@@ -98,8 +94,7 @@ def test_25_percentile_pruner_intermediate_values(direction_value):
     assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
 
 
-def test_25_percentile_pruner_intermediate_values_nan():
-    # type: () -> None
+def test_25_percentile_pruner_intermediate_values_nan() -> None:
 
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
     study = optuna.study.create_study()
@@ -125,8 +120,9 @@ def test_25_percentile_pruner_intermediate_values_nan():
 @pytest.mark.parametrize(
     "direction_expected", [(StudyDirection.MINIMIZE, 0.1), (StudyDirection.MAXIMIZE, 0.2)]
 )
-def test_get_best_intermediate_result_over_steps(direction_expected):
-    # type: (Tuple[StudyDirection, float]) -> None
+def test_get_best_intermediate_result_over_steps(
+    direction_expected: Tuple[StudyDirection, float]
+) -> None:
 
     direction, expected = direction_expected
 
@@ -172,11 +168,8 @@ def test_get_best_intermediate_result_over_steps(direction_expected):
     )
 
 
-def test_get_percentile_intermediate_result_over_trials():
-    # type: () -> None
-
-    def setup_study(trial_num, _intermediate_values):
-        # type: (int, List[List[float]]) -> Study
+def test_get_percentile_intermediate_result_over_trials() -> None:
+    def setup_study(trial_num: int, _intermediate_values: List[List[float]]) -> Study:
 
         _study = optuna.study.create_study(direction="minimize")
         trial_ids = [_study._storage.create_new_trial(_study._study_id) for _ in range(trial_num)]

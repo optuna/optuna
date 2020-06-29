@@ -38,8 +38,7 @@ class RandomSampler(BaseSampler):
             seed: Seed for random number generator.
     """
 
-    def __init__(self, seed=None):
-        # type: (Optional[int]) -> None
+    def __init__(self, seed: Optional[int] = None) -> None:
 
         self._rng = numpy.random.RandomState(seed)
 
@@ -47,18 +46,25 @@ class RandomSampler(BaseSampler):
 
         self._rng = numpy.random.RandomState()
 
-    def infer_relative_search_space(self, study, trial):
-        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
 
         return {}
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
 
         return {}
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, distributions.BaseDistribution) -> Any
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: distributions.BaseDistribution,
+    ) -> Any:
 
         if isinstance(param_distribution, distributions.UniformDistribution):
             return self._rng.uniform(param_distribution.low, param_distribution.high)

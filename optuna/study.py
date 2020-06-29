@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections
 import copy
 import datetime
@@ -48,15 +50,13 @@ _logger = logging.get_logger(__name__)
 
 
 class BaseStudy(object):
-    def __init__(self, study_id, storage):
-        # type: (int, storages.BaseStorage) -> None
+    def __init__(self, study_id: int, storage: storages.BaseStorage) -> None:
 
         self._study_id = study_id
         self._storage = storage
 
     @property
-    def best_params(self):
-        # type: () -> Dict[str, Any]
+    def best_params(self) -> Dict[str, Any]:
         """Return parameters of the best trial in the study.
 
         Returns:
@@ -66,8 +66,7 @@ class BaseStudy(object):
         return self.best_trial.params
 
     @property
-    def best_value(self):
-        # type: () -> float
+    def best_value(self) -> float:
         """Return the best objective value in the study.
 
         Returns:
@@ -80,8 +79,7 @@ class BaseStudy(object):
         return best_value
 
     @property
-    def best_trial(self):
-        # type: () -> FrozenTrial
+    def best_trial(self) -> FrozenTrial:
         """Return the best trial in the study.
 
         Returns:
@@ -91,8 +89,7 @@ class BaseStudy(object):
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
     @property
-    def direction(self):
-        # type: () -> StudyDirection
+    def direction(self) -> StudyDirection:
         """Return the direction of the study.
 
         Returns:
@@ -102,8 +99,7 @@ class BaseStudy(object):
         return self._storage.get_study_direction(self._study_id)
 
     @property
-    def trials(self):
-        # type: () -> List[FrozenTrial]
+    def trials(self) -> List[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
@@ -116,8 +112,7 @@ class BaseStudy(object):
 
         return self.get_trials()
 
-    def get_trials(self, deepcopy=True):
-        # type: (bool) -> List[FrozenTrial]
+    def get_trials(self, deepcopy: bool = True) -> List[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
@@ -154,12 +149,11 @@ class Study(BaseStudy):
 
     def __init__(
         self,
-        study_name,  # type: str
-        storage,  # type: Union[str, storages.BaseStorage]
-        sampler=None,  # type: samplers.BaseSampler
-        pruner=None,  # type: pruners.BasePruner
-    ):
-        # type: (...) -> None
+        study_name: str,
+        storage: Union[str, storages.BaseStorage],
+        sampler: samplers.BaseSampler = None,
+        pruner: pruners.BasePruner = None,
+    ) -> None:
 
         self.study_name = study_name
         storage = storages.get_storage(storage)
@@ -172,22 +166,19 @@ class Study(BaseStudy):
         self._optimize_lock = threading.Lock()
         self._stop_flag = False
 
-    def __getstate__(self):
-        # type: () -> Dict[Any, Any]
+    def __getstate__(self) -> Dict[Any, Any]:
 
         state = self.__dict__.copy()
         del state["_optimize_lock"]
         return state
 
-    def __setstate__(self, state):
-        # type: (Dict[Any, Any]) -> None
+    def __setstate__(self, state: Dict[Any, Any]) -> None:
 
         self.__dict__.update(state)
         self._optimize_lock = threading.Lock()
 
     @property
-    def user_attrs(self):
-        # type: () -> Dict[str, Any]
+    def user_attrs(self) -> Dict[str, Any]:
         """Return user attributes.
 
         Returns:
@@ -197,8 +188,7 @@ class Study(BaseStudy):
         return copy.deepcopy(self._storage.get_study_user_attrs(self._study_id))
 
     @property
-    def system_attrs(self):
-        # type: () -> Dict[str, Any]
+    def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 
         Returns:
@@ -209,16 +199,15 @@ class Study(BaseStudy):
 
     def optimize(
         self,
-        func,  # type: ObjectiveFuncType
-        n_trials=None,  # type: Optional[int]
-        timeout=None,  # type: Optional[float]
-        n_jobs=1,  # type: int
-        catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-        callbacks=None,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial=False,  # type: bool
-        show_progress_bar=False,  # type: bool
-    ):
-        # type: (...) -> None
+        func: ObjectiveFuncType,
+        n_trials: Optional[int] = None,
+        timeout: Optional[float] = None,
+        n_jobs: int = 1,
+        catch: Union[Tuple[()], Tuple[Type[Exception]]] = (),
+        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
+        gc_after_trial: bool = False,
+        show_progress_bar: bool = False,
+    ) -> None:
         """Optimize an objective function.
 
         Optimization is done by choosing a suitable set of hyperparameter values from a given
@@ -336,8 +325,7 @@ class Study(BaseStudy):
             self._progress_bar.close()
             del self._progress_bar
 
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
+    def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
 
         Args:
@@ -348,8 +336,7 @@ class Study(BaseStudy):
 
         self._storage.set_study_user_attr(self._study_id, key, value)
 
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
+    def set_system_attr(self, key: str, value: Any) -> None:
         """Set a system attribute to the study.
 
         Note that Optuna internally uses this method to save system messages. Please use
@@ -365,7 +352,7 @@ class Study(BaseStudy):
 
     def trials_dataframe(
         self,
-        attrs=(
+        attrs: Tuple[str, ...] = (
             "number",
             "value",
             "datetime_start",
@@ -375,10 +362,9 @@ class Study(BaseStudy):
             "user_attrs",
             "system_attrs",
             "state",
-        ),  # type: Tuple[str, ...]
-        multi_index=False,  # type: bool
-    ):
-        # type: (...) -> pd.DataFrame
+        ),
+        multi_index: bool = False,
+    ) -> pd.DataFrame:
         """Export trials as a pandas DataFrame_.
 
         The DataFrame_ provides various features to analyze studies. It is also useful to draw a
@@ -444,8 +430,7 @@ class Study(BaseStudy):
         column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
         non_nested_attr = ""
 
-        def _create_record_and_aggregate_column(trial):
-            # type: (FrozenTrial) -> Dict[Tuple[str, str], Any]
+        def _create_record_and_aggregate_column(trial: FrozenTrial) -> Dict[Tuple[str, str], Any]:
 
             record = {}
             for attr, df_column in attrs_to_df_columns.items():
@@ -505,8 +490,7 @@ class Study(BaseStudy):
         self._stop_flag = True
 
     @experimental("1.2.0")
-    def enqueue_trial(self, params):
-        # type: (Dict[str, Any]) -> None
+    def enqueue_trial(self, params: Dict[str, Any]) -> None:
         """Enqueue a trial with given parameter values.
 
         You can fix the next sampling parameters which will be evaluated in your
@@ -540,17 +524,16 @@ class Study(BaseStudy):
 
     def _append_trial(
         self,
-        value=None,  # type: Optional[float]
-        params=None,  # type: Optional[Dict[str, Any]]
-        distributions=None,  # type: Optional[Dict[str, BaseDistribution]]
-        user_attrs=None,  # type: Optional[Dict[str, Any]]
-        system_attrs=None,  # type: Optional[Dict[str, Any]]
-        intermediate_values=None,  # type: Optional[Dict[int, float]]
-        state=TrialState.COMPLETE,  # type: TrialState
-        datetime_start=None,  # type: Optional[datetime.datetime]
-        datetime_complete=None,  # type: Optional[datetime.datetime]
-    ):
-        # type: (...) -> int
+        value: Optional[float] = None,
+        params: Optional[Dict[str, Any]] = None,
+        distributions: Optional[Dict[str, BaseDistribution]] = None,
+        user_attrs: Optional[Dict[str, Any]] = None,
+        system_attrs: Optional[Dict[str, Any]] = None,
+        intermediate_values: Optional[Dict[int, float]] = None,
+        state: TrialState = TrialState.COMPLETE,
+        datetime_start: Optional[datetime.datetime] = None,
+        datetime_complete: Optional[datetime.datetime] = None,
+    ) -> int:
 
         params = params or {}
         distributions = distributions or {}
@@ -583,15 +566,14 @@ class Study(BaseStudy):
 
     def _reseed_and_optimize_sequential(
         self,
-        func,  # type: ObjectiveFuncType
-        n_trials,  # type: Optional[int]
-        timeout,  # type: Optional[float]
-        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-        callbacks,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial,  # type: bool
-        time_start,  # type: Optional[datetime.datetime]
-    ):
-        # type: (...) -> None
+        func: ObjectiveFuncType,
+        n_trials: Optional[int],
+        timeout: Optional[float],
+        catch: Union[Tuple[()], Tuple[Type[Exception]]],
+        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]],
+        gc_after_trial: bool,
+        time_start: Optional[datetime.datetime],
+    ) -> None:
 
         self.sampler.reseed_rng()
         self._optimize_sequential(
@@ -600,15 +582,14 @@ class Study(BaseStudy):
 
     def _optimize_sequential(
         self,
-        func,  # type: ObjectiveFuncType
-        n_trials,  # type: Optional[int]
-        timeout,  # type: Optional[float]
-        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-        callbacks,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial,  # type: bool
-        time_start,  # type: Optional[datetime.datetime]
-    ):
-        # type: (...) -> None
+        func: ObjectiveFuncType,
+        n_trials: Optional[int],
+        timeout: Optional[float],
+        catch: Union[Tuple[()], Tuple[Type[Exception]]],
+        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]],
+        gc_after_trial: bool,
+        time_start: Optional[datetime.datetime],
+    ) -> None:
 
         i_trial = 0
 
@@ -635,8 +616,7 @@ class Study(BaseStudy):
 
         self._storage.remove_session()
 
-    def _pop_waiting_trial_id(self):
-        # type: () -> Optional[int]
+    def _pop_waiting_trial_id(self) -> Optional[int]:
 
         # TODO(c-bata): Reduce database query counts for extracting waiting trials.
         for trial in self._storage.get_all_trials(self._study_id, deepcopy=False):
@@ -653,12 +633,11 @@ class Study(BaseStudy):
 
     def _run_trial_and_callbacks(
         self,
-        func,  # type: ObjectiveFuncType
-        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-        callbacks,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial,  # type: bool
-    ):
-        # type: (...) -> None
+        func: ObjectiveFuncType,
+        catch: Union[Tuple[()], Tuple[Type[Exception]]],
+        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]],
+        gc_after_trial: bool,
+    ) -> None:
 
         trial = self._run_trial(func, catch, gc_after_trial)
         if callbacks is not None:
@@ -668,11 +647,10 @@ class Study(BaseStudy):
 
     def _run_trial(
         self,
-        func,  # type: ObjectiveFuncType
-        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
-        gc_after_trial,  # type: bool
-    ):
-        # type: (...) -> trial_module.Trial
+        func: ObjectiveFuncType,
+        catch: Union[Tuple[()], Tuple[Type[Exception]]],
+        gc_after_trial: bool,
+    ) -> trial_module.Trial:
 
         # Sync storage once at the beginning of the objective evaluation.
         self._storage.read_trials_from_remote_storage(self._study_id)
@@ -763,14 +741,13 @@ class Study(BaseStudy):
 
 
 def create_study(
-    storage=None,  # type: Union[None, str, storages.BaseStorage]
-    sampler=None,  # type: samplers.BaseSampler
-    pruner=None,  # type: pruners.BasePruner
-    study_name=None,  # type: Optional[str]
-    direction="minimize",  # type: str
-    load_if_exists=False,  # type: bool
-):
-    # type: (...) -> Study
+    storage: Union[None, str, storages.BaseStorage] = None,
+    sampler: samplers.BaseSampler = None,
+    pruner: pruners.BasePruner = None,
+    study_name: Optional[str] = None,
+    direction: str = "minimize",
+    load_if_exists: bool = False,
+) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
     Args:
@@ -846,12 +823,11 @@ def create_study(
 
 
 def load_study(
-    study_name,  # type: str
-    storage,  # type: Union[str, storages.BaseStorage]
-    sampler=None,  # type: samplers.BaseSampler
-    pruner=None,  # type: pruners.BasePruner
-):
-    # type: (...) -> Study
+    study_name: str,
+    storage: Union[str, storages.BaseStorage],
+    sampler: samplers.BaseSampler = None,
+    pruner: pruners.BasePruner = None,
+) -> Study:
     """Load the existing :class:`~optuna.study.Study` that has the specified name.
 
     Args:
@@ -874,11 +850,7 @@ def load_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
-def delete_study(
-    study_name,  # type: str
-    storage,  # type: Union[str, storages.BaseStorage]
-):
-    # type: (...) -> None
+def delete_study(study_name: str, storage: Union[str, storages.BaseStorage],) -> None:
     """Delete a :class:`~optuna.study.Study` object.
 
     Args:
@@ -895,8 +867,7 @@ def delete_study(
     storage.delete_study(study_id)
 
 
-def get_all_study_summaries(storage):
-    # type: (Union[str, storages.BaseStorage]) -> List[StudySummary]
+def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[StudySummary]:
     """Get all history of studies stored in a specified storage.
 
     Args:

@@ -5,8 +5,7 @@ from optuna.visualization._utils import _is_log_scale
 from optuna.visualization import is_available
 
 
-def test_is_log_scale():
-    # type: () -> None
+def test_is_log_scale() -> None:
 
     study = create_study()
     study._append_trial(
@@ -26,8 +25,7 @@ def test_is_log_scale():
     assert not _is_log_scale(study.trials, "param_linear")
 
 
-def _is_plotly_available():
-    # type: () -> bool
+def _is_plotly_available() -> bool:
 
     try:
         import plotly  # NOQA
@@ -38,7 +36,6 @@ def _is_plotly_available():
     return available
 
 
-def test_visualization_is_available():
-    # type: () -> None
+def test_visualization_is_available() -> None:
 
     assert is_available() == _is_plotly_available()

@@ -30,8 +30,7 @@ _ALIAS_GROUP_LIST = [
 ]  # type: List[Dict[str, Any]]
 
 
-def _handling_alias_parameters(lgbm_params):
-    # type: (Dict[str, Any]) -> None
+def _handling_alias_parameters(lgbm_params: Dict[str, Any]) -> None:
     """Handling alias parameters."""
 
     for alias_group in _ALIAS_GROUP_LIST:
@@ -60,8 +59,7 @@ _ALIAS_METRIC_LIST = [
 ]  # type: List[Dict[str, Any]]
 
 
-def _handling_alias_metrics(lgbm_params):
-    # type: (Dict[str, Any]) -> None
+def _handling_alias_metrics(lgbm_params: Dict[str, Any]) -> None:
     """Handling alias metrics."""
 
     if "metric" not in lgbm_params.keys():

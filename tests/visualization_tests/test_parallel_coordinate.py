@@ -10,8 +10,7 @@ if type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
-def test_plot_parallel_coordinate():
-    # type: () -> None
+def test_plot_parallel_coordinate() -> None:
 
     # Test with no trial.
     study = create_study()
@@ -48,8 +47,7 @@ def test_plot_parallel_coordinate():
         plot_parallel_coordinate(study, params=["optuna", "optuna"])
 
     # Ignore failed trials.
-    def fail_objective(_):
-        # type: (Trial) -> float
+    def fail_objective(_: Trial) -> float:
 
         raise ValueError
 

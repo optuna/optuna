@@ -38,8 +38,7 @@ parametrize_sampler = pytest.mark.parametrize(
 
 
 @pytest.mark.parametrize("seed", [None, 0, 169208])
-def test_pickle_random_sampler(seed):
-    # type: (Optional[int]) -> None
+def test_pickle_random_sampler(seed: Optional[int]) -> None:
 
     sampler = optuna.samplers.RandomSampler(seed)
     restored_sampler = pickle.loads(pickle.dumps(sampler))
@@ -63,8 +62,9 @@ def test_random_sampler_reseed_rng() -> None:
         UniformDistribution(-1.0, 0.0),
     ],
 )
-def test_uniform(sampler_class, distribution):
-    # type: (typing.Callable[[], BaseSampler], UniformDistribution) -> None
+def test_uniform(
+    sampler_class: typing.Callable[[], BaseSampler], distribution: UniformDistribution
+) -> None:
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array(
@@ -83,8 +83,9 @@ def test_uniform(sampler_class, distribution):
 
 @parametrize_sampler
 @pytest.mark.parametrize("distribution", [LogUniformDistribution(1e-7, 1.0)])
-def test_log_uniform(sampler_class, distribution):
-    # type: (typing.Callable[[], BaseSampler], LogUniformDistribution) -> None
+def test_log_uniform(
+    sampler_class: typing.Callable[[], BaseSampler], distribution: LogUniformDistribution
+) -> None:
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array(
@@ -106,8 +107,9 @@ def test_log_uniform(sampler_class, distribution):
     "distribution",
     [DiscreteUniformDistribution(-10, 10, 0.1), DiscreteUniformDistribution(-10.2, 10.2, 0.1)],
 )
-def test_discrete_uniform(sampler_class, distribution):
-    # type: (typing.Callable[[], BaseSampler], DiscreteUniformDistribution) -> None
+def test_discrete_uniform(
+    sampler_class: typing.Callable[[], BaseSampler], distribution: DiscreteUniformDistribution
+) -> None:
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array(
@@ -143,8 +145,9 @@ def test_discrete_uniform(sampler_class, distribution):
         IntUniformDistribution(-10, 0, 2),
     ],
 )
-def test_int(sampler_class, distribution):
-    # type: (typing.Callable[[], BaseSampler], IntUniformDistribution) -> None
+def test_int(
+    sampler_class: typing.Callable[[], BaseSampler], distribution: IntUniformDistribution
+) -> None:
 
     study = optuna.study.create_study(sampler=sampler_class())
     points = np.array(
@@ -163,15 +166,15 @@ def test_int(sampler_class, distribution):
 
 @parametrize_sampler
 @pytest.mark.parametrize("choices", [(1, 2, 3), ("a", "b", "c"), (1, "a")])
-def test_categorical(sampler_class, choices):
-    # type: (typing.Callable[[], BaseSampler], Sequence[CategoricalChoiceType]) -> None
+def test_categorical(
+    sampler_class: typing.Callable[[], BaseSampler], choices: Sequence[CategoricalChoiceType]
+) -> None:
 
     distribution = CategoricalDistribution(choices)
 
     study = optuna.study.create_study(sampler=sampler_class())
 
-    def sample():
-        # type: () -> float
+    def sample() -> float:
 
         trial = _create_new_trial(study)
         param_value = study.sampler.sample_independent(study, trial, "x", distribution)
@@ -186,39 +189,48 @@ def test_categorical(sampler_class, choices):
     np.testing.assert_almost_equal(round_points, points)
 
 
-def _create_new_trial(study):
-    # type: (Study) -> FrozenTrial
+def _create_new_trial(study: Study) -> FrozenTrial:
 
     trial_id = study._storage.create_new_trial(study._study_id)
     return study._storage.get_trial(trial_id)
 
 
 class FixedSampler(BaseSampler):
-    def __init__(self, relative_search_space, relative_params, unknown_param_value):
-        # type: (Dict[str, BaseDistribution], Dict[str, Any], Any) -> None
+    def __init__(
+        self,
+        relative_search_space: Dict[str, BaseDistribution],
+        relative_params: Dict[str, Any],
+        unknown_param_value: Any,
+    ) -> None:
 
         self.relative_search_space = relative_search_space
         self.relative_params = relative_params
         self.unknown_param_value = unknown_param_value
 
-    def infer_relative_search_space(self, study, trial):
-        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
 
         return self.relative_search_space
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
 
         return self.relative_params
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: BaseDistribution,
+    ) -> Any:
 
         return self.unknown_param_value
 
 
-def test_sample_relative():
-    # type: () -> None
+def test_sample_relative() -> None:
 
     relative_search_space = {
         "a": UniformDistribution(low=0, high=5),
@@ -236,8 +248,7 @@ def test_sample_relative():
     )
     study = optuna.study.create_study(sampler=sampler)
 
-    def objective(trial):
-        # type: (Trial) -> float
+    def objective(trial: Trial) -> float:
 
         # Predefined parameters are sampled by `sample_relative()` method.
         assert trial.suggest_uniform("a", 0, 5) == 3.2
@@ -289,8 +300,7 @@ def test_intersection_search_space() -> None:
 
     # Failed or pruned trials are not considered in the calculation of
     # an intersection search space.
-    def objective(trial, exception):
-        # type: (optuna.trial.Trial, Exception) -> float
+    def objective(trial: optuna.trial.Trial, exception: Exception) -> float:
 
         trial.suggest_uniform("z", 0, 1)
         raise exception
@@ -326,13 +336,11 @@ def test_intersection_search_space_class_with_different_studies() -> None:
 
 
 @parametrize_sampler
-def test_nan_objective_value(sampler_class):
-    # type: (typing.Callable[[], BaseSampler]) -> None
+def test_nan_objective_value(sampler_class: typing.Callable[[], BaseSampler]) -> None:
 
     study = optuna.create_study(sampler=sampler_class())
 
-    def objective(trial, base_value):
-        # type: (Trial, float) -> float
+    def objective(trial: Trial, base_value: float) -> float:
 
         return trial.suggest_uniform("x", 0.1, 0.2) + base_value
 

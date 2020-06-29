@@ -47,8 +47,9 @@ class ChainerPruningExtension(Extension):
             unit like ``(1, 'epoch')``.
     """
 
-    def __init__(self, trial, observation_key, pruner_trigger):
-        # type: (optuna.trial.Trial, str, TriggerType) -> None
+    def __init__(
+        self, trial: optuna.trial.Trial, observation_key: str, pruner_trigger: TriggerType
+    ) -> None:
 
         _imports.check()
 
@@ -67,8 +68,7 @@ class ChainerPruningExtension(Extension):
             )
 
     @staticmethod
-    def _get_float_value(observation_value):
-        # type: (Union[float, chainer.Variable]) -> float
+    def _get_float_value(observation_value: Union[float, chainer.Variable]) -> float:
 
         _imports.check()
 
@@ -85,13 +85,11 @@ class ChainerPruningExtension(Extension):
 
         return observation_value
 
-    def _observation_exists(self, trainer):
-        # type: (chainer.training.Trainer) -> bool
+    def _observation_exists(self, trainer: chainer.training.Trainer) -> bool:
 
         return self._pruner_trigger(trainer) and self._observation_key in trainer.observation
 
-    def __call__(self, trainer):
-        # type: (chainer.training.Trainer) -> None
+    def __call__(self, trainer: chainer.training.Trainer) -> None:
 
         if not self._observation_exists(trainer):
             return

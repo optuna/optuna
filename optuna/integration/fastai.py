@@ -48,8 +48,7 @@ class FastAIPruningCallback(TrackerCallback):
             details.
     """
 
-    def __init__(self, learn, trial, monitor):
-        # type: (Learner, optuna.trial.Trial, str) -> None
+    def __init__(self, learn: Learner, trial: optuna.trial.Trial, monitor: str) -> None:
 
         super(FastAIPruningCallback, self).__init__(learn, monitor)
 
@@ -57,8 +56,7 @@ class FastAIPruningCallback(TrackerCallback):
 
         self._trial = trial
 
-    def on_epoch_end(self, epoch, **kwargs):
-        # type: (int, Any) -> None
+    def on_epoch_end(self, epoch: int, **kwargs: Any) -> None:
 
         value = self.get_monitor_value()
         if value is None:

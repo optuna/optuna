@@ -50,12 +50,7 @@ class Trial(BaseTrial):
 
     """
 
-    def __init__(
-        self,
-        study,  # type: Study
-        trial_id,  # type: int
-    ):
-        # type: (...) -> None
+    def __init__(self, study: Study, trial_id: int,) -> None:
 
         self.study = study
         self._trial_id = trial_id
@@ -66,8 +61,7 @@ class Trial(BaseTrial):
 
         self._init_relative_params()
 
-    def _init_relative_params(self):
-        # type: () -> None
+    def _init_relative_params(self) -> None:
 
         trial = self.storage.get_trial(self._trial_id)
 
@@ -175,8 +169,7 @@ class Trial(BaseTrial):
             else:
                 return self.suggest_uniform(name, low, high)
 
-    def suggest_uniform(self, name, low, high):
-        # type: (str, float, float) -> float
+    def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
         The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high})`
@@ -229,8 +222,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_loguniform(self, name, low, high):
-        # type: (str, float, float) -> float
+    def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
         The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high})`
@@ -282,8 +274,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    def suggest_discrete_uniform(self, name, low, high, q):
-        # type: (str, float, float, float) -> float
+    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         """Suggest a value for the discrete parameter.
 
         The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high}]`,
@@ -440,8 +431,9 @@ class Trial(BaseTrial):
 
         return int(self._suggest(name, distribution))
 
-    def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
         """Suggest a value for the categorical parameter.
 
         The value is sampled from ``choices``.
@@ -493,8 +485,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
-    def report(self, value, step):
-        # type: (float, int) -> None
+    def report(self, value: float, step: int) -> None:
         """Report an objective function value for a given step.
 
         The reported values are used by the pruners to determine whether this trial should be
@@ -592,8 +583,7 @@ class Trial(BaseTrial):
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
 
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
+    def set_user_attr(self, key: str, value: Any) -> None:
         """Set user attributes to the trial.
 
         The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
@@ -639,8 +629,7 @@ class Trial(BaseTrial):
 
         self.storage.set_trial_user_attr(self._trial_id, key, value)
 
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
+    def set_system_attr(self, key: str, value: Any) -> None:
         """Set system attributes to the trial.
 
         Note that Optuna internally uses this method to save system messages such as failure
@@ -656,8 +645,7 @@ class Trial(BaseTrial):
 
         self.storage.set_trial_system_attr(self._trial_id, key, value)
 
-    def _suggest(self, name, distribution):
-        # type: (str, BaseDistribution) -> Any
+    def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
 
         storage = self.storage
         trial_id = self._trial_id
@@ -686,8 +674,7 @@ class Trial(BaseTrial):
 
         return param_value
 
-    def _is_fixed_param(self, name, distribution):
-        # type: (str, BaseDistribution) -> bool
+    def _is_fixed_param(self, name: str, distribution: BaseDistribution) -> bool:
 
         system_attrs = self.storage.get_trial_system_attrs(self._trial_id)
         if "fixed_params" not in system_attrs:
@@ -707,8 +694,7 @@ class Trial(BaseTrial):
             )
         return contained
 
-    def _is_relative_param(self, name, distribution):
-        # type: (str, BaseDistribution) -> bool
+    def _is_relative_param(self, name: str, distribution: BaseDistribution) -> bool:
 
         if name not in self.relative_params:
             return False
@@ -726,8 +712,7 @@ class Trial(BaseTrial):
         param_value_in_internal_repr = distribution.to_internal_repr(param_value)
         return distribution._contains(param_value_in_internal_repr)
 
-    def _check_distribution(self, name, distribution):
-        # type: (str, BaseDistribution) -> None
+    def _check_distribution(self, name: str, distribution: BaseDistribution) -> None:
 
         old_distribution = self.storage.get_trial(self._trial_id).distributions.get(
             name, distribution
@@ -745,8 +730,7 @@ class Trial(BaseTrial):
             )
 
     @property
-    def number(self):
-        # type: () -> int
+    def number(self) -> int:
         """Return trial's number which is consecutive and unique in a study.
 
         Returns:
@@ -756,8 +740,7 @@ class Trial(BaseTrial):
         return self.storage.get_trial_number_from_id(self._trial_id)
 
     @property
-    def params(self):
-        # type: () -> Dict[str, Any]
+    def params(self) -> Dict[str, Any]:
         """Return parameters to be optimized.
 
         Returns:
@@ -767,8 +750,7 @@ class Trial(BaseTrial):
         return copy.deepcopy(self.storage.get_trial_params(self._trial_id))
 
     @property
-    def distributions(self):
-        # type: () -> Dict[str, BaseDistribution]
+    def distributions(self) -> Dict[str, BaseDistribution]:
         """Return distributions of parameters to be optimized.
 
         Returns:
@@ -778,8 +760,7 @@ class Trial(BaseTrial):
         return copy.deepcopy(self.storage.get_trial(self._trial_id).distributions)
 
     @property
-    def user_attrs(self):
-        # type: () -> Dict[str, Any]
+    def user_attrs(self) -> Dict[str, Any]:
         """Return user attributes.
 
         Returns:
@@ -789,8 +770,7 @@ class Trial(BaseTrial):
         return copy.deepcopy(self.storage.get_trial_user_attrs(self._trial_id))
 
     @property
-    def system_attrs(self):
-        # type: () -> Dict[str, Any]
+    def system_attrs(self) -> Dict[str, Any]:
         """Return system attributes.
 
         Returns:
@@ -800,8 +780,7 @@ class Trial(BaseTrial):
         return copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
 
     @property
-    def datetime_start(self):
-        # type: () -> Optional[datetime.datetime]
+    def datetime_start(self) -> Optional[datetime.datetime]:
         """Return start datetime.
 
         Returns:

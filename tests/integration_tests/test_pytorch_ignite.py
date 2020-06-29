@@ -12,11 +12,8 @@ if type_checking.TYPE_CHECKING:
     from typing import Iterable  # NOQA
 
 
-def test_pytorch_ignite_pruning_handler():
-    # type: () -> None
-
-    def update(engine, batch):
-        # type: (Engine, Iterable) -> None
+def test_pytorch_ignite_pruning_handler() -> None:
+    def update(engine: Engine, batch: Iterable) -> None:
 
         pass
 

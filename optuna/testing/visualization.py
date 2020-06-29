@@ -6,8 +6,9 @@ if type_checking.TYPE_CHECKING:
     from optuna import Study  # NOQA
 
 
-def prepare_study_with_trials(no_trials=False, less_than_two=False, with_c_d=True):
-    # type: (bool, bool, bool) -> Study
+def prepare_study_with_trials(
+    no_trials: bool = False, less_than_two: bool = False, with_c_d: bool = True
+) -> Study:
     """Prepare a study for tests.
 
     Args:

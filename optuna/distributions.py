@@ -21,8 +21,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
     They are used by :class:`~optuna.trial.Trial` and :class:`~optuna.samplers` internally.
     """
 
-    def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> Any
+    def to_external_repr(self, param_value_in_internal_repr: float) -> Any:
         """Convert internal representation of a parameter value into external representation.
 
         Args:
@@ -35,8 +34,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
 
         return param_value_in_internal_repr
 
-    def to_internal_repr(self, param_value_in_external_repr):
-        # type: (Any) -> float
+    def to_internal_repr(self, param_value_in_external_repr: Any) -> float:
         """Convert external representation of a parameter value into internal representation.
 
         Args:
@@ -50,8 +48,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
         return param_value_in_external_repr
 
     @abc.abstractmethod
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
         """Test whether the range of this distribution contains just a single value.
 
         When this method returns :obj:`True`, :mod:`~optuna.samplers` always sample
@@ -65,8 +62,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
         """Test if a parameter value is contained in the range of this distribution.
 
         Args:
@@ -80,13 +76,11 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
-    def _asdict(self):
-        # type: () -> Dict
+    def _asdict(self) -> Dict:
 
         return self.__dict__
 
-    def __eq__(self, other):
-        # type: (Any) -> bool
+    def __eq__(self, other: Any) -> bool:
 
         if not isinstance(other, BaseDistribution):
             return NotImplemented
@@ -94,13 +88,11 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
             return False
         return self.__dict__ == other.__dict__
 
-    def __hash__(self):
-        # type: () -> int
+    def __hash__(self) -> int:
 
         return hash((self.__class__,) + tuple(sorted(self.__dict__.items())))
 
-    def __repr__(self):
-        # type: () -> str
+    def __repr__(self) -> str:
 
         kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self.__dict__.items()))
         return "{}({})".format(self.__class__.__name__, kwargs)
@@ -119,8 +111,7 @@ class UniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
-    def __init__(self, low, high):
-        # type: (float, float) -> None
+    def __init__(self, low: float, high: float) -> None:
 
         if low > high:
             raise ValueError(
@@ -131,13 +122,11 @@ class UniformDistribution(BaseDistribution):
         self.low = low
         self.high = high
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
 
         return self.low == self.high
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
         if self.low == self.high:
@@ -159,8 +148,7 @@ class LogUniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
-    def __init__(self, low, high):
-        # type: (float, float) -> None
+    def __init__(self, low: float, high: float) -> None:
 
         if low > high:
             raise ValueError(
@@ -176,13 +164,11 @@ class LogUniformDistribution(BaseDistribution):
         self.low = low
         self.high = high
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
 
         return self.low == self.high
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
         if self.low == self.high:
@@ -224,8 +210,7 @@ class DiscreteUniformDistribution(BaseDistribution):
         self.high = high
         self.q = q
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
 
         if self.low == self.high:
             return True
@@ -236,8 +221,7 @@ class DiscreteUniformDistribution(BaseDistribution):
             return True
         return False
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
         return self.low <= value <= self.high
@@ -281,25 +265,21 @@ class IntUniformDistribution(BaseDistribution):
         self.high = high
         self.step = step
 
-    def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> int
+    def to_external_repr(self, param_value_in_internal_repr: float) -> int:
 
         return int(param_value_in_internal_repr)
 
-    def to_internal_repr(self, param_value_in_external_repr):
-        # type: (int) -> float
+    def to_internal_repr(self, param_value_in_external_repr: int) -> float:
 
         return float(param_value_in_external_repr)
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
 
         if self.low == self.high:
             return True
         return (self.high - self.low) < self.step
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
         return self.low <= value <= self.high
@@ -353,23 +333,19 @@ class IntLogUniformDistribution(BaseDistribution):
         self.low = low
         self.high = high
 
-    def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> int
+    def to_external_repr(self, param_value_in_internal_repr: float) -> int:
 
         return int(param_value_in_internal_repr)
 
-    def to_internal_repr(self, param_value_in_external_repr):
-        # type: (int) -> float
+    def to_internal_repr(self, param_value_in_external_repr: int) -> float:
 
         return float(param_value_in_external_repr)
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
 
         return self.low == self.high
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
         return self.low <= value <= self.high
@@ -396,8 +372,7 @@ class CategoricalDistribution(BaseDistribution):
             Parameter value candidates.
     """
 
-    def __init__(self, choices):
-        # type: (Sequence[CategoricalChoiceType]) -> None
+    def __init__(self, choices: Sequence[CategoricalChoiceType]) -> None:
 
         if len(choices) == 0:
             raise ValueError("The `choices` must contains one or more elements.")
@@ -412,13 +387,11 @@ class CategoricalDistribution(BaseDistribution):
 
         self.choices = choices
 
-    def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> CategoricalChoiceType
+    def to_external_repr(self, param_value_in_internal_repr: float) -> CategoricalChoiceType:
 
         return self.choices[int(param_value_in_internal_repr)]
 
-    def to_internal_repr(self, param_value_in_external_repr):
-        # type: (CategoricalChoiceType) -> float
+    def to_internal_repr(self, param_value_in_external_repr: CategoricalChoiceType) -> float:
 
         try:
             return self.choices.index(param_value_in_external_repr)
@@ -427,13 +400,11 @@ class CategoricalDistribution(BaseDistribution):
                 "'{}' not in {}.".format(param_value_in_external_repr, self.choices)
             ) from e
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
 
         return len(self.choices) == 1
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         index = int(param_value_in_internal_repr)
         return 0 <= index < len(self.choices)
@@ -449,8 +420,7 @@ DISTRIBUTION_CLASSES = (
 )
 
 
-def json_to_distribution(json_str):
-    # type: (str) -> BaseDistribution
+def json_to_distribution(json_str: str) -> BaseDistribution:
     """Deserialize a distribution in JSON format.
 
     Args:
@@ -472,8 +442,7 @@ def json_to_distribution(json_str):
     raise ValueError("Unknown distribution class: {}".format(json_dict["name"]))
 
 
-def distribution_to_json(dist):
-    # type: (BaseDistribution) -> str
+def distribution_to_json(dist: BaseDistribution) -> str:
     """Serialize a distribution to JSON format.
 
     Args:
@@ -487,8 +456,9 @@ def distribution_to_json(dist):
     return json.dumps({"name": dist.__class__.__name__, "attributes": dist._asdict()})
 
 
-def check_distribution_compatibility(dist_old, dist_new):
-    # type: (BaseDistribution, BaseDistribution) -> None
+def check_distribution_compatibility(
+    dist_old: BaseDistribution, dist_new: BaseDistribution
+) -> None:
     """A function to check compatibility of two distributions.
 
     Note that this method is not supposed to be called by library users.
@@ -548,8 +518,7 @@ def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
     return high
 
 
-def _get_single_value(distribution):
-    # type: (BaseDistribution) -> Union[int, float, CategoricalChoiceType]
+def _get_single_value(distribution: BaseDistribution) -> Union[int, float, CategoricalChoiceType]:
 
     assert distribution.single()
 

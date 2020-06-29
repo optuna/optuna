@@ -82,12 +82,11 @@ class SkoptSampler(BaseSampler):
 
     def __init__(
         self,
-        independent_sampler=None,
-        warn_independent_sampling=True,
-        skopt_kwargs=None,
-        n_startup_trials=1,
-    ):
-        # type: (Optional[BaseSampler], bool, Optional[Dict[str, Any]], int) -> None
+        independent_sampler: Optional[BaseSampler] = None,
+        warn_independent_sampling: bool = True,
+        skopt_kwargs: Optional[Dict[str, Any]] = None,
+        n_startup_trials: int = 1,
+    ) -> None:
 
         _imports.check()
 
@@ -104,8 +103,9 @@ class SkoptSampler(BaseSampler):
 
         self._independent_sampler.reseed_rng()
 
-    def infer_relative_search_space(self, study, trial):
-        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
 
         search_space = {}
         for name, distribution in self._search_space.calculate(study).items():
@@ -121,8 +121,9 @@ class SkoptSampler(BaseSampler):
 
         return search_space
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
 
         if len(search_space) == 0:
             return {}
@@ -135,8 +136,13 @@ class SkoptSampler(BaseSampler):
         optimizer.tell(study, complete_trials)
         return optimizer.ask()
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: BaseDistribution,
+    ) -> Any:
 
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
@@ -147,8 +153,7 @@ class SkoptSampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def _log_independent_sampling(self, trial, param_name):
-        # type: (FrozenTrial, str) -> None
+    def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
 
         logger = optuna.logging.get_logger(__name__)
         logger.warning(
@@ -164,8 +169,9 @@ class SkoptSampler(BaseSampler):
 
 
 class _Optimizer(object):
-    def __init__(self, search_space, skopt_kwargs):
-        # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
+    def __init__(
+        self, search_space: Dict[str, BaseDistribution], skopt_kwargs: Dict[str, Any]
+    ) -> None:
 
         self._search_space = search_space
 
@@ -200,8 +206,7 @@ class _Optimizer(object):
 
         self._optimizer = skopt.Optimizer(dimensions, **skopt_kwargs)
 
-    def tell(self, study, complete_trials):
-        # type: (Study, List[FrozenTrial]) -> None
+    def tell(self, study: Study, complete_trials: List[FrozenTrial]) -> None:
 
         xs = []
         ys = []
@@ -216,8 +221,7 @@ class _Optimizer(object):
 
         self._optimizer.tell(xs, ys)
 
-    def ask(self):
-        # type: () -> Dict[str, Any]
+    def ask(self) -> Dict[str, Any]:
 
         params = {}
         param_values = self._optimizer.ask()
@@ -234,8 +238,7 @@ class _Optimizer(object):
 
         return params
 
-    def _is_compatible(self, trial):
-        # type: (FrozenTrial) -> bool
+    def _is_compatible(self, trial: FrozenTrial) -> bool:
 
         # Thanks to `intersection_search_space()` function, in sequential optimization,
         # the parameters of complete trials are always compatible with the search space.
@@ -255,8 +258,9 @@ class _Optimizer(object):
 
         return True
 
-    def _complete_trial_to_skopt_observation(self, study, trial):
-        # type: (Study, FrozenTrial) -> Tuple[List[Any], float]
+    def _complete_trial_to_skopt_observation(
+        self, study: Study, trial: FrozenTrial
+    ) -> Tuple[List[Any], float]:
 
         param_values = []
         for name, distribution in sorted(self._search_space.items()):

@@ -23,8 +23,9 @@ class TestParzenEstimator(object):
             (True, False),  # endpoints
         ),
     )
-    def test_calculate_shape_check(mus, prior, magic_clip, endpoints):
-        # type: (List[float], bool, bool, bool) -> None
+    def test_calculate_shape_check(
+        mus: List[float], prior: bool, magic_clip: bool, endpoints: bool
+    ) -> None:
 
         s_weights, s_mus, s_sigmas = _ParzenEstimator._calculate(
             mus,
@@ -103,8 +104,9 @@ class TestParzenEstimator(object):
             ],
         ],
     )
-    def test_calculate(mus, flags, expected):
-        # type: (List[float], Dict[str, bool], Dict[str, List[float]]) -> None
+    def test_calculate(
+        mus: List[float], flags: Dict[str, bool], expected: Dict[str, List[float]]
+    ) -> None:
 
         s_weights, s_mus, s_sigmas = _ParzenEstimator._calculate(
             mus,

@@ -32,15 +32,13 @@ def turnoff_train(metric: Optional[str] = "binary_logloss") -> Generator[None, N
     dummy_num_iterations = 1234
 
     class DummyBooster(object):
-        def __init__(self):
-            # type: () -> None
+        def __init__(self) -> None:
 
             self.best_score = {
                 "valid_0": {metric: unexpected_value},
             }
 
-        def current_iteration(self):
-            # type: () -> int
+        def current_iteration(self) -> int:
 
             return dummy_num_iterations
 
@@ -61,8 +59,7 @@ def turnoff_cv(metric: Optional[str] = "binary_logloss") -> Generator[None, None
 
 
 class TestOptunaObjective(object):
-    def test_init_(self):
-        # type: () -> None
+    def test_init_(self) -> None:
 
         target_param_names = ["learning_rate"]  # Invalid parameter name.
 
@@ -71,8 +68,7 @@ class TestOptunaObjective(object):
 
         assert execinfo.type is NotImplementedError
 
-    def test_call(self):
-        # type: () -> None
+    def test_call(self) -> None:
 
         target_param_names = ["lambda_l1"]
         lgbm_params = {}  # type: Dict[str, Any]
@@ -123,14 +119,12 @@ class TestOptunaObjectiveCV(object):
 
 
 class TestBaseTuner(object):
-    def test_get_booster_best_score(self):
-        # type: () -> None
+    def test_get_booster_best_score(self) -> None:
 
         expected_value = 1.0
 
         class DummyBooster(object):
-            def __init__(self):
-                # type: () -> None
+            def __init__(self) -> None:
 
                 self.best_score = {"valid_0": {"binary_logloss": expected_value}}
 
@@ -141,8 +135,7 @@ class TestBaseTuner(object):
         val_score = tuner._get_booster_best_score(booster)
         assert val_score == expected_value
 
-    def test_higher_is_better(self):
-        # type: () -> None
+    def test_higher_is_better(self) -> None:
 
         for metric in [
             "auc",
@@ -163,14 +156,12 @@ class TestBaseTuner(object):
             tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert not tuner.higher_is_better()
 
-    def test_get_booster_best_score__using_valid_names_as_str(self):
-        # type: () -> None
+    def test_get_booster_best_score__using_valid_names_as_str(self) -> None:
 
         expected_value = 1.0
 
         class DummyBooster(object):
-            def __init__(self):
-                # type: () -> None
+            def __init__(self) -> None:
 
                 self.best_score = {"dev": {"binary_logloss": expected_value}}
 
@@ -181,15 +172,13 @@ class TestBaseTuner(object):
         val_score = tuner._get_booster_best_score(booster)
         assert val_score == expected_value
 
-    def test_get_booster_best_score__using_valid_names_as_list(self):
-        # type: () -> None
+    def test_get_booster_best_score__using_valid_names_as_list(self) -> None:
 
         unexpected_value = 0.5
         expected_value = 1.0
 
         class DummyBooster(object):
-            def __init__(self):
-                # type: () -> None
+            def __init__(self) -> None:
 
                 self.best_score = {
                     "train": {"binary_logloss": unexpected_value},
@@ -209,8 +198,7 @@ class TestBaseTuner(object):
         val_score = tuner._get_booster_best_score(booster)
         assert val_score == expected_value
 
-    def test_compare_validation_metrics(self):
-        # type: () -> None
+    def test_compare_validation_metrics(self) -> None:
 
         for metric in [
             "auc",
@@ -255,16 +243,16 @@ class TestBaseTuner(object):
             ("map", {}, "map@1"),
         ],
     )
-    def test_metric_with_eval_at(self, metric, eval_at_param, expected):
-        # type: (str, Dict[str, Union[int, List[int]]], str) -> None
+    def test_metric_with_eval_at(
+        self, metric: str, eval_at_param: Dict[str, Union[int, List[int]]], expected: str
+    ) -> None:
 
         params = {"metric": metric}  # type: Dict[str, Union[str, int, List[int]]]
         params.update(eval_at_param)
         tuner = _BaseTuner(lgbm_params=params)
         assert tuner._metric_with_eval_at(metric) == expected
 
-    def test_metric_with_eval_at_error(self):
-        # type: () -> None
+    def test_metric_with_eval_at_error(self) -> None:
 
         tuner = _BaseTuner(lgbm_params={"metric": "ndcg", "eval_at": "1"})
         with pytest.raises(ValueError):
@@ -272,8 +260,13 @@ class TestBaseTuner(object):
 
 
 class TestLightGBMTuner(object):
-    def _get_tuner_object(self, params={}, train_set=None, kwargs_options={}, study=None):
-        # type: (Dict[str, Any], lgb.Dataset, Dict[str, Any], Optional[Study]) -> lgb.LightGBMTuner
+    def _get_tuner_object(
+        self,
+        params: Dict[str, Any] = {},
+        train_set: lgb.Dataset = None,
+        kwargs_options: Dict[str, Any] = {},
+        study: Optional[Study] = None,
+    ) -> lgb.LightGBMTuner:
 
         # Required keyword arguments.
         dummy_dataset = lgb.Dataset(None)
@@ -286,8 +279,7 @@ class TestLightGBMTuner(object):
         runner = lgb.LightGBMTuner(params, train_set, **kwargs)
         return runner
 
-    def test_no_eval_set_args(self):
-        # type: () -> None
+    def test_no_eval_set_args(self) -> None:
 
         params = {}  # type: Dict[str, Any]
         train_set = lgb.Dataset(None)
@@ -326,16 +318,14 @@ class TestLightGBMTuner(object):
         assert excinfo.type == ValueError
         assert str(excinfo.value).startswith("Study direction is inconsistent with the metric")
 
-    def test_with_minimum_required_args(self):
-        # type: () -> None
+    def test_with_minimum_required_args(self) -> None:
 
         runner = self._get_tuner_object()
         assert "num_boost_round" in runner.lgbm_kwargs
         assert "num_boost_round" not in runner.auto_options
         assert runner.lgbm_kwargs["num_boost_round"] == 5
 
-    def test__parse_args_wrapper_args(self):
-        # type: () -> None
+    def test__parse_args_wrapper_args(self) -> None:
 
         params = {}  # type: Dict[str, Any]
         train_set = lgb.Dataset(None)
@@ -379,8 +369,7 @@ class TestLightGBMTuner(object):
             runner.tune_regularization_factors()
             assert runner.best_params["lambda_l1"] != unexpected_value
 
-    def test_sample_train_set(self):
-        # type: () -> None
+    def test_sample_train_set(self) -> None:
 
         sample_size = 3
 
@@ -413,8 +402,7 @@ class TestLightGBMTuner(object):
             assert runner.lgbm_params["feature_fraction"] == unexpected_value
             assert len(runner.study.trials) == 0
 
-    def test_tune_feature_fraction(self):
-        # type: () -> None
+    def test_tune_feature_fraction(self) -> None:
 
         unexpected_value = 1.1  # out of scope.
 
@@ -430,8 +418,7 @@ class TestLightGBMTuner(object):
             assert runner.lgbm_params["feature_fraction"] != unexpected_value
             assert len(runner.study.trials) == 7
 
-    def test_tune_num_leaves(self):
-        # type: () -> None
+    def test_tune_num_leaves(self) -> None:
 
         unexpected_value = 1  # out of scope.
 
@@ -443,8 +430,7 @@ class TestLightGBMTuner(object):
             assert runner.lgbm_params["num_leaves"] != unexpected_value
             assert len(runner.study.trials) == 20
 
-    def test_tune_num_leaves_negative_max_depth(self):
-        # type: () -> None
+    def test_tune_num_leaves_negative_max_depth(self) -> None:
 
         params = {
             "metric": "binary_logloss",
@@ -465,8 +451,7 @@ class TestLightGBMTuner(object):
         runner.tune_num_leaves()
         assert len(runner.study.trials) == 20
 
-    def test_tune_bagging(self):
-        # type: () -> None
+    def test_tune_bagging(self) -> None:
 
         unexpected_value = 1  # out of scope.
 
@@ -478,8 +463,7 @@ class TestLightGBMTuner(object):
             assert runner.lgbm_params["bagging_fraction"] != unexpected_value
             assert len(runner.study.trials) == 10
 
-    def test_tune_feature_fraction_stage2(self):
-        # type: () -> None
+    def test_tune_feature_fraction_stage2(self) -> None:
 
         unexpected_value = 0.5
 
@@ -491,8 +475,7 @@ class TestLightGBMTuner(object):
             assert runner.lgbm_params["feature_fraction"] != unexpected_value
             assert len(runner.study.trials) == 6
 
-    def test_tune_regularization_factors(self):
-        # type: () -> None
+    def test_tune_regularization_factors(self) -> None:
 
         unexpected_value = 20  # out of scope.
 
@@ -506,8 +489,7 @@ class TestLightGBMTuner(object):
             assert runner.lgbm_params["lambda_l1"] != unexpected_value
             assert len(runner.study.trials) == 20
 
-    def test_tune_min_data_in_leaf(self):
-        # type: () -> None
+    def test_tune_min_data_in_leaf(self) -> None:
 
         unexpected_value = 1  # out of scope.
 
@@ -523,8 +505,7 @@ class TestLightGBMTuner(object):
             assert runner.lgbm_params["min_child_samples"] != unexpected_value
             assert len(runner.study.trials) == 5
 
-    def test_when_a_step_does_not_improve_best_score(self):
-        # type: () -> None
+    def test_when_a_step_does_not_improve_best_score(self) -> None:
 
         params = {}  # type: Dict
         valid_data = np.zeros((10, 10))

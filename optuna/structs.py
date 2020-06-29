@@ -68,19 +68,18 @@ class FrozenTrial(object):
 
     def __init__(
         self,
-        number,  # type: int
-        state,  # type: TrialState
-        value,  # type: Optional[float]
-        datetime_start,  # type: Optional[datetime]
-        datetime_complete,  # type: Optional[datetime]
-        params,  # type: Dict[str, Any]
-        distributions,  # type: Dict[str, BaseDistribution]
-        user_attrs,  # type: Dict[str, Any]
-        system_attrs,  # type: Dict[str, Any]
-        intermediate_values,  # type: Dict[int, float]
-        trial_id,  # type: int
-    ):
-        # type: (...) -> None
+        number: int,
+        state: TrialState,
+        value: Optional[float],
+        datetime_start: Optional[datetime],
+        datetime_complete: Optional[datetime],
+        params: Dict[str, Any],
+        distributions: Dict[str, BaseDistribution],
+        user_attrs: Dict[str, Any],
+        system_attrs: Dict[str, Any],
+        intermediate_values: Dict[int, float],
+        trial_id: int,
+    ) -> None:
 
         self.number = number
         self.state = state
@@ -110,36 +109,31 @@ class FrozenTrial(object):
         "state",
     ]
 
-    def __eq__(self, other):
-        # type: (Any) -> bool
+    def __eq__(self, other: Any) -> bool:
 
         if not isinstance(other, FrozenTrial):
             return NotImplemented
         return other.__dict__ == self.__dict__
 
-    def __lt__(self, other):
-        # type: (Any) -> bool
+    def __lt__(self, other: Any) -> bool:
 
         if not isinstance(other, FrozenTrial):
             return NotImplemented
 
         return self.number < other.number
 
-    def __le__(self, other):
-        # type: (Any) -> bool
+    def __le__(self, other: Any) -> bool:
 
         if not isinstance(other, FrozenTrial):
             return NotImplemented
 
         return self.number <= other.number
 
-    def __hash__(self):
-        # type: () -> int
+    def __hash__(self) -> int:
 
         return hash(tuple(getattr(self, field) for field in self._ordered_fields))
 
-    def __repr__(self):
-        # type: () -> str
+    def __repr__(self) -> str:
 
         return "{cls}({kwargs})".format(
             cls=self.__class__.__name__,
@@ -152,8 +146,7 @@ class FrozenTrial(object):
             ),
         )
 
-    def _validate(self):
-        # type: () -> None
+    def _validate(self) -> None:
 
         if self.datetime_start is None:
             raise ValueError("`datetime_start` is supposed to be set.")
@@ -188,20 +181,17 @@ class FrozenTrial(object):
                 )
 
     @property
-    def distributions(self):
-        # type: () -> Dict[str, BaseDistribution]
+    def distributions(self) -> Dict[str, BaseDistribution]:
         """Dictionary that contains the distributions of :attr:`params`."""
 
         return self._distributions
 
     @distributions.setter
-    def distributions(self, value):
-        # type: (Dict[str, BaseDistribution]) -> None
+    def distributions(self, value: Dict[str, BaseDistribution]) -> None:
         self._distributions = value
 
     @property
-    def last_step(self):
-        # type: () -> Optional[int]
+    def last_step(self) -> Optional[int]:
 
         if len(self.intermediate_values) == 0:
             return None
@@ -209,8 +199,7 @@ class FrozenTrial(object):
             return max(self.intermediate_values.keys())
 
     @property
-    def duration(self):
-        # type: () -> Optional[timedelta]
+    def duration(self) -> Optional[timedelta]:
         """Return the elapsed time taken to complete the trial.
 
         Returns:
@@ -256,16 +245,15 @@ class StudySummary(object):
 
     def __init__(
         self,
-        study_name,  # type: str
-        direction,  # type: _study_direction.StudyDirection
-        best_trial,  # type: Optional[FrozenTrial]
-        user_attrs,  # type: Dict[str, Any]
-        system_attrs,  # type: Dict[str, Any]
-        n_trials,  # type: int
-        datetime_start,  # type: Optional[datetime]
-        study_id,  # type: int
-    ):
-        # type: (...) -> None
+        study_name: str,
+        direction: _study_direction.StudyDirection,
+        best_trial: Optional[FrozenTrial],
+        user_attrs: Dict[str, Any],
+        system_attrs: Dict[str, Any],
+        n_trials: int,
+        datetime_start: Optional[datetime],
+        study_id: int,
+    ) -> None:
 
         self.study_name = study_name
         self.direction = direction
@@ -276,24 +264,21 @@ class StudySummary(object):
         self.datetime_start = datetime_start
         self._study_id = study_id
 
-    def __eq__(self, other):
-        # type: (Any) -> bool
+    def __eq__(self, other: Any) -> bool:
 
         if not isinstance(other, StudySummary):
             return NotImplemented
 
         return other.__dict__ == self.__dict__
 
-    def __lt__(self, other):
-        # type: (Any) -> bool
+    def __lt__(self, other: Any) -> bool:
 
         if not isinstance(other, StudySummary):
             return NotImplemented
 
         return self._study_id < other._study_id
 
-    def __le__(self, other):
-        # type: (Any) -> bool
+    def __le__(self, other: Any) -> bool:
 
         if not isinstance(other, StudySummary):
             return NotImplemented
