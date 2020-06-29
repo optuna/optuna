@@ -121,7 +121,7 @@ if __name__ == "__main__":
         "-p",
         action="store_true",
         help="Activate the pruning feature. `MedianPruner` stops unpromising "
-             "trials at the early stages of training.",
+        "trials at the early stages of training.",
     )
     args = parser.parse_args()
     pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
