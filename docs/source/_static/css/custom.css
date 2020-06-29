@@ -14,10 +14,12 @@ em.sig-param > span:not(:nth-child(1)) {
 }
 
 /* Container for a class signature */
-html.writer-html5.rst-content
-  dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):not(.method)
+/* html.writer-html4 .rst-content dl:not(.docutils) > dt, */
+html.writer-html5
+  .rst-content
+  dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)
   > dt {
-  background-color: #f0f0f0;
+    background-color: #f0f0f0;
 }
 
 /* External link in a signature */
