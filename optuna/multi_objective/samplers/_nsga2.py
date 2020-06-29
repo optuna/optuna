@@ -160,7 +160,11 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     def _collect_parent_population(
         self, study: "multi_objective.study.MultiObjectiveStudy"
     ) -> Tuple[int, List["multi_objective.trial.FrozenMultiObjectiveTrial"]]:
-        trials = study._storage.get_all_trials(deepcopy=False)
+        trials = [
+            multi_objective.trial.FrozenMultiObjectiveTrial(study.n_objectives, t)
+            for t in study._storage.get_all_trials(study._study_id, deepcopy=False)
+        ]
+
         generation_to_runnings = defaultdict(list)
         generation_to_population = defaultdict(list)
         for trial in trials:

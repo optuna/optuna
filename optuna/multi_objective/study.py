@@ -391,6 +391,10 @@ class MultiObjectiveStudy(object):
     def _storage(self) -> BaseStorage:
         return self._study._storage
 
+    @property
+    def _study_id(self) -> int:
+        return self._study._study_id
+
 
 def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:
     values = multi_objective.trial.MultiObjectiveTrial(trial)._get_values()
