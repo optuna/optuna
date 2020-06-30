@@ -1,30 +1,40 @@
 """
-Optuna example that performs Cross Validation for cancer dataset
-using XGBoost.
+Optuna example that performs Cross Validation for cancer dataset using XGBoost.
+
 In this example, we perform cross-validation to accuracy of cancer detection
 using XGBoost. We optimize both the choice of booster model and their hyper
 parameters.
+
 We have following two ways to execute this example:
+
 (1) Execute this code directly.
     $ python xgboost_cv.py
+
+
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
     $ optuna study optimize xgboost_cv.py objective --n-trials=100 --study $STUDY_NAME \
       --storage sqlite:///example.db
+
 """
 
 
 import optuna
 import os
+import shutil
 import sklearn.datasets
 import sklearn.metrics
 import xgboost as xgb
 
-# Set Constants
+
+# Set constants
 SEED = 108
 N_FOLDS = 3
+CV_RESULT_DIR = "./xgboost_cv_results"
 
-# Define Optuna Objective
+if not os.path.exists(file_path):
+    os.mkdir(CV_RESULT_DIR)
+
 # FYI: Objective functions can take additional arguments
 # (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
@@ -63,13 +73,18 @@ def objective(trial):
         verbose_eval=False,
     )
 
-    # Set n_estimators as a trial attribute; Accessible via study.trials_dataframe()
+    # Set n_estimators as a trial attribute; Accessible via study.trials_dataframe().
     trial.set_user_attr("n_estimators", len(xgb_cv_results))
 
-    # Extract the best score
+    # Save cross-validation results.
+    filepath = os.path.join(CV_RESULT_DIR, '{}.csv'.format(trial.number))
+    xgb_cv_results.to_csv(filepath, index=False)
+
+    # Extract the best score.
     best_score = xgb_cv_results["test-auc-mean"].values[-1]
     return best_score
 
+shutil.rmtree(CV_RESULT_DIR)
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
