@@ -184,8 +184,8 @@ class TestOptimizer(object):
                 {
                     "BoundaryHandler": cma.BoundTransform,
                     "bounds": [
-                        [-0.5, -1.0, -1.5, -2.0, math.log(1.5), math.log(0.001), -2,],
-                        [1.5, 11.0, 1.5, 4.0, math.log(16.5), math.log(0.1), 2],
+                        [-0.5, -1.0, -1.5, -1.5, math.log(1.5), math.log(0.001), -2,],
+                        [1.5, 11.0, 1.5, 3.5, math.log(16.5), math.log(0.1), 2],
                     ],
                     "popsize": 5,
                     "seed": 1,
