@@ -13,22 +13,30 @@ em.sig-param > span:not(:nth-child(1)) {
   color: #2980b9;
 }
 
-/* Container for a class signature */
-/* html.writer-html4 .rst-content dl:not(.docutils) > dt, */
-html.writer-html5
-  .rst-content
-  dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)
-  > dt {
-    background-color: #f0f0f0;
-}
-
-/* External link in a signature */
+/* Internal links in a signature */
 html.writer-html5
   .rst-content
   dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)
   > dt
   a.reference.external {
-  color: #27ae60;
+  color: #2980b9;
+}
+
+/* Internal links in a signature */
+html.writer-html5
+  .rst-content
+  dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)
+  > dt
+  a.reference.internal {
+  color: #2980b9;
+} */
+
+/* Container for a class signature */
+html.writer-html5
+  .rst-content
+  dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)
+  > dt {
+    background-color: #f0f0f0;
 }
 
 
