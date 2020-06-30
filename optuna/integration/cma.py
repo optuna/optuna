@@ -431,7 +431,7 @@ class _Optimizer(object):
         # type: (Dict[str, BaseDistribution], str, Any) -> float
 
         dist = search_space[param_name]
-        if isinstance(dist, LogUniformDistribution) or isinstance(dist, IntLogUniformDistribution):
+        if isinstance(dist, (LogUniformDistribution, IntLogUniformDistribution)):
             return math.log(optuna_param_value)
         elif isinstance(dist, DiscreteUniformDistribution):
             return optuna_param_value - dist.low
