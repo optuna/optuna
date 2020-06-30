@@ -107,8 +107,8 @@ class AllenNLPExecutor(object):
         https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
 
         :class:`~optuna.integration.AllenNLPExecutor` also reads environment variables.
-        If a value is set in both search space in Optuna and the environment variables,
-        the executor will use a value specified in a search space in Optuna.
+        If a value is set in both a search space in Optuna and the environment variables,
+        the executor will use the value specified in the search space in Optuna.
 
         """
         params = self._environment_variables()
