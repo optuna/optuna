@@ -2,7 +2,6 @@ import os
 from typing import Dict
 
 import optuna
-
 from optuna._imports import try_import
 
 with try_import() as _imports:
