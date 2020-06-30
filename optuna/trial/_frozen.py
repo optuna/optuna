@@ -204,15 +204,15 @@ class FrozenTrial(object):
 @experimental("2.0.0")
 def create_trial(
     *,
+    state: Optional[TrialState] = None,
+    value: Optional[float] = None,
     params: Optional[Dict[str, Any]] = None,
     distributions: Optional[Dict[str, BaseDistribution]] = None,
-    value: Optional[float] = None,
     intermediate_values: Optional[Dict[int, float]] = None,
-    state: Optional[TrialState] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
     system_attrs: Optional[Dict[str, Any]] = None
 ) -> FrozenTrial:
-    """Create trial.
+    """Create a trial.
 
     Example:
 
@@ -239,6 +239,22 @@ def create_trial(
 
         See :func:`~optuna.study.Study.add_trial` for how this function can be used to create a
         study from existing trials.
+
+    Args:
+        state:
+            Trial state.
+        value:
+            Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
+        params:
+            Dictionary with suggested parameters of the trial.
+        distributions:
+            Dictionary with parameter distributions of the trial.
+        intermediate_values:
+            Dictionary with intermediate objective values of the trial.
+        user_attrs:
+            Dictionary with user attributes.
+        system_attrs:
+            Dictionary with system attributes. Should not have to be used for most users.
 
     Returns:
         Created trial.
