@@ -254,7 +254,7 @@ def create_trial(
 
     datetime_start = datetime.datetime.now()
     if state.is_finished():
-        datetime_complete = datetime.datetime.now()  # type: Optional[datetime.datetime]
+        datetime_complete = datetime_start  # type: Optional[datetime.datetime]
     else:
         datetime_complete = None
 
