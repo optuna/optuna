@@ -5,9 +5,8 @@ import sys
 import tempfile
 
 import optuna
-from optuna.integration.tensorboard import TensorBoardCallback
-
 from optuna._imports import try_import
+from optuna.integration.tensorboard import TensorBoardCallback
 
 with try_import() as _imports:
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
