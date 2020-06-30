@@ -112,21 +112,17 @@ def test_median_pruner_n_warmup_steps():
 @pytest.mark.parametrize(
     "n_warmup_steps,interval_steps,report_steps,expected_prune_steps",
     [
-        (1, 2, 1, [2, 4]),
-        (0, 3, 10, list(range(1, 30))),
-        (2, 3, 10, list(range(11, 30))),
-        (0, 10, 3, [1, 2, 3, 13, 14, 15, 22, 23, 24]),
-        (2, 10, 3, [4, 5, 6, 13, 14, 15, 25, 26, 27]),
+        (1, 2, 1, [1, 3]),
+        (0, 3, 10, list(range(29))),
+        (2, 3, 10, list(range(10, 29))),
+        (0, 10, 3, [0, 1, 2, 12, 13, 14, 21, 22, 23]),
+        (2, 10, 3, [3, 4, 5, 12, 13, 14, 24, 25, 26]),
     ],
 )
 def test_median_pruner_interval_steps(
     n_warmup_steps, interval_steps, report_steps, expected_prune_steps
 ):
     # type: (int, int, int, List[int]) -> None
-
-    expected_prune_steps = list(
-        map(lambda expected_prune_step: expected_prune_step - 1, expected_prune_steps)
-    )
 
     pruner = optuna.pruners.MedianPruner(0, n_warmup_steps, interval_steps)
     study = optuna.study.create_study()
