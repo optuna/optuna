@@ -35,9 +35,9 @@ def test_mean_decrease_impurity_importance_evaluator_max_depth() -> None:
     param_importance = evaluator.evaluate(study)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(max_depth=2, seed=0)
-    param_importance_different_n_trees = evaluator.evaluate(study)
+    param_importance_different_max_depth = evaluator.evaluate(study)
 
-    assert param_importance != param_importance_different_n_trees
+    assert param_importance != param_importance_different_max_depth
 
 
 def test_mean_decrease_impurity_importance_evaluator_seed() -> None:
