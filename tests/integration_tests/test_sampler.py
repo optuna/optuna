@@ -36,7 +36,7 @@ def test_suggested_value(sampler_class):
     for trial in study.trials:
         for param_name, param_value in trial.params.items():
             distribution = trial.distributions[param_name]
-            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            param_value_in_internal_repr = distribution._to_internal_repr(param_value)
             assert distribution._contains(param_value_in_internal_repr)
 
     # direction='maximize'
@@ -45,7 +45,7 @@ def test_suggested_value(sampler_class):
     for trial in study.trials:
         for param_name, param_value in trial.params.items():
             distribution = trial.distributions[param_name]
-            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            param_value_in_internal_repr = distribution._to_internal_repr(param_value)
             assert distribution._contains(param_value_in_internal_repr)
 
 

@@ -102,7 +102,7 @@ def _distribution_to_hyperparameter(name: str, distribution: BaseDistribution) -
     elif isinstance(d, IntLogUniformDistribution):
         hp = UniformIntegerHyperparameter(name, lower=d.low, upper=d.high, log=True)
     elif isinstance(d, CategoricalDistribution):
-        hp = CategoricalHyperparameter(name, choices=[d.to_internal_repr(c) for c in d.choices])
+        hp = CategoricalHyperparameter(name, choices=[d._to_internal_repr(c) for c in d.choices])
     else:
         distribution_list = [
             UniformDistribution.__name__,

@@ -197,8 +197,8 @@ def test_upgrade():
             },
             {
                 "params": {
-                    "paramA": UniformDistribution(0, 3).to_internal_repr(3),
-                    "paramB": CategoricalDistribution(["foo", "bar"]).to_internal_repr("bar"),
+                    "paramA": UniformDistribution(0, 3)._to_internal_repr(3),
+                    "paramB": CategoricalDistribution(["foo", "bar"])._to_internal_repr("bar"),
                 },
                 "distributions_": {
                     "paramA": UniformDistribution(0, 3),

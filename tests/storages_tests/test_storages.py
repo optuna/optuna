@@ -480,7 +480,7 @@ def test_get_trial_param_and_get_trial_params(storage_mode: str) -> None:
                 for key in expected_trial.params.keys():
                     assert storage.get_trial_param(trial_id, key) == expected_trial.distributions[
                         key
-                    ].to_internal_repr(expected_trial.params[key])
+                    ]._to_internal_repr(expected_trial.params[key])
 
         non_existent_trial_id = (
             max(tid for ts in study_to_trials.values() for tid in ts.keys()) + 1

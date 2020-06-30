@@ -392,7 +392,7 @@ class RDBStorage(BaseStorage):
                 param_distributions = {}
                 for param in params:
                     distribution = distributions.json_to_distribution(param.distribution_json)
-                    param_dict[param.param_name] = distribution.to_external_repr(param.param_value)
+                    param_dict[param.param_name] = distribution._to_external_repr(param.param_value)
                     param_distributions[param.param_name] = distribution
                 user_attrs = session.query(models.TrialUserAttributeModel).filter(
                     models.TrialUserAttributeModel.trial_id == best_trial.trial_id
@@ -496,7 +496,7 @@ class RDBStorage(BaseStorage):
         if template_trial is not None:
             for param_name, param_value in template_trial.params.items():
                 distribution = template_trial.distributions[param_name]
-                param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+                param_value_in_internal_repr = distribution._to_internal_repr(param_value)
                 self._set_trial_param_without_commit(
                     session, trial.trial_id, param_name, param_value_in_internal_repr, distribution
                 )
@@ -956,7 +956,7 @@ class RDBStorage(BaseStorage):
             params={
                 p.param_name: distributions.json_to_distribution(
                     p.distribution_json
-                ).to_external_repr(p.param_value)
+                )._to_external_repr(p.param_value)
                 for p in trial.params
             },
             distributions={

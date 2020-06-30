@@ -398,7 +398,7 @@ class RedisStorage(BaseStorage):
             )
 
             # Set params.
-            trial.params[param_name] = distribution.to_external_repr(param_value_internal)
+            trial.params[param_name] = distribution._to_external_repr(param_value_internal)
             trial.distributions[param_name] = distribution
             pipe.set(self._key_trial(trial_id), pickle.dumps(trial))
             pipe.execute()
@@ -454,7 +454,7 @@ class RedisStorage(BaseStorage):
         # type: (int, str) -> float
 
         distribution = self.get_trial(trial_id).distributions[param_name]
-        return distribution.to_internal_repr(self.get_trial(trial_id).params[param_name])
+        return distribution._to_internal_repr(self.get_trial(trial_id).params[param_name])
 
     def set_trial_value(self, trial_id, value):
         # type: (int, float) -> None

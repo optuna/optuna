@@ -52,7 +52,7 @@ def test_sample_independent(
         value = study.sampler.sample_independent(
             study, _create_new_trial(study), "x", distribution
         )
-        assert distribution._contains(distribution.to_internal_repr(value))
+        assert distribution._contains(distribution._to_internal_repr(value))
 
         if not isinstance(distribution, CategoricalDistribution):
             # Please see https://github.com/optuna/optuna/pull/393 why this assertion is needed.

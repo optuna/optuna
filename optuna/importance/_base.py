@@ -117,7 +117,7 @@ def _get_study_data(
         for j, (name, distribution) in enumerate(distributions.items()):
             param = trial_params[name]
             if isinstance(distribution, CategoricalDistribution):
-                param = distribution.to_internal_repr(param)
+                param = distribution._to_internal_repr(param)
             params[i, j] = param
         values[i] = trial.value
 

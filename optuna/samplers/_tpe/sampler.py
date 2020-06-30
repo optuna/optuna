@@ -631,7 +631,7 @@ def _get_observation_pairs(study, param_name, trial):
         param_value = None  # type: Optional[float]
         if param_name in trial.params:
             distribution = trial.distributions[param_name]
-            param_value = distribution.to_internal_repr(trial.params[param_name])
+            param_value = distribution._to_internal_repr(trial.params[param_name])
 
         values.append(param_value)
         scores.append(score)

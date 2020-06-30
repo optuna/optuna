@@ -667,7 +667,7 @@ class Trial(BaseTrial):
         if name in trial.distributions:
             # No need to sample if already suggested.
             distributions.check_distribution_compatibility(trial.distributions[name], distribution)
-            param_value = distribution.to_external_repr(storage.get_trial_param(trial_id, name))
+            param_value = distribution._to_external_repr(storage.get_trial_param(trial_id, name))
         else:
             if self._is_fixed_param(name, distribution):
                 param_value = storage.get_trial_system_attrs(trial_id)["fixed_params"][name]
@@ -681,7 +681,7 @@ class Trial(BaseTrial):
                     study, trial, name, distribution
                 )
 
-            param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+            param_value_in_internal_repr = distribution._to_internal_repr(param_value)
             storage.set_trial_param(trial_id, name, param_value_in_internal_repr, distribution)
 
         return param_value
@@ -697,7 +697,7 @@ class Trial(BaseTrial):
             return False
 
         param_value = system_attrs["fixed_params"][name]
-        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+        param_value_in_internal_repr = distribution._to_internal_repr(param_value)
 
         contained = distribution._contains(param_value_in_internal_repr)
         if not contained:
@@ -723,7 +723,7 @@ class Trial(BaseTrial):
         distributions.check_distribution_compatibility(relative_distribution, distribution)
 
         param_value = self.relative_params[name]
-        param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+        param_value_in_internal_repr = distribution._to_internal_repr(param_value)
         return distribution._contains(param_value_in_internal_repr)
 
     def _check_distribution(self, name, distribution):

@@ -235,7 +235,7 @@ class _CachedStorage(BaseStorage):
                     self._studies[study_id].param_distribution[param_name] = distribution
 
                 params = copy.copy(cached_trial.params)
-                params[param_name] = distribution.to_external_repr(param_value_internal)
+                params[param_name] = distribution._to_external_repr(param_value_internal)
                 cached_trial.params = params
 
                 dists = copy.copy(cached_trial.distributions)
@@ -261,7 +261,7 @@ class _CachedStorage(BaseStorage):
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
 
         trial = self.get_trial(trial_id)
-        return trial.distributions[param_name].to_internal_repr(trial.params[param_name])
+        return trial.distributions[param_name]._to_internal_repr(trial.params[param_name])
 
     def set_trial_value(self, trial_id: int, value: float) -> None:
 

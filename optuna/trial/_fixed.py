@@ -139,7 +139,7 @@ class FixedTrial(BaseTrial):
             )
 
         value = self._params[name]
-        param_value_in_internal_repr = distribution.to_internal_repr(value)
+        param_value_in_internal_repr = distribution._to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
             raise ValueError(
                 "The value {} of the parameter '{}' is out of "

@@ -156,7 +156,7 @@ class GridSampler(BaseSampler):
         # See https://gist.github.com/c-bata/f759f64becb24eea2040f4b2e3afce8f for details.
         grid_id = trial.system_attrs["grid_id"]
         param_value = self._all_grids[grid_id][self._param_names.index(param_name)]
-        contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))
+        contains = param_distribution._contains(param_distribution._to_internal_repr(param_value))
         if not contains:
             raise ValueError(
                 "The value `{}` is out of range of the parameter `{}`. Please make "

@@ -404,7 +404,7 @@ class _Optimizer(object):
 
             distributions.check_distribution_compatibility(distribution, trial.distributions[name])
             param_value = trial.params[name]
-            param_internal_value = distribution.to_internal_repr(param_value)
+            param_internal_value = distribution._to_internal_repr(param_value)
             if not distribution._contains(param_internal_value):
                 return False
 

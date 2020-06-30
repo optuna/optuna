@@ -21,7 +21,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
     They are used by :class:`~optuna.trial.Trial` and :class:`~optuna.samplers` internally.
     """
 
-    def to_external_repr(self, param_value_in_internal_repr):
+    def _to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> Any
         """Convert internal representation of a parameter value into external representation.
 
@@ -35,7 +35,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
 
         return param_value_in_internal_repr
 
-    def to_internal_repr(self, param_value_in_external_repr):
+    def _to_internal_repr(self, param_value_in_external_repr):
         # type: (Any) -> float
         """Convert external representation of a parameter value into internal representation.
 
@@ -281,12 +281,12 @@ class IntUniformDistribution(BaseDistribution):
         self.high = high
         self.step = step
 
-    def to_external_repr(self, param_value_in_internal_repr):
+    def _to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
 
         return int(param_value_in_internal_repr)
 
-    def to_internal_repr(self, param_value_in_external_repr):
+    def _to_internal_repr(self, param_value_in_external_repr):
         # type: (int) -> float
 
         return float(param_value_in_external_repr)
@@ -353,12 +353,12 @@ class IntLogUniformDistribution(BaseDistribution):
         self.low = low
         self.high = high
 
-    def to_external_repr(self, param_value_in_internal_repr):
+    def _to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> int
 
         return int(param_value_in_internal_repr)
 
-    def to_internal_repr(self, param_value_in_external_repr):
+    def _to_internal_repr(self, param_value_in_external_repr):
         # type: (int) -> float
 
         return float(param_value_in_external_repr)
@@ -412,12 +412,12 @@ class CategoricalDistribution(BaseDistribution):
 
         self.choices = choices
 
-    def to_external_repr(self, param_value_in_internal_repr):
+    def _to_external_repr(self, param_value_in_internal_repr):
         # type: (float) -> CategoricalChoiceType
 
         return self.choices[int(param_value_in_internal_repr)]
 
-    def to_internal_repr(self, param_value_in_external_repr):
+    def _to_internal_repr(self, param_value_in_external_repr):
         # type: (CategoricalChoiceType) -> float
 
         try:

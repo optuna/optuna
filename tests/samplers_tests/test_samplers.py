@@ -175,7 +175,7 @@ def test_categorical(sampler_class, choices):
 
         trial = _create_new_trial(study)
         param_value = study.sampler.sample_independent(study, trial, "x", distribution)
-        return distribution.to_internal_repr(param_value)
+        return distribution._to_internal_repr(param_value)
 
     points = np.array([sample() for _ in range(100)])
 
