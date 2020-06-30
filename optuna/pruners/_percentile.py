@@ -167,7 +167,7 @@ class PercentilePruner(BasePruner):
             return False
 
         n_warmup_steps = self._n_warmup_steps
-        if step <= n_warmup_steps - 1:
+        if step < n_warmup_steps:
             return False
 
         if not _is_first_in_interval_step(

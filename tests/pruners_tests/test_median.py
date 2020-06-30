@@ -124,6 +124,8 @@ def test_median_pruner_interval_steps(
 ):
     # type: (int, int, int, List[int]) -> None
 
+    expected_prune_steps = list(map(lambda expected_prune_step: expected_prune_step - 1, expected_prune_steps))
+
     pruner = optuna.pruners.MedianPruner(0, n_warmup_steps, interval_steps)
     study = optuna.study.create_study()
 
@@ -139,5 +141,5 @@ def test_median_pruner_interval_steps(
         if (i - base_index) % report_steps == 0:
             trial.report(2, i)
         assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id)) == (
-            i > n_warmup_steps - 1 and i + 1 in expected_prune_steps
+            i >= n_warmup_steps and i in expected_prune_steps
         )
