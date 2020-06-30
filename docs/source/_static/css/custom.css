@@ -13,7 +13,7 @@ em.sig-param > span:not(:nth-child(1)) {
   color: #2980b9;
 }
 
-/* Internal links in a signature */
+/* External links in a signature */
 html.writer-html5
   .rst-content
   dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)
@@ -36,7 +36,7 @@ html.writer-html5
   .rst-content
   dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)
   > dt {
-    background-color: #f0f0f0;
+  background-color: #f0f0f0;
 }
 
 
