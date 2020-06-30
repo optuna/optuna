@@ -57,6 +57,11 @@ class AllenNLPExecutor(object):
     `config file <https://github.com/optuna/optuna/blob/master/
     examples/allennlp/classifier.jsonnet>`_.
 
+    .. note::
+        :class:`~optuna.integration.AllenNLPExecutor` also reads environment variables.
+        If a value is set in both a search space in Optuna and the environment variables,
+        the executor will use the value specified in the search space in Optuna.
+
     Args:
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation
@@ -105,10 +110,6 @@ class AllenNLPExecutor(object):
         _build_params is based on allentune's train_func.
         For more detail, please refer to
         https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
-
-        :class:`~optuna.integration.AllenNLPExecutor` also reads environment variables.
-        If a value is set in both a search space in Optuna and the environment variables,
-        the executor will use the value specified in the search space in Optuna.
 
         """
         params = self._environment_variables()
