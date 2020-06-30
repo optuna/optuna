@@ -12,7 +12,7 @@ with try_import() as _imports:
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 
-def _objective_func(trial: "optuna.trial.Trial") -> float:
+def _objective_func(trial: optuna.trial.Trial) -> float:
 
     x = trial.suggest_uniform("x", -1.0, 1.0)
     y = trial.suggest_loguniform("y", 20.0, 30.0)
