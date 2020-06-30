@@ -233,9 +233,7 @@ class PyCmaSampler(BaseSampler):
                 x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, IntUniformDistribution):
                 x0[name] = int(numpy.mean([distribution.high, distribution.low]))
-            elif isinstance(distribution, LogUniformDistribution) or isinstance(
-                distribution, IntLogUniformDistribution
-            ):
+            elif isinstance(distribution, (LogUniformDistribution, IntLogUniformDistribution)):
                 log_high = math.log(distribution.high)
                 log_low = math.log(distribution.low)
                 x0[name] = math.exp(numpy.mean([log_high, log_low]))
