@@ -1,11 +1,6 @@
 import optuna
 from optuna.integration.tensorboard import TensorBoardCallback
-from optuna import type_checking
 import tensorflow as tf
-
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
-    from typing import Any  # NOQA
 
 
 fashion_mnist = tf.keras.datasets.fashion_mnist
