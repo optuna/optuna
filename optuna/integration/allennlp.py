@@ -58,7 +58,9 @@ class AllenNLPExecutor(object):
     examples/allennlp/classifier.jsonnet>`_.
 
     .. note::
-        :class:`~optuna.integration.AllenNLPExecutor` also reads environment variables.
+        In :class:`~optuna.integration.AllenNLPExecutor`,
+        you can pass parameter to AllenNLP by either defining a search space using
+        Optuna suggest methods or setting a environment variable just like AllenNLP cli.
         If a value is set in both a search space in Optuna and the environment variables,
         the executor will use the value specified in the search space in Optuna.
 
