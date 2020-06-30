@@ -153,7 +153,6 @@ class TestOptimizer(object):
             "i": IntUniformDistribution(-1, 1),
             "ii": IntUniformDistribution(-1, 3, 2),
             "il": IntLogUniformDistribution(2, 16),
-            "ili": IntLogUniformDistribution(2, 16, 2),
             "l": LogUniformDistribution(0.001, 0.1),
             "u": UniformDistribution(-2, 2),
         }
@@ -168,7 +167,6 @@ class TestOptimizer(object):
             "i": -1,
             "ii": -1,
             "il": 2,
-            "ili": 2,
             "l": 0.001,
             "u": -2,
         }
@@ -181,22 +179,13 @@ class TestOptimizer(object):
                 search_space, x0, 0.2, None, {"popsize": 5, "seed": 1}
             )
             assert mock_obj.mock_calls[0] == call(
-                [0, 0, -1, -1, math.log(2), math.log(2), math.log(0.001), -2],
+                [0, 0, -1, -1, math.log(2), math.log(0.001), -2],
                 0.2,
                 {
                     "BoundaryHandler": cma.BoundTransform,
                     "bounds": [
-                        [
-                            -0.5,
-                            -1.0,
-                            -1.5,
-                            -2.0,
-                            math.log(1.5),
-                            math.log(1.5),
-                            math.log(0.001),
-                            -2,
-                        ],
-                        [1.5, 11.0, 1.5, 4.0, math.log(16.5), math.log(16.5), math.log(0.1), 2],
+                        [-0.5, -1.0, -1.5, -2.0, math.log(1.5), math.log(0.001), -2,],
+                        [1.5, 11.0, 1.5, 4.0, math.log(16.5), math.log(0.1), 2],
                     ],
                     "popsize": 5,
                     "seed": 1,

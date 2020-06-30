@@ -456,8 +456,7 @@ class _Optimizer(object):
             return int(v)
         if isinstance(dist, IntLogUniformDistribution):
             exp_value = math.exp(cma_param_value)
-            r = numpy.round((exp_value - dist.low) / dist.step)
-            v = r * dist.step + dist.low
+            v = numpy.round(exp_value)
             return int(min(max(v, dist.low), dist.high))
 
         if isinstance(dist, CategoricalDistribution):
