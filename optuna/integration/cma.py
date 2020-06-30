@@ -316,8 +316,8 @@ class _Optimizer(object):
                 lows.append(0 - 0.5 * dist.q)
                 highs.append(r + 0.5 * dist.q)
             elif isinstance(dist, IntUniformDistribution):
-                lows.append(dist.low - 0.5)
-                highs.append(dist.high + 0.5)
+                lows.append(dist.low - 0.5 * dist.step)
+                highs.append(dist.high + 0.5 * dist.step)
             elif isinstance(dist, IntLogUniformDistribution):
                 lows.append(self._to_cma_params(search_space, param_name, dist.low - 0.5))
                 highs.append(self._to_cma_params(search_space, param_name, dist.high + 0.5))
