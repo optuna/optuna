@@ -32,7 +32,7 @@ def train_test_model(num_units: int, dropout_rate: float, optimizer: str) -> flo
     return accuracy
 
 
-def objective(trial: "optuna.trial.Trial") -> float:
+def objective(trial: optuna.trial.Trial) -> float:
 
     num_units = trial.suggest_int("NUM_UNITS", 16, 32)
     dropout_rate = trial.suggest_uniform("DROPOUT_RATE", 0.1, 0.2)
