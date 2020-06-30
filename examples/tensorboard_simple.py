@@ -14,7 +14,7 @@ fashion_mnist = tf.keras.datasets.fashion_mnist
 x_train, x_test = x_train / 255.0, x_test / 255.0
 
 
-def train_test_model(num_units: "int", dropout_rate: "float", optimizer: "str") -> float:
+def train_test_model(num_units: int, dropout_rate: float, optimizer: str) -> float:
     model = tf.keras.models.Sequential(
         [
             tf.keras.layers.Flatten(),
