@@ -55,9 +55,9 @@ def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
     trial.set_user_attr("gae_lambda_", gae_lambda)
     trial.set_user_attr("n_steps", n_steps)
 
-    net_arch = (
-        {"pi": [64], "vf": [64],} if net_arch == "tiny" else {"pi": [64, 64], "vf": [64, 64],}
-    )
+    net_arch = [
+        {"pi": [64], "vf": [64]} if net_arch == "tiny" else {"pi": [64, 64], "vf": [64, 64]}
+     ]
 
     activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU,}[activation_fn]
 
