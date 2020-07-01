@@ -897,7 +897,6 @@ def test_frozen_trial_repr():
 # experimental.
 @pytest.mark.parametrize("state", [None, TrialState.COMPLETE, TrialState.FAIL])
 def test_create_trial(state: TrialState) -> None:
-    state = TrialState.COMPLETE
     value = 0.2
     params = {"x": 10}
     distributions = {"x": UniformDistribution(5, 12)}
@@ -916,7 +915,7 @@ def test_create_trial(state: TrialState) -> None:
     )
 
     assert isinstance(trial, FrozenTrial)
-    assert trial.state == state
+    assert trial.state == (state if state is not None else TrialState.COMPLETE)
     assert trial.value == value
     assert trial.params == params
     assert trial.distributions == distributions
