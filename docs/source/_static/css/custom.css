@@ -1,44 +1,47 @@
+/* WARNING: This style sheet may not be compatible with `sphinx-rtd-theme >= 0.5.0` */
+
 /* Code-block for console */
 .highlight-console pre {
   background: #d3d5d4;
 }
 
-/* Parameter names in a signature */
-em.sig-param > span:nth-child(1) {
+/* Parameter names and colons after them in a signature */
+em.sig-param > span:nth-child(1),
+em.sig-param > span:nth-child(2) {
   color: #555555;
 }
 
 /* Type hints and default values in a signature */
-em.sig-param > span:not(:nth-child(1)) {
+em.sig-param > span:not(:nth-child(1)):not(:nth-child(2)) {
+  color: #2980b9;
+}
+
+/* Internal links in a signature
+We could simplify the selectors here using the `:is()` function, but it's still experimental.
+See for details: https://developer.mozilla.org/en-US/docs/Web/CSS/:is */
+.rst-content dl.class > dt a.reference.internal,
+.rst-content dl.method > dt a.reference.internal,
+.rst-content dl.function > dt a.reference.internal {
   color: #2980b9;
 }
 
 /* External links in a signature */
-html.writer-html5
-  .rst-content
-  dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)
-  > dt
-  a.reference.external {
+.rst-content dl.class > dt a.reference.external,
+.rst-content dl.method > dt a.reference.external,
+.rst-content dl.function > dt a.reference.external {
   color: #2980b9;
 }
 
-/* Internal links in a signature */
-html.writer-html5
-  .rst-content
-  dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)
-  > dt
-  a.reference.internal {
-  color: #2980b9;
-}
-
-/* Container for a class signature */
-html.writer-html5
-  .rst-content
-  dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)
-  > dt {
+/* Containers for a signature */
+.rst-content dl.class > dt,
+.rst-content dl.function > dt {
   background-color: #f0f0f0;
 }
 
+/* Containers for methods, properties, parameters, and returns */
+.rst-content dl:not(.docutils) dl dt {
+  border-left: solid 3px #6ab0de;
+}
 /* Sidebar header (and topbar for mobile) */
 .wy-side-nav-search, .wy-nav-top {
     background: #F1F3F4;
@@ -115,15 +118,4 @@ a {
 }
 .wy-alert, .rst-content .note, .rst-content .attention, .rst-content .caution, .rst-content .danger, .rst-content .error, .rst-content .hint, .rst-content .important, .rst-content .tip, .rst-content .warning, .rst-content .seealso, .rst-content .admonition-todo, .rst-content .admonition{
     background: #F1F3F4;
-}
-.rst-content dl:not(.docutils) dt {
-    display: table;
-    margin: 6px 0;
-    font-size: 90%;
-    line-height: normal;
-    background: #F1F3F4;
-    color: #2980B9;
-    border-top: solid 3px #2BA9CD;
-    padding: 6px;
-    position: relative;
 }
