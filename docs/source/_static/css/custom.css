@@ -16,9 +16,7 @@ em.sig-param > span:not(:nth-child(1)):not(:nth-child(2)) {
   color: #2980b9;
 }
 
-/* Internal links in a signature
-We could simplify the selectors here using the `:is()` function, but it's still experimental.
-See for details: https://developer.mozilla.org/en-US/docs/Web/CSS/:is */
+/* Internal links in a signature */
 .rst-content dl.class > dt a.reference.internal,
 .rst-content dl.method > dt a.reference.internal,
 .rst-content dl.function > dt a.reference.internal {
