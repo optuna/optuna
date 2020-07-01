@@ -40,10 +40,10 @@ DEFAULT_HYPERPARAMS = {
 
 def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
     """Sampler for A2C hyperparameters."""
-    gamma = trial.suggest_categorical("gamma", [0.9, 0.95, 0.98, 0.99, 0.999, 0.9999])
-    max_grad_norm = trial.suggest_categorical("max_grad_norm", [0.3, 0.5, 0.7, 0.9, 1, 2, 5])
-    gae_lambda = trial.suggest_categorical("gae_lambda", [0.8, 0.9, 0.92, 0.95, 0.98, 0.99, 1.0])
-    n_steps = trial.suggest_categorical("n_steps", [8, 16, 32, 64, 128, 256, 512, 1024])
+    gamma = 1. - trial.suggest_float("gamma", 0.0001, 0.1, log=True)
+    max_grad_norm = trial.suggest_float("max_grad_norm", 0.3, 5.0, log=True)
+    gae_lambda = 1. - trial.suggest_float("gae_lambda", 0.001, 0.2. log=True)
+    n_steps = 2 ** trial.suggest_int("exponent_n_steps", 3, 10)
     learning_rate = trial.suggest_loguniform("lr", 1e-5, 1)
     ent_coef = trial.suggest_loguniform("ent_coef", 0.00000001, 0.1)
     ortho_init = trial.suggest_categorical("ortho_init", [False, True])
