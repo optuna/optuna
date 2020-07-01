@@ -294,7 +294,6 @@ class Study(BaseStudy):
                 if show_progress_bar:
                     msg = "Progress bar only supports serial execution (`n_jobs=1`)."
                     warnings.warn(msg)
-                    _logger.warning(msg)
 
                 time_start = datetime.datetime.now()
 
@@ -325,7 +324,6 @@ class Study(BaseStudy):
                             "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html."
                         )
                         warnings.warn(msg, UserWarning)
-                        _logger.warning(msg)
 
                     parallel(
                         delayed(self._reseed_and_optimize_sequential)(
@@ -482,7 +480,6 @@ class Study(BaseStudy):
 
         return df
 
-    @experimental("1.4.0")
     def stop(self) -> None:
 
         """Exit from the current optimization loop after the running trials finish.
@@ -815,6 +812,9 @@ def create_study(
     Returns:
         A :class:`~optuna.study.Study` object.
 
+    See also:
+        :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
+
     """
 
     storage = storages.get_storage(storage)
@@ -871,6 +871,9 @@ def load_study(
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
 
+    See also:
+        :func:`optuna.load_study` is an alias of :func:`optuna.study.load_study`.
+
     """
 
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
@@ -890,6 +893,9 @@ def delete_study(
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
             :func:`~optuna.study.create_study` for further details.
 
+    See also:
+        :func:`optuna.delete_study` is an alias of :func:`optuna.study.delete_study`.
+
     """
 
     storage = storages.get_storage(storage)
@@ -908,6 +914,10 @@ def get_all_study_summaries(storage):
 
     Returns:
         List of study history summarized as :class:`~optuna.study.StudySummary` objects.
+
+    See also:
+        :func:`optuna.get_all_study_summaries` is an alias of
+        :func:`optuna.study.get_all_study_summaries`.
 
     """
 

@@ -146,8 +146,7 @@ class _StudySetUserAttribute(_BaseCommand):
             )
         elif parsed_args.study:
             message = "The use of `--study` is deprecated. Please use `--study-name` instead."
-            warnings.warn(message, DeprecationWarning)
-            self.logger.warning(message)
+            warnings.warn(message, FutureWarning)
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
         elif parsed_args.study_name:
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
@@ -237,8 +236,7 @@ class _Dashboard(_BaseCommand):
             )
         elif parsed_args.study:
             message = "The use of `--study` is deprecated. Please use `--study-name` instead."
-            warnings.warn(message, DeprecationWarning)
-            self.logger.warning(message)
+            warnings.warn(message, FutureWarning)
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
         elif parsed_args.study_name:
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
@@ -299,8 +297,7 @@ class _StudyOptimize(_BaseCommand):
             "The use of the `study optimize` command is deprecated. Please execute your Python "
             "script directly instead."
         )
-        warnings.warn(message, DeprecationWarning)
-        self.logger.warning(message)
+        warnings.warn(message, FutureWarning)
 
         storage_url = _check_storage_url(self.app_args.storage)
 
@@ -311,8 +308,7 @@ class _StudyOptimize(_BaseCommand):
             )
         elif parsed_args.study:
             message = "The use of `--study` is deprecated. Please use `--study-name` instead."
-            warnings.warn(message, DeprecationWarning)
-            self.logger.warning(message)
+            warnings.warn(message, FutureWarning)
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
         elif parsed_args.study_name:
             study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
@@ -372,7 +368,7 @@ class _StorageUpgrade(_BaseCommand):
             storage.upgrade()
             self.logger.info("Completed to upgrade the storage.")
         else:
-            self.logger.warning(
+            warnings.warn(
                 "Your optuna version seems outdated against the storage version. "
                 "Please try updating optuna to the latest version by "
                 "`$ pip install -U optuna`."

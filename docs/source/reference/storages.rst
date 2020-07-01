@@ -1,7 +1,9 @@
-.. module:: optuna.storages
-
 optuna.storages
 ===============
 
-.. autoclass:: RDBStorage
-.. autoclass:: RedisStorage
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   optuna.storages.RDBStorage
+   optuna.storages.RedisStorage

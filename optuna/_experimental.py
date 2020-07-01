@@ -61,6 +61,7 @@ def experimental(version: str, name: str = None) -> Any:
                         name if name is not None else func.__name__, version
                     ),
                     ExperimentalWarning,
+                    stacklevel=2,
                 )
 
                 return func(*args, **kwargs)  # type: ignore
@@ -82,6 +83,7 @@ def experimental(version: str, name: str = None) -> Any:
                         name if name is not None else cls.__name__, version
                     ),
                     ExperimentalWarning,
+                    stacklevel=2,
                 )
 
                 _original_init(self, *args, **kwargs)

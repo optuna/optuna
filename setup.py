@@ -60,8 +60,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-optimize",
             "mlflow",
         ],
-        # TODO(hvy): Unpin `sphinx` version after https://github.com/sphinx-doc/sphinx/issues/7807.
-        "document": ["sphinx>=3.0.0,!=3.1.0,!=3.1.1", "sphinx_rtd_theme"],
+        "document": [
+            # TODO(hvy): Unpin `sphinx` version after:
+            # https://github.com/sphinx-doc/sphinx/issues/7807.
+            "sphinx>=3.0.0,!=3.1.0,!=3.1.1",
+            # As reported in: https://github.com/readthedocs/sphinx_rtd_theme/issues/949,
+            # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
+            "sphinx_rtd_theme<0.5.0",
+        ],
         "example": [
             "catboost",
             "chainer",

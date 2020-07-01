@@ -5,6 +5,7 @@ import time
 
 import numpy as np
 
+from optuna._experimental import experimental
 from optuna._imports import try_import
 import optuna.logging
 import optuna.study
@@ -255,11 +256,11 @@ if _imports.is_successful():
             self.all_trials_widget.update(current_trials, new_trials)
 
 
+@experimental("0.1.0", name="Optuna dashboard")
 def _show_experimental_warning():
     # type: () -> None
 
-    logger = optuna.logging.get_logger(__name__)
-    logger.warning("Optuna dashboard is still highly experimental. Please use with caution!")
+    pass
 
 
 def _get_this_source_path():

@@ -13,13 +13,12 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
-import warnings
 
 import numpy as np
 import tqdm
 
 import optuna
-from optuna._experimental import experimental
+from optuna._deprecated import deprecated
 from optuna._imports import try_import
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
@@ -436,7 +435,6 @@ class _LightGBMBaseTuner(_BaseTuner):
         if self.auto_options["verbosity"] == 0:
             optuna.logging.disable_default_handler()
             self.lgbm_params["verbose"] = -1
-            self.lgbm_params["seed"] = 111
             self.lgbm_kwargs["verbose_eval"] = False
 
         # Handling aliases.
@@ -469,10 +467,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         param_name = "feature_fraction"
         param_values = np.linspace(0.4, 1.0, n_trials).tolist()
 
-        # TODO(toshihikoyanase): Remove catch_warnings after GridSampler becomes non-experimental.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
-            sampler = optuna.samplers.GridSampler({param_name: param_values})
+        sampler = optuna.samplers.GridSampler({param_name: param_values})
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction")
 
     def tune_num_leaves(self, n_trials: int = 20) -> None:
@@ -491,10 +486,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         ).tolist()
         param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
 
-        # TODO(toshihikoyanase): Remove catch_warnings after GridSampler becomes non-experimental.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
-            sampler = optuna.samplers.GridSampler({param_name: param_values})
+        sampler = optuna.samplers.GridSampler({param_name: param_values})
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction_stage2")
 
     def tune_regularization_factors(self, n_trials: int = 20) -> None:
@@ -509,10 +501,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         param_name = "min_child_samples"
         param_values = [5, 10, 25, 50, 100]
 
-        # TODO(toshihikoyanase): Remove catch_warnings after GridSampler becomes non-experimental.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
-            sampler = optuna.samplers.GridSampler({param_name: param_values})
+        sampler = optuna.samplers.GridSampler({param_name: param_values})
         self._tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
 
     def _tune_params(
@@ -551,18 +540,13 @@ class _LightGBMBaseTuner(_BaseTuner):
         else:
             _timeout = None
         if _n_trials > 0:
-            try:
-                study.optimize(
-                    objective,
-                    n_trials=_n_trials,
-                    timeout=_timeout,
-                    catch=(),
-                    callbacks=self._optuna_callbacks,
-                )
-            except ValueError:
-                # ValueError is raised by GridSampler when all combinations were examined.
-                # TODO(toshihikoyanase): Remove this try-except after Study.stop is implemented.
-                pass
+            study.optimize(
+                objective,
+                n_trials=_n_trials,
+                timeout=_timeout,
+                catch=(),
+                callbacks=self._optuna_callbacks,
+            )
 
         pbar.close()
         del pbar
@@ -624,7 +608,6 @@ class _LightGBMBaseTuner(_BaseTuner):
         return _StepwiseStudy(study, step_name)
 
 
-@experimental("1.5.0")
 class LightGBMTuner(_LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM.
 
@@ -728,18 +711,16 @@ class LightGBMTuner(_LightGBMBaseTuner):
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
 
-    @property
+    @property  # type: ignore
+    @deprecated(
+        "1.4.0",
+        text=(
+            "Please get the best booster via "
+            ":class:`~optuna.integration.lightgbm.LightGBMTuner.get_best_booster` instead."
+        ),
+    )
     def best_booster(self) -> "lgb.Booster":
-        """Return the best booster.
-
-        .. deprecated:: 1.4.0
-            Please get the best booster via
-            :class:`~optuna.integration.lightgbm.LightGBMTuner.get_best_booster` instead.
-        """
-        warnings.warn(
-            "The `best_booster` attribute is deprecated. Please use `get_best_booster` instead.",
-            DeprecationWarning,
-        )
+        """Return the best booster."""
 
         return self.get_best_booster()
 
@@ -817,7 +798,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
         )
 
 
-@experimental("1.5.0")
 class LightGBMTunerCV(_LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM with cross-validation.
 
