@@ -23,7 +23,6 @@ MODEL_DIR = os.path.join(DIR, "result")
 
 
 class MetricsCallback(Callback):
-
     def __init__(self):
         super().__init__()
         self.metrics = []
@@ -53,7 +52,6 @@ def create_model(trial):
 
 
 class LightningNet(pl.LightningModule):
-
     def __init__(self, trial):
         super().__init__()
         self.model = create_model(trial)
@@ -129,10 +127,7 @@ if __name__ == "__main__":
         objective,
         n_trials=100,
         timeout=600,
-        callbacks=[MLflowCallback(
-            tracking_uri="http://mlflow:5000/",
-            metric_name="val_accuracy",
-        )]
+        callbacks=[MLflowCallback(tracking_uri="http://mlflow:5000/", metric_name="val_accuracy")],
     )
 
     print("Number of finished trials: {}".format(len(study.trials)))
