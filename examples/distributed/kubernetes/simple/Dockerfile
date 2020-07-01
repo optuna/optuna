@@ -1,9 +1,9 @@
-FROM python:3.6-slim-buster
+FROM python:3.5-slim-buster
 
 WORKDIR /usr/src/
 
-RUN pip install --no-cache-dir optuna scikit-learn psycopg2-binary mlflow
+RUN pip install --no-cache-dir optuna scikit-learn psycopg2-binary
 
 COPY sklearn_distributed.py .
 
-COPY run_mlflow.sh
+CMD ["python", "sklearn_distributed.py"]

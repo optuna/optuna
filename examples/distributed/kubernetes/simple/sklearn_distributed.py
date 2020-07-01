@@ -18,7 +18,6 @@ import sklearn.model_selection
 import sklearn.svm
 
 import optuna
-from optuna.integration.mlflow import MLflowCallback
 
 
 # FYI: Objective functions can take additional arguments
@@ -52,15 +51,6 @@ if __name__ == "__main__":
             os.environ["POSTGRES_DB"],
         ),
         load_if_exists=True,
-        callbacks=[
-            MLflowCallback(
-                tracking_uri="postgresql://{}:{}@postgres:5433/{}".format(
-                    os.environ["POSTGRES_USER"],
-                    os.environ["POSTGRES_PASSWORD"],
-                    os.environ["POSTGRES_MLFLOW_DB"]),
-                metric_name="accuracy",
-            ),
-        ],
     )
     study.optimize(objective, n_trials=20)
     print(study.best_trial)
