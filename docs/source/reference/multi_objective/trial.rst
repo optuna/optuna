@@ -1,12 +1,9 @@
-.. module:: optuna.multi_objective.trial
-
 optuna.multi_objective.trial
 ============================
 
-.. autoclass:: MultiObjectiveTrial
-    :members:
-    :exclude-members: system_attrs, set_system_attr
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autoclass:: FrozenMultiObjectiveTrial
-    :members:
-    :exclude-members: system_attrs
+   optuna.multi_objective.trial.MultiObjectiveTrial
+   optuna.multi_objective.trial.FrozenMultiObjectiveTrial

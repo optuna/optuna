@@ -1,15 +1,10 @@
-.. module:: optuna.multi_objective.samplers
-
 optuna.multi_objective.samplers
 ===============================
 
-.. autoclass:: BaseMultiObjectiveSampler
-    :members:
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autoclass:: NSGAIIMultiObjectiveSampler
-    :members:
-    :exclude-members: infer_relative_search_space, sample_relative, sample_independent
-
-.. autoclass:: RandomMultiObjectiveSampler
-    :members:
-    :exclude-members: infer_relative_search_space, sample_relative, sample_independent
+   optuna.multi_objective.samplers.BaseMultiObjectiveSampler
+   optuna.multi_objective.samplers.NSGAIIMultiObjectiveSampler
+   optuna.multi_objective.samplers.RandomMultiObjectiveSampler

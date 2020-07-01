@@ -1,12 +1,10 @@
-.. module:: optuna.importance
-
 optuna.importance
 =================
 
-.. autofunction:: get_param_importances
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autoclass:: FanovaImportanceEvaluator
-    :members:
-
-.. autoclass:: MeanDecreaseImpurityImportanceEvaluator
-    :members:
+   optuna.importance.get_param_importances
+   optuna.importance.FanovaImportanceEvaluator
+   optuna.importance.MeanDecreaseImpurityImportanceEvaluator
