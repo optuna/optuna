@@ -23,7 +23,7 @@ def test_build_params() -> None:
     assert params["model"]["hidden_size"] == [100, 200, 300]
 
 
-def test__build_params_overwriting_environment_variable() -> None:
+def test_build_params_overwriting_environment_variable() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
