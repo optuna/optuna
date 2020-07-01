@@ -208,9 +208,9 @@ def create_trial(
     value: Optional[float] = None,
     params: Optional[Dict[str, Any]] = None,
     distributions: Optional[Dict[str, BaseDistribution]] = None,
-    intermediate_values: Optional[Dict[int, float]] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
-    system_attrs: Optional[Dict[str, Any]] = None
+    system_attrs: Optional[Dict[str, Any]] = None,
+    intermediate_values: Optional[Dict[int, float]] = None
 ) -> FrozenTrial:
     """Create a trial.
 
@@ -249,12 +249,12 @@ def create_trial(
             Dictionary with suggested parameters of the trial.
         distributions:
             Dictionary with parameter distributions of the trial.
-        intermediate_values:
-            Dictionary with intermediate objective values of the trial.
         user_attrs:
             Dictionary with user attributes.
         system_attrs:
             Dictionary with system attributes. Should not have to be used for most users.
+        intermediate_values:
+            Dictionary with intermediate objective values of the trial.
 
     Returns:
         Created trial.
