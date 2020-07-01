@@ -1,9 +1,12 @@
 # Distributed Optimization on Kubernetes
 
-This example's code is mostly the same as the mlflow_simple.py example except for:
+This example is only verified on minikube.
+
+This example's code is based on ../../pytorch_lightning_simple.py example with the following changes:
 
 1. It gives a name to the study and sets `load_if_exists` to `True` in order to avoid errors when the code is run from multiple workers.
 2. It sets the storage address to the postgres pod deployed with the workers.
+3. It uses `MLfloatCallback`.
 
 In order to run this example you have to do the following steps:
 
@@ -25,7 +28,11 @@ docker build -t optuna-kubernetes-mlflow:example .
 kubectl apply -f k8s-manifest.yaml
 ```
 
-4. Track the progress of each worker by checking their logs:
+4. Track the study by checking MLflow dashboard:
+
+You can tell the IP address of MLflow dashboard via `minikube service mlflow --url`.
+
+Also, you can track the progress of each worker by checking their logs directly:
 
 ```bash
 kubectl logs worker-<pod id>
