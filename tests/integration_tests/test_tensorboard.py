@@ -25,7 +25,6 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
     sys.version_info > (3, 7), reason="Tensorflow is not installed for python 3.8."
 )
 def test_study_name() -> None:
-
     dirname = tempfile.mkdtemp()
     metric_name = "target"
     study_name = "test_tensorboard_integration"
