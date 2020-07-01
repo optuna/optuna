@@ -511,7 +511,10 @@ class _LightGBMBaseTuner(_BaseTuner):
         sampler: optuna.samplers.BaseSampler,
         step_name: str,
     ) -> _OptunaObjective:
-        pbar = tqdm.tqdm(total=n_trials, ascii=True)
+        if self.auto_options["verbosity"] == 0:
+            pbar = None
+        else:
+            pbar = tqdm.tqdm(total=n_trials, ascii=True)
 
         # Set current best parameters.
         self.lgbm_params.update(self.best_params)
@@ -548,8 +551,9 @@ class _LightGBMBaseTuner(_BaseTuner):
                 callbacks=self._optuna_callbacks,
             )
 
-        pbar.close()
-        del pbar
+        if pbar:
+            pbar.close()
+            del pbar
 
         return objective
 
@@ -559,7 +563,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         target_param_names: List[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: tqdm.tqdm,
+        pbar: Optional[tqdm.tqdm],
     ) -> _OptunaObjective:
 
         raise NotImplementedError
@@ -784,7 +788,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         target_param_names: List[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: tqdm.tqdm,
+        pbar: Optional[tqdm.tqdm],
     ) -> _OptunaObjective:
         return _OptunaObjective(
             target_param_names,
@@ -899,7 +903,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         target_param_names: List[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: tqdm.tqdm,
+        pbar: Optional[tqdm.tqdm],
     ) -> _OptunaObjective:
         return _OptunaObjectiveCV(
             target_param_names,
