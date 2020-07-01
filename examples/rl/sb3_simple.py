@@ -39,11 +39,7 @@ DEFAULT_HYPERPARAMS = {
 
 
 def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
-    """Sampler for A2C hyperparameters.
-
-    :param trial: (optuna.Trial)
-    :return: (Dict[str, Any])
-    """
+    """Sampler for A2C hyperparameters."""
     gamma = trial.suggest_categorical("gamma", [0.9, 0.95, 0.98, 0.99, 0.999, 0.9999])
     max_grad_norm = trial.suggest_categorical("max_grad_norm", [0.3, 0.5, 0.7, 0.9, 1, 2, 5])
     gae_lambda = trial.suggest_categorical("gae_lambda", [0.8, 0.9, 0.92, 0.95, 0.98, 0.99, 1.0])
@@ -105,7 +101,7 @@ class TrialEvalCallback(EvalCallback):
             self.eval_idx += 1
             self.trial.report(self.last_mean_reward, self.eval_idx)
             # Prune trial if need
-            if self.trial.should_prune(self.eval_idx):
+            if self.trial.should_prune():
                 self.is_pruned = True
                 return False
         return True
@@ -126,17 +122,21 @@ def objective(trial: optuna.Trial) -> float:
         eval_env, trial, n_eval_episodes=N_EVAL_EPISODES, eval_freq=EVAL_FREQ, deterministic=True
     )
 
+    nan_encountered = False
     try:
         model.learn(N_TIMESTEPS, callback=eval_callback)
     except AssertionError as e:
         # Sometimes, random hyperparams can generate NaN
-        # Prune hyperparams that generate NaNs
         print(e)
-        raise optuna.exceptions.TrialPruned()
+        nan_encountered = True
     finally:
         # Free memory
         model.env.close()
         eval_env.close()
+
+    # Tell the optimizer that the trial failed
+    if nan_encountered:
+        return float("nan")
 
     if eval_callback.is_pruned:
         raise optuna.exceptions.TrialPruned()
