@@ -435,7 +435,6 @@ class _LightGBMBaseTuner(_BaseTuner):
         if self.auto_options["verbosity"] == 0:
             optuna.logging.disable_default_handler()
             self.lgbm_params["verbose"] = -1
-            self.lgbm_params["seed"] = 111
             self.lgbm_kwargs["verbose_eval"] = False
 
         # Handling aliases.
