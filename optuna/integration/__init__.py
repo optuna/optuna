@@ -8,6 +8,7 @@ from optuna.type_checking import TYPE_CHECKING
 
 _import_structure = {
     "allennlp": ["AllenNLPExecutor"],
+    "catalyst": ["CatalystPruningCallback"],
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
     "cma": ["CmaEsSampler", "PyCmaSampler"],
@@ -31,6 +32,7 @@ __all__ = list(_import_structure.keys()) + sum(_import_structure.values(), [])
 
 if TYPE_CHECKING:
     from optuna.integration.allennlp import AllenNLPExecutor  # NOQA
+    from optuna.integration.catalyst import CatalystPruningCallback  # NOQA
     from optuna.integration.chainer import ChainerPruningExtension  # NOQA
     from optuna.integration.chainermn import ChainerMNStudy  # NOQA
     from optuna.integration.cma import CmaEsSampler  # NOQA
