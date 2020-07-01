@@ -37,7 +37,6 @@ from torchvision.transforms import ToTensor
 
 import optuna
 
-
 EPOCHS = 10
 TRAIN_BATCH_SIZE = 64
 VAL_BATCH_SIZE = 1000
@@ -90,6 +89,7 @@ def objective(trial):
     device = "cpu"
     if torch.cuda.is_available():
         device = "cuda"
+        model.cuda(device)
 
     optimizer = Adam(model.parameters())
     trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)

@@ -9,6 +9,7 @@ from optuna._imports import try_import
 from optuna import distributions
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
@@ -226,14 +227,13 @@ class PyCmaSampler(BaseSampler):
 
         x0 = {}
         for name, distribution in search_space.items():
-            # TODO(nzw0301) support IntLogUniform
             if isinstance(distribution, UniformDistribution):
                 x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, DiscreteUniformDistribution):
                 x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, IntUniformDistribution):
                 x0[name] = int(numpy.mean([distribution.high, distribution.low]))
-            elif isinstance(distribution, LogUniformDistribution):
+            elif isinstance(distribution, (LogUniformDistribution, IntLogUniformDistribution)):
                 log_high = math.log(distribution.high)
                 log_low = math.log(distribution.low)
                 x0[name] = math.exp(numpy.mean([log_high, log_low]))
@@ -252,14 +252,13 @@ class PyCmaSampler(BaseSampler):
 
         sigma0s = []
         for name, distribution in search_space.items():
-            # TODO(nzw0301) support IntLogUniform
             if isinstance(distribution, UniformDistribution):
                 sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, DiscreteUniformDistribution):
                 sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, IntUniformDistribution):
                 sigma0s.append((distribution.high - distribution.low) / 6)
-            elif isinstance(distribution, LogUniformDistribution):
+            elif isinstance(distribution, (LogUniformDistribution, IntLogUniformDistribution)):
                 log_high = math.log(distribution.high)
                 log_low = math.log(distribution.low)
                 sigma0s.append((log_high - log_low) / 6)
@@ -317,8 +316,11 @@ class _Optimizer(object):
                 lows.append(0 - 0.5 * dist.q)
                 highs.append(r + 0.5 * dist.q)
             elif isinstance(dist, IntUniformDistribution):
-                lows.append(dist.low - 0.5)
-                highs.append(dist.high + 0.5)
+                lows.append(dist.low - 0.5 * dist.step)
+                highs.append(dist.high + 0.5 * dist.step)
+            elif isinstance(dist, IntLogUniformDistribution):
+                lows.append(self._to_cma_params(search_space, param_name, dist.low - 0.5))
+                highs.append(self._to_cma_params(search_space, param_name, dist.high + 0.5))
             else:
                 raise NotImplementedError("The distribution {} is not implemented.".format(dist))
 
@@ -425,7 +427,7 @@ class _Optimizer(object):
         # type: (Dict[str, BaseDistribution], str, Any) -> float
 
         dist = search_space[param_name]
-        if isinstance(dist, LogUniformDistribution):
+        if isinstance(dist, (LogUniformDistribution, IntLogUniformDistribution)):
             return math.log(optuna_param_value)
         elif isinstance(dist, DiscreteUniformDistribution):
             return optuna_param_value - dist.low
@@ -447,7 +449,12 @@ class _Optimizer(object):
         if isinstance(dist, IntUniformDistribution):
             r = numpy.round((cma_param_value - dist.low) / dist.step)
             v = r * dist.step + dist.low
-            return v
+            return int(v)
+        if isinstance(dist, IntLogUniformDistribution):
+            exp_value = math.exp(cma_param_value)
+            v = numpy.round(exp_value)
+            return int(min(max(v, dist.low), dist.high))
+
         if isinstance(dist, CategoricalDistribution):
             v = int(numpy.round(cma_param_value))
             return dist.choices[v]

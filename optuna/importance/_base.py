@@ -7,7 +7,6 @@ from typing import Tuple
 
 import numpy as np
 
-from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.samplers import intersection_search_space
@@ -15,14 +14,13 @@ from optuna.study import Study
 from optuna.trial import TrialState
 
 
-@experimental("1.3.0")
 class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
     """Abstract parameter importance evaluator.
 
     """
 
     @abc.abstractmethod
-    def evaluate(self, study: Study, params: Optional[List[str]]) -> Dict[str, float]:
+    def evaluate(self, study: Study, params: Optional[List[str]] = None) -> Dict[str, float]:
         """Evaluate parameter importances based on completed trials in the given study.
 
         .. note::

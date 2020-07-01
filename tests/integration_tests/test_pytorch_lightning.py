@@ -85,8 +85,8 @@ def test_pytorch_lightning_pruning_callback():
             early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="accuracy"),
             min_epochs=0,  # Required to fire the callback after the first epoch.
             max_epochs=2,
+            checkpoint_callback=False,
         )
-        trainer.checkpoint_callback = None  # Disable unrelated checkpoint callbacks.
 
         model = Model()
         trainer.fit(model)

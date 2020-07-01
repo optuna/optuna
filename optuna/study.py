@@ -480,7 +480,6 @@ class Study(BaseStudy):
 
         return df
 
-    @experimental("1.4.0")
     def stop(self) -> None:
 
         """Exit from the current optimization loop after the running trials finish.

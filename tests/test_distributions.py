@@ -19,7 +19,7 @@ EXAMPLE_DISTRIBUTIONS = {
     "iu": distributions.IntUniformDistribution(low=1, high=9, step=2),
     "c1": distributions.CategoricalDistribution(choices=(2.71, -float("inf"))),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
-    "ilu": distributions.IntLogUniformDistribution(low=2, high=12),
+    "ilu": distributions.IntLogUniformDistribution(low=2, high=12, step=2),
 }  # type: Dict[str, Any]
 
 EXAMPLE_JSONS = {
@@ -30,7 +30,8 @@ EXAMPLE_JSONS = {
     "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 9, "step": 2}}',
     "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
-    "ilu": '{"name": "IntLogUniformDistribution", "attributes": {"low": 2, "high": 12}}',
+    "ilu": '{"name": "IntLogUniformDistribution", '
+    '"attributes": {"low": 2, "high": 12, "step": 2}}',
 }
 
 
@@ -358,12 +359,34 @@ def test_int_uniform_distribution_asdict():
 def test_int_log_uniform_distribution_asdict():
     # type: () -> None
 
-    assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12}
+    assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12, "step": 2}
 
 
 def test_int_log_uniform_distribution_deprecation():
     # type: () -> None
 
     # step != 1 is deprecated
+
+    d = distributions.IntLogUniformDistribution(low=1, high=100)
+
     with pytest.warns(FutureWarning):
-        distributions.IntLogUniformDistribution(low=1, high=100, step=2)
+        # `step` should always be assumed to be 1 and samplers and other components should never
+        # have to get/set the attribute.
+        assert d.step == 1
+
+    with pytest.warns(FutureWarning):
+        d.step = 2
+
+    with pytest.warns(FutureWarning):
+        d = distributions.IntLogUniformDistribution(low=1, high=100, step=2)
+
+    with pytest.warns(FutureWarning):
+        assert d.step == 2
+
+    with pytest.warns(FutureWarning):
+        d.step = 1
+        assert d.step == 1
+
+    with pytest.warns(FutureWarning):
+        d.step = 2
+        assert d.step == 2
