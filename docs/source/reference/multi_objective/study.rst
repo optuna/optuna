@@ -1,11 +1,10 @@
-.. module:: optuna.multi_objective.study
-
 optuna.multi_objective.study
 ============================
 
-.. autoclass:: MultiObjectiveStudy
-    :members:
-    :exclude-members: system_attrs, set_system_attr
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autofunction:: create_study
-.. autofunction:: load_study
+   optuna.multi_objective.study.MultiObjectiveStudy
+   optuna.multi_objective.study.create_study
+   optuna.multi_objective.study.load_study

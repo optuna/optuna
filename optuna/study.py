@@ -812,6 +812,9 @@ def create_study(
     Returns:
         A :class:`~optuna.study.Study` object.
 
+    See also:
+        :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
+
     """
 
     storage = storages.get_storage(storage)
@@ -868,6 +871,9 @@ def load_study(
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
 
+    See also:
+        :func:`optuna.load_study` is an alias of :func:`optuna.study.load_study`.
+
     """
 
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
@@ -887,6 +893,9 @@ def delete_study(
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
             :func:`~optuna.study.create_study` for further details.
 
+    See also:
+        :func:`optuna.delete_study` is an alias of :func:`optuna.study.delete_study`.
+
     """
 
     storage = storages.get_storage(storage)
@@ -905,6 +914,10 @@ def get_all_study_summaries(storage):
 
     Returns:
         List of study history summarized as :class:`~optuna.study.StudySummary` objects.
+
+    See also:
+        :func:`optuna.get_all_study_summaries` is an alias of
+        :func:`optuna.study.get_all_study_summaries`.
 
     """
 
