@@ -104,7 +104,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             ]
             if sys.version_info[:2] < (3, 8)
             else []
-        ),
+        )
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
         "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -133,6 +134,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
         )
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
         + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
         + (
             ["keras<2.4.0", "tensorflow", "tensorflow-datasets"]
