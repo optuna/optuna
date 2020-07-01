@@ -128,7 +128,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - python
-            - keras_distributed.py
+            - pytorch_lightning_distributed.py
           envFrom:
             - secretRef:
                 name: postgres-secrets
