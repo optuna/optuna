@@ -108,8 +108,7 @@ class LightningNet(pl.LightningModule):
         data, target = batch
         output = self.forward(data)
         pred = output.argmax(dim=1, keepdim=True)
-        correct = pred.eq(target.view_as(pred)).sum().item()
-        accuracy = correct / data.size(0)
+        accuracy = pred.eq(target.view_as(pred)).float().mean()
         return {"batch_val_acc": accuracy}
 
     def validation_epoch_end(self, outputs):
@@ -150,7 +149,7 @@ def objective(trial):
         val_percent_check=PERCENT_VALID_EXAMPLES,
         checkpoint_callback=checkpoint_callback,
         max_epochs=EPOCHS,
-        gpus=0 if torch.cuda.is_available() else None,
+        gpus=1 if torch.cuda.is_available() else None,
         callbacks=[metrics_callback],
         early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="val_acc"),
     )
@@ -158,7 +157,7 @@ def objective(trial):
     model = LightningNet(trial)
     trainer.fit(model)
 
-    return metrics_callback.metrics[-1]["val_acc"]
+    return metrics_callback.metrics[-1]["val_acc"].item()
 
 
 if __name__ == "__main__":

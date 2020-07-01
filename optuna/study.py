@@ -216,7 +216,7 @@ class Study(BaseStudy):
         n_jobs=1,  # type: int
         catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
         callbacks=None,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial=True,  # type: bool
+        gc_after_trial=False,  # type: bool
         show_progress_bar=False,  # type: bool
     ):
         # type: (...) -> None
@@ -253,9 +253,16 @@ class Study(BaseStudy):
                 must accept two parameters with the following types in this order:
                 :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
             gc_after_trial:
-                Flag to execute garbage collection at the end of each trial. By default, garbage
-                collection is enabled, just in case. You can turn it off with this argument if
-                memory is safely managed in your objective function.
+                Flag to determine whether to automatically run garbage collection after each trial.
+                Set to :obj:`True` to run the garbage collection, :obj:`False` otherwise.
+                When it runs, it runs a full collection by internally calling :func:`gc.collect`.
+                If you see an increase in memory consumption over several trials, try setting this
+                flag to :obj:`True`.
+
+                .. seealso::
+
+                    :ref:`out-of-memory-gc-collect`
+
             show_progress_bar:
                 Flag to show progress bars or not. To disable progress bar, set this ``False``.
                 Currently, progress bar is experimental feature and disabled
@@ -288,7 +295,6 @@ class Study(BaseStudy):
                 if show_progress_bar:
                     msg = "Progress bar only supports serial execution (`n_jobs=1`)."
                     warnings.warn(msg)
-                    _logger.warning(msg)
 
                 time_start = datetime.datetime.now()
 
@@ -319,7 +325,6 @@ class Study(BaseStudy):
                             "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html."
                         )
                         warnings.warn(msg, UserWarning)
-                        _logger.warning(msg)
 
                     parallel(
                         delayed(self._reseed_and_optimize_sequential)(
@@ -476,7 +481,6 @@ class Study(BaseStudy):
 
         return df
 
-    @experimental("1.4.0")
     def stop(self) -> None:
 
         """Exit from the current optimization loop after the running trials finish.
@@ -761,8 +765,10 @@ class Study(BaseStudy):
 
         return trial
 
-    def _log_completed_trial(self, trial, result):
-        # type: (trial_module.Trial, float) -> None
+    def _log_completed_trial(self, trial: trial_module.Trial, result: float) -> None:
+
+        if not _logger.isEnabledFor(logging.INFO):
+            return
 
         _logger.info(
             "Trial {} finished with value: {} and parameters: {}. "
@@ -823,6 +829,9 @@ def create_study(
     Returns:
         A :class:`~optuna.study.Study` object.
 
+    See also:
+        :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
+
     """
 
     storage = storages.get_storage(storage)
@@ -879,6 +888,9 @@ def load_study(
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
 
+    See also:
+        :func:`optuna.load_study` is an alias of :func:`optuna.study.load_study`.
+
     """
 
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
@@ -898,6 +910,9 @@ def delete_study(
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
             :func:`~optuna.study.create_study` for further details.
 
+    See also:
+        :func:`optuna.delete_study` is an alias of :func:`optuna.study.delete_study`.
+
     """
 
     storage = storages.get_storage(storage)
@@ -916,6 +931,10 @@ def get_all_study_summaries(storage):
 
     Returns:
         List of study history summarized as :class:`~optuna.study.StudySummary` objects.
+
+    See also:
+        :func:`optuna.get_all_study_summaries` is an alias of
+        :func:`optuna.study.get_all_study_summaries`.
 
     """
 

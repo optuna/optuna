@@ -1,13 +1,14 @@
 import abc
+import copy
 import decimal
 import json
+from typing import Dict
 import warnings
 
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
-    from typing import Dict  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
@@ -311,12 +312,6 @@ class IntLogUniformDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
     :mod:`~optuna.samplers` in general.
 
-    .. note::
-        If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by
-        :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced with the maximum of
-        :math:`k \\times \\mathsf{step} + \\mathsf{low} \\lt \\mathsf{high}`, where :math:`k` is
-        an integer.
-
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
@@ -324,6 +319,16 @@ class IntLogUniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
         step:
             A step for spacing between values.
+
+            .. warning::
+                Deprecated in v2.0.0. ``step`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v4.0.0,
+                but this schedule is subject to change.
+
+                Samplers and other components in Optuna relying on this distribution will ignore
+                this value and assume that ``step`` is always 1.
+                User-defined samplers may continue to use other values besides 1 during the
+                deprecation.
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
@@ -333,45 +338,61 @@ class IntLogUniformDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
-        if step <= 0:
-            raise ValueError(
-                "The `step` value must be non-zero positive value, but step={}.".format(step)
-            )
-
         if low < 1.0:
             raise ValueError(
                 "The `low` value must be equal to or greater than 1 for a log distribution "
                 "(low={}, high={}).".format(low, high)
             )
 
-        high = _adjust_int_uniform_high(low, high, step)
+        if step != 1:
+            self._warn_step()
 
         self.low = low
         self.high = high
-        self.step = step
+        self._step = step
 
-    def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> int
+    def __repr__(self) -> str:
+        # TODO(hvy): `BaseDistribution.__repr__` could rely on `_asdict` instead of `__dict__`.
+        # `IntLogUniformDistribution` would not have to override `__repr__`.
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
 
+    def _asdict(self) -> Dict:
+        d = copy.copy(self.__dict__)
+        d["step"] = d.pop("_step")
+        return d
+
+    def _warn_step(self) -> None:
+        warnings.warn(
+            "Samplers and other components in Optuna will assume that `step` is 1. "
+            "`step` argument is deprecated and will be removed in the future. "
+            "The removal of this feature is currently scheduled for v4.0.0, "
+            "but this schedule is subject to change.",
+            FutureWarning,
+        )
+
+    def to_external_repr(self, param_value_in_internal_repr: float) -> int:
         return int(param_value_in_internal_repr)
 
-    def to_internal_repr(self, param_value_in_external_repr):
-        # type: (int) -> float
-
+    def to_internal_repr(self, param_value_in_external_repr: int) -> float:
         return float(param_value_in_external_repr)
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
+        return self.low == self.high
 
-        if self.low == self.high:
-            return True
-        return (self.high - self.low) < self.step
-
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
-
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
         value = param_value_in_internal_repr
         return self.low <= value <= self.high
+
+    @property
+    def step(self) -> int:
+        self._warn_step()
+        return self._step
+
+    @step.setter
+    def step(self, value: int) -> None:
+        self._warn_step()
+        self._step = value
 
 
 class CategoricalDistribution(BaseDistribution):

@@ -1,28 +1,14 @@
-.. module:: optuna.samplers
+optuna.samplers
+===============
 
-Samplers
-========
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autoclass:: BaseSampler
-    :members:
-
-.. autoclass:: GridSampler
-    :members:
-    :exclude-members: infer_relative_search_space, sample_relative, sample_independent
-
-.. autoclass:: RandomSampler
-    :members:
-    :exclude-members: infer_relative_search_space, sample_relative, sample_independent
-
-.. autoclass:: TPESampler
-    :members:
-    :exclude-members: infer_relative_search_space, sample_relative, sample_independent
-
-.. autoclass:: CmaEsSampler
-    :members:
-    :exclude-members: infer_relative_search_space, sample_relative, sample_independent
-
-.. autoclass:: IntersectionSearchSpace
-    :members:
-
-.. autofunction:: intersection_search_space
+   optuna.samplers.BaseSampler
+   optuna.samplers.GridSampler
+   optuna.samplers.RandomSampler
+   optuna.samplers.TPESampler
+   optuna.samplers.CmaEsSampler
+   optuna.samplers.IntersectionSearchSpace
+   optuna.samplers.intersection_search_space

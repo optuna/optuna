@@ -1,4 +1,6 @@
+from typing import List
 from unittest.mock import call
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -13,6 +15,11 @@ from optuna.trial import FrozenTrial
 if optuna.type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
+
+
+def test_consider_pruned_trials_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.integration.SkoptSampler(consider_pruned_trials=True)
 
 
 def test_conversion_from_distribution_to_dimension():
@@ -181,6 +188,44 @@ def test_sample_relative_n_startup_trials():
         study.optimize(lambda t: t.suggest_int("x", -1, 1) + t.suggest_int("y", -1, 1), n_trials=3)
         assert mock_independent.call_count == 4  # The objective function has two parameters.
         assert mock_relative.call_count == 3
+
+
+def test_get_trials() -> None:
+
+    with patch("optuna.Study.get_trials", new=Mock(side_effect=lambda deepcopy: _create_trials())):
+        sampler = optuna.integration.SkoptSampler(consider_pruned_trials=False)
+        study = optuna.create_study(sampler=sampler)
+        trials = sampler._get_trials(study)
+        assert len(trials) == 1
+
+        sampler = optuna.integration.SkoptSampler(consider_pruned_trials=True)
+        study = optuna.create_study(sampler=sampler)
+        trials = sampler._get_trials(study)
+        assert len(trials) == 2
+        assert trials[0].value == 1.0
+        assert trials[1].value == 2.0
+
+
+def _create_trials() -> List[FrozenTrial]:
+
+    trials = []
+    trials.append(_create_frozen_trial({}, {}))
+    trials.append(
+        FrozenTrial(
+            number=1,
+            value=None,
+            state=optuna.trial.TrialState.PRUNED,
+            user_attrs={},
+            system_attrs={},
+            params={},
+            distributions={},
+            intermediate_values={0: 2.0},
+            datetime_start=None,
+            datetime_complete=None,
+            trial_id=0,
+        )
+    )
+    return trials
 
 
 def _create_frozen_trial(params, param_distributions):

@@ -1,22 +1,12 @@
-.. module:: optuna.exceptions
+optuna.exceptions
+=================
 
-Exceptions
-==========
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autoclass:: OptunaError
-    :members:
-
-.. autoclass:: TrialPruned
-    :members:
-
-.. seealso::
-    The alias also exists as :class:`optuna.TrialPruned`.
-
-.. autoclass:: CLIUsageError
-    :members:
-
-.. autoclass:: StorageInternalError
-    :members:
-
-.. autoclass:: DuplicatedStudyError
-    :members:
+   optuna.exceptions.OptunaError
+   optuna.exceptions.TrialPruned
+   optuna.exceptions.CLIUsageError
+   optuna.exceptions.StorageInternalError
+   optuna.exceptions.DuplicatedStudyError

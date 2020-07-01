@@ -38,7 +38,7 @@ def test_population_size() -> None:
 
     with pytest.raises(TypeError):
         # Not an integer.
-        multi_objective.samplers.NSGAIIMultiObjectiveSampler(population_size=2.5)
+        multi_objective.samplers.NSGAIIMultiObjectiveSampler(population_size=2.5)  # type: ignore
 
 
 def test_mutation_prob() -> None:

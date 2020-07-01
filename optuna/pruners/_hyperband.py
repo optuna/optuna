@@ -4,7 +4,6 @@ from typing import Optional
 from typing import Union
 
 import optuna
-from optuna._experimental import experimental
 from optuna import logging
 from optuna.pruners._base import BasePruner
 from optuna.pruners._successive_halving import SuccessiveHalvingPruner
@@ -13,7 +12,6 @@ from optuna.trial._state import TrialState
 _logger = logging.get_logger(__name__)
 
 
-@experimental("1.1.0")
 class HyperbandPruner(BasePruner):
     """Pruner using Hyperband.
 

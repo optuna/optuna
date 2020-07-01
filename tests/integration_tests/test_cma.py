@@ -11,6 +11,7 @@ import optuna
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
@@ -22,11 +23,16 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-class TestCmaEsSampler(object):
+def test_cmaes_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning):
+        optuna.integration.CmaEsSampler()
+
+
+class TestPyCmaSampler(object):
     @staticmethod
     def test_init_cma_opts() -> None:
 
-        sampler = optuna.integration.CmaEsSampler(
+        sampler = optuna.integration.PyCmaSampler(
             x0={"x": 0, "y": 0},
             sigma0=0.1,
             cma_stds={"x": 1, "y": 1},
@@ -55,7 +61,7 @@ class TestCmaEsSampler(object):
     @staticmethod
     def test_init_default_values() -> None:
 
-        sampler = optuna.integration.CmaEsSampler()
+        sampler = optuna.integration.PyCmaSampler()
         seed = sampler._cma_opts.get("seed")
         assert isinstance(seed, int)
         assert 0 < seed
@@ -64,7 +70,7 @@ class TestCmaEsSampler(object):
 
     @staticmethod
     def test_reseed_rng() -> None:
-        sampler = optuna.integration.CmaEsSampler()
+        sampler = optuna.integration.PyCmaSampler()
         original_seed = sampler._cma_opts["seed"]
         sampler._independent_sampler.reseed_rng()
 
@@ -80,7 +86,7 @@ class TestCmaEsSampler(object):
     @staticmethod
     def test_infer_relative_search_space_1d() -> None:
 
-        sampler = optuna.integration.CmaEsSampler()
+        sampler = optuna.integration.PyCmaSampler()
         study = optuna.create_study(sampler=sampler)
 
         # The distribution has only one candidate.
@@ -91,7 +97,7 @@ class TestCmaEsSampler(object):
     def test_sample_relative_1d() -> None:
 
         independent_sampler = DeterministicRelativeSampler({}, {})
-        sampler = optuna.integration.CmaEsSampler(independent_sampler=independent_sampler)
+        sampler = optuna.integration.PyCmaSampler(independent_sampler=independent_sampler)
         study = optuna.create_study(sampler=sampler)
 
         # If search space is one dimensional, the independent sampler is always used.
@@ -105,7 +111,7 @@ class TestCmaEsSampler(object):
     def test_sample_relative_n_startup_trials() -> None:
 
         independent_sampler = DeterministicRelativeSampler({}, {})
-        sampler = optuna.integration.CmaEsSampler(
+        sampler = optuna.integration.PyCmaSampler(
             n_startup_trials=2, independent_sampler=independent_sampler
         )
         study = optuna.create_study(sampler=sampler)
@@ -127,13 +133,13 @@ class TestCmaEsSampler(object):
     def test_initialize_x0_with_unsupported_distribution() -> None:
 
         with pytest.raises(NotImplementedError):
-            optuna.integration.CmaEsSampler._initialize_x0({"x": UnsupportedDistribution()})
+            optuna.integration.PyCmaSampler._initialize_x0({"x": UnsupportedDistribution()})
 
     @staticmethod
     def test_initialize_sigma0_with_unsupported_distribution() -> None:
 
         with pytest.raises(NotImplementedError):
-            optuna.integration.CmaEsSampler._initialize_sigma0({"x": UnsupportedDistribution()})
+            optuna.integration.PyCmaSampler._initialize_sigma0({"x": UnsupportedDistribution()})
 
 
 class TestOptimizer(object):
@@ -146,6 +152,7 @@ class TestOptimizer(object):
             "d": DiscreteUniformDistribution(-1, 9, 2),
             "i": IntUniformDistribution(-1, 1),
             "ii": IntUniformDistribution(-1, 3, 2),
+            "il": IntLogUniformDistribution(2, 16),
             "l": LogUniformDistribution(0.001, 0.1),
             "u": UniformDistribution(-2, 2),
         }
@@ -159,6 +166,7 @@ class TestOptimizer(object):
             "d": -1,
             "i": -1,
             "ii": -1,
+            "il": 2,
             "l": 0.001,
             "u": -2,
         }
@@ -171,13 +179,13 @@ class TestOptimizer(object):
                 search_space, x0, 0.2, None, {"popsize": 5, "seed": 1}
             )
             assert mock_obj.mock_calls[0] == call(
-                [0, 0, -1, -1, math.log(0.001), -2],
+                [0, 0, -1, -1, math.log(2), math.log(0.001), -2],
                 0.2,
                 {
                     "BoundaryHandler": cma.BoundTransform,
                     "bounds": [
-                        [-0.5, -1.0, -1.5, -1.5, math.log(0.001), -2],
-                        [1.5, 11.0, 1.5, 3.5, math.log(0.1), 2],
+                        [-0.5, -1.0, -1.5, -2.0, math.log(1.5), math.log(0.001), -2,],
+                        [1.5, 11.0, 1.5, 4.0, math.log(16.5), math.log(0.1), 2],
                     ],
                     "popsize": 5,
                     "seed": 1,

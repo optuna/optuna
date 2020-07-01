@@ -1,8 +1,7 @@
-import gc
 from typing import Optional
+import warnings
 
 from optuna._imports import try_import
-from optuna.logging import get_logger
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.trial import BaseTrial
@@ -90,8 +89,7 @@ class ChainerMNStudy(object):
 
         if isinstance(study._storage, RDBStorage):
             if study._storage.engine.dialect.name == "sqlite":
-                logger = get_logger(__name__)
-                logger.warning(
+                warnings.warn(
                     "SQLite may cause synchronization problems when used with "
                     "ChainerMN integration. Please use other DBs like PostgreSQL."
                 )
@@ -119,11 +117,13 @@ class ChainerMNStudy(object):
 
         if self.comm.rank == 0:
             func_mn = _ChainerMNObjectiveFunc(func, self.comm)
-            self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
-            self.comm.mpi_comm.bcast(False)
+            try:
+                self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
+            finally:
+                self.comm.mpi_comm.bcast(False)
         else:
+            has_next_trial = self.comm.mpi_comm.bcast(None)
             while True:
-                has_next_trial = self.comm.mpi_comm.bcast(None)
                 if not has_next_trial:
                     break
                 try:
@@ -139,11 +139,7 @@ class ChainerMNStudy(object):
                 except catch:
                     pass
                 finally:
-                    # The following line mitigates memory problems that can be occurred in some
-                    # environments (e.g., services that use computing containers such as CircleCI).
-                    # Please refer to the following PR for further details:
-                    # https://github.com/optuna/optuna/pull/325.
-                    gc.collect()
+                    has_next_trial = self.comm.mpi_comm.bcast(None)
 
     def __getattr__(self, attr_name):
         # type: (str) -> Any
