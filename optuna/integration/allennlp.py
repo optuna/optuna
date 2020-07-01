@@ -59,8 +59,8 @@ class AllenNLPExecutor(object):
 
     .. note::
         In :class:`~optuna.integration.AllenNLPExecutor`,
-        you can pass parameter to AllenNLP by either defining a search space using
-        Optuna suggest methods or setting a environment variable just like AllenNLP cli.
+        you can pass parameters to AllenNLP by either defining a search space using
+        Optuna suggest methods or setting environment variables just like AllenNLP CLI.
         If a value is set in both a search space in Optuna and the environment variables,
         the executor will use the value specified in the search space in Optuna.
 
