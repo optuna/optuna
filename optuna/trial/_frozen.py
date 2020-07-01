@@ -212,7 +212,7 @@ def create_trial(
     system_attrs: Optional[Dict[str, Any]] = None,
     intermediate_values: Optional[Dict[int, float]] = None
 ) -> FrozenTrial:
-    """Create a trial.
+    """Create a new :class:`~optuna.trial.FrozenTrial`.
 
     Example:
 
