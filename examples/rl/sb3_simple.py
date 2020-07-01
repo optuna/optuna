@@ -57,7 +57,7 @@ def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
 
     net_arch = [
         {"pi": [64], "vf": [64]} if net_arch == "tiny" else {"pi": [64, 64], "vf": [64, 64]}
-     ]
+    ]
 
     activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU,}[activation_fn]
 
@@ -172,4 +172,8 @@ if __name__ == "__main__":
 
     print("  Params: ")
     for key, value in trial.params.items():
+        print("    {}: {}".format(key, value))
+
+    print("  User attrs:")
+    for key, value in trial.user_attrs.items():
         print("    {}: {}".format(key, value))
