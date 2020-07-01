@@ -69,7 +69,7 @@ jobs:
       - run:
           name: install
           command: |
-            python -m venv venv || virtualenv venv --python=python3
+            python -m venv venv || virtualenv venv --python=python3.8
             . venv/bin/activate
             pip install -U pip
             pip install --progress-bar off .[document]
