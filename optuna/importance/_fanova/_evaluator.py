@@ -45,6 +45,11 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         cover a wide range of the hyperparameter search space. It is recommended to use an
         exploration-oriented sampler such as :class:`~optuna.samplers.RandomSampler`.
 
+    .. note::
+
+        For how to cite the original work, please refer to
+        https://automl.github.io/fanova/cite.html.
+
     Args:
         n_trees:
             The number of trees in the forest.

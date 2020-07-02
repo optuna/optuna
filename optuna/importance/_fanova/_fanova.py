@@ -1,6 +1,7 @@
 """An implementation of `An Efficient Approach for Assessing Hyperparameter Importance`.
 
-See http://proceedings.mlr.press/v32/hutter14.pdf.
+See http://proceedings.mlr.press/v32/hutter14.pdf and https://automl.github.io/fanova/cite.html
+for how to cite the original work.
 
 This implementation is inspired by the efficient algorithm in
 `fanova` (https://github.com/automl/fanova) and
