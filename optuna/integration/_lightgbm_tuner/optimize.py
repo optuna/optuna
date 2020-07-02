@@ -363,6 +363,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
         self._start_time = None  # type: Optional[float]
+        self._use_pbar = True
         self._optuna_callbacks = optuna_callbacks
         self._best_params = {}
 
@@ -436,6 +437,7 @@ class _LightGBMBaseTuner(_BaseTuner):
             optuna.logging.disable_default_handler()
             self.lgbm_params["verbose"] = -1
             self.lgbm_kwargs["verbose_eval"] = False
+            self._use_pbar = False
 
         # Handling aliases.
         _handling_alias_parameters(self.lgbm_params)
@@ -511,10 +513,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         sampler: optuna.samplers.BaseSampler,
         step_name: str,
     ) -> _OptunaObjective:
-        if self.auto_options["verbosity"] == 0:
-            pbar = None
-        else:
-            pbar = tqdm.tqdm(total=n_trials, ascii=True)
+        pbar = tqdm.tqdm(total=n_trials, ascii=True) if self._use_pbar else None
 
         # Set current best parameters.
         self.lgbm_params.update(self.best_params)
