@@ -7,6 +7,7 @@ optuna.integration
 
    optuna.integration.ChainerPruningExtension
    optuna.integration.ChainerMNStudy 
+   optuna.integration.CatalystPruningCallback
    optuna.integration.PyCmaSampler
    optuna.integration.CmaEsSampler
    optuna.integration.FastAIPruningCallback
