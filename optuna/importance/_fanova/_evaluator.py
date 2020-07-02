@@ -5,7 +5,6 @@ from typing import Optional
 
 import numpy
 
-from optuna._experimental import experimental
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
