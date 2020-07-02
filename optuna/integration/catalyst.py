@@ -2,6 +2,7 @@ from typing import Any  # NOQA
 
 import optuna
 
+from optuna._experimental import experimental
 from optuna._imports import try_import
 
 with try_import() as _imports:
@@ -11,6 +12,7 @@ if not _imports.is_successful():
     Callback = object  # NOQA
 
 
+@experimental("2.0.0")
 class CatalystPruningCallback(Callback):
     """Catalyst callback to prune unpromising trials.
 
