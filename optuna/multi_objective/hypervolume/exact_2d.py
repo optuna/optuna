@@ -1,6 +1,7 @@
 import numpy as np
 
 from optuna.multi_objective.hypervolume import BaseHypervolume
+from optuna.multi_objective.hypervolume import compute_2points_volume
 
 
 class Exact2d(BaseHypervolume):
@@ -13,18 +14,22 @@ class Exact2d(BaseHypervolume):
         pass
 
     def compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
-        assert solution_set.ndim == 2
-        assert reference_point.ndim == 1
+        self._validate(solution_set, reference_point)
 
-        if solution_set.shape == (1, 0):
-            return 0.
+        if reference_point.shape != (2,):
+            raise ValueError("The dimension of given all points must be 2.")
 
-        assert all(
-            [solution_set[i].ndim == solution_set[0].ndim for i in range(solution_set.ndim)]
+        if solution_set.shape[0] == 1:
+            return compute_2points_volume(solution_set[0], reference_point)
+
+        sorted(solution_set, key=lambda p: p[1])
+
+        weights = np.asarray(
+            [
+                reference_point[0] - np.min(solution_set[: i + 1, 0])
+                for i in range(len(solution_set))
+            ]
         )
-        assert solution_set[0].shape == reference_point.shape
-        assert reference_point.shape == (2,)
-
-        weights = np.asarray([reference_point[0] - np.min(solution_set[:i+1, 0]) for i in range(len(solution_set))])
-        hypervolume = float(np.sum(weights * solution_set[:, 1]))
-        return hypervolume
+        edges = np.hstack([solution_set[1:, 1], reference_point[1]]) - solution_set[:, 1]
+        v = float(np.sum(weights * edges))
+        return v
