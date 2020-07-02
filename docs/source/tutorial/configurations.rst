@@ -72,7 +72,7 @@ The difficulty of optimization increases roughly exponentially with regard to th
 Arguments for `Study.optimize`
 --------------------------------
 
-The method :func:`~optuna.study.Study.optimize` (and ``optuna study optimize`` CLI command as well)
+The method :func:`~optuna.study.Study.optimize`
 has several useful options such as ``timeout``.
 For details, please refer to the API reference for :func:`~optuna.study.Study.optimize`.
 

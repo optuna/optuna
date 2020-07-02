@@ -247,28 +247,6 @@ The behavior when altered is defined by each sampler individually.
     Discussion about the TPE sampler. https://github.com/optuna/optuna/issues/822
 
 
-How can I use two GPUs for evaluating two trials simultaneously?
-----------------------------------------------------------------
-
-If your optimization target supports GPU (CUDA) acceleration and you want to specify which GPU is used, the easiest way is to set ``CUDA_VISIBLE_DEVICES`` environment variable:
-
-.. code-block:: bash
-
-    # On a terminal.
-    #
-    # Specify to use the first GPU, and run an optimization.
-    $ export CUDA_VISIBLE_DEVICES=0
-    $ optuna study optimize foo.py objective --study-name foo --storage sqlite:///example.db
-
-    # On another terminal.
-    #
-    # Specify to use the second GPU, and run another optimization.
-    $ export CUDA_VISIBLE_DEVICES=1
-    $ optuna study optimize bar.py objective --study-name bar --storage sqlite:///example.db
-
-Please refer to `CUDA C Programming Guide <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_ for further details.
-
-
 How can I test my objective functions?
 --------------------------------------
 
