@@ -5,7 +5,7 @@ Annealing itself.
 
 Note that this implementation isn't intended to be used for production purposes and
 has the following limitations:
-- The sampler only supports `UniformDistribution` (i.e., `Trial.suggest_uniform` method).
+- The sampler only supports `UniformDistribution` (i.e., `Trial.suggest_float` method).
 - The implementation prioritizes simplicity over optimization efficiency.
 
 You can run this example as follows:
@@ -110,8 +110,8 @@ class SimulatedAnnealingSampler(BaseSampler):
 
 # Define a simple 2-dimensional objective function whose minimum value is -1 when (x, y) = (0, -1).
 def objective(trial):
-    x = trial.suggest_uniform("x", -100, 100)
-    y = trial.suggest_uniform("y", -1, 1)
+    x = trial.suggest_float("x", -100, 100)
+    y = trial.suggest_float("y", -1, 1)
     return x ** 2 + y
 
 

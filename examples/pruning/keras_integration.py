@@ -41,7 +41,7 @@ def create_model(trial):
     for i in range(n_layers):
         num_hidden = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
         model.add(Dense(num_hidden, activation="relu"))
-        dropout = trial.suggest_uniform("dropout_l{}".format(i), 0.2, 0.5)
+        dropout = trial.suggest_float("dropout_l{}".format(i), 0.2, 0.5)
         model.add(Dropout(rate=dropout))
     model.add(Dense(CLASSES, activation="softmax"))
 

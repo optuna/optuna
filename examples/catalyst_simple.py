@@ -43,7 +43,7 @@ class Net(nn.Module):
 
         # We optimize the number of layers, hidden units in each layer and dropouts.
         n_layers = trial.suggest_int("n_layers", 1, 3)
-        dropout = trial.suggest_uniform("dropout", 0.2, 0.5)
+        dropout = trial.suggest_float("dropout", 0.2, 0.5)
         input_dim = 28 * 28
         for i in range(n_layers):
             output_dim = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))

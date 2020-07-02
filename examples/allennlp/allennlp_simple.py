@@ -82,7 +82,7 @@ def create_model(vocab, trial):
         output_dim=output_dim,
     )
 
-    dropout = trial.suggest_uniform("dropout", 0, 0.5)
+    dropout = trial.suggest_float("dropout", 0, 0.5)
     model = allennlp.models.BasicClassifier(
         text_field_embedder=embedder, seq2vec_encoder=encoder, dropout=dropout, vocab=vocab,
     )

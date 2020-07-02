@@ -62,7 +62,7 @@ def create_optimizer(trial):
     optimizer_selected = trial.suggest_categorical("optimizer", optimizer_options)
     if optimizer_selected == "RMSprop":
         kwargs["learning_rate"] = trial.suggest_loguniform("rmsprop_learning_rate", 1e-5, 1e-1)
-        kwargs["decay"] = trial.suggest_uniform("rmsprop_decay", 0.85, 0.99)
+        kwargs["decay"] = trial.suggest_float("rmsprop_decay", 0.85, 0.99)
         kwargs["momentum"] = trial.suggest_loguniform("rmsprop_momentum", 1e-5, 1e-1)
     elif optimizer_selected == "Adam":
         kwargs["learning_rate"] = trial.suggest_loguniform("adam_learning_rate", 1e-5, 1e-1)

@@ -41,7 +41,7 @@ def objective(trial):
             do_flip=False,
             flip_vert=False,
             max_rotate=trial.suggest_int("max_rotate", -45, 45),
-            max_zoom=trial.suggest_uniform("max_zoom", 1, 2),
+            max_zoom=trial.suggest_float("max_zoom", 1, 2),
             p_affine=trial.suggest_discrete_uniform("p_affine", 0.1, 1.0, 0.1),
         )
     data = vision.ImageDataBunch.from_folder(

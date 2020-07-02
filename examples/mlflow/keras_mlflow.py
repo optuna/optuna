@@ -51,7 +51,7 @@ def create_model(num_features, trial):
 
     optimizer = SGD(
         lr=trial.suggest_loguniform("lr", 1e-5, 1e-1),
-        momentum=trial.suggest_uniform("momentum", 0.0, 1.0),
+        momentum=trial.suggest_float("momentum", 0.0, 1.0),
     )
     model.compile(loss="mean_squared_error", optimizer=optimizer)
     return model
