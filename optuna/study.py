@@ -214,7 +214,7 @@ class Study(BaseStudy):
         n_trials=None,  # type: Optional[int]
         timeout=None,  # type: Optional[float]
         n_jobs=1,  # type: int
-        catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        catch=(),  # type: Tuple[Type[Exception], ...]
         callbacks=None,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
         gc_after_trial=False,  # type: bool
         show_progress_bar=False,  # type: bool
@@ -608,7 +608,7 @@ class Study(BaseStudy):
         func,  # type: ObjectiveFuncType
         n_trials,  # type: Optional[int]
         timeout,  # type: Optional[float]
-        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        catch,  # type: Tuple[Type[Exception], ...]
         callbacks,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
         gc_after_trial,  # type: bool
         time_start,  # type: Optional[datetime.datetime]
@@ -625,7 +625,7 @@ class Study(BaseStudy):
         func,  # type: ObjectiveFuncType
         n_trials,  # type: Optional[int]
         timeout,  # type: Optional[float]
-        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        catch,  # type: Tuple[Type[Exception], ...]
         callbacks,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
         gc_after_trial,  # type: bool
         time_start,  # type: Optional[datetime.datetime]
@@ -676,7 +676,7 @@ class Study(BaseStudy):
     def _run_trial_and_callbacks(
         self,
         func,  # type: ObjectiveFuncType
-        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        catch,  # type: Tuple[Type[Exception], ...]
         callbacks,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
         gc_after_trial,  # type: bool
     ):
@@ -691,7 +691,7 @@ class Study(BaseStudy):
     def _run_trial(
         self,
         func,  # type: ObjectiveFuncType
-        catch,  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        catch,  # type: Tuple[Type[Exception], ...]
         gc_after_trial,  # type: bool
     ):
         # type: (...) -> trial_module.Trial
