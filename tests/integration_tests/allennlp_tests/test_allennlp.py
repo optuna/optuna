@@ -1,5 +1,5 @@
 import json
-import os.path
+import os
 import tempfile
 
 import _jsonnet
@@ -8,7 +8,7 @@ import pytest
 import optuna
 
 
-def test__set_param() -> None:
+def test_build_params() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
@@ -21,6 +21,52 @@ def test__set_param() -> None:
     assert params["model"]["dropout"] == 0.1
     assert params["model"]["input_size"] == 100
     assert params["model"]["hidden_size"] == [100, 200, 300]
+
+
+def test_build_params_overwriting_environment_variable() -> None:
+    study = optuna.create_study(direction="maximize")
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
+    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    os.environ["TRAIN_PATH"] = "tests/integration_tests/allennlp_tests/sentences.train"
+    os.environ["VALID_PATH"] = "tests/integration_tests/allennlp_tests/sentences.valid"
+    executor = optuna.integration.AllenNLPExecutor(
+        trial,
+        "tests/integration_tests/allennlp_tests/example_with_environment_variables.jsonnet",
+        "test",
+    )
+    params = executor._build_params()
+    os.environ.pop("TRAIN_PATH")
+    os.environ.pop("VALID_PATH")
+    assert params["train_data_path"] == "tests/integration_tests/allennlp_tests/sentences.train"
+    assert (
+        params["validation_data_path"] == "tests/integration_tests/allennlp_tests/sentences.valid"
+    )
+
+
+def test_build_params_when_optuna_and_environment_variable_both_exist() -> None:
+    study = optuna.create_study(direction="maximize")
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-2)
+    os.environ["TRAIN_PATH"] = "tests/integration_tests/allennlp_tests/sentences.train"
+    os.environ["VALID_PATH"] = "tests/integration_tests/allennlp_tests/sentences.valid"
+    os.environ["LEARNING_RATE"] = "1e-3"
+    os.environ["DROPOUT"] = "0.0"
+    executor = optuna.integration.AllenNLPExecutor(
+        trial,
+        "tests/integration_tests/allennlp_tests/example_with_environment_variables.jsonnet",
+        "test",
+    )
+    params = executor._build_params()
+    os.environ.pop("TRAIN_PATH")
+    os.environ.pop("VALID_PATH")
+    os.environ.pop("LEARNING_RATE")
+    os.environ.pop("DROPOUT")
+
+    # Optuna trial overwrites a parameter specified by environment variable
+    assert params["trainer"]["lr"] == 1e-2
+    path = params["model"]["text_field_embedder"]["token_embedders"]["token_characters"]["dropout"]
+    assert path == 0.0
 
 
 def test_missing_config_file() -> None:
