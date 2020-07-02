@@ -559,7 +559,7 @@ class Study(BaseStudy):
                 study = optuna.create_study()
                 assert len(study.trials) == 0
 
-                trial = optuna.create_trial(
+                trial = optuna.trial.create_trial(
                     params={"x": 2.0},
                     distributions={"x": UniformDistribution(0, 10)},
                     value=4.0,
@@ -579,6 +579,12 @@ class Study(BaseStudy):
 
                 other_study.optimize(objective, n_trials=2)
                 assert len(other_study.trials) == len(study.trials) + 2
+
+        .. seealso::
+
+            This method should in general be used to add already evaluated trials
+            (``trial.state.is_finished() == True``). To queue trials for evaluation,
+            please refer to :func:`~optuna.study.Study.enqueue_trial`.
 
         .. seealso::
 

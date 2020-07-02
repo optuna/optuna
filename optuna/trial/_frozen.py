@@ -222,7 +222,7 @@ def create_trial(
             from optuna.distributions import CategoricalDistribution
             from optuna.distributions import UniformDistribution
 
-            trial = optuna.create_trial(
+            trial = optuna.trial.create_trial(
                 params={"x": 1.0, "y": 0},
                 distributions={
                     "x": UniformDistribution(0, 10),
@@ -239,6 +239,11 @@ def create_trial(
 
         See :func:`~optuna.study.Study.add_trial` for how this function can be used to create a
         study from existing trials.
+
+    .. note::
+
+        Please note that this is a low-level API. In general, trials that are passed to objective
+        functions are created inside :func:`~optuna.study.Study.optimize`.
 
     Args:
         state:
