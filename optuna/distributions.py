@@ -1,14 +1,14 @@
 import abc
+import copy
 import decimal
 import json
+from typing import Dict
 import warnings
 
-from optuna import logging
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
-    from typing import Dict  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
@@ -198,6 +198,11 @@ class DiscreteUniformDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and passed
     to :mod:`~optuna.samplers` in general.
 
+    .. note::
+        If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by :math:`q`,
+        :math:`\\mathsf{high}` will be replaced with the maximum of :math:`k q + \\mathsf{low}
+        \\lt \\mathsf{high}`, where :math:`k` is an integer.
+
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
@@ -207,14 +212,14 @@ class DiscreteUniformDistribution(BaseDistribution):
             A discretization step.
     """
 
-    def __init__(self, low, high, q):
-        # type: (float, float, float) -> None
-
+    def __init__(self, low: float, high: float, q: float) -> None:
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}, q={}).".format(low, high, q)
             )
+
+        high = _adjust_discrete_uniform_high(low, high, q)
 
         self.low = low
         self.high = high
@@ -245,6 +250,12 @@ class IntUniformDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
     :mod:`~optuna.samplers` in general.
 
+    .. note::
+        If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by
+        :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced with the maximum of
+        :math:`k \\times \\mathsf{step} + \\mathsf{low} \\lt \\mathsf{high}`, where :math:`k` is
+        an integer.
+
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
@@ -254,9 +265,7 @@ class IntUniformDistribution(BaseDistribution):
             A step for spacing between values.
     """
 
-    def __init__(self, low, high, step=1):
-        # type: (int, int, int) -> None
-
+    def __init__(self, low: int, high: int, step: int = 1) -> None:
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
@@ -266,6 +275,8 @@ class IntUniformDistribution(BaseDistribution):
             raise ValueError(
                 "The `step` value must be non-zero positive value, but step={}.".format(step)
             )
+
+        high = _adjust_int_uniform_high(low, high, step)
 
         self.low = low
         self.high = high
@@ -293,6 +304,95 @@ class IntUniformDistribution(BaseDistribution):
 
         value = param_value_in_internal_repr
         return self.low <= value <= self.high
+
+
+class IntLogUniformDistribution(BaseDistribution):
+    """A uniform distribution on integers in the log domain.
+
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
+    :mod:`~optuna.samplers` in general.
+
+    Attributes:
+        low:
+            Lower endpoint of the range of the distribution. ``low`` is included in the range.
+        high:
+            Upper endpoint of the range of the distribution. ``high`` is included in the range.
+        step:
+            A step for spacing between values.
+
+            .. warning::
+                Deprecated in v2.0.0. ``step`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v4.0.0,
+                but this schedule is subject to change.
+
+                Samplers and other components in Optuna relying on this distribution will ignore
+                this value and assume that ``step`` is always 1.
+                User-defined samplers may continue to use other values besides 1 during the
+                deprecation.
+    """
+
+    def __init__(self, low: int, high: int, step: int = 1) -> None:
+        if low > high:
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
+
+        if low < 1.0:
+            raise ValueError(
+                "The `low` value must be equal to or greater than 1 for a log distribution "
+                "(low={}, high={}).".format(low, high)
+            )
+
+        if step != 1:
+            self._warn_step()
+
+        self.low = low
+        self.high = high
+        self._step = step
+
+    def __repr__(self) -> str:
+        # TODO(hvy): `BaseDistribution.__repr__` could rely on `_asdict` instead of `__dict__`.
+        # `IntLogUniformDistribution` would not have to override `__repr__`.
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
+
+    def _asdict(self) -> Dict:
+        d = copy.copy(self.__dict__)
+        d["step"] = d.pop("_step")
+        return d
+
+    def _warn_step(self) -> None:
+        warnings.warn(
+            "Samplers and other components in Optuna will assume that `step` is 1. "
+            "`step` argument is deprecated and will be removed in the future. "
+            "The removal of this feature is currently scheduled for v4.0.0, "
+            "but this schedule is subject to change.",
+            FutureWarning,
+        )
+
+    def to_external_repr(self, param_value_in_internal_repr: float) -> int:
+        return int(param_value_in_internal_repr)
+
+    def to_internal_repr(self, param_value_in_external_repr: int) -> float:
+        return float(param_value_in_external_repr)
+
+    def single(self) -> bool:
+        return self.low == self.high
+
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
+        value = param_value_in_internal_repr
+        return self.low <= value <= self.high
+
+    @property
+    def step(self) -> int:
+        self._warn_step()
+        return self._step
+
+    @step.setter
+    def step(self, value: int) -> None:
+        self._warn_step()
+        self._step = value
 
 
 class CategoricalDistribution(BaseDistribution):
@@ -330,9 +430,6 @@ class CategoricalDistribution(BaseDistribution):
                 )
                 warnings.warn(message)
 
-                logger = logging._get_library_root_logger()
-                logger.warning(message)
-
         self.choices = choices
 
     def to_external_repr(self, param_value_in_internal_repr):
@@ -367,6 +464,7 @@ DISTRIBUTION_CLASSES = (
     LogUniformDistribution,
     DiscreteUniformDistribution,
     IntUniformDistribution,
+    IntLogUniformDistribution,
     CategoricalDistribution,
 )
 
@@ -434,3 +532,58 @@ def check_distribution_compatibility(dist_old, dist_new):
         raise ValueError(
             CategoricalDistribution.__name__ + " does not support dynamic value space."
         )
+
+
+def _adjust_discrete_uniform_high(low: float, high: float, q: float) -> float:
+    d_high = decimal.Decimal(str(high))
+    d_low = decimal.Decimal(str(low))
+    d_q = decimal.Decimal(str(q))
+
+    d_r = d_high - d_low
+
+    if d_r % d_q != decimal.Decimal("0"):
+        old_high = high
+        high = float((d_r // d_q) * d_q + d_low)
+        warnings.warn(
+            "The distribution is specified by [{low}, {old_high}] and q={step}, but the range "
+            "is not divisible by `q`. It will be replaced by [{low}, {high}].".format(
+                low=low, old_high=old_high, high=high, step=q
+            )
+        )
+
+    return high
+
+
+def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
+    r = high - low
+    if r % step != 0:
+        old_high = high
+        high = r // step * step + low
+        warnings.warn(
+            "The distribution is specified by [{low}, {old_high}] and step={step}, but the range "
+            "is not divisible by `step`. It will be replaced by [{low}, {high}].".format(
+                low=low, old_high=old_high, high=high, step=step
+            )
+        )
+    return high
+
+
+def _get_single_value(distribution):
+    # type: (BaseDistribution) -> Union[int, float, CategoricalChoiceType]
+
+    assert distribution.single()
+
+    if isinstance(
+        distribution,
+        (
+            UniformDistribution,
+            LogUniformDistribution,
+            DiscreteUniformDistribution,
+            IntUniformDistribution,
+            IntLogUniformDistribution,
+        ),
+    ):
+        return distribution.low
+    elif isinstance(distribution, CategoricalDistribution):
+        return distribution.choices[0]
+    assert False

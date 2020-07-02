@@ -4,7 +4,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 
 from optuna._experimental import experimental
@@ -48,8 +47,8 @@ class MultiObjectiveTrial(object):
         low: float,
         high: float,
         *,
-        log: bool = False,
-        step: Optional[float] = None
+        step: Optional[float] = None,
+        log: bool = False
     ) -> float:
         """Suggest a value for the floating point parameter.
 
@@ -57,7 +56,7 @@ class MultiObjectiveTrial(object):
         for further details.
         """
 
-        return self._trial.suggest_float(name, low, high, log=log, step=step)
+        return self._trial.suggest_float(name, low, high, step=step, log=log)
 
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
@@ -86,14 +85,16 @@ class MultiObjectiveTrial(object):
 
         return self._trial.suggest_discrete_uniform(name, low, high, q)
 
-    def suggest_int(self, name: str, low: int, high: int) -> int:
+    def suggest_int(
+        self, name: str, low: int, high: int, step: int = 1, log: bool = False,
+    ) -> int:
         """Suggest a value for the integer parameter.
 
         Please refer to the documentation of :func:`optuna.trial.Trial.suggest_int`
         for further details.
         """
 
-        return self._trial.suggest_int(name, low, high)
+        return self._trial.suggest_int(name, low, high, step=step, log=log)
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
@@ -106,7 +107,7 @@ class MultiObjectiveTrial(object):
 
         return self._trial.suggest_categorical(name, choices)
 
-    def report(self, values: Tuple[float], step: int) -> None:
+    def report(self, values: Sequence[float], step: int) -> None:
         """Report intermediate objective function values for a given step.
 
         The reported values are used by the pruners to determine whether this trial should be
@@ -142,7 +143,7 @@ class MultiObjectiveTrial(object):
         for i, value in enumerate(values):
             self._trial.report(value, self._n_objectives * (step + 1) + i)
 
-    def _report_complete_values(self, values: Tuple[float]) -> None:
+    def _report_complete_values(self, values: Sequence[float]) -> None:
         if len(values) != self._n_objectives:
             raise ValueError(
                 "The number of the values {} is mismatched with the number of the objectives {}.",
@@ -293,6 +294,10 @@ class FrozenMultiObjectiveTrial(object):
     @property
     def number(self) -> int:
         return self._trial.number
+
+    @property
+    def _trial_id(self) -> int:
+        return self._trial._trial_id
 
     @property
     def state(self) -> TrialState:

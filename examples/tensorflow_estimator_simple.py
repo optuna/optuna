@@ -15,7 +15,7 @@ We have the following two ways to execute this example:
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
     $ optuna study optimize tensorflow_estimator_simple.py objective --n-trials=100 \
-      --study $STUDY_NAME --storage sqlite:///example.db
+      --study-name $STUDY_NAME --storage sqlite:///example.db
 
 """
 
@@ -104,7 +104,7 @@ def objective(trial):
 
 def main():
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=25)
+    study.optimize(objective, n_trials=25, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
 

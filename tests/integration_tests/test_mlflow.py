@@ -5,8 +5,7 @@ import optuna
 from optuna.integration.mlflow import MLflowCallback
 
 
-def _objective_func(trial):
-    # type: (optuna.trial.Trial) -> float
+def _objective_func(trial: optuna.trial.Trial) -> float:
 
     x = trial.suggest_uniform("x", -1.0, 1.0)
     y = trial.suggest_loguniform("y", 20, 30)
@@ -16,8 +15,7 @@ def _objective_func(trial):
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
-def test_study_name(tmpdir):
-    # type: (py.path.local) -> None
+def test_study_name(tmpdir: py.path.local) -> None:
 
     tracking_file_name = "file:{}".format(tmpdir)
     study_name = "my_study"
@@ -62,8 +60,7 @@ def test_study_name(tmpdir):
     assert first_run_dict["data"]["tags"]["my_user_attr"] == "my_user_attr_value"
 
 
-def test_metric_name(tmpdir):
-    # type: (py.path.local) -> None
+def test_metric_name(tmpdir: py.path.local) -> None:
 
     tracking_file_name = "file:{}".format(tmpdir)
     metric_name = "my_metric_name"

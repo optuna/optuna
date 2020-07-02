@@ -27,36 +27,32 @@ from typing import Union
 
 import numpy
 
+from optuna._imports import try_import
 from optuna.importance._fanova._tree import _FanovaTree
 
-try:
+with try_import() as _imports:
     from sklearn.compose import ColumnTransformer
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.preprocessing import OneHotEncoder
-
-    _available = True
-except ImportError as e:
-    _import_error = e
-    _available = False
 
 
 class _Fanova(object):
     def __init__(
         self,
-        n_estimators: int,
+        n_trees: int,
         max_depth: int,
         min_samples_split: Union[int, float],
         min_samples_leaf: Union[int, float],
-        random_state: Optional[int],
+        seed: Optional[int],
     ) -> None:
-        _check_sklearn_availability()
+        _imports.check()
 
         self._forest = RandomForestRegressor(
-            n_estimators=n_estimators,
+            n_estimators=n_trees,
             max_depth=max_depth,
             min_samples_split=min_samples_split,
             min_samples_leaf=min_samples_leaf,
-            random_state=random_state,
+            random_state=seed,
         )
         self._trees = None  # type: Optional[List[_FanovaTree]]
         self._variances = None  # type: Optional[Dict[Tuple[int, ...], numpy.ndarray]]
@@ -236,14 +232,3 @@ class _CategoricalFeaturesOneHotEncoder(object):
         self.features_to_raw_features = features_to_raw_features
 
         return X, raw_search_spaces
-
-
-def _check_sklearn_availability() -> None:
-    if not _available:
-        raise ImportError(
-            "scikit-learn is not available. Please install scikit-learn to "
-            "use this feature. scikit-learn can be installed by executing "
-            "`$ pip install scikit-learn>=0.19.0`. For further information, "
-            "please refer to the installation guide of scikit-learn. (The "
-            "actual import error is as follows: " + str(_import_error) + ")"
-        )

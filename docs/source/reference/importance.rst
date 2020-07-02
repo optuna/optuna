@@ -1,9 +1,10 @@
-.. module:: optuna.importance
+optuna.importance
+=================
 
-Hyperparameter Importance
-=========================
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autofunction:: get_param_importances
-
-.. autoclass:: FanovaImportanceEvaluator
-    :members:
+   optuna.importance.get_param_importances
+   optuna.importance.FanovaImportanceEvaluator
+   optuna.importance.MeanDecreaseImpurityImportanceEvaluator

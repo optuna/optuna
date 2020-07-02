@@ -15,7 +15,7 @@ We have the following two ways to execute this example:
 (2) Execute through CLI. Pruning is enabled automatically.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
     $ optuna study optimize pytorch_ignite_simple.py objective --n-trials=100 \
-      --study $STUDY_NAME --storage sqlite:///example.db
+      --study-name $STUDY_NAME --storage sqlite:///example.db
 """
 
 import argparse
@@ -36,7 +36,6 @@ from torchvision.transforms import Normalize
 from torchvision.transforms import ToTensor
 
 import optuna
-
 
 EPOCHS = 10
 TRAIN_BATCH_SIZE = 64
@@ -90,6 +89,7 @@ def objective(trial):
     device = "cpu"
     if torch.cuda.is_available():
         device = "cuda"
+        model.cuda(device)
 
     optimizer = Adam(model.parameters())
     trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)

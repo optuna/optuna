@@ -3,8 +3,8 @@ import itertools
 import numpy as np
 import pytest
 
-from optuna.samplers.tpe.parzen_estimator import _ParzenEstimator
-from optuna.samplers.tpe.sampler import default_weights
+from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
+from optuna.samplers._tpe.sampler import default_weights
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -37,10 +37,11 @@ class TestParzenEstimator(object):
             weights_func=default_weights,
         )
 
-        # Result contains an additional value for a prior distribution if prior is True.
-        assert len(s_weights) == len(mus) + int(prior)
-        assert len(s_mus) == len(mus) + int(prior)
-        assert len(s_sigmas) == len(mus) + int(prior)
+        # Result contains an additional value for a prior distribution if prior is True or
+        # len(mus) == 0 (in this case, prior is always used).
+        assert len(s_weights) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
+        assert len(s_mus) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
+        assert len(s_sigmas) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
 
     # TODO(ytsmiling): Improve test coverage for weights_func.
     @staticmethod
@@ -50,7 +51,7 @@ class TestParzenEstimator(object):
             [
                 [],
                 {"prior": False, "magic_clip": False, "endpoints": True},
-                {"weights": [], "mus": [], "sigmas": []},
+                {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
             ],
             [
                 [],

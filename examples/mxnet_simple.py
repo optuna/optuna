@@ -14,7 +14,7 @@ We have the following two ways to execute this example:
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize mxnet_simple.py objective --n-trials=100 --study $STUDY_NAME \
+    $ optuna study optimize mxnet_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
       --storage sqlite:///example.db
 
 """
@@ -114,7 +114,7 @@ def objective(trial):
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=100, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
 

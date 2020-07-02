@@ -2,20 +2,15 @@ import mxnet as mx
 import numpy as np
 import pytest
 
+from typing import Union
+
 import optuna
 from optuna.integration.mxnet import MXNetPruningCallback
 from optuna.testing.integration import DeterministicPruner
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import Union  # NOQA
 
 
-def test_mxnet_pruning_callback():
-    # type: () -> None
-
-    def objective(trial, eval_metric):
-        # type: (optuna.trial.Trial, Union[list, str]) -> float
+def test_mxnet_pruning_callback() -> None:
+    def objective(trial: optuna.trial.Trial, eval_metric: Union[list, str]) -> float:
 
         # Symbol
         data = mx.symbol.Variable("data")

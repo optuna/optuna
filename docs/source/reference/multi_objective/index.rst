@@ -1,11 +1,10 @@
-.. module:: optuna.multi_objective
-
-Multi-objective
-===============
+optuna.multi_objective
+======================
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     samplers
     study
     trial
+    visualization

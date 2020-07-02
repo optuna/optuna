@@ -1,4 +1,5 @@
 import collections
+import copy
 import datetime
 import gc
 import math
@@ -10,18 +11,9 @@ from joblib import delayed
 from joblib import Parallel
 
 from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
-
-try:
-    import pandas as pd  # NOQA
-
-    _pandas_available = True
-except ImportError as e:
-    _pandas_import_error = e
-    # trials_dataframe is disabled because pandas is not available.
-    _pandas_available = False
-
 from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
@@ -29,6 +21,7 @@ from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
+from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna import type_checking
@@ -48,6 +41,9 @@ if type_checking.TYPE_CHECKING:
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
+with try_import() as _pandas_imports:
+    # `trials_dataframe` is disabled if pandas is not available.
+    import pandas as pd  # NOQA
 
 _logger = logging.get_logger(__name__)
 
@@ -93,7 +89,7 @@ class BaseStudy(object):
             A :class:`~optuna.FrozenTrial` object of the best trial.
         """
 
-        return self._storage.get_best_trial(self._study_id)
+        return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
     @property
     def direction(self):
@@ -141,36 +137,8 @@ class BaseStudy(object):
             A list of :class:`~optuna.FrozenTrial` objects.
         """
 
+        self._storage.read_trials_from_remote_storage(self._study_id)
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
-
-    @property
-    def storage(self):
-        # type: () -> storages.BaseStorage
-        """Return the storage object used by the study.
-
-        .. deprecated:: 0.15.0
-            The direct use of storage is deprecated.
-            Please access to storage via study's public methods
-            (e.g., :meth:`~optuna.study.Study.set_user_attr`).
-
-        Returns:
-            A storage object.
-        """
-
-        warnings.warn(
-            "The direct use of storage is deprecated. "
-            "Please access to storage via study's public methods "
-            "(e.g., `Study.set_user_attr`)",
-            DeprecationWarning,
-        )
-
-        _logger.warning(
-            "The direct use of storage is deprecated. "
-            "Please access to storage via study's public methods "
-            "(e.g., `Study.set_user_attr`)"
-        )
-
-        return self._storage
 
 
 class Study(BaseStudy):
@@ -203,6 +171,7 @@ class Study(BaseStudy):
         self.pruner = pruner or pruners.MedianPruner()
 
         self._optimize_lock = threading.Lock()
+        self._stop_flag = False
 
     def __getstate__(self):
         # type: () -> Dict[Any, Any]
@@ -218,27 +187,6 @@ class Study(BaseStudy):
         self._optimize_lock = threading.Lock()
 
     @property
-    def study_id(self):
-        # type: () -> int
-        """Return the study ID.
-
-        .. deprecated:: 0.20.0
-            The direct use of this attribute is deprecated and it is recommended that you use
-            :attr:`~optuna.study.Study.study_name` instead.
-
-        Returns:
-            The study ID.
-        """
-
-        message = (
-            "The use of `Study.study_id` is deprecated. Please use `Study.study_name` instead."
-        )
-        warnings.warn(message, DeprecationWarning)
-        _logger.warning(message)
-
-        return self._study_id
-
-    @property
     def user_attrs(self):
         # type: () -> Dict[str, Any]
         """Return user attributes.
@@ -247,7 +195,7 @@ class Study(BaseStudy):
             A dictionary containing all user attributes.
         """
 
-        return self._storage.get_study_user_attrs(self._study_id)
+        return copy.deepcopy(self._storage.get_study_user_attrs(self._study_id))
 
     @property
     def system_attrs(self):
@@ -258,7 +206,7 @@ class Study(BaseStudy):
             A dictionary containing all system attributes.
         """
 
-        return self._storage.get_study_system_attrs(self._study_id)
+        return copy.deepcopy(self._storage.get_study_system_attrs(self._study_id))
 
     def optimize(
         self,
@@ -268,7 +216,7 @@ class Study(BaseStudy):
         n_jobs=1,  # type: int
         catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
         callbacks=None,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial=True,  # type: bool
+        gc_after_trial=False,  # type: bool
         show_progress_bar=False,  # type: bool
     ):
         # type: (...) -> None
@@ -305,9 +253,16 @@ class Study(BaseStudy):
                 must accept two parameters with the following types in this order:
                 :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
             gc_after_trial:
-                Flag to execute garbage collection at the end of each trial. By default, garbage
-                collection is enabled, just in case. You can turn it off with this argument if
-                memory is safely managed in your objective function.
+                Flag to determine whether to automatically run garbage collection after each trial.
+                Set to :obj:`True` to run the garbage collection, :obj:`False` otherwise.
+                When it runs, it runs a full collection by internally calling :func:`gc.collect`.
+                If you see an increase in memory consumption over several trials, try setting this
+                flag to :obj:`True`.
+
+                .. seealso::
+
+                    :ref:`out-of-memory-gc-collect`
+
             show_progress_bar:
                 Flag to show progress bars or not. To disable progress bar, set this ``False``.
                 Currently, progress bar is experimental feature and disabled
@@ -328,6 +283,9 @@ class Study(BaseStudy):
         self._progress_bar = pbar_module._ProgressBar(
             show_progress_bar and n_jobs == 1, n_trials, timeout
         )
+
+        self._stop_flag = False
+
         try:
             if n_jobs == 1:
                 self._optimize_sequential(
@@ -337,23 +295,24 @@ class Study(BaseStudy):
                 if show_progress_bar:
                     msg = "Progress bar only supports serial execution (`n_jobs=1`)."
                     warnings.warn(msg)
-                    _logger.warning(msg)
 
                 time_start = datetime.datetime.now()
 
+                def _should_stop() -> bool:
+                    if self._stop_flag:
+                        return True
+
+                    if timeout is not None:
+                        # This is needed for mypy.
+                        t = timeout  # type: float
+                        return (datetime.datetime.now() - time_start).total_seconds() > t
+
+                    return False
+
                 if n_trials is not None:
                     _iter = iter(range(n_trials))
-                elif timeout is not None:
-                    # This is needed for mypy
-                    actual_timeout = timeout  # type: float
-                    _iter = iter(
-                        lambda: (datetime.datetime.now() - time_start).total_seconds()
-                        > actual_timeout,
-                        True,
-                    )
                 else:
-                    # The following expression makes an iterator that never ends.
-                    _iter = iter(int, 1)
+                    _iter = iter(_should_stop, True)
 
                 with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
                     if not isinstance(
@@ -366,11 +325,10 @@ class Study(BaseStudy):
                             "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html."
                         )
                         warnings.warn(msg, UserWarning)
-                        _logger.warning(msg)
 
                     parallel(
                         delayed(self._reseed_and_optimize_sequential)(
-                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start
+                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start,
                         )
                         for _ in _iter
                     )
@@ -463,7 +421,7 @@ class Study(BaseStudy):
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
 
-        _check_pandas_availability()
+        _pandas_imports.check()
 
         trials = self.get_trials(deepcopy=False)
 
@@ -523,6 +481,29 @@ class Study(BaseStudy):
 
         return df
 
+    def stop(self) -> None:
+
+        """Exit from the current optimization loop after the running trials finish.
+
+        This method lets the running :meth:`~optuna.study.Study.optimize` method return
+        immediately after all trials which the :meth:`~optuna.study.Study.optimize` method
+        spawned finishes.
+        This method does not affect any behaviors of parallel or successive study processes.
+
+        Raises:
+            RuntimeError:
+                If this method is called outside an objective function or callback.
+        """
+
+        if self._optimize_lock.acquire(False):
+            self._optimize_lock.release()
+            raise RuntimeError(
+                "`Study.stop` is supposed to be invoked inside an objective function or a "
+                "callback."
+            )
+
+        self._stop_flag = True
+
     @experimental("1.2.0")
     def enqueue_trial(self, params):
         # type: (Dict[str, Any]) -> None
@@ -554,51 +535,73 @@ class Study(BaseStudy):
                 Parameter values to pass your objective function.
         """
 
-        system_attrs = {"fixed_params": params}
-        self._append_trial(state=TrialState.WAITING, system_attrs=system_attrs)
-
-    def _append_trial(
-        self,
-        value=None,  # type: Optional[float]
-        params=None,  # type: Optional[Dict[str, Any]]
-        distributions=None,  # type: Optional[Dict[str, BaseDistribution]]
-        user_attrs=None,  # type: Optional[Dict[str, Any]]
-        system_attrs=None,  # type: Optional[Dict[str, Any]]
-        intermediate_values=None,  # type: Optional[Dict[int, float]]
-        state=TrialState.COMPLETE,  # type: TrialState
-        datetime_start=None,  # type: Optional[datetime.datetime]
-        datetime_complete=None,  # type: Optional[datetime.datetime]
-    ):
-        # type: (...) -> int
-
-        params = params or {}
-        distributions = distributions or {}
-        user_attrs = user_attrs or {}
-        system_attrs = system_attrs or {}
-        intermediate_values = intermediate_values or {}
-        datetime_start = datetime_start or datetime.datetime.now()
-
-        if state.is_finished():
-            datetime_complete = datetime_complete or datetime.datetime.now()
-
-        trial = FrozenTrial(
-            number=-1,  # dummy value.
-            trial_id=-1,  # dummy value.
-            state=state,
-            value=value,
-            datetime_start=datetime_start,
-            datetime_complete=datetime_complete,
-            params=params,
-            distributions=distributions,
-            user_attrs=user_attrs,
-            system_attrs=system_attrs,
-            intermediate_values=intermediate_values,
+        self.add_trial(
+            create_trial(state=TrialState.WAITING, system_attrs={"fixed_params": params})
         )
+
+    @experimental("2.0.0")
+    def add_trial(self, trial: FrozenTrial) -> None:
+        """Add trial to study.
+
+        The trial is validated before being added.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+                from optuna.distributions import UniformDistribution
+
+                def objective(trial):
+                    x = trial.suggest_uniform('x', 0, 10)
+                    return x ** 2
+
+                study = optuna.create_study()
+                assert len(study.trials) == 0
+
+                trial = optuna.trial.create_trial(
+                    params={"x": 2.0},
+                    distributions={"x": UniformDistribution(0, 10)},
+                    value=4.0,
+                )
+
+                study.add_trial(trial)
+                assert len(study.trials) == 1
+
+                study.optimize(objective, n_trials=3)
+                assert len(study.trials) == 4
+
+                other_study = optuna.create_study()
+
+                for trial in study.trials:
+                    other_study.add_trial(trial)
+                assert len(other_study.trials) == len(study.trials)
+
+                other_study.optimize(objective, n_trials=2)
+                assert len(other_study.trials) == len(study.trials) + 2
+
+        .. seealso::
+
+            This method should in general be used to add already evaluated trials
+            (``trial.state.is_finished() == True``). To queue trials for evaluation,
+            please refer to :func:`~optuna.study.Study.enqueue_trial`.
+
+        .. seealso::
+
+            See :func:`~optuna.trial.create_trial` for how to create trials.
+
+        Args:
+            trial: Trial to add.
+
+        Raises:
+            :exc:`ValueError`:
+                If trial is an invalid state.
+
+        """
 
         trial._validate()
 
-        trial_id = self._storage.create_new_trial(self._study_id, template_trial=trial)
-        return trial_id
+        self._storage.create_new_trial(self._study_id, template_trial=trial)
 
     def _reseed_and_optimize_sequential(
         self,
@@ -635,6 +638,9 @@ class Study(BaseStudy):
             time_start = datetime.datetime.now()
 
         while True:
+            if self._stop_flag:
+                break
+
             if n_trials is not None:
                 if i_trial >= n_trials:
                     break
@@ -648,20 +654,21 @@ class Study(BaseStudy):
             self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
 
             self._progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
+
         self._storage.remove_session()
 
     def _pop_waiting_trial_id(self):
         # type: () -> Optional[int]
 
         # TODO(c-bata): Reduce database query counts for extracting waiting trials.
-        for trial in self.get_trials(deepcopy=False):
+        for trial in self._storage.get_all_trials(self._study_id, deepcopy=False):
             if trial.state != TrialState.WAITING:
                 continue
 
             if not self._storage.set_trial_state(trial._trial_id, TrialState.RUNNING):
                 continue
 
-            _logger.debug("Trial#{} is popped from the trial queue.".format(trial.number))
+            _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
             return trial._trial_id
 
         return None
@@ -677,7 +684,7 @@ class Study(BaseStudy):
 
         trial = self._run_trial(func, catch, gc_after_trial)
         if callbacks is not None:
-            frozen_trial = self._storage.get_trial(trial._trial_id)
+            frozen_trial = copy.deepcopy(self._storage.get_trial(trial._trial_id))
             for callback in callbacks:
                 callback(self, frozen_trial)
 
@@ -689,6 +696,9 @@ class Study(BaseStudy):
     ):
         # type: (...) -> trial_module.Trial
 
+        # Sync storage once at the beginning of the objective evaluation.
+        self._storage.read_trials_from_remote_storage(self._study_id)
+
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
             trial_id = self._storage.create_new_trial(self._study_id)
@@ -698,9 +708,7 @@ class Study(BaseStudy):
         try:
             result = func(trial)
         except exceptions.TrialPruned as e:
-            message = "Setting status of trial#{} as {}. {}".format(
-                trial_number, TrialState.PRUNED, str(e)
-            )
+            message = "Trial {} pruned. {}".format(trial_number, str(e))
             _logger.info(message)
 
             # Register the last intermediate value if present as the value of the trial.
@@ -714,8 +722,8 @@ class Study(BaseStudy):
             self._storage.set_trial_state(trial_id, TrialState.PRUNED)
             return trial
         except Exception as e:
-            message = "Setting status of trial#{} as {} because of the following error: {}".format(
-                trial_number, TrialState.FAIL, repr(e)
+            message = "Trial {} failed because of the following error: {}".format(
+                trial_number, repr(e)
             )
             _logger.warning(message, exc_info=True)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
@@ -739,9 +747,9 @@ class Study(BaseStudy):
             TypeError,
         ):
             message = (
-                "Setting status of trial#{} as {} because the returned value from the "
-                "objective function cannot be casted to float. Returned value is: "
-                "{}".format(trial_number, TrialState.FAIL, repr(result))
+                "Trial {} failed, because the returned value from the "
+                "objective function cannot be cast to float. Returned value is: "
+                "{}".format(trial_number, repr(result))
             )
             _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
@@ -749,9 +757,8 @@ class Study(BaseStudy):
             return trial
 
         if math.isnan(result):
-            message = (
-                "Setting status of trial#{} as {} because the objective function "
-                "returned {}.".format(trial_number, TrialState.FAIL, result)
+            message = "Trial {} failed, because the objective function returned {}.".format(
+                trial_number, result
             )
             _logger.warning(message)
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
@@ -764,13 +771,15 @@ class Study(BaseStudy):
 
         return trial
 
-    def _log_completed_trial(self, trial, result):
-        # type: (trial_module.Trial, float) -> None
+    def _log_completed_trial(self, trial: trial_module.Trial, result: float) -> None:
+
+        if not _logger.isEnabledFor(logging.INFO):
+            return
 
         _logger.info(
-            "Finished trial#{} with value: {} with parameters: {}. "
-            "Best is trial#{} with value: {}.".format(
-                trial.number, result, trial.params, self.best_trial.number, self.best_value
+            "Trial {} finished with value: {} and parameters: {}. "
+            "Best is trial {} with value: {}.".format(
+                trial.number, result, trial.params, self.best_trial.number, self.best_value,
             )
         )
 
@@ -825,6 +834,9 @@ def create_study(
 
     Returns:
         A :class:`~optuna.study.Study` object.
+
+    See also:
+        :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
 
     """
 
@@ -882,6 +894,9 @@ def load_study(
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
 
+    See also:
+        :func:`optuna.load_study` is an alias of :func:`optuna.study.load_study`.
+
     """
 
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
@@ -900,6 +915,9 @@ def delete_study(
         storage:
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
             :func:`~optuna.study.create_study` for further details.
+
+    See also:
+        :func:`optuna.delete_study` is an alias of :func:`optuna.study.delete_study`.
 
     """
 
@@ -920,19 +938,11 @@ def get_all_study_summaries(storage):
     Returns:
         List of study history summarized as :class:`~optuna.study.StudySummary` objects.
 
+    See also:
+        :func:`optuna.get_all_study_summaries` is an alias of
+        :func:`optuna.study.get_all_study_summaries`.
+
     """
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
-
-
-def _check_pandas_availability():
-    # type: () -> None
-
-    if not _pandas_available:
-        raise ImportError(
-            "pandas is not available. Please install pandas to use this feature. "
-            "pandas can be installed by executing `$ pip install pandas`. "
-            "For further information, please refer to the installation guide of pandas. "
-            "(The actual import error is as follows: " + str(_pandas_import_error) + ")"
-        )

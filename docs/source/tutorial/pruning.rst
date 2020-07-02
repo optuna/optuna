@@ -26,7 +26,7 @@ To turn on the pruning feature, you need to call :func:`~optuna.trial.Trial.repo
     def objective(trial):
         iris = sklearn.datasets.load_iris()
         classes = list(set(iris.target))
-        train_x, test_x, train_y, test_y = \
+        train_x, valid_x, train_y, valid_y = \
             sklearn.model_selection.train_test_split(iris.data, iris.target, test_size=0.25, random_state=0)
 
         alpha = trial.suggest_loguniform('alpha', 1e-5, 1e-1)
@@ -36,14 +36,14 @@ To turn on the pruning feature, you need to call :func:`~optuna.trial.Trial.repo
             clf.partial_fit(train_x, train_y, classes=classes)
 
             # Report intermediate objective value.
-            intermediate_value = 1.0 - clf.score(test_x, test_y)
+            intermediate_value = 1.0 - clf.score(valid_x, valid_y)
             trial.report(intermediate_value, step)
 
             # Handle pruning based on the intermediate value.
             if trial.should_prune():
-                raise optuna.exceptions.TrialPruned()
+                raise optuna.TrialPruned()
 
-        return 1.0 - clf.score(test_x, test_y)
+        return 1.0 - clf.score(valid_x, valid_y)
 
     # Set up the median stopping rule as the pruning condition.
     study = optuna.create_study(pruner=optuna.pruners.MedianPruner())
@@ -55,20 +55,19 @@ Executing the script above:
 .. code-block:: bash
 
     $ python prune.py
-    [I 2018-11-21 17:27:57,836] Finished trial#0 resulted in value: 0.052631578947368474. Current best value is 0.052631578947368474 with parameters: {'alpha': 0.011428158279113485}.
-    [I 2018-11-21 17:27:57,963] Finished trial#1 resulted in value: 0.02631578947368418. Current best value is 0.02631578947368418 with parameters: {'alpha': 0.01862693201743629}.
-    [I 2018-11-21 17:27:58,164] Finished trial#2 resulted in value: 0.21052631578947367. Current best value is 0.02631578947368418 with parameters: {'alpha': 0.01862693201743629}.
-    [I 2018-11-21 17:27:58,333] Finished trial#3 resulted in value: 0.02631578947368418. Current best value is 0.02631578947368418 with parameters: {'alpha': 0.01862693201743629}.
-    [I 2018-11-21 17:27:58,617] Finished trial#4 resulted in value: 0.23684210526315785. Current best value is 0.02631578947368418 with parameters: {'alpha': 0.01862693201743629}.
-    [I 2018-11-21 17:27:58,642] Setting status of trial#5 as TrialState.PRUNED.
-    [I 2018-11-21 17:27:58,666] Setting status of trial#6 as TrialState.PRUNED.
-    [I 2018-11-21 17:27:58,675] Setting status of trial#7 as TrialState.PRUNED.
-    [I 2018-11-21 17:27:59,183] Finished trial#8 resulted in value: 0.39473684210526316. Current best value is 0.02631578947368418 with parameters: {'alpha': 0.01862693201743629}.
-    [I 2018-11-21 17:27:59,202] Setting status of trial#9 as TrialState.PRUNED.
+    [I 2020-06-12 16:54:23,876] Trial 0 finished with value: 0.3157894736842105 and parameters: {'alpha': 0.00181467547181131}. Best is trial 0 with value: 0.3157894736842105.
+    [I 2020-06-12 16:54:23,981] Trial 1 finished with value: 0.07894736842105265 and parameters: {'alpha': 0.015378744419287613}. Best is trial 1 with value: 0.07894736842105265.
+    [I 2020-06-12 16:54:24,083] Trial 2 finished with value: 0.21052631578947367 and parameters: {'alpha': 0.04089428832878595}. Best is trial 1 with value: 0.07894736842105265.
+    [I 2020-06-12 16:54:24,185] Trial 3 finished with value: 0.052631578947368474 and parameters: {'alpha': 0.004018735937374473}. Best is trial 3 with value: 0.052631578947368474.
+    [I 2020-06-12 16:54:24,303] Trial 4 finished with value: 0.07894736842105265 and parameters: {'alpha': 2.805688697062864e-05}. Best is trial 3 with value: 0.052631578947368474.
+    [I 2020-06-12 16:54:24,315] Trial 5 pruned. 
+    [I 2020-06-12 16:54:24,355] Trial 6 pruned. 
+    [I 2020-06-12 16:54:24,511] Trial 7 finished with value: 0.052631578947368474 and parameters: {'alpha': 2.243775785299103e-05}. Best is trial 3 with value: 0.052631578947368474.
+    [I 2020-06-12 16:54:24,625] Trial 8 finished with value: 0.1842105263157895 and parameters: {'alpha': 0.007021209286214553}. Best is trial 3 with value: 0.052631578947368474.
+    [I 2020-06-12 16:54:24,629] Trial 9 pruned. 
     ...
 
-We can see ``Setting status of trial#{} as TrialState.PRUNED`` in the log messages.
-This means several trials are stopped before they finish all iterations.
+``Trial 5 pruned.``, etc. in the log messages means several trials were stopped before they finished all of the iterations.
 
 
 Integration Modules for Pruning
@@ -92,4 +91,4 @@ For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces prun
 .. code-block:: python
 
         pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'validation-error')
-        bst = xgb.train(param, dtrain, evals=[(dtest, 'validation')], callbacks=[pruning_callback])
+        bst = xgb.train(param, dtrain, evals=[(dvalid, 'validation')], callbacks=[pruning_callback])

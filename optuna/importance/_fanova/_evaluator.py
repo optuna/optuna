@@ -18,7 +18,6 @@ from optuna.importance._fanova._fanova import _Fanova
 from optuna.study import Study
 
 
-@experimental("1.3.0")
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
     """fANOVA importance evaluator.
 
@@ -48,28 +47,28 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         exploration-oriented sampler such as :class:`~optuna.samplers.RandomSampler`.
 
     Args:
-        n_estimators:
+        n_trees:
             The number of trees in the forest.
         max_depth:
             The maximum depth of the trees in the forest.
-        random_state:
+        seed:
             Controls the randomness of the forest. For deterministic behavior, specify a value
             other than :obj:`None`.
 
     """
 
     def __init__(
-        self, n_estimators: int = 16, max_depth: int = 64, random_state: Optional[int] = None
+        self, *, n_trees: int = 16, max_depth: int = 64, seed: Optional[int] = None
     ) -> None:
         self._evaluator = _Fanova(
-            n_estimators=n_estimators,
+            n_trees=n_trees,
             max_depth=max_depth,
             min_samples_split=2,
             min_samples_leaf=1,
-            random_state=random_state,
+            seed=seed,
         )
 
-    def evaluate(self, study: Study, params: Optional[List[str]]) -> Dict[str, float]:
+    def evaluate(self, study: Study, params: Optional[List[str]] = None) -> Dict[str, float]:
         distributions = _get_distributions(study, params)
         params_data, values_data = _get_study_data(study, distributions)
 

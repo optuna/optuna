@@ -7,13 +7,14 @@ import time
 from unittest.mock import Mock  # NOQA
 from unittest.mock import patch
 import uuid
-import warnings
 
+import _pytest.capture
 import joblib
 import pandas as pd
 import pytest
 
 import optuna
+from optuna import create_trial
 from optuna.testing.storage import StorageSupplier
 from optuna import type_checking
 
@@ -28,23 +29,12 @@ if type_checking.TYPE_CHECKING:
 
     CallbackFuncType = Callable[[optuna.study.Study, optuna.trial.FrozenTrial], None]
 
+# TODO(ytsmiling) Add tests for multi-worker settings.
 STORAGE_MODES = [
-    "none",  # We give `None` to storage argument, so InMemoryStorage is used.
-    "new",  # We always create a new sqlite DB file for each experiment.
-    "common",  # We use a sqlite DB file for the whole experiments.
+    "inmemory",
+    "sqlite",
+    "redis",
 ]
-
-
-def setup_module():
-    # type: () -> None
-
-    StorageSupplier.setup_common_tempfile()
-
-
-def teardown_module():
-    # type: () -> None
-
-    StorageSupplier.teardown_common_tempfile()
 
 
 def func(trial, x_max=1.0):
@@ -397,10 +387,7 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_value_error, catch=(ValueError,), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = (
-            "Setting status of trial#1 as TrialState.FAIL because of the "
-            "following error: ValueError()"
-        )
+        expected_message = "Trial 1 failed because of the following error: ValueError()"
         assert frozen_trial.state == optuna.trial.TrialState.FAIL
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
@@ -418,8 +405,8 @@ def test_run_trial(storage_mode):
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = (
-            "Setting status of trial#3 as TrialState.FAIL because the returned "
-            "value from the objective function cannot be casted to float. "
+            "Trial 3 failed, because the returned "
+            "value from the objective function cannot be cast to float. "
             "Returned value is: None"
         )
         assert frozen_trial.state == optuna.trial.TrialState.FAIL
@@ -434,17 +421,15 @@ def test_run_trial(storage_mode):
         trial = study._run_trial(func_nan, catch=(Exception,), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = (
-            "Setting status of trial#4 as TrialState.FAIL because the objective "
-            "function returned nan."
-        )
+        expected_message = "Trial 4 failed, because the objective function returned nan."
         assert frozen_trial.state == optuna.trial.TrialState.FAIL
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
 
 # TODO(Yanase): Remove this test function after removing `optuna.structs.TrialPruned`.
 @pytest.mark.parametrize(
-    "trial_pruned_class", [optuna.exceptions.TrialPruned, optuna.structs.TrialPruned]
+    "trial_pruned_class",
+    [optuna.TrialPruned, optuna.exceptions.TrialPruned, optuna.structs.TrialPruned],
 )
 @pytest.mark.parametrize("report_value", [None, 1.2])
 def test_run_trial_with_trial_pruned(trial_pruned_class, report_value):
@@ -647,15 +632,8 @@ def test_create_study(storage_mode):
         # Test `load_if_exists=True` with existing study.
         optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=True)
 
-        if isinstance(study._storage, optuna.storages.InMemoryStorage):
-            # `InMemoryStorage` does not share study's namespace (i.e., no name conflicts occur).
+        with pytest.raises(optuna.exceptions.DuplicatedStudyError):
             optuna.create_study(study_name=study.study_name, storage=storage, load_if_exists=False)
-        else:
-            # Test `load_if_exists=False` with existing study.
-            with pytest.raises(optuna.exceptions.DuplicatedStudyError):
-                optuna.create_study(
-                    study_name=study.study_name, storage=storage, load_if_exists=False
-                )
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -669,7 +647,7 @@ def test_load_study(storage_mode):
 
         study_name = str(uuid.uuid4())
 
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             # Test loading an unexisting study.
             optuna.study.load_study(study_name=study_name, storage=storage)
 
@@ -691,7 +669,7 @@ def test_delete_study(storage_mode):
         assert storage is not None
 
         # Test deleting a non-existing study.
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             optuna.delete_study("invalid-study-name", storage)
 
         # Test deleting an existing study.
@@ -699,10 +677,8 @@ def test_delete_study(storage_mode):
         optuna.delete_study(study.study_name, storage)
 
         # Test failed to delete the study which is already deleted.
-        if not isinstance(study._storage, optuna.storages.InMemoryStorage):
-            # Skip `InMemoryStorage` because it just internally initializes trials and so on.
-            with pytest.raises(ValueError):
-                optuna.delete_study(study.study_name, storage)
+        with pytest.raises(KeyError):
+            optuna.delete_study(study.study_name, storage)
 
 
 def test_nested_optimization():
@@ -720,17 +696,66 @@ def test_nested_optimization():
     study.optimize(objective, n_trials=10, catch=())
 
 
+def test_stop_in_objective() -> None:
+    def objective(trial: optuna.trial.Trial, threshold_number: int) -> float:
+        if trial.number >= threshold_number:
+            trial.study.stop()
+
+        return trial.number
+
+    # Test stopping the optimization: it should stop once the trial number reaches 4.
+    study = optuna.create_study()
+    study.optimize(lambda x: objective(x, 4), n_trials=10)
+    assert len(study.trials) == 5
+
+    # Test calling `optimize` again: it should stop once the trial number reaches 11.
+    study.optimize(lambda x: objective(x, 11), n_trials=10)
+    assert len(study.trials) == 12
+
+
+def test_stop_in_callback() -> None:
+    def callback(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+        if trial.number >= 4:
+            study.stop()
+
+    # Test stopping the optimization inside a callback.
+    study = optuna.create_study()
+    study.optimize(lambda _: 1.0, n_trials=10, callbacks=[callback])
+    assert len(study.trials) == 5
+
+
+def test_stop_n_jobs() -> None:
+    def callback(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+        if trial.number >= 4:
+            study.stop()
+
+    study = optuna.create_study()
+    study.optimize(lambda _: 1.0, n_trials=None, callbacks=[callback], n_jobs=2)
+    assert 5 <= len(study.trials) <= 6
+
+
+def test_stop_outside_optimize() -> None:
+    # Test stopping outside the optimization: it should raise `RuntimeError`.
+    study = optuna.create_study()
+    with pytest.raises(RuntimeError):
+        study.stop()
+
+    # Test calling `optimize` after the `RuntimeError` is caught.
+    study.optimize(lambda _: 1.0, n_trials=1)
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_append_trial(storage_mode):
+def test_add_trial(storage_mode):
     # type: (str) -> None
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
         assert len(study.trials) == 0
 
-        trial_id = study._append_trial(value=0.8)
-        assert study.trials[0]._trial_id == trial_id
+        trial = create_trial(value=0.8)
+        study.add_trial(trial)
         assert len(study.trials) == 1
+        assert study.trials[0].number == 0
         assert study.best_value == 0.8
 
 
@@ -785,11 +810,43 @@ def test_enqueue_trial_with_unfixed_parameters(storage_mode):
         assert -10 <= t.params["y"] <= 10
 
 
-def test_storage_property():
-    # type: () -> None
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_with_out_of_range_parameters(storage_mode):
+    # type: (str) -> None
 
-    study = optuna.create_study()
-    assert study.storage == study._storage
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.enqueue_trial(params={"x": 11})
+
+        def objective(trial):
+            # type: (optuna.trial.Trial) -> float
+
+            return trial.suggest_int("x", -10, 10)
+
+        with pytest.warns(UserWarning):
+            study.optimize(objective, n_trials=1)
+        t = study.trials[0]
+        assert -10 <= t.params["x"] <= 10
+
+    # Internal logic might differ when distribution contains a single element.
+    # Test it explicitly.
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.enqueue_trial(params={"x": 11})
+
+        def objective(trial):
+            # type: (optuna.trial.Trial) -> float
+
+            return trial.suggest_int("x", 1, 1)  # Single element.
+
+        with pytest.warns(UserWarning):
+            study.optimize(objective, n_trials=1)
+        t = study.trials[0]
+        assert t.params["x"] == 1
 
 
 @patch("optuna.study.gc.collect")
@@ -904,36 +961,6 @@ def test_get_trials(storage_mode):
             assert trials0 == trials2
 
 
-def test_study_id():
-    # type: () -> None
-
-    study = optuna.create_study()
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=DeprecationWarning)
-        assert study.study_id == study._study_id
-
-    with pytest.warns(DeprecationWarning):
-        study.study_id
-
-
-def test_study_summary_study_id():
-    # type: () -> None
-
-    study = optuna.create_study()
-    summaries = study._storage.get_all_study_summaries()
-    assert len(summaries) == 1
-
-    summary = summaries[0]
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=DeprecationWarning)
-        assert summary.study_id == summary._study_id
-
-    with pytest.warns(DeprecationWarning):
-        summary.study_id
-
-
 def test_study_summary_eq_ne():
     # type: () -> None
 
@@ -986,3 +1013,51 @@ def test_study_summary_lt_le():
     summaries.sort()
     assert summaries[0] == summary_0
     assert summaries[1] == summary_1
+
+
+def test_log_completed_trial(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    # We need to reconstruct our default handler to properly capture stderr.
+    optuna.logging._reset_library_root_logger()
+    optuna.logging.set_verbosity(optuna.logging.INFO)
+
+    study = optuna.create_study()
+    study.optimize(lambda _: 1.0, n_trials=1)
+    _, err = capsys.readouterr()
+    assert "Trial 0" in err
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    study.optimize(lambda _: 1.0, n_trials=1)
+    _, err = capsys.readouterr()
+    assert "Trial 1" not in err
+
+    optuna.logging.set_verbosity(optuna.logging.DEBUG)
+    study.optimize(lambda _: 1.0, n_trials=1)
+    _, err = capsys.readouterr()
+    assert "Trial 2" in err
+
+
+def test_log_completed_trial_skip_storage_access() -> None:
+
+    study = optuna.create_study()
+
+    # Create a trial to retrieve it as the `study.best_trial`.
+    study.optimize(lambda _: 0.0, n_trials=1)
+    trial = optuna.Trial(study, study._storage.create_new_trial(study._study_id))
+
+    storage = study._storage
+
+    with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
+        study._log_completed_trial(trial, 1.0)
+        # Trial.best_trial and Trial.best_params access storage.
+        assert mock_object.call_count == 2
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
+        study._log_completed_trial(trial, 1.0)
+        assert mock_object.call_count == 0
+
+    optuna.logging.set_verbosity(optuna.logging.DEBUG)
+    with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
+        study._log_completed_trial(trial, 1.0)
+        assert mock_object.call_count == 2
