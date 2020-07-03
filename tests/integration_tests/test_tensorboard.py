@@ -1,15 +1,12 @@
 import os
 import pytest
 import shutil
-import sys
 import tempfile
 
-import optuna
-from optuna._imports import try_import
-from optuna.integration.tensorboard import TensorBoardCallback
+from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
-with try_import() as _imports:
-    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+import optuna
+from optuna.integration.tensorboard import TensorBoardCallback
 
 
 def _objective_func(trial: optuna.trial.Trial) -> float:
@@ -21,9 +18,6 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
     return (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
-@pytest.mark.skipif(
-    sys.version_info > (3, 7), reason="Tensorflow is not installed for python 3.8."
-)
 def test_study_name() -> None:
     dirname = tempfile.mkdtemp()
     metric_name = "target"
@@ -42,3 +36,8 @@ def test_study_name() -> None:
         raise e
     finally:
         shutil.rmtree(dirname)
+
+
+def test_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        TensorBoardCallback(dirname="", metric_name="")

@@ -184,6 +184,7 @@ jobs:
             . venv/bin/activate
             pytest tests --ignore tests/integration_tests/test_fastai.py \
                 --ignore tests/integration_tests/test_keras.py \
+                --ignore tests/integration_tests/test_tensorboard.py \
                 --ignore tests/integration_tests/test_tensorflow.py \
                 --ignore tests/integration_tests/test_tfkeras.py \
                 --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
